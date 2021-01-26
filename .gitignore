@@ -1,0 +1,20 @@
+!.gitkeep
+
+__pycache__/
+.cache/
+.venv/
+.pytest_cache/
+.project
+
+# pyenv
+.python-version
+
+# Intellij
+.idea
+/*.iml
+
+# VSCode
+.vscode
+
+# Mac
+.DS_Store
