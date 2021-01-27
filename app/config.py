@@ -35,6 +35,9 @@ else:
 CONFIG = configparser.ConfigParser()
 CONFIG.read(INI_FILE)
 
+# Logging
+LOG_LEVEL = CONFIG['logging']['level']
+
 # Database
 if 'pytest' in sys.modules:  # for unit test
     DATABASE_URL = os.environ.get("TEST_DATABASE_URL") or 'postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb_test'
@@ -42,6 +45,15 @@ else:
     DATABASE_URL = os.environ.get("DATABASE_URL") or 'postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb'
 DB_ECHO = True if CONFIG['database']['echo'] == 'yes' else False
 DB_AUTOCOMMIT = True
+
+# Blockchain
+WEB3_HTTP_PROVIDER = os.environ.get('WEB3_HTTP_PROVIDER') or 'http://localhost:8545'
+CHAIN_ID = int(os.environ.get("CHAIN_ID")) if os.environ.get("CHAIN_ID") else 2017
+TX_GAS_LIMIT = int(os.environ.get("TX_GAS_LIMIT")) if os.environ.get("TX_GAS_LIMIT") else 6000000
+
+# Token data cache
+TOKEN_CACHE = False if os.environ.get("TOKEN_CACHE") == "0" else True
+TOKEN_CACHE_TTL = int(os.environ.get("TOKEN_CACHE_TTL")) if os.environ.get("TOKEN_CACHE_TTL") else 43200
 
 # Key File Password
 KEY_FILE_PASSWORD = os.environ.get("KEY_FILE_PASSWORD") or "password"

@@ -26,7 +26,9 @@ from app.config import SERVER_NAME
 from app.routers import account, bond
 from app.database import engine
 from app.model import db
+from app.exceptions import *
 
+# Create Database
 db.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -49,6 +51,20 @@ app.include_router(bond.router)
 # EXCEPTION
 ###############################################################
 
+# 500:InternalServerError
+@app.exception_handler(500)
+async def internal_server_error_handler(request: Request, exc: Exception):
+    meta = {
+        "code": 1,
+        "title": "InternalServerError"
+    }
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content=jsonable_encoder({"meta": meta}),
+    )
+
+
+# 422:RequestValidationError
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     meta = {
@@ -61,9 +77,35 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 
-# 404: NotFound
+# 400:InvalidParameterError
+@app.exception_handler(InvalidParameterError)
+async def invalid_parameter_error_handler(request: Request, exc: InvalidParameterError):
+    meta = {
+        "code": 1,
+        "title": "InvalidParameterError"
+    }
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=jsonable_encoder({"meta": meta, "detail": exc.args}),
+    )
+
+
+# 400:SendTransactionError
+@app.exception_handler(SendTransactionError)
+async def invalid_parameter_error_handler(request: Request, exc: SendTransactionError):
+    meta = {
+        "code": 2,
+        "title": "SendTransactionError"
+    }
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=jsonable_encoder({"meta": meta, "detail": exc.args}),
+    )
+
+
+# 404:NotFound
 @app.exception_handler(404)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
+async def not_found_error_handler(request: Request, exc: Exception):
     meta = {
         "code": 1,
         "title": "NotFound"
@@ -74,9 +116,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 
-# 405: MethodNotAllowed
+# 405:MethodNotAllowed
 @app.exception_handler(405)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
+async def method_not_allowed_error_handler(request: Request, exc: Exception):
     meta = {
         "code": 1,
         "title": "MethodNotAllowed"

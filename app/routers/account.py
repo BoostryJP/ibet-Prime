@@ -47,7 +47,7 @@ async def create_key(db: Session = Depends(db_session)):
     # Register keyfile to the DB
     _account = Account()
     _account.issuer_address = addr
-    _account.ibet_keyfile = keyfile_json
+    _account.keyfile = keyfile_json
     db.add(_account)
     db.commit()
 
