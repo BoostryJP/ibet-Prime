@@ -48,9 +48,7 @@ async def get_tokens(db: Session = Depends(db_session)):
     # Get contract data
     bond_tokens = []
     for token in tokens:
-        bond_tokens.append(
-            IbetStraightBondContract.get(contract_address=token.token_address).__dict__
-        )
+        bond_tokens.append(IbetStraightBondContract.get(contract_address=token.token_address).__dict__)
 
     return bond_tokens
 

@@ -16,7 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import Mapping, Dict, Optional, List
+from typing import Dict, Optional, List
 import json
 from decimal import Decimal
 from datetime import datetime, timedelta
@@ -46,12 +46,12 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
     return_date: str
     return_amount: str
     purpose: str
-    interest_rate: Optional[float]
-    interest_payment_date: Optional[List[str]]
-    transferable: Optional[bool]
-    initial_offering_status: Optional[bool]
-    is_redeemed: Optional[bool]
-    personal_info_contract_address: Optional[str]
+    interest_rate: float
+    interest_payment_date: List[str]
+    transferable: bool
+    initial_offering_status: bool
+    is_redeemed: bool
+    personal_info_contract_address: str
 
     # Cache
     cache = {}
@@ -97,19 +97,33 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
         bond_token.privacy_policy = bond_contract.functions.privacyPolicy().call()
         bond_token.tradable_exchange_contract_address = bond_contract.functions.tradableExchange().call()
         bond_token.status = bond_contract.functions.status().call()
-
         bond_token.face_value = bond_contract.functions.faceValue().call()
         bond_token.redemption_date = bond_contract.functions.redemptionDate().call()
         bond_token.redemption_value = bond_contract.functions.redemptionValue().call()
         bond_token.return_date = bond_contract.functions.returnDate().call()
         bond_token.return_amount = bond_contract.functions.returnAmount().call()
         bond_token.purpose = bond_contract.functions.purpose().call()
-        bond_token.interest_rate = bond_contract.functions.interestRate().call()
-        bond_token.interest_payment_date = []  # TODO
+        bond_token.interest_rate = float(
+            Decimal(str(bond_contract.functions.interestRate().call())) * Decimal("0.0001")
+        )
         bond_token.transferable = bond_contract.functions.transferable().call()
         bond_token.initial_offering_status = bond_contract.functions.initialOfferingStatus().call()
         bond_token.is_redeemed = bond_contract.functions.isRedeemed().call()
         bond_token.personal_info_contract_address = bond_contract.functions.personalInfoAddress().call()
+
+        interest_payment_date_list = []
+        interest_payment_date_string = bond_contract.functions.interestPaymentDate().call().replace("'", '"')
+        interest_payment_date = {}
+        try:
+            if interest_payment_date_string != "":
+                interest_payment_date = json.loads(interest_payment_date_string)
+        except Exception as err:
+            LOG.warning("Failed to load interestPaymentDate: ", err)
+        for i in range(1, 13):
+            interest_payment_date_list.append(
+                interest_payment_date.get(f"interestPaymentDate{str(i)}", "")
+            )
+        bond_token.interest_payment_date = interest_payment_date_list
 
         if TOKEN_CACHE:
             IbetStraightBondContract.cache[contract_address] = {
