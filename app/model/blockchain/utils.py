@@ -57,6 +57,7 @@ class ContractUtils:
 
         :param contract_name: contract name
         :param args: arguments given to constructor
+        :param deployer: contract deployer
         :param private_key: private key
         :return: contract address, ABI, transaction hash
         """
@@ -87,7 +88,6 @@ class ContractUtils:
         try:
             tx_hash, txn_receipt = ContractUtils.send_transaction(
                 transaction=tx,
-                from_address=deployer,
                 private_key=private_key
             )
         except TimeExhausted as timeout_error:
@@ -118,7 +118,7 @@ class ContractUtils:
         return contract
 
     @staticmethod
-    def send_transaction(transaction: dict, from_address: str, private_key: str):
+    def send_transaction(transaction: dict, private_key: str):
         """Send transaction"""
         signed_tx = web3.eth.account.signTransaction(
             transaction_dict=transaction,

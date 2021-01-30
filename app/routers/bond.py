@@ -27,7 +27,6 @@ from app.model.schema import IbetStraightBondCreate, IbetStraightBondUpdate, Ibe
 from app.model.db import Account, Token, TokenType
 from app.model.blockchain import IbetStraightBondContract
 from app.config import KEY_FILE_PASSWORD
-from app.utils import ContractUtils
 from app.exceptions import InvalidParameterError, SendTransactionError
 
 router = APIRouter(
@@ -71,8 +70,7 @@ async def issue_token(token: IbetStraightBondCreate, db: Session = Depends(db_se
 
     # Deploy
     try:
-        contract_address, abi, tx_hash = ContractUtils.deploy_contract(
-            contract_name="IbetStraightBond",
+        contract_address, abi, tx_hash = IbetStraightBondContract.create(
             args=arguments,
             deployer=token.issuer_address,
             private_key=private_key
@@ -119,10 +117,9 @@ async def get_token(token_address: str):
 
 
 @router.post("/token/{token_address}")
-async def get_token(token_address: str, token: IbetStraightBondUpdate):
+async def update_token(token_address: str, token: IbetStraightBondUpdate):
     """Update token"""
     # Get contract data
     bond_token = IbetStraightBondContract.get(contract_address=token_address).__dict__
 
     return bond_token
-

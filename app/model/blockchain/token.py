@@ -16,14 +16,15 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import Dict, Optional, List
+from typing import Dict, List
 import json
 from decimal import Decimal
 from datetime import datetime, timedelta
 
 from app.config import TOKEN_CACHE, TOKEN_CACHE_TTL
-from app.utils.blockchain_utils import ContractUtils
 from app import log
+from .utils import ContractUtils
+
 LOG = log.get_logger()
 
 
@@ -56,6 +57,16 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
 
     # Cache
     cache = {}
+
+    @staticmethod
+    def create(args: list, deployer: str, private_key: str):
+        contract_address, abi, tx_hash = ContractUtils.deploy_contract(
+            contract_name="IbetStraightBond",
+            args=args,
+            deployer=deployer,
+            private_key=private_key
+        )
+        return contract_address, abi, tx_hash
 
     @staticmethod
     def get(contract_address: str):
