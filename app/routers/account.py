@@ -27,13 +27,13 @@ import eth_keyfile
 
 from app.config import KEY_FILE_PASSWORD
 from app.database import db_session
-from app.model.schema import Account as AccountSchema
+from app.model.schema import AccountResponse
 from app.model.db import Account
 
 router = APIRouter(tags=["account"])
 
 
-@router.post("/accounts", response_model=AccountSchema)
+@router.put("/account", response_model=AccountResponse)
 async def create_key(db: Session = Depends(db_session)):
     """Create Key"""
     private_key = keccak_256(secrets.token_bytes(32)).digest()

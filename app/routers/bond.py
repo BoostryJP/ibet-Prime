@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session
 from eth_keyfile import decode_keyfile_json
 
 from app.database import db_session
-from app.model.schema import IbetStraightBond
+from app.model.schema import IbetStraightBondCreate, IbetStraightBondUpdate, IbetStraightBondResponse
 from app.model.db import Account, Token, TokenType
 from app.model.blockchain import IbetStraightBondContract
 from app.config import KEY_FILE_PASSWORD
@@ -37,24 +37,8 @@ router = APIRouter(
 )
 
 
-@router.get("/tokens", response_model=List[IbetStraightBond])
-async def get_tokens(db: Session = Depends(db_session)):
-    """Get issued tokens"""
-    # Get issued token list
-    tokens = db.query(Token).\
-        filter(Token.type == TokenType.IBET_STRAIGHT_BOND).\
-        all()
-
-    # Get contract data
-    bond_tokens = []
-    for token in tokens:
-        bond_tokens.append(IbetStraightBondContract.get(contract_address=token.token_address).__dict__)
-
-    return bond_tokens
-
-
-@router.post("/tokens")
-async def issue_token(token: IbetStraightBond, db: Session = Depends(db_session)):
+@router.put("/token")
+async def issue_token(token: IbetStraightBondCreate, db: Session = Depends(db_session)):
     """Issue ibet Straight Bond"""
 
     # Get Account
@@ -72,7 +56,7 @@ async def issue_token(token: IbetStraightBond, db: Session = Depends(db_session)
         password=KEY_FILE_PASSWORD.encode("utf-8")
     )
 
-    # Arguments
+    # Deploy Arguments
     arguments = [
         token.name,
         token.symbol,
@@ -107,3 +91,38 @@ async def issue_token(token: IbetStraightBond, db: Session = Depends(db_session)
     db.commit()
 
     return {"token_address": _token.token_address}
+
+
+@router.get("/tokens", response_model=List[IbetStraightBondResponse])
+async def get_tokens(db: Session = Depends(db_session)):
+    """Get issued tokens"""
+    # Get issued token list
+    tokens = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        all()
+
+    # Get contract data
+    bond_tokens = []
+    for token in tokens:
+        bond_tokens.append(IbetStraightBondContract.get(contract_address=token.token_address).__dict__)
+
+    return bond_tokens
+
+
+@router.get("/token/{token_address}", response_model=IbetStraightBondResponse)
+async def get_token(token_address: str):
+    """Get issued token"""
+    # Get contract data
+    bond_token = IbetStraightBondContract.get(contract_address=token_address).__dict__
+
+    return bond_token
+
+
+@router.post("/token/{token_address}")
+async def get_token(token_address: str, token: IbetStraightBondUpdate):
+    """Update token"""
+    # Get contract data
+    bond_token = IbetStraightBondContract.get(contract_address=token_address).__dict__
+
+    return bond_token
+
