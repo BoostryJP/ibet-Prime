@@ -29,14 +29,15 @@ LOG = log.get_logger()
 
 class IbetStandardTokenInterfaceContract:
     issuer_address: str
+    token_address: str
     name: str
     symbol: str
     total_supply: int
-    image_url: Optional[List[Dict[str, str]]]
-    contact_information: Optional[str]
-    privacy_policy: Optional[str]
-    tradable_exchange_contract_address: Optional[str]
-    status: Optional[bool]
+    image_url: List[Dict[str, str]]
+    contact_information: str
+    privacy_policy: str
+    tradable_exchange_contract_address: str
+    status: bool
 
 
 class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
@@ -85,6 +86,7 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
         bond_token = IbetStraightBondContract()
 
         bond_token.issuer_address = bond_contract.functions.owner().call()
+        bond_token.token_address = contract_address
         bond_token.name = bond_contract.functions.name().call()
         bond_token.symbol = bond_contract.functions.symbol().call()
         bond_token.total_supply = bond_contract.functions.totalSupply().call()
