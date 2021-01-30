@@ -19,6 +19,10 @@ SPDX-License-Identifier: Apache-2.0
 from pydantic import BaseModel
 
 
-class Account(BaseModel):
-    """Account schema"""
+############################
+# RESPONSE
+############################
+
+class AccountResponse(BaseModel):
+    """Account schema (Response)"""
     issuer_address: str
