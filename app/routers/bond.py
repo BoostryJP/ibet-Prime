@@ -16,7 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Header
 from sqlalchemy.orm import Session
@@ -96,17 +96,27 @@ async def issue_token(
 
 
 @router.get("/tokens", response_model=List[IbetStraightBondResponse])
-async def get_tokens(db: Session = Depends(db_session)):
+async def get_tokens(
+        issuer_address: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
     """Get issued tokens"""
     # Get issued token list
-    tokens = db.query(Token). \
-        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
-        all()
+    if issuer_address is None:
+        tokens = db.query(Token). \
+            filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+            all()
+    else:
+        tokens = db.query(Token). \
+            filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+            filter(Token.issuer_address == issuer_address). \
+            all()
 
     # Get contract data
     bond_tokens = []
     for token in tokens:
-        bond_tokens.append(IbetStraightBondContract.get(contract_address=token.token_address).__dict__)
+        bond_tokens.append(
+            IbetStraightBondContract.get(contract_address=token.token_address).__dict__
+        )
 
     return bond_tokens
 
