@@ -19,3 +19,4 @@ SPDX-License-Identifier: Apache-2.0
 from .base import Base
 from .account import Account
 from .token import Token, TokenType
+from .event_transfer import EventTransfer

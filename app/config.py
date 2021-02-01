@@ -57,3 +57,6 @@ TOKEN_CACHE_TTL = int(os.environ.get("TOKEN_CACHE_TTL")) if os.environ.get("TOKE
 
 # Key File Password
 KEY_FILE_PASSWORD = os.environ.get("KEY_FILE_PASSWORD") or "password"
+
+# Indexer sync interval
+INDEXER_SYNC_INTERVAL = 10
