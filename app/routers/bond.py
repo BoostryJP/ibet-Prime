@@ -25,8 +25,8 @@ from eth_keyfile import decode_keyfile_json
 from config import KEY_FILE_PASSWORD
 from app.database import db_session
 from app.model.schema import IbetStraightBondCreate, IbetStraightBondUpdate, IbetStraightBondTransfer, \
-    IbetStraightBondResponse
-from app.model.db import Account, Token, TokenType
+    IbetStraightBondResponse, HolderResponse
+from app.model.db import Account, Token, TokenType, IDXPosition
 from app.model.blockchain import IbetStraightBondContract
 from app.exceptions import InvalidParameterError, SendTransactionError
 
@@ -143,10 +143,17 @@ async def update_token(
     _account = db.query(Account). \
         filter(Account.issuer_address == issuer_address). \
         first()
-
-    # If account does not exist, return 400 error
     if _account is None:
         raise InvalidParameterError("issuer does not exist")
+
+    # Get Token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        first()
+    if _token is None:
+        raise InvalidParameterError("token not found")
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -200,3 +207,38 @@ async def transfer(
     )
 
     return
+
+
+@router.get("/holders/{token_address}", response_model=List[HolderResponse])
+async def get_holders(
+        token_address: str,
+        issuer_address: str = Header(None),
+        db: Session = Depends(db_session)):
+    """Get bond token holders"""
+
+    # Get Account
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
+        first()
+    if _account is None:
+        raise InvalidParameterError("issuer does not exist")
+
+    # Get Token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        first()
+    if _token is None:
+        raise InvalidParameterError("token not found")
+
+    # Get Holders
+    _holders = db.query(IDXPosition).\
+        filter(IDXPosition.token_address == token_address).\
+        all()
+
+    holders = []
+    for _holder in _holders:
+        holders.append(_holder.json())
+
+    return holders

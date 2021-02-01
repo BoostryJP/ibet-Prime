@@ -434,12 +434,12 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
         tx = bond_contract.functions. \
             transferFrom(_from, _to, _amount). \
             buildTransaction({
-            "nonce": nonce,
-            "chainId": CHAIN_ID,
-            "from": tx_from,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+                "nonce": nonce,
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
         try:
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
         except TimeExhausted as timeout_error:

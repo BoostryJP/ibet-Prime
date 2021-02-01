@@ -16,7 +16,14 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from .account import AccountResponse
-from .token import IbetStraightBondCreate, IbetStraightBondUpdate, IbetStraightBondTransfer
-from .token import IbetStraightBondResponse
-from .holder import HolderResponse
+from pydantic import BaseModel
+
+
+############################
+# RESPONSE
+############################
+
+class HolderResponse(BaseModel):
+    """Holder schema (Response)"""
+    account_address: str
+    balance: int
