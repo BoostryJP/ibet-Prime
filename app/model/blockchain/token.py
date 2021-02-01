@@ -27,7 +27,7 @@ from web3.exceptions import TimeExhausted
 
 from app.config import TOKEN_CACHE, TOKEN_CACHE_TTL, \
     WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT
-from app.model.schema import IbetStraightBondUpdate
+from app.model.schema import IbetStraightBondUpdate, IbetStraightBondTransfer
 from app.exceptions import SendTransactionError
 from app import log
 from .utils import ContractUtils
@@ -196,7 +196,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
         return bond_token
 
     @staticmethod
-    def update(contract_address: str, update_data: IbetStraightBondUpdate, tx_from: str, private_key: str):
+    def update(contract_address: str,
+               update_data: IbetStraightBondUpdate,
+               tx_from: str,
+               private_key: str):
         bond_contract = ContractUtils.get_contract(
             contract_name="IbetStraightBond",
             contract_address=contract_address
@@ -413,3 +416,31 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+
+    @staticmethod
+    def transfer(contract_address: str,
+                 transfer_data: IbetStraightBondTransfer,
+                 tx_from: str,
+                 private_key: str):
+        bond_contract = ContractUtils.get_contract(
+            contract_name="IbetStraightBond",
+            contract_address=contract_address
+        )
+
+        _from = transfer_data.transfer_from
+        _to = transfer_data.transfer_to
+        _amount = transfer_data.amount
+        nonce = web3.eth.getTransactionCount(tx_from)
+        tx = bond_contract.functions. \
+            transferFrom(_from, _to, _amount). \
+            buildTransaction({
+            "nonce": nonce,
+            "chainId": CHAIN_ID,
+            "from": tx_from,
+            "gas": TX_GAS_LIMIT,
+            "gasPrice": 0
+        })
+        try:
+            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)

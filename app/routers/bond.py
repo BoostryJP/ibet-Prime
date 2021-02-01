@@ -23,7 +23,8 @@ from sqlalchemy.orm import Session
 from eth_keyfile import decode_keyfile_json
 
 from app.database import db_session
-from app.model.schema import IbetStraightBondCreate, IbetStraightBondUpdate, IbetStraightBondResponse
+from app.model.schema import IbetStraightBondCreate, IbetStraightBondUpdate, IbetStraightBondTransfer, \
+    IbetStraightBondResponse
 from app.model.db import Account, Token, TokenType
 from app.model.blockchain import IbetStraightBondContract
 from app.config import KEY_FILE_PASSWORD
@@ -164,5 +165,38 @@ async def update_token(
         )
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
+
+    return
+
+
+@router.post("/transfer/{token_address}")
+async def transfer(
+        token_address: str,
+        token: IbetStraightBondTransfer,
+        issuer_address: str = Header(None),
+        db: Session = Depends(db_session)):
+    """Transfer token"""
+
+    # Get Account
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
+        first()
+
+    # If account does not exist, return 400 error
+    if _account is None:
+        raise InvalidParameterError("issuer does not exist")
+
+    keyfile_json = _account.keyfile
+    private_key = decode_keyfile_json(
+        raw_keyfile_json=keyfile_json,
+        password=KEY_FILE_PASSWORD.encode("utf-8")
+    )
+
+    IbetStraightBondContract.transfer(
+        contract_address=token_address,
+        transfer_data=token,
+        tx_from=issuer_address,
+        private_key=private_key
+    )
 
     return

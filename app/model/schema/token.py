@@ -113,6 +113,31 @@ class IbetStraightBondUpdate(BaseModel):
         return v
 
 
+class IbetStraightBondTransfer(BaseModel):
+    """ibet Straight Bond schema (Transfer)"""
+    transfer_from: str
+    transfer_to: str
+    amount: int
+
+    @validator("transfer_from")
+    def transfer_from_is_valid_address(cls, v):
+        if not Web3.isAddress(v):
+            raise ValueError("transfer_from is not a valid address")
+        return v
+
+    @validator("transfer_to")
+    def transfer_to_is_valid_address(cls, v):
+        if not Web3.isAddress(v):
+            raise ValueError("transfer_to is not a valid address")
+        return v
+
+    @validator("amount")
+    def amount_must_be_greater_than_0(cls, v):
+        if v <= 0:
+            raise ValueError("amount must be greater than 0")
+        return v
+
+
 ############################
 # RESPONSE
 ############################
