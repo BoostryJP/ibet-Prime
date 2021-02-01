@@ -28,5 +28,9 @@ class Account(Base):
 
     # issuer address
     issuer_address = Column(String(42), primary_key=True)
-    # keyfile
+    # ethereum keyfile
     keyfile = Column(JSON)
+    # rsa private key
+    rsa_private_key = Column(String(8000))
+    # rsa public key
+    rsa_public_key = Column(String(2000))
