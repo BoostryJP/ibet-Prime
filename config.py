@@ -26,12 +26,12 @@ APP_ENV = os.environ.get('APP_ENV') or 'local'
 NETWORK = os.environ.get("NETWORK") or "IBET"  # IBET or IBETFIN
 
 if APP_ENV != "live":
-    INI_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), f"../conf/{APP_ENV}.ini")
+    INI_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), f"conf/{APP_ENV}.ini")
 else:
     if NETWORK == "IBET":  # ibet
-        INI_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), f"../conf/live.ini")
+        INI_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), f"conf/live.ini")
     else:  # ibet for Fin
-        INI_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), f"../conf/live_fin.ini")
+        INI_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), f"conf/live_fin.ini")
 CONFIG = configparser.ConfigParser()
 CONFIG.read(INI_FILE)
 

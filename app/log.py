@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import sys
 import logging
 
-from app.config import LOG_LEVEL, APP_ENV
+from config import LOG_LEVEL, APP_ENV
 
 logging.basicConfig(level=LOG_LEVEL)
 LOG = logging.getLogger("issuer_api")

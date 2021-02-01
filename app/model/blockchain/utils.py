@@ -24,7 +24,7 @@ from web3.middleware import geth_poa_middleware
 from web3.exceptions import TimeExhausted
 from eth_utils import to_checksum_address
 
-from app.config import WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT
+from config import WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT
 from app.exceptions import SendTransactionError
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))

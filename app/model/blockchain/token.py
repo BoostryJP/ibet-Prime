@@ -25,7 +25,7 @@ from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from web3.exceptions import TimeExhausted
 
-from app.config import TOKEN_CACHE, TOKEN_CACHE_TTL, \
+from config import TOKEN_CACHE, TOKEN_CACHE_TTL, \
     WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT
 from app.model.schema import IbetStraightBondUpdate, IbetStraightBondTransfer
 from app.exceptions import SendTransactionError

@@ -22,12 +22,12 @@ from fastapi import APIRouter, Depends, Header
 from sqlalchemy.orm import Session
 from eth_keyfile import decode_keyfile_json
 
+from config import KEY_FILE_PASSWORD
 from app.database import db_session
 from app.model.schema import IbetStraightBondCreate, IbetStraightBondUpdate, IbetStraightBondTransfer, \
     IbetStraightBondResponse
 from app.model.db import Account, Token, TokenType
 from app.model.blockchain import IbetStraightBondContract
-from app.config import KEY_FILE_PASSWORD
 from app.exceptions import InvalidParameterError, SendTransactionError
 
 router = APIRouter(

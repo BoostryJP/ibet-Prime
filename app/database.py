@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from .config import DATABASE_URL, DB_ECHO, DB_AUTOCOMMIT
+from config import DATABASE_URL, DB_ECHO, DB_AUTOCOMMIT
 
 
 options = {

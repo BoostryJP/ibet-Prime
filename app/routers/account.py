@@ -17,6 +17,9 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import secrets
+import time
+from Crypto.PublicKey import RSA
+from Crypto import Random
 
 from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
@@ -25,15 +28,41 @@ from coincurve import PublicKey
 from eth_utils import to_checksum_address
 import eth_keyfile
 
-from app.config import KEY_FILE_PASSWORD
+from config import KEY_FILE_PASSWORD
 from app.database import db_session
 from app.model.schema import AccountResponse
 from app.model.db import Account
 from app import log
 LOG = log.get_logger()
-from background import generate_rsa_key
 
 router = APIRouter(tags=["account"])
+
+
+def generate_rsa_key(db: Session, issuer_address: str):
+    """Generate RSA key"""
+    time.sleep(1)
+    LOG.info(f"RSA key generation started: {issuer_address}")
+
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
+        first()
+    if _account is None:
+        LOG.error(f"RSA key generation failed: {issuer_address}")
+        return
+
+    random_func = Random.new().read
+    rsa = RSA.generate(10240, random_func)
+    rsa_private_pem = rsa.exportKey(format="PEM", passphrase=KEY_FILE_PASSWORD).decode()
+    rsa_public_pem = rsa.publickey().exportKey().decode()
+
+    # Register key data to the DB
+    _account.rsa_private_key = rsa_private_pem
+    _account.rsa_public_key = rsa_public_pem
+    db.merge(_account)
+    db.commit()
+
+    LOG.info(f"RSA key generation succeeded: {issuer_address}")
+    return
 
 
 @router.put("/account", response_model=AccountResponse)
@@ -60,6 +89,6 @@ async def create_key(
     db.commit()
 
     # Generate RSA key (background)
-    background_tasks.add_task(generate_rsa_key.process, db, addr)
+    background_tasks.add_task(generate_rsa_key, db, addr)
 
     return {"issuer_address": _account.issuer_address}
