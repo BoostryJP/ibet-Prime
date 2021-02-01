@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 from typing import List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Header
 from sqlalchemy.orm import Session
 from eth_keyfile import decode_keyfile_json
 
@@ -37,18 +37,22 @@ router = APIRouter(
 
 
 @router.put("/token")
-async def issue_token(token: IbetStraightBondCreate, db: Session = Depends(db_session)):
+async def issue_token(
+        token: IbetStraightBondCreate,
+        issuer_address: str = Header(None),
+        db: Session = Depends(db_session)):
     """Issue ibet Straight Bond"""
 
     # Get Account
     _account = db.query(Account). \
-        filter(Account.issuer_address == token.issuer_address). \
+        filter(Account.issuer_address == issuer_address). \
         first()
 
     # If account does not exist, return 400 error
     if _account is None:
         raise InvalidParameterError("issuer does not exist")
 
+    # Get private key
     keyfile_json = _account.keyfile
     private_key = decode_keyfile_json(
         raw_keyfile_json=keyfile_json,
@@ -72,7 +76,7 @@ async def issue_token(token: IbetStraightBondCreate, db: Session = Depends(db_se
     try:
         contract_address, abi, tx_hash = IbetStraightBondContract.create(
             args=arguments,
-            deployer=token.issuer_address,
+            tx_from=issuer_address,
             private_key=private_key
         )
     except SendTransactionError:
@@ -82,7 +86,7 @@ async def issue_token(token: IbetStraightBondCreate, db: Session = Depends(db_se
     _token = Token()
     _token.type = TokenType.IBET_STRAIGHT_BOND
     _token.tx_hash = tx_hash
-    _token.issuer_address = token.issuer_address
+    _token.issuer_address = issuer_address
     _token.token_address = contract_address
     _token.abi = abi
     db.add(_token)
@@ -117,9 +121,38 @@ async def get_token(token_address: str):
 
 
 @router.post("/token/{token_address}")
-async def update_token(token_address: str, token: IbetStraightBondUpdate):
+async def update_token(
+        token_address: str,
+        token: IbetStraightBondUpdate,
+        issuer_address: str = Header(None),
+        db: Session = Depends(db_session)):
     """Update token"""
-    # Get contract data
-    bond_token = IbetStraightBondContract.get(contract_address=token_address).__dict__
 
-    return bond_token
+    # Get Account
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
+        first()
+
+    # If account does not exist, return 400 error
+    if _account is None:
+        raise InvalidParameterError("issuer does not exist")
+
+    # Get private key
+    keyfile_json = _account.keyfile
+    private_key = decode_keyfile_json(
+        raw_keyfile_json=keyfile_json,
+        password=KEY_FILE_PASSWORD.encode("utf-8")
+    )
+
+    # Send transaction
+    try:
+        IbetStraightBondContract.update(
+            contract_address=token_address,
+            update_data=token,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+    except SendTransactionError:
+        raise SendTransactionError("failed to send transaction")
+
+    return

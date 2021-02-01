@@ -16,29 +16,18 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import Dict, List, Optional
+from typing import List, Optional
 import math
 
 from pydantic import BaseModel, validator
 from web3 import Web3
 
 
-class IbetStraightBondBase(BaseModel):
-    """ibet Straight Bond schema (Base)"""
-    issuer_address: str
-
-    @validator("issuer_address")
-    def issuer_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
-            raise ValueError("issuer_address is not a valid address")
-        return v
-
-
 ############################
 # REQUEST
 ############################
 
-class IbetStraightBondCreate(IbetStraightBondBase):
+class IbetStraightBondCreate(BaseModel):
     """ibet Straight Bond schema (Create)"""
     name: str
     symbol: str
@@ -57,7 +46,7 @@ class IbetStraightBondCreate(IbetStraightBondBase):
     initial_offering_status: Optional[bool]
     tradable_exchange_contract_address: Optional[str]
     personal_info_contract_address: Optional[str]
-    image_url: Optional[List[Dict[str, str]]]
+    image_url: Optional[List[str]]
     contact_information: Optional[str]
     privacy_policy: Optional[str]
 
@@ -81,15 +70,20 @@ class IbetStraightBondCreate(IbetStraightBondBase):
             raise ValueError("personal_info_contract_address is not a valid address")
         return v
 
+    @validator("image_url")
+    def image_list_length_is_less_than_3(cls, v):
+        if len(v) >= 4:
+            raise ValueError("The length of the list must be less than or equal to 3")
 
-class IbetStraightBondUpdate(IbetStraightBondBase):
+
+class IbetStraightBondUpdate(BaseModel):
     """ibet Straight Bond schema (Update)"""
     face_value: Optional[int]
     interest_rate: Optional[float]
     interest_payment_date: Optional[List[str]]
     redemption_value: Optional[int]
     transferable: Optional[bool]
-    image_url: Optional[List[Dict[str, str]]]
+    image_url: Optional[List[str]]
     status: Optional[bool]
     initial_offering_status: Optional[bool]
     is_redeemed: Optional[bool]
@@ -123,8 +117,9 @@ class IbetStraightBondUpdate(IbetStraightBondBase):
 # RESPONSE
 ############################
 
-class IbetStraightBondResponse(IbetStraightBondBase):
+class IbetStraightBondResponse(BaseModel):
     """ibet Straight Bond schema (Response)"""
+    issuer_address: str
     token_address: str
     name: str
     symbol: str
@@ -143,6 +138,6 @@ class IbetStraightBondResponse(IbetStraightBondBase):
     initial_offering_status: bool
     tradable_exchange_contract_address: str
     personal_info_contract_address: str
-    image_url: List[Dict[str, str]]
+    image_url: List[str]
     contact_information: str
     privacy_policy: str
