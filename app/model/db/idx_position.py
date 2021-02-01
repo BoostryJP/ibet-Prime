@@ -16,8 +16,20 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from sqlalchemy import Column
+from sqlalchemy import String, BigInteger
+
 from .base import Base
-from .account import Account
-from .token import Token, TokenType
-from .idx_transfer import IDXTransfer
-from .idx_position import IDXPosition
+
+
+class IDXPosition(Base):
+    """INDEX Position"""
+    __tablename__ = 'idx_position'
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    # token address
+    token_address = Column(String(42), index=True)
+    # account address
+    account_address = Column(String(42), index=True)
+    # balance
+    balance = Column(BigInteger)

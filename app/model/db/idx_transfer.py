@@ -16,16 +16,17 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column
+from sqlalchemy import BigInteger, String, DateTime
 
 from .base import Base
 
 
-class EventTransfer(Base):
-    """Transfer event"""
-    __tablename__ = "event_transfer"
+class IDXTransfer(Base):
+    """INDEX Transfer"""
+    __tablename__ = "idx_transfer"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
     # transaction hash
     transaction_hash = Column(String(66), index=True)
     # token address
@@ -35,6 +36,6 @@ class EventTransfer(Base):
     # transfer to address
     transfer_to = Column(String(42), index=True)
     # transfer amount
-    amount = Column(Integer)
+    amount = Column(BigInteger)
     # block timestamp
     block_timestamp = Column(DateTime)

@@ -32,12 +32,11 @@ path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
 from config import INDEXER_SYNC_INTERVAL, WEB3_HTTP_PROVIDER, DATABASE_URL
-from app.model.db import Token, EventTransfer
-import log
+from app.model.db import Token, IDXTransfer
+import batch_log
 process_name = "INDEXER-Transfer"
-LOG = log.get_logger(process_name=process_name)
+LOG = batch_log.get_logger(process_name=process_name)
 
-# 初期化
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 engine = create_engine(DATABASE_URL, echo=False)
@@ -69,7 +68,7 @@ class DBSink:
                     transfer_from, transfer_to, amount, block_timestamp):
         transfer_record = self.__get_record(transaction_hash, token_address)
         if transfer_record is None:
-            transfer_record = EventTransfer()
+            transfer_record = IDXTransfer()
             transfer_record.transaction_hash = transaction_hash
             transfer_record.token_address = token_address
             transfer_record.transfer_from = transfer_from
@@ -83,9 +82,9 @@ class DBSink:
         self.db.commit()
 
     def __get_record(self, transaction_hash, token_address):
-        return self.db.query(EventTransfer). \
-            filter(EventTransfer.transaction_hash == transaction_hash). \
-            filter(EventTransfer.token_address == token_address). \
+        return self.db.query(IDXTransfer). \
+            filter(IDXTransfer.transaction_hash == transaction_hash). \
+            filter(IDXTransfer.token_address == token_address). \
             first()
 
 
@@ -108,7 +107,7 @@ class Processor:
 
     def initial_sync(self):
         self.get_token_list()
-        # 1,000,000ブロックずつ同期処理を行う
+        # synchronize 1,000,000 blocks at a time
         _to_block = 999999
         _from_block = 0
         if self.latest_block > 999999:
@@ -119,6 +118,7 @@ class Processor:
             self.__sync_all(_from_block, self.latest_block)
         else:
             self.__sync_all(_from_block, self.latest_block)
+        LOG.info(f"<{process_name}> Initial sync has been completed")
 
     def sync_new_logs(self):
         self.get_token_list()
@@ -128,12 +128,18 @@ class Processor:
         self.__sync_all(self.latest_block + 1, blockTo)
         self.latest_block = blockTo
 
-    def __sync_all(self, block_from, block_to):
+    def __sync_all(self, block_from: int, block_to: int):
         LOG.info("syncing from={}, to={}".format(block_from, block_to))
         self.__sync_transfer(block_from, block_to)
         self.sink.flush()
 
-    def __sync_transfer(self, block_from, block_to):
+    def __sync_transfer(self, block_from: int, block_to: int):
+        """Synchronize Transfer events
+
+        :param block_from: from block number
+        :param block_to: to block number
+        :return: None
+        """
         for token in self.token_list:
             try:
                 event_filter = token.events.Transfer.createFilter(
