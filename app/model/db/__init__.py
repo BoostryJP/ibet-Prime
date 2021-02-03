@@ -21,3 +21,4 @@ from .account import Account
 from .token import Token, TokenType
 from .idx_transfer import IDXTransfer
 from .idx_position import IDXPosition
+from .idx_personal_info import IDXPersonalInfo, IDXPersonalInfoBlockNumber

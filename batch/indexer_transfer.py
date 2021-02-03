@@ -129,7 +129,7 @@ class Processor:
         self.latest_block = blockTo
 
     def __sync_all(self, block_from: int, block_to: int):
-        LOG.info("syncing from={}, to={}".format(block_from, block_to))
+        LOG.info(f"syncing from={block_from}, to={block_to}")
         self.__sync_transfer(block_from, block_to)
         self.sink.flush()
 
