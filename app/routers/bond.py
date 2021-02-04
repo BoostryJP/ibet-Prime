@@ -26,7 +26,7 @@ from config import KEY_FILE_PASSWORD
 from app.database import db_session
 from app.model.schema import IbetStraightBondCreate, IbetStraightBondUpdate, IbetStraightBondTransfer, \
     IbetStraightBondResponse, HolderResponse
-from app.model.db import Account, Token, TokenType, IDXPosition
+from app.model.db import Account, Token, TokenType, IDXPosition, IDXPersonalInfo
 from app.model.blockchain import IbetStraightBondContract
 from app.exceptions import InvalidParameterError, SendTransactionError
 
@@ -233,12 +233,94 @@ async def get_holders(
         raise InvalidParameterError("token not found")
 
     # Get Holders
-    _holders = db.query(IDXPosition).\
-        filter(IDXPosition.token_address == token_address).\
+    _holders = db.query(IDXPosition). \
+        filter(IDXPosition.token_address == token_address). \
         all()
+
+    # Get personal information
+    _personal_info_list = db.query(IDXPersonalInfo). \
+        filter(IDXPersonalInfo.issuer_address == issuer_address). \
+        all()
+    _personal_info_dict = {}
+    for item in _personal_info_list:
+        _personal_info_dict[item.account_address] = item.personal_info
+
+    personal_info_default = {
+        "key_manager": None,
+        "name": None,
+        "postal_code": None,
+        "address": None,
+        "email": None,
+        "birth": None
+    }
 
     holders = []
     for _holder in _holders:
-        holders.append(_holder.json())
+        _personal_info = _personal_info_dict.get(
+            _holder.account_address,
+            personal_info_default
+        )
+        holders.append({
+            "account_address": _holder.account_address,
+            "personal_information": _personal_info,
+            "balance": _holder.balance
+        })
 
     return holders
+
+
+@router.get("/holder/{token_address}/{account_address}", response_model=HolderResponse)
+async def get_holder(
+        token_address: str,
+        account_address: str,
+        issuer_address: str = Header(None),
+        db: Session = Depends(db_session)):
+    """Get bond token holder"""
+
+    # Get Issuer
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
+        first()
+    if _account is None:
+        raise InvalidParameterError("issuer does not exist")
+
+    # Get Token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        first()
+    if _token is None:
+        raise InvalidParameterError("token not found")
+
+    # Get Holders
+    _holder = db.query(IDXPosition). \
+        filter(IDXPosition.token_address == token_address). \
+        filter(IDXPosition.account_address == account_address). \
+        first()
+
+    # Get personal information
+    personal_info_default = {
+        "key_manager": None,
+        "name": None,
+        "postal_code": None,
+        "address": None,
+        "email": None,
+        "birth": None
+    }
+    _personal_info_record = db.query(IDXPersonalInfo). \
+        filter(IDXPersonalInfo.account_address == account_address). \
+        filter(IDXPersonalInfo.issuer_address == issuer_address). \
+        first()
+    if _personal_info_record is None:
+        _personal_info = personal_info_default
+    else:
+        _personal_info = _personal_info_record.personal_info
+
+    holder = {
+        "account_address": _holder.account_address,
+        "personal_information": _personal_info,
+        "balance": _holder.balance
+    }
+
+    return holder
