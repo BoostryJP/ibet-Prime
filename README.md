@@ -1,4 +1,4 @@
-# ibet-Issuer (version 2)
+# ibet-Prime
 
 <p>
   <img alt="Version" src="https://img.shields.io/badge/version-0.1-blue.svg?cacheSeconds=2592000" />
@@ -13,7 +13,7 @@
 
 ## About this repository
 
-ibet-Issuer is an API service for issuers to issue various tokens on the [ibet network](https://github.com/BoostryJP/ibet-Network).
+ibet-Prime is an API service for issuers to issue various tokens on the [ibet network](https://github.com/BoostryJP/ibet-Network).
 
 It supports the tokens developed by [ibet-SmartContract](https://github.com/BoostryJP/ibet-SmartContract).
 
@@ -36,7 +36,7 @@ $ ./bin/run_server.sh start(stop)
 
 ## License
 
-ibet-Issuer is licensed under the Apache License, Version 2.0.
+ibet-Prime is licensed under the Apache License, Version 2.0.
 
 ## Sponsors
 

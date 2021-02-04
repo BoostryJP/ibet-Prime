@@ -21,7 +21,7 @@ import os
 import configparser
 
 # Global Config
-SERVER_NAME = 'ibet-Issuer'
+SERVER_NAME = 'ibet-Prime'
 APP_ENV = os.environ.get('APP_ENV') or 'local'
 NETWORK = os.environ.get("NETWORK") or "IBET"  # IBET or IBETFIN
 
