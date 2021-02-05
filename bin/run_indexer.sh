@@ -19,7 +19,6 @@
 
 # shellcheck disable=SC1090
 source ~/.bash_profile
-
 cd /app/ibet-Prime
 
 python batch/indexer_personal_info.py &

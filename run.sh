@@ -16,11 +16,8 @@
 # limitations under the License.
 #
 # SPDX-License-Identifier: Apache-2.0
-
 source ~/.bash_profile
-
 RUN_MODE=${RUN_MODE:-server}
-
 cd /app/ibet-Prime
 
 if [ "${RUN_MODE}" == "server" ]; then
