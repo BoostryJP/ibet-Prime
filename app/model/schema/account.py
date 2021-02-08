@@ -26,3 +26,4 @@ from pydantic import BaseModel
 class AccountResponse(BaseModel):
     """Account schema (Response)"""
     issuer_address: str
+    rsa_public_key: str

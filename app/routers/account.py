@@ -91,4 +91,22 @@ async def create_key(
     # Generate RSA key (background)
     background_tasks.add_task(generate_rsa_key, db, addr)
 
-    return {"issuer_address": _account.issuer_address}
+    return {
+        "issuer_address": _account.issuer_address,
+        "rsa_public_key": _account.rsa_public_key
+    }
+
+
+@router.get("/account/{issuer_address}", response_model=AccountResponse)
+async def get_account(issuer_address: str, db: Session = Depends(db_session)):
+    """Get account"""
+
+    # Register key data to the DB
+    _account = db.query(Account).\
+        filter(Account.issuer_address == issuer_address).\
+        first()
+
+    return {
+        "issuer_address": _account.issuer_address,
+        "rsa_public_key": _account.rsa_public_key
+    }
