@@ -105,11 +105,13 @@ async def get_tokens(
     if issuer_address is None:
         tokens = db.query(Token). \
             filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+            order_by(Token.id). \
             all()
     else:
         tokens = db.query(Token). \
             filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
             filter(Token.issuer_address == issuer_address). \
+            order_by(Token.id). \
             all()
 
     # Get contract data
@@ -235,11 +237,13 @@ async def get_holders(
     # Get Holders
     _holders = db.query(IDXPosition). \
         filter(IDXPosition.token_address == token_address). \
+        order_by(IDXPosition.id). \
         all()
 
     # Get personal information
     _personal_info_list = db.query(IDXPersonalInfo). \
         filter(IDXPersonalInfo.issuer_address == issuer_address). \
+        order_by(IDXPersonalInfo.id). \
         all()
     _personal_info_dict = {}
     for item in _personal_info_list:

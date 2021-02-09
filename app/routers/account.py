@@ -93,7 +93,7 @@ async def create_key(
 
     return {
         "issuer_address": _account.issuer_address,
-        "rsa_public_key": _account.rsa_public_key
+        "rsa_public_key": ""
     }
 
 

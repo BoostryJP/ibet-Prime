@@ -91,7 +91,10 @@ class ContractUtils:
                 private_key=private_key
             )
         except TimeExhausted as timeout_error:
+            # NOTE: トランザクションがPending滞留などでタイムアウト発生
             raise SendTransactionError(timeout_error)
+        except Exception as error:
+            raise SendTransactionError(error)
 
         contract_address = None
         if txn_receipt is not None:
