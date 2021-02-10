@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/ash
 
 # Copyright BOOSTRY Co., Ltd.
 #
@@ -17,7 +17,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-source ~/.bash_profile
+source ~/.profile
 
 function start () {
     uvicorn app.main:app --reload

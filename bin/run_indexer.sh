@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/ash
 
 # Copyright BOOSTRY Co., Ltd.
 #
@@ -18,7 +18,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # shellcheck disable=SC1090
-source ~/.bash_profile
+source ~/.profile
 cd /app/ibet-Prime
 
 python batch/indexer_personal_info.py &
