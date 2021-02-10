@@ -16,43 +16,37 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import eth_keyfile
+from unittest import mock
+from unittest.mock import MagicMock, ANY
 
-from eth_utils import to_checksum_address
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
 import config
-
+from app.exceptions import SendTransactionError
 from app.model.db import Account, Token, TokenType
-
-from tests.account_config import eth_account
+from tests.account_config import config_eth_account, eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
 class TestAppRoutersBondBondTokensGET:
-    # テスト対象API
+    # target API endpoint
     apiurl = "/bond/token"
 
     ###########################################################################
-    # 正常系
+    # Normal Case
     ###########################################################################
 
-    # ＜正常系1＞
-    def test_normal_1(self, client, db):
-        local_account = web3.eth.account.create()
-        address = to_checksum_address(local_account.address)
-        keyfile_json = eth_keyfile.create_keyfile_json(
-            private_key=local_account.key,
-            password=config.KEY_FILE_PASSWORD.encode("utf-8"),
-            kdf="pbkdf2"
-        )
+    # <Normal Case 1>
+    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.create")
+    def test_normal_1(self, mock_create, client, db):
+        test_account = config_eth_account("user1")
 
         account = Account()
-        account.issuer_address = address
-        account.keyfile = keyfile_json
+        account.issuer_address = test_account["address"]
+        account.keyfile = test_account["keyfile_json"]
         db.add(account)
 
         token_before = db.query(Token).all()
@@ -67,54 +61,40 @@ class TestAppRoutersBondBondTokensGET:
             "return_date": "redemption_value_test1",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
-            "interest_rate": 0.005,
-            "interest_payment_date": [
-                "interest_payment_date1_test1", "interest_payment_date2_test1",
-                "interest_payment_date3_test1", "interest_payment_date4_test1",
-                "interest_payment_date5_test1", "interest_payment_date6_test1",
-                "interest_payment_date7_test1", "interest_payment_date8_test1",
-                "interest_payment_date9_test1", "interest_payment_date10_test1",
-                "interest_payment_date11_test1", "interest_payment_date12_test1",
-            ],
-            "transferable": True,
-            "is_redeemed": True,
-            "status": True,
-            "initial_offering_status": True,
-            "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
-            "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
-            "image_url": [
-                "http://hoge1.test/test1.png",
-                "http://hoge2.test/test1.png",
-                "http://hoge3.test/test1.png",
-            ],
-            "contact_information": "contact_information_test1",
-            "privacy_policy": "privacy_policy_test1",
         }
 
-        resp = client.put(self.apiurl, json=req_param, headers={"issuer-address": address})
+        mock_create.side_effect = [
+            ("contract_address_test1", "abi_test1", "tx_hash_test1")
+        ]
+
+        resp = client.put(self.apiurl, json=req_param, headers={"issuer-address": test_account["address"]})
+
+        # assertion mock call arguments
+        arguments = [value for value in req_param.values()]
+        mock_create.assert_any_call(args=arguments, tx_from=account.issuer_address, private_key=ANY)
 
         token_after = db.query(Token).all()
 
         assert resp.status_code == 200
-        assert resp.json()["token_address"] is not None
+        assert resp.json()["token_address"] == "contract_address_test1"
 
         assert 0 == len(token_before)
         assert 1 == len(token_after)
         token_1 = token_after[0]
         assert token_1.id == 1
         assert token_1.type == TokenType.IBET_STRAIGHT_BOND
-        assert token_1.tx_hash is not None
-        assert token_1.issuer_address == address
-        assert token_1.token_address == resp.json()["token_address"]
-        assert token_1.abi is not None
+        assert token_1.tx_hash == "tx_hash_test1"
+        assert token_1.issuer_address == test_account["address"]
+        assert token_1.token_address == "contract_address_test1"
+        assert token_1.abi == "abi_test1"
 
     ###########################################################################
-    # エラー系
+    # Error Case
     ###########################################################################
 
-    # ＜エラー系1＞
-    # パラメータエラー
-    def test_error_1(self, client, db):
+    # <Error Case 1>
+    # Parameter Error
+    def test_error_1(self, client):
         resp = client.put(self.apiurl, headers={"issuer-address": ""})
         assert resp.status_code == 422
         assert resp.json()["meta"] == {
@@ -122,21 +102,15 @@ class TestAppRoutersBondBondTokensGET:
             "title": "RequestValidationError"
         }
         assert resp.json()["detail"] is not None
-
-    # ＜エラー系2＞
-    # DBに存在しないアドレス
+    
+    # <Error Case 2>
+    # Not Exists Address
     def test_error_2(self, client, db):
-        local_account = web3.eth.account.create()
-        address = to_checksum_address(local_account.address)
-        keyfile_json = eth_keyfile.create_keyfile_json(
-            private_key=local_account.key,
-            password=config.KEY_FILE_PASSWORD.encode("utf-8"),
-            kdf="pbkdf2"
-        )
+        test_account = config_eth_account("user1")
 
         account = Account()
-        account.issuer_address = address
-        account.keyfile = keyfile_json
+        account.issuer_address = test_account["address"]
+        account.keyfile = test_account["keyfile_json"]
         db.add(account)
 
         req_param = {
@@ -149,28 +123,6 @@ class TestAppRoutersBondBondTokensGET:
             "return_date": "redemption_value_test1",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
-            "interest_rate": 0.005,
-            "interest_payment_date": [
-                "interest_payment_date1_test1", "interest_payment_date2_test1",
-                "interest_payment_date3_test1", "interest_payment_date4_test1",
-                "interest_payment_date5_test1", "interest_payment_date6_test1",
-                "interest_payment_date7_test1", "interest_payment_date8_test1",
-                "interest_payment_date9_test1", "interest_payment_date10_test1",
-                "interest_payment_date11_test1", "interest_payment_date12_test1",
-            ],
-            "transferable": True,
-            "is_redeemed": True,
-            "status": True,
-            "initial_offering_status": True,
-            "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
-            "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
-            "image_url": [
-                "http://hoge1.test/test1.png",
-                "http://hoge2.test/test1.png",
-                "http://hoge3.test/test1.png",
-            ],
-            "contact_information": "contact_information_test1",
-            "privacy_policy": "privacy_policy_test1",
         }
 
         resp = client.put(self.apiurl, json=req_param,
@@ -182,23 +134,17 @@ class TestAppRoutersBondBondTokensGET:
             "title": "InvalidParameterError"
         }
         assert resp.json()["detail"] == ["issuer does not exist"]
-
-    # ＜エラー系3＞
-    # トランザクション送信エラー(keyfileが他アカウントのもの)
+    
+    # <Error Case 3>
+    # Send Transaction Error
+    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.create", MagicMock(side_effect=SendTransactionError()))
     def test_error_3(self, client, db):
-        local_account_1 = web3.eth.account.create()
-        address = to_checksum_address(local_account_1.address)
-
-        local_account_2 = web3.eth.account.create()
-        keyfile_json = eth_keyfile.create_keyfile_json(
-            private_key=local_account_2.key,
-            password=config.KEY_FILE_PASSWORD.encode("utf-8"),
-            kdf="pbkdf2"
-        )
+        test_account_1 = config_eth_account("user1")
+        test_account_2 = config_eth_account("user2")
 
         account = Account()
-        account.issuer_address = address
-        account.keyfile = keyfile_json
+        account.issuer_address = test_account_1["address"]
+        account.keyfile = test_account_2["keyfile_json"]
         db.add(account)
 
         req_param = {
@@ -211,31 +157,9 @@ class TestAppRoutersBondBondTokensGET:
             "return_date": "redemption_value_test1",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
-            "interest_rate": 0.005,
-            "interest_payment_date": [
-                "interest_payment_date1_test1", "interest_payment_date2_test1",
-                "interest_payment_date3_test1", "interest_payment_date4_test1",
-                "interest_payment_date5_test1", "interest_payment_date6_test1",
-                "interest_payment_date7_test1", "interest_payment_date8_test1",
-                "interest_payment_date9_test1", "interest_payment_date10_test1",
-                "interest_payment_date11_test1", "interest_payment_date12_test1",
-            ],
-            "transferable": True,
-            "is_redeemed": True,
-            "status": True,
-            "initial_offering_status": True,
-            "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
-            "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
-            "image_url": [
-                "http://hoge1.test/test1.png",
-                "http://hoge2.test/test1.png",
-                "http://hoge3.test/test1.png",
-            ],
-            "contact_information": "contact_information_test1",
-            "privacy_policy": "privacy_policy_test1",
         }
 
-        resp = client.put(self.apiurl, json=req_param, headers={"issuer-address": address})
+        resp = client.put(self.apiurl, json=req_param, headers={"issuer-address": test_account_1["address"]})
 
         assert resp.status_code == 400
         assert resp.json()["meta"] == {

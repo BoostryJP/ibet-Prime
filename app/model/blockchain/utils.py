@@ -91,14 +91,14 @@ class ContractUtils:
                 private_key=private_key
             )
         except TimeExhausted as timeout_error:
-            # NOTE: トランザクションがPending滞留などでタイムアウト発生
+            # NOTE: Time-out occurred because sending transaction stays in pending, etc.
             raise SendTransactionError(timeout_error)
         except Exception as error:
             raise SendTransactionError(error)
 
         contract_address = None
         if txn_receipt is not None:
-            # ブロックの状態を確認して、コントラクトアドレスが登録されているかを確認する。
+            # Check if contract address is registered from transaction receipt result.
             if 'contractAddress' in txn_receipt.keys():
                 contract_address = txn_receipt['contractAddress']
 

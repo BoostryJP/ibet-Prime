@@ -16,83 +16,90 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from app.model.db import Token, TokenType
+from unittest import mock
+from unittest.mock import call
 
+from app.model.blockchain import IbetStraightBondContract
+from app.model.db import Token, TokenType
 from tests.account_config import eth_account
-from tests.contract_module import issue_bond_token
 
 
 class TestAppRoutersBondBondTokensGET:
-    # テスト対象API
+    # target API endpoint
     apiurl = "/bond/tokens"
 
     ###########################################################################
-    # 正常系
+    # Normal Case
     ###########################################################################
 
-    # ＜正常系1＞
-    # アドレス指定なし、0件
-    def test_normal_1(self, client, db):
-
+    # <Normal Case 1>
+    # parameter unset address, 0 Record
+    def test_normal_1(self, client):
         resp = client.get(self.apiurl)
 
         assert resp.status_code == 200
         assert resp.json() == []
 
-    # ＜正常系2＞
-    # アドレス指定なし、1件
-    def test_normal_2(self, client, db):
-        issuer = eth_account["issuer"]
-        bond_token = issue_bond_token(issuer, {
-            "name": "testtoken1",
-            "symbol": "test1",
-            "totalSupply": 10000,
-            "faceValue": 200,
-            "redemptionDate": "redemptionDate_test1",
-            "redemptionValue": 40,
-            "returnDate": "returnDate_test1",
-            "returnAmount": "returnAmount_test1",
-            "purpose": "purpose_test1",
-            "tradableExchange": "0x1234567890abCdFe1234567890ABCdFE12345678",
-            "personalInfoAddress": "0x1234567890aBcDFE1234567890abcDFE12345679",
-            "contactInformation": "contactInformation_test1",
-            "privacyPolicy": "privacyPolicy_test1",
-            "imageURL": [
-                "http://hoge1.test/test1.png",
-                "http://hoge2.test/test1.png",
-                "http://hoge3.test/test1.png",
-            ],
-            "memo": "memo_test1",
-            "interestRate": 30,
-            "interestPaymentDate1": "interestPaymentDate1_test1",
-            "interestPaymentDate2": "interestPaymentDate2_test1",
-            "interestPaymentDate3": "interestPaymentDate3_test1",
-            "interestPaymentDate4": "interestPaymentDate4_test1",
-            "interestPaymentDate5": "interestPaymentDate5_test1",
-            "interestPaymentDate6": "interestPaymentDate6_test1",
-            "interestPaymentDate7": "interestPaymentDate7_test1",
-            "interestPaymentDate8": "interestPaymentDate8_test1",
-            "interestPaymentDate9": "interestPaymentDate9_test1",
-            "interestPaymentDate10": "interestPaymentDate10_test1",
-            "interestPaymentDate11": "interestPaymentDate11_test1",
-            "interestPaymentDate12": "interestPaymentDate12_test1",
-            "transferable": True
-        })
-
+    # <Normal Case 2>
+    # parameter unset address, 1 Record
+    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    def test_normal_2(self, mock_get, client, db):
         token = Token()
         token.type = TokenType.IBET_STRAIGHT_BOND
-        token.tx_hash = bond_token["tx_hash"]
-        token.issuer_address = issuer["account_address"]
-        token.token_address = bond_token["address"]
-        token.abi = bond_token["abi"]
+        token.tx_hash = "tx_hash_test1"
+        token.issuer_address = "issuer_address_test1"
+        token.token_address = "token_address_test1"
+        token.abi = "abi_test1"
         db.add(token)
+
+        mock_token = IbetStraightBondContract()
+        mock_token.issuer_address = token.issuer_address
+        mock_token.token_address = token.token_address
+        mock_token.name = "testtoken1"
+        mock_token.symbol = "test1"
+        mock_token.total_supply = 10000
+        mock_token.image_url = [
+            "http://hoge1.test/test1.png",
+            "http://hoge2.test/test1.png",
+            "http://hoge3.test/test1.png",
+        ]
+        mock_token.contact_information = "contactInformation_test1"
+        mock_token.privacy_policy = "privacyPolicy_test1"
+        mock_token.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
+        mock_token.status = True
+        mock_token.face_value = 200
+        mock_token.redemption_date = "redemptionDate_test1"
+        mock_token.redemption_value = 40
+        mock_token.return_date = "returnDate_test1"
+        mock_token.return_amount = "returnAmount_test1"
+        mock_token.purpose = "purpose_test1"
+        mock_token.interest_rate = 0.003
+        mock_token.transferable = True
+        mock_token.initial_offering_status = False
+        mock_token.is_redeemed = False
+        mock_token.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token.interest_payment_date = [
+            "interestPaymentDate1_test1", "interestPaymentDate2_test1",
+            "interestPaymentDate3_test1", "interestPaymentDate4_test1",
+            "interestPaymentDate5_test1", "interestPaymentDate6_test1",
+            "interestPaymentDate7_test1", "interestPaymentDate8_test1",
+            "interestPaymentDate9_test1", "interestPaymentDate10_test1",
+            "interestPaymentDate11_test1", "interestPaymentDate12_test1",
+        ]
+
+        mock_get.side_effect = [
+            mock_token
+        ]
 
         resp = client.get(self.apiurl)
 
+        # assertion mock call arguments
+        mock_get.assert_any_call(contract_address=token.token_address)
+
         assumed_response = [
             {
-                "issuer_address": issuer["account_address"],
-                "token_address": bond_token["address"],
+                "issuer_address": token.issuer_address,
+                "token_address": token.token_address,
                 "name": "testtoken1",
                 "symbol": "test1",
                 "total_supply": 10000,
@@ -130,107 +137,112 @@ class TestAppRoutersBondBondTokensGET:
         assert resp.status_code == 200
         assert resp.json() == assumed_response
 
-    # ＜正常系3＞
-    # アドレス指定なし、複数件
-    def test_normal_3(self, client, db):
-        issuer = eth_account["issuer"]
+    # <Normal Case 3>
+    # parameter unset address, Multi Record
+    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    def test_normal_3(self, mock_get, client, db):
+        # 1st Data
+        token_1 = Token()
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
+        token_1.tx_hash = "tx_hash_test1"
+        token_1.issuer_address = "issuer_address_test1"
+        token_1.token_address = "token_address_test1"
+        token_1.abi = "abi_test1"
+        db.add(token_1)
 
-        # 1件目
-        bond_token_1 = issue_bond_token(issuer, {
-            "name": "testtoken1",
-            "symbol": "test1",
-            "totalSupply": 10000,
-            "faceValue": 200,
-            "redemptionDate": "redemptionDate_test1",
-            "redemptionValue": 40,
-            "returnDate": "returnDate_test1",
-            "returnAmount": "returnAmount_test1",
-            "purpose": "purpose_test1",
-            "tradableExchange": "0x1234567890abCdFe1234567890ABCdFE12345678",
-            "personalInfoAddress": "0x1234567890aBcDFE1234567890abcDFE12345679",
-            "contactInformation": "contactInformation_test1",
-            "privacyPolicy": "privacyPolicy_test1",
-            "imageURL": [
-                "http://hoge1.test/test1.png",
-                "http://hoge2.test/test1.png",
-                "http://hoge3.test/test1.png",
-            ],
-            "memo": "memo_test1",
-            "interestRate": 30,
-            "interestPaymentDate1": "interestPaymentDate1_test1",
-            "interestPaymentDate2": "interestPaymentDate2_test1",
-            "interestPaymentDate3": "interestPaymentDate3_test1",
-            "interestPaymentDate4": "interestPaymentDate4_test1",
-            "interestPaymentDate5": "interestPaymentDate5_test1",
-            "interestPaymentDate6": "interestPaymentDate6_test1",
-            "interestPaymentDate7": "interestPaymentDate7_test1",
-            "interestPaymentDate8": "interestPaymentDate8_test1",
-            "interestPaymentDate9": "interestPaymentDate9_test1",
-            "interestPaymentDate10": "interestPaymentDate10_test1",
-            "interestPaymentDate11": "interestPaymentDate11_test1",
-            "interestPaymentDate12": "interestPaymentDate12_test1",
-            "transferable": True
-        })
+        mock_token_1 = IbetStraightBondContract()
+        mock_token_1.issuer_address = token_1.issuer_address
+        mock_token_1.token_address = token_1.token_address
+        mock_token_1.name = "testtoken1"
+        mock_token_1.symbol = "test1"
+        mock_token_1.total_supply = 10000
+        mock_token_1.image_url = [
+            "http://hoge1.test/test1.png",
+            "http://hoge2.test/test1.png",
+            "http://hoge3.test/test1.png",
+        ]
+        mock_token_1.contact_information = "contactInformation_test1"
+        mock_token_1.privacy_policy = "privacyPolicy_test1"
+        mock_token_1.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
+        mock_token_1.status = True
+        mock_token_1.face_value = 200
+        mock_token_1.redemption_date = "redemptionDate_test1"
+        mock_token_1.redemption_value = 40
+        mock_token_1.return_date = "returnDate_test1"
+        mock_token_1.return_amount = "returnAmount_test1"
+        mock_token_1.purpose = "purpose_test1"
+        mock_token_1.interest_rate = 0.003
+        mock_token_1.transferable = True
+        mock_token_1.initial_offering_status = False
+        mock_token_1.is_redeemed = False
+        mock_token_1.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token_1.interest_payment_date = [
+            "interestPaymentDate1_test1", "interestPaymentDate2_test1",
+            "interestPaymentDate3_test1", "interestPaymentDate4_test1",
+            "interestPaymentDate5_test1", "interestPaymentDate6_test1",
+            "interestPaymentDate7_test1", "interestPaymentDate8_test1",
+            "interestPaymentDate9_test1", "interestPaymentDate10_test1",
+            "interestPaymentDate11_test1", "interestPaymentDate12_test1",
+        ]
 
-        token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
-        token.tx_hash = bond_token_1["tx_hash"]
-        token.issuer_address = issuer["account_address"]
-        token.token_address = bond_token_1["address"]
-        token.abi = bond_token_1["abi"]
-        db.add(token)
+        # 2nd Data
+        token_2 = Token()
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
+        token_2.tx_hash = "tx_hash_test2"
+        token_2.issuer_address = "issuer_address_test2"
+        token_2.token_address = "token_address_test2"
+        token_2.abi = "abi_test2"
+        db.add(token_2)
 
-        # 2件目
-        bond_token_2 = issue_bond_token(issuer, {
-            "name": "testtoken2",
-            "symbol": "test2",
-            "totalSupply": 50000,
-            "faceValue": 600,
-            "redemptionDate": "redemptionDate_test2",
-            "redemptionValue": 80,
-            "returnDate": "returnDate_test2",
-            "returnAmount": "returnAmount_test2",
-            "purpose": "purpose_test2",
-            "tradableExchange": "0x1234567890AbcdfE1234567890abcdfE12345680",
-            "personalInfoAddress": "0x1234567890abcdFE1234567890ABcdfE12345681",
-            "contactInformation": "contactInformation_test2",
-            "privacyPolicy": "privacyPolicy_test2",
-            "imageURL": [
-                "http://hoge1.test/test2.png",
-                "http://hoge2.test/test2.png",
-                "http://hoge3.test/test2.png",
-            ],
-            "memo": "memo_test2",
-            "interestRate": 70,
-            "interestPaymentDate1": "interestPaymentDate1_test2",
-            "interestPaymentDate2": "interestPaymentDate2_test2",
-            "interestPaymentDate3": "interestPaymentDate3_test2",
-            "interestPaymentDate4": "interestPaymentDate4_test2",
-            "interestPaymentDate5": "interestPaymentDate5_test2",
-            "interestPaymentDate6": "interestPaymentDate6_test2",
-            "interestPaymentDate7": "interestPaymentDate7_test2",
-            "interestPaymentDate8": "interestPaymentDate8_test2",
-            "interestPaymentDate9": "interestPaymentDate9_test2",
-            "interestPaymentDate10": "interestPaymentDate10_test2",
-            "interestPaymentDate11": "interestPaymentDate11_test2",
-            "interestPaymentDate12": "interestPaymentDate12_test2",
-            "transferable": False
-        })
+        mock_token_2 = IbetStraightBondContract()
+        mock_token_2.issuer_address = token_2.issuer_address
+        mock_token_2.token_address = token_2.token_address
+        mock_token_2.name = "testtoken2"
+        mock_token_2.symbol = "test2"
+        mock_token_2.total_supply = 50000
+        mock_token_2.image_url = [
+            "http://hoge1.test/test2.png",
+            "http://hoge2.test/test2.png",
+            "http://hoge3.test/test2.png",
+        ]
+        mock_token_2.contact_information = "contactInformation_test2"
+        mock_token_2.privacy_policy = "privacyPolicy_test2"
+        mock_token_2.tradable_exchange_contract_address = "0x1234567890AbcdfE1234567890abcdfE12345680"
+        mock_token_2.status = True
+        mock_token_2.face_value = 600
+        mock_token_2.redemption_date = "redemptionDate_test2"
+        mock_token_2.redemption_value = 80
+        mock_token_2.return_date = "returnDate_test2"
+        mock_token_2.return_amount = "returnAmount_test2"
+        mock_token_2.purpose = "purpose_test2"
+        mock_token_2.interest_rate = 0.007
+        mock_token_2.transferable = False
+        mock_token_2.initial_offering_status = False
+        mock_token_2.is_redeemed = False
+        mock_token_2.personal_info_contract_address = "0x1234567890abcdFE1234567890ABcdfE12345681"
+        mock_token_2.interest_payment_date = [
+            "interestPaymentDate1_test2", "interestPaymentDate2_test2",
+            "interestPaymentDate3_test2", "interestPaymentDate4_test2",
+            "interestPaymentDate5_test2", "interestPaymentDate6_test2",
+            "interestPaymentDate7_test2", "interestPaymentDate8_test2",
+            "interestPaymentDate9_test2", "interestPaymentDate10_test2",
+            "interestPaymentDate11_test2", "interestPaymentDate12_test2",
+        ]
 
-        token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
-        token.tx_hash = bond_token_2["tx_hash"]
-        token.issuer_address = issuer["account_address"]
-        token.token_address = bond_token_2["address"]
-        token.abi = bond_token_2["abi"]
-        db.add(token)
+        mock_get.side_effect = [
+            mock_token_1, mock_token_2
+        ]
 
         resp = client.get(self.apiurl)
 
-        assumed_response =[
+        # assertion mock call arguments
+        mock_get.assert_has_calls(
+            [call(contract_address=token_1.token_address), call(contract_address=token_2.token_address)])
+
+        assumed_response = [
             {
-                "issuer_address": issuer["account_address"],
-                "token_address": bond_token_1["address"],
+                "issuer_address": token_1.issuer_address,
+                "token_address": token_1.token_address,
                 "name": "testtoken1",
                 "symbol": "test1",
                 "total_supply": 10000,
@@ -264,8 +276,8 @@ class TestAppRoutersBondBondTokensGET:
                 ],
             },
             {
-                "issuer_address": issuer["account_address"],
-                "token_address": bond_token_2["address"],
+                "issuer_address": token_2.issuer_address,
+                "token_address": token_2.token_address,
                 "name": "testtoken2",
                 "symbol": "test2",
                 "total_supply": 50000,
@@ -303,30 +315,16 @@ class TestAppRoutersBondBondTokensGET:
         assert resp.status_code == 200
         assert resp.json() == assumed_response
 
-    # ＜正常系4＞
-    # アドレス指定あり、0件
+    # <Normal Case 4>
+    # parameter set address, 0 Record
     def test_normal_4(self, client, db):
-
-        # 対象外データ
-        issuer_2 = eth_account["issuer2"]
-        bond_token_2 = issue_bond_token(issuer_2, {
-            "name": "testtoken1",
-            "symbol": "test1",
-            "totalSupply": 10000,
-            "faceValue": 200,
-            "redemptionDate": "redemptionDate_test1",
-            "redemptionValue": 40,
-            "returnDate": "returnDate_test1",
-            "returnAmount": "returnAmount_test1",
-            "purpose": "purpose_test1",
-        })
-
+        # No Target Data
         token = Token()
         token.type = TokenType.IBET_STRAIGHT_BOND
-        token.tx_hash = bond_token_2["tx_hash"]
-        token.issuer_address = issuer_2["account_address"]
-        token.token_address = bond_token_2["address"]
-        token.abi = bond_token_2["abi"]
+        token.tx_hash = "tx_hash_test1"
+        token.issuer_address = eth_account["issuer"]["account_address"]
+        token.token_address = "token_address_test1"
+        token.abi = "abi_test1"
         db.add(token)
 
         resp = client.get(self.apiurl, headers={"issuer-address": "test"})
@@ -334,82 +332,75 @@ class TestAppRoutersBondBondTokensGET:
         assert resp.status_code == 200
         assert resp.json() == []
 
-    # ＜正常系5＞
-    # アドレス指定あり、1件
-    def test_normal_5(self, client, db):
-        issuer_1 = eth_account["issuer"]
-        bond_token_1 = issue_bond_token(issuer_1, {
-            "name": "testtoken1",
-            "symbol": "test1",
-            "totalSupply": 10000,
-            "faceValue": 200,
-            "redemptionDate": "redemptionDate_test1",
-            "redemptionValue": 40,
-            "returnDate": "returnDate_test1",
-            "returnAmount": "returnAmount_test1",
-            "purpose": "purpose_test1",
-            "tradableExchange": "0x1234567890abCdFe1234567890ABCdFE12345678",
-            "personalInfoAddress": "0x1234567890aBcDFE1234567890abcDFE12345679",
-            "contactInformation": "contactInformation_test1",
-            "privacyPolicy": "privacyPolicy_test1",
-            "imageURL": [
-                "http://hoge1.test/test1.png",
-                "http://hoge2.test/test1.png",
-                "http://hoge3.test/test1.png",
-            ],
-            "memo": "memo_test1",
-            "interestRate": 30,
-            "interestPaymentDate1": "interestPaymentDate1_test1",
-            "interestPaymentDate2": "interestPaymentDate2_test1",
-            "interestPaymentDate3": "interestPaymentDate3_test1",
-            "interestPaymentDate4": "interestPaymentDate4_test1",
-            "interestPaymentDate5": "interestPaymentDate5_test1",
-            "interestPaymentDate6": "interestPaymentDate6_test1",
-            "interestPaymentDate7": "interestPaymentDate7_test1",
-            "interestPaymentDate8": "interestPaymentDate8_test1",
-            "interestPaymentDate9": "interestPaymentDate9_test1",
-            "interestPaymentDate10": "interestPaymentDate10_test1",
-            "interestPaymentDate11": "interestPaymentDate11_test1",
-            "interestPaymentDate12": "interestPaymentDate12_test1",
-            "transferable": True
-        })
+    # <Normal Case 5>
+    # parameter set address, 1 Record
+    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    def test_normal_5(self, mock_get, client, db):
+        token_1 = Token()
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
+        token_1.tx_hash = "tx_hash_test1"
+        token_1.issuer_address = "issuer_address_test1"
+        token_1.token_address = "token_address_test1"
+        token_1.abi = "abi_test1"
+        db.add(token_1)
 
-        token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
-        token.tx_hash = bond_token_1["tx_hash"]
-        token.issuer_address = issuer_1["account_address"]
-        token.token_address = bond_token_1["address"]
-        token.abi = bond_token_1["abi"]
-        db.add(token)
+        mock_token = IbetStraightBondContract()
+        mock_token.issuer_address = token_1.issuer_address
+        mock_token.token_address = token_1.token_address
+        mock_token.name = "testtoken1"
+        mock_token.symbol = "test1"
+        mock_token.total_supply = 10000
+        mock_token.image_url = [
+            "http://hoge1.test/test1.png",
+            "http://hoge2.test/test1.png",
+            "http://hoge3.test/test1.png",
+        ]
+        mock_token.contact_information = "contactInformation_test1"
+        mock_token.privacy_policy = "privacyPolicy_test1"
+        mock_token.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
+        mock_token.status = True
+        mock_token.face_value = 200
+        mock_token.redemption_date = "redemptionDate_test1"
+        mock_token.redemption_value = 40
+        mock_token.return_date = "returnDate_test1"
+        mock_token.return_amount = "returnAmount_test1"
+        mock_token.purpose = "purpose_test1"
+        mock_token.interest_rate = 0.003
+        mock_token.transferable = True
+        mock_token.initial_offering_status = False
+        mock_token.is_redeemed = False
+        mock_token.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token.interest_payment_date = [
+            "interestPaymentDate1_test1", "interestPaymentDate2_test1",
+            "interestPaymentDate3_test1", "interestPaymentDate4_test1",
+            "interestPaymentDate5_test1", "interestPaymentDate6_test1",
+            "interestPaymentDate7_test1", "interestPaymentDate8_test1",
+            "interestPaymentDate9_test1", "interestPaymentDate10_test1",
+            "interestPaymentDate11_test1", "interestPaymentDate12_test1",
+        ]
 
-        # 対象外データ
-        issuer_2 = eth_account["issuer2"]
-        bond_token_2 = issue_bond_token(issuer_2, {
-            "name": "testtoken1",
-            "symbol": "test1",
-            "totalSupply": 10000,
-            "faceValue": 200,
-            "redemptionDate": "redemptionDate_test1",
-            "redemptionValue": 40,
-            "returnDate": "returnDate_test1",
-            "returnAmount": "returnAmount_test1",
-            "purpose": "purpose_test1",
-        })
+        mock_get.side_effect = [
+            mock_token
+        ]
 
-        token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
-        token.tx_hash = bond_token_2["tx_hash"]
-        token.issuer_address = issuer_2["account_address"]
-        token.token_address = bond_token_2["address"]
-        token.abi = bond_token_2["abi"]
-        db.add(token)
+        # No Target Data
+        token_2 = Token()
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
+        token_2.tx_hash = "tx_hash_test1"
+        token_2.issuer_address = eth_account["issuer"]["account_address"]
+        token_2.token_address = "token_address_test1"
+        token_2.abi = "abi_test1"
+        db.add(token_2)
 
-        resp = client.get(self.apiurl, headers={"issuer-address": issuer_1["account_address"]})
+        resp = client.get(self.apiurl, headers={"issuer-address": "issuer_address_test1"})
 
-        assumed_response =[
+        # assertion mock call arguments
+        mock_get.assert_any_call(contract_address=token_1.token_address)
+
+        assumed_response = [
             {
-                "issuer_address": issuer_1["account_address"],
-                "token_address": bond_token_1["address"],
+                "issuer_address": token_1.issuer_address,
+                "token_address": token_1.token_address,
                 "name": "testtoken1",
                 "symbol": "test1",
                 "total_supply": 10000,
@@ -447,129 +438,121 @@ class TestAppRoutersBondBondTokensGET:
         assert resp.status_code == 200
         assert resp.json() == assumed_response
 
-    # ＜正常系6＞
-    # アドレス指定あり、複数件
-    def test_normal_6(self, client, db):
-        issuer_1 = eth_account["issuer"]
+    # <Normal Case 6>
+    # parameter set address, Multi Record
+    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    def test_normal_6(self, mock_get, client, db):
+        # 1st Data
+        token_1 = Token()
+        token_1.type = TokenType.IBET_STRAIGHT_BOND
+        token_1.tx_hash = "tx_hash_test1"
+        token_1.issuer_address = "issuer_address_common"
+        token_1.token_address = "token_address_test1"
+        token_1.abi = "abi_test1"
+        db.add(token_1)
 
-        # 1件目
-        bond_token_1 = issue_bond_token(issuer_1, {
-            "name": "testtoken1",
-            "symbol": "test1",
-            "totalSupply": 10000,
-            "faceValue": 200,
-            "redemptionDate": "redemptionDate_test1",
-            "redemptionValue": 40,
-            "returnDate": "returnDate_test1",
-            "returnAmount": "returnAmount_test1",
-            "purpose": "purpose_test1",
-            "tradableExchange": "0x1234567890abCdFe1234567890ABCdFE12345678",
-            "personalInfoAddress": "0x1234567890aBcDFE1234567890abcDFE12345679",
-            "contactInformation": "contactInformation_test1",
-            "privacyPolicy": "privacyPolicy_test1",
-            "imageURL": [
-                "http://hoge1.test/test1.png",
-                "http://hoge2.test/test1.png",
-                "http://hoge3.test/test1.png",
-            ],
-            "memo": "memo_test1",
-            "interestRate": 30,
-            "interestPaymentDate1": "interestPaymentDate1_test1",
-            "interestPaymentDate2": "interestPaymentDate2_test1",
-            "interestPaymentDate3": "interestPaymentDate3_test1",
-            "interestPaymentDate4": "interestPaymentDate4_test1",
-            "interestPaymentDate5": "interestPaymentDate5_test1",
-            "interestPaymentDate6": "interestPaymentDate6_test1",
-            "interestPaymentDate7": "interestPaymentDate7_test1",
-            "interestPaymentDate8": "interestPaymentDate8_test1",
-            "interestPaymentDate9": "interestPaymentDate9_test1",
-            "interestPaymentDate10": "interestPaymentDate10_test1",
-            "interestPaymentDate11": "interestPaymentDate11_test1",
-            "interestPaymentDate12": "interestPaymentDate12_test1",
-            "transferable": True
-        })
+        mock_token_1 = IbetStraightBondContract()
+        mock_token_1.issuer_address = token_1.issuer_address
+        mock_token_1.token_address = token_1.token_address
+        mock_token_1.name = "testtoken1"
+        mock_token_1.symbol = "test1"
+        mock_token_1.total_supply = 10000
+        mock_token_1.image_url = [
+            "http://hoge1.test/test1.png",
+            "http://hoge2.test/test1.png",
+            "http://hoge3.test/test1.png",
+        ]
+        mock_token_1.contact_information = "contactInformation_test1"
+        mock_token_1.privacy_policy = "privacyPolicy_test1"
+        mock_token_1.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
+        mock_token_1.status = True
+        mock_token_1.face_value = 200
+        mock_token_1.redemption_date = "redemptionDate_test1"
+        mock_token_1.redemption_value = 40
+        mock_token_1.return_date = "returnDate_test1"
+        mock_token_1.return_amount = "returnAmount_test1"
+        mock_token_1.purpose = "purpose_test1"
+        mock_token_1.interest_rate = 0.003
+        mock_token_1.transferable = True
+        mock_token_1.initial_offering_status = False
+        mock_token_1.is_redeemed = False
+        mock_token_1.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token_1.interest_payment_date = [
+            "interestPaymentDate1_test1", "interestPaymentDate2_test1",
+            "interestPaymentDate3_test1", "interestPaymentDate4_test1",
+            "interestPaymentDate5_test1", "interestPaymentDate6_test1",
+            "interestPaymentDate7_test1", "interestPaymentDate8_test1",
+            "interestPaymentDate9_test1", "interestPaymentDate10_test1",
+            "interestPaymentDate11_test1", "interestPaymentDate12_test1",
+        ]
 
-        token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
-        token.tx_hash = bond_token_1["tx_hash"]
-        token.issuer_address = issuer_1["account_address"]
-        token.token_address = bond_token_1["address"]
-        token.abi = bond_token_1["abi"]
-        db.add(token)
+        # 2nd Data
+        token_2 = Token()
+        token_2.type = TokenType.IBET_STRAIGHT_BOND
+        token_2.tx_hash = "tx_hash_test2"
+        token_2.issuer_address = "issuer_address_common"
+        token_2.token_address = "token_address_test2"
+        token_2.abi = "abi_test2"
+        db.add(token_2)
 
-        # 2件目
-        bond_token_2 = issue_bond_token(issuer_1, {
-            "name": "testtoken2",
-            "symbol": "test2",
-            "totalSupply": 50000,
-            "faceValue": 600,
-            "redemptionDate": "redemptionDate_test2",
-            "redemptionValue": 80,
-            "returnDate": "returnDate_test2",
-            "returnAmount": "returnAmount_test2",
-            "purpose": "purpose_test2",
-            "tradableExchange": "0x1234567890AbcdfE1234567890abcdfE12345680",
-            "personalInfoAddress": "0x1234567890abcdFE1234567890ABcdfE12345681",
-            "contactInformation": "contactInformation_test2",
-            "privacyPolicy": "privacyPolicy_test2",
-            "imageURL": [
-                "http://hoge1.test/test2.png",
-                "http://hoge2.test/test2.png",
-                "http://hoge3.test/test2.png",
-            ],
-            "memo": "memo_test2",
-            "interestRate": 70,
-            "interestPaymentDate1": "interestPaymentDate1_test2",
-            "interestPaymentDate2": "interestPaymentDate2_test2",
-            "interestPaymentDate3": "interestPaymentDate3_test2",
-            "interestPaymentDate4": "interestPaymentDate4_test2",
-            "interestPaymentDate5": "interestPaymentDate5_test2",
-            "interestPaymentDate6": "interestPaymentDate6_test2",
-            "interestPaymentDate7": "interestPaymentDate7_test2",
-            "interestPaymentDate8": "interestPaymentDate8_test2",
-            "interestPaymentDate9": "interestPaymentDate9_test2",
-            "interestPaymentDate10": "interestPaymentDate10_test2",
-            "interestPaymentDate11": "interestPaymentDate11_test2",
-            "interestPaymentDate12": "interestPaymentDate12_test2",
-            "transferable": False
-        })
+        mock_token_2 = IbetStraightBondContract()
+        mock_token_2.issuer_address = token_2.issuer_address
+        mock_token_2.token_address = token_2.token_address
+        mock_token_2.name = "testtoken2"
+        mock_token_2.symbol = "test2"
+        mock_token_2.total_supply = 50000
+        mock_token_2.image_url = [
+            "http://hoge1.test/test2.png",
+            "http://hoge2.test/test2.png",
+            "http://hoge3.test/test2.png",
+        ]
+        mock_token_2.contact_information = "contactInformation_test2"
+        mock_token_2.privacy_policy = "privacyPolicy_test2"
+        mock_token_2.tradable_exchange_contract_address = "0x1234567890AbcdfE1234567890abcdfE12345680"
+        mock_token_2.status = True
+        mock_token_2.face_value = 600
+        mock_token_2.redemption_date = "redemptionDate_test2"
+        mock_token_2.redemption_value = 80
+        mock_token_2.return_date = "returnDate_test2"
+        mock_token_2.return_amount = "returnAmount_test2"
+        mock_token_2.purpose = "purpose_test2"
+        mock_token_2.interest_rate = 0.007
+        mock_token_2.transferable = False
+        mock_token_2.initial_offering_status = False
+        mock_token_2.is_redeemed = False
+        mock_token_2.personal_info_contract_address = "0x1234567890abcdFE1234567890ABcdfE12345681"
+        mock_token_2.interest_payment_date = [
+            "interestPaymentDate1_test2", "interestPaymentDate2_test2",
+            "interestPaymentDate3_test2", "interestPaymentDate4_test2",
+            "interestPaymentDate5_test2", "interestPaymentDate6_test2",
+            "interestPaymentDate7_test2", "interestPaymentDate8_test2",
+            "interestPaymentDate9_test2", "interestPaymentDate10_test2",
+            "interestPaymentDate11_test2", "interestPaymentDate12_test2",
+        ]
 
-        token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
-        token.tx_hash = bond_token_2["tx_hash"]
-        token.issuer_address = issuer_1["account_address"]
-        token.token_address = bond_token_2["address"]
-        token.abi = bond_token_2["abi"]
-        db.add(token)
+        mock_get.side_effect = [
+            mock_token_1, mock_token_2
+        ]
 
-        # 対象外データ
-        issuer_2 = eth_account["issuer2"]
-        bond_token_3 = issue_bond_token(issuer_2, {
-            "name": "testtoken1",
-            "symbol": "test1",
-            "totalSupply": 10000,
-            "faceValue": 200,
-            "redemptionDate": "redemptionDate_test1",
-            "redemptionValue": 40,
-            "returnDate": "returnDate_test1",
-            "returnAmount": "returnAmount_test1",
-            "purpose": "purpose_test1",
-        })
+        # No Target Data
+        token_3 = Token()
+        token_3.type = TokenType.IBET_STRAIGHT_BOND
+        token_3.tx_hash = "tx_hash_test1"
+        token_3.issuer_address = eth_account["issuer"]["account_address"]
+        token_3.token_address = "token_address_test1"
+        token_3.abi = "abi_test1"
+        db.add(token_3)
 
-        token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
-        token.tx_hash = bond_token_3["tx_hash"]
-        token.issuer_address = issuer_2["account_address"]
-        token.token_address = bond_token_3["address"]
-        token.abi = bond_token_3["abi"]
-        db.add(token)
+        resp = client.get(self.apiurl, headers={"issuer-address": "issuer_address_common"})
 
-        resp = client.get(self.apiurl, headers={"issuer-address": issuer_1["account_address"]})
+        # assertion mock call arguments
+        mock_get.assert_has_calls(
+            [call(contract_address=token_1.token_address), call(contract_address=token_2.token_address)])
 
-        assumed_response =[
+        assumed_response = [
             {
-                "issuer_address": issuer_1["account_address"],
-                "token_address": bond_token_1["address"],
+                "issuer_address": "issuer_address_common",
+                "token_address": token_1.token_address,
                 "name": "testtoken1",
                 "symbol": "test1",
                 "total_supply": 10000,
@@ -603,8 +586,8 @@ class TestAppRoutersBondBondTokensGET:
                 ],
             },
             {
-                "issuer_address": issuer_1["account_address"],
-                "token_address": bond_token_2["address"],
+                "issuer_address": "issuer_address_common",
+                "token_address": token_2.token_address,
                 "name": "testtoken2",
                 "symbol": "test2",
                 "total_supply": 50000,
@@ -643,5 +626,5 @@ class TestAppRoutersBondBondTokensGET:
         assert resp.json() == assumed_response
 
     ###########################################################################
-    # エラー系
+    # Error Case
     ###########################################################################

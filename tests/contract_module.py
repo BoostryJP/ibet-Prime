@@ -17,13 +17,10 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import json
-from sqlalchemy import String, JSON
-from eth_utils import to_checksum_address
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
 import config
-
 from app.model.blockchain.utils import ContractUtils
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
@@ -57,10 +54,10 @@ class TestContractUtils:
 
 
 ###########################################################################
-# Bond(普通社債)
+# Straight Bond
 ###########################################################################
 
-# 債券トークンの発行
+# Issuer Token
 def issue_bond_token(invoker, attribute):
     arguments = [
         attribute["name"], attribute["symbol"], attribute["totalSupply"],
@@ -76,7 +73,7 @@ def issue_bond_token(invoker, attribute):
         invoker
     )
 
-    # その他項目の更新
+    # Other setting
     token_contract = ContractUtils.get_contract("IbetStraightBond", contract_address)
     if "tradableExchange" in attribute and attribute["tradableExchange"] is not None:
         token_contract.functions.setTradableExchange(attribute["tradableExchange"]). \

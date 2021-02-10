@@ -16,13 +16,18 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import json
+
 from web3 import Web3
+from web3.middleware import geth_poa_middleware
+import yaml
 
 import config
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
+web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
-# Account Address
+# Account Address(from Ethereum)
 eth_account = {
     'deployer': {
         'account_address': web3.eth.accounts[0],
@@ -57,3 +62,10 @@ eth_account = {
         'password': 'password'
     }
 }
+
+
+# Account Address(from local config)
+def config_eth_account(name):
+    account_config = yaml.safe_load(open(f"tests/account_config.yml", "r"))
+    account_config[name]["keyfile_json"] = json.loads(account_config[name]["keyfile_json"])
+    return account_config[name]

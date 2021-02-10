@@ -37,25 +37,24 @@ def client():
     return client
 
 
-# セッションの作成、テーブルの自動作成・自動削除
 @pytest.fixture(scope='function')
 def db():
-    # セッションの作成
+    # Create DB session
     db = SessionLocal()
 
     def override_inject_db_session():
         return db
 
-    # テストメソッドのDBセッションと同一オブジェクトとなるようAPIのDIを上書き
+    # Replace target API's dependency DB session.
     app.main.app.dependency_overrides[db_session] = override_inject_db_session
 
-    # テーブルの自動作成
+    # Create DB tables
     from app.model.db import Base
     Base.metadata.create_all(engine)
 
     yield db
 
-    # テーブルの自動削除
+    # Remove DB tables
     db.rollback()
     Base.metadata.drop_all(engine)
     db.close()

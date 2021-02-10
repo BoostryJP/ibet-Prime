@@ -16,62 +16,69 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from tests.account_config import eth_account
-from tests.contract_module import issue_bond_token
+from unittest import mock
+
+from app.model.blockchain import IbetStraightBondContract
 
 
 class TestAppRoutersBondBondTokenGET:
-    # テスト対象API
+    # target API endpoint
     base_apiurl = "/bond/token/"
 
     ###########################################################################
-    # 正常系
+    # Normal Case
     ###########################################################################
 
-    # ＜正常系1＞
-    def test_normal_1(self, client, db):
-        issuer = eth_account["issuer"]
-        bond_token = issue_bond_token(issuer, {
-            "name": "testtoken1",
-            "symbol": "test1",
-            "totalSupply": 10000,
-            "faceValue": 200,
-            "redemptionDate": "redemptionDate_test1",
-            "redemptionValue": 40,
-            "returnDate": "returnDate_test1",
-            "returnAmount": "returnAmount_test1",
-            "purpose": "purpose_test1",
-            "tradableExchange": "0x1234567890abCdFe1234567890ABCdFE12345678",
-            "personalInfoAddress": "0x1234567890aBcDFE1234567890abcDFE12345679",
-            "contactInformation": "contactInformation_test1",
-            "privacyPolicy": "privacyPolicy_test1",
-            "imageURL": [
-                "http://hoge1.test/test1.png",
-                "http://hoge2.test/test1.png",
-                "http://hoge3.test/test1.png",
-            ],
-            "memo": "memo_test1",
-            "interestRate": 30,
-            "interestPaymentDate1": "interestPaymentDate1_test1",
-            "interestPaymentDate2": "interestPaymentDate2_test1",
-            "interestPaymentDate3": "interestPaymentDate3_test1",
-            "interestPaymentDate4": "interestPaymentDate4_test1",
-            "interestPaymentDate5": "interestPaymentDate5_test1",
-            "interestPaymentDate6": "interestPaymentDate6_test1",
-            "interestPaymentDate7": "interestPaymentDate7_test1",
-            "interestPaymentDate8": "interestPaymentDate8_test1",
-            "interestPaymentDate9": "interestPaymentDate9_test1",
-            "interestPaymentDate10": "interestPaymentDate10_test1",
-            "interestPaymentDate11": "interestPaymentDate11_test1",
-            "interestPaymentDate12": "interestPaymentDate12_test1",
-            "transferable": True
-        })
+    # <Normal Case 1>
+    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    def test_normal_1(self, mock_get, client):
+        mock_token = IbetStraightBondContract()
+        mock_token.issuer_address = "issuer_address_test1"
+        mock_token.token_address = "token_address_test1"
+        mock_token.name = "testtoken1"
+        mock_token.symbol = "test1"
+        mock_token.total_supply = 10000
+        mock_token.image_url = [
+            "http://hoge1.test/test1.png",
+            "http://hoge2.test/test1.png",
+            "http://hoge3.test/test1.png",
+        ]
+        mock_token.contact_information = "contactInformation_test1"
+        mock_token.privacy_policy = "privacyPolicy_test1"
+        mock_token.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
+        mock_token.status = True
+        mock_token.face_value = 200
+        mock_token.redemption_date = "redemptionDate_test1"
+        mock_token.redemption_value = 40
+        mock_token.return_date = "returnDate_test1"
+        mock_token.return_amount = "returnAmount_test1"
+        mock_token.purpose = "purpose_test1"
+        mock_token.interest_rate = 0.003
+        mock_token.transferable = True
+        mock_token.initial_offering_status = False
+        mock_token.is_redeemed = False
+        mock_token.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token.interest_payment_date = [
+            "interestPaymentDate1_test1", "interestPaymentDate2_test1",
+            "interestPaymentDate3_test1", "interestPaymentDate4_test1",
+            "interestPaymentDate5_test1", "interestPaymentDate6_test1",
+            "interestPaymentDate7_test1", "interestPaymentDate8_test1",
+            "interestPaymentDate9_test1", "interestPaymentDate10_test1",
+            "interestPaymentDate11_test1", "interestPaymentDate12_test1",
+        ]
 
-        resp = client.get(self.base_apiurl + bond_token["address"])
+        mock_get.side_effect = [
+            mock_token
+        ]
+
+        resp = client.get(self.base_apiurl + "token_address_test1")
+
+        # assertion mock call arguments
+        mock_get.assert_any_call(contract_address="token_address_test1")
 
         assumed_response = {
-            "issuer_address": issuer["account_address"],
-            "token_address": bond_token["address"],
+            "issuer_address": "issuer_address_test1",
+            "token_address": "token_address_test1",
             "name": "testtoken1",
             "symbol": "test1",
             "total_supply": 10000,
@@ -109,5 +116,5 @@ class TestAppRoutersBondBondTokenGET:
         assert resp.json() == assumed_response
 
     ###########################################################################
-    # エラー系
+    # Error Case
     ###########################################################################

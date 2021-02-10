@@ -25,7 +25,7 @@
 #sleep 10
 
 # test
-python -m pytest tests/ -v --cov=app/routers/ --cov-report=xml --cov-branch
+python -m pytest tests/ -v --cov=app/routers/ --cov-report=xml --cov-branch -vv
 
 status_code=$?
 
