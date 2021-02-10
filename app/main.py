@@ -23,7 +23,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from config import SERVER_NAME
-from app.routers import account, bond
+from app.routers import account, bond, share
 from app.database import engine
 from app.model import db
 from app.exceptions import *
@@ -31,7 +31,10 @@ from app.exceptions import *
 # Create Database
 db.Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(
+    title="ibet Prime",
+    version="0.0.1"
+)
 
 
 ###############################################################
@@ -45,7 +48,7 @@ async def root():
 
 app.include_router(account.router)
 app.include_router(bond.router)
-
+app.include_router(share.router)
 
 ###############################################################
 # EXCEPTION

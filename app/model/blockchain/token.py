@@ -27,7 +27,7 @@ from web3.exceptions import TimeExhausted
 
 from config import TOKEN_CACHE, TOKEN_CACHE_TTL, \
     WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT
-from app.model.schema import IbetStraightBondUpdate, IbetStraightBondTransfer
+from app.model.schema import IbetStraightBondUpdate, IbetStraightBondTransfer, IbetShareUpdate, IbetShareTransfer
 from app.exceptions import SendTransactionError
 from app import log
 from .utils import ContractUtils
@@ -104,6 +104,7 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 if token_cache.get("expiration_datetime") > datetime.utcnow():
                     # get data from cache
                     bond_token = token_cache["token"]
+                    bond_token.total_supply = bond_contract.functions.totalSupply().call()
                     bond_token.face_value = bond_contract.functions.faceValue().call()
                     bond_token.interest_rate = float(
                         Decimal(str(bond_contract.functions.interestRate().call())) * Decimal("0.0001")
@@ -432,6 +433,318 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
         _amount = transfer_data.amount
         nonce = web3.eth.getTransactionCount(tx_from)
         tx = bond_contract.functions. \
+            transferFrom(_from, _to, _amount). \
+            buildTransaction({
+                "nonce": nonce,
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        try:
+            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+
+
+class IbetShareContract(IbetStandardTokenInterfaceContract):
+    issue_price: int
+    dividends: float
+    dividend_record_date: str
+    dividend_payment_date: str
+    cancellation_date: str
+    transferable: bool
+    offering_status: bool
+    personal_info_contract_address: str
+
+    # Cache
+    cache = {}
+
+    @staticmethod
+    def create(args: list, tx_from: str, private_key: str):
+        """Deploy share contract
+
+        :param args: deploy arguments
+        :param tx_from: contract deployer
+        :param private_key: deployer's private key
+        :return: contract address, ABI, transaction hash
+        """
+        contract_address, abi, tx_hash = ContractUtils.deploy_contract(
+            contract_name="IbetShare",
+            args=args,
+            deployer=tx_from,
+            private_key=private_key
+        )
+        return contract_address, abi, tx_hash
+
+    @staticmethod
+    def get(contract_address: str):
+        """Get share contract data
+
+        :param contract_address: contract address
+        :return: IbetShare
+        """
+        share_contract = ContractUtils.get_contract(
+            contract_name="IbetShare",
+            contract_address=contract_address
+        )
+
+        # When using the cache
+        if TOKEN_CACHE:
+            if contract_address in IbetShareContract.cache:
+                token_cache = IbetShareContract.cache[contract_address]
+                if token_cache.get("expiration_datetime") > datetime.utcnow():
+                    # get data from cache
+                    share_token = token_cache["token"]
+                    share_token.total_supply = share_contract.functions.totalSupply().call()
+                    share_token.cancellation_date = share_contract.functions.cancellationDate().call()
+                    _dividend_info = share_contract.functions.dividendInformation().call()
+                    share_token.dividends = float(Decimal(str(_dividend_info[0])) * Decimal("0.01"))
+                    share_token.dividend_record_date = _dividend_info[1]
+                    share_token.dividend_payment_date = _dividend_info[2]
+                    share_token.tradable_exchange_contract_address = share_contract.functions.tradableExchange().call()
+                    share_token.personal_info_contract_address = share_contract.functions.personalInfoAddress().call()
+                    share_token.image_url = [
+                        share_contract.functions.referenceUrls(0).call(),
+                        share_contract.functions.referenceUrls(1).call(),
+                        share_contract.functions.referenceUrls(2).call()
+                    ]
+                    share_token.transferable = share_contract.functions.transferable().call()
+                    share_token.status = share_contract.functions.status().call()
+                    share_token.offering_status = share_contract.functions.offeringStatus().call()
+                    share_token.contact_information = share_contract.functions.contactInformation().call()
+                    share_token.privacy_policy = share_contract.functions.privacyPolicy().call()
+                    return share_token
+
+        # When cache is not used
+        # Or, if there is no data in the cache
+        # Or, if the cache has expired
+
+        # get data from contract
+        share_token = IbetShareContract()
+
+        share_token.issuer_address = share_contract.functions.owner().call()
+        share_token.token_address = contract_address
+        share_token.name = share_contract.functions.name().call()
+        share_token.symbol = share_contract.functions.symbol().call()
+        share_token.total_supply = share_contract.functions.totalSupply().call()
+        share_token.image_url = [
+            share_contract.functions.referenceUrls(0).call(),
+            share_contract.functions.referenceUrls(1).call(),
+            share_contract.functions.referenceUrls(2).call()
+        ]
+        share_token.contact_information = share_contract.functions.contactInformation().call()
+        share_token.privacy_policy = share_contract.functions.privacyPolicy().call()
+        share_token.tradable_exchange_contract_address = share_contract.functions.tradableExchange().call()
+        share_token.status = share_contract.functions.status().call()
+        share_token.issue_price = share_contract.functions.issuePrice().call()
+        _dividend_info = share_contract.functions.dividendInformation().call()
+        share_token.dividends = float(Decimal(str(_dividend_info[0])) * Decimal("0.01"))
+        share_token.dividend_record_date = _dividend_info[1]
+        share_token.dividend_payment_date = _dividend_info[2]
+        share_token.cancellation_date = share_contract.functions.cancellationDate().call()
+        share_token.transferable = share_contract.functions.transferable().call()
+        share_token.offering_status = share_contract.functions.offeringStatus().call()
+        share_token.personal_info_contract_address = share_contract.functions.personalInfoAddress().call()
+
+        if TOKEN_CACHE:
+            IbetShareContract.cache[contract_address] = {
+                "expiration_datetime": datetime.utcnow() + timedelta(seconds=TOKEN_CACHE_TTL),
+                "token": share_token
+            }
+
+        return share_token
+
+    @staticmethod
+    def update(contract_address: str,
+               update_data: IbetShareUpdate,
+               tx_from: str,
+               private_key: str):
+        share_contract = ContractUtils.get_contract(
+            contract_name="IbetShare",
+            contract_address=contract_address
+        )
+
+        if update_data.tradable_exchange_contract_address:
+            nonce = web3.eth.getTransactionCount(tx_from)
+            tx = share_contract.functions.setTradableExchange(
+                update_data.tradable_exchange_contract_address
+            ).buildTransaction({
+                "nonce": nonce,
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            try:
+                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+
+        if update_data.personal_info_contract_address:
+            nonce = web3.eth.getTransactionCount(tx_from)
+            tx = share_contract.functions.setPersonalInfoAddress(
+                update_data.personal_info_contract_address
+            ).buildTransaction({
+                "nonce": nonce,
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            try:
+                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+
+        if update_data.dividends:
+            _dividends = int(update_data.dividends * 100)
+            nonce = web3.eth.getTransactionCount(tx_from)
+            tx = share_contract.functions.setDividendInformation(
+                _dividends,
+                update_data.dividend_record_date,
+                update_data.dividend_payment_date
+            ).buildTransaction({
+                "nonce": nonce,
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            try:
+                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+
+        if update_data.cancellation_date:
+            nonce = web3.eth.getTransactionCount(tx_from)
+            tx = share_contract.functions.setCancellationDate(
+                update_data.cancellation_date
+            ).buildTransaction({
+                "nonce": nonce,
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            try:
+                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+
+        if update_data.image_url:
+            for _class, _image_url in enumerate(update_data.image_url):
+                nonce = web3.eth.getTransactionCount(tx_from)
+                tx = share_contract.functions.setReferenceUrls(
+                    _class,
+                    _image_url
+                ).buildTransaction({
+                    "nonce": nonce,
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0
+                })
+                try:
+                    ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+                except TimeExhausted as timeout_error:
+                    raise SendTransactionError(timeout_error)
+
+        if update_data.contact_information:
+            nonce = web3.eth.getTransactionCount(tx_from)
+            tx = share_contract.functions.setContactInformation(
+                update_data.contact_information
+            ).buildTransaction({
+                "nonce": nonce,
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            try:
+                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+
+        if update_data.privacy_policy:
+            nonce = web3.eth.getTransactionCount(tx_from)
+            tx = share_contract.functions.setPrivacyPolicy(
+                update_data.privacy_policy
+            ).buildTransaction({
+                "nonce": nonce,
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            try:
+                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+
+        if update_data.status:
+            nonce = web3.eth.getTransactionCount(tx_from)
+            tx = share_contract.functions.setStatus(
+                update_data.status
+            ).buildTransaction({
+                "nonce": nonce,
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            try:
+                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+
+        if update_data.transferable:
+            nonce = web3.eth.getTransactionCount(tx_from)
+            tx = share_contract.functions.setTransferable(
+                update_data.transferable
+            ).buildTransaction({
+                "nonce": nonce,
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            try:
+                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+
+        if update_data.offering_status:
+            nonce = web3.eth.getTransactionCount(tx_from)
+            tx = share_contract.functions.setOfferingStatus(
+                update_data.offering_status
+            ).buildTransaction({
+                "nonce": nonce,
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            try:
+                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+
+    @staticmethod
+    def transfer(contract_address: str,
+                 transfer_data: IbetShareTransfer,
+                 tx_from: str,
+                 private_key: str):
+        share_contract = ContractUtils.get_contract(
+            contract_name="IbetShare",
+            contract_address=contract_address
+        )
+
+        _from = transfer_data.transfer_from
+        _to = transfer_data.transfer_to
+        _amount = transfer_data.amount
+        nonce = web3.eth.getTransactionCount(tx_from)
+        tx = share_contract.functions. \
             transferFrom(_from, _to, _amount). \
             buildTransaction({
                 "nonce": nonce,
