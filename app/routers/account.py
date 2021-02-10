@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from typing import List
 import secrets
 import time
 from Crypto.PublicKey import RSA
@@ -95,6 +96,23 @@ async def create_key(
         "issuer_address": _account.issuer_address,
         "rsa_public_key": _account.rsa_public_key
     }
+
+
+@router.get("/accounts", response_model=List[AccountResponse])
+async def get_accounts(db: Session = Depends(db_session)):
+    """Get accounts"""
+
+    # Register key data to the DB
+    _accounts = db.query(Account).all()
+
+    account_list = []
+    for _account in _accounts:
+        account_list.append({
+            "issuer_address": _account.issuer_address,
+            "rsa_public_key": _account.rsa_public_key
+        })
+
+    return account_list
 
 
 @router.get("/account/{issuer_address}", response_model=AccountResponse)

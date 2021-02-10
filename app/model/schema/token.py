@@ -138,6 +138,118 @@ class IbetStraightBondTransfer(BaseModel):
         return v
 
 
+class IbetShareCreate(BaseModel):
+    """ibet Share schema (Create)"""
+    name: str
+    symbol: str
+    issue_price: int
+    total_supply: int
+    dividends: float
+    dividend_record_date: str
+    dividend_payment_date: str
+    cancellation_date: str
+    image_url: Optional[List[str]]
+    transferable: Optional[bool]
+    status: Optional[bool]
+    offering_status: Optional[bool]
+    tradable_exchange_contract_address: Optional[str]
+    personal_info_contract_address: Optional[str]
+    contact_information: Optional[str]
+    privacy_policy: Optional[str]
+
+    @validator("dividends")
+    def dividends_2_decimal_places(cls, v):
+        float_data = float(v * 10 ** 4)
+        int_data = int(v * 10 ** 4)
+        if not math.isclose(int_data, float_data):
+            raise ValueError("dividends must be less than or equal to four decimal places")
+        return v
+
+    @validator("tradable_exchange_contract_address")
+    def tradable_exchange_contract_address_is_valid_address(cls, v):
+        if not Web3.isAddress(v):
+            raise ValueError("tradable_exchange_contract_address is not a valid address")
+        return v
+
+    @validator("personal_info_contract_address")
+    def personal_info_contract_address_is_valid_address(cls, v):
+        if not Web3.isAddress(v):
+            raise ValueError("personal_info_contract_address is not a valid address")
+        return v
+
+    @validator("image_url")
+    def image_list_length_is_less_than_3(cls, v):
+        if len(v) >= 4:
+            raise ValueError("The length of the list must be less than or equal to 3")
+
+
+class IbetShareUpdate(BaseModel):
+    """ibet Share schema (Update)"""
+    cancellation_date: Optional[str]
+    dividends: Optional[float]
+    dividend_record_date: Optional[str]
+    dividend_payment_date: Optional[str]
+    tradable_exchange_contract_address: Optional[str]
+    personal_info_contract_address: Optional[str]
+    image_url: Optional[List[str]]
+    transferable: Optional[bool]
+    status: Optional[bool]
+    offering_status: Optional[bool]
+    contact_information: Optional[str]
+    privacy_policy: Optional[str]
+
+    @validator("dividends")
+    def dividends_2_decimal_places(cls, v):
+        float_data = float(v * 10 ** 4)
+        int_data = int(v * 10 ** 4)
+        if not math.isclose(int_data, float_data):
+            raise ValueError("dividends must be less than or equal to four decimal places")
+        return v
+
+    @validator("tradable_exchange_contract_address")
+    def tradable_exchange_contract_address_is_valid_address(cls, v):
+        if not Web3.isAddress(v):
+            raise ValueError("tradable_exchange_contract_address is not a valid address")
+        return v
+
+    @validator("personal_info_contract_address")
+    def personal_info_contract_address_is_valid_address(cls, v):
+        if not Web3.isAddress(v):
+            raise ValueError("personal_info_contract_address is not a valid address")
+        return v
+
+    @validator("dividends")
+    def dividend_information_all_required(cls, v, values, **kwargs):
+        if ("dividend_record_date" not in values) or ("dividend_payment_date" not in values):
+            raise ValueError("all items are required to update the dividend information")
+        return v
+
+
+class IbetShareTransfer(BaseModel):
+    """ibet Share schema (Transfer)"""
+    transfer_from: str
+    transfer_to: str
+    amount: int
+
+    @validator("transfer_from")
+    def transfer_from_is_valid_address(cls, v):
+        if not Web3.isAddress(v):
+            raise ValueError("transfer_from is not a valid address")
+        return v
+
+    @validator("transfer_to")
+    def transfer_to_is_valid_address(cls, v):
+        if not Web3.isAddress(v):
+            raise ValueError("transfer_to is not a valid address")
+        return v
+
+    @validator("amount")
+    def amount_must_be_greater_than_0(cls, v):
+        if v <= 0:
+            raise ValueError("amount must be greater than 0")
+        return v
+
+
 ############################
 # RESPONSE
 ############################
@@ -164,5 +276,27 @@ class IbetStraightBondResponse(BaseModel):
     tradable_exchange_contract_address: str
     personal_info_contract_address: str
     image_url: List[str]
+    contact_information: str
+    privacy_policy: str
+
+
+class IbetShareResponse(BaseModel):
+    """ibet Share schema (Response)"""
+    issuer_address: str
+    token_address: str
+    name: str
+    symbol: str
+    issue_price: int
+    total_supply: int
+    dividends: float
+    dividend_record_date: str
+    dividend_payment_date: str
+    cancellation_date: str
+    image_url: List[str]
+    transferable: bool
+    status: bool
+    offering_status: bool
+    tradable_exchange_contract_address: str
+    personal_info_contract_address: str
     contact_information: str
     privacy_policy: str
