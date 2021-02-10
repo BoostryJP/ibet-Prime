@@ -17,10 +17,10 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import json
+import yaml
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
-import yaml
 
 import config
 

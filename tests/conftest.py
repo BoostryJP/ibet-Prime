@@ -16,24 +16,22 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import os
+import sys
 import pytest
 
 from fastapi.testclient import TestClient
-from web3 import Web3
-from web3.middleware import geth_poa_middleware
 
-import config
-from app import main
-import app.database
+path = os.path.join(os.path.dirname(__file__), "../")
+sys.path.append(path)
+
+from app.main import app
 from app.database import SessionLocal, engine, db_session
-
-web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
 @pytest.fixture(scope='session')
 def client():
-    client = TestClient(main.app)
+    client = TestClient(app)
     return client
 
 
@@ -46,7 +44,7 @@ def db():
         return db
 
     # Replace target API's dependency DB session.
-    app.main.app.dependency_overrides[db_session] = override_inject_db_session
+    app.dependency_overrides[db_session] = override_inject_db_session
 
     # Create DB tables
     from app.model.db import Base
@@ -59,4 +57,4 @@ def db():
     Base.metadata.drop_all(engine)
     db.close()
 
-    app.main.app.dependency_overrides[db_session] = db_session
+    app.dependency_overrides[db_session] = db_session

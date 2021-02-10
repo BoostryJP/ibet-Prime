@@ -34,7 +34,7 @@ class TestAppRoutersBondBondTokensGET:
 
     # <Normal Case 1>
     # parameter unset address, 0 Record
-    def test_normal_1(self, client):
+    def test_normal_1(self, client, db):
         resp = client.get(self.apiurl)
 
         assert resp.status_code == 200
