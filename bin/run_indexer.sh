@@ -23,6 +23,7 @@ cd /app/ibet-Prime
 
 python batch/indexer_personal_info.py &
 python batch/indexer_position_bond.py &
+python batch/indexer_position_share.py &
 python batch/indexer_transfer.py &
 
 tail -f /dev/null
