@@ -30,8 +30,7 @@ web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 class TestContractUtils:
 
     @staticmethod
-    def deploy_contract(contract_name: str, args: list, deployer: str):
-
+    def deploy_contract(contract_name: str, args: list, deployer: dict):
         contract_file = f"contracts/{contract_name}.json"
         contract_json = json.load(open(contract_file, "r"))
         contract = web3.eth.contract(
@@ -41,8 +40,10 @@ class TestContractUtils:
         )
 
         web3.geth.personal.unlock_account(deployer["account_address"], deployer["password"], 60)
-        tx_hash = contract.constructor(*args).transact(
-            {"from": deployer["account_address"], "gas": config.TX_GAS_LIMIT}).hex()
+        tx_hash = contract.constructor(*args).transact({
+            "from": deployer["account_address"],
+            "gas": config.TX_GAS_LIMIT}
+        )
         tx = web3.eth.waitForTransactionReceipt(tx_hash)
 
         contract_address = ""
