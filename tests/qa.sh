@@ -17,12 +17,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# TODO:Dockerコンテナ内のディレクトリ構成で実行する
-#source ~/.bash_profile
-#
-#cd /app/ibet-Prime
-#
-#sleep 10
+source ~/.profile
+
+cd /app/ibet-Prime
+
+sleep 10
 
 # test
 python -m pytest tests/ -v --cov=app/routers/ --cov-report=xml --cov-branch -vv
