@@ -70,22 +70,20 @@ class ContractUtils:
             bytecode_runtime=contract_json["deployedBytecode"],
         )
 
-        # Get nonce
-        nonce = web3.eth.getTransactionCount(deployer)
-
-        # Build transaction
-        tx = contract.constructor(*args).buildTransaction(
-            transaction={
-                "nonce": nonce,
-                "chainId": CHAIN_ID,
-                "from": deployer,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0
-            }
-        )
-
-        # Send transaction
         try:
+            # Get nonce
+            nonce = web3.eth.getTransactionCount(deployer)
+            # Build transaction
+            tx = contract.constructor(*args).buildTransaction(
+                transaction={
+                    "nonce": nonce,
+                    "chainId": CHAIN_ID,
+                    "from": deployer,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0
+                }
+            )
+            # Send transaction
             tx_hash, txn_receipt = ContractUtils.send_transaction(
                 transaction=tx,
                 private_key=private_key
@@ -123,7 +121,7 @@ class ContractUtils:
     @staticmethod
     def send_transaction(transaction: dict, private_key: str):
         """Send transaction"""
-        signed_tx = web3.eth.account.signTransaction(
+        signed_tx = web3.eth.account.sign_transaction(
             transaction_dict=transaction,
             private_key=private_key
         )
