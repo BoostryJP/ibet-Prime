@@ -21,7 +21,6 @@ from unittest.mock import call
 
 from app.model.blockchain import IbetStraightBondContract
 from app.model.db import Token, TokenType
-from tests.account_config import eth_account
 
 
 class TestAppRoutersBondBondTokensGET:
@@ -322,7 +321,7 @@ class TestAppRoutersBondBondTokensGET:
         token = Token()
         token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = "tx_hash_test1"
-        token.issuer_address = eth_account["issuer"]["account_address"]
+        token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         db.add(token)
@@ -387,7 +386,7 @@ class TestAppRoutersBondBondTokensGET:
         token_2 = Token()
         token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.tx_hash = "tx_hash_test1"
-        token_2.issuer_address = eth_account["issuer"]["account_address"]
+        token_2.issuer_address = "issuer_address_test2"
         token_2.token_address = "token_address_test1"
         token_2.abi = "abi_test1"
         db.add(token_2)
@@ -538,7 +537,7 @@ class TestAppRoutersBondBondTokensGET:
         token_3 = Token()
         token_3.type = TokenType.IBET_STRAIGHT_BOND
         token_3.tx_hash = "tx_hash_test1"
-        token_3.issuer_address = eth_account["issuer"]["account_address"]
+        token_3.issuer_address = "issuer_address_test2"
         token_3.token_address = "token_address_test1"
         token_3.abi = "abi_test1"
         db.add(token_3)

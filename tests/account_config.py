@@ -27,42 +27,6 @@ import config
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
-# Account Address(from Ethereum)
-eth_account = {
-    'deployer': {
-        'account_address': web3.eth.accounts[0],
-        'password': 'password'
-    },
-    'issuer': {
-        'account_address': web3.eth.accounts[1],
-        'password': 'password'
-    },
-    'agent': {
-        'account_address': web3.eth.accounts[2],
-        'password': 'password'
-    },
-    'trader': {
-        'account_address': web3.eth.accounts[3],
-        'password': 'password'
-    },
-    'deployer2': {
-        'account_address': web3.eth.accounts[4],
-        'password': 'password'
-    },
-    'issuer2': {
-        'account_address': web3.eth.accounts[5],
-        'password': 'password'
-    },
-    'agent2': {
-        'account_address': web3.eth.accounts[6],
-        'password': 'password'
-    },
-    'trader2': {
-        'account_address': web3.eth.accounts[7],
-        'password': 'password'
-    }
-}
-
 
 # Account Address(from local config)
 def config_eth_account(name):
