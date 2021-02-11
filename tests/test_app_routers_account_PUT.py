@@ -20,7 +20,7 @@ from unittest import mock
 
 from app.model.db import Account
 from app.routers.account import generate_rsa_key
-from tests.account_config import config_eth_account, eth_account
+from tests.account_config import config_eth_account
 
 
 class TestAppRoutersAccountAccountPUT:
@@ -96,7 +96,7 @@ class TestAppRoutersAccountAccountPUT:
         db.add(account)
 
         # Run BackGroundTask
-        generate_rsa_key(db, eth_account["issuer"]["account_address"])
+        generate_rsa_key(db, issuer_address="not_exists_issuer")
 
         update_account = db.query(Account).first()
 

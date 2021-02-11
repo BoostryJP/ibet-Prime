@@ -25,7 +25,7 @@ from web3.middleware import geth_poa_middleware
 import config
 from app.exceptions import SendTransactionError
 from app.model.db import Account, Token, TokenType
-from tests.account_config import config_eth_account, eth_account
+from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
@@ -125,8 +125,11 @@ class TestAppRoutersBondBondTokensGET:
             "purpose": "purpose_test1",
         }
 
-        resp = client.put(self.apiurl, json=req_param,
-                          headers={"issuer-address": eth_account["issuer"]["account_address"]})
+        resp = client.put(
+            self.apiurl,
+            json=req_param,
+            headers={"issuer-address": "not_exists_issuer"}
+        )
 
         assert resp.status_code == 400
         assert resp.json()["meta"] == {
