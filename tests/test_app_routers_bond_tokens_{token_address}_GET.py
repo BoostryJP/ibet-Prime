@@ -19,9 +19,10 @@ SPDX-License-Identifier: Apache-2.0
 from unittest import mock
 
 from app.model.blockchain import IbetStraightBondContract
+from app.model.db import Token, TokenType
 
 
-class TestAppRoutersBondBondTokenGET:
+class TestAppRoutersBondTokensTokenAddressGET:
     # target API endpoint
     base_apiurl = "/bond/tokens/"
 
@@ -31,7 +32,15 @@ class TestAppRoutersBondBondTokenGET:
 
     # <Normal Case 1>
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_1(self, mock_get, client):
+    def test_normal_1(self, mock_get, client, db):
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = "tx_hash_test1"
+        token.issuer_address = "issuer_address_test1"
+        token.token_address = "token_address_test1"
+        token.abi = "abi_test1"
+        db.add(token)
+
         mock_token = IbetStraightBondContract()
         mock_token.issuer_address = "issuer_address_test1"
         mock_token.token_address = "token_address_test1"

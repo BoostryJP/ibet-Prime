@@ -23,7 +23,7 @@ from app.routers.account import generate_rsa_key
 from tests.account_config import config_eth_account
 
 
-class TestAppRoutersAccountAccountPUT:
+class TestAppRoutersAccountPUT:
     # target API endpoint
     apiurl = "/account"
 

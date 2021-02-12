@@ -17,8 +17,10 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from .account import AccountResponse
-from .token import IbetStraightBondCreate, IbetStraightBondUpdate, IbetStraightBondTransfer
+from .token import IbetStraightBondCreate, IbetStraightBondUpdate, \
+    IbetStraightBondTransfer, IbetStraightBondAdd
 from .token import IbetStraightBondResponse
-from .token import IbetShareCreate, IbetShareUpdate, IbetShareTransfer
+from .token import IbetShareCreate, IbetShareUpdate, \
+    IbetShareTransfer, IbetShareAdd
 from .token import IbetShareResponse
 from .holder import HolderResponse

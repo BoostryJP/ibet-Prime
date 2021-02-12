@@ -23,7 +23,7 @@ from app.model.blockchain import IbetStraightBondContract
 from app.model.db import Token, TokenType
 
 
-class TestAppRoutersBondBondTokensGET:
+class TestAppRoutersBondTokensGET:
     # target API endpoint
     apiurl = "/bond/tokens"
 

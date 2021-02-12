@@ -31,7 +31,7 @@ web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
-class TestAppRoutersBondBondTokensGET:
+class TestAppRoutersBondTokenPUT:
     # target API endpoint
     apiurl = "/bond/token"
 
