@@ -18,11 +18,13 @@ SPDX-License-Identifier: Apache-2.0
 """
 import pytest
 
+from pydantic.error_wrappers import ValidationError
 from eth_keyfile import decode_keyfile_json
 
 from config import ZERO_ADDRESS
 from app.model.blockchain import IbetStraightBondContract
 from app.model.blockchain.utils import ContractUtils
+from app.model.schema import IbetStraightBondAdd
 from app.exceptions import SendTransactionError
 
 from tests.account_config import config_eth_account
@@ -146,7 +148,6 @@ class TestGet:
     ###########################################################################
 
     # <Normal_1>
-    # default values
     def test_normal_1(self):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
@@ -194,3 +195,114 @@ class TestGet:
         assert bond_contract.initial_offering_status is False
         assert bond_contract.is_redeemed is False
         assert bond_contract.personal_info_contract_address == ZERO_ADDRESS
+
+
+class TestAddSupply:
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    def test_normal_1(self):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト債券", "TEST", 10000, 20000,
+            "20211231", 30000,
+            "20211231", "リターン内容",
+            "発行目的"
+        ]
+        contract_address, abi, tx_hash = IbetStraightBondContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # add supply
+        _data = {
+            "account_address": issuer_address,
+            "amount": 10
+        }
+        _add_data = IbetStraightBondAdd(**_data)
+        IbetStraightBondContract.add_supply(
+            contract_address=contract_address,
+            data=_add_data,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # assertion
+        bond_contract = IbetStraightBondContract.get(contract_address=contract_address)
+        assert bond_contract.total_supply == arguments[2] + 10
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
+    # invalid parameter (IbetStraightBondAdd)
+    def test_error_1(self):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+
+        _data = {}
+        with pytest.raises(ValidationError):
+            IbetStraightBondAdd(**_data)
+
+        _data = {
+            "account_address": issuer_address[:-1],  # short address
+            "amount": 1
+        }
+        with pytest.raises(ValidationError):
+            IbetStraightBondAdd(**_data)
+
+        _data = {
+            "account_address": issuer_address,
+            "amount": -1  # short address
+        }
+        with pytest.raises(ValidationError):
+            IbetStraightBondAdd(**_data)
+
+    # <Error_2>
+    # invalid private key
+    def test_error_2(self):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト債券", "TEST", 10000, 20000,
+            "20211231", 30000,
+            "20211231", "リターン内容",
+            "発行目的"
+        ]
+        contract_address, abi, tx_hash = IbetStraightBondContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # add supply
+        _data = {
+            "account_address": issuer_address,
+            "amount": 10
+        }
+        _add_data = IbetStraightBondAdd(**_data)
+        with pytest.raises(SendTransactionError):
+            IbetStraightBondContract.add_supply(
+                contract_address=contract_address,
+                data=_add_data,
+                tx_from=test_account.get("address"),
+                private_key="invalid_private_key"
+            )

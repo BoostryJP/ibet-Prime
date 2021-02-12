@@ -24,7 +24,8 @@ from eth_keyfile import decode_keyfile_json
 
 from config import KEY_FILE_PASSWORD
 from app.database import db_session
-from app.model.schema import IbetShareCreate, IbetShareUpdate, IbetShareTransfer, \
+from app.model.schema import IbetShareCreate, IbetShareUpdate, \
+    IbetShareTransfer, IbetShareAdd, \
     IbetShareResponse, HolderResponse
 from app.model.db import Account, Token, TokenType, IDXPosition, IDXPersonalInfo
 from app.model.blockchain import IbetShareContract
@@ -125,8 +126,18 @@ async def get_tokens(
 
 # GET: /share/tokens/{token_address}
 @router.get("/tokens/{token_address}", response_model=IbetShareResponse)
-async def get_token(token_address: str):
+async def get_token(
+        token_address: str,
+        db: Session = Depends(db_session)):
     """Get issued token"""
+    # Get Token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.token_address == token_address). \
+        first()
+    if _token is None:
+        raise InvalidParameterError("token not found")
+
     # Get contract data
     share_token = IbetShareContract.get(contract_address=token_address).__dict__
 
@@ -169,7 +180,53 @@ async def update_token(
     try:
         IbetShareContract.update(
             contract_address=token_address,
-            update_data=token,
+            data=token,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+    except SendTransactionError:
+        raise SendTransactionError("failed to send transaction")
+
+    return
+
+
+# POST: /bond/tokens/{token_address}/add
+@router.post("/tokens/{token_address}/add")
+async def add_supply(
+        token_address: str,
+        token: IbetShareAdd,
+        issuer_address: str = Header(None),
+        db: Session = Depends(db_session)):
+    """Add token supply"""
+
+    # Get Account
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
+        first()
+    if _account is None:
+        raise InvalidParameterError("issuer does not exist")
+
+    # Get Token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        first()
+    if _token is None:
+        raise InvalidParameterError("token not found")
+
+    # Get private key
+    keyfile_json = _account.keyfile
+    private_key = decode_keyfile_json(
+        raw_keyfile_json=keyfile_json,
+        password=KEY_FILE_PASSWORD.encode("utf-8")
+    )
+
+    # Send transaction
+    try:
+        IbetShareContract.add_supply(
+            contract_address=token_address,
+            data=token,
             tx_from=issuer_address,
             private_key=private_key
         )
@@ -323,7 +380,7 @@ async def transfer(
 
     IbetShareContract.transfer(
         contract_address=token.token_address,
-        transfer_data=token,
+        data=token,
         tx_from=issuer_address,
         private_key=private_key
     )

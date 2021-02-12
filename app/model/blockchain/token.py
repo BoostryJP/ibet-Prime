@@ -26,8 +26,11 @@ from web3.middleware import geth_poa_middleware
 from web3.exceptions import TimeExhausted
 
 from config import TOKEN_CACHE, TOKEN_CACHE_TTL, \
-    WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT
-from app.model.schema import IbetStraightBondUpdate, IbetStraightBondTransfer, IbetShareUpdate, IbetShareTransfer
+    WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT, ZERO_ADDRESS
+from app.model.schema import (
+    IbetStraightBondUpdate, IbetStraightBondTransfer, IbetStraightBondAdd,
+    IbetShareUpdate, IbetShareTransfer, IbetShareAdd
+)
 from app.exceptions import SendTransactionError
 from app import log
 from .utils import ContractUtils
@@ -70,7 +73,7 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
 
     @staticmethod
     def create(args: list, tx_from: str, private_key: str):
-        """Deploy bond contract
+        """Deploy token
 
         :param args: deploy arguments
         :param tx_from: contract deployer
@@ -87,7 +90,7 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
 
     @staticmethod
     def get(contract_address: str):
-        """Get bond contract data
+        """Get token data
 
         :param contract_address: contract address
         :return: IbetStraightBond
@@ -198,18 +201,19 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
 
     @staticmethod
     def update(contract_address: str,
-               update_data: IbetStraightBondUpdate,
+               data: IbetStraightBondUpdate,
                tx_from: str,
                private_key: str):
+        """Update token"""
         bond_contract = ContractUtils.get_contract(
             contract_name="IbetStraightBond",
             contract_address=contract_address
         )
 
-        if update_data.face_value:
+        if data.face_value:
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions.\
-                setFaceValue(update_data.face_value).\
+                setFaceValue(data.face_value).\
                 buildTransaction({
                     "nonce": nonce,
                     "chainId": CHAIN_ID,
@@ -222,8 +226,8 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
 
-        if update_data.interest_rate:
-            _interest_rate = int(update_data.interest_rate * 10000)
+        if data.interest_rate:
+            _interest_rate = int(data.interest_rate * 10000)
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions.\
                 setInterestRate(_interest_rate).\
@@ -239,9 +243,9 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
 
-        if update_data.interest_payment_date:
+        if data.interest_payment_date:
             _interest_payment_date = {}
-            for i, item in enumerate(update_data.interest_payment_date):
+            for i, item in enumerate(data.interest_payment_date):
                 _interest_payment_date[f"interestPaymentDate{i + 1}"] = item
             _interest_payment_date_string = json.dumps(_interest_payment_date)
             nonce = web3.eth.getTransactionCount(tx_from)
@@ -259,10 +263,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
 
-        if update_data.redemption_value:
+        if data.redemption_value:
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions.\
-                setRedemptionValue(update_data.redemption_value).\
+                setRedemptionValue(data.redemption_value).\
                 buildTransaction({
                     "nonce": nonce,
                     "chainId": CHAIN_ID,
@@ -275,10 +279,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
 
-        if update_data.transferable:
+        if data.transferable:
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions.\
-                setTransferable(update_data.transferable).\
+                setTransferable(data.transferable).\
                 buildTransaction({
                     "nonce": nonce,
                     "chainId": CHAIN_ID,
@@ -291,8 +295,8 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
 
-        if update_data.image_url:
-            for i, _image_url in enumerate(update_data.image_url):
+        if data.image_url:
+            for i, _image_url in enumerate(data.image_url):
                 nonce = web3.eth.getTransactionCount(tx_from)
                 tx = bond_contract.functions.\
                     setImageURL(i, _image_url).\
@@ -308,10 +312,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 except TimeExhausted as timeout_error:
                     raise SendTransactionError(timeout_error)
 
-        if update_data.status:
+        if data.status:
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions. \
-                setStatus(update_data.status). \
+                setStatus(data.status). \
                 buildTransaction({
                     "nonce": nonce,
                     "chainId": CHAIN_ID,
@@ -324,10 +328,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
 
-        if update_data.initial_offering_status:
+        if data.initial_offering_status:
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions. \
-                setInitialOfferingStatus(update_data.initial_offering_status). \
+                setInitialOfferingStatus(data.initial_offering_status). \
                 buildTransaction({
                     "nonce": nonce,
                     "chainId": CHAIN_ID,
@@ -340,7 +344,7 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
 
-        if update_data.is_redeemed:
+        if data.is_redeemed:
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions.redeem().buildTransaction({
                 "nonce": nonce,
@@ -354,10 +358,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
 
-        if update_data.tradable_exchange_contract_address:
+        if data.tradable_exchange_contract_address:
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions. \
-                setTradableExchange(update_data.tradable_exchange_contract_address). \
+                setTradableExchange(data.tradable_exchange_contract_address). \
                 buildTransaction({
                     "nonce": nonce,
                     "chainId": CHAIN_ID,
@@ -370,10 +374,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
 
-        if update_data.personal_info_contract_address:
+        if data.personal_info_contract_address:
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions. \
-                setPersonalInfoAddress(update_data.personal_info_contract_address). \
+                setPersonalInfoAddress(data.personal_info_contract_address). \
                 buildTransaction({
                     "nonce": nonce,
                     "chainId": CHAIN_ID,
@@ -386,10 +390,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
 
-        if update_data.contact_information:
+        if data.contact_information:
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions. \
-                setContactInformation(update_data.contact_information). \
+                setContactInformation(data.contact_information). \
                 buildTransaction({
                     "nonce": nonce,
                     "chainId": CHAIN_ID,
@@ -402,10 +406,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
 
-        if update_data.privacy_policy:
+        if data.privacy_policy:
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions. \
-                setPrivacyPolicy(update_data.privacy_policy). \
+                setPrivacyPolicy(data.privacy_policy). \
                 buildTransaction({
                     "nonce": nonce,
                     "chainId": CHAIN_ID,
@@ -420,17 +424,18 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
 
     @staticmethod
     def transfer(contract_address: str,
-                 transfer_data: IbetStraightBondTransfer,
+                 data: IbetStraightBondTransfer,
                  tx_from: str,
                  private_key: str):
+        """Transfer ownership"""
         bond_contract = ContractUtils.get_contract(
             contract_name="IbetStraightBond",
             contract_address=contract_address
         )
 
-        _from = transfer_data.transfer_from
-        _to = transfer_data.transfer_to
-        _amount = transfer_data.amount
+        _from = data.transfer_from
+        _to = data.transfer_to
+        _amount = data.amount
         nonce = web3.eth.getTransactionCount(tx_from)
         tx = bond_contract.functions. \
             transferFrom(_from, _to, _amount). \
@@ -445,6 +450,36 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
+
+    @staticmethod
+    def add_supply(contract_address: str,
+                   data: IbetStraightBondAdd,
+                   tx_from: str,
+                   private_key: str):
+        """Add token supply"""
+        bond_contract = ContractUtils.get_contract(
+            contract_name="IbetStraightBond",
+            contract_address=contract_address
+        )
+
+        _target_address = data.account_address
+        _amount = data.amount
+        nonce = web3.eth.getTransactionCount(tx_from)
+        tx = bond_contract.functions. \
+            issueFrom(_target_address, ZERO_ADDRESS, _amount). \
+            buildTransaction({
+                "nonce": nonce,
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        try:
+            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
 
 
 class IbetShareContract(IbetStandardTokenInterfaceContract):
@@ -462,7 +497,7 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
 
     @staticmethod
     def create(args: list, tx_from: str, private_key: str):
-        """Deploy share contract
+        """Deploy token
 
         :param args: deploy arguments
         :param tx_from: contract deployer
@@ -479,7 +514,7 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
 
     @staticmethod
     def get(contract_address: str):
-        """Get share contract data
+        """Get token data
 
         :param contract_address: contract address
         :return: IbetShare
@@ -557,18 +592,19 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
 
     @staticmethod
     def update(contract_address: str,
-               update_data: IbetShareUpdate,
+               data: IbetShareUpdate,
                tx_from: str,
                private_key: str):
+        """Update token"""
         share_contract = ContractUtils.get_contract(
             contract_name="IbetShare",
             contract_address=contract_address
         )
 
-        if update_data.tradable_exchange_contract_address:
+        if data.tradable_exchange_contract_address:
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = share_contract.functions.setTradableExchange(
-                update_data.tradable_exchange_contract_address
+                data.tradable_exchange_contract_address
             ).buildTransaction({
                 "nonce": nonce,
                 "chainId": CHAIN_ID,
@@ -581,10 +617,10 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
 
-        if update_data.personal_info_contract_address:
+        if data.personal_info_contract_address:
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = share_contract.functions.setPersonalInfoAddress(
-                update_data.personal_info_contract_address
+                data.personal_info_contract_address
             ).buildTransaction({
                 "nonce": nonce,
                 "chainId": CHAIN_ID,
@@ -597,13 +633,13 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
 
-        if update_data.dividends:
-            _dividends = int(update_data.dividends * 100)
+        if data.dividends:
+            _dividends = int(data.dividends * 100)
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = share_contract.functions.setDividendInformation(
                 _dividends,
-                update_data.dividend_record_date,
-                update_data.dividend_payment_date
+                data.dividend_record_date,
+                data.dividend_payment_date
             ).buildTransaction({
                 "nonce": nonce,
                 "chainId": CHAIN_ID,
@@ -616,10 +652,10 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
 
-        if update_data.cancellation_date:
+        if data.cancellation_date:
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = share_contract.functions.setCancellationDate(
-                update_data.cancellation_date
+                data.cancellation_date
             ).buildTransaction({
                 "nonce": nonce,
                 "chainId": CHAIN_ID,
@@ -632,8 +668,8 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
 
-        if update_data.image_url:
-            for _class, _image_url in enumerate(update_data.image_url):
+        if data.image_url:
+            for _class, _image_url in enumerate(data.image_url):
                 nonce = web3.eth.getTransactionCount(tx_from)
                 tx = share_contract.functions.setReferenceUrls(
                     _class,
@@ -650,10 +686,10 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 except TimeExhausted as timeout_error:
                     raise SendTransactionError(timeout_error)
 
-        if update_data.contact_information:
+        if data.contact_information:
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = share_contract.functions.setContactInformation(
-                update_data.contact_information
+                data.contact_information
             ).buildTransaction({
                 "nonce": nonce,
                 "chainId": CHAIN_ID,
@@ -666,10 +702,10 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
 
-        if update_data.privacy_policy:
+        if data.privacy_policy:
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = share_contract.functions.setPrivacyPolicy(
-                update_data.privacy_policy
+                data.privacy_policy
             ).buildTransaction({
                 "nonce": nonce,
                 "chainId": CHAIN_ID,
@@ -682,10 +718,10 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
 
-        if update_data.status:
+        if data.status:
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = share_contract.functions.setStatus(
-                update_data.status
+                data.status
             ).buildTransaction({
                 "nonce": nonce,
                 "chainId": CHAIN_ID,
@@ -698,10 +734,10 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
 
-        if update_data.transferable:
+        if data.transferable:
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = share_contract.functions.setTransferable(
-                update_data.transferable
+                data.transferable
             ).buildTransaction({
                 "nonce": nonce,
                 "chainId": CHAIN_ID,
@@ -714,10 +750,10 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
 
-        if update_data.offering_status:
+        if data.offering_status:
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = share_contract.functions.setOfferingStatus(
-                update_data.offering_status
+                data.offering_status
             ).buildTransaction({
                 "nonce": nonce,
                 "chainId": CHAIN_ID,
@@ -732,17 +768,18 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
 
     @staticmethod
     def transfer(contract_address: str,
-                 transfer_data: IbetShareTransfer,
+                 data: IbetShareTransfer,
                  tx_from: str,
                  private_key: str):
+        """Transfer ownership"""
         share_contract = ContractUtils.get_contract(
             contract_name="IbetShare",
             contract_address=contract_address
         )
 
-        _from = transfer_data.transfer_from
-        _to = transfer_data.transfer_to
-        _amount = transfer_data.amount
+        _from = data.transfer_from
+        _to = data.transfer_to
+        _amount = data.amount
         nonce = web3.eth.getTransactionCount(tx_from)
         tx = share_contract.functions. \
             transferFrom(_from, _to, _amount). \
@@ -757,3 +794,33 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
+
+    @staticmethod
+    def add_supply(contract_address: str,
+                   data: IbetShareAdd,
+                   tx_from: str,
+                   private_key: str):
+        """Add token supply"""
+        bond_contract = ContractUtils.get_contract(
+            contract_name="IbetShare",
+            contract_address=contract_address
+        )
+
+        _target_address = data.account_address
+        _amount = data.amount
+        try:
+            nonce = web3.eth.getTransactionCount(tx_from)
+            tx = bond_contract.functions. \
+                issueFrom(_target_address, ZERO_ADDRESS, _amount). \
+                buildTransaction({
+                    "nonce": nonce,
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0
+                })
+            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
