@@ -23,9 +23,9 @@ from app.routers.account import generate_rsa_key
 from tests.account_config import config_eth_account
 
 
-class TestAppRoutersAccountPUT:
+class TestAppRoutersAccountsPOST:
     # target API endpoint
-    apiurl = "/account"
+    apiurl = "/accounts"
 
     ###########################################################################
     # Normal Case
@@ -36,7 +36,7 @@ class TestAppRoutersAccountPUT:
     def test_normal_1(self, mock_add_task, client, db):
         accounts_before = db.query(Account).all()
 
-        resp = client.put(self.apiurl)
+        resp = client.post(self.apiurl)
 
         assert resp.status_code == 200
         assert resp.json()["issuer_address"] is not None

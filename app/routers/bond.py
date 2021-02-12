@@ -38,13 +38,13 @@ router = APIRouter(
 )
 
 
-# PUT: /bond/token
-@router.put("/token")
+# POST: /bond/tokens
+@router.post("/tokens")
 async def issue_token(
         token: IbetStraightBondCreate,
         issuer_address: str = Header(None),
         db: Session = Depends(db_session)):
-    """Issue ibet Straight Bond"""
+    """Issue ibetStraightBond token"""
 
     # Get Account
     _account = db.query(Account). \
@@ -100,10 +100,10 @@ async def issue_token(
 
 # GET: /bond/tokens
 @router.get("/tokens", response_model=List[IbetStraightBondResponse])
-async def get_tokens(
+async def list_all_tokens(
         issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
-    """Get issued tokens"""
+    """List all issued tokens"""
     # Get issued token list
     if issuer_address is None:
         tokens = db.query(Token). \
@@ -129,10 +129,10 @@ async def get_tokens(
 
 # GET: /bond/tokens/{token_address}
 @router.get("/tokens/{token_address}", response_model=IbetStraightBondResponse)
-async def get_token(
+async def retrieve_token(
         token_address: str,
         db: Session = Depends(db_session)):
-    """Get issued token"""
+    """Retrieve token"""
     # Get Token
     _token = db.query(Token). \
         filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
@@ -154,7 +154,7 @@ async def update_token(
         token: IbetStraightBondUpdate,
         issuer_address: str = Header(None),
         db: Session = Depends(db_session)):
-    """Update token"""
+    """Update a token"""
 
     # Get Account
     _account = db.query(Account). \
@@ -195,12 +195,12 @@ async def update_token(
 
 # POST: /bond/tokens/{token_address}/add
 @router.post("/tokens/{token_address}/add")
-async def add_supply(
+async def add_token(
         token_address: str,
         token: IbetStraightBondAdd,
         issuer_address: str = Header(None),
         db: Session = Depends(db_session)):
-    """Add token supply"""
+    """Add token"""
 
     # Get Account
     _account = db.query(Account). \
@@ -241,11 +241,11 @@ async def add_supply(
 
 # GET: /bond/tokens/{token_address}/holders
 @router.get("/tokens/{token_address}/holders", response_model=List[HolderResponse])
-async def get_holders(
+async def list_all_holders(
         token_address: str,
         issuer_address: str = Header(None),
         db: Session = Depends(db_session)):
-    """Get bond token holders"""
+    """List all bond token holders"""
 
     # Get Account
     _account = db.query(Account). \
@@ -304,12 +304,12 @@ async def get_holders(
 
 # GET: /bond/tokens/{token_address}/holders/{account_address}
 @router.get("/tokens/{token_address}/holders/{account_address}", response_model=HolderResponse)
-async def get_holder(
+async def retrieve_holder(
         token_address: str,
         account_address: str,
         issuer_address: str = Header(None),
         db: Session = Depends(db_session)):
-    """Get bond token holder"""
+    """Retrieve bond token holder"""
 
     # Get Issuer
     _account = db.query(Account). \
@@ -362,11 +362,11 @@ async def get_holder(
 
 # POST: /bond/transfer
 @router.post("/transfer")
-async def transfer(
+async def transfer_ownership(
         token: IbetStraightBondTransfer,
         issuer_address: str = Header(None),
         db: Session = Depends(db_session)):
-    """Transfer token"""
+    """Transfer token ownership"""
 
     # Get Account
     _account = db.query(Account). \

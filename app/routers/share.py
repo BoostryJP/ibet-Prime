@@ -38,13 +38,13 @@ router = APIRouter(
 )
 
 
-# PUT: /share/token
-@router.put("/token")
+# POST: /share/tokens
+@router.post("/tokens")
 async def issue_token(
         token: IbetShareCreate,
         issuer_address: str = Header(None),
         db: Session = Depends(db_session)):
-    """Issue ibet Straight Share"""
+    """Issue ibetShare token"""
 
     # Get Account
     _account = db.query(Account). \
@@ -99,10 +99,10 @@ async def issue_token(
 
 # GET: /share/tokens
 @router.get("/tokens", response_model=List[IbetShareResponse])
-async def get_tokens(
+async def list_all_tokens(
         issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
-    """Get issued tokens"""
+    """List all issued tokens"""
     # Get issued token list
     if issuer_address is None:
         tokens = db.query(Token). \
@@ -126,10 +126,10 @@ async def get_tokens(
 
 # GET: /share/tokens/{token_address}
 @router.get("/tokens/{token_address}", response_model=IbetShareResponse)
-async def get_token(
+async def retrieve_token(
         token_address: str,
         db: Session = Depends(db_session)):
-    """Get issued token"""
+    """Retrieve token"""
     # Get Token
     _token = db.query(Token). \
         filter(Token.type == TokenType.IBET_SHARE). \
@@ -151,7 +151,7 @@ async def update_token(
         token: IbetShareUpdate,
         issuer_address: str = Header(None),
         db: Session = Depends(db_session)):
-    """Update token"""
+    """Update a token"""
 
     # Get Account
     _account = db.query(Account). \
@@ -192,12 +192,12 @@ async def update_token(
 
 # POST: /bond/tokens/{token_address}/add
 @router.post("/tokens/{token_address}/add")
-async def add_supply(
+async def add_token(
         token_address: str,
         token: IbetShareAdd,
         issuer_address: str = Header(None),
         db: Session = Depends(db_session)):
-    """Add token supply"""
+    """Add token"""
 
     # Get Account
     _account = db.query(Account). \
@@ -238,11 +238,11 @@ async def add_supply(
 
 # GET: /share/tokens/{token_address}/holders
 @router.get("/tokens/{token_address}/holders", response_model=List[HolderResponse])
-async def get_holders(
+async def list_all_holders(
         token_address: str,
         issuer_address: str = Header(None),
         db: Session = Depends(db_session)):
-    """Get share token holders"""
+    """List all share token holders"""
 
     # Get Account
     _account = db.query(Account). \
@@ -299,12 +299,12 @@ async def get_holders(
 
 # GET: /share/tokens/{token_address}/holders/{account_address}
 @router.get("/share/tokens/{token_address}/holder/{account_address}", response_model=HolderResponse)
-async def get_holder(
+async def retrieve_holder(
         token_address: str,
         account_address: str,
         issuer_address: str = Header(None),
         db: Session = Depends(db_session)):
-    """Get share token holder"""
+    """Retrieve share token holder"""
 
     # Get Issuer
     _account = db.query(Account). \
@@ -357,11 +357,11 @@ async def get_holder(
 
 # POST: /share/transfer
 @router.post("/transfer")
-async def transfer(
+async def transfer_ownership(
         token: IbetShareTransfer,
         issuer_address: str = Header(None),
         db: Session = Depends(db_session)):
-    """Transfer token"""
+    """Transfer token ownership"""
 
     # Get Account
     _account = db.query(Account). \
