@@ -66,6 +66,7 @@ def generate_rsa_key(db: Session, issuer_address: str):
     return
 
 
+# PUT: /account
 @router.put("/account", response_model=AccountResponse)
 async def create_key(
         background_tasks: BackgroundTasks,
@@ -98,6 +99,7 @@ async def create_key(
     }
 
 
+# GET: /accounts
 @router.get("/accounts", response_model=List[AccountResponse])
 async def get_accounts(db: Session = Depends(db_session)):
     """Get accounts"""
@@ -115,7 +117,8 @@ async def get_accounts(db: Session = Depends(db_session)):
     return account_list
 
 
-@router.get("/account/{issuer_address}", response_model=AccountResponse)
+# GET: /accounts/{issuer_address}
+@router.get("/accounts/{issuer_address}", response_model=AccountResponse)
 async def get_account(issuer_address: str, db: Session = Depends(db_session)):
     """Get account"""
 
