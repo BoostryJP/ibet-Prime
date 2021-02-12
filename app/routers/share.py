@@ -37,6 +37,7 @@ router = APIRouter(
 )
 
 
+# PUT: /share/token
 @router.put("/token")
 async def issue_token(
         token: IbetShareCreate,
@@ -95,6 +96,7 @@ async def issue_token(
     return {"token_address": _token.token_address}
 
 
+# GET: /share/tokens
 @router.get("/tokens", response_model=List[IbetShareResponse])
 async def get_tokens(
         issuer_address: Optional[str] = Header(None),
@@ -121,7 +123,8 @@ async def get_tokens(
     return share_tokens
 
 
-@router.get("/token/{token_address}", response_model=IbetShareResponse)
+# GET: /share/tokens/{token_address}
+@router.get("/tokens/{token_address}", response_model=IbetShareResponse)
 async def get_token(token_address: str):
     """Get issued token"""
     # Get contract data
@@ -130,7 +133,8 @@ async def get_token(token_address: str):
     return share_token
 
 
-@router.post("/token/{token_address}")
+# POST: /share/tokens/{token_address}
+@router.post("/tokens/{token_address}")
 async def update_token(
         token_address: str,
         token: IbetShareUpdate,
@@ -175,40 +179,8 @@ async def update_token(
     return
 
 
-@router.post("/transfer/{token_address}")
-async def transfer(
-        token_address: str,
-        token: IbetShareTransfer,
-        issuer_address: str = Header(None),
-        db: Session = Depends(db_session)):
-    """Transfer token"""
-
-    # Get Account
-    _account = db.query(Account). \
-        filter(Account.issuer_address == issuer_address). \
-        first()
-
-    # If account does not exist, return 400 error
-    if _account is None:
-        raise InvalidParameterError("issuer does not exist")
-
-    keyfile_json = _account.keyfile
-    private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json,
-        password=KEY_FILE_PASSWORD.encode("utf-8")
-    )
-
-    IbetShareContract.transfer(
-        contract_address=token_address,
-        transfer_data=token,
-        tx_from=issuer_address,
-        private_key=private_key
-    )
-
-    return
-
-
-@router.get("/holders/{token_address}", response_model=List[HolderResponse])
+# GET: /share/tokens/{token_address}/holders
+@router.get("/tokens/{token_address}/holders", response_model=List[HolderResponse])
 async def get_holders(
         token_address: str,
         issuer_address: str = Header(None),
@@ -268,7 +240,8 @@ async def get_holders(
     return holders
 
 
-@router.get("/holder/{token_address}/{account_address}", response_model=HolderResponse)
+# GET: /share/tokens/{token_address}/holders/{account_address}
+@router.get("/share/tokens/{token_address}/holder/{account_address}", response_model=HolderResponse)
 async def get_holder(
         token_address: str,
         account_address: str,
@@ -323,3 +296,36 @@ async def get_holder(
     }
 
     return holder
+
+
+# POST: /share/transfer
+@router.post("/transfer")
+async def transfer(
+        token: IbetShareTransfer,
+        issuer_address: str = Header(None),
+        db: Session = Depends(db_session)):
+    """Transfer token"""
+
+    # Get Account
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
+        first()
+
+    # If account does not exist, return 400 error
+    if _account is None:
+        raise InvalidParameterError("issuer does not exist")
+
+    keyfile_json = _account.keyfile
+    private_key = decode_keyfile_json(
+        raw_keyfile_json=keyfile_json,
+        password=KEY_FILE_PASSWORD.encode("utf-8")
+    )
+
+    IbetShareContract.transfer(
+        contract_address=token.token_address,
+        transfer_data=token,
+        tx_from=issuer_address,
+        private_key=private_key
+    )
+
+    return
