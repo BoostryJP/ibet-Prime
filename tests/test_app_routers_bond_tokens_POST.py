@@ -31,9 +31,9 @@ web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
-class TestAppRoutersBondTokenPUT:
+class TestAppRoutersBondTokensPOST:
     # target API endpoint
-    apiurl = "/bond/token"
+    apiurl = "/bond/tokens"
 
     ###########################################################################
     # Normal Case
@@ -67,7 +67,7 @@ class TestAppRoutersBondTokenPUT:
             ("contract_address_test1", "abi_test1", "tx_hash_test1")
         ]
 
-        resp = client.put(self.apiurl, json=req_param, headers={"issuer-address": test_account["address"]})
+        resp = client.post(self.apiurl, json=req_param, headers={"issuer-address": test_account["address"]})
 
         # assertion mock call arguments
         arguments = [value for value in req_param.values()]
@@ -95,7 +95,7 @@ class TestAppRoutersBondTokenPUT:
     # <Error Case 1>
     # Parameter Error
     def test_error_1(self, client):
-        resp = client.put(self.apiurl, headers={"issuer-address": ""})
+        resp = client.post(self.apiurl, headers={"issuer-address": ""})
         assert resp.status_code == 422
         assert resp.json()["meta"] == {
             "code": 1,
@@ -125,7 +125,7 @@ class TestAppRoutersBondTokenPUT:
             "purpose": "purpose_test1",
         }
 
-        resp = client.put(
+        resp = client.post(
             self.apiurl,
             json=req_param,
             headers={"issuer-address": "not_exists_issuer"}
@@ -162,7 +162,7 @@ class TestAppRoutersBondTokenPUT:
             "purpose": "purpose_test1",
         }
 
-        resp = client.put(self.apiurl, json=req_param, headers={"issuer-address": test_account_1["address"]})
+        resp = client.post(self.apiurl, json=req_param, headers={"issuer-address": test_account_1["address"]})
 
         assert resp.status_code == 400
         assert resp.json()["meta"] == {
