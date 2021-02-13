@@ -114,7 +114,7 @@ class IbetStraightBondUpdate(BaseModel):
 
 
 class IbetStraightBondAdd(BaseModel):
-    """ibet Straight Bond schema (Add Supply)"""
+    """ibet Straight Bond schema (Additional Issue)"""
     account_address: str
     amount: int
 
@@ -283,7 +283,7 @@ class IbetShareTransfer(BaseModel):
 
 
 class IbetShareAdd(BaseModel):
-    """ibet Share schema (Add Supply)"""
+    """ibet Share schema (Additional Issue)"""
     account_address: str
     amount: int
 

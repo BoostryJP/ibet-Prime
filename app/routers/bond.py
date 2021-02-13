@@ -195,7 +195,7 @@ async def update_token(
 
 # POST: /bond/tokens/{token_address}/add
 @router.post("/tokens/{token_address}/add")
-async def add_token(
+async def additional_issue(
         token_address: str,
         token: IbetStraightBondAdd,
         issuer_address: str = Header(None),
