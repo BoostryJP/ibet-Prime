@@ -1,4 +1,4 @@
-#!/bin/ash
+#!/bin/bash
 
 # Copyright BOOSTRY Co., Ltd.
 #
@@ -17,25 +17,36 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-source ~/.profile
+source ~/.bash_profile
 
 function start () {
-    uvicorn app.main:app --reload
+  WORKER_COUNT=${WORKER_COUNT:-2}
+  WORKER_TIMEOUT=${WORKER_TIMEOUT:-30}
+  WORKER_MAX_REQUESTS=${WORKER_MAX_REQUESTS:-500}
+  WORKER_MAX_REQUESTS_JITTER=${WORKER_MAX_REQUESTS_JITTER:-200}
+  ACCESS_LOGFILE=${ACCESS_LOGFILE:-/dev/stdout}
+  gunicorn --worker-class app.main.AppUvicornWorker \
+           --workers ${WORKER_COUNT} \
+           --bind :5000 \
+           --timeout ${WORKER_TIMEOUT} \
+           --max-requests ${WORKER_MAX_REQUESTS} \
+           --max-requests-jitter ${WORKER_MAX_REQUESTS_JITTER} \
+           --access-logfile ${ACCESS_LOGFILE} \
+           app.main:app
 }
 
 function stop () {
-    ps -ef | grep uvicorn | awk '{print $2}' | xargs kill -9
+  ps -ef | grep gunicorn | awk '{print $1}' | xargs kill -9
 }
 
-
 case "$1" in
-    start)
-        start
-        ;;
-    stop)
-        stop
-        ;;
-    *)
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  *)
     echo "Usage: run_server.sh {start|stop}"
     exit 1
 esac

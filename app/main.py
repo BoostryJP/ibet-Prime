@@ -16,11 +16,13 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import os
 
 from fastapi import FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from uvicorn.workers import UvicornWorker
 
 from config import SERVER_NAME
 from app.routers import account, bond, share
@@ -37,6 +39,16 @@ app = FastAPI(
 )
 
 
+# gunicorn loading worker
+class AppUvicornWorker(UvicornWorker):
+    CONFIG_KWARGS = {
+        "loop": "asyncio",
+        "http": "h11",
+        # NOTE: gunicorn don't support '--worker-connections' to uvicorn
+        "limit_concurrency": int(os.environ.get('WORKER_CONNECTIONS')) if os.environ.get('WORKER_CONNECTIONS') else 100
+    }
+
+
 ###############################################################
 # ROUTER
 ###############################################################
@@ -49,6 +61,7 @@ async def root():
 app.include_router(account.router)
 app.include_router(bond.router)
 app.include_router(share.router)
+
 
 ###############################################################
 # EXCEPTION

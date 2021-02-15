@@ -17,13 +17,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# shellcheck disable=SC1090
-source ~/.bash_profile
-cd /app/ibet-Prime
+PROC_LIST="${PROC_LIST} batch/indexer_personal_info.py"
+PROC_LIST="${PROC_LIST} batch/indexer_position_bond.py"
+PROC_LIST="${PROC_LIST} batch/indexer_position_share.py"
+PROC_LIST="${PROC_LIST} batch/indexer_transfer.py"
 
-python batch/indexer_personal_info.py &
-python batch/indexer_position_bond.py &
-python batch/indexer_position_share.py &
-python batch/indexer_transfer.py &
-
-tail -f /dev/null
+for i in ${PROC_LIST}; do
+  # shellcheck disable=SC2009
+  ps -ef | grep -v grep | grep "$i"
+  if [ $? -ne 0 ]; then
+    exit 1
+  fi
+done
