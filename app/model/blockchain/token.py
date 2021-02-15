@@ -428,28 +428,29 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                  tx_from: str,
                  private_key: str):
         """Transfer ownership"""
-        bond_contract = ContractUtils.get_contract(
-            contract_name="IbetStraightBond",
-            contract_address=contract_address
-        )
-
-        _from = data.transfer_from
-        _to = data.transfer_to
-        _amount = data.amount
-        nonce = web3.eth.getTransactionCount(tx_from)
-        tx = bond_contract.functions. \
-            transferFrom(_from, _to, _amount). \
-            buildTransaction({
-                "nonce": nonce,
-                "chainId": CHAIN_ID,
-                "from": tx_from,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0
-            })
         try:
+            bond_contract = ContractUtils.get_contract(
+                contract_name="IbetStraightBond",
+                contract_address=contract_address
+            )
+            _from = data.transfer_from
+            _to = data.transfer_to
+            _amount = data.amount
+            nonce = web3.eth.getTransactionCount(tx_from)
+            tx = bond_contract.functions. \
+                transferFrom(_from, _to, _amount). \
+                buildTransaction({
+                    "nonce": nonce,
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0
+                })
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
 
     @staticmethod
     def add_supply(contract_address: str,
@@ -457,24 +458,23 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                    tx_from: str,
                    private_key: str):
         """Add token supply"""
-        bond_contract = ContractUtils.get_contract(
-            contract_name="IbetStraightBond",
-            contract_address=contract_address
-        )
-
-        _target_address = data.account_address
-        _amount = data.amount
-        nonce = web3.eth.getTransactionCount(tx_from)
-        tx = bond_contract.functions. \
-            issueFrom(_target_address, ZERO_ADDRESS, _amount). \
-            buildTransaction({
-                "nonce": nonce,
-                "chainId": CHAIN_ID,
-                "from": tx_from,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0
-            })
         try:
+            bond_contract = ContractUtils.get_contract(
+                contract_name="IbetStraightBond",
+                contract_address=contract_address
+            )
+            _target_address = data.account_address
+            _amount = data.amount
+            nonce = web3.eth.getTransactionCount(tx_from)
+            tx = bond_contract.functions. \
+                issueFrom(_target_address, ZERO_ADDRESS, _amount). \
+                buildTransaction({
+                    "nonce": nonce,
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0
+                })
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
@@ -772,28 +772,29 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                  tx_from: str,
                  private_key: str):
         """Transfer ownership"""
-        share_contract = ContractUtils.get_contract(
-            contract_name="IbetShare",
-            contract_address=contract_address
-        )
-
-        _from = data.transfer_from
-        _to = data.transfer_to
-        _amount = data.amount
-        nonce = web3.eth.getTransactionCount(tx_from)
-        tx = share_contract.functions. \
-            transferFrom(_from, _to, _amount). \
-            buildTransaction({
-                "nonce": nonce,
-                "chainId": CHAIN_ID,
-                "from": tx_from,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0
-            })
         try:
+            share_contract = ContractUtils.get_contract(
+                contract_name="IbetShare",
+                contract_address=contract_address
+            )
+            _from = data.transfer_from
+            _to = data.transfer_to
+            _amount = data.amount
+            nonce = web3.eth.getTransactionCount(tx_from)
+            tx = share_contract.functions. \
+                transferFrom(_from, _to, _amount). \
+                buildTransaction({
+                    "nonce": nonce,
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0
+                })
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
 
     @staticmethod
     def add_supply(contract_address: str,
@@ -801,14 +802,13 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                    tx_from: str,
                    private_key: str):
         """Add token supply"""
-        bond_contract = ContractUtils.get_contract(
-            contract_name="IbetShare",
-            contract_address=contract_address
-        )
-
-        _target_address = data.account_address
-        _amount = data.amount
         try:
+            bond_contract = ContractUtils.get_contract(
+                contract_name="IbetShare",
+                contract_address=contract_address
+            )
+            _target_address = data.account_address
+            _amount = data.amount
             nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions. \
                 issueFrom(_target_address, ZERO_ADDRESS, _amount). \
