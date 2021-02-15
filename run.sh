@@ -1,4 +1,4 @@
-#!/bin/ash
+#!/bin/bash
 
 # Copyright BOOSTRY Co., Ltd.
 #
@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 # SPDX-License-Identifier: Apache-2.0
-source ~/.profile
+source ~/.bash_profile
 RUN_MODE=${RUN_MODE:-server}
 cd /app/ibet-Prime
 

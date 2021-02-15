@@ -17,7 +17,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-source ~/.profile
+source ~/.bash_profile
 
 cd /app/ibet-Prime
 

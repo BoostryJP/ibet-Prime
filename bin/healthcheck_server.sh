@@ -17,13 +17,4 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# shellcheck disable=SC1090
-source ~/.bash_profile
-cd /app/ibet-Prime
-
-python batch/indexer_personal_info.py &
-python batch/indexer_position_bond.py &
-python batch/indexer_position_share.py &
-python batch/indexer_transfer.py &
-
-tail -f /dev/null
+curl -D - -s -o /dev/null http://127.0.0.1:5000/ | grep "HTTP/1.1 200 OK" || exit 1

@@ -16,14 +16,16 @@
 # limitations under the License.
 #
 # SPDX-License-Identifier: Apache-2.0
-
-# shellcheck disable=SC1090
 source ~/.bash_profile
+RUN_MODE=${RUN_MODE:-server}
 cd /app/ibet-Prime
 
-python batch/indexer_personal_info.py &
-python batch/indexer_position_bond.py &
-python batch/indexer_position_share.py &
-python batch/indexer_transfer.py &
+if [ "${RUN_MODE}" == "server" ]; then
+  ./bin/healthcheck_server.sh start
+elif [ "${RUN_MODE}" == "indexer" ]; then
+  ./bin/healthcheck_indexer.sh
+  echo "RUN_MODE is invalid value." >&2
+  exit 1
+fi
 
-tail -f /dev/null
+
