@@ -298,7 +298,7 @@ async def list_all_holders(
 
 
 # GET: /share/tokens/{token_address}/holders/{account_address}
-@router.get("/share/tokens/{token_address}/holder/{account_address}", response_model=HolderResponse)
+@router.get("/share/tokens/{token_address}/holders/{account_address}", response_model=HolderResponse)
 async def retrieve_holder(
         token_address: str,
         account_address: str,
@@ -367,10 +367,17 @@ async def transfer_ownership(
     _account = db.query(Account). \
         filter(Account.issuer_address == issuer_address). \
         first()
-
-    # If account does not exist, return 400 error
     if _account is None:
         raise InvalidParameterError("issuer does not exist")
+
+    # Check that it is a token that has been issued.
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token.token_address). \
+        first()
+    if _token is None:
+        raise InvalidParameterError("token not found")
 
     keyfile_json = _account.keyfile
     private_key = decode_keyfile_json(
@@ -378,11 +385,14 @@ async def transfer_ownership(
         password=KEY_FILE_PASSWORD.encode("utf-8")
     )
 
-    IbetShareContract.transfer(
-        contract_address=token.token_address,
-        data=token,
-        tx_from=issuer_address,
-        private_key=private_key
-    )
+    try:
+        IbetShareContract.transfer(
+            contract_address=token.token_address,
+            data=token,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+    except SendTransactionError:
+        raise SendTransactionError("failed to send transaction")
 
     return

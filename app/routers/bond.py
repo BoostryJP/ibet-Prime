@@ -372,10 +372,17 @@ async def transfer_ownership(
     _account = db.query(Account). \
         filter(Account.issuer_address == issuer_address). \
         first()
-
-    # If account does not exist, return 400 error
     if _account is None:
         raise InvalidParameterError("issuer does not exist")
+
+    # Check that it is a token that has been issued.
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token.token_address). \
+        first()
+    if _token is None:
+        raise InvalidParameterError("token not found")
 
     keyfile_json = _account.keyfile
     private_key = decode_keyfile_json(
@@ -383,11 +390,14 @@ async def transfer_ownership(
         password=KEY_FILE_PASSWORD.encode("utf-8")
     )
 
-    IbetStraightBondContract.transfer(
-        contract_address=token.token_address,
-        data=token,
-        tx_from=issuer_address,
-        private_key=private_key
-    )
+    try:
+        IbetStraightBondContract.transfer(
+            contract_address=token.token_address,
+            data=token,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+    except SendTransactionError:
+        raise SendTransactionError("failed to send transaction")
 
     return
