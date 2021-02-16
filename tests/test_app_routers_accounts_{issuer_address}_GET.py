@@ -84,7 +84,7 @@ class TestAppRoutersAccountsIssuerAddressGET:
         assert resp.status_code == 404
         assert resp.json() == {
             "meta": {
-                "code": 1,
-                "title": "NotFound"
-            }
+                "code": 1, "title": "NotFound"
+            }, 
+            "detail": "issuer is not exists"
         }

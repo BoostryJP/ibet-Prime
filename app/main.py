@@ -22,6 +22,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn.workers import UvicornWorker
 
 from config import SERVER_NAME
@@ -102,7 +103,7 @@ async def invalid_parameter_error_handler(request: Request, exc: InvalidParamete
     }
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
-        content=jsonable_encoder({"meta": meta, "detail": exc.args}),
+        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
     )
 
 
@@ -115,26 +116,26 @@ async def invalid_parameter_error_handler(request: Request, exc: SendTransaction
     }
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
-        content=jsonable_encoder({"meta": meta, "detail": exc.args}),
+        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
     )
 
 
 # 404:NotFound
 @app.exception_handler(404)
-async def not_found_error_handler(request: Request, exc: Exception):
+async def not_found_error_handler(request: Request, exc: StarletteHTTPException):
     meta = {
         "code": 1,
         "title": "NotFound"
     }
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
-        content=jsonable_encoder({"meta": meta}),
+        content=jsonable_encoder({"meta": meta, "detail": exc.detail}),
     )
 
 
 # 405:MethodNotAllowed
 @app.exception_handler(405)
-async def method_not_allowed_error_handler(request: Request, exc: Exception):
+async def method_not_allowed_error_handler(request: Request, exc: StarletteHTTPException):
     meta = {
         "code": 1,
         "title": "MethodNotAllowed"

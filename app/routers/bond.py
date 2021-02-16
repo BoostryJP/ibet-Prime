@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Header
+from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
 from eth_keyfile import decode_keyfile_json
 
@@ -139,7 +140,7 @@ async def retrieve_token(
         filter(Token.token_address == token_address). \
         first()
     if _token is None:
-        raise InvalidParameterError("token not found")
+        raise HTTPException(status_code=404, detail="token not found")
 
     # Get contract data
     bond_token = IbetStraightBondContract.get(contract_address=token_address).__dict__
@@ -170,7 +171,7 @@ async def update_token(
         filter(Token.token_address == token_address). \
         first()
     if _token is None:
-        raise InvalidParameterError("token not found")
+        raise HTTPException(status_code=404, detail="token not found")
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -216,7 +217,7 @@ async def additional_issue(
         filter(Token.token_address == token_address). \
         first()
     if _token is None:
-        raise InvalidParameterError("token not found")
+        raise HTTPException(status_code=404, detail="token not found")
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -261,7 +262,7 @@ async def list_all_holders(
         filter(Token.token_address == token_address). \
         first()
     if _token is None:
-        raise InvalidParameterError("token not found")
+        raise HTTPException(status_code=404, detail="token not found")
 
     # Get Holders
     _holders = db.query(IDXPosition). \
@@ -325,7 +326,7 @@ async def retrieve_holder(
         filter(Token.token_address == token_address). \
         first()
     if _token is None:
-        raise InvalidParameterError("token not found")
+        raise HTTPException(status_code=404, detail="token not found")
 
     # Get Holders
     _holder = db.query(IDXPosition). \

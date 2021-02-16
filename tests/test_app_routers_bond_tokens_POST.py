@@ -132,12 +132,14 @@ class TestAppRoutersBondTokensPOST:
         )
 
         assert resp.status_code == 400
-        assert resp.json()["meta"] == {
-            "code": 1,
-            "title": "InvalidParameterError"
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "InvalidParameterError"
+            },
+            "detail": "issuer does not exist"
         }
-        assert resp.json()["detail"] == ["issuer does not exist"]
-    
+
     # <Error Case 3>
     # Send Transaction Error
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.create", MagicMock(side_effect=SendTransactionError()))
@@ -165,8 +167,10 @@ class TestAppRoutersBondTokensPOST:
         resp = client.post(self.apiurl, json=req_param, headers={"issuer-address": test_account_1["address"]})
 
         assert resp.status_code == 400
-        assert resp.json()["meta"] == {
-            "code": 2,
-            "title": "SendTransactionError"
+        assert resp.json() == {
+            "meta": {
+                "code": 2,
+                "title": "SendTransactionError"
+            },
+            "detail": "failed to send transaction"
         }
-        assert resp.json()["detail"] == ["failed to send transaction"]

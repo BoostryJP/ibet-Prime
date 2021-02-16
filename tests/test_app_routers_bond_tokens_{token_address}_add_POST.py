@@ -113,11 +113,13 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
 
         # assertion
         assert resp.status_code == 400
-        assert resp.json()["meta"] == {
-            "code": 1,
-            "title": "InvalidParameterError"
+        assert resp.json() == {
+            "meta": {
+                "code": 1, 
+                "title": "InvalidParameterError"
+            }, 
+            "detail": "issuer does not exist"
         }
-        assert resp.json()["detail"] == ["issuer does not exist"]
 
     # <Error_2>
     # token not found
@@ -144,12 +146,14 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
             headers={"issuer-address": _issuer_address}
         )
 
-        assert resp.status_code == 400
-        assert resp.json()["meta"] == {
-            "code": 1,
-            "title": "InvalidParameterError"
+        assert resp.status_code == 404
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "NotFound"
+            },
+            "detail": "token not found"
         }
-        assert resp.json()["detail"] == ["token not found"]
 
     # <Error_3>
     # Send Transaction Error
@@ -188,8 +192,10 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
 
         # assertion
         assert resp.status_code == 400
-        assert resp.json()["meta"] == {
-            "code": 2,
-            "title": "SendTransactionError"
+        assert resp.json() == {
+            "meta": {
+                "code": 2,
+                "title": "SendTransactionError"
+            },
+            "detail": "failed to send transaction"
         }
-        assert resp.json()["detail"] == ["failed to send transaction"]
