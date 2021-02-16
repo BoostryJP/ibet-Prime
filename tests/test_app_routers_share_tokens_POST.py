@@ -31,17 +31,17 @@ web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
-class TestAppRoutersBondTokensPOST:
+class TestAppRoutersShareTokensPOST:
     # target API endpoint
-    apiurl = "/bond/tokens"
+    apiurl = "/share/tokens"
 
     ###########################################################################
     # Normal Case
     ###########################################################################
 
     # <Normal Case 1>
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.create")
-    def test_normal_1(self, IbetStraightBondContract_mock, client, db):
+    @mock.patch("app.model.blockchain.token.IbetShareContract.create")
+    def test_normal_1(self, IbetShareContract_mock, client, db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -56,15 +56,14 @@ class TestAppRoutersBondTokensPOST:
         req_param = {
             "name": "name_test1",
             "symbol": "symbol_test1",
+            "issue_price": 1000,
             "total_supply": 10000,
-            "face_value": 200,
-            "redemption_date": "redemption_date_test1",
-            "redemption_value": 4000,
-            "return_date": "redemption_value_test1",
-            "return_amount": "return_amount_test1",
-            "purpose": "purpose_test1",
+            "dividends": 123.45,
+            "dividend_record_date": "20211231",
+            "dividend_payment_date": "20211231",
+            "cancellation_date": "20221231"
         }
-        IbetStraightBondContract_mock.side_effect = [
+        IbetShareContract_mock.side_effect = [
             ("contract_address_test1", "abi_test1", "tx_hash_test1")
         ]
         resp = client.post(
@@ -74,8 +73,10 @@ class TestAppRoutersBondTokensPOST:
         )
 
         # assertion
+        contract_args = req_param
+        contract_args["dividends"] = int(req_param["dividends"] * 100)
         arguments = [value for value in req_param.values()]
-        IbetStraightBondContract_mock.assert_any_call(
+        IbetShareContract_mock.assert_any_call(
             args=arguments,
             tx_from=account.issuer_address,
             private_key=ANY
@@ -90,7 +91,7 @@ class TestAppRoutersBondTokensPOST:
         assert 1 == len(token_after)
         token_1 = token_after[0]
         assert token_1.id == 1
-        assert token_1.type == TokenType.IBET_STRAIGHT_BOND
+        assert token_1.type == TokenType.IBET_SHARE
         assert token_1.tx_hash == "tx_hash_test1"
         assert token_1.issuer_address == test_account["address"]
         assert token_1.token_address == "contract_address_test1"
@@ -128,7 +129,7 @@ class TestAppRoutersBondTokensPOST:
                 }
             ]
         }
-    
+
     # <Error Case 2>
     # Not Exists Address
     def test_error_2(self, client, db):
@@ -144,13 +145,12 @@ class TestAppRoutersBondTokensPOST:
         req_param = {
             "name": "name_test1",
             "symbol": "symbol_test1",
+            "issue_price": 1000,
             "total_supply": 10000,
-            "face_value": 200,
-            "redemption_date": "redemption_date_test1",
-            "redemption_value": 4000,
-            "return_date": "redemption_value_test1",
-            "return_amount": "return_amount_test1",
-            "purpose": "purpose_test1",
+            "dividends": 123.45,
+            "dividend_record_date": "20211231",
+            "dividend_payment_date": "20211231",
+            "cancellation_date": "20221231"
         }
         resp = client.post(
             self.apiurl,
@@ -170,7 +170,7 @@ class TestAppRoutersBondTokensPOST:
 
     # <Error Case 3>
     # Send Transaction Error
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.create",
+    @mock.patch("app.model.blockchain.token.IbetShareContract.create",
                 MagicMock(side_effect=SendTransactionError()))
     def test_error_3(self, client, db):
         test_account_1 = config_eth_account("user1")
@@ -186,13 +186,12 @@ class TestAppRoutersBondTokensPOST:
         req_param = {
             "name": "name_test1",
             "symbol": "symbol_test1",
+            "issue_price": 1000,
             "total_supply": 10000,
-            "face_value": 200,
-            "redemption_date": "redemption_date_test1",
-            "redemption_value": 4000,
-            "return_date": "redemption_value_test1",
-            "return_amount": "return_amount_test1",
-            "purpose": "purpose_test1",
+            "dividends": 123.45,
+            "dividend_record_date": "20211231",
+            "dividend_payment_date": "20211231",
+            "cancellation_date": "20221231"
         }
         resp = client.post(
             self.apiurl,

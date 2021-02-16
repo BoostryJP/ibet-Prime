@@ -97,7 +97,13 @@ class IbetStraightBondUpdate(BaseModel):
         float_data = float(v * 10 ** 4)
         int_data = int(v * 10 ** 4)
         if not math.isclose(int_data, float_data):
-            raise ValueError("interest_rate must be less than or equal to four decimal places")
+            raise ValueError("interest_rate must be rounded to 4 decimal places")
+        return v
+
+    @validator("interest_payment_date")
+    def interest_payment_date_list_length_less_than_13(cls, v):
+        if len(v) >= 13:
+            raise ValueError("list length of interest_payment_date must be less than 13")
         return v
 
     @validator("tradable_exchange_contract_address")
@@ -211,9 +217,9 @@ class IbetShareCreate(BaseModel):
 class IbetShareUpdate(BaseModel):
     """ibet Share schema (Update)"""
     cancellation_date: Optional[str]
-    dividends: Optional[float]
     dividend_record_date: Optional[str]
     dividend_payment_date: Optional[str]
+    dividends: Optional[float]
     tradable_exchange_contract_address: Optional[str]
     personal_info_contract_address: Optional[str]
     image_url: Optional[List[str]]
@@ -225,10 +231,16 @@ class IbetShareUpdate(BaseModel):
 
     @validator("dividends")
     def dividends_2_decimal_places(cls, v):
-        float_data = float(v * 10 ** 4)
-        int_data = int(v * 10 ** 4)
+        float_data = float(v * 10 ** 2)
+        int_data = int(v * 10 ** 2)
         if not math.isclose(int_data, float_data):
-            raise ValueError("dividends must be less than or equal to four decimal places")
+            raise ValueError("dividends must be rounded to 2 decimal places")
+        return v
+
+    @validator("dividends")
+    def dividend_information_all_required(cls, v, values, **kwargs):
+        if values["dividend_record_date"] is None or values["dividend_payment_date"] is None:
+            raise ValueError("all items are required to update the dividend information")
         return v
 
     @validator("tradable_exchange_contract_address")
@@ -241,12 +253,6 @@ class IbetShareUpdate(BaseModel):
     def personal_info_contract_address_is_valid_address(cls, v):
         if not Web3.isAddress(v):
             raise ValueError("personal_info_contract_address is not a valid address")
-        return v
-
-    @validator("dividends")
-    def dividend_information_all_required(cls, v, values, **kwargs):
-        if ("dividend_record_date" not in values) or ("dividend_payment_date" not in values):
-            raise ValueError("all items are required to update the dividend information")
         return v
 
 

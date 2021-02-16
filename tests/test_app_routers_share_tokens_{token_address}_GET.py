@@ -18,24 +18,24 @@ SPDX-License-Identifier: Apache-2.0
 """
 from unittest import mock
 
-from app.model.blockchain import IbetStraightBondContract
+from app.model.blockchain import IbetShareContract
 from app.model.db import Token, TokenType
 
 
-class TestAppRoutersBondTokensTokenAddressGET:
+class TestAppRoutersShareTokensTokenAddressGET:
     # target API endpoint
-    base_apiurl = "/bond/tokens/"
+    base_apiurl = "/share/tokens/"
 
     ###########################################################################
     # Normal Case
     ###########################################################################
 
     # <Normal_1>
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
     def test_normal_1(self, mock_get, client, db):
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = "tx_hash_test1"
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
@@ -43,7 +43,7 @@ class TestAppRoutersBondTokensTokenAddressGET:
         db.add(token)
 
         # request target API
-        mock_token = IbetStraightBondContract()
+        mock_token = IbetShareContract()
         mock_token.issuer_address = "issuer_address_test1"
         mock_token.token_address = "token_address_test1"
         mock_token.name = "testtoken1"
@@ -58,25 +58,14 @@ class TestAppRoutersBondTokensTokenAddressGET:
         mock_token.privacy_policy = "privacyPolicy_test1"
         mock_token.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
         mock_token.status = True
-        mock_token.face_value = 200
-        mock_token.redemption_date = "redemptionDate_test1"
-        mock_token.redemption_value = 40
-        mock_token.return_date = "returnDate_test1"
-        mock_token.return_amount = "returnAmount_test1"
-        mock_token.purpose = "purpose_test1"
-        mock_token.interest_rate = 0.003
+        mock_token.issue_price = 1000
+        mock_token.dividends = 123.45
+        mock_token.dividend_record_date = "20211231"
+        mock_token.dividend_payment_date = "20211231"
+        mock_token.cancellation_date = "20221231"
         mock_token.transferable = True
-        mock_token.initial_offering_status = False
-        mock_token.is_redeemed = False
+        mock_token.offering_status = True
         mock_token.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
-        mock_token.interest_payment_date = [
-            "interestPaymentDate1_test1", "interestPaymentDate2_test1",
-            "interestPaymentDate3_test1", "interestPaymentDate4_test1",
-            "interestPaymentDate5_test1", "interestPaymentDate6_test1",
-            "interestPaymentDate7_test1", "interestPaymentDate8_test1",
-            "interestPaymentDate9_test1", "interestPaymentDate10_test1",
-            "interestPaymentDate11_test1", "interestPaymentDate12_test1",
-        ]
         mock_get.side_effect = [mock_token]
 
         resp = client.get(self.base_apiurl + "token_address_test1")
@@ -99,25 +88,14 @@ class TestAppRoutersBondTokensTokenAddressGET:
             "privacy_policy": "privacyPolicy_test1",
             "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
             "status": True,
-            "face_value": 200,
-            "redemption_date": "redemptionDate_test1",
-            "redemption_value": 40,
-            "return_date": "returnDate_test1",
-            "return_amount": "returnAmount_test1",
-            "purpose": "purpose_test1",
-            "interest_rate": 0.003,
+            "issue_price": 1000,
+            "dividends": 123.45,
+            "dividend_record_date": "20211231",
+            "dividend_payment_date": "20211231",
+            "cancellation_date": "20221231",
             "transferable": True,
-            "initial_offering_status": False,
-            "is_redeemed": False,
-            "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
-            "interest_payment_date": [
-                "interestPaymentDate1_test1", "interestPaymentDate2_test1",
-                "interestPaymentDate3_test1", "interestPaymentDate4_test1",
-                "interestPaymentDate5_test1", "interestPaymentDate6_test1",
-                "interestPaymentDate7_test1", "interestPaymentDate8_test1",
-                "interestPaymentDate9_test1", "interestPaymentDate10_test1",
-                "interestPaymentDate11_test1", "interestPaymentDate12_test1",
-            ],
+            "offering_status": True,
+            "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679"
         }
 
         assert resp.status_code == 200

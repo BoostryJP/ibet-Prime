@@ -171,10 +171,10 @@ class TestAppRoutersShareTransferPOST:
         assert resp.status_code == 400
         assert resp.json() == {
             "meta": {
-                "code": 1, 
+                "code": 1,
                 "title": "InvalidParameterError"
-            }, 
-            "detail": ["issuer does not exist"]
+            },
+            "detail": "issuer does not exist"
         }
 
     # <Error_3>
@@ -212,13 +212,13 @@ class TestAppRoutersShareTransferPOST:
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 404
         assert resp.json() == {
             "meta": {
                 "code": 1,
-                "title": "InvalidParameterError"
+                "title": "NotFound"
             },
-            "detail": ["token not found"]
+            "detail": "token not found"
         }
 
     # <Error_4>
@@ -267,8 +267,10 @@ class TestAppRoutersShareTransferPOST:
 
         # assertion
         assert resp.status_code == 400
-        assert resp.json()["meta"] == {
-            "code": 2,
-            "title": "SendTransactionError"
+        assert resp.json() == {
+            "meta": {
+                "code": 2,
+                "title": "SendTransactionError"
+            },
+            "detail": "failed to send transaction"
         }
-        assert resp.json()["detail"] == ["failed to send transaction"]
