@@ -51,8 +51,6 @@ async def issue_token(
     _account = db.query(Account). \
         filter(Account.issuer_address == issuer_address). \
         first()
-
-    # If account does not exist, return 400 error
     if _account is None:
         raise InvalidParameterError("issuer does not exist")
 
