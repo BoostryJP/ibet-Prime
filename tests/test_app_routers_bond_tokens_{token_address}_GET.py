@@ -30,7 +30,7 @@ class TestAppRoutersBondTokensTokenAddressGET:
     # Normal Case
     ###########################################################################
 
-    # <Normal Case 1>
+    # <Normal_1>
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
     def test_normal_1(self, mock_get, client, db):
         token = Token()
@@ -127,3 +127,17 @@ class TestAppRoutersBondTokensTokenAddressGET:
     ###########################################################################
     # Error Case
     ###########################################################################
+
+    # <Error_1>
+    # No data
+    def test_error_1(self, client, db):
+        resp = client.get(self.base_apiurl + "not_found_token_address")
+
+        assert resp.status_code == 404
+        assert resp.json() == {
+            "meta": {
+                "code": 1, 
+                "title": "NotFound"
+            }, 
+            "detail": "token not found"
+        }

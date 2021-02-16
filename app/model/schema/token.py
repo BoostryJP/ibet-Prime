@@ -100,6 +100,12 @@ class IbetStraightBondUpdate(BaseModel):
             raise ValueError("interest_rate must be less than or equal to four decimal places")
         return v
 
+    @validator("interest_payment_date")
+    def interest_payment_date_list_length_less_than_13(cls, v):
+        if len(v) >= 13:
+            raise ValueError("list length of interest_payment_date must be less than 13")
+        return v
+
     @validator("tradable_exchange_contract_address")
     def tradable_exchange_contract_address_is_valid_address(cls, v):
         if not Web3.isAddress(v):
