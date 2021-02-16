@@ -350,6 +350,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         }
 
     # <Error_7>
+    # Send Transaction Error
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.update",
                 MagicMock(side_effect=SendTransactionError()))
     def test_error_7(self, client, db):

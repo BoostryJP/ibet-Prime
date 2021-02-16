@@ -207,7 +207,6 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             ]
         }
 
-
     # <Error_3>
     # RequestValidationError: tradable_exchange_contract_address
     def test_error_3(self, client, db):
@@ -349,6 +348,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         }
 
     # <Error_7>
+    # Send Transaction Error
     @mock.patch("app.model.blockchain.token.IbetShareContract.update",
                 MagicMock(side_effect=SendTransactionError()))
     def test_error_7(self, client, db):
