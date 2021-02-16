@@ -23,6 +23,7 @@ from Crypto.PublicKey import RSA
 from Crypto import Random
 
 from fastapi import APIRouter, Depends, BackgroundTasks
+from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
 from sha3 import keccak_256
 from coincurve import PublicKey
@@ -126,6 +127,8 @@ async def retrieve_account(issuer_address: str, db: Session = Depends(db_session
     _account = db.query(Account).\
         filter(Account.issuer_address == issuer_address).\
         first()
+    if _account is None:
+        raise HTTPException(status_code=404, detail="issuer is not exists")
 
     return {
         "issuer_address": _account.issuer_address,

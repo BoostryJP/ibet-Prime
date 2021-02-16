@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from typing import Optional
 from pydantic import BaseModel
 
 
@@ -26,4 +27,4 @@ from pydantic import BaseModel
 class AccountResponse(BaseModel):
     """Account schema (Response)"""
     issuer_address: str
-    rsa_public_key: str
+    rsa_public_key: Optional[str]
