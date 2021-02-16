@@ -49,7 +49,6 @@ class TestAppRoutersAccountsIssuerAddressGET:
             "rsa_public_key": None
         }
 
-
     # <Normal_2>
     # rsa_public_key is not None
     def test_normal_2(self, client, db):
@@ -73,14 +72,13 @@ class TestAppRoutersAccountsIssuerAddressGET:
             "rsa_public_key": _admin_account["rsa_public_key"]
         }
 
-
     ###########################################################################
     # Error Case
     ###########################################################################
 
-    # <Normal_3>
+    # <Error_1>
     # No data
-    def test_normal_3(self, client, db):
+    def test_error_1(self, client, db):
         resp = client.get(self.base_url.format("non_existent_issuer_address"))
 
         assert resp.status_code == 404
