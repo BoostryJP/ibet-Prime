@@ -21,6 +21,17 @@ from pydantic import BaseModel
 
 
 ############################
+# REQUEST
+############################
+
+class AccountChangeRsaKeyRequest(BaseModel):
+    """Account Change Rsa Key schema (REQUEST)"""
+    rsa_private_key: str
+    # TODO: issue#25 'Set KEY_FILE_PASSWORD from the client'
+    password: Optional[str]
+
+
+############################
 # RESPONSE
 ############################
 

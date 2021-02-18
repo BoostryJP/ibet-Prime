@@ -22,7 +22,7 @@ import time
 from Crypto.PublicKey import RSA
 from Crypto import Random
 
-from fastapi import APIRouter, Depends, BackgroundTasks
+from fastapi import APIRouter, Depends, BackgroundTasks, Header
 from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
 from sha3 import keccak_256
@@ -32,9 +32,11 @@ import eth_keyfile
 
 from config import KEY_FILE_PASSWORD
 from app.database import db_session
-from app.model.schema import AccountResponse
-from app.model.db import Account
+from app.model.schema import AccountResponse, AccountChangeRsaKeyRequest
+from app.model.db import Account, AccountRsaKeyTemporary
+from app.exceptions import InvalidParameterError
 from app import log
+
 LOG = log.get_logger()
 
 router = APIRouter(tags=["account"])
@@ -124,8 +126,8 @@ async def retrieve_account(issuer_address: str, db: Session = Depends(db_session
     """Retrieve an account"""
 
     # Register key data to the DB
-    _account = db.query(Account).\
-        filter(Account.issuer_address == issuer_address).\
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
         first()
     if _account is None:
         raise HTTPException(status_code=404, detail="issuer is not exists")
@@ -133,4 +135,61 @@ async def retrieve_account(issuer_address: str, db: Session = Depends(db_session
     return {
         "issuer_address": _account.issuer_address,
         "rsa_public_key": _account.rsa_public_key
+    }
+
+
+# POST: /accounts/rsakey
+@router.post("/accounts/rsakey", response_model=AccountResponse)
+async def change_account_rsa_key(
+        data: AccountChangeRsaKeyRequest,
+        issuer_address: str = Header(None),
+        db: Session = Depends(db_session)):
+    """Change RSA key"""
+
+    # Get Account
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
+        first()
+    if _account is None:
+        raise HTTPException(status_code=404, detail="issuer is not exists")
+
+    # Check Account Changing
+    _temporary = db.query(AccountRsaKeyTemporary). \
+        filter(AccountRsaKeyTemporary.issuer_address == issuer_address). \
+        first()
+    if _temporary is not None:
+        raise InvalidParameterError("issuer information is now changing")
+
+    # Check RSA Private Key Format
+    try:
+        # TODO: issue#25 'Set KEY_FILE_PASSWORD from the client'
+        rsa_key = RSA.importKey(data.rsa_private_key, passphrase=KEY_FILE_PASSWORD)
+    except ValueError:
+        raise InvalidParameterError("RSA Private Key is invalid")
+
+    if not rsa_key.has_private():
+        raise InvalidParameterError("RSA Private Key is invalid")
+
+    # Create RSA Public Key
+    rsa_public_key = rsa_key.publickey().exportKey().decode()
+
+    # Registry previous key data to the DB
+    # NOTE: This data is deleted in the Batch when PersonalInfo modify completed.
+    _temporary = AccountRsaKeyTemporary()
+    _temporary.issuer_address = issuer_address
+    _temporary.rsa_private_key = _account.rsa_private_key
+    _temporary.rsa_public_key = _account.rsa_public_key
+    db.add(_temporary)
+
+    # Change key data to the DB
+    # NOTE: PersonalInfo modify execute in the Batch.
+    _account.rsa_private_key = data.rsa_private_key
+    _account.rsa_public_key = rsa_public_key
+    db.merge(_account)
+
+    db.commit()
+
+    return {
+        "issuer_address": issuer_address,
+        "rsa_public_key": rsa_public_key
     }

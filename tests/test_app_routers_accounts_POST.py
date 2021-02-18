@@ -31,13 +31,14 @@ class TestAppRoutersAccountsPOST:
     # Normal Case
     ###########################################################################
 
-    # <Normal Case 1>
+    # <Normal_1>
     @mock.patch("starlette.background.BackgroundTasks.add_task")
     def test_normal_1(self, mock_add_task, client, db):
         accounts_before = db.query(Account).all()
 
         resp = client.post(self.apiurl)
 
+        # assertion
         assert resp.status_code == 200
         assert resp.json()["issuer_address"] is not None
 
@@ -51,7 +52,6 @@ class TestAppRoutersAccountsPOST:
         assert account_1.rsa_private_key is None
         assert account_1.rsa_public_key is None
 
-        # assertion mock call arguments
         mock_add_task.assert_any_call(generate_rsa_key, db, account_1.issuer_address)
 
     ###########################################################################
@@ -62,7 +62,7 @@ class TestAppRoutersAccountsPOST:
     # Normal Case(BackGroundTask)
     ###########################################################################
 
-    # <Normal Case 1>
+    # <Normal_1>
     def test_backgroundtask_normal_1(self, db):
         config_account = config_eth_account("user1")
 
@@ -85,7 +85,7 @@ class TestAppRoutersAccountsPOST:
     # Error Case(BackGroundTask)
     ###########################################################################
 
-    # <Error Case 1>
+    # <Error_1>
     # Not Exists Address
     def test_backgroundtask_error_1(self, db):
         config_account = config_eth_account("user1")

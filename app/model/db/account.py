@@ -34,3 +34,15 @@ class Account(Base):
     rsa_private_key = Column(String(8000))
     # rsa public key
     rsa_public_key = Column(String(2000))
+
+
+class AccountRsaKeyTemporary(Base):
+    """Issuer Account(RSA Key Temporary Table)"""
+    __tablename__ = "account_rsa_key_temporary"
+
+    # issuer address
+    issuer_address = Column(String(42), primary_key=True)
+    # rsa private key
+    rsa_private_key = Column(String(8000))
+    # rsa public key
+    rsa_public_key = Column(String(2000))
