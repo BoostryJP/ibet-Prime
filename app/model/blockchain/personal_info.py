@@ -25,37 +25,36 @@ import logging
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from datetime import timezone, timedelta
+
 JST = timezone(timedelta(hours=+9), "JST")
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
+from web3.exceptions import TimeExhausted
+from eth_keyfile import decode_keyfile_json
 
 path = os.path.join(os.path.dirname(__file__), '../')
 sys.path.append(path)
 
-from config import KEY_FILE_PASSWORD, WEB3_HTTP_PROVIDER, DATABASE_URL
+from config import KEY_FILE_PASSWORD, WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT
 from app.model.blockchain.utils import ContractUtils
 from app.model.db import Account
+from app.exceptions import SendTransactionError
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
-engine = create_engine(DATABASE_URL, echo=False)
-db_session = scoped_session(sessionmaker())
-db_session.configure(bind=engine)
 
 
 class PersonalInfoContract:
     """PersonalInfo contract model"""
 
-    def __init__(self, issuer_address: str, contract_address=None):
+    def __init__(self, db, issuer_address: str, contract_address=None):
         self.personal_info_contract = ContractUtils.get_contract(
             contract_name="PersonalInfo",
             contract_address=contract_address
         )
-        self.issuer = db_session.query(Account).\
-            filter(Account.issuer_address == issuer_address).\
+        self.issuer = db.query(Account). \
+            filter(Account.issuer_address == issuer_address). \
             first()
 
     def get_info(self, account_address: str, default_value=None):
@@ -86,7 +85,7 @@ class PersonalInfoContract:
 
         # Get encrypted personal information
         personal_info_state = self.personal_info_contract.functions. \
-            personal_info(account_address, self.issuer.eth_account). \
+            personal_info(account_address, self.issuer.issuer_address). \
             call()
         encrypted_info = personal_info_state[2]
 
@@ -115,6 +114,52 @@ class PersonalInfoContract:
             except Exception as err:
                 logging.error(f"Failed to decrypt: {err}")
                 return personal_info  # default
+
+    def modify_info(self, account_address: str, data: dict, default_value=None):
+        """トークン保有者情報の修正
+
+        :param account_address: Token holder account address
+        :param data: Modify data
+        :param default_value: Default value for items for which no value is set. (If not specified: None)
+        :return: None
+        """
+
+        # Set default value
+        personal_info = {
+            "key_manager": data.get("key_manager", default_value),
+            "name": data.get("name", default_value),
+            "postal_code": data.get("postal_code", default_value),
+            "address": data.get("address", default_value),
+            "email": data.get("email", default_value),
+            "birth": data.get("birth", default_value)
+        }
+
+        # Encrypt personal info
+        # TODO: issue#25 'Set KEY_FILE_PASSWORD from the client'
+        rsa_key = RSA.importKey(self.issuer.rsa_public_key, passphrase=KEY_FILE_PASSWORD)
+        cipher = PKCS1_OAEP.new(rsa_key)
+        ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(personal_info).encode('utf-8')))
+
+        try:
+            private_key = decode_keyfile_json(
+                raw_keyfile_json=self.issuer.keyfile,
+                # TODO: issue#25 'Set KEY_FILE_PASSWORD from the client'
+                password=KEY_FILE_PASSWORD.encode("utf-8")
+            )
+            tx = self.personal_info_contract.functions.modify(account_address, ciphertext). \
+                buildTransaction({
+                    "nonce": web3.eth.getTransactionCount(self.issuer.issuer_address),
+                    "chainId": CHAIN_ID,
+                    "from": self.issuer.issuer_address,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0
+                })
+            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            logging.exception(f"{err}")
+            raise SendTransactionError(err)
 
     def get_register_event(self, block_from, block_to):
         """Get Register event

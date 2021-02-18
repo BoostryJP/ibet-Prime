@@ -137,6 +137,7 @@ class Processor:
         # Get a list of PersonalInfoContracts
         for item in unique_list:
             personal_info_contract = PersonalInfoContract(
+                db_session,
                 issuer_address=item["issuer_address"],
                 contract_address=item["personal_info_address"]
             )
