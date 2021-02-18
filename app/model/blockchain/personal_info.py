@@ -116,7 +116,7 @@ class PersonalInfoContract:
                 return personal_info  # default
 
     def modify_info(self, account_address: str, data: dict, default_value=None):
-        """トークン保有者情報の修正
+        """Modify personal information
 
         :param account_address: Token holder account address
         :param data: Modify data
