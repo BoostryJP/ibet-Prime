@@ -35,7 +35,7 @@ from config import KEY_FILE_PASSWORD, EOA_PASSWORD_PATTERN, EOA_PASSWORD_PATTERN
     PERSONAL_INFO_PASSPHRASE_PATTERN, PERSONAL_INFO_PASSPHRASE_PATTERN_MSG
 from app.database import db_session
 from app.model.schema import AccountCreateKeyRequest, AccountResponse, AccountChangeRsaKeyRequest
-from app.model.schema.utils import SecureValueUtils, headers_validate, address_address_is_valid_address
+from app.model.schema.utils import SecureValueUtils, headers_validate, address_is_valid_address
 from app.model.db import Account, AccountRsaKeyTemporary
 from app.exceptions import InvalidParameterError
 from app import log
@@ -159,7 +159,7 @@ async def change_account_rsa_key(
     headers_validate([{
         "name": "issuer-address",
         "value": issuer_address,
-        "validator": address_address_is_valid_address
+        "validator": address_is_valid_address
     }])
 
     # Get Account

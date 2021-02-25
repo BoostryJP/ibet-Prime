@@ -155,7 +155,7 @@ def headers_validate(validators: list):
         raise RequestValidationError(errors)
 
 
-def address_address_is_valid_address(name, value):
+def address_is_valid_address(name, value):
     if value:
         if not Web3.isAddress(value):
             raise ValueError(f"{name} is not a valid address")

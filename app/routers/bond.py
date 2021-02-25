@@ -28,7 +28,7 @@ from app.model.schema import IbetStraightBondCreate, IbetStraightBondUpdate, \
     IbetStraightBondTransfer, IbetStraightBondAdd, \
     IbetStraightBondResponse, HolderResponse
 from app.model.schema.utils import SecureValueUtils, headers_validate, \
-    address_address_is_valid_address, password_is_valid_encrypt
+    address_is_valid_address, password_is_valid_encrypt
 from app.model.db import Account, Token, TokenType, IDXPosition, IDXPersonalInfo
 from app.model.blockchain import IbetStraightBondContract
 from app.exceptions import InvalidParameterError, SendTransactionError
@@ -55,7 +55,7 @@ async def issue_token(
     headers_validate([{
         "name": "issuer-address",
         "value": issuer_address,
-        "validator": address_address_is_valid_address
+        "validator": address_is_valid_address
     }, {
         "name": "password",
         "value": password,
@@ -131,7 +131,7 @@ async def list_all_tokens(
     headers_validate([{
         "name": "issuer-address",
         "value": issuer_address,
-        "validator": address_address_is_valid_address
+        "validator": address_is_valid_address
     }])
 
     # Get issued token list
@@ -192,7 +192,7 @@ async def update_token(
     headers_validate([{
         "name": "issuer-address",
         "value": issuer_address,
-        "validator": address_address_is_valid_address
+        "validator": address_is_valid_address
     }, {
         "name": "password",
         "value": password,
@@ -259,7 +259,7 @@ async def additional_issue(
     headers_validate([{
         "name": "issuer-address",
         "value": issuer_address,
-        "validator": address_address_is_valid_address
+        "validator": address_is_valid_address
     }, {
         "name": "password",
         "value": password,
@@ -323,7 +323,7 @@ async def list_all_holders(
     headers_validate([{
         "name": "issuer-address",
         "value": issuer_address,
-        "validator": address_address_is_valid_address
+        "validator": address_is_valid_address
     }])
 
     # Get Account
@@ -394,7 +394,7 @@ async def retrieve_holder(
     headers_validate([{
         "name": "issuer-address",
         "value": issuer_address,
-        "validator": address_address_is_valid_address
+        "validator": address_is_valid_address
     }])
 
     # Get Issuer
@@ -460,7 +460,7 @@ async def transfer_ownership(
     headers_validate([{
         "name": "issuer-address",
         "value": issuer_address,
-        "validator": address_address_is_valid_address
+        "validator": address_is_valid_address
     }, {
         "name": "password",
         "value": password,
