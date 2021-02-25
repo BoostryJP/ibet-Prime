@@ -20,12 +20,15 @@
 source ~/.bash_profile
 
 function start () {
+
+  # gunicorn parameters
   WORKER_COUNT=${WORKER_COUNT:-2}
   WORKER_TIMEOUT=${WORKER_TIMEOUT:-30}
   WORKER_MAX_REQUESTS=${WORKER_MAX_REQUESTS:-500}
   WORKER_MAX_REQUESTS_JITTER=${WORKER_MAX_REQUESTS_JITTER:-200}
   ACCESS_LOGFILE=${ACCESS_LOGFILE:-/dev/stdout}
-  gunicorn --worker-class app.main.AppUvicornWorker \
+
+  gunicorn --worker-class server.AppUvicornWorker \
            --workers ${WORKER_COUNT} \
            --bind :5000 \
            --timeout ${WORKER_TIMEOUT} \

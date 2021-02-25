@@ -16,14 +16,11 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import os
-
 from fastapi import FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from uvicorn.workers import UvicornWorker
 
 from config import SERVER_NAME
 from app.routers import account, bond, share
@@ -38,16 +35,6 @@ app = FastAPI(
     title="ibet Prime",
     version="0.0.1"
 )
-
-
-# gunicorn loading worker
-class AppUvicornWorker(UvicornWorker):
-    CONFIG_KWARGS = {
-        "loop": "asyncio",
-        "http": "h11",
-        # NOTE: gunicorn don't support '--worker-connections' to uvicorn
-        "limit_concurrency": int(os.environ.get('WORKER_CONNECTIONS')) if os.environ.get('WORKER_CONNECTIONS') else 100
-    }
 
 
 ###############################################################

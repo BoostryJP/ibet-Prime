@@ -19,9 +19,10 @@ SPDX-License-Identifier: Apache-2.0
 from typing import List
 import secrets
 import time
+import re
+
 from Crypto.PublicKey import RSA
 from Crypto import Random
-
 from fastapi import APIRouter, Depends, BackgroundTasks, Header
 from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
@@ -30,9 +31,11 @@ from coincurve import PublicKey
 from eth_utils import to_checksum_address
 import eth_keyfile
 
-from config import KEY_FILE_PASSWORD
+from config import KEY_FILE_PASSWORD, EOA_PASSWORD_PATTERN, EOA_PASSWORD_PATTERN_MSG, \
+    PERSONAL_INFO_PASSPHRASE_PATTERN, PERSONAL_INFO_PASSPHRASE_PATTERN_MSG
 from app.database import db_session
-from app.model.schema import AccountResponse, AccountChangeRsaKeyRequest
+from app.model.schema import AccountCreateKeyRequest, AccountResponse, AccountChangeRsaKeyRequest
+from app.model.schema.utils import SecureValueUtils, headers_validate, address_address_is_valid_address
 from app.model.db import Account, AccountRsaKeyTemporary
 from app.exceptions import InvalidParameterError
 from app import log
@@ -62,6 +65,7 @@ def generate_rsa_key(db: Session, issuer_address: str):
     # Register key data to the DB
     _account.rsa_private_key = rsa_private_pem
     _account.rsa_public_key = rsa_public_pem
+    _account.rsa_encrypt_passphrase = SecureValueUtils.encrypt(KEY_FILE_PASSWORD)
     db.merge(_account)
     db.commit()
 
@@ -72,9 +76,14 @@ def generate_rsa_key(db: Session, issuer_address: str):
 # POST: /accounts
 @router.post("/accounts", response_model=AccountResponse)
 async def create_key(
+        data: AccountCreateKeyRequest,
         background_tasks: BackgroundTasks,
         db: Session = Depends(db_session)):
     """Create Keys"""
+    # Check Password Policy
+    eoa_password = SecureValueUtils.decrypt(data.eoa_password)
+    if not re.match(EOA_PASSWORD_PATTERN, eoa_password):
+        raise InvalidParameterError(EOA_PASSWORD_PATTERN_MSG)
 
     # Generate Ethereum Key
     private_key = keccak_256(secrets.token_bytes(32)).digest()
@@ -82,7 +91,7 @@ async def create_key(
     addr = to_checksum_address(keccak_256(public_key).digest()[-20:])
     keyfile_json = eth_keyfile.create_keyfile_json(
         private_key=private_key,
-        password=KEY_FILE_PASSWORD.encode("utf-8"),
+        password=eoa_password.encode("utf-8"),
         kdf="pbkdf2"
     )
 
@@ -142,9 +151,16 @@ async def retrieve_account(issuer_address: str, db: Session = Depends(db_session
 @router.post("/accounts/rsakey", response_model=AccountResponse)
 async def change_account_rsa_key(
         data: AccountChangeRsaKeyRequest,
-        issuer_address: str = Header(None),
+        issuer_address: str = Header(...),
         db: Session = Depends(db_session)):
     """Change RSA key"""
+
+    # Headers Validate
+    headers_validate([{
+        "name": "issuer-address",
+        "value": issuer_address,
+        "validator": address_address_is_valid_address
+    }])
 
     # Get Account
     _account = db.query(Account). \
@@ -160,15 +176,23 @@ async def change_account_rsa_key(
     if _temporary is not None:
         raise InvalidParameterError("issuer information is now changing")
 
+    # Check Password Policy
+    passphrase = SecureValueUtils.decrypt(data.passphrase)
+    if not re.match(PERSONAL_INFO_PASSPHRASE_PATTERN, passphrase):
+        raise InvalidParameterError(PERSONAL_INFO_PASSPHRASE_PATTERN_MSG)
+
     # Check RSA Private Key Format
     try:
-        # TODO: issue#25 'Set KEY_FILE_PASSWORD from the client'
-        rsa_key = RSA.importKey(data.rsa_private_key, passphrase=KEY_FILE_PASSWORD)
+        rsa_key = RSA.importKey(data.rsa_private_key, passphrase=passphrase)
     except ValueError:
-        raise InvalidParameterError("RSA Private Key is invalid")
+        raise InvalidParameterError("RSA Private Key is invalid, or passphrase is invalid")
 
     if not rsa_key.has_private():
         raise InvalidParameterError("RSA Private Key is invalid")
+
+    # Check RSA key length
+    if rsa_key.size_in_bits() != 10240:
+        raise InvalidParameterError("RSA Key length(bits) is invalid")
 
     # Create RSA Public Key
     rsa_public_key = rsa_key.publickey().exportKey().decode()
@@ -179,12 +203,14 @@ async def change_account_rsa_key(
     _temporary.issuer_address = issuer_address
     _temporary.rsa_private_key = _account.rsa_private_key
     _temporary.rsa_public_key = _account.rsa_public_key
+    _temporary.rsa_encrypt_passphrase = _account.rsa_encrypt_passphrase
     db.add(_temporary)
 
     # Change key data to the DB
     # NOTE: PersonalInfo modify execute in the Batch.
     _account.rsa_private_key = data.rsa_private_key
     _account.rsa_public_key = rsa_public_key
+    _account.rsa_encrypt_passphrase = SecureValueUtils.encrypt(passphrase)
     db.merge(_account)
 
     db.commit()

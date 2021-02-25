@@ -21,6 +21,7 @@ from unittest.mock import call
 
 from app.model.blockchain import IbetStraightBondContract
 from app.model.db import Token, TokenType
+from tests.account_config import config_eth_account
 
 
 class TestAppRoutersBondTokensGET:
@@ -43,10 +44,13 @@ class TestAppRoutersBondTokensGET:
     # parameter unset address, 1 Record
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
     def test_normal_2(self, mock_get, client, db):
+        user_1 = config_eth_account("user1")
+        issuer_address_1 = user_1["address"]
+
         token = Token()
         token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = "tx_hash_test1"
-        token.issuer_address = "issuer_address_test1"
+        token.issuer_address = issuer_address_1
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         db.add(token)
@@ -140,11 +144,16 @@ class TestAppRoutersBondTokensGET:
     # parameter unset address, Multi Record
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
     def test_normal_3(self, mock_get, client, db):
+        user_1 = config_eth_account("user1")
+        issuer_address_1 = user_1["address"]
+        user_2 = config_eth_account("user2")
+        issuer_address_2 = user_2["address"]
+
         # 1st Data
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.tx_hash = "tx_hash_test1"
-        token_1.issuer_address = "issuer_address_test1"
+        token_1.issuer_address = issuer_address_1
         token_1.token_address = "token_address_test1"
         token_1.abi = "abi_test1"
         db.add(token_1)
@@ -188,7 +197,7 @@ class TestAppRoutersBondTokensGET:
         token_2 = Token()
         token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.tx_hash = "tx_hash_test2"
-        token_2.issuer_address = "issuer_address_test2"
+        token_2.issuer_address = issuer_address_2
         token_2.token_address = "token_address_test2"
         token_2.abi = "abi_test2"
         db.add(token_2)
@@ -317,16 +326,21 @@ class TestAppRoutersBondTokensGET:
     # <Normal Case 4>
     # parameter set address, 0 Record
     def test_normal_4(self, client, db):
+        user_1 = config_eth_account("user1")
+        issuer_address_1 = user_1["address"]
+        user_2 = config_eth_account("user2")
+        issuer_address_2 = user_2["address"]
+
         # No Target Data
         token = Token()
         token.type = TokenType.IBET_STRAIGHT_BOND
         token.tx_hash = "tx_hash_test1"
-        token.issuer_address = "issuer_address_test1"
+        token.issuer_address = issuer_address_1
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         db.add(token)
 
-        resp = client.get(self.apiurl, headers={"issuer-address": "test"})
+        resp = client.get(self.apiurl, headers={"issuer-address": issuer_address_2})
 
         assert resp.status_code == 200
         assert resp.json() == []
@@ -335,10 +349,15 @@ class TestAppRoutersBondTokensGET:
     # parameter set address, 1 Record
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
     def test_normal_5(self, mock_get, client, db):
+        user_1 = config_eth_account("user1")
+        issuer_address_1 = user_1["address"]
+        user_2 = config_eth_account("user2")
+        issuer_address_2 = user_2["address"]
+
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.tx_hash = "tx_hash_test1"
-        token_1.issuer_address = "issuer_address_test1"
+        token_1.issuer_address = issuer_address_1
         token_1.token_address = "token_address_test1"
         token_1.abi = "abi_test1"
         db.add(token_1)
@@ -386,12 +405,12 @@ class TestAppRoutersBondTokensGET:
         token_2 = Token()
         token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.tx_hash = "tx_hash_test1"
-        token_2.issuer_address = "issuer_address_test2"
+        token_2.issuer_address = issuer_address_2
         token_2.token_address = "token_address_test1"
         token_2.abi = "abi_test1"
         db.add(token_2)
 
-        resp = client.get(self.apiurl, headers={"issuer-address": "issuer_address_test1"})
+        resp = client.get(self.apiurl, headers={"issuer-address": issuer_address_1})
 
         # assertion mock call arguments
         mock_get.assert_any_call(contract_address=token_1.token_address)
@@ -441,11 +460,16 @@ class TestAppRoutersBondTokensGET:
     # parameter set address, Multi Record
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
     def test_normal_6(self, mock_get, client, db):
+        user_1 = config_eth_account("user1")
+        issuer_address_1 = user_1["address"]
+        user_2 = config_eth_account("user2")
+        issuer_address_2 = user_2["address"]
+
         # 1st Data
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.tx_hash = "tx_hash_test1"
-        token_1.issuer_address = "issuer_address_common"
+        token_1.issuer_address = issuer_address_1
         token_1.token_address = "token_address_test1"
         token_1.abi = "abi_test1"
         db.add(token_1)
@@ -489,7 +513,7 @@ class TestAppRoutersBondTokensGET:
         token_2 = Token()
         token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.tx_hash = "tx_hash_test2"
-        token_2.issuer_address = "issuer_address_common"
+        token_2.issuer_address = issuer_address_1
         token_2.token_address = "token_address_test2"
         token_2.abi = "abi_test2"
         db.add(token_2)
@@ -537,12 +561,12 @@ class TestAppRoutersBondTokensGET:
         token_3 = Token()
         token_3.type = TokenType.IBET_STRAIGHT_BOND
         token_3.tx_hash = "tx_hash_test1"
-        token_3.issuer_address = "issuer_address_test2"
+        token_3.issuer_address = issuer_address_2
         token_3.token_address = "token_address_test1"
         token_3.abi = "abi_test1"
         db.add(token_3)
 
-        resp = client.get(self.apiurl, headers={"issuer-address": "issuer_address_common"})
+        resp = client.get(self.apiurl, headers={"issuer-address": issuer_address_1})
 
         # assertion mock call arguments
         mock_get.assert_has_calls(
@@ -550,7 +574,7 @@ class TestAppRoutersBondTokensGET:
 
         assumed_response = [
             {
-                "issuer_address": "issuer_address_common",
+                "issuer_address": issuer_address_1,
                 "token_address": token_1.token_address,
                 "name": "testtoken1",
                 "symbol": "test1",
@@ -585,7 +609,7 @@ class TestAppRoutersBondTokensGET:
                 ],
             },
             {
-                "issuer_address": "issuer_address_common",
+                "issuer_address": issuer_address_1,
                 "token_address": token_2.token_address,
                 "name": "testtoken2",
                 "symbol": "test2",
@@ -627,3 +651,21 @@ class TestAppRoutersBondTokensGET:
     ###########################################################################
     # Error Case
     ###########################################################################
+
+    # <Error_1>
+    # parameter error
+    def test_error_1(self, client, db):
+        resp = client.get(self.apiurl, headers={"issuer-address": "issuer_address"})
+
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [{
+                "loc": ["header", "issuer-address"],
+                "msg": "issuer-address is not a valid address",
+                "type": "value_error"
+            }]
+        }

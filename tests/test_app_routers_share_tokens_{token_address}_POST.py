@@ -25,6 +25,7 @@ from web3.middleware import geth_poa_middleware
 import config
 from app.exceptions import SendTransactionError
 from app.model.db import Account, Token, TokenType
+from app.model.schema.utils import SecureValueUtils
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
@@ -86,7 +87,10 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={"issuer-address": _issuer_address}
+            headers={
+                "issuer-address": _issuer_address,
+                "password": SecureValueUtils.encrypt("password")
+            }
         )
 
         # assertion
@@ -130,7 +134,10 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={"issuer-address": _issuer_address}
+            headers={
+                "issuer-address": _issuer_address,
+                "password": SecureValueUtils.encrypt("password")
+            }
         )
 
         # assertion
@@ -144,6 +151,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # <Error_1>
     # RequestValidationError: dividends
     def test_error_1(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
@@ -153,7 +162,10 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={"issuer-address": ""}
+            headers={
+                "issuer-address": _issuer_address,
+                "password": SecureValueUtils.encrypt("password")
+            }
         )
 
         assert resp.status_code == 422
@@ -177,6 +189,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # <Error_2>
     # RequestValidationError: dividend information all required
     def test_error_2(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
@@ -186,7 +200,10 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={"issuer-address": ""}
+            headers={
+                "issuer-address": _issuer_address,
+                "password": SecureValueUtils.encrypt("password")
+            }
         )
 
         assert resp.status_code == 422
@@ -210,6 +227,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # <Error_3>
     # RequestValidationError: tradable_exchange_contract_address
     def test_error_3(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
@@ -219,7 +238,10 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={"issuer-address": ""}
+            headers={
+                "issuer-address": _issuer_address,
+                "password": SecureValueUtils.encrypt("password")
+            }
         )
 
         assert resp.status_code == 422
@@ -243,6 +265,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     # <Error_4>
     # RequestValidationError: personal_info_contract_address
     def test_error_4(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
@@ -252,7 +276,10 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={"issuer-address": ""}
+            headers={
+                "issuer-address": _issuer_address,
+                "password": SecureValueUtils.encrypt("password")
+            }
         )
 
         assert resp.status_code == 422
@@ -274,9 +301,76 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         }
 
     # <Error_5>
+    # RequestValidationError: headers and body required
+    def test_error_5(self, client, db):
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # request target API
+        resp = client.post(
+            self.base_url.format(_token_address)
+        )
+
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "loc": ["header", "issuer-address"],
+                    "msg": "field required",
+                    "type": "value_error.missing"
+                },
+                {
+                    "loc": ["header", "password"],
+                    "msg": "field required",
+                    "type": "value_error.missing"
+                },
+                {
+                    "loc": ["body"],
+                    "msg": "field required",
+                    "type": "value_error.missing"
+                }
+            ]
+        }
+
+    # <Error_6>
+    # RequestValidationError: password
+    def test_error_6(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # request target API
+        req_param = {}
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "password": "password"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [{
+                "loc": ["header", "password"],
+                "msg": "password is not a Base64-decoded encrypted data",
+                "type": "value_error"
+            }]
+        }
+
+    # <Error_7>
     # InvalidParameterError: issuer does not exist
     @mock.patch("app.model.blockchain.token.IbetShareContract.update")
-    def test_error_5(self, IbetShareContract_mock, client, db):
+    def test_error_7(self, IbetShareContract_mock, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -298,7 +392,10 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={"issuer-address": _issuer_address}
+            headers={
+                "issuer-address": _issuer_address,
+                "password": SecureValueUtils.encrypt("password")
+            }
         )
 
         # assertion
@@ -311,10 +408,45 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "detail": "issuer does not exist"
         }
 
-    # <Error_6>
+    # <Error_8>
+    # InvalidParameterError: password is mismatch
+    def test_error_8(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        db.add(account)
+
+        # request target API
+        req_param = {}
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "password": SecureValueUtils.encrypt("passwordtest")
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "InvalidParameterError"
+            },
+            "detail": "password is mismatch"
+        }
+
+    # <Error_9>
     # token not found
     @mock.patch("app.model.blockchain.token.IbetShareContract.update")
-    def test_error_6(self, IbetShareContract_mock, client, db):
+    def test_error_9(self, IbetShareContract_mock, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -334,7 +466,10 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={"issuer-address": _issuer_address}
+            headers={
+                "issuer-address": _issuer_address,
+                "password": SecureValueUtils.encrypt("password")
+            }
         )
 
         # assertion
@@ -347,11 +482,11 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "detail": "token not found"
         }
 
-    # <Error_7>
+    # <Error_10>
     # Send Transaction Error
     @mock.patch("app.model.blockchain.token.IbetShareContract.update",
                 MagicMock(side_effect=SendTransactionError()))
-    def test_error_7(self, client, db):
+    def test_error_10(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -376,7 +511,10 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={"issuer-address": _issuer_address}
+            headers={
+                "issuer-address": _issuer_address,
+                "password": SecureValueUtils.encrypt("password")
+            }
         )
 
         # assertion

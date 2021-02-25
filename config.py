@@ -37,10 +37,12 @@ CONFIG.read(INI_FILE)
 
 # Logging
 LOG_LEVEL = CONFIG['logging']['level']
+AUTH_LOGFILE = os.environ.get('AUTH_LOGFILE') or '/dev/stdout'
 
 # Database
 if 'pytest' in sys.modules:  # for unit test
-    DATABASE_URL = os.environ.get("TEST_DATABASE_URL") or 'postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb_test'
+    DATABASE_URL = os.environ.get(
+        "TEST_DATABASE_URL") or 'postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb_test'
 else:
     DATABASE_URL = os.environ.get("DATABASE_URL") or 'postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb'
 DB_ECHO = True if CONFIG['database']['echo'] == 'yes' else False
@@ -61,3 +63,36 @@ KEY_FILE_PASSWORD = os.environ.get("KEY_FILE_PASSWORD") or "password"
 
 # Indexer sync interval
 INDEXER_SYNC_INTERVAL = 10
+
+# Password Policy
+# NOTE:
+# Set PATTERN with a regular expression.
+# e.g.) ^(?=.*?[a-z])(?=.*?[A-Z])[a-zA-Z]{10,}$
+#         => 10 or higher length in mixed characters with lowercase alphabetic, uppercase alphabetic
+#       ^(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[0-9])(?=.*?[\*\+\.\\\(\)\?\[\]\^\$\-\|!#%&"',/:;<=>@_`{}~])[a-zA-Z0-9\*\+\.\\\(\)\?\[\]\^\$\-\|!#%&"',/:;<=>@_`{}~]{12,}$
+#         => 12 or higher length of mixed characters with
+#            lowercase alphabetic, uppercase alphabetic, numeric, and symbolic(space exclude)
+EOA_PASSWORD_PATTERN = os.environ.get("EOA_PASSWORD_PATTERN") or "^[a-zA-Z0-9]{8,}$"
+EOA_PASSWORD_PATTERN_MSG = os.environ.get(
+    "EAO_PASSWORD_PATTERN_MSG") or "password is need 8 or higher length of alphanumeric characters"
+PERSONAL_INFO_PASSPHRASE_PATTERN = os.environ.get(
+    "PERSONAL_INFO_PASSPHRASE_PATTERN") or "^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,}$"
+PERSONAL_INFO_PASSPHRASE_PATTERN_MSG = os.environ.get(
+    "PERSONAL_INFO_PASSPHRASE_PATTERN_MSG") or \
+                                       "passphrase is need 8 or higher length of alphanumeric or symbolic characters"
+
+# Secure value crypto(RSA)
+# NOTE:
+# 0:Nothing(No-crypto)
+# 1:File, Set the file path to RSA_KEY_RESOURCE_PLACE.
+# 2:AWS SecretsManager, Set the SecretsManagerARN to RSA_KEY_RESOURCE_PLACE.
+if 'pytest' in sys.modules:  # for unit test
+    RSA_KEY_RESOURCE_MODE = int(os.environ.get("RSA_KEY_RESOURCE_MODE")) if os.environ.get(
+        "RSA_KEY_RESOURCE_MODE") else 1
+    RSA_KEY_RESOURCE_PLACE = os.environ.get("KEY_RESOURCE_PLACE") or "tests/data/rsa_private.pem"
+    RSA_KEY_PASSPHRASE = os.environ.get("KEY_RESOURCE_PLACE") or "password"
+else:
+    RSA_KEY_RESOURCE_MODE = int(os.environ.get("RSA_KEY_RESOURCE_MODE")) if os.environ.get(
+        "RSA_KEY_RESOURCE_MODE") else 0
+    RSA_KEY_RESOURCE_PLACE = os.environ.get("KEY_RESOURCE_PLACE")
+    RSA_KEY_PASSPHRASE = os.environ.get("KEY_RESOURCE_PLACE")

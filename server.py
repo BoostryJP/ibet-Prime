@@ -16,20 +16,20 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import json
-import yaml
+import os
 
-from web3 import Web3
-from web3.middleware import geth_poa_middleware
+from uvicorn.workers import UvicornWorker
 
-import config
-
-web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+# uvicorn parameters
+WORKER_CONNECTIONS = int(os.environ.get('WORKER_CONNECTIONS')) \
+    if os.environ.get('WORKER_CONNECTIONS') else 100
 
 
-# Account Address(from local config)
-def config_eth_account(name):
-    account_config = yaml.safe_load(open(f"tests/data/account_config.yml", "r"))
-    account_config[name]["keyfile_json"] = json.loads(account_config[name]["keyfile_json"])
-    return account_config[name]
+# Worker class to load by gunicorn when server run
+class AppUvicornWorker(UvicornWorker):
+    CONFIG_KWARGS = {
+        "loop": "asyncio",
+        "http": "h11",
+        # NOTE: gunicorn don't support '--worker-connections' to uvicorn
+        "limit_concurrency": WORKER_CONNECTIONS
+    }

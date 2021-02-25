@@ -34,6 +34,8 @@ class Account(Base):
     rsa_private_key = Column(String(8000))
     # rsa public key
     rsa_public_key = Column(String(2000))
+    # rsa encrypt passphrase
+    rsa_encrypt_passphrase = Column(String(2000))
 
 
 class AccountRsaKeyTemporary(Base):
@@ -46,3 +48,5 @@ class AccountRsaKeyTemporary(Base):
     rsa_private_key = Column(String(8000))
     # rsa public key
     rsa_public_key = Column(String(2000))
+    # rsa encrypt passphrase
+    rsa_encrypt_passphrase = Column(String(2000))

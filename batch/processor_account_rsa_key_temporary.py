@@ -143,10 +143,17 @@ class Processor:
             return False
 
         # If previous rsa key decrypted succeed, need modify.
+        # Backup origin RSA
         org_rsa_private_key = personal_info_contract_accessor.issuer.rsa_private_key
+        org_rsa_encrypt_passphrase = personal_info_contract_accessor.issuer.rsa_encrypt_passphrase
+        # Replace RSA
         personal_info_contract_accessor.issuer.rsa_private_key = temporary.rsa_private_key
+        personal_info_contract_accessor.issuer.rsa_encrypt_passphrase = temporary.rsa_encrypt_passphrase
+        # Modify
         info = personal_info_contract_accessor.get_info(idx_personal_info.account_address)
+        # Back RSA
         personal_info_contract_accessor.issuer.rsa_private_key = org_rsa_private_key
+        personal_info_contract_accessor.issuer.rsa_private_key = org_rsa_encrypt_passphrase
         default_info = {
             "key_manager": None,
             "name": None,
@@ -159,7 +166,8 @@ class Processor:
             return False
 
         # Modify personal information
-        personal_info_contract_accessor.modify_info(idx_personal_info.account_address, info)
+        # TODO: APIで指定されたパスワードの取得方法を一括強制移転バッチと合わせる
+        personal_info_contract_accessor.modify_info(idx_personal_info.account_address, "password", info)
         return True
 
 

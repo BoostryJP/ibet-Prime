@@ -18,19 +18,21 @@ SPDX-License-Identifier: Apache-2.0
 """
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Request
 from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
 from eth_keyfile import decode_keyfile_json
 
-from config import KEY_FILE_PASSWORD
 from app.database import db_session
 from app.model.schema import IbetStraightBondCreate, IbetStraightBondUpdate, \
     IbetStraightBondTransfer, IbetStraightBondAdd, \
     IbetStraightBondResponse, HolderResponse
+from app.model.schema.utils import SecureValueUtils, headers_validate, \
+    address_address_is_valid_address, password_is_valid_encrypt
 from app.model.db import Account, Token, TokenType, IDXPosition, IDXPersonalInfo
 from app.model.blockchain import IbetStraightBondContract
 from app.exceptions import InvalidParameterError, SendTransactionError
+from app.log import auth_info, auth_error
 
 router = APIRouter(
     prefix="/bond",
@@ -43,23 +45,44 @@ router = APIRouter(
 @router.post("/tokens")
 async def issue_token(
         token: IbetStraightBondCreate,
-        issuer_address: str = Header(None),
+        request: Request,
+        issuer_address: str = Header(...),
+        password: str = Header(...),
         db: Session = Depends(db_session)):
     """Issue ibetStraightBond token"""
+
+    # Headers Validate
+    headers_validate([{
+        "name": "issuer-address",
+        "value": issuer_address,
+        "validator": address_address_is_valid_address
+    }, {
+        "name": "password",
+        "value": password,
+        "validator": password_is_valid_encrypt
+    }])
 
     # Get Account
     _account = db.query(Account). \
         filter(Account.issuer_address == issuer_address). \
         first()
     if _account is None:
+        auth_error(request, issuer_address, "not exist address")
         raise InvalidParameterError("issuer does not exist")
 
     # Get private key
     keyfile_json = _account.keyfile
-    private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json,
-        password=KEY_FILE_PASSWORD.encode("utf-8")
-    )
+    try:
+        decrypt_password = SecureValueUtils.decrypt(password)
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=keyfile_json,
+            password=decrypt_password.encode("utf-8")
+        )
+    except ValueError:
+        auth_error(request, issuer_address, "mismatch password")
+        raise InvalidParameterError("password is mismatch")
+
+    auth_info(request, issuer_address, "authentication succeed")
 
     # Deploy Arguments
     arguments = [
@@ -103,6 +126,14 @@ async def list_all_tokens(
         issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """List all issued tokens"""
+
+    # Headers Validate
+    headers_validate([{
+        "name": "issuer-address",
+        "value": issuer_address,
+        "validator": address_address_is_valid_address
+    }])
+
     # Get issued token list
     if issuer_address is None:
         tokens = db.query(Token). \
@@ -151,16 +182,44 @@ async def retrieve_token(
 async def update_token(
         token_address: str,
         token: IbetStraightBondUpdate,
-        issuer_address: str = Header(None),
+        request: Request,
+        issuer_address: str = Header(...),
+        password: str = Header(...),
         db: Session = Depends(db_session)):
     """Update a token"""
+
+    # Headers Validate
+    headers_validate([{
+        "name": "issuer-address",
+        "value": issuer_address,
+        "validator": address_address_is_valid_address
+    }, {
+        "name": "password",
+        "value": password,
+        "validator": password_is_valid_encrypt
+    }])
 
     # Get Account
     _account = db.query(Account). \
         filter(Account.issuer_address == issuer_address). \
         first()
     if _account is None:
+        auth_error(request, issuer_address, "not exist address")
         raise InvalidParameterError("issuer does not exist")
+
+    # Get private key
+    keyfile_json = _account.keyfile
+    try:
+        decrypt_password = SecureValueUtils.decrypt(password)
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=keyfile_json,
+            password=decrypt_password.encode("utf-8")
+        )
+    except ValueError:
+        auth_error(request, issuer_address, "mismatch password")
+        raise InvalidParameterError("password is mismatch")
+
+    auth_info(request, issuer_address, "authentication succeed")
 
     # Get Token
     _token = db.query(Token). \
@@ -170,13 +229,6 @@ async def update_token(
         first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-
-    # Get private key
-    keyfile_json = _account.keyfile
-    private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json,
-        password=KEY_FILE_PASSWORD.encode("utf-8")
-    )
 
     # Send transaction
     try:
@@ -197,16 +249,44 @@ async def update_token(
 async def additional_issue(
         token_address: str,
         token: IbetStraightBondAdd,
-        issuer_address: str = Header(None),
+        request: Request,
+        issuer_address: str = Header(...),
+        password: str = Header(...),
         db: Session = Depends(db_session)):
     """Add token"""
+
+    # Headers Validate
+    headers_validate([{
+        "name": "issuer-address",
+        "value": issuer_address,
+        "validator": address_address_is_valid_address
+    }, {
+        "name": "password",
+        "value": password,
+        "validator": password_is_valid_encrypt
+    }])
 
     # Get Account
     _account = db.query(Account). \
         filter(Account.issuer_address == issuer_address). \
         first()
     if _account is None:
+        auth_error(request, issuer_address, "not exist address")
         raise InvalidParameterError("issuer does not exist")
+
+    # Get private key
+    keyfile_json = _account.keyfile
+    try:
+        decrypt_password = SecureValueUtils.decrypt(password)
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=keyfile_json,
+            password=decrypt_password.encode("utf-8")
+        )
+    except ValueError:
+        auth_error(request, issuer_address, "mismatch password")
+        raise InvalidParameterError("password is mismatch")
+
+    auth_info(request, issuer_address, "authentication succeed")
 
     # Get Token
     _token = db.query(Token). \
@@ -216,13 +296,6 @@ async def additional_issue(
         first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-
-    # Get private key
-    keyfile_json = _account.keyfile
-    private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json,
-        password=KEY_FILE_PASSWORD.encode("utf-8")
-    )
 
     # Send transaction
     try:
@@ -242,9 +315,16 @@ async def additional_issue(
 @router.get("/tokens/{token_address}/holders", response_model=List[HolderResponse])
 async def list_all_holders(
         token_address: str,
-        issuer_address: str = Header(None),
+        issuer_address: str = Header(...),
         db: Session = Depends(db_session)):
     """List all bond token holders"""
+
+    # Headers Validate
+    headers_validate([{
+        "name": "issuer-address",
+        "value": issuer_address,
+        "validator": address_address_is_valid_address
+    }])
 
     # Get Account
     _account = db.query(Account). \
@@ -306,9 +386,16 @@ async def list_all_holders(
 async def retrieve_holder(
         token_address: str,
         account_address: str,
-        issuer_address: str = Header(None),
+        issuer_address: str = Header(...),
         db: Session = Depends(db_session)):
     """Retrieve bond token holder"""
+
+    # Headers Validate
+    headers_validate([{
+        "name": "issuer-address",
+        "value": issuer_address,
+        "validator": address_address_is_valid_address
+    }])
 
     # Get Issuer
     _account = db.query(Account). \
@@ -363,16 +450,44 @@ async def retrieve_holder(
 @router.post("/transfer")
 async def transfer_ownership(
         token: IbetStraightBondTransfer,
-        issuer_address: str = Header(None),
+        request: Request,
+        issuer_address: str = Header(...),
+        password: str = Header(...),
         db: Session = Depends(db_session)):
     """Transfer token ownership"""
+
+    # Headers Validate
+    headers_validate([{
+        "name": "issuer-address",
+        "value": issuer_address,
+        "validator": address_address_is_valid_address
+    }, {
+        "name": "password",
+        "value": password,
+        "validator": password_is_valid_encrypt
+    }])
 
     # Get Account
     _account = db.query(Account). \
         filter(Account.issuer_address == issuer_address). \
         first()
     if _account is None:
+        auth_error(request, issuer_address, "not exist address")
         raise InvalidParameterError("issuer does not exist")
+
+    # Get private key
+    keyfile_json = _account.keyfile
+    try:
+        decrypt_password = SecureValueUtils.decrypt(password)
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=keyfile_json,
+            password=decrypt_password.encode("utf-8")
+        )
+    except ValueError:
+        auth_error(request, issuer_address, "mismatch password")
+        raise InvalidParameterError("password is mismatch")
+
+    auth_info(request, issuer_address, "authentication succeed")
 
     # Check that it is a token that has been issued.
     _token = db.query(Token). \
@@ -382,12 +497,6 @@ async def transfer_ownership(
         first()
     if _token is None:
         raise InvalidParameterError("token not found")
-
-    keyfile_json = _account.keyfile
-    private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json,
-        password=KEY_FILE_PASSWORD.encode("utf-8")
-    )
 
     try:
         IbetStraightBondContract.transfer(

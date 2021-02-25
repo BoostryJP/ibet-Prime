@@ -17,18 +17,42 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
+
+from app.model.schema.utils import SecureValueUtils
 
 
 ############################
 # REQUEST
 ############################
+class AccountCreateKeyRequest(BaseModel):
+    """Account Create Key schema (REQUEST)"""
+    eoa_password: str
+
+    @validator("eoa_password")
+    def eoa_password_is_valid_encrypt(cls, v):
+        try:
+            SecureValueUtils.decrypt(v)
+        except ValueError:
+            raise ValueError("eoa_password is not a Base64-decoded encrypted data")
+        return v
+
 
 class AccountChangeRsaKeyRequest(BaseModel):
     """Account Change Rsa Key schema (REQUEST)"""
+    # NOTE:
+    # rsa_private_key is a long text, but there is a possible of encryption fail when RSA key length is small.
+    # So It deals in rsa_private_key at plane text.
     rsa_private_key: str
-    # TODO: issue#25 'Set KEY_FILE_PASSWORD from the client'
-    password: Optional[str]
+    passphrase: str
+
+    @validator("passphrase")
+    def passphrase_is_valid_encrypt(cls, v):
+        try:
+            SecureValueUtils.decrypt(v)
+        except ValueError:
+            raise ValueError("passphrase is not a Base64-decoded encrypted data")
+        return v
 
 
 ############################

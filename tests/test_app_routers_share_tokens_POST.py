@@ -25,6 +25,7 @@ from web3.middleware import geth_poa_middleware
 import config
 from app.exceptions import SendTransactionError
 from app.model.db import Account, Token, TokenType
+from app.model.schema.utils import SecureValueUtils
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
@@ -69,7 +70,10 @@ class TestAppRoutersShareTokensPOST:
         resp = client.post(
             self.apiurl,
             json=req_param,
-            headers={"issuer-address": test_account["address"]}
+            headers={
+                "issuer-address": test_account["address"],
+                "password": SecureValueUtils.encrypt("password")
+            }
         )
 
         # assertion
@@ -106,22 +110,27 @@ class TestAppRoutersShareTokensPOST:
     def test_error_1(self, client, db):
         # request target api
         resp = client.post(
-            self.apiurl,
-            headers={"issuer-address": ""}
+            self.apiurl
         )
 
         # assertion
         assert resp.status_code == 422
-        assert resp.json()["meta"] == {
-            "code": 1,
-            "title": "RequestValidationError"
-        }
         assert resp.json() == {
             "meta": {
                 "code": 1,
                 "title": "RequestValidationError"
             },
             "detail": [
+                {
+                    "loc": ["header", "issuer-address"],
+                    "msg": "field required",
+                    "type": "value_error.missing"
+                },
+                {
+                    "loc": ["header", "password"],
+                    "msg": "field required",
+                    "type": "value_error.missing"
+                },
                 {
                     "loc": ["body"],
                     "msg": "field required",
@@ -131,14 +140,134 @@ class TestAppRoutersShareTokensPOST:
         }
 
     # <Error Case 2>
-    # Not Exists Address
+    # Parameter Error: dividends, tradable_exchange_contract_address, personal_info_contract_address, image_url
     def test_error_2(self, client, db):
         test_account = config_eth_account("user1")
 
+        # request target api
+        req_param = {
+            "name": "name_test1",
+            "symbol": "symbol_test1",
+            "issue_price": 1000,
+            "total_supply": 10000,
+            "dividends": 123.45678,
+            "dividend_record_date": "20211231",
+            "dividend_payment_date": "20211231",
+            "cancellation_date": "20221231",
+            "tradable_exchange_contract_address": "0x0",
+            "personal_info_contract_address": "0x0",
+            "image_url": [
+                "http://test.test/test",
+                "http://test.test/test",
+                "http://test.test/test",
+                "http://test.test/test"
+            ]
+        }
+        resp = client.post(
+            self.apiurl,
+            json=req_param,
+            headers={
+                "issuer-address": test_account["address"],
+                "password": SecureValueUtils.encrypt("password")
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "loc": [
+                        "body",
+                        "dividends"
+                    ],
+                    "msg": "dividends must be less than or equal to four decimal places",
+                    "type": "value_error"
+                },
+                {
+                    "loc": [
+                        "body",
+                        "image_url"
+                    ],
+                    "msg": "The length of the list must be less than or equal to 3",
+                    "type": "value_error"
+                },
+                {
+                    "loc": [
+                        "body",
+                        "tradable_exchange_contract_address"
+                    ],
+                    "msg": "tradable_exchange_contract_address is not a valid address",
+                    "type": "value_error"
+                },
+                {
+                    "loc": [
+                        "body",
+                        "personal_info_contract_address"
+                    ],
+                    "msg": "personal_info_contract_address is not a valid address",
+                    "type": "value_error"
+                }
+            ]
+        }
+
+    # <Error Case 3>
+    # Parameter Error: issuer-address, password
+    def test_error_3(self, client, db):
+        test_account = config_eth_account("user1")
+
+        # request target api
+        req_param = {
+            "name": "name_test1",
+            "symbol": "symbol_test1",
+            "issue_price": 1000,
+            "total_supply": 10000,
+            "dividends": 123.45,
+            "dividend_record_date": "20211231",
+            "dividend_payment_date": "20211231",
+            "cancellation_date": "20221231"
+        }
+        resp = client.post(
+            self.apiurl,
+            json=req_param,
+            headers={
+                "issuer-address": "issuer-address",
+                "password": "password"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [{
+                "loc": ["header", "issuer-address"],
+                "msg": "issuer-address is not a valid address",
+                "type": "value_error"
+            }, {
+                "loc": ["header", "password"],
+                "msg": "password is not a Base64-decoded encrypted data",
+                "type": "value_error"
+            }]
+        }
+
+    # <Error Case 4>
+    # Not Exists Address
+    def test_error_4(self, client, db):
+        test_account_1 = config_eth_account("user1")
+        test_account_2 = config_eth_account("user2")
+
         # prepare data
         account = Account()
-        account.issuer_address = test_account["address"]
-        account.keyfile = test_account["keyfile_json"]
+        account.issuer_address = test_account_1["address"]
+        account.keyfile = test_account_1["keyfile_json"]
         db.add(account)
 
         # request target api
@@ -155,7 +284,10 @@ class TestAppRoutersShareTokensPOST:
         resp = client.post(
             self.apiurl,
             json=req_param,
-            headers={"issuer-address": "not_exists_issuer"}
+            headers={
+                "issuer-address": test_account_2["address"],
+                "password": SecureValueUtils.encrypt("password")
+            }
         )
 
         # assertion
@@ -168,11 +300,54 @@ class TestAppRoutersShareTokensPOST:
             "detail": "issuer does not exist"
         }
 
-    # <Error Case 3>
+    # <Error Case 5>
+    # Password Mismatch
+    def test_error_5(self, client, db):
+        test_account = config_eth_account("user1")
+
+        # prepare data
+        account = Account()
+        account.issuer_address = test_account["address"]
+        account.keyfile = test_account["keyfile_json"]
+        db.add(account)
+
+        token_before = db.query(Token).all()
+
+        # request target api
+        req_param = {
+            "name": "name_test1",
+            "symbol": "symbol_test1",
+            "issue_price": 1000,
+            "total_supply": 10000,
+            "dividends": 123.45,
+            "dividend_record_date": "20211231",
+            "dividend_payment_date": "20211231",
+            "cancellation_date": "20221231"
+        }
+        resp = client.post(
+            self.apiurl,
+            json=req_param,
+            headers={
+                "issuer-address": test_account["address"],
+                "password": SecureValueUtils.encrypt("passwordtest")
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "InvalidParameterError"
+            },
+            "detail": "password is mismatch"
+        }
+
+    # <Error Case 6>
     # Send Transaction Error
     @mock.patch("app.model.blockchain.token.IbetShareContract.create",
                 MagicMock(side_effect=SendTransactionError()))
-    def test_error_3(self, client, db):
+    def test_error_6(self, client, db):
         test_account_1 = config_eth_account("user1")
         test_account_2 = config_eth_account("user2")
 
@@ -196,7 +371,10 @@ class TestAppRoutersShareTokensPOST:
         resp = client.post(
             self.apiurl,
             json=req_param,
-            headers={"issuer-address": test_account_1["address"]}
+            headers={
+                "issuer-address": test_account_1["address"],
+                "password": SecureValueUtils.encrypt("password")
+            }
         )
 
         # assertion
