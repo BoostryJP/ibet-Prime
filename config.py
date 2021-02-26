@@ -58,9 +58,6 @@ ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 TOKEN_CACHE = False if os.environ.get("TOKEN_CACHE") == "0" else True
 TOKEN_CACHE_TTL = int(os.environ.get("TOKEN_CACHE_TTL")) if os.environ.get("TOKEN_CACHE_TTL") else 43200
 
-# Key File Password
-KEY_FILE_PASSWORD = os.environ.get("KEY_FILE_PASSWORD") or "password"
-
 # Indexer sync interval
 INDEXER_SYNC_INTERVAL = 10
 
@@ -75,11 +72,12 @@ INDEXER_SYNC_INTERVAL = 10
 EOA_PASSWORD_PATTERN = os.environ.get("EOA_PASSWORD_PATTERN") or "^[a-zA-Z0-9]{8,}$"
 EOA_PASSWORD_PATTERN_MSG = os.environ.get(
     "EAO_PASSWORD_PATTERN_MSG") or "password is need 8 or higher length of alphanumeric characters"
-PERSONAL_INFO_PASSPHRASE_PATTERN = os.environ.get(
-    "PERSONAL_INFO_PASSPHRASE_PATTERN") or "^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,}$"
-PERSONAL_INFO_PASSPHRASE_PATTERN_MSG = os.environ.get(
-    "PERSONAL_INFO_PASSPHRASE_PATTERN_MSG") or \
+PERSONAL_INFO_RSA_PASSPHRASE_PATTERN = os.environ.get(
+    "PERSONAL_INFO_RSA_PASSPHRASE_PATTERN") or "^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,}$"
+PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG = os.environ.get(
+    "PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG") or \
                                        "passphrase is need 8 or higher length of alphanumeric or symbolic characters"
+PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE = os.environ.get("PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE") or "password"
 
 # Secure value crypto(RSA)
 # NOTE:

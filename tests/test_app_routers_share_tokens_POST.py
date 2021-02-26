@@ -49,7 +49,7 @@ class TestAppRoutersShareTokensPOST:
         account = Account()
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
-        account.keyfile_password = SecureValueUtils.encrypt("password")
+        account.eoa_password = SecureValueUtils.encrypt("password")
         db.add(account)
 
         token_before = db.query(Token).all()
@@ -257,7 +257,7 @@ class TestAppRoutersShareTokensPOST:
         account = Account()
         account.issuer_address = test_account_1["address"]
         account.keyfile = test_account_1["keyfile_json"]
-        account.keyfile_password = SecureValueUtils.encrypt("password")
+        account.eoa_password = SecureValueUtils.encrypt("password")
         db.add(account)
 
         # request target api
@@ -301,7 +301,7 @@ class TestAppRoutersShareTokensPOST:
         account = Account()
         account.issuer_address = test_account_1["address"]
         account.keyfile = test_account_2["keyfile_json"]
-        account.keyfile_password = SecureValueUtils.encrypt("password")
+        account.eoa_password = SecureValueUtils.encrypt("password")
         db.add(account)
 
         # request target api

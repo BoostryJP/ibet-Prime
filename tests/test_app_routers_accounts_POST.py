@@ -56,7 +56,7 @@ class TestAppRoutersAccountsPOST:
         account_1 = accounts_after[0]
         assert account_1.issuer_address == resp.json()["issuer_address"]
         assert account_1.keyfile is not None
-        assert account_1.keyfile_password is not None
+        assert account_1.eoa_password is not None
         assert account_1.rsa_private_key is None
         assert account_1.rsa_public_key is None
         assert account_1.rsa_passphrase is None
@@ -121,7 +121,7 @@ class TestAppRoutersAccountsPOST:
         account = Account()
         account.issuer_address = config_account["address"]
         account.keyfile = config_account["keyfile_json"]
-        account.keyfile_password = encrypt_password
+        account.eoa_password = encrypt_password
         db.add(account)
 
         # Run BackGroundTask
@@ -131,7 +131,7 @@ class TestAppRoutersAccountsPOST:
 
         assert update_account.issuer_address == config_account["address"]
         assert update_account.keyfile == config_account["keyfile_json"]
-        assert update_account.keyfile_password == encrypt_password
+        assert update_account.eoa_password == encrypt_password
         assert update_account.rsa_private_key is not None
         assert update_account.rsa_public_key is not None
         assert update_account.rsa_passphrase is not None
@@ -149,7 +149,7 @@ class TestAppRoutersAccountsPOST:
         account = Account()
         account.issuer_address = config_account["address"]
         account.keyfile = config_account["keyfile_json"]
-        account.keyfile_password = encrypt_password
+        account.eoa_password = encrypt_password
         db.add(account)
 
         # Run BackGroundTask
@@ -159,7 +159,7 @@ class TestAppRoutersAccountsPOST:
 
         assert update_account.issuer_address == config_account["address"]
         assert update_account.keyfile == config_account["keyfile_json"]
-        assert update_account.keyfile_password == encrypt_password
+        assert update_account.eoa_password == encrypt_password
         assert update_account.rsa_private_key is None
         assert update_account.rsa_public_key is None
         assert update_account.rsa_passphrase is None

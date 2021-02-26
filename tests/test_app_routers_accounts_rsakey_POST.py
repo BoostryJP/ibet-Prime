@@ -16,7 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from config import PERSONAL_INFO_PASSPHRASE_PATTERN_MSG
+from config import PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG
 from app.model.db import Account, AccountRsaKeyTemporary
 from app.model.utils import SecureValueUtils
 from tests.account_config import config_eth_account
@@ -49,7 +49,7 @@ class TestAppRoutersAccountsRsakeyPOST:
 
         req_param = {
             "rsa_private_key": _user_2["rsa_private_key"],
-            "passphrase": SecureValueUtils.encrypt("password")
+            "rsa_passphrase": SecureValueUtils.encrypt("password")
         }
 
         resp = client.post(self.apiurl, json=req_param, headers={"issuer-address": _user_1["address"]})
@@ -114,7 +114,7 @@ class TestAppRoutersAccountsRsakeyPOST:
 
         req_param = {
             "rsa_private_key": _user_2["rsa_private_key"],
-            "passphrase": SecureValueUtils.encrypt("password")
+            "rsa_passphrase": SecureValueUtils.encrypt("password")
         }
 
         resp = client.post(self.apiurl, json=req_param, headers={"issuer-address": "0x0"})
@@ -149,7 +149,7 @@ class TestAppRoutersAccountsRsakeyPOST:
 
         req_param = {
             "rsa_private_key": _user_2["rsa_private_key"],
-            "passphrase": SecureValueUtils.encrypt("password")
+            "rsa_passphrase": SecureValueUtils.encrypt("password")
         }
 
         resp = client.post(self.apiurl, json=req_param, headers={"issuer-address": _user_2["address"]})
@@ -180,7 +180,7 @@ class TestAppRoutersAccountsRsakeyPOST:
 
         req_param = {
             "rsa_private_key": _user_2["rsa_private_key"],
-            "passphrase": SecureValueUtils.encrypt("password")
+            "rsa_passphrase": SecureValueUtils.encrypt("password")
         }
 
         _temporary = AccountRsaKeyTemporary()
@@ -216,7 +216,7 @@ class TestAppRoutersAccountsRsakeyPOST:
 
         req_param = {
             "rsa_private_key": "test",
-            "passphrase": SecureValueUtils.encrypt("password")
+            "rsa_passphrase": SecureValueUtils.encrypt("password")
         }
 
         resp = client.post(self.apiurl, json=req_param, headers={"issuer-address": _user_1["address"]})
@@ -247,7 +247,7 @@ class TestAppRoutersAccountsRsakeyPOST:
 
         req_param = {
             "rsa_private_key": _user_2["rsa_private_key"],
-            "passphrase": SecureValueUtils.encrypt("hogehoge")
+            "rsa_passphrase": SecureValueUtils.encrypt("hogehoge")
         }
 
         resp = client.post(self.apiurl, json=req_param, headers={"issuer-address": _user_1["address"]})
@@ -278,7 +278,7 @@ class TestAppRoutersAccountsRsakeyPOST:
 
         req_param = {
             "rsa_private_key": _user_2["rsa_public_key"],
-            "passphrase": SecureValueUtils.encrypt("password")
+            "rsa_passphrase": SecureValueUtils.encrypt("password")
         }
 
         resp = client.post(self.apiurl, json=req_param, headers={"issuer-address": _user_1["address"]})
@@ -326,7 +326,7 @@ class TestAppRoutersAccountsRsakeyPOST:
                           "-----END RSA PRIVATE KEY-----"
         req_param = {
             "rsa_private_key": rsa_private_key,
-            "passphrase": SecureValueUtils.encrypt("password")
+            "rsa_passphrase": SecureValueUtils.encrypt("password")
         }
 
         resp = client.post(self.apiurl, json=req_param, headers={"issuer-address": _user_1["address"]})
@@ -357,7 +357,7 @@ class TestAppRoutersAccountsRsakeyPOST:
 
         req_param = {
             "rsa_private_key": _user_2["rsa_private_key"],
-            "passphrase": "test"  # Not Base64-encoded
+            "rsa_passphrase": "test"  # Not Base64-encoded
         }
 
         resp = client.post(self.apiurl, json=req_param, headers={"issuer-address": _user_1["address"]})
@@ -370,8 +370,8 @@ class TestAppRoutersAccountsRsakeyPOST:
                 "title": "RequestValidationError"
             },
             "detail": [{
-                "loc": ["body", "passphrase"],
-                "msg": "passphrase is not a Base64-decoded encrypted data",
+                "loc": ["body", "rsa_passphrase"],
+                "msg": "rsa_passphrase is not a Base64-decoded encrypted data",
                 "type": "value_error"
             }]
         }
@@ -392,7 +392,7 @@ class TestAppRoutersAccountsRsakeyPOST:
 
         req_param = {
             "rsa_private_key": _user_2["rsa_private_key"],
-            "passphrase": SecureValueUtils.encrypt("test")
+            "rsa_passphrase": SecureValueUtils.encrypt("test")
         }
 
         resp = client.post(self.apiurl, json=req_param, headers={"issuer-address": _user_1["address"]})
@@ -404,5 +404,5 @@ class TestAppRoutersAccountsRsakeyPOST:
                 "code": 1,
                 "title": "InvalidParameterError"
             },
-            "detail": PERSONAL_INFO_PASSPHRASE_PATTERN_MSG
+            "detail": PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG
         }

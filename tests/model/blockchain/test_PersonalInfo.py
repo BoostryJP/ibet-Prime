@@ -47,7 +47,7 @@ def initialize(issuer, db):
     _account.issuer_address = issuer["address"]
     _account.keyfile = issuer["keyfile_json"]
     eoa_password = "password"
-    _account.keyfile_password = SecureValueUtils.encrypt(eoa_password)
+    _account.eoa_password = SecureValueUtils.encrypt(eoa_password)
     _account.rsa_private_key = issuer["rsa_private_key"]
     _account.rsa_public_key = issuer["rsa_public_key"]
     rsa_password = "password"

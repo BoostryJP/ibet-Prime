@@ -31,8 +31,8 @@ from coincurve import PublicKey
 from eth_utils import to_checksum_address
 import eth_keyfile
 
-from config import KEY_FILE_PASSWORD, EOA_PASSWORD_PATTERN, EOA_PASSWORD_PATTERN_MSG, \
-    PERSONAL_INFO_PASSPHRASE_PATTERN, PERSONAL_INFO_PASSPHRASE_PATTERN_MSG, SECURE_VALUE_REQUEST_ENABLED
+from config import PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE, EOA_PASSWORD_PATTERN, EOA_PASSWORD_PATTERN_MSG, \
+    PERSONAL_INFO_RSA_PASSPHRASE_PATTERN, PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG, SECURE_VALUE_REQUEST_ENABLED
 from app.database import db_session
 from app.model.schema import AccountCreateKeyRequest, AccountResponse, AccountChangeRsaKeyRequest
 from app.model.utils import SecureValueUtils, headers_validate, address_is_valid_address
@@ -59,13 +59,13 @@ def generate_rsa_key(db: Session, issuer_address: str):
 
     random_func = Random.new().read
     rsa = RSA.generate(10240, random_func)
-    rsa_private_pem = rsa.exportKey(format="PEM", passphrase=KEY_FILE_PASSWORD).decode()
+    rsa_private_pem = rsa.exportKey(format="PEM", passphrase=PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE).decode()
     rsa_public_pem = rsa.publickey().exportKey().decode()
 
     # Register key data to the DB
     _account.rsa_private_key = rsa_private_pem
     _account.rsa_public_key = rsa_public_pem
-    _account.rsa_passphrase = SecureValueUtils.encrypt(KEY_FILE_PASSWORD)
+    _account.rsa_passphrase = SecureValueUtils.encrypt(PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE)
     db.merge(_account)
     db.commit()
 
@@ -99,7 +99,7 @@ async def create_key(
     _account = Account()
     _account.issuer_address = addr
     _account.keyfile = keyfile_json
-    _account.keyfile_password = SecureValueUtils.encrypt(eoa_password)
+    _account.eoa_password = SecureValueUtils.encrypt(eoa_password)
     db.add(_account)
     db.commit()
 
@@ -178,13 +178,13 @@ async def change_account_rsa_key(
         raise InvalidParameterError("issuer information is now changing")
 
     # Check Password Policy
-    passphrase = SecureValueUtils.decrypt(data.passphrase) if SECURE_VALUE_REQUEST_ENABLED else data.passphrase
-    if not re.match(PERSONAL_INFO_PASSPHRASE_PATTERN, passphrase):
-        raise InvalidParameterError(PERSONAL_INFO_PASSPHRASE_PATTERN_MSG)
+    rsa_passphrase = SecureValueUtils.decrypt(data.rsa_passphrase) if SECURE_VALUE_REQUEST_ENABLED else data.rsa_passphrase
+    if not re.match(PERSONAL_INFO_RSA_PASSPHRASE_PATTERN, rsa_passphrase):
+        raise InvalidParameterError(PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG)
 
     # Check RSA Private Key Format
     try:
-        rsa_key = RSA.importKey(data.rsa_private_key, passphrase=passphrase)
+        rsa_key = RSA.importKey(data.rsa_private_key, passphrase=rsa_passphrase)
     except ValueError:
         raise InvalidParameterError("RSA Private Key is invalid, or passphrase is invalid")
 
@@ -211,7 +211,7 @@ async def change_account_rsa_key(
     # NOTE: PersonalInfo modify execute in the Batch.
     _account.rsa_private_key = data.rsa_private_key
     _account.rsa_public_key = rsa_public_key
-    _account.rsa_passphrase = SecureValueUtils.encrypt(passphrase)
+    _account.rsa_passphrase = SecureValueUtils.encrypt(rsa_passphrase)
     db.merge(_account)
 
     db.commit()

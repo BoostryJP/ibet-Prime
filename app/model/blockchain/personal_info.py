@@ -144,7 +144,7 @@ class PersonalInfoContract:
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(personal_info).encode('utf-8')))
 
         try:
-            password = SecureValueUtils.decrypt(self.issuer.keyfile_password)
+            password = SecureValueUtils.decrypt(self.issuer.eoa_password)
             private_key = decode_keyfile_json(
                 raw_keyfile_json=self.issuer.keyfile,
                 password=password.encode("utf-8")

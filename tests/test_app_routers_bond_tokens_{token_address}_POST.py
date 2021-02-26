@@ -52,7 +52,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         account = Account()
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
-        account.keyfile_password = SecureValueUtils.encrypt("password")
+        account.eoa_password = SecureValueUtils.encrypt("password")
         db.add(account)
 
         token = Token()
@@ -117,7 +117,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         account = Account()
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
-        account.keyfile_password = SecureValueUtils.encrypt("password")
+        account.eoa_password = SecureValueUtils.encrypt("password")
         db.add(account)
 
         token = Token()
@@ -405,7 +405,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         account = Account()
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
-        account.keyfile_password = SecureValueUtils.encrypt("password")
+        account.eoa_password = SecureValueUtils.encrypt("password")
         db.add(account)
 
         # mock
@@ -445,7 +445,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         account = Account()
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
-        account.keyfile_password = SecureValueUtils.encrypt("password")
+        account.eoa_password = SecureValueUtils.encrypt("password")
         db.add(account)
 
         token = Token()

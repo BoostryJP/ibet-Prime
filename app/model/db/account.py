@@ -30,8 +30,8 @@ class Account(Base):
     issuer_address = Column(String(42), primary_key=True)
     # ethereum keyfile
     keyfile = Column(JSON)
-    # ethereum keyfile password(encrypted)
-    keyfile_password = Column(String(2000))
+    # ethereum account password(encrypted)
+    eoa_password = Column(String(2000))
     # rsa private key
     rsa_private_key = Column(String(8000))
     # rsa public key

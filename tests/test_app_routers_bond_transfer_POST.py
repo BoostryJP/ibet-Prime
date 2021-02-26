@@ -52,7 +52,7 @@ class TestAppRoutersBondTransferPOST:
         account = Account()
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
-        account.keyfile_password = SecureValueUtils.encrypt("password")
+        account.eoa_password = SecureValueUtils.encrypt("password")
         db.add(account)
 
         token = Token()
@@ -274,7 +274,7 @@ class TestAppRoutersBondTransferPOST:
         account = Account()
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
-        account.keyfile_password = SecureValueUtils.encrypt("password")
+        account.eoa_password = SecureValueUtils.encrypt("password")
         db.add(account)
 
         # request target API
@@ -323,7 +323,7 @@ class TestAppRoutersBondTransferPOST:
         account = Account()
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
-        account.keyfile_password = SecureValueUtils.encrypt("password")
+        account.eoa_password = SecureValueUtils.encrypt("password")
         db.add(account)
 
         token = Token()

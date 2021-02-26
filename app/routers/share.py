@@ -63,7 +63,7 @@ async def issue_token(
 
     # Get private key
     keyfile_json = _account.keyfile
-    decrypt_password = SecureValueUtils.decrypt(_account.keyfile_password)
+    decrypt_password = SecureValueUtils.decrypt(_account.eoa_password)
     private_key = decode_keyfile_json(
         raw_keyfile_json=keyfile_json,
         password=decrypt_password.encode("utf-8")
@@ -184,7 +184,7 @@ async def update_token(
 
     # Get private key
     keyfile_json = _account.keyfile
-    decrypt_password = SecureValueUtils.decrypt(_account.keyfile_password)
+    decrypt_password = SecureValueUtils.decrypt(_account.eoa_password)
     private_key = decode_keyfile_json(
         raw_keyfile_json=keyfile_json,
         password=decrypt_password.encode("utf-8")
@@ -238,7 +238,7 @@ async def additional_issue(
 
     # Get private key
     keyfile_json = _account.keyfile
-    decrypt_password = SecureValueUtils.decrypt(_account.keyfile_password)
+    decrypt_password = SecureValueUtils.decrypt(_account.eoa_password)
     private_key = decode_keyfile_json(
         raw_keyfile_json=keyfile_json,
         password=decrypt_password.encode("utf-8")
@@ -424,7 +424,7 @@ async def transfer_ownership(
 
     # Get private key
     keyfile_json = _account.keyfile
-    decrypt_password = SecureValueUtils.decrypt(_account.keyfile_password)
+    decrypt_password = SecureValueUtils.decrypt(_account.eoa_password)
     private_key = decode_keyfile_json(
         raw_keyfile_json=keyfile_json,
         password=decrypt_password.encode("utf-8")

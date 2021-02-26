@@ -43,12 +43,12 @@ class AccountChangeRsaKeyRequest(BaseModel):
     # rsa_private_key is a long text, but there is a possible of encryption fail when RSA key length is small.
     # So It deals in rsa_private_key at plane text.
     rsa_private_key: str
-    passphrase: str
+    rsa_passphrase: str
 
-    @validator("passphrase")
-    def passphrase_is_valid_encrypt(cls, v):
+    @validator("rsa_passphrase")
+    def rsa_passphrase_is_valid_encrypt(cls, v):
         if SECURE_VALUE_REQUEST_ENABLED:
-            secure_value_is_valid_encrypt("passphrase", v)
+            secure_value_is_valid_encrypt("rsa_passphrase", v)
         return v
 
 

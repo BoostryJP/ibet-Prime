@@ -32,6 +32,13 @@ from config import SECURE_VALUE_RESOURCE_MODE, SECURE_VALUE_RSA_RESOURCE, SECURE
 
 
 class SecureValueUtils:
+    """Secure Value Utility
+
+    This class is a encrypt utility.
+    Used to encrypt or decrypt that need to be secured value, such as password,
+    when storage to the DB, get to encrypted HTTP parameters, etc
+    """
+
     cache = {
         "private_key": None,
         "public_key": None,
