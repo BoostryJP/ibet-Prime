@@ -20,7 +20,7 @@ from unittest import mock
 from unittest.mock import ANY, MagicMock
 
 from app.model.db import Account, Token, TokenType
-from app.model.utils import SecureValueUtils
+from app.model.utils import E2EEUtils
 from app.exceptions import SendTransactionError
 from tests.account_config import config_eth_account
 
@@ -45,7 +45,7 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
         account = Account()
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
-        account.eoa_password = SecureValueUtils.encrypt("password")
+        account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
         token = Token()
@@ -245,7 +245,7 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
         account = Account()
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
-        account.eoa_password = SecureValueUtils.encrypt("password")
+        account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
         # request target API
@@ -284,7 +284,7 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
         account = Account()
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
-        account.eoa_password = SecureValueUtils.encrypt("password")
+        account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
         token = Token()

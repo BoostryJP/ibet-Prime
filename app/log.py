@@ -68,12 +68,12 @@ def get_logger():
     return LOG
 
 
-def auth_info(req: Request, address: str, msg: str, *args, **kwargs):
-    AUTH_LOG.info(__auth_format(req, address, msg, *args, **kwargs))
+def auth_info(req: Request, address: str, msg: str):
+    AUTH_LOG.info(__auth_format(req, address, msg))
 
 
-def auth_error(req: Request, address: str, msg: str, *args, **kwargs):
-    AUTH_LOG.error(__auth_format(req, address, msg, *args, **kwargs))
+def auth_error(req: Request, address: str, msg: str):
+    AUTH_LOG.error(__auth_format(req, address, msg))
 
 
 def __auth_format(req: Request, address: str, msg: str):

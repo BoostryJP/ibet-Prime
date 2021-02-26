@@ -34,7 +34,7 @@ from app.model.blockchain import PersonalInfoContract
 from app.model.blockchain.utils import ContractUtils
 from app.exceptions import SendTransactionError
 from app.model.db import Account
-from app.model.utils import SecureValueUtils
+from app.model.utils import E2EEUtils
 
 from tests.account_config import config_eth_account
 
@@ -47,11 +47,11 @@ def initialize(issuer, db):
     _account.issuer_address = issuer["address"]
     _account.keyfile = issuer["keyfile_json"]
     eoa_password = "password"
-    _account.eoa_password = SecureValueUtils.encrypt(eoa_password)
+    _account.eoa_password = E2EEUtils.encrypt(eoa_password)
     _account.rsa_private_key = issuer["rsa_private_key"]
     _account.rsa_public_key = issuer["rsa_public_key"]
     rsa_password = "password"
-    _account.rsa_passphrase = SecureValueUtils.encrypt(rsa_password)
+    _account.rsa_passphrase = E2EEUtils.encrypt(rsa_password)
     db.add(_account)
     db.commit()
 

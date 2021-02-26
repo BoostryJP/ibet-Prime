@@ -69,28 +69,35 @@ INDEXER_SYNC_INTERVAL = 10
 #       ^(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[0-9])(?=.*?[\*\+\.\\\(\)\?\[\]\^\$\-\|!#%&"',/:;<=>@_`{}~])[a-zA-Z0-9\*\+\.\\\(\)\?\[\]\^\$\-\|!#%&"',/:;<=>@_`{}~]{12,}$
 #         => 12 or higher length of mixed characters with
 #            lowercase alphabetic, uppercase alphabetic, numeric, and symbolic(space exclude)
-EOA_PASSWORD_PATTERN = os.environ.get("EOA_PASSWORD_PATTERN") or "^[a-zA-Z0-9]{8,}$"
-EOA_PASSWORD_PATTERN_MSG = os.environ.get(
-    "EAO_PASSWORD_PATTERN_MSG") or "password is need 8 or higher length of alphanumeric characters"
-PERSONAL_INFO_RSA_PASSPHRASE_PATTERN = os.environ.get(
-    "PERSONAL_INFO_RSA_PASSPHRASE_PATTERN") or "^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,}$"
-PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG = os.environ.get(
-    "PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG") or \
-                                       "passphrase is need 8 or higher length of alphanumeric or symbolic characters"
-PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE = os.environ.get("PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE") or "password"
+EOA_PASSWORD_PATTERN = \
+    os.environ.get("EOA_PASSWORD_PATTERN") or \
+    "^[a-zA-Z0-9]{8,}$"
+EOA_PASSWORD_PATTERN_MSG = \
+    os.environ.get("EAO_PASSWORD_PATTERN_MSG") or \
+    "password is need 8 or higher length of alphanumeric characters"
+PERSONAL_INFO_RSA_PASSPHRASE_PATTERN = \
+    os.environ.get("PERSONAL_INFO_RSA_PASSPHRASE_PATTERN") or \
+    "^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,}$"
+PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG = \
+    os.environ.get("PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG") or \
+    "passphrase is need 8 or higher length of alphanumeric or symbolic characters"
+PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE = \
+    os.environ.get("PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE") or \
+    "password"
 
-# Secure value crypto(RSA)
+# End to End Encryption (RSA)
 # NOTE:
-# about SECURE_VALUE_RESOURCE_MODE
-# - 0:File, Set the file path to SECURE_PARAM_RSA_RESOURCE.
-# - 1:AWS SecretsManager, Set the SecretsManagerARN to SECURE_PARAM_RSA_RESOURCE.
+# about E2EE_RSA_RESOURCE_MODE
+# - 0:File, Set the file path to E2EE_RSA_RESOURCE.
+# - 1:AWS SecretsManager, Set the SecretsManagerARN to E2EE_RSA_RESOURCE.
 if 'pytest' in sys.modules:  # for unit test
-    SECURE_VALUE_RESOURCE_MODE = int(os.environ.get("SECURE_VALUE_RESOURCE_MODE")) if os.environ.get(
-        "SECURE_VALUE_RESOURCE_MODE") else 0
-    SECURE_VALUE_RSA_RESOURCE = os.environ.get("SECURE_VALUE_RSA_RESOURCE") or "tests/data/rsa_private.pem"
-    SECURE_VALUE_RSA_PASSPHRASE = os.environ.get("SECURE_VALUE_RSA_PASSPHRASE") or "password"
+    E2EE_RSA_RESOURCE_MODE = int(os.environ.get("E2EE_RSA_RESOURCE_MODE")) \
+        if os.environ.get("E2EE_RSA_RESOURCE_MODE") else 0
+    E2EE_RSA_RESOURCE = os.environ.get("E2EE_RSA_RESOURCE") or "tests/data/rsa_private.pem"
+    E2EE_RSA_PASSPHRASE = os.environ.get("E2EE_RSA_PASSPHRASE") or "password"
 else:
-    SECURE_VALUE_RESOURCE_MODE = int(os.environ.get("SECURE_VALUE_RESOURCE_MODE"))
-    SECURE_VALUE_RSA_RESOURCE = os.environ.get("SECURE_VALUE_RSA_RESOURCE")
-    SECURE_VALUE_RSA_PASSPHRASE = os.environ.get("SECURE_VALUE_RSA_PASSPHRASE")
-SECURE_VALUE_REQUEST_ENABLED = False if os.environ.get('SECURE_VALUE_REQUEST_ENABLED') == '0' else True
+    E2EE_RSA_RESOURCE_MODE = int(os.environ.get("E2EE_RSA_RESOURCE_MODE"))
+    E2EE_RSA_RESOURCE = os.environ.get("E2EE_RSA_RESOURCE")
+    E2EE_RSA_PASSPHRASE = os.environ.get("E2EE_RSA_PASSPHRASE")
+E2EE_REQUEST_ENABLED = False \
+    if os.environ.get('E2EE_REQUEST_ENABLED') == "0" else True

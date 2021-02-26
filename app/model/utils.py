@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from typing import Dict
 import base64
 import binascii
 import json
@@ -28,22 +29,22 @@ from fastapi.exceptions import RequestValidationError
 from pydantic.error_wrappers import ErrorWrapper
 from web3 import Web3
 
-from config import SECURE_VALUE_RESOURCE_MODE, SECURE_VALUE_RSA_RESOURCE, SECURE_VALUE_RSA_PASSPHRASE
+from config import E2EE_RSA_RESOURCE_MODE, E2EE_RSA_RESOURCE, E2EE_RSA_PASSPHRASE
 
 
-class SecureValueUtils:
-    """Secure Value Utility
+class E2EEUtils:
+    """End to End Encryption Utilities
 
-    This class is a encrypt utility.
-    Used to encrypt or decrypt that need to be secured value, such as password,
-    when storage to the DB, get to encrypted HTTP parameters, etc
+    This class is used for E2E encryption or decryption between client side and server side.
+    The values encrypted on the client side are directly stored in the DB, etc.
+    in an encrypted state, and decrypted for use.
     """
 
     cache = {
         "private_key": None,
         "public_key": None,
         "encrypted_length": None,
-        "expiration_datetime": None
+        "expiration_datetime": datetime.min
     }
 
     @staticmethod
@@ -53,11 +54,11 @@ class SecureValueUtils:
         :param data: Data to encrypt
         :return: Base64-decoded encrypted data
         """
-        crypto_data = SecureValueUtils.__get_crypto_data()
+        crypto_data = E2EEUtils.__get_crypto_data()
         if crypto_data.get("public_key") is None:
             return data
 
-        rsa_key = RSA.importKey(crypto_data.get("public_key"), passphrase=SECURE_VALUE_RSA_PASSPHRASE)
+        rsa_key = RSA.importKey(crypto_data.get("public_key"), passphrase=E2EE_RSA_PASSPHRASE)
         cipher = PKCS1_OAEP.new(rsa_key)
         encrypt_data = cipher.encrypt(data.encode("utf-8"))
         base64_data = base64.encodebytes(encrypt_data)
@@ -70,11 +71,11 @@ class SecureValueUtils:
         :param base64_encrypt_data: Base64-decoded encrypted data
         :return: Decrypted data
         """
-        crypto_data = SecureValueUtils.__get_crypto_data()
+        crypto_data = E2EEUtils.__get_crypto_data()
         if crypto_data.get("private_key") is None:
             return base64_encrypt_data
 
-        rsa_key = RSA.importKey(crypto_data.get("private_key"), passphrase=SECURE_VALUE_RSA_PASSPHRASE)
+        rsa_key = RSA.importKey(crypto_data.get("private_key"), passphrase=E2EE_RSA_PASSPHRASE)
         cipher = PKCS1_OAEP.new(rsa_key)
 
         try:
@@ -100,28 +101,28 @@ class SecureValueUtils:
 
         :return: Private Key, Public Key
         """
-        crypto_data = SecureValueUtils.__get_crypto_data()
+        crypto_data = E2EEUtils.__get_crypto_data()
         return crypto_data.get("private_key"), crypto_data.get("public_key")
 
     @staticmethod
-    def __get_crypto_data():
+    def __get_crypto_data() -> Dict:
 
         # Use Cache
-        if SecureValueUtils.cache.get("expiration_datetime") is not None \
-                and SecureValueUtils.cache.get("expiration_datetime") > datetime.utcnow():
-            return SecureValueUtils.cache
+        if E2EEUtils.cache.get("expiration_datetime") > datetime.utcnow():
+            return E2EEUtils.cache
 
         # Get Private Key
-        if SECURE_VALUE_RESOURCE_MODE == 0:
-            with open(SECURE_VALUE_RSA_RESOURCE, "r") as f:
+        private_key = None
+        if E2EE_RSA_RESOURCE_MODE == 0:
+            with open(E2EE_RSA_RESOURCE, "r") as f:
                 private_key = f.read()
-        elif SECURE_VALUE_RESOURCE_MODE == 1:
+        elif E2EE_RSA_RESOURCE_MODE == 1:
             secrets_manager = boto3.client(service_name="secretsmanager")
-            result = secrets_manager.get_secret_value(SecretId=SECURE_VALUE_RSA_RESOURCE)
+            result = secrets_manager.get_secret_value(SecretId=E2EE_RSA_RESOURCE)
             private_key = json.loads(result.get("SecretString"))
 
         # Get Public Key
-        rsa_key = RSA.importKey(private_key, passphrase=SECURE_VALUE_RSA_PASSPHRASE)
+        rsa_key = RSA.importKey(private_key, passphrase=E2EE_RSA_PASSPHRASE)
 
         public_key = rsa_key.publickey().exportKey().decode()
 
@@ -130,14 +131,14 @@ class SecureValueUtils:
         encrypted_length = len(cipher.encrypt(b''))
 
         # Update Cache(expiration for 1 hour)
-        SecureValueUtils.cache = {
+        E2EEUtils.cache = {
             "private_key": private_key,
             "public_key": public_key,
             "encrypted_length": encrypted_length,
             "expiration_datetime": datetime.utcnow() + timedelta(hours=1)
         }
 
-        return SecureValueUtils.cache
+        return E2EEUtils.cache
 
 
 def headers_validate(validators: list):
@@ -162,9 +163,9 @@ def address_is_valid_address(name, value):
             raise ValueError(f"{name} is not a valid address")
 
 
-def secure_value_is_valid_encrypt(name, value):
+def check_value_is_encrypted(name, value):
     if value:
         try:
-            SecureValueUtils.decrypt(value)
+            E2EEUtils.decrypt(value)
         except ValueError:
             raise ValueError(f"{name} is not a Base64-decoded encrypted data")

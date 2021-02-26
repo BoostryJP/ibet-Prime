@@ -25,7 +25,7 @@ from web3.middleware import geth_poa_middleware
 import config
 from app.exceptions import SendTransactionError
 from app.model.db import Account, Token, TokenType
-from app.model.utils import SecureValueUtils
+from app.model.utils import E2EEUtils
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
@@ -49,7 +49,7 @@ class TestAppRoutersShareTokensPOST:
         account = Account()
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
-        account.eoa_password = SecureValueUtils.encrypt("password")
+        account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
         token_before = db.query(Token).all()
@@ -257,7 +257,7 @@ class TestAppRoutersShareTokensPOST:
         account = Account()
         account.issuer_address = test_account_1["address"]
         account.keyfile = test_account_1["keyfile_json"]
-        account.eoa_password = SecureValueUtils.encrypt("password")
+        account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
         # request target api
@@ -301,7 +301,7 @@ class TestAppRoutersShareTokensPOST:
         account = Account()
         account.issuer_address = test_account_1["address"]
         account.keyfile = test_account_2["keyfile_json"]
-        account.eoa_password = SecureValueUtils.encrypt("password")
+        account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
         # request target api

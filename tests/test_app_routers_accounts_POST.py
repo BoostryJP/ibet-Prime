@@ -21,7 +21,7 @@ from unittest import mock
 
 from config import EOA_PASSWORD_PATTERN_MSG
 from app.model.db import Account
-from app.model.utils import SecureValueUtils
+from app.model.utils import E2EEUtils
 from app.routers.account import generate_rsa_key
 from tests.account_config import config_eth_account
 
@@ -40,7 +40,7 @@ class TestAppRoutersAccountsPOST:
         accounts_before = db.query(Account).all()
 
         req_param = {
-            "eoa_password": SecureValueUtils.encrypt("password")
+            "eoa_password": E2EEUtils.encrypt("password")
         }
 
         resp = client.post(self.apiurl, json=req_param)
@@ -94,7 +94,7 @@ class TestAppRoutersAccountsPOST:
     # Invalid Password
     def test_error_2(self, client, db):
         req_param = {
-            "eoa_password": SecureValueUtils.encrypt("test")
+            "eoa_password": E2EEUtils.encrypt("test")
         }
 
         resp = client.post(self.apiurl, json=req_param)
@@ -116,7 +116,7 @@ class TestAppRoutersAccountsPOST:
     # <Normal_1>
     def test_backgroundtask_normal_1(self, db):
         config_account = config_eth_account("user1")
-        encrypt_password = SecureValueUtils.encrypt("password")
+        encrypt_password = E2EEUtils.encrypt("password")
 
         account = Account()
         account.issuer_address = config_account["address"]
@@ -144,7 +144,7 @@ class TestAppRoutersAccountsPOST:
     # Not Exists Address
     def test_backgroundtask_error_1(self, db):
         config_account = config_eth_account("user1")
-        encrypt_password = SecureValueUtils.encrypt("password")
+        encrypt_password = E2EEUtils.encrypt("password")
 
         account = Account()
         account.issuer_address = config_account["address"]

@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 from config import PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG
 from app.model.db import Account, AccountRsaKeyTemporary
-from app.model.utils import SecureValueUtils
+from app.model.utils import E2EEUtils
 from tests.account_config import config_eth_account
 
 
@@ -40,7 +40,7 @@ class TestAppRoutersAccountsRsakeyPOST:
         _account_before.keyfile = _user_1["keyfile_json"]
         _account_before.rsa_private_key = _user_1["rsa_private_key"]
         _account_before.rsa_public_key = _user_1["rsa_public_key"]
-        rsa_encrypt_passphrase = SecureValueUtils.encrypt("password")
+        rsa_encrypt_passphrase = E2EEUtils.encrypt("password")
         _account_before.rsa_passphrase = rsa_encrypt_passphrase
         db.add(_account_before)
         db.commit()
@@ -49,7 +49,7 @@ class TestAppRoutersAccountsRsakeyPOST:
 
         req_param = {
             "rsa_private_key": _user_2["rsa_private_key"],
-            "rsa_passphrase": SecureValueUtils.encrypt("password")
+            "rsa_passphrase": E2EEUtils.encrypt("password")
         }
 
         resp = client.post(self.apiurl, json=req_param, headers={"issuer-address": _user_1["address"]})
@@ -114,7 +114,7 @@ class TestAppRoutersAccountsRsakeyPOST:
 
         req_param = {
             "rsa_private_key": _user_2["rsa_private_key"],
-            "rsa_passphrase": SecureValueUtils.encrypt("password")
+            "rsa_passphrase": E2EEUtils.encrypt("password")
         }
 
         resp = client.post(self.apiurl, json=req_param, headers={"issuer-address": "0x0"})
@@ -144,12 +144,12 @@ class TestAppRoutersAccountsRsakeyPOST:
         _account.keyfile = _user_1["keyfile_json"]
         _account.rsa_private_key = _user_1["rsa_private_key"]
         _account.rsa_public_key = _user_1["rsa_public_key"]
-        _account.rsa_passphrase = SecureValueUtils.encrypt("password")
+        _account.rsa_passphrase = E2EEUtils.encrypt("password")
         db.add(_account)
 
         req_param = {
             "rsa_private_key": _user_2["rsa_private_key"],
-            "rsa_passphrase": SecureValueUtils.encrypt("password")
+            "rsa_passphrase": E2EEUtils.encrypt("password")
         }
 
         resp = client.post(self.apiurl, json=req_param, headers={"issuer-address": _user_2["address"]})
@@ -175,12 +175,12 @@ class TestAppRoutersAccountsRsakeyPOST:
         _account.keyfile = _user_1["keyfile_json"]
         _account.rsa_private_key = _user_1["rsa_private_key"]
         _account.rsa_public_key = _user_1["rsa_public_key"]
-        _account.rsa_passphrase = SecureValueUtils.encrypt("password")
+        _account.rsa_passphrase = E2EEUtils.encrypt("password")
         db.add(_account)
 
         req_param = {
             "rsa_private_key": _user_2["rsa_private_key"],
-            "rsa_passphrase": SecureValueUtils.encrypt("password")
+            "rsa_passphrase": E2EEUtils.encrypt("password")
         }
 
         _temporary = AccountRsaKeyTemporary()
@@ -211,12 +211,12 @@ class TestAppRoutersAccountsRsakeyPOST:
         _account.keyfile = _user_1["keyfile_json"]
         _account.rsa_private_key = _user_1["rsa_private_key"]
         _account.rsa_public_key = _user_1["rsa_public_key"]
-        _account.rsa_passphrase = SecureValueUtils.encrypt("password")
+        _account.rsa_passphrase = E2EEUtils.encrypt("password")
         db.add(_account)
 
         req_param = {
             "rsa_private_key": "test",
-            "rsa_passphrase": SecureValueUtils.encrypt("password")
+            "rsa_passphrase": E2EEUtils.encrypt("password")
         }
 
         resp = client.post(self.apiurl, json=req_param, headers={"issuer-address": _user_1["address"]})
@@ -242,12 +242,12 @@ class TestAppRoutersAccountsRsakeyPOST:
         _account.keyfile = _user_1["keyfile_json"]
         _account.rsa_private_key = _user_1["rsa_private_key"]
         _account.rsa_public_key = _user_1["rsa_public_key"]
-        _account.rsa_passphrase = SecureValueUtils.encrypt("password")
+        _account.rsa_passphrase = E2EEUtils.encrypt("password")
         db.add(_account)
 
         req_param = {
             "rsa_private_key": _user_2["rsa_private_key"],
-            "rsa_passphrase": SecureValueUtils.encrypt("hogehoge")
+            "rsa_passphrase": E2EEUtils.encrypt("hogehoge")
         }
 
         resp = client.post(self.apiurl, json=req_param, headers={"issuer-address": _user_1["address"]})
@@ -273,12 +273,12 @@ class TestAppRoutersAccountsRsakeyPOST:
         _account.keyfile = _user_1["keyfile_json"]
         _account.rsa_private_key = _user_1["rsa_private_key"]
         _account.rsa_public_key = _user_1["rsa_public_key"]
-        _account.rsa_passphrase = SecureValueUtils.encrypt("password")
+        _account.rsa_passphrase = E2EEUtils.encrypt("password")
         db.add(_account)
 
         req_param = {
             "rsa_private_key": _user_2["rsa_public_key"],
-            "rsa_passphrase": SecureValueUtils.encrypt("password")
+            "rsa_passphrase": E2EEUtils.encrypt("password")
         }
 
         resp = client.post(self.apiurl, json=req_param, headers={"issuer-address": _user_1["address"]})
@@ -303,7 +303,7 @@ class TestAppRoutersAccountsRsakeyPOST:
         _account.keyfile = _user_1["keyfile_json"]
         _account.rsa_private_key = _user_1["rsa_private_key"]
         _account.rsa_public_key = _user_1["rsa_public_key"]
-        _account.rsa_passphrase = SecureValueUtils.encrypt("password")
+        _account.rsa_passphrase = E2EEUtils.encrypt("password")
         db.add(_account)
 
         rsa_private_key = "-----BEGIN RSA PRIVATE KEY-----\n" \
@@ -326,7 +326,7 @@ class TestAppRoutersAccountsRsakeyPOST:
                           "-----END RSA PRIVATE KEY-----"
         req_param = {
             "rsa_private_key": rsa_private_key,
-            "rsa_passphrase": SecureValueUtils.encrypt("password")
+            "rsa_passphrase": E2EEUtils.encrypt("password")
         }
 
         resp = client.post(self.apiurl, json=req_param, headers={"issuer-address": _user_1["address"]})
@@ -352,7 +352,7 @@ class TestAppRoutersAccountsRsakeyPOST:
         _account.keyfile = _user_1["keyfile_json"]
         _account.rsa_private_key = _user_1["rsa_private_key"]
         _account.rsa_public_key = _user_1["rsa_public_key"]
-        _account.rsa_passphrase = SecureValueUtils.encrypt("password")
+        _account.rsa_passphrase = E2EEUtils.encrypt("password")
         db.add(_account)
 
         req_param = {
@@ -387,12 +387,12 @@ class TestAppRoutersAccountsRsakeyPOST:
         _account.keyfile = _user_1["keyfile_json"]
         _account.rsa_private_key = _user_1["rsa_private_key"]
         _account.rsa_public_key = _user_1["rsa_public_key"]
-        _account.rsa_passphrase = SecureValueUtils.encrypt("password")
+        _account.rsa_passphrase = E2EEUtils.encrypt("password")
         db.add(_account)
 
         req_param = {
             "rsa_private_key": _user_2["rsa_private_key"],
-            "rsa_passphrase": SecureValueUtils.encrypt("test")
+            "rsa_passphrase": E2EEUtils.encrypt("test")
         }
 
         resp = client.post(self.apiurl, json=req_param, headers={"issuer-address": _user_1["address"]})
