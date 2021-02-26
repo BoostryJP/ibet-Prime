@@ -16,7 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from .account import AccountChangeRsaKeyRequest, AccountResponse
+from .account import AccountCreateKeyRequest, AccountChangeRsaKeyRequest, AccountResponse
 from .token import IbetStraightBondCreate, IbetStraightBondUpdate, \
     IbetStraightBondTransfer, IbetStraightBondAdd
 from .token import IbetStraightBondResponse

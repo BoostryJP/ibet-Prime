@@ -143,10 +143,17 @@ class Processor:
             return False
 
         # If previous rsa key decrypted succeed, need modify.
+        # Backup origin RSA
         org_rsa_private_key = personal_info_contract_accessor.issuer.rsa_private_key
+        org_rsa_encrypt_passphrase = personal_info_contract_accessor.issuer.rsa_passphrase
+        # Replace RSA
         personal_info_contract_accessor.issuer.rsa_private_key = temporary.rsa_private_key
+        personal_info_contract_accessor.issuer.rsa_passphrase = temporary.rsa_passphrase
+        # Modify
         info = personal_info_contract_accessor.get_info(idx_personal_info.account_address)
+        # Back RSA
         personal_info_contract_accessor.issuer.rsa_private_key = org_rsa_private_key
+        personal_info_contract_accessor.issuer.rsa_private_key = org_rsa_encrypt_passphrase
         default_info = {
             "key_manager": None,
             "name": None,

@@ -25,6 +25,7 @@ from web3.middleware import geth_poa_middleware
 import config
 from app.exceptions import SendTransactionError
 from app.model.db import Account, Token, TokenType
+from app.model.utils import E2EEUtils
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
@@ -48,6 +49,7 @@ class TestAppRoutersBondTokensPOST:
         account = Account()
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
         token_before = db.query(Token).all()
@@ -70,7 +72,9 @@ class TestAppRoutersBondTokensPOST:
         resp = client.post(
             self.apiurl,
             json=req_param,
-            headers={"issuer-address": test_account["address"]}
+            headers={
+                "issuer-address": test_account["address"]
+            }
         )
 
         # assertion
@@ -105,16 +109,11 @@ class TestAppRoutersBondTokensPOST:
     def test_error_1(self, client, db):
         # request target api
         resp = client.post(
-            self.apiurl,
-            headers={"issuer-address": ""}
+            self.apiurl
         )
 
         # assertion
         assert resp.status_code == 422
-        assert resp.json()["meta"] == {
-            "code": 1,
-            "title": "RequestValidationError"
-        }
         assert resp.json() == {
             "meta": {
                 "code": 1,
@@ -122,22 +121,144 @@ class TestAppRoutersBondTokensPOST:
             },
             "detail": [
                 {
+                    "loc": ["header", "issuer-address"],
+                    "msg": "field required",
+                    "type": "value_error.missing"
+                },
+                {
                     "loc": ["body"],
                     "msg": "field required",
                     "type": "value_error.missing"
                 }
             ]
         }
-    
+
     # <Error Case 2>
-    # Not Exists Address
+    # Parameter Error: interest_rate, tradable_exchange_contract_address, personal_info_contract_address, image_url
     def test_error_2(self, client, db):
         test_account = config_eth_account("user1")
 
+        # request target api
+        req_param = {
+            "name": "name_test1",
+            "symbol": "symbol_test1",
+            "total_supply": 10000,
+            "face_value": 200,
+            "redemption_date": "redemption_date_test1",
+            "redemption_value": 4000,
+            "return_date": "redemption_value_test1",
+            "return_amount": "return_amount_test1",
+            "purpose": "purpose_test1",
+            "interest_rate": 123.45678,
+            "tradable_exchange_contract_address": "0x0",
+            "personal_info_contract_address": "0x0",
+            "image_url": [
+                "http://test/test",
+                "http://test/test",
+                "http://test/test",
+                "http://test/test",
+            ],
+        }
+        resp = client.post(
+            self.apiurl,
+            json=req_param,
+            headers={
+                "issuer-address": test_account["address"]
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "loc": [
+                        "body",
+                        "interest_rate"
+                    ],
+                    "msg": "interest_rate must be less than or equal to four decimal places",
+                    "type": "value_error"
+                },
+                {
+                    "loc": [
+                        "body",
+                        "tradable_exchange_contract_address"
+                    ],
+                    "msg": "tradable_exchange_contract_address is not a valid address",
+                    "type": "value_error"
+                },
+                {
+                    "loc": [
+                        "body",
+                        "personal_info_contract_address"
+                    ],
+                    "msg": "personal_info_contract_address is not a valid address",
+                    "type": "value_error"
+                },
+                {
+                    "loc": [
+                        "body",
+                        "image_url"
+                    ],
+                    "msg": "The length of the list must be less than or equal to 3",
+                    "type": "value_error"
+                }
+            ]
+        }
+
+    # <Error Case 3>
+    # Parameter Error: issuer-address
+    def test_error_3(self, client, db):
+
+        # request target api
+        req_param = {
+            "name": "name_test1",
+            "symbol": "symbol_test1",
+            "total_supply": 10000,
+            "face_value": 200,
+            "redemption_date": "redemption_date_test1",
+            "redemption_value": 4000,
+            "return_date": "redemption_value_test1",
+            "return_amount": "return_amount_test1",
+            "purpose": "purpose_test1",
+        }
+        resp = client.post(
+            self.apiurl,
+            json=req_param,
+            headers={
+                "issuer-address": "issuer-address"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [{
+                "loc": ["header", "issuer-address"],
+                "msg": "issuer-address is not a valid address",
+                "type": "value_error"
+            }]
+        }
+
+    # <Error Case 4>
+    # Not Exists Address
+    def test_error_4(self, client, db):
+        test_account_1 = config_eth_account("user1")
+        test_account_2 = config_eth_account("user2")
+
         # prepare data
         account = Account()
-        account.issuer_address = test_account["address"]
-        account.keyfile = test_account["keyfile_json"]
+        account.issuer_address = test_account_1["address"]
+        account.keyfile = test_account_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
         # request target api
@@ -155,7 +276,9 @@ class TestAppRoutersBondTokensPOST:
         resp = client.post(
             self.apiurl,
             json=req_param,
-            headers={"issuer-address": "not_exists_issuer"}
+            headers={
+                "issuer-address": test_account_2["address"]
+            }
         )
 
         # assertion
@@ -168,11 +291,11 @@ class TestAppRoutersBondTokensPOST:
             "detail": "issuer does not exist"
         }
 
-    # <Error Case 3>
+    # <Error Case 5>
     # Send Transaction Error
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.create",
                 MagicMock(side_effect=SendTransactionError()))
-    def test_error_3(self, client, db):
+    def test_error_5(self, client, db):
         test_account_1 = config_eth_account("user1")
         test_account_2 = config_eth_account("user2")
 
@@ -180,6 +303,7 @@ class TestAppRoutersBondTokensPOST:
         account = Account()
         account.issuer_address = test_account_1["address"]
         account.keyfile = test_account_2["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
         # request target api
@@ -197,7 +321,9 @@ class TestAppRoutersBondTokensPOST:
         resp = client.post(
             self.apiurl,
             json=req_param,
-            headers={"issuer-address": test_account_1["address"]}
+            headers={
+                "issuer-address": test_account_1["address"]
+            }
         )
 
         # assertion

@@ -23,11 +23,11 @@ from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
 from eth_keyfile import decode_keyfile_json
 
-from config import KEY_FILE_PASSWORD
 from app.database import db_session
 from app.model.schema import IbetStraightBondCreate, IbetStraightBondUpdate, \
     IbetStraightBondTransfer, IbetStraightBondAdd, \
     IbetStraightBondResponse, HolderResponse
+from app.model.utils import E2EEUtils, headers_validate, address_is_valid_address
 from app.model.db import Account, Token, TokenType, IDXPosition, IDXPersonalInfo
 from app.model.blockchain import IbetStraightBondContract
 from app.exceptions import InvalidParameterError, SendTransactionError
@@ -43,9 +43,16 @@ router = APIRouter(
 @router.post("/tokens")
 async def issue_token(
         token: IbetStraightBondCreate,
-        issuer_address: str = Header(None),
+        issuer_address: str = Header(...),
         db: Session = Depends(db_session)):
     """Issue ibetStraightBond token"""
+
+    # Headers Validate
+    headers_validate([{
+        "name": "issuer-address",
+        "value": issuer_address,
+        "validator": address_is_valid_address
+    }])
 
     # Get Account
     _account = db.query(Account). \
@@ -56,9 +63,10 @@ async def issue_token(
 
     # Get private key
     keyfile_json = _account.keyfile
+    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
     private_key = decode_keyfile_json(
         raw_keyfile_json=keyfile_json,
-        password=KEY_FILE_PASSWORD.encode("utf-8")
+        password=decrypt_password.encode("utf-8")
     )
 
     # Deploy Arguments
@@ -103,6 +111,14 @@ async def list_all_tokens(
         issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """List all issued tokens"""
+
+    # Headers Validate
+    headers_validate([{
+        "name": "issuer-address",
+        "value": issuer_address,
+        "validator": address_is_valid_address
+    }])
+
     # Get issued token list
     if issuer_address is None:
         tokens = db.query(Token). \
@@ -151,9 +167,16 @@ async def retrieve_token(
 async def update_token(
         token_address: str,
         token: IbetStraightBondUpdate,
-        issuer_address: str = Header(None),
+        issuer_address: str = Header(...),
         db: Session = Depends(db_session)):
     """Update a token"""
+
+    # Headers Validate
+    headers_validate([{
+        "name": "issuer-address",
+        "value": issuer_address,
+        "validator": address_is_valid_address
+    }])
 
     # Get Account
     _account = db.query(Account). \
@@ -161,6 +184,14 @@ async def update_token(
         first()
     if _account is None:
         raise InvalidParameterError("issuer does not exist")
+
+    # Get private key
+    keyfile_json = _account.keyfile
+    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
+    private_key = decode_keyfile_json(
+        raw_keyfile_json=keyfile_json,
+        password=decrypt_password.encode("utf-8")
+    )
 
     # Get Token
     _token = db.query(Token). \
@@ -170,13 +201,6 @@ async def update_token(
         first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-
-    # Get private key
-    keyfile_json = _account.keyfile
-    private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json,
-        password=KEY_FILE_PASSWORD.encode("utf-8")
-    )
 
     # Send transaction
     try:
@@ -197,9 +221,16 @@ async def update_token(
 async def additional_issue(
         token_address: str,
         token: IbetStraightBondAdd,
-        issuer_address: str = Header(None),
+        issuer_address: str = Header(...),
         db: Session = Depends(db_session)):
     """Add token"""
+
+    # Headers Validate
+    headers_validate([{
+        "name": "issuer-address",
+        "value": issuer_address,
+        "validator": address_is_valid_address
+    }])
 
     # Get Account
     _account = db.query(Account). \
@@ -207,6 +238,14 @@ async def additional_issue(
         first()
     if _account is None:
         raise InvalidParameterError("issuer does not exist")
+
+    # Get private key
+    keyfile_json = _account.keyfile
+    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
+    private_key = decode_keyfile_json(
+        raw_keyfile_json=keyfile_json,
+        password=decrypt_password.encode("utf-8")
+    )
 
     # Get Token
     _token = db.query(Token). \
@@ -216,13 +255,6 @@ async def additional_issue(
         first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
-
-    # Get private key
-    keyfile_json = _account.keyfile
-    private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json,
-        password=KEY_FILE_PASSWORD.encode("utf-8")
-    )
 
     # Send transaction
     try:
@@ -242,9 +274,16 @@ async def additional_issue(
 @router.get("/tokens/{token_address}/holders", response_model=List[HolderResponse])
 async def list_all_holders(
         token_address: str,
-        issuer_address: str = Header(None),
+        issuer_address: str = Header(...),
         db: Session = Depends(db_session)):
     """List all bond token holders"""
+
+    # Headers Validate
+    headers_validate([{
+        "name": "issuer-address",
+        "value": issuer_address,
+        "validator": address_is_valid_address
+    }])
 
     # Get Account
     _account = db.query(Account). \
@@ -306,9 +345,16 @@ async def list_all_holders(
 async def retrieve_holder(
         token_address: str,
         account_address: str,
-        issuer_address: str = Header(None),
+        issuer_address: str = Header(...),
         db: Session = Depends(db_session)):
     """Retrieve bond token holder"""
+
+    # Headers Validate
+    headers_validate([{
+        "name": "issuer-address",
+        "value": issuer_address,
+        "validator": address_is_valid_address
+    }])
 
     # Get Issuer
     _account = db.query(Account). \
@@ -363,9 +409,16 @@ async def retrieve_holder(
 @router.post("/transfer")
 async def transfer_ownership(
         token: IbetStraightBondTransfer,
-        issuer_address: str = Header(None),
+        issuer_address: str = Header(...),
         db: Session = Depends(db_session)):
     """Transfer token ownership"""
+
+    # Headers Validate
+    headers_validate([{
+        "name": "issuer-address",
+        "value": issuer_address,
+        "validator": address_is_valid_address
+    }])
 
     # Get Account
     _account = db.query(Account). \
@@ -373,6 +426,14 @@ async def transfer_ownership(
         first()
     if _account is None:
         raise InvalidParameterError("issuer does not exist")
+
+    # Get private key
+    keyfile_json = _account.keyfile
+    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
+    private_key = decode_keyfile_json(
+        raw_keyfile_json=keyfile_json,
+        password=decrypt_password.encode("utf-8")
+    )
 
     # Check that it is a token that has been issued.
     _token = db.query(Token). \
@@ -382,12 +443,6 @@ async def transfer_ownership(
         first()
     if _token is None:
         raise InvalidParameterError("token not found")
-
-    keyfile_json = _account.keyfile
-    private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json,
-        password=KEY_FILE_PASSWORD.encode("utf-8")
-    )
 
     try:
         IbetStraightBondContract.transfer(

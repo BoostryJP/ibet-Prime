@@ -39,7 +39,7 @@ RUN mkdir -p /app/ibet-Prime/contracts/
 COPY --chown=apl:apl contracts/ /app/ibet-Prime/contracts/
 RUN mkdir -p /app/ibet-Prime/conf/
 COPY --chown=apl:apl conf/ /app/ibet-Prime/conf/
-COPY --chown=apl:apl config.py /app/ibet-Prime/
+COPY --chown=apl:apl config.py server.py /app/ibet-Prime/
 RUN mkdir -p /app/ibet-Prime/batch/
 COPY --chown=apl:apl batch/ /app/ibet-Prime/batch/
 RUN mkdir -p /app/ibet-Prime/app/
@@ -53,6 +53,7 @@ RUN mkdir -p /app/ibet-Prime/tests/
 COPY --chown=apl:apl tests/ /app/ibet-Prime/tests/
 RUN chmod -R 755 /app/ibet-Prime/tests/ \
  && pip install -r /app/ibet-Prime/tests/requirements.txt \
- && rm -f /app/ibet-Prime/tests/requirements.txt
+ && rm -f /app/ibet-Prime/tests/requirements.txt \
+ && find /app/ibet-Prime/ -type d -name __pycache__ | xargs rm -fr
 
 CMD /app/ibet-Prime/tests/qa.sh

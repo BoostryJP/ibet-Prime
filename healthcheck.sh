@@ -21,13 +21,17 @@ RUN_MODE=${RUN_MODE:-server}
 cd /app/ibet-Prime
 
 if [ "${RUN_MODE}" == "server" ]; then
-  ./bin/healthcheck_server.sh start
+  ./bin/healthcheck_server.sh
 elif [ "${RUN_MODE}" == "batch" ]; then
   ./bin/healthcheck_indexer.sh || exit 1
   ./bin/healthcheck_processor.sh
 elif [ "${RUN_MODE}" == "batch_indexer" ]; then
   ./bin/healthcheck_indexer.sh
 elif [ "${RUN_MODE}" == "batch_processor" ]; then
+  ./bin/healthcheck_processor.sh
+elif [ "${RUN_MODE}" == "all" ]; then
+  ./bin/healthcheck_server.sh || exit 1
+  ./bin/healthcheck_indexer.sh || exit 1
   ./bin/healthcheck_processor.sh
 else
   echo "RUN_MODE is invalid value." >&2

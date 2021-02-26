@@ -16,9 +16,12 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import base64
 from unittest import mock
 
+from config import EOA_PASSWORD_PATTERN_MSG
 from app.model.db import Account
+from app.model.utils import E2EEUtils
 from app.routers.account import generate_rsa_key
 from tests.account_config import config_eth_account
 
@@ -36,7 +39,11 @@ class TestAppRoutersAccountsPOST:
     def test_normal_1(self, mock_add_task, client, db):
         accounts_before = db.query(Account).all()
 
-        resp = client.post(self.apiurl)
+        req_param = {
+            "eoa_password": E2EEUtils.encrypt("password")
+        }
+
+        resp = client.post(self.apiurl, json=req_param)
 
         # assertion
         assert resp.status_code == 200
@@ -49,14 +56,58 @@ class TestAppRoutersAccountsPOST:
         account_1 = accounts_after[0]
         assert account_1.issuer_address == resp.json()["issuer_address"]
         assert account_1.keyfile is not None
+        assert account_1.eoa_password is not None
         assert account_1.rsa_private_key is None
         assert account_1.rsa_public_key is None
+        assert account_1.rsa_passphrase is None
 
         mock_add_task.assert_any_call(generate_rsa_key, db, account_1.issuer_address)
 
     ###########################################################################
     # Error Case
     ###########################################################################
+
+    # <Error_1>
+    # Password Policy Violation
+    def test_error_1(self, client, db):
+        req_param = {
+            "eoa_password": base64.encodebytes("password".encode("utf-8")).decode()
+        }
+
+        resp = client.post(self.apiurl, json=req_param)
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [{
+                "loc": ["body", "eoa_password"],
+                "msg": "eoa_password is not a Base64-decoded encrypted data",
+                "type": "value_error"
+            }]
+        }
+
+    # <Error_2>
+    # Invalid Password
+    def test_error_2(self, client, db):
+        req_param = {
+            "eoa_password": E2EEUtils.encrypt("test")
+        }
+
+        resp = client.post(self.apiurl, json=req_param)
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "InvalidParameterError"
+            },
+            "detail": EOA_PASSWORD_PATTERN_MSG
+        }
 
     ###########################################################################
     # Normal Case(BackGroundTask)
@@ -65,10 +116,12 @@ class TestAppRoutersAccountsPOST:
     # <Normal_1>
     def test_backgroundtask_normal_1(self, db):
         config_account = config_eth_account("user1")
+        encrypt_password = E2EEUtils.encrypt("password")
 
         account = Account()
         account.issuer_address = config_account["address"]
         account.keyfile = config_account["keyfile_json"]
+        account.eoa_password = encrypt_password
         db.add(account)
 
         # Run BackGroundTask
@@ -78,8 +131,10 @@ class TestAppRoutersAccountsPOST:
 
         assert update_account.issuer_address == config_account["address"]
         assert update_account.keyfile == config_account["keyfile_json"]
+        assert update_account.eoa_password == encrypt_password
         assert update_account.rsa_private_key is not None
         assert update_account.rsa_public_key is not None
+        assert update_account.rsa_passphrase is not None
 
     ###########################################################################
     # Error Case(BackGroundTask)
@@ -89,10 +144,12 @@ class TestAppRoutersAccountsPOST:
     # Not Exists Address
     def test_backgroundtask_error_1(self, db):
         config_account = config_eth_account("user1")
+        encrypt_password = E2EEUtils.encrypt("password")
 
         account = Account()
         account.issuer_address = config_account["address"]
         account.keyfile = config_account["keyfile_json"]
+        account.eoa_password = encrypt_password
         db.add(account)
 
         # Run BackGroundTask
@@ -102,5 +159,7 @@ class TestAppRoutersAccountsPOST:
 
         assert update_account.issuer_address == config_account["address"]
         assert update_account.keyfile == config_account["keyfile_json"]
+        assert update_account.eoa_password == encrypt_password
         assert update_account.rsa_private_key is None
         assert update_account.rsa_public_key is None
+        assert update_account.rsa_passphrase is None

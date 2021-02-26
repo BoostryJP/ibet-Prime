@@ -19,9 +19,10 @@ SPDX-License-Identifier: Apache-2.0
 from typing import List
 import secrets
 import time
+import re
+
 from Crypto.PublicKey import RSA
 from Crypto import Random
-
 from fastapi import APIRouter, Depends, BackgroundTasks, Header
 from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
@@ -30,9 +31,11 @@ from coincurve import PublicKey
 from eth_utils import to_checksum_address
 import eth_keyfile
 
-from config import KEY_FILE_PASSWORD
+from config import PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE, EOA_PASSWORD_PATTERN, EOA_PASSWORD_PATTERN_MSG, \
+    PERSONAL_INFO_RSA_PASSPHRASE_PATTERN, PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG, E2EE_REQUEST_ENABLED
 from app.database import db_session
-from app.model.schema import AccountResponse, AccountChangeRsaKeyRequest
+from app.model.schema import AccountCreateKeyRequest, AccountResponse, AccountChangeRsaKeyRequest
+from app.model.utils import E2EEUtils, headers_validate, address_is_valid_address
 from app.model.db import Account, AccountRsaKeyTemporary
 from app.exceptions import InvalidParameterError
 from app import log
@@ -56,12 +59,13 @@ def generate_rsa_key(db: Session, issuer_address: str):
 
     random_func = Random.new().read
     rsa = RSA.generate(10240, random_func)
-    rsa_private_pem = rsa.exportKey(format="PEM", passphrase=KEY_FILE_PASSWORD).decode()
+    rsa_private_pem = rsa.exportKey(format="PEM", passphrase=PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE).decode()
     rsa_public_pem = rsa.publickey().exportKey().decode()
 
     # Register key data to the DB
     _account.rsa_private_key = rsa_private_pem
     _account.rsa_public_key = rsa_public_pem
+    _account.rsa_passphrase = E2EEUtils.encrypt(PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE)
     db.merge(_account)
     db.commit()
 
@@ -72,9 +76,14 @@ def generate_rsa_key(db: Session, issuer_address: str):
 # POST: /accounts
 @router.post("/accounts", response_model=AccountResponse)
 async def create_key(
+        data: AccountCreateKeyRequest,
         background_tasks: BackgroundTasks,
         db: Session = Depends(db_session)):
     """Create Keys"""
+    # Check Password Policy
+    eoa_password = E2EEUtils.decrypt(data.eoa_password) if E2EE_REQUEST_ENABLED else data.eoa_password
+    if not re.match(EOA_PASSWORD_PATTERN, eoa_password):
+        raise InvalidParameterError(EOA_PASSWORD_PATTERN_MSG)
 
     # Generate Ethereum Key
     private_key = keccak_256(secrets.token_bytes(32)).digest()
@@ -82,7 +91,7 @@ async def create_key(
     addr = to_checksum_address(keccak_256(public_key).digest()[-20:])
     keyfile_json = eth_keyfile.create_keyfile_json(
         private_key=private_key,
-        password=KEY_FILE_PASSWORD.encode("utf-8"),
+        password=eoa_password.encode("utf-8"),
         kdf="pbkdf2"
     )
 
@@ -90,6 +99,7 @@ async def create_key(
     _account = Account()
     _account.issuer_address = addr
     _account.keyfile = keyfile_json
+    _account.eoa_password = E2EEUtils.encrypt(eoa_password)
     db.add(_account)
     db.commit()
 
@@ -142,9 +152,16 @@ async def retrieve_account(issuer_address: str, db: Session = Depends(db_session
 @router.post("/accounts/rsakey", response_model=AccountResponse)
 async def change_account_rsa_key(
         data: AccountChangeRsaKeyRequest,
-        issuer_address: str = Header(None),
+        issuer_address: str = Header(...),
         db: Session = Depends(db_session)):
     """Change RSA key"""
+
+    # Headers Validate
+    headers_validate([{
+        "name": "issuer-address",
+        "value": issuer_address,
+        "validator": address_is_valid_address
+    }])
 
     # Get Account
     _account = db.query(Account). \
@@ -160,15 +177,23 @@ async def change_account_rsa_key(
     if _temporary is not None:
         raise InvalidParameterError("issuer information is now changing")
 
+    # Check Password Policy
+    rsa_passphrase = E2EEUtils.decrypt(data.rsa_passphrase) if E2EE_REQUEST_ENABLED else data.rsa_passphrase
+    if not re.match(PERSONAL_INFO_RSA_PASSPHRASE_PATTERN, rsa_passphrase):
+        raise InvalidParameterError(PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG)
+
     # Check RSA Private Key Format
     try:
-        # TODO: issue#25 'Set KEY_FILE_PASSWORD from the client'
-        rsa_key = RSA.importKey(data.rsa_private_key, passphrase=KEY_FILE_PASSWORD)
+        rsa_key = RSA.importKey(data.rsa_private_key, passphrase=rsa_passphrase)
     except ValueError:
-        raise InvalidParameterError("RSA Private Key is invalid")
+        raise InvalidParameterError("RSA Private Key is invalid, or passphrase is invalid")
 
     if not rsa_key.has_private():
         raise InvalidParameterError("RSA Private Key is invalid")
+
+    # Check RSA key length
+    if rsa_key.size_in_bits() != 10240:
+        raise InvalidParameterError("RSA Key length(bits) is invalid")
 
     # Create RSA Public Key
     rsa_public_key = rsa_key.publickey().exportKey().decode()
@@ -179,12 +204,14 @@ async def change_account_rsa_key(
     _temporary.issuer_address = issuer_address
     _temporary.rsa_private_key = _account.rsa_private_key
     _temporary.rsa_public_key = _account.rsa_public_key
+    _temporary.rsa_passphrase = _account.rsa_passphrase
     db.add(_temporary)
 
     # Change key data to the DB
     # NOTE: PersonalInfo modify execute in the Batch.
     _account.rsa_private_key = data.rsa_private_key
     _account.rsa_public_key = rsa_public_key
+    _account.rsa_passphrase = E2EEUtils.encrypt(rsa_passphrase)
     db.merge(_account)
 
     db.commit()

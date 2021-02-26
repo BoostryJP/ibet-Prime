@@ -17,18 +17,39 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
+
+from config import E2EE_REQUEST_ENABLED
+from app.model.utils import check_value_is_encrypted
 
 
 ############################
 # REQUEST
 ############################
+class AccountCreateKeyRequest(BaseModel):
+    """Account Create Key schema (REQUEST)"""
+    eoa_password: str
+
+    @validator("eoa_password")
+    def eoa_password_is_encrypted_value(cls, v):
+        if E2EE_REQUEST_ENABLED:
+            check_value_is_encrypted("eoa_password", v)
+        return v
+
 
 class AccountChangeRsaKeyRequest(BaseModel):
     """Account Change Rsa Key schema (REQUEST)"""
+    # NOTE:
+    # rsa_private_key is a long text, but there is a possible of encryption fail when RSA key length is small.
+    # So It deals in rsa_private_key at plane text.
     rsa_private_key: str
-    # TODO: issue#25 'Set KEY_FILE_PASSWORD from the client'
-    password: Optional[str]
+    rsa_passphrase: str
+
+    @validator("rsa_passphrase")
+    def rsa_passphrase_is_encrypted_value(cls, v):
+        if E2EE_REQUEST_ENABLED:
+            check_value_is_encrypted("rsa_passphrase", v)
+        return v
 
 
 ############################

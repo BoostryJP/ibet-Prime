@@ -20,6 +20,7 @@ from unittest import mock
 from unittest.mock import ANY, MagicMock
 
 from app.model.db import Account, Token, TokenType
+from app.model.utils import E2EEUtils
 from app.exceptions import SendTransactionError
 from tests.account_config import config_eth_account
 
@@ -44,6 +45,7 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
         account = Account()
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
         token = Token()
@@ -65,7 +67,9 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={"issuer-address": _issuer_address}
+            headers={
+                "issuer-address": _issuer_address
+            }
         )
 
         # assertion
@@ -83,8 +87,114 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
     ###########################################################################
 
     # <Error_1>
-    # issuer does not exist
+    # RequestValidationError: headers and body required
     def test_error_1(self, client, db):
+        _token_address = "token_address_test"
+
+        # request target API
+        resp = client.post(
+            self.base_url.format(_token_address)
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "loc": ["header", "issuer-address"],
+                    "msg": "field required",
+                    "type": "value_error.missing"
+                },
+                {
+                    "loc": ["body"],
+                    "msg": "field required",
+                    "type": "value_error.missing"
+                }
+            ]
+        }
+
+    # <Error_2>
+    # RequestValidationError: account_address, amount
+    def test_error_2(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _token_address = "token_address_test"
+
+        # request target API
+        req_param = {
+            "account_address": "0x0",
+            "amount": -1
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "loc": ["body", "account_address"],
+                    "msg": "account_address is not a valid address",
+                    "type": "value_error"
+                },
+                {
+                    "loc": ["body", "amount"],
+                    "msg": "amount must be greater than 0",
+                    "type": "value_error"
+                }
+            ]
+        }
+
+    # <Error_3>
+    # RequestValidationError: issuer-address
+    def test_error_3(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _token_address = "token_address_test"
+
+        # request target API
+        req_param = {
+            "account_address": _issuer_address,
+            "amount": 10
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": "issuer-address"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [{
+                "loc": ["header", "issuer-address"],
+                "msg": "issuer-address is not a valid address",
+                "type": "value_error"
+            }]
+        }
+
+    # <Error_4>
+    # issuer does not exist
+    def test_error_4(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -108,7 +218,9 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={"issuer-address": _issuer_address}
+            headers={
+                "issuer-address": _issuer_address
+            }
         )
 
         # assertion
@@ -121,9 +233,9 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
             "detail": "issuer does not exist"
         }
 
-    # <Error_2>
+    # <Error_5>
     # token not found
-    def test_error_2(self, client, db):
+    def test_error_5(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -133,6 +245,7 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
         account = Account()
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
         # request target API
@@ -143,7 +256,9 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={"issuer-address": _issuer_address}
+            headers={
+                "issuer-address": _issuer_address
+            }
         )
 
         assert resp.status_code == 404
@@ -155,12 +270,11 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
             "detail": "token not found"
         }
 
-
-    # <Error_3>
+    # <Error_6>
     # Send Transaction Error
     @mock.patch("app.model.blockchain.token.IbetShareContract.add_supply",
                 MagicMock(side_effect=SendTransactionError()))
-    def test_error_3(self, client, db):
+    def test_error_6(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -170,6 +284,7 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
         account = Account()
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
         token = Token()
@@ -188,7 +303,9 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={"issuer-address": _issuer_address}
+            headers={
+                "issuer-address": _issuer_address
+            }
         )
 
         # assertion
