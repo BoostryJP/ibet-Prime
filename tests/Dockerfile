@@ -53,6 +53,7 @@ RUN mkdir -p /app/ibet-Prime/tests/
 COPY --chown=apl:apl tests/ /app/ibet-Prime/tests/
 RUN chmod -R 755 /app/ibet-Prime/tests/ \
  && pip install -r /app/ibet-Prime/tests/requirements.txt \
- && rm -f /app/ibet-Prime/tests/requirements.txt
+ && rm -f /app/ibet-Prime/tests/requirements.txt \
+ && find /app/ibet-Prime/ -type d -name __pycache__ | xargs rm -fr
 
 CMD /app/ibet-Prime/tests/qa.sh

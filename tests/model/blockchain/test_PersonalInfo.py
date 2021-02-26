@@ -29,11 +29,12 @@ from web3.exceptions import TimeExhausted
 from unittest.mock import MagicMock
 from unittest import mock
 
-from config import WEB3_HTTP_PROVIDER, KEY_FILE_PASSWORD, TX_GAS_LIMIT, CHAIN_ID
+from config import WEB3_HTTP_PROVIDER, TX_GAS_LIMIT, CHAIN_ID
 from app.model.blockchain import PersonalInfoContract
 from app.model.blockchain.utils import ContractUtils
 from app.exceptions import SendTransactionError
 from app.model.db import Account
+from app.model.schema.utils import SecureValueUtils
 
 from tests.account_config import config_eth_account
 
@@ -47,12 +48,15 @@ def initialize(issuer, db):
     _account.keyfile = issuer["keyfile_json"]
     _account.rsa_private_key = issuer["rsa_private_key"]
     _account.rsa_public_key = issuer["rsa_public_key"]
+    rsa_password = "password"
+    _account.rsa_encrypt_passphrase = SecureValueUtils.encrypt(rsa_password)
     db.add(_account)
     db.commit()
 
+    eoa_password = "password"
     private_key = decode_keyfile_json(
         raw_keyfile_json=issuer["keyfile_json"],
-        password=KEY_FILE_PASSWORD.encode("utf-8")
+        password=eoa_password.encode("utf-8")
     )
     contract_address, _, _ = ContractUtils.deploy_contract("PersonalInfo", [], issuer["address"], private_key)
 
@@ -73,7 +77,8 @@ class TestGetInfo:
 
         # Set personal information data
         setting_user = config_eth_account("user2")
-        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=KEY_FILE_PASSWORD)
+        rsa_password = "password"
+        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password)
         cipher = PKCS1_OAEP.new(rsa)
         data = {
             "key_manager": "1234567890",
@@ -92,9 +97,10 @@ class TestGetInfo:
             "gasPrice": 0,
             "chainId": CHAIN_ID
         })
+        eoa_password = "password"
         private_key = decode_keyfile_json(
             raw_keyfile_json=setting_user["keyfile_json"],
-            password=KEY_FILE_PASSWORD.encode("utf-8")
+            password=eoa_password.encode("utf-8")
         )
         ContractUtils.send_transaction(tx, private_key)
 
@@ -119,9 +125,10 @@ class TestGetInfo:
             "gasPrice": 0,
             "chainId": CHAIN_ID
         })
+        eoa_password = "password"
         private_key = decode_keyfile_json(
             raw_keyfile_json=setting_user["keyfile_json"],
-            password=KEY_FILE_PASSWORD.encode("utf-8")
+            password=eoa_password.encode("utf-8")
         )
         ContractUtils.send_transaction(tx, private_key)
 
@@ -149,7 +156,8 @@ class TestGetInfo:
 
         # Set personal information data
         setting_user = config_eth_account("user2")
-        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=KEY_FILE_PASSWORD)
+        rsa_password = "password"
+        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password)
         cipher = PKCS1_OAEP.new(rsa)
         data = {
             "key_manager": "1234567890",
@@ -168,9 +176,10 @@ class TestGetInfo:
             "gasPrice": 0,
             "chainId": CHAIN_ID
         })
+        eoa_password = "password"
         private_key = decode_keyfile_json(
             raw_keyfile_json=setting_user["keyfile_json"],
-            password=KEY_FILE_PASSWORD.encode("utf-8")
+            password=eoa_password.encode("utf-8")
         )
         ContractUtils.send_transaction(tx, private_key)
 
@@ -206,9 +215,10 @@ class TestGetInfo:
             "chainId": CHAIN_ID
 
         })
+        eoa_password = "password"
         private_key = decode_keyfile_json(
             raw_keyfile_json=setting_user["keyfile_json"],
-            password=KEY_FILE_PASSWORD.encode("utf-8")
+            password=eoa_password.encode("utf-8")
         )
         ContractUtils.send_transaction(tx, private_key)
 
@@ -238,7 +248,8 @@ class TestModifyInfo:
 
         # Set personal information data
         setting_user = config_eth_account("user2")
-        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=KEY_FILE_PASSWORD)
+        rsa_password = "password"
+        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password)
         cipher = PKCS1_OAEP.new(rsa)
         data = {
             "key_manager": "1234567890",
@@ -257,9 +268,10 @@ class TestModifyInfo:
             "gasPrice": 0,
             "chainId": CHAIN_ID
         })
+        eoa_password = "password"
         private_key = decode_keyfile_json(
             raw_keyfile_json=setting_user["keyfile_json"],
-            password=KEY_FILE_PASSWORD.encode("utf-8")
+            password=eoa_password.encode("utf-8")
         )
         ContractUtils.send_transaction(tx, private_key)
 
@@ -272,7 +284,7 @@ class TestModifyInfo:
             "email": "sample@test.test2",
             "birth": "19800101"
         }
-        personal_info_contract.modify_info(setting_user["address"], update_data)
+        personal_info_contract.modify_info(setting_user["address"], eoa_password, update_data)
 
         get_info = personal_info_contract.get_info(setting_user["address"])
 
@@ -290,7 +302,8 @@ class TestModifyInfo:
 
         # Set personal information data
         setting_user = config_eth_account("user2")
-        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=KEY_FILE_PASSWORD)
+        rsa_password = "password"
+        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password)
         cipher = PKCS1_OAEP.new(rsa)
         data = {
             "key_manager": "1234567890",
@@ -309,9 +322,10 @@ class TestModifyInfo:
             "gasPrice": 0,
             "chainId": CHAIN_ID
         })
+        eoa_password = "password"
         private_key = decode_keyfile_json(
             raw_keyfile_json=setting_user["keyfile_json"],
-            password=KEY_FILE_PASSWORD.encode("utf-8")
+            password=eoa_password.encode("utf-8")
         )
         ContractUtils.send_transaction(tx, private_key)
 
@@ -326,7 +340,7 @@ class TestModifyInfo:
         }
         with mock.patch("web3.eth.Eth.waitForTransactionReceipt", MagicMock(side_effect=TimeExhausted())):
             with pytest.raises(SendTransactionError):
-                personal_info_contract.modify_info(setting_user["address"], update_data)
+                personal_info_contract.modify_info(setting_user["address"], eoa_password, update_data)
 
     # <Error_1>
     # SendTransactionError(Other Error)
@@ -336,7 +350,8 @@ class TestModifyInfo:
 
         # Set personal information data
         setting_user = config_eth_account("user2")
-        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=KEY_FILE_PASSWORD)
+        rsa_password = "password"
+        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password)
         cipher = PKCS1_OAEP.new(rsa)
         data = {
             "key_manager": "1234567890",
@@ -355,9 +370,10 @@ class TestModifyInfo:
             "gasPrice": 0,
             "chainId": CHAIN_ID
         })
+        eoa_password = "password"
         private_key = decode_keyfile_json(
             raw_keyfile_json=setting_user["keyfile_json"],
-            password=KEY_FILE_PASSWORD.encode("utf-8")
+            password=eoa_password.encode("utf-8")
         )
         ContractUtils.send_transaction(tx, private_key)
 
@@ -372,7 +388,7 @@ class TestModifyInfo:
         }
         with mock.patch("web3.eth.Eth.waitForTransactionReceipt", MagicMock(side_effect=TypeError())):
             with pytest.raises(SendTransactionError):
-                personal_info_contract.modify_info(setting_user["address"], update_data)
+                personal_info_contract.modify_info(setting_user["address"], eoa_password, update_data)
 
 
 class TestGetRegisterEvent:
@@ -390,7 +406,8 @@ class TestGetRegisterEvent:
 
         # Set personal information data(Register)
         setting_user = config_eth_account("user2")
-        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=KEY_FILE_PASSWORD)
+        rsa_password = "password"
+        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password)
         cipher = PKCS1_OAEP.new(rsa)
         data = {
             "key_manager": "1234567890",
@@ -409,9 +426,10 @@ class TestGetRegisterEvent:
             "gasPrice": 0,
             "chainId": CHAIN_ID
         })
+        eoa_password = "password"
         private_key = decode_keyfile_json(
             raw_keyfile_json=setting_user["keyfile_json"],
-            password=KEY_FILE_PASSWORD.encode("utf-8")
+            password=eoa_password.encode("utf-8")
         )
         ContractUtils.send_transaction(tx, private_key)
 
@@ -437,7 +455,8 @@ class TestGetModifyEvent:
 
         # Set personal information data
         setting_user = config_eth_account("user2")
-        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=KEY_FILE_PASSWORD)
+        rsa_password = "password"
+        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password)
         cipher = PKCS1_OAEP.new(rsa)
         data = {
             "key_manager": "1234567890",
@@ -456,9 +475,10 @@ class TestGetModifyEvent:
             "gasPrice": 0,
             "chainId": CHAIN_ID
         })
+        eoa_password = "password"
         private_key = decode_keyfile_json(
             raw_keyfile_json=setting_user["keyfile_json"],
-            password=KEY_FILE_PASSWORD.encode("utf-8")
+            password=eoa_password.encode("utf-8")
         )
         ContractUtils.send_transaction(tx, private_key)
 
@@ -484,7 +504,7 @@ class TestGetModifyEvent:
         })
         private_key = decode_keyfile_json(
             raw_keyfile_json=issuer["keyfile_json"],
-            password=KEY_FILE_PASSWORD.encode("utf-8")
+            password=eoa_password.encode("utf-8")
         )
         ContractUtils.send_transaction(tx, private_key)
 
