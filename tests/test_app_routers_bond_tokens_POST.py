@@ -25,7 +25,7 @@ from web3.middleware import geth_poa_middleware
 import config
 from app.exceptions import SendTransactionError
 from app.model.db import Account, Token, TokenType
-from app.model.schema.utils import SecureValueUtils
+from app.model.utils import SecureValueUtils
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
@@ -49,6 +49,7 @@ class TestAppRoutersBondTokensPOST:
         account = Account()
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
+        account.keyfile_password = SecureValueUtils.encrypt("password")
         db.add(account)
 
         token_before = db.query(Token).all()
@@ -72,8 +73,7 @@ class TestAppRoutersBondTokensPOST:
             self.apiurl,
             json=req_param,
             headers={
-                "issuer-address": test_account["address"],
-                "password": SecureValueUtils.encrypt("password")
+                "issuer-address": test_account["address"]
             }
         )
 
@@ -126,11 +126,6 @@ class TestAppRoutersBondTokensPOST:
                     "type": "value_error.missing"
                 },
                 {
-                    "loc": ["header", "password"],
-                    "msg": "field required",
-                    "type": "value_error.missing"
-                },
-                {
                     "loc": ["body"],
                     "msg": "field required",
                     "type": "value_error.missing"
@@ -168,8 +163,7 @@ class TestAppRoutersBondTokensPOST:
             self.apiurl,
             json=req_param,
             headers={
-                "issuer-address": test_account["address"],
-                "password": SecureValueUtils.encrypt("password")
+                "issuer-address": test_account["address"]
             }
         )
 
@@ -217,7 +211,7 @@ class TestAppRoutersBondTokensPOST:
         }
 
     # <Error Case 3>
-    # Parameter Error: issuer-address, password
+    # Parameter Error: issuer-address
     def test_error_3(self, client, db):
 
         # request target api
@@ -236,8 +230,7 @@ class TestAppRoutersBondTokensPOST:
             self.apiurl,
             json=req_param,
             headers={
-                "issuer-address": "issuer-address",
-                "password": "password"
+                "issuer-address": "issuer-address"
             }
         )
 
@@ -252,10 +245,6 @@ class TestAppRoutersBondTokensPOST:
                 "loc": ["header", "issuer-address"],
                 "msg": "issuer-address is not a valid address",
                 "type": "value_error"
-            }, {
-                "loc": ["header", "password"],
-                "msg": "password is not a Base64-decoded encrypted data",
-                "type": "value_error"
             }]
         }
 
@@ -269,6 +258,7 @@ class TestAppRoutersBondTokensPOST:
         account = Account()
         account.issuer_address = test_account_1["address"]
         account.keyfile = test_account_1["keyfile_json"]
+        account.keyfile_password = SecureValueUtils.encrypt("password")
         db.add(account)
 
         # request target api
@@ -287,8 +277,7 @@ class TestAppRoutersBondTokensPOST:
             self.apiurl,
             json=req_param,
             headers={
-                "issuer-address": test_account_2["address"],
-                "password": SecureValueUtils.encrypt("password")
+                "issuer-address": test_account_2["address"]
             }
         )
 
@@ -303,54 +292,10 @@ class TestAppRoutersBondTokensPOST:
         }
 
     # <Error Case 5>
-    # Incorrect Password
-    def test_error_5(self, client, db):
-        test_account = config_eth_account("user1")
-
-        # prepare data
-        account = Account()
-        account.issuer_address = test_account["address"]
-        account.keyfile = test_account["keyfile_json"]
-        db.add(account)
-
-        token_before = db.query(Token).all()
-
-        # request target api
-        req_param = {
-            "name": "name_test1",
-            "symbol": "symbol_test1",
-            "total_supply": 10000,
-            "face_value": 200,
-            "redemption_date": "redemption_date_test1",
-            "redemption_value": 4000,
-            "return_date": "redemption_value_test1",
-            "return_amount": "return_amount_test1",
-            "purpose": "purpose_test1",
-        }
-        resp = client.post(
-            self.apiurl,
-            json=req_param,
-            headers={
-                "issuer-address": test_account["address"],
-                "password": SecureValueUtils.encrypt("passwordtest")
-            }
-        )
-
-        # assertion
-        assert resp.status_code == 400
-        assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "password is mismatch"
-        }
-
-    # <Error Case 6>
     # Send Transaction Error
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.create",
                 MagicMock(side_effect=SendTransactionError()))
-    def test_error_6(self, client, db):
+    def test_error_5(self, client, db):
         test_account_1 = config_eth_account("user1")
         test_account_2 = config_eth_account("user2")
 
@@ -358,6 +303,7 @@ class TestAppRoutersBondTokensPOST:
         account = Account()
         account.issuer_address = test_account_1["address"]
         account.keyfile = test_account_2["keyfile_json"]
+        account.keyfile_password = SecureValueUtils.encrypt("password")
         db.add(account)
 
         # request target api
@@ -376,8 +322,7 @@ class TestAppRoutersBondTokensPOST:
             self.apiurl,
             json=req_param,
             headers={
-                "issuer-address": test_account_1["address"],
-                "password": SecureValueUtils.encrypt("password")
+                "issuer-address": test_account_1["address"]
             }
         )
 

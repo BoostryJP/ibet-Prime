@@ -39,7 +39,7 @@ sys.path.append(path)
 from config import WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT
 from app.model.blockchain.utils import ContractUtils
 from app.model.db import Account
-from app.model.schema.utils import SecureValueUtils
+from app.model.utils import SecureValueUtils
 from app.exceptions import SendTransactionError
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
@@ -69,7 +69,7 @@ class PersonalInfoContract:
         # Get issuer's RSA private key
         cipher = None
         try:
-            passphrase = SecureValueUtils.decrypt(self.issuer.rsa_encrypt_passphrase)
+            passphrase = SecureValueUtils.decrypt(self.issuer.rsa_passphrase)
             key = RSA.importKey(self.issuer.rsa_private_key, passphrase)
             cipher = PKCS1_OAEP.new(key)
         except Exception as err:
@@ -117,7 +117,7 @@ class PersonalInfoContract:
                 logging.error(f"Failed to decrypt: {err}")
                 return personal_info  # default
 
-    def modify_info(self, account_address: str, password: str, data: dict, default_value=None):
+    def modify_info(self, account_address: str, data: dict, default_value=None):
         """Modify personal information
 
         :param account_address: Token holder account address
@@ -138,12 +138,13 @@ class PersonalInfoContract:
         }
 
         # Encrypt personal info
-        passphrase = SecureValueUtils.decrypt(self.issuer.rsa_encrypt_passphrase)
+        passphrase = SecureValueUtils.decrypt(self.issuer.rsa_passphrase)
         rsa_key = RSA.importKey(self.issuer.rsa_public_key, passphrase=passphrase)
         cipher = PKCS1_OAEP.new(rsa_key)
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(personal_info).encode('utf-8')))
 
         try:
+            password = SecureValueUtils.decrypt(self.issuer.keyfile_password)
             private_key = decode_keyfile_json(
                 raw_keyfile_json=self.issuer.keyfile,
                 password=password.encode("utf-8")

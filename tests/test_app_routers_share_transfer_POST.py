@@ -20,7 +20,7 @@ from unittest import mock
 from unittest.mock import ANY, MagicMock
 
 from app.model.db import Account, Token, TokenType
-from app.model.schema.utils import SecureValueUtils
+from app.model.utils import SecureValueUtils
 from app.exceptions import SendTransactionError
 from tests.account_config import config_eth_account
 
@@ -52,6 +52,7 @@ class TestAppRoutersShareTransferPOST:
         account = Account()
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
+        account.keyfile_password = SecureValueUtils.encrypt("password")
         db.add(account)
 
         token = Token()
@@ -76,8 +77,7 @@ class TestAppRoutersShareTransferPOST:
             self.test_url,
             json=req_param,
             headers={
-                "issuer-address": _admin_address,
-                "password": SecureValueUtils.encrypt("password")
+                "issuer-address": _admin_address
             }
         )
 
@@ -115,8 +115,7 @@ class TestAppRoutersShareTransferPOST:
             self.test_url,
             json=req_param,
             headers={
-                "issuer-address": _admin_address,
-                "password": SecureValueUtils.encrypt("password")
+                "issuer-address": _admin_address
             }
         )
 
@@ -170,11 +169,6 @@ class TestAppRoutersShareTransferPOST:
                     "type": "value_error.missing"
                 },
                 {
-                    "loc": ["header", "password"],
-                    "msg": "field required",
-                    "type": "value_error.missing"
-                },
-                {
                     "loc": ["body"],
                     "msg": "field required",
                     "type": "value_error.missing"
@@ -183,7 +177,7 @@ class TestAppRoutersShareTransferPOST:
         }
 
     # <Error_3>
-    # RequestValidationError: issuer-address, password
+    # RequestValidationError: issuer-address
     def test_error_3(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
@@ -208,8 +202,7 @@ class TestAppRoutersShareTransferPOST:
             self.test_url,
             json=req_param,
             headers={
-                "issuer-address": "issuer-address",
-                "password": "password"
+                "issuer-address": "issuer-address"
             }
         )
 
@@ -223,10 +216,6 @@ class TestAppRoutersShareTransferPOST:
             "detail": [{
                 "loc": ["header", "issuer-address"],
                 "msg": "issuer-address is not a valid address",
-                "type": "value_error"
-            }, {
-                "loc": ["header", "password"],
-                "msg": "password is not a Base64-decoded encrypted data",
                 "type": "value_error"
             }]
         }
@@ -257,8 +246,7 @@ class TestAppRoutersShareTransferPOST:
             self.test_url,
             json=req_param,
             headers={
-                "issuer-address": _admin_address,  # Non-existent issuer
-                "password": SecureValueUtils.encrypt("password")
+                "issuer-address": _admin_address  # Non-existent issuer
             }
         )
 
@@ -273,7 +261,7 @@ class TestAppRoutersShareTransferPOST:
         }
 
     # <Error_5>
-    # InvalidParameterError: password is mismatch
+    # InvalidParameterError: token not found
     def test_error_5(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
@@ -291,6 +279,7 @@ class TestAppRoutersShareTransferPOST:
         account = Account()
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
+        account.keyfile_password = SecureValueUtils.encrypt("password")
         db.add(account)
 
         # request target API
@@ -304,23 +293,24 @@ class TestAppRoutersShareTransferPOST:
             self.test_url,
             json=req_param,
             headers={
-                "issuer-address": _admin_address,
-                "password": SecureValueUtils.encrypt("passwordtest")
+                "issuer-address": _admin_address
             }
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 404
         assert resp.json() == {
             "meta": {
                 "code": 1,
-                "title": "InvalidParameterError"
+                "title": "NotFound"
             },
-            "detail": "password is mismatch"
+            "detail": "token not found"
         }
 
     # <Error_6>
-    # InvalidParameterError: token not found
+    # Send Transaction Error
+    @mock.patch("app.model.blockchain.token.IbetShareContract.transfer",
+                MagicMock(side_effect=SendTransactionError()))
     def test_error_6(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
@@ -338,55 +328,7 @@ class TestAppRoutersShareTransferPOST:
         account = Account()
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
-        db.add(account)
-
-        # request target API
-        req_param = {
-            "token_address": _token_address,
-            "transfer_from": _transfer_from,
-            "transfer_to": _transfer_to,
-            "amount": 10
-        }
-        resp = client.post(
-            self.test_url,
-            json=req_param,
-            headers={
-                "issuer-address": _admin_address,
-                "password": SecureValueUtils.encrypt("password")
-            }
-        )
-
-        # assertion
-        assert resp.status_code == 404
-        assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token not found"
-        }
-
-    # <Error_7>
-    # Send Transaction Error
-    @mock.patch("app.model.blockchain.token.IbetShareContract.transfer",
-                MagicMock(side_effect=SendTransactionError()))
-    def test_error_7(self, client, db):
-        _admin_account = config_eth_account("user1")
-        _admin_address = _admin_account["address"]
-        _admin_keyfile = _admin_account["keyfile_json"]
-
-        _transfer_from_account = config_eth_account("user2")
-        _transfer_from = _transfer_from_account["address"]
-
-        _transfer_to_account = config_eth_account("user3")
-        _transfer_to = _transfer_to_account["address"]
-
-        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
-
-        # prepare data
-        account = Account()
-        account.issuer_address = _admin_address
-        account.keyfile = _admin_keyfile
+        account.keyfile_password = SecureValueUtils.encrypt("password")
         db.add(account)
 
         token = Token()
@@ -408,8 +350,7 @@ class TestAppRoutersShareTransferPOST:
             self.test_url,
             json=req_param,
             headers={
-                "issuer-address": _admin_address,
-                "password": SecureValueUtils.encrypt("password")
+                "issuer-address": _admin_address
             }
         )
 

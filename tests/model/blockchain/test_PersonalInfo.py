@@ -34,7 +34,7 @@ from app.model.blockchain import PersonalInfoContract
 from app.model.blockchain.utils import ContractUtils
 from app.exceptions import SendTransactionError
 from app.model.db import Account
-from app.model.schema.utils import SecureValueUtils
+from app.model.utils import SecureValueUtils
 
 from tests.account_config import config_eth_account
 
@@ -46,14 +46,15 @@ def initialize(issuer, db):
     _account = Account()
     _account.issuer_address = issuer["address"]
     _account.keyfile = issuer["keyfile_json"]
+    eoa_password = "password"
+    _account.keyfile_password = SecureValueUtils.encrypt(eoa_password)
     _account.rsa_private_key = issuer["rsa_private_key"]
     _account.rsa_public_key = issuer["rsa_public_key"]
     rsa_password = "password"
-    _account.rsa_encrypt_passphrase = SecureValueUtils.encrypt(rsa_password)
+    _account.rsa_passphrase = SecureValueUtils.encrypt(rsa_password)
     db.add(_account)
     db.commit()
 
-    eoa_password = "password"
     private_key = decode_keyfile_json(
         raw_keyfile_json=issuer["keyfile_json"],
         password=eoa_password.encode("utf-8")
@@ -284,7 +285,7 @@ class TestModifyInfo:
             "email": "sample@test.test2",
             "birth": "19800101"
         }
-        personal_info_contract.modify_info(setting_user["address"], eoa_password, update_data)
+        personal_info_contract.modify_info(setting_user["address"], update_data)
 
         get_info = personal_info_contract.get_info(setting_user["address"])
 
@@ -340,7 +341,7 @@ class TestModifyInfo:
         }
         with mock.patch("web3.eth.Eth.waitForTransactionReceipt", MagicMock(side_effect=TimeExhausted())):
             with pytest.raises(SendTransactionError):
-                personal_info_contract.modify_info(setting_user["address"], eoa_password, update_data)
+                personal_info_contract.modify_info(setting_user["address"], update_data)
 
     # <Error_1>
     # SendTransactionError(Other Error)
@@ -388,7 +389,7 @@ class TestModifyInfo:
         }
         with mock.patch("web3.eth.Eth.waitForTransactionReceipt", MagicMock(side_effect=TypeError())):
             with pytest.raises(SendTransactionError):
-                personal_info_contract.modify_info(setting_user["address"], eoa_password, update_data)
+                personal_info_contract.modify_info(setting_user["address"], update_data)
 
 
 class TestGetRegisterEvent:

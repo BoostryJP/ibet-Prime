@@ -21,7 +21,7 @@ from unittest import mock
 
 from config import EOA_PASSWORD_PATTERN_MSG
 from app.model.db import Account
-from app.model.schema.utils import SecureValueUtils
+from app.model.utils import SecureValueUtils
 from app.routers.account import generate_rsa_key
 from tests.account_config import config_eth_account
 
@@ -40,7 +40,7 @@ class TestAppRoutersAccountsPOST:
         accounts_before = db.query(Account).all()
 
         req_param = {
-            "eoa_password": SecureValueUtils.encrypt("password")  # Not Encrypted
+            "eoa_password": SecureValueUtils.encrypt("password")
         }
 
         resp = client.post(self.apiurl, json=req_param)
@@ -56,9 +56,10 @@ class TestAppRoutersAccountsPOST:
         account_1 = accounts_after[0]
         assert account_1.issuer_address == resp.json()["issuer_address"]
         assert account_1.keyfile is not None
+        assert account_1.keyfile_password is not None
         assert account_1.rsa_private_key is None
         assert account_1.rsa_public_key is None
-        assert account_1.rsa_encrypt_passphrase is None
+        assert account_1.rsa_passphrase is None
 
         mock_add_task.assert_any_call(generate_rsa_key, db, account_1.issuer_address)
 
@@ -115,10 +116,12 @@ class TestAppRoutersAccountsPOST:
     # <Normal_1>
     def test_backgroundtask_normal_1(self, db):
         config_account = config_eth_account("user1")
+        encrypt_password = SecureValueUtils.encrypt("password")
 
         account = Account()
         account.issuer_address = config_account["address"]
         account.keyfile = config_account["keyfile_json"]
+        account.keyfile_password = encrypt_password
         db.add(account)
 
         # Run BackGroundTask
@@ -128,9 +131,10 @@ class TestAppRoutersAccountsPOST:
 
         assert update_account.issuer_address == config_account["address"]
         assert update_account.keyfile == config_account["keyfile_json"]
+        assert update_account.keyfile_password == encrypt_password
         assert update_account.rsa_private_key is not None
         assert update_account.rsa_public_key is not None
-        assert update_account.rsa_encrypt_passphrase is not None
+        assert update_account.rsa_passphrase is not None
 
     ###########################################################################
     # Error Case(BackGroundTask)
@@ -140,10 +144,12 @@ class TestAppRoutersAccountsPOST:
     # Not Exists Address
     def test_backgroundtask_error_1(self, db):
         config_account = config_eth_account("user1")
+        encrypt_password = SecureValueUtils.encrypt("password")
 
         account = Account()
         account.issuer_address = config_account["address"]
         account.keyfile = config_account["keyfile_json"]
+        account.keyfile_password = encrypt_password
         db.add(account)
 
         # Run BackGroundTask
@@ -153,6 +159,7 @@ class TestAppRoutersAccountsPOST:
 
         assert update_account.issuer_address == config_account["address"]
         assert update_account.keyfile == config_account["keyfile_json"]
+        assert update_account.keyfile_password == encrypt_password
         assert update_account.rsa_private_key is None
         assert update_account.rsa_public_key is None
-        assert update_account.rsa_encrypt_passphrase is None
+        assert update_account.rsa_passphrase is None

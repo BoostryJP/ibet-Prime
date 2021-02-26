@@ -19,7 +19,8 @@ SPDX-License-Identifier: Apache-2.0
 from typing import Optional
 from pydantic import BaseModel, validator
 
-from app.model.schema.utils import SecureValueUtils
+from config import SECURE_VALUE_REQUEST_ENABLED
+from app.model.utils import secure_value_is_valid_encrypt
 
 
 ############################
@@ -31,10 +32,8 @@ class AccountCreateKeyRequest(BaseModel):
 
     @validator("eoa_password")
     def eoa_password_is_valid_encrypt(cls, v):
-        try:
-            SecureValueUtils.decrypt(v)
-        except ValueError:
-            raise ValueError("eoa_password is not a Base64-decoded encrypted data")
+        if SECURE_VALUE_REQUEST_ENABLED:
+            secure_value_is_valid_encrypt("eoa_password", v)
         return v
 
 
@@ -48,10 +47,8 @@ class AccountChangeRsaKeyRequest(BaseModel):
 
     @validator("passphrase")
     def passphrase_is_valid_encrypt(cls, v):
-        try:
-            SecureValueUtils.decrypt(v)
-        except ValueError:
-            raise ValueError("passphrase is not a Base64-decoded encrypted data")
+        if SECURE_VALUE_REQUEST_ENABLED:
+            secure_value_is_valid_encrypt("passphrase", v)
         return v
 
 

@@ -32,10 +32,10 @@ from eth_utils import to_checksum_address
 import eth_keyfile
 
 from config import KEY_FILE_PASSWORD, EOA_PASSWORD_PATTERN, EOA_PASSWORD_PATTERN_MSG, \
-    PERSONAL_INFO_PASSPHRASE_PATTERN, PERSONAL_INFO_PASSPHRASE_PATTERN_MSG
+    PERSONAL_INFO_PASSPHRASE_PATTERN, PERSONAL_INFO_PASSPHRASE_PATTERN_MSG, SECURE_VALUE_REQUEST_ENABLED
 from app.database import db_session
 from app.model.schema import AccountCreateKeyRequest, AccountResponse, AccountChangeRsaKeyRequest
-from app.model.schema.utils import SecureValueUtils, headers_validate, address_is_valid_address
+from app.model.utils import SecureValueUtils, headers_validate, address_is_valid_address
 from app.model.db import Account, AccountRsaKeyTemporary
 from app.exceptions import InvalidParameterError
 from app import log
@@ -65,7 +65,7 @@ def generate_rsa_key(db: Session, issuer_address: str):
     # Register key data to the DB
     _account.rsa_private_key = rsa_private_pem
     _account.rsa_public_key = rsa_public_pem
-    _account.rsa_encrypt_passphrase = SecureValueUtils.encrypt(KEY_FILE_PASSWORD)
+    _account.rsa_passphrase = SecureValueUtils.encrypt(KEY_FILE_PASSWORD)
     db.merge(_account)
     db.commit()
 
@@ -81,7 +81,7 @@ async def create_key(
         db: Session = Depends(db_session)):
     """Create Keys"""
     # Check Password Policy
-    eoa_password = SecureValueUtils.decrypt(data.eoa_password)
+    eoa_password = SecureValueUtils.decrypt(data.eoa_password) if SECURE_VALUE_REQUEST_ENABLED else data.eoa_password
     if not re.match(EOA_PASSWORD_PATTERN, eoa_password):
         raise InvalidParameterError(EOA_PASSWORD_PATTERN_MSG)
 
@@ -99,6 +99,7 @@ async def create_key(
     _account = Account()
     _account.issuer_address = addr
     _account.keyfile = keyfile_json
+    _account.keyfile_password = SecureValueUtils.encrypt(eoa_password)
     db.add(_account)
     db.commit()
 
@@ -177,7 +178,7 @@ async def change_account_rsa_key(
         raise InvalidParameterError("issuer information is now changing")
 
     # Check Password Policy
-    passphrase = SecureValueUtils.decrypt(data.passphrase)
+    passphrase = SecureValueUtils.decrypt(data.passphrase) if SECURE_VALUE_REQUEST_ENABLED else data.passphrase
     if not re.match(PERSONAL_INFO_PASSPHRASE_PATTERN, passphrase):
         raise InvalidParameterError(PERSONAL_INFO_PASSPHRASE_PATTERN_MSG)
 
@@ -203,14 +204,14 @@ async def change_account_rsa_key(
     _temporary.issuer_address = issuer_address
     _temporary.rsa_private_key = _account.rsa_private_key
     _temporary.rsa_public_key = _account.rsa_public_key
-    _temporary.rsa_encrypt_passphrase = _account.rsa_encrypt_passphrase
+    _temporary.rsa_passphrase = _account.rsa_passphrase
     db.add(_temporary)
 
     # Change key data to the DB
     # NOTE: PersonalInfo modify execute in the Batch.
     _account.rsa_private_key = data.rsa_private_key
     _account.rsa_public_key = rsa_public_key
-    _account.rsa_encrypt_passphrase = SecureValueUtils.encrypt(passphrase)
+    _account.rsa_passphrase = SecureValueUtils.encrypt(passphrase)
     db.merge(_account)
 
     db.commit()

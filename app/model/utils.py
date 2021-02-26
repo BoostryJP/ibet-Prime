@@ -28,7 +28,7 @@ from fastapi.exceptions import RequestValidationError
 from pydantic.error_wrappers import ErrorWrapper
 from web3 import Web3
 
-from config import RSA_KEY_RESOURCE_MODE, RSA_KEY_RESOURCE_PLACE, RSA_KEY_PASSPHRASE
+from config import SECURE_VALUE_RESOURCE_MODE, SECURE_VALUE_RSA_RESOURCE, SECURE_VALUE_RSA_PASSPHRASE
 
 
 class SecureValueUtils:
@@ -50,7 +50,7 @@ class SecureValueUtils:
         if crypto_data.get("public_key") is None:
             return data
 
-        rsa_key = RSA.importKey(crypto_data.get("public_key"), passphrase=RSA_KEY_PASSPHRASE)
+        rsa_key = RSA.importKey(crypto_data.get("public_key"), passphrase=SECURE_VALUE_RSA_PASSPHRASE)
         cipher = PKCS1_OAEP.new(rsa_key)
         encrypt_data = cipher.encrypt(data.encode("utf-8"))
         base64_data = base64.encodebytes(encrypt_data)
@@ -67,7 +67,7 @@ class SecureValueUtils:
         if crypto_data.get("private_key") is None:
             return base64_encrypt_data
 
-        rsa_key = RSA.importKey(crypto_data.get("private_key"), passphrase=RSA_KEY_PASSPHRASE)
+        rsa_key = RSA.importKey(crypto_data.get("private_key"), passphrase=SECURE_VALUE_RSA_PASSPHRASE)
         cipher = PKCS1_OAEP.new(rsa_key)
 
         try:
@@ -105,22 +105,16 @@ class SecureValueUtils:
             return SecureValueUtils.cache
 
         # Get Private Key
-        if RSA_KEY_RESOURCE_MODE == 0:
-            private_key = None
-        elif RSA_KEY_RESOURCE_MODE == 1:
-            with open(RSA_KEY_RESOURCE_PLACE, "r") as f:
+        if SECURE_VALUE_RESOURCE_MODE == 0:
+            with open(SECURE_VALUE_RSA_RESOURCE, "r") as f:
                 private_key = f.read()
-        elif RSA_KEY_RESOURCE_MODE == 2:
+        elif SECURE_VALUE_RESOURCE_MODE == 1:
             secrets_manager = boto3.client(service_name="secretsmanager")
-            result = secrets_manager.get_secret_value(SecretId=RSA_KEY_RESOURCE_PLACE)
+            result = secrets_manager.get_secret_value(SecretId=SECURE_VALUE_RSA_RESOURCE)
             private_key = json.loads(result.get("SecretString"))
 
-        if private_key is None:
-            # NOTE: if Mode is '0', Return Default Value.
-            return SecureValueUtils.cache
-
         # Get Public Key
-        rsa_key = RSA.importKey(private_key, passphrase=RSA_KEY_PASSPHRASE)
+        rsa_key = RSA.importKey(private_key, passphrase=SECURE_VALUE_RSA_PASSPHRASE)
 
         public_key = rsa_key.publickey().exportKey().decode()
 
@@ -159,11 +153,11 @@ def address_is_valid_address(name, value):
     if value:
         if not Web3.isAddress(value):
             raise ValueError(f"{name} is not a valid address")
-    return value
 
 
-def password_is_valid_encrypt(name, value):
-    try:
-        SecureValueUtils.decrypt(value)
-    except ValueError:
-        raise ValueError(f"{name} is not a Base64-decoded encrypted data")
+def secure_value_is_valid_encrypt(name, value):
+    if value:
+        try:
+            SecureValueUtils.decrypt(value)
+        except ValueError:
+            raise ValueError(f"{name} is not a Base64-decoded encrypted data")

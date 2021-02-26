@@ -83,16 +83,16 @@ PERSONAL_INFO_PASSPHRASE_PATTERN_MSG = os.environ.get(
 
 # Secure value crypto(RSA)
 # NOTE:
-# 0:Nothing(No-crypto)
-# 1:File, Set the file path to RSA_KEY_RESOURCE_PLACE.
-# 2:AWS SecretsManager, Set the SecretsManagerARN to RSA_KEY_RESOURCE_PLACE.
+# about SECURE_VALUE_RESOURCE_MODE
+# - 0:File, Set the file path to SECURE_PARAM_RSA_RESOURCE.
+# - 1:AWS SecretsManager, Set the SecretsManagerARN to SECURE_PARAM_RSA_RESOURCE.
 if 'pytest' in sys.modules:  # for unit test
-    RSA_KEY_RESOURCE_MODE = int(os.environ.get("RSA_KEY_RESOURCE_MODE")) if os.environ.get(
-        "RSA_KEY_RESOURCE_MODE") else 1
-    RSA_KEY_RESOURCE_PLACE = os.environ.get("KEY_RESOURCE_PLACE") or "tests/data/rsa_private.pem"
-    RSA_KEY_PASSPHRASE = os.environ.get("KEY_RESOURCE_PLACE") or "password"
+    SECURE_VALUE_RESOURCE_MODE = int(os.environ.get("SECURE_VALUE_RESOURCE_MODE")) if os.environ.get(
+        "SECURE_VALUE_RESOURCE_MODE") else 0
+    SECURE_VALUE_RSA_RESOURCE = os.environ.get("SECURE_VALUE_RSA_RESOURCE") or "tests/data/rsa_private.pem"
+    SECURE_VALUE_RSA_PASSPHRASE = os.environ.get("SECURE_VALUE_RSA_PASSPHRASE") or "password"
 else:
-    RSA_KEY_RESOURCE_MODE = int(os.environ.get("RSA_KEY_RESOURCE_MODE")) if os.environ.get(
-        "RSA_KEY_RESOURCE_MODE") else 0
-    RSA_KEY_RESOURCE_PLACE = os.environ.get("KEY_RESOURCE_PLACE")
-    RSA_KEY_PASSPHRASE = os.environ.get("KEY_RESOURCE_PLACE")
+    SECURE_VALUE_RESOURCE_MODE = int(os.environ.get("SECURE_VALUE_RESOURCE_MODE"))
+    SECURE_VALUE_RSA_RESOURCE = os.environ.get("SECURE_VALUE_RSA_RESOURCE")
+    SECURE_VALUE_RSA_PASSPHRASE = os.environ.get("SECURE_VALUE_RSA_PASSPHRASE")
+SECURE_VALUE_REQUEST_ENABLED = False if os.environ.get('SECURE_VALUE_REQUEST_ENABLED') == '0' else True

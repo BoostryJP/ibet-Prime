@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 from config import PERSONAL_INFO_PASSPHRASE_PATTERN_MSG
 from app.model.db import Account, AccountRsaKeyTemporary
-from app.model.schema.utils import SecureValueUtils
+from app.model.utils import SecureValueUtils
 from tests.account_config import config_eth_account
 
 
@@ -41,7 +41,7 @@ class TestAppRoutersAccountsRsakeyPOST:
         _account_before.rsa_private_key = _user_1["rsa_private_key"]
         _account_before.rsa_public_key = _user_1["rsa_public_key"]
         rsa_encrypt_passphrase = SecureValueUtils.encrypt("password")
-        _account_before.rsa_encrypt_passphrase = rsa_encrypt_passphrase
+        _account_before.rsa_passphrase = rsa_encrypt_passphrase
         db.add(_account_before)
         db.commit()
 
@@ -66,13 +66,13 @@ class TestAppRoutersAccountsRsakeyPOST:
         assert _temporary.issuer_address == _user_1["address"]
         assert _temporary.rsa_private_key == _user_1["rsa_private_key"]
         assert _temporary.rsa_public_key == _user_1["rsa_public_key"]
-        assert _temporary.rsa_encrypt_passphrase == rsa_encrypt_passphrase
+        assert _temporary.rsa_passphrase == rsa_encrypt_passphrase
         _account_after = db.query(Account).first()
         assert _account_after.issuer_address == _user_1["address"]
         assert _account_after.keyfile == _user_1["keyfile_json"]
         assert _account_after.rsa_private_key == _user_2["rsa_private_key"]
         assert _account_after.rsa_public_key == _user_2["rsa_public_key"]
-        assert _account_after.rsa_encrypt_passphrase is not None
+        assert _account_after.rsa_passphrase is not None
 
     ###########################################################################
     # Error Case
@@ -144,7 +144,7 @@ class TestAppRoutersAccountsRsakeyPOST:
         _account.keyfile = _user_1["keyfile_json"]
         _account.rsa_private_key = _user_1["rsa_private_key"]
         _account.rsa_public_key = _user_1["rsa_public_key"]
-        _account.rsa_encrypt_passphrase = SecureValueUtils.encrypt("password")
+        _account.rsa_passphrase = SecureValueUtils.encrypt("password")
         db.add(_account)
 
         req_param = {
@@ -175,7 +175,7 @@ class TestAppRoutersAccountsRsakeyPOST:
         _account.keyfile = _user_1["keyfile_json"]
         _account.rsa_private_key = _user_1["rsa_private_key"]
         _account.rsa_public_key = _user_1["rsa_public_key"]
-        _account.rsa_encrypt_passphrase = SecureValueUtils.encrypt("password")
+        _account.rsa_passphrase = SecureValueUtils.encrypt("password")
         db.add(_account)
 
         req_param = {
@@ -211,7 +211,7 @@ class TestAppRoutersAccountsRsakeyPOST:
         _account.keyfile = _user_1["keyfile_json"]
         _account.rsa_private_key = _user_1["rsa_private_key"]
         _account.rsa_public_key = _user_1["rsa_public_key"]
-        _account.rsa_encrypt_passphrase = SecureValueUtils.encrypt("password")
+        _account.rsa_passphrase = SecureValueUtils.encrypt("password")
         db.add(_account)
 
         req_param = {
@@ -242,7 +242,7 @@ class TestAppRoutersAccountsRsakeyPOST:
         _account.keyfile = _user_1["keyfile_json"]
         _account.rsa_private_key = _user_1["rsa_private_key"]
         _account.rsa_public_key = _user_1["rsa_public_key"]
-        _account.rsa_encrypt_passphrase = SecureValueUtils.encrypt("password")
+        _account.rsa_passphrase = SecureValueUtils.encrypt("password")
         db.add(_account)
 
         req_param = {
@@ -273,7 +273,7 @@ class TestAppRoutersAccountsRsakeyPOST:
         _account.keyfile = _user_1["keyfile_json"]
         _account.rsa_private_key = _user_1["rsa_private_key"]
         _account.rsa_public_key = _user_1["rsa_public_key"]
-        _account.rsa_encrypt_passphrase = SecureValueUtils.encrypt("password")
+        _account.rsa_passphrase = SecureValueUtils.encrypt("password")
         db.add(_account)
 
         req_param = {
@@ -303,7 +303,7 @@ class TestAppRoutersAccountsRsakeyPOST:
         _account.keyfile = _user_1["keyfile_json"]
         _account.rsa_private_key = _user_1["rsa_private_key"]
         _account.rsa_public_key = _user_1["rsa_public_key"]
-        _account.rsa_encrypt_passphrase = SecureValueUtils.encrypt("password")
+        _account.rsa_passphrase = SecureValueUtils.encrypt("password")
         db.add(_account)
 
         rsa_private_key = "-----BEGIN RSA PRIVATE KEY-----\n" \
@@ -352,7 +352,7 @@ class TestAppRoutersAccountsRsakeyPOST:
         _account.keyfile = _user_1["keyfile_json"]
         _account.rsa_private_key = _user_1["rsa_private_key"]
         _account.rsa_public_key = _user_1["rsa_public_key"]
-        _account.rsa_encrypt_passphrase = SecureValueUtils.encrypt("password")
+        _account.rsa_passphrase = SecureValueUtils.encrypt("password")
         db.add(_account)
 
         req_param = {
@@ -387,7 +387,7 @@ class TestAppRoutersAccountsRsakeyPOST:
         _account.keyfile = _user_1["keyfile_json"]
         _account.rsa_private_key = _user_1["rsa_private_key"]
         _account.rsa_public_key = _user_1["rsa_public_key"]
-        _account.rsa_encrypt_passphrase = SecureValueUtils.encrypt("password")
+        _account.rsa_passphrase = SecureValueUtils.encrypt("password")
         db.add(_account)
 
         req_param = {

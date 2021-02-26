@@ -20,7 +20,7 @@ from unittest import mock
 from unittest.mock import ANY, MagicMock
 
 from app.model.db import Account, Token, TokenType
-from app.model.schema.utils import SecureValueUtils
+from app.model.utils import SecureValueUtils
 from app.exceptions import SendTransactionError
 from tests.account_config import config_eth_account
 
@@ -45,6 +45,7 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
         account = Account()
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
+        account.keyfile_password = SecureValueUtils.encrypt("password")
         db.add(account)
 
         token = Token()
@@ -67,8 +68,7 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
             self.base_url.format(_token_address),
             json=req_param,
             headers={
-                "issuer-address": _issuer_address,
-                "password": SecureValueUtils.encrypt("password")
+                "issuer-address": _issuer_address
             }
         )
 
@@ -114,7 +114,7 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "password": SecureValueUtils.encrypt("password")
+                "eoa-password": SecureValueUtils.encrypt("password")
             }
         )
 
@@ -165,7 +165,7 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "password": SecureValueUtils.encrypt("password")
+                "eoa-password": SecureValueUtils.encrypt("password")
             }
         )
 
@@ -212,11 +212,6 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
                     "type": "value_error.missing"
                 },
                 {
-                    "loc": ["header", "password"],
-                    "msg": "field required",
-                    "type": "value_error.missing"
-                },
-                {
                     "loc": ["body"],
                     "msg": "field required",
                     "type": "value_error.missing"
@@ -225,21 +220,11 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
         }
 
     # <Error_4>
-    # RequestValidationError: issuer-address, password
+    # RequestValidationError: issuer-address
     def test_error_4(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
-        _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
-
-        # prepare data
-        token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
-        token.tx_hash = ""
-        token.issuer_address = _issuer_address
-        token.token_address = _token_address
-        token.abi = ""
-        db.add(token)
 
         # request target API
         req_param = {
@@ -251,8 +236,7 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
             self.base_url.format(_token_address),
             json=req_param,
             headers={
-                "issuer-address": "issuer-address",
-                "password": "password"
+                "issuer-address": "issuer-address"
             }
         )
 
@@ -266,10 +250,6 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
             "detail": [{
                 "loc": ["header", "issuer-address"],
                 "msg": "issuer-address is not a valid address",
-                "type": "value_error"
-            }, {
-                "loc": ["header", "password"],
-                "msg": "password is not a Base64-decoded encrypted data",
                 "type": "value_error"
             }]
         }
@@ -301,8 +281,7 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
             self.base_url.format(_token_address),
             json=req_param,
             headers={
-                "issuer-address": _issuer_address,
-                "password": SecureValueUtils.encrypt("password")
+                "issuer-address": _issuer_address
             }
         )
 
@@ -317,7 +296,7 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
         }
 
     # <Error_6>
-    # password is mismatch
+    # token not found
     def test_error_6(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -328,53 +307,7 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
         account = Account()
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
-        db.add(account)
-
-        token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
-        token.tx_hash = ""
-        token.issuer_address = _issuer_address
-        token.token_address = _token_address
-        token.abi = ""
-        db.add(token)
-
-        # request target API
-        req_param = {
-            "account_address": _issuer_address,
-            "amount": 10
-        }
-
-        resp = client.post(
-            self.base_url.format(_token_address),
-            json=req_param,
-            headers={
-                "issuer-address": _issuer_address,
-                "password": SecureValueUtils.encrypt("passwordtest")
-            }
-        )
-
-        # assertion
-        assert resp.status_code == 400
-        assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "password is mismatch"
-        }
-
-    # <Error_7>
-    # token not found
-    def test_error_7(self, client, db):
-        test_account = config_eth_account("user1")
-        _issuer_address = test_account["address"]
-        _keyfile = test_account["keyfile_json"]
-        _token_address = "token_address_test"
-
-        # prepare data
-        account = Account()
-        account.issuer_address = _issuer_address
-        account.keyfile = _keyfile
+        account.keyfile_password = SecureValueUtils.encrypt("password")
         db.add(account)
 
         # request target API
@@ -386,8 +319,7 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
             self.base_url.format(_token_address),
             json=req_param,
             headers={
-                "issuer-address": _issuer_address,
-                "password": SecureValueUtils.encrypt("password")
+                "issuer-address": _issuer_address
             }
         )
 
@@ -400,11 +332,11 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
             "detail": "token not found"
         }
 
-    # <Error_8>
+    # <Error_7>
     # Send Transaction Error
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.add_supply",
                 MagicMock(side_effect=SendTransactionError()))
-    def test_error_8(self, client, db):
+    def test_error_7(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -414,6 +346,7 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
         account = Account()
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
+        account.keyfile_password = SecureValueUtils.encrypt("password")
         db.add(account)
 
         token = Token()
@@ -433,8 +366,7 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
             self.base_url.format(_token_address),
             json=req_param,
             headers={
-                "issuer-address": _issuer_address,
-                "password": SecureValueUtils.encrypt("password")
+                "issuer-address": _issuer_address
             }
         )
 
