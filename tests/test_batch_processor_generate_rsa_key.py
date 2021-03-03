@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import pytest
+from unittest import mock
 
 from app.model.db import Account, AccountRsaStatus
 from app.model.utils import E2EEUtils
@@ -106,8 +107,27 @@ class TestProcessor:
         account_4.rsa_status = AccountRsaStatus.SET.value
         db.add(account_4)
 
+        # Mock start
+        patch = mock.patch("Crypto.PublicKey.RSA.generate")
+        generate_mock = patch.start()
+
+        # NOTE: It takes time because RSA key length is too long.
+        #       so shorten it.
+        def crypto_publickey_rsa_generate(*args, **kwargs):
+            assert len(args) > 0
+            assert args[0] == 10240
+            args_list = list(args)
+            args_list[0] = 1024
+            # Call original method
+            return patch.temp_original(*tuple(args_list), **kwargs)
+
+        generate_mock.side_effect = crypto_publickey_rsa_generate
+
         # Execute batch
         processor.process()
+
+        # Mock end
+        patch.stop()
 
         # assertion
         account_after = db.query(Account).order_by(Account.created).all()
