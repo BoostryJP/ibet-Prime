@@ -37,13 +37,9 @@ class AccountCreateKeyRequest(BaseModel):
         return v
 
 
-class AccountChangeRsaKeyRequest(BaseModel):
+class AccountGenerateRsaKeyRequest(BaseModel):
     """Account Change Rsa Key schema (REQUEST)"""
-    # NOTE:
-    # rsa_private_key is a long text, but there is a possible of encryption fail when RSA key length is small.
-    # So It deals in rsa_private_key at plane text.
-    rsa_private_key: str
-    rsa_passphrase: str
+    rsa_passphrase: Optional[str]
 
     @validator("rsa_passphrase")
     def rsa_passphrase_is_encrypted_value(cls, v):
@@ -60,3 +56,4 @@ class AccountResponse(BaseModel):
     """Account schema (Response)"""
     issuer_address: str
     rsa_public_key: Optional[str]
+    rsa_status: int

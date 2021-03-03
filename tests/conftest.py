@@ -24,6 +24,8 @@ from fastapi.testclient import TestClient
 
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
+path = os.path.join(os.path.dirname(__file__), "../batch")
+sys.path.append(path)
 
 from app.main import app
 from app.database import SessionLocal, engine, db_session

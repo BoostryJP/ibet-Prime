@@ -18,12 +18,9 @@ SPDX-License-Identifier: Apache-2.0
 """
 from typing import List
 import secrets
-import time
 import re
 
-from Crypto.PublicKey import RSA
-from Crypto import Random
-from fastapi import APIRouter, Depends, BackgroundTasks, Header
+from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
 from sha3 import keccak_256
@@ -34,9 +31,9 @@ import eth_keyfile
 from config import PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE, EOA_PASSWORD_PATTERN, EOA_PASSWORD_PATTERN_MSG, \
     PERSONAL_INFO_RSA_PASSPHRASE_PATTERN, PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG, E2EE_REQUEST_ENABLED
 from app.database import db_session
-from app.model.schema import AccountCreateKeyRequest, AccountResponse, AccountChangeRsaKeyRequest
-from app.model.utils import E2EEUtils, headers_validate, address_is_valid_address
-from app.model.db import Account, AccountRsaKeyTemporary
+from app.model.schema import AccountCreateKeyRequest, AccountResponse, AccountGenerateRsaKeyRequest
+from app.model.utils import E2EEUtils
+from app.model.db import Account, AccountRsaKeyTemporary, AccountRsaStatus
 from app.exceptions import InvalidParameterError
 from app import log
 
@@ -45,39 +42,10 @@ LOG = log.get_logger()
 router = APIRouter(tags=["account"])
 
 
-def generate_rsa_key(db: Session, issuer_address: str):
-    """Generate RSA key"""
-    time.sleep(1)
-    LOG.info(f"RSA key generation started: {issuer_address}")
-
-    _account = db.query(Account). \
-        filter(Account.issuer_address == issuer_address). \
-        first()
-    if _account is None:
-        LOG.error(f"RSA key generation failed: {issuer_address}")
-        return
-
-    random_func = Random.new().read
-    rsa = RSA.generate(10240, random_func)
-    rsa_private_pem = rsa.exportKey(format="PEM", passphrase=PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE).decode()
-    rsa_public_pem = rsa.publickey().exportKey().decode()
-
-    # Register key data to the DB
-    _account.rsa_private_key = rsa_private_pem
-    _account.rsa_public_key = rsa_public_pem
-    _account.rsa_passphrase = E2EEUtils.encrypt(PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE)
-    db.merge(_account)
-    db.commit()
-
-    LOG.info(f"RSA key generation succeeded: {issuer_address}")
-    return
-
-
 # POST: /accounts
 @router.post("/accounts", response_model=AccountResponse)
 async def create_key(
         data: AccountCreateKeyRequest,
-        background_tasks: BackgroundTasks,
         db: Session = Depends(db_session)):
     """Create Keys"""
     # Check Password Policy
@@ -100,15 +68,14 @@ async def create_key(
     _account.issuer_address = addr
     _account.keyfile = keyfile_json
     _account.eoa_password = E2EEUtils.encrypt(eoa_password)
+    _account.rsa_status = AccountRsaStatus.UNSET.value
     db.add(_account)
     db.commit()
 
-    # Generate RSA key (background)
-    background_tasks.add_task(generate_rsa_key, db, addr)
-
     return {
         "issuer_address": _account.issuer_address,
-        "rsa_public_key": ""
+        "rsa_public_key": "",
+        "rsa_status": _account.rsa_status
     }
 
 
@@ -124,7 +91,8 @@ async def list_all_accounts(db: Session = Depends(db_session)):
     for _account in _accounts:
         account_list.append({
             "issuer_address": _account.issuer_address,
-            "rsa_public_key": _account.rsa_public_key
+            "rsa_public_key": _account.rsa_public_key,
+            "rsa_status": _account.rsa_status
         })
 
     return account_list
@@ -144,24 +112,18 @@ async def retrieve_account(issuer_address: str, db: Session = Depends(db_session
 
     return {
         "issuer_address": _account.issuer_address,
-        "rsa_public_key": _account.rsa_public_key
+        "rsa_public_key": _account.rsa_public_key,
+        "rsa_status": _account.rsa_status
     }
 
 
-# POST: /accounts/rsakey
-@router.post("/accounts/rsakey", response_model=AccountResponse)
-async def change_account_rsa_key(
-        data: AccountChangeRsaKeyRequest,
-        issuer_address: str = Header(...),
+# POST: /accounts/{issuer_address}/rsakey
+@router.post("/accounts/{issuer_address}/rsakey", response_model=AccountResponse)
+async def generate_rsa_key(
+        issuer_address: str,
+        data: AccountGenerateRsaKeyRequest,
         db: Session = Depends(db_session)):
-    """Change RSA key"""
-
-    # Headers Validate
-    headers_validate([{
-        "name": "issuer-address",
-        "value": issuer_address,
-        "validator": address_is_valid_address
-    }])
+    """Generate RSA key"""
 
     # Get Account
     _account = db.query(Account). \
@@ -170,53 +132,43 @@ async def change_account_rsa_key(
     if _account is None:
         raise HTTPException(status_code=404, detail="issuer is not exists")
 
-    # Check Account Changing
-    _temporary = db.query(AccountRsaKeyTemporary). \
-        filter(AccountRsaKeyTemporary.issuer_address == issuer_address). \
-        first()
-    if _temporary is not None:
-        raise InvalidParameterError("issuer information is now changing")
+    # Check now Generating RSA
+    if _account.rsa_status == AccountRsaStatus.CREATING.value or \
+            _account.rsa_status == AccountRsaStatus.CHANGING.value:
+        raise InvalidParameterError("RSA key is now generating")
 
     # Check Password Policy
-    rsa_passphrase = E2EEUtils.decrypt(data.rsa_passphrase) if E2EE_REQUEST_ENABLED else data.rsa_passphrase
-    if not re.match(PERSONAL_INFO_RSA_PASSPHRASE_PATTERN, rsa_passphrase):
-        raise InvalidParameterError(PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG)
+    if data.rsa_passphrase:
+        rsa_passphrase = E2EEUtils.decrypt(data.rsa_passphrase) if E2EE_REQUEST_ENABLED else data.rsa_passphrase
+        if not re.match(PERSONAL_INFO_RSA_PASSPHRASE_PATTERN, rsa_passphrase):
+            raise InvalidParameterError(PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG)
+    else:
+        rsa_passphrase = PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE
 
-    # Check RSA Private Key Format
-    try:
-        rsa_key = RSA.importKey(data.rsa_private_key, passphrase=rsa_passphrase)
-    except ValueError:
-        raise InvalidParameterError("RSA Private Key is invalid, or passphrase is invalid")
+    # NOTE: rsa_status is updated to AccountRsaStatus.SET on the batch.
+    rsa_status = AccountRsaStatus.CREATING.value
+    if _account.rsa_status == AccountRsaStatus.SET.value:
+        # Create data to the temporary DB
+        # NOTE: This data is deleted in the Batch when PersonalInfo modify is completed.
+        temporary = AccountRsaKeyTemporary()
+        temporary.issuer_address = _account.issuer_address
+        temporary.rsa_private_key = _account.rsa_private_key
+        temporary.rsa_public_key = _account.rsa_public_key
+        rsa_passphrase_org = _account.rsa_passphrase
+        temporary.rsa_passphrase = rsa_passphrase_org
+        db.add(temporary)
 
-    if not rsa_key.has_private():
-        raise InvalidParameterError("RSA Private Key is invalid")
+        rsa_status = AccountRsaStatus.CHANGING.value
 
-    # Check RSA key length
-    if rsa_key.size_in_bits() != 10240:
-        raise InvalidParameterError("RSA Key length(bits) is invalid")
-
-    # Create RSA Public Key
-    rsa_public_key = rsa_key.publickey().exportKey().decode()
-
-    # Registry previous key data to the DB
-    # NOTE: This data is deleted in the Batch when PersonalInfo modify completed.
-    _temporary = AccountRsaKeyTemporary()
-    _temporary.issuer_address = issuer_address
-    _temporary.rsa_private_key = _account.rsa_private_key
-    _temporary.rsa_public_key = _account.rsa_public_key
-    _temporary.rsa_passphrase = _account.rsa_passphrase
-    db.add(_temporary)
-
-    # Change key data to the DB
-    # NOTE: PersonalInfo modify execute in the Batch.
-    _account.rsa_private_key = data.rsa_private_key
-    _account.rsa_public_key = rsa_public_key
+    # Update data to the DB
     _account.rsa_passphrase = E2EEUtils.encrypt(rsa_passphrase)
+    _account.rsa_status = rsa_status
     db.merge(_account)
 
     db.commit()
 
     return {
         "issuer_address": issuer_address,
-        "rsa_public_key": rsa_public_key
+        "rsa_public_key": _account.rsa_public_key,
+        "rsa_status": rsa_status
     }

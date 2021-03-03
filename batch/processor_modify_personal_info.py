@@ -28,11 +28,11 @@ path = os.path.join(os.path.dirname(__file__), '../')
 sys.path.append(path)
 
 from config import DATABASE_URL, ZERO_ADDRESS
-from app.model.db import Token, TokenType, IDXPersonalInfo, Account, AccountRsaKeyTemporary
+from app.model.db import Token, TokenType, IDXPersonalInfo, Account, AccountRsaKeyTemporary, AccountRsaStatus
 from app.model.blockchain import PersonalInfoContract, IbetShareContract, IbetStraightBondContract
 import batch_log
 
-process_name = "PROCESSOR-Account-RSA-Key-Temporary"
+process_name = "PROCESSOR-Modify-Personal-Info"
 LOG = batch_log.get_logger(process_name=process_name)
 
 engine = create_engine(DATABASE_URL, echo=False)
@@ -49,7 +49,7 @@ class Sinks:
 
     def on_completed(self, *args, **kwargs):
         for sink in self.sinks:
-            sink.on_account(*args, **kwargs)
+            sink.on_completed(*args, **kwargs)
 
     def flush(self, *args, **kwargs):
         for sink in self.sinks:
@@ -61,6 +61,12 @@ class DBSink:
         self.db = db
 
     def on_completed(self, issuer_address):
+        account = self.db.query(Account). \
+            filter(Account.issuer_address == issuer_address). \
+            first()
+        if account is not None:
+            account.rsa_status = AccountRsaStatus.SET.value
+            self.db.merge(account)
         temporary = self.db.query(AccountRsaKeyTemporary). \
             filter(Account.issuer_address == issuer_address). \
             first()
@@ -78,7 +84,7 @@ class Processor:
 
     def process(self):
 
-        temporary_list = self.db.query(AccountRsaKeyTemporary).all()
+        temporary_list = self.__get_temporary_list()
         for temporary in temporary_list:
 
             contract_accessor_list = self.__get_personal_info_contract_accessor_list(temporary.issuer_address)
@@ -95,8 +101,8 @@ class Processor:
                 for contract_accessor in contract_accessor_list:
                     is_registered = contract_accessor. \
                         personal_info_contract.functions. \
-                        isRegistered(). \
-                        call(idx_personal_info.account_address, idx_personal_info.issuer_address)
+                        isRegistered(idx_personal_info.account_address, idx_personal_info.issuer_address). \
+                        call()
                     if is_registered:
                         target_contract_accessor = contract_accessor
                         break
@@ -110,6 +116,16 @@ class Processor:
             if count == completed_count:
                 self.sink.on_completed(temporary.issuer_address)
                 self.sink.flush()
+
+    def __get_temporary_list(self):
+        # NOTE: rsa_private_key in Account DB and AccountRsaKeyTemporary DB is the same when API is executed,
+        #       Account DB is changed when RSA generate batch is completed.
+        temporary_list = self.db.query(AccountRsaKeyTemporary). \
+            join(Account, AccountRsaKeyTemporary.issuer_address == Account.issuer_address). \
+            filter(AccountRsaKeyTemporary.rsa_private_key != Account.rsa_private_key). \
+            all()
+
+        return temporary_list
 
     def __get_personal_info_contract_accessor_list(self, issuer_address):
         token_list = self.db.query(Token).filter(Token.issuer_address == issuer_address).all()
@@ -145,15 +161,19 @@ class Processor:
         # If previous rsa key decrypted succeed, need modify.
         # Backup origin RSA
         org_rsa_private_key = personal_info_contract_accessor.issuer.rsa_private_key
-        org_rsa_encrypt_passphrase = personal_info_contract_accessor.issuer.rsa_passphrase
+        org_rsa_passphrase = personal_info_contract_accessor.issuer.rsa_passphrase
         # Replace RSA
         personal_info_contract_accessor.issuer.rsa_private_key = temporary.rsa_private_key
         personal_info_contract_accessor.issuer.rsa_passphrase = temporary.rsa_passphrase
         # Modify
+        LOG.info(
+            f"Modify Start: issuer_address={temporary.issuer_address}, account_address={idx_personal_info.account_address}")
         info = personal_info_contract_accessor.get_info(idx_personal_info.account_address)
+        LOG.info(
+            f"Modify End: issuer_address={temporary.issuer_address}, account_address={idx_personal_info.account_address}")
         # Back RSA
         personal_info_contract_accessor.issuer.rsa_private_key = org_rsa_private_key
-        personal_info_contract_accessor.issuer.rsa_private_key = org_rsa_encrypt_passphrase
+        personal_info_contract_accessor.issuer.rsa_passphrase = org_rsa_passphrase
         default_info = {
             "key_manager": None,
             "name": None,
@@ -173,13 +193,20 @@ class Processor:
 _sink = Sinks()
 _sink.register(DBSink(db_session))
 processor = Processor(sink=_sink, db=db_session)
-LOG.info("Service started successfully")
 
-while True:
-    try:
-        processor.process()
-        logging.debug("Processed")
-    except Exception as ex:
-        logging.exception(ex)
 
-    time.sleep(10)
+def main():
+    LOG.info("Service started successfully")
+
+    while True:
+        try:
+            processor.process()
+            logging.debug("Processed")
+        except Exception as ex:
+            logging.exception(ex)
+
+        time.sleep(10)
+
+
+if __name__ == "__main__":
+    main()
