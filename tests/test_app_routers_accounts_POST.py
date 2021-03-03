@@ -17,13 +17,10 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import base64
-from unittest import mock
 
 from config import EOA_PASSWORD_PATTERN_MSG
-from app.model.db import Account
+from app.model.db import Account, AccountRsaStatus
 from app.model.utils import E2EEUtils
-from app.routers.account import generate_rsa_key
-from tests.account_config import config_eth_account
 
 
 class TestAppRoutersAccountsPOST:
@@ -35,12 +32,12 @@ class TestAppRoutersAccountsPOST:
     ###########################################################################
 
     # <Normal_1>
-    @mock.patch("starlette.background.BackgroundTasks.add_task")
-    def test_normal_1(self, mock_add_task, client, db):
+    def test_normal_1(self, client, db):
         accounts_before = db.query(Account).all()
 
+        password = "password"
         req_param = {
-            "eoa_password": E2EEUtils.encrypt("password")
+            "eoa_password": E2EEUtils.encrypt(password)
         }
 
         resp = client.post(self.apiurl, json=req_param)
@@ -48,6 +45,8 @@ class TestAppRoutersAccountsPOST:
         # assertion
         assert resp.status_code == 200
         assert resp.json()["issuer_address"] is not None
+        assert resp.json()["rsa_public_key"] == ""
+        assert resp.json()["rsa_status"] == AccountRsaStatus.UNSET.value
 
         accounts_after = db.query(Account).all()
 
@@ -56,12 +55,11 @@ class TestAppRoutersAccountsPOST:
         account_1 = accounts_after[0]
         assert account_1.issuer_address == resp.json()["issuer_address"]
         assert account_1.keyfile is not None
-        assert account_1.eoa_password is not None
+        assert E2EEUtils.decrypt(account_1.eoa_password) == password
         assert account_1.rsa_private_key is None
         assert account_1.rsa_public_key is None
         assert account_1.rsa_passphrase is None
-
-        mock_add_task.assert_any_call(generate_rsa_key, db, account_1.issuer_address)
+        assert account_1.rsa_status == AccountRsaStatus.UNSET.value
 
     ###########################################################################
     # Error Case
@@ -108,58 +106,3 @@ class TestAppRoutersAccountsPOST:
             },
             "detail": EOA_PASSWORD_PATTERN_MSG
         }
-
-    ###########################################################################
-    # Normal Case(BackGroundTask)
-    ###########################################################################
-
-    # <Normal_1>
-    def test_backgroundtask_normal_1(self, db):
-        config_account = config_eth_account("user1")
-        encrypt_password = E2EEUtils.encrypt("password")
-
-        account = Account()
-        account.issuer_address = config_account["address"]
-        account.keyfile = config_account["keyfile_json"]
-        account.eoa_password = encrypt_password
-        db.add(account)
-
-        # Run BackGroundTask
-        generate_rsa_key(db, config_account["address"])
-
-        update_account = db.query(Account).first()
-
-        assert update_account.issuer_address == config_account["address"]
-        assert update_account.keyfile == config_account["keyfile_json"]
-        assert update_account.eoa_password == encrypt_password
-        assert update_account.rsa_private_key is not None
-        assert update_account.rsa_public_key is not None
-        assert update_account.rsa_passphrase is not None
-
-    ###########################################################################
-    # Error Case(BackGroundTask)
-    ###########################################################################
-
-    # <Error_1>
-    # Not Exists Address
-    def test_backgroundtask_error_1(self, db):
-        config_account = config_eth_account("user1")
-        encrypt_password = E2EEUtils.encrypt("password")
-
-        account = Account()
-        account.issuer_address = config_account["address"]
-        account.keyfile = config_account["keyfile_json"]
-        account.eoa_password = encrypt_password
-        db.add(account)
-
-        # Run BackGroundTask
-        generate_rsa_key(db, issuer_address="not_exists_issuer")
-
-        update_account = db.query(Account).first()
-
-        assert update_account.issuer_address == config_account["address"]
-        assert update_account.keyfile == config_account["keyfile_json"]
-        assert update_account.eoa_password == encrypt_password
-        assert update_account.rsa_private_key is None
-        assert update_account.rsa_public_key is None
-        assert update_account.rsa_passphrase is None

@@ -17,7 +17,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-PROC_LIST="${PROC_LIST} batch/processor_account_rsa_key_temporary.py"
+PROC_LIST="${PROC_LIST} batch/processor_generate_rsa_key.py"
+PROC_LIST="${PROC_LIST} batch/processor_modify_personal_info.py"
 
 for i in ${PROC_LIST}; do
   # shellcheck disable=SC2009

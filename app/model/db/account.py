@@ -16,8 +16,9 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from enum import Enum
 
-from sqlalchemy import Column, JSON, String
+from sqlalchemy import Column, JSON, String, Integer
 
 from .base import Base
 
@@ -38,6 +39,8 @@ class Account(Base):
     rsa_public_key = Column(String(2000))
     # rsa passphrase(encrypted)
     rsa_passphrase = Column(String(2000))
+    # rsa status
+    rsa_status = Column(Integer)
 
 
 class AccountRsaKeyTemporary(Base):
@@ -52,3 +55,10 @@ class AccountRsaKeyTemporary(Base):
     rsa_public_key = Column(String(2000))
     # rsa passphrase(encrypted)
     rsa_passphrase = Column(String(2000))
+
+
+class AccountRsaStatus(Enum):
+    UNSET = 0
+    CREATING = 1
+    CHANGING = 2
+    SET = 3

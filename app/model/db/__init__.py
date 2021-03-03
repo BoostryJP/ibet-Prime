@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from .base import Base
-from .account import Account, AccountRsaKeyTemporary
+from .account import Account, AccountRsaKeyTemporary, AccountRsaStatus
 from .token import Token, TokenType
 from .idx_transfer import IDXTransfer
 from .idx_position import IDXPosition

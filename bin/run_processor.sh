@@ -21,6 +21,7 @@
 source ~/.bash_profile
 cd /app/ibet-Prime
 
-python batch/processor_account_rsa_key_temporary.py &
+python batch/processor_generate_rsa_key.py &
+python batch/processor_modify_personal_info.py &
 
 tail -f /dev/null

@@ -16,7 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from app.model.db import Account
+from app.model.db import Account, AccountRsaStatus
 from tests.account_config import config_eth_account
 
 
@@ -39,6 +39,7 @@ class TestAppRoutersAccountsIssuerAddressGET:
         account = Account()
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
+        account.rsa_status = AccountRsaStatus.UNSET.value
         db.add(account)
 
         resp = client.get(self.base_url.format(_admin_address))
@@ -46,7 +47,8 @@ class TestAppRoutersAccountsIssuerAddressGET:
         assert resp.status_code == 200
         assert resp.json() == {
             "issuer_address": _admin_account["address"],
-            "rsa_public_key": None
+            "rsa_public_key": None,
+            "rsa_status": AccountRsaStatus.UNSET.value
         }
 
     # <Normal_2>
@@ -62,6 +64,7 @@ class TestAppRoutersAccountsIssuerAddressGET:
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.rsa_public_key = _admin_rsa_public_key
+        account.rsa_status = AccountRsaStatus.CHANGING.value
         db.add(account)
 
         resp = client.get(self.base_url.format(_admin_address))
@@ -69,7 +72,8 @@ class TestAppRoutersAccountsIssuerAddressGET:
         assert resp.status_code == 200
         assert resp.json() == {
             "issuer_address": _admin_account["address"],
-            "rsa_public_key": _admin_account["rsa_public_key"]
+            "rsa_public_key": _admin_account["rsa_public_key"],
+            "rsa_status": AccountRsaStatus.CHANGING.value
         }
 
     ###########################################################################
@@ -85,6 +89,6 @@ class TestAppRoutersAccountsIssuerAddressGET:
         assert resp.json() == {
             "meta": {
                 "code": 1, "title": "NotFound"
-            }, 
+            },
             "detail": "issuer is not exists"
         }
