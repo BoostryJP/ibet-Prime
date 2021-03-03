@@ -166,7 +166,11 @@ class Processor:
         personal_info_contract_accessor.issuer.rsa_private_key = temporary.rsa_private_key
         personal_info_contract_accessor.issuer.rsa_passphrase = temporary.rsa_passphrase
         # Modify
+        LOG.info(
+            f"Modify Start: issuer_address={temporary.issuer_address}, account_address={idx_personal_info.account_address}")
         info = personal_info_contract_accessor.get_info(idx_personal_info.account_address)
+        LOG.info(
+            f"Modify End: issuer_address={temporary.issuer_address}, account_address={idx_personal_info.account_address}")
         # Back RSA
         personal_info_contract_accessor.issuer.rsa_private_key = org_rsa_private_key
         personal_info_contract_accessor.issuer.rsa_passphrase = org_rsa_passphrase
