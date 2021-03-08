@@ -99,7 +99,7 @@ else:
     E2EE_RSA_RESOURCE_MODE = int(os.environ.get("E2EE_RSA_RESOURCE_MODE"))
     E2EE_RSA_RESOURCE = os.environ.get("E2EE_RSA_RESOURCE")
     E2EE_RSA_PASSPHRASE = os.environ.get("E2EE_RSA_PASSPHRASE")
-if E2EE_RSA_RESOURCE == 1:
+if E2EE_RSA_RESOURCE_MODE == 1:
     AWS_REGION_NAME = os.environ.get("AWS_REGION_NAME")  # e.g. ap-northeast-1
 E2EE_REQUEST_ENABLED = False \
     if os.environ.get('E2EE_REQUEST_ENABLED') == "0" else True
