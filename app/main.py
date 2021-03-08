@@ -23,7 +23,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from config import SERVER_NAME
-from app.routers import account, bond, share
+from app.routers import index, account, bond, share
 from app.database import engine
 from app.model import db
 from app.exceptions import *
@@ -46,6 +46,7 @@ async def root():
     return {"server": SERVER_NAME}
 
 
+app.include_router(index.router)
 app.include_router(account.router)
 app.include_router(bond.router)
 app.include_router(share.router)

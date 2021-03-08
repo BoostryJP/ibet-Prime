@@ -336,7 +336,7 @@ async def list_all_holders(
 
 
 # GET: /share/tokens/{token_address}/holders/{account_address}
-@router.get("/share/tokens/{token_address}/holders/{account_address}", response_model=HolderResponse)
+@router.get("/tokens/{token_address}/holders/{account_address}", response_model=HolderResponse)
 async def retrieve_holder(
         token_address: str,
         account_address: str,
@@ -372,6 +372,8 @@ async def retrieve_holder(
         filter(IDXPosition.token_address == token_address). \
         filter(IDXPosition.account_address == account_address). \
         first()
+    if _holder is None:
+        raise HTTPException(status_code=404, detail="holder not found")
 
     # Get personal information
     personal_info_default = {
