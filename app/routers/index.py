@@ -26,7 +26,7 @@ router = APIRouter(tags=["index"])
 
 # GET: /e2ee
 @router.get("/e2ee", response_model=E2EEResponse)
-def get_e2ee():
+def e2e_encryption_key():
     """Get E2EE info"""
 
     _, public_key = E2EEUtils.get_key()
