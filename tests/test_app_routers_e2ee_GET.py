@@ -16,8 +16,6 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from app.model.db import Account, AccountRsaStatus
-from tests.account_config import config_eth_account
 
 
 class TestAppRoutersE2EEGET:
@@ -30,7 +28,6 @@ class TestAppRoutersE2EEGET:
 
     # <Normal_1>
     def test_normal_1(self, client, db):
-
         # request target api
         resp = client.get(self.apiurl)
 
