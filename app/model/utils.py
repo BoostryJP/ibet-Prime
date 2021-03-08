@@ -122,7 +122,7 @@ class E2EEUtils:
                 region_name=AWS_REGION_NAME
             )
             result = secrets_manager.get_secret_value(SecretId=E2EE_RSA_RESOURCE)
-            private_key = json.loads(result.get("SecretString"))
+            private_key = result.get("SecretString")
 
         # Get Public Key
         rsa_key = RSA.importKey(private_key, passphrase=E2EE_RSA_PASSPHRASE)
