@@ -29,7 +29,7 @@ from fastapi.exceptions import RequestValidationError
 from pydantic.error_wrappers import ErrorWrapper
 from web3 import Web3
 
-from config import E2EE_RSA_RESOURCE_MODE, E2EE_RSA_RESOURCE, E2EE_RSA_PASSPHRASE
+from config import E2EE_RSA_RESOURCE_MODE, E2EE_RSA_RESOURCE, E2EE_RSA_PASSPHRASE, AWS_REGION_NAME
 
 
 class E2EEUtils:
@@ -117,9 +117,12 @@ class E2EEUtils:
             with open(E2EE_RSA_RESOURCE, "r") as f:
                 private_key = f.read()
         elif E2EE_RSA_RESOURCE_MODE == 1:
-            secrets_manager = boto3.client(service_name="secretsmanager")
+            secrets_manager = boto3.client(
+                service_name="secretsmanager",
+                region_name=AWS_REGION_NAME
+            )
             result = secrets_manager.get_secret_value(SecretId=E2EE_RSA_RESOURCE)
-            private_key = json.loads(result.get("SecretString"))
+            private_key = result.get("SecretString")
 
         # Get Public Key
         rsa_key = RSA.importKey(private_key, passphrase=E2EE_RSA_PASSPHRASE)
