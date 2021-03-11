@@ -16,12 +16,20 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from .account import AccountChangeRsaKeyRequest, AccountResponse
-from .token import IbetStraightBondCreate, IbetStraightBondUpdate, \
-    IbetStraightBondTransfer, IbetStraightBondAdd, \
-    IbetStraightBondBulkTransfer
-from .token import IbetStraightBondResponse
-from .token import IbetShareCreate, IbetShareUpdate, \
-    IbetShareTransfer, IbetShareAdd
-from .token import IbetShareResponse
-from .holder import HolderResponse
+from sqlalchemy import Column, Integer, String
+
+from .base import Base
+
+
+class BulkTransferUpload(Base):
+    """Bulk Transfer Upload"""
+    __tablename__ = 'bulk_transfer_upload'
+
+    # sequence id
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    # upload id
+    upload_id = Column(String(36), primary_key=True)
+    # issuer account address
+    eth_account = Column(String(42), nullable=False, index=True)
+    # status of process（pending：0、succeeded：1、failed：2）
+    status = Column(Integer, nullable=False, index=True)

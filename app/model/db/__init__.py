@@ -19,6 +19,8 @@ SPDX-License-Identifier: Apache-2.0
 from .base import Base
 from .account import Account, AccountRsaKeyTemporary
 from .token import Token, TokenType
+from .bulk_transfer_upload import BulkTransferUpload
+from .bulk_transfer import BulkTransfer
 from .idx_transfer import IDXTransfer
 from .idx_position import IDXPosition
 from .idx_personal_info import IDXPersonalInfo, IDXPersonalInfoBlockNumber

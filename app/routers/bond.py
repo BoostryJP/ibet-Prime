@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import uuid
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Header
@@ -26,9 +27,10 @@ from eth_keyfile import decode_keyfile_json
 from config import KEY_FILE_PASSWORD
 from app.database import db_session
 from app.model.schema import IbetStraightBondCreate, IbetStraightBondUpdate, \
-    IbetStraightBondTransfer, IbetStraightBondAdd, \
+    IbetStraightBondTransfer, IbetStraightBondAdd, IbetStraightBondBulkTransfer, \
     IbetStraightBondResponse, HolderResponse
-from app.model.db import Account, Token, TokenType, IDXPosition, IDXPersonalInfo
+from app.model.db import Account, Token, TokenType, IDXPosition, IDXPersonalInfo, \
+    BulkTransfer, BulkTransferUpload, IDXTransfer
 from app.model.blockchain import IbetStraightBondContract
 from app.exceptions import InvalidParameterError, SendTransactionError
 
@@ -400,3 +402,79 @@ async def transfer_ownership(
         raise SendTransactionError("failed to send transaction")
 
     return
+
+
+# POST: /bond/bulk_transfer
+@router.post("/bulk_transfer")
+async def bulk_transfer_ownership(
+        tokens: IbetStraightBondBulkTransfer,
+        issuer_address: str = Header(None),
+        db: Session = Depends(db_session)):
+
+    """Transfer token ownership"""
+    print("BEGIN")
+    # Get Account
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
+        first()
+    if _account is None:
+        raise InvalidParameterError("issuer does not exist")
+
+    # Set upload_id
+    _this_upload_id = uuid.uuid4()
+    _skipped_transfer_record = []
+
+    # Check on_transfer, and register transfer.
+    db.begin(subtransactions=True)
+    try:
+        # Register: bulk transfer upload table
+        _bulk_transfer_upload = BulkTransferUpload()
+        _bulk_transfer_upload.upload_id = _this_upload_id
+        _bulk_transfer_upload.eth_account = issuer_address
+        _bulk_transfer_upload.status = 0;
+        db.add(_bulk_transfer_upload)
+
+        # Check that it is a token that has been issued.
+        _valid_tokens = []
+        for _t in db.query(Token). \
+                filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+                filter(Token.issuer_address == issuer_address). \
+                all():
+                _valid_tokens.append(_t.token_address)
+
+        # Check the transfer under progress
+        _under_transfer_tokens = []
+        for _t in db.query(IDXTransfer).all():
+                _under_transfer_tokens.append(_t.token_address)
+
+        for _t in db.query(BulkTransfer). \
+                    filter(BulkTransfer.status == 0). \
+                    all():
+                _under_transfer_tokens.append(_t.token_address)
+
+        # Register: bulk transfer table, which contains each transfer information.
+        _bulk_transfer_lists=[]
+        for _token in tokens.transfer_list:
+
+            if not _token.token_address in _valid_tokens:
+                raise InvalidParameterError(f"token_adderess:{_token.token_address} does not exist")
+            elif _token.token_address in _under_transfer_tokens:
+                _skipped_transfer_record.append(_token)
+                continue;
+
+            _bulk_transfer = BulkTransfer()
+            _bulk_transfer.eth_account = issuer_address
+            _bulk_transfer.upload_id = _this_upload_id
+            _bulk_transfer.token_address = _token.token_address
+            _bulk_transfer.token_type=TokenType.IBET_STRAIGHT_BOND
+            _bulk_transfer.from_address=_token.transfer_from
+            _bulk_transfer.to_address=_token.transfer_to
+            _bulk_transfer.amount=_token.amount
+            _bulk_transfer.status = 0
+            _bulk_transfer_lists.append(_bulk_transfer)
+        db.bulk_save_objects(_bulk_transfer_lists)
+        db.commit()
+    except:
+        db.rollback()
+        raise
+    return {"upload_id": _this_upload_id, "skipped_transfer":_skipped_transfer_record}
