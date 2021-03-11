@@ -16,11 +16,20 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from sqlalchemy import Column, Integer, String
+
 from .base import Base
-from .account import Account, AccountRsaKeyTemporary, AccountRsaStatus
-from .token import Token, TokenType
-from .bulk_transfer_upload import BulkTransferUpload
-from .bulk_transfer import BulkTransfer
-from .idx_transfer import IDXTransfer
-from .idx_position import IDXPosition
-from .idx_personal_info import IDXPersonalInfo, IDXPersonalInfoBlockNumber
+
+
+class BulkTransferUpload(Base):
+    """Bulk Transfer Upload"""
+    __tablename__ = 'bulk_transfer_upload'
+
+    # sequence id
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    # upload id
+    upload_id = Column(String(36), primary_key=True)
+    # issuer account address
+    eth_account = Column(String(42), nullable=False, index=True)
+    # status of process（pending：0、succeeded：1、failed：2）
+    status = Column(Integer, nullable=False, index=True)
