@@ -158,20 +158,22 @@ class TestAppRoutersBondTransferPOST:
                          all()
 
         assert len(bulk_transfer) == 2
+        _i = self.req_tokens.index(bulk_transfer[0].token_address)
         assert bulk_transfer[0].eth_account == self.admin_address
-        assert bulk_transfer[0].token_address == self.req_tokens[0]
+        assert bulk_transfer[0].token_address == self.req_tokens[_i]
         assert bulk_transfer[0].token_type == TokenType.IBET_STRAIGHT_BOND
         assert bulk_transfer[0].from_address == self.transfer_from
         assert bulk_transfer[0].to_address == self.transfer_to
-        assert bulk_transfer[0].amount == 5
+        assert bulk_transfer[0].amount == (_i+1)*5
         assert bulk_transfer[0].status == 0
 
+        _i = self.req_tokens.index(bulk_transfer[1].token_address)
         assert bulk_transfer[1].eth_account == self.admin_address
-        assert bulk_transfer[1].token_address == self.req_tokens[1]
+        assert bulk_transfer[1].token_address == self.req_tokens[_i]
         assert bulk_transfer[1].token_type == TokenType.IBET_STRAIGHT_BOND
         assert bulk_transfer[1].from_address == self.transfer_from
         assert bulk_transfer[1].to_address == self.transfer_to
-        assert bulk_transfer[1].amount == 10
+        assert bulk_transfer[1].amount == (_i+1)*5
         assert bulk_transfer[1].status == 0
 
     # <Normal_2> : skip access_token
@@ -302,28 +304,31 @@ class TestAppRoutersBondTransferPOST:
                          all()
 
         assert len(bulk_transfer) == 3
+        _i = self.req_tokens.index(bulk_transfer[0].token_address)
         assert bulk_transfer[0].eth_account == self.admin_address
-        assert bulk_transfer[0].token_address == self.req_tokens[2]
+        assert bulk_transfer[0].token_address == self.req_tokens[_i]
         assert bulk_transfer[0].token_type == TokenType.IBET_STRAIGHT_BOND
         assert bulk_transfer[0].from_address == self.transfer_from
         assert bulk_transfer[0].to_address == self.transfer_to
-        assert bulk_transfer[0].amount == 10
+        assert bulk_transfer[0].amount == _i*5
         assert bulk_transfer[0].status == 0
 
+        _i = self.req_tokens.index(bulk_transfer[1].token_address)
         assert bulk_transfer[1].eth_account == self.admin_address
-        assert bulk_transfer[1].token_address == self.req_tokens[3]
+        assert bulk_transfer[1].token_address == self.req_tokens[_i]
         assert bulk_transfer[1].token_type == TokenType.IBET_STRAIGHT_BOND
         assert bulk_transfer[1].from_address == self.transfer_from
         assert bulk_transfer[1].to_address == self.transfer_to
-        assert bulk_transfer[1].amount == 15
+        assert bulk_transfer[1].amount == _i*5
         assert bulk_transfer[1].status == 0
 
+        _i = self.req_tokens.index(bulk_transfer[2].token_address)
         assert bulk_transfer[2].eth_account == self.admin_address
-        assert bulk_transfer[2].token_address == self.req_tokens[4]
+        assert bulk_transfer[2].token_address == self.req_tokens[_i]
         assert bulk_transfer[2].token_type == TokenType.IBET_STRAIGHT_BOND
         assert bulk_transfer[2].from_address == self.transfer_from
         assert bulk_transfer[2].to_address == self.transfer_to
-        assert bulk_transfer[2].amount == 20
+        assert bulk_transfer[2].amount == _i*5
         assert bulk_transfer[2].status == 0
 
     ###########################################################################
