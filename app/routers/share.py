@@ -215,7 +215,7 @@ async def update_token(
     return
 
 
-# POST: /bond/tokens/{token_address}/add
+# POST: /share/tokens/{token_address}/add
 @router.post("/tokens/{token_address}/add")
 async def additional_issue(
         token_address: str,
