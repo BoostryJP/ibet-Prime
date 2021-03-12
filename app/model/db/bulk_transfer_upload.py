@@ -25,11 +25,9 @@ class BulkTransferUpload(Base):
     """Bulk Transfer Upload"""
     __tablename__ = 'bulk_transfer_upload'
 
-    # sequence id
-    id = Column(Integer, primary_key=True, autoincrement=True)
     # upload id
     upload_id = Column(String(36), primary_key=True)
-    # issuer account address
-    eth_account = Column(String(42), nullable=False, index=True)
-    # status of process（pending：0、succeeded：1、failed：2）
+    # issuer address
+    issuer_address = Column(String(42), nullable=False, index=True)
+    # processing status (pending:0, succeeded:1, failed:2)
     status = Column(Integer, nullable=False, index=True)

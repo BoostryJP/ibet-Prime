@@ -168,15 +168,6 @@ class IbetStraightBondTransfer(BaseModel):
             raise ValueError("amount must be greater than 0")
         return v
 
-class IbetStraightBondBulkTransfer(BaseModel):
-    """ibet Straight Bond schema (Bulk Transfer)"""
-    transfer_list: List[IbetStraightBondTransfer]
-
-    @validator("transfer_list")
-    def transfer_list_is_valid_address(cls, v):
-        if len(v) <= 0:
-            raise ValueError("bulk transfer must contain more than 1 transfer")
-        return v
 
 class IbetShareCreate(BaseModel):
     """ibet Share schema (Create)"""

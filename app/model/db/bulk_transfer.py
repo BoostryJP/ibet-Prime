@@ -16,30 +16,30 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String
 
 from .base import Base
+
 
 class BulkTransfer(Base):
     """Bulk Transfer"""
     __tablename__ = "bulk_transfer"
+
     # sequence id
     id = Column(Integer, primary_key=True, autoincrement=True)
-    # issuer account address
-    eth_account = Column(String(42), nullable=False, index=True)
+    # issuer address
+    issuer_address = Column(String(42), nullable=False, index=True)
     # upload id
     upload_id = Column(String(36), index=True)
     # token address
     token_address = Column(String(42), nullable=False)
     # token type
     token_type = Column(String(40), nullable=False)
-    # shipping address
+    # transfer from
     from_address = Column(String(42), nullable=False)
-    # forwarding address
+    # transfer to
     to_address = Column(String(42), nullable=False)
-    # amount of transfer token
+    # transfer amount
     amount = Column(Integer, nullable=False)
-    # status of Approve
-    approved = Column(Boolean, default=False, index=True)
-    # status of process（pending：0、succeeded：1、failed：2）
+    # processing status (pending:0, succeeded:1, failed:2)
     status = Column(Integer, nullable=False, index=True)

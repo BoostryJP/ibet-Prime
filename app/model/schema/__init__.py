@@ -19,8 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 from .index import E2EEResponse
 from .account import AccountCreateKeyRequest, AccountGenerateRsaKeyRequest, AccountResponse
 from .token import IbetStraightBondCreate, IbetStraightBondUpdate, \
-    IbetStraightBondTransfer, IbetStraightBondAdd, \
-    IbetStraightBondBulkTransfer
+    IbetStraightBondTransfer, IbetStraightBondAdd
 from .token import IbetStraightBondResponse
 from .token import IbetShareCreate, IbetShareUpdate, \
     IbetShareTransfer, IbetShareAdd
