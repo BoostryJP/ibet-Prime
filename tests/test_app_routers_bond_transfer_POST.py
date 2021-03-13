@@ -26,6 +26,7 @@ from tests.account_config import config_eth_account
 
 
 class TestAppRoutersBondTransferPOST:
+
     # target API endpoint
     test_url = "/bond/transfer"
 

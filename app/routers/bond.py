@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import uuid
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Header
@@ -28,7 +29,8 @@ from app.model.schema import IbetStraightBondCreate, IbetStraightBondUpdate, \
     IbetStraightBondTransfer, IbetStraightBondAdd, \
     IbetStraightBondResponse, HolderResponse
 from app.model.utils import E2EEUtils, headers_validate, address_is_valid_address
-from app.model.db import Account, Token, TokenType, IDXPosition, IDXPersonalInfo
+from app.model.db import Account, Token, TokenType, IDXPosition, IDXPersonalInfo, \
+    BulkTransfer, BulkTransferUpload
 from app.model.blockchain import IbetStraightBondContract
 from app.exceptions import InvalidParameterError, SendTransactionError
 
@@ -437,7 +439,7 @@ async def transfer_ownership(
         password=decrypt_password.encode("utf-8")
     )
 
-    # Check that it is a token that has been issued.
+    # Verify that the token is issued by the issuer_address
     _token = db.query(Token). \
         filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
         filter(Token.issuer_address == issuer_address). \
@@ -457,3 +459,66 @@ async def transfer_ownership(
         raise SendTransactionError("failed to send transaction")
 
     return
+
+
+# POST: /bond/bulk_transfer
+@router.post("/bulk_transfer")
+async def bulk_transfer_ownership(
+        tokens: List[IbetStraightBondTransfer],
+        issuer_address: str = Header(...),
+        db: Session = Depends(db_session)):
+    """Bulk transfer token ownership"""
+
+    # Headers Validate
+    headers_validate([{
+        "name": "issuer-address",
+        "value": issuer_address,
+        "validator": address_is_valid_address
+    }])
+
+    if len(tokens) < 1:
+        raise InvalidParameterError("list length is zero")
+
+    # Get Account
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
+        first()
+    if _account is None:
+        raise InvalidParameterError("issuer does not exist")
+
+    # Verify that the tokens are issued by the issuer_address
+    for _token in tokens:
+        _issued_token = db.query(Token). \
+            filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+            filter(Token.issuer_address == issuer_address). \
+            filter(Token.token_address == _token.token_address). \
+            first()
+        if _issued_token is None:
+            raise InvalidParameterError(f"token not found: {_token.token_address}")
+
+    # generate upload_id
+    upload_id = uuid.uuid4()
+
+    # add bulk transfer upload record
+    _bulk_transfer_upload = BulkTransferUpload()
+    _bulk_transfer_upload.upload_id = upload_id
+    _bulk_transfer_upload.issuer_address = issuer_address
+    _bulk_transfer_upload.status = 0
+    db.add(_bulk_transfer_upload)
+
+    # add bulk transfer records
+    for _token in tokens:
+        _bulk_transfer = BulkTransfer()
+        _bulk_transfer.issuer_address = issuer_address
+        _bulk_transfer.upload_id = upload_id
+        _bulk_transfer.token_address = _token.token_address
+        _bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
+        _bulk_transfer.from_address = _token.transfer_from
+        _bulk_transfer.to_address = _token.transfer_to
+        _bulk_transfer.amount = _token.amount
+        _bulk_transfer.status = 0
+        db.add(_bulk_transfer)
+
+    db.commit()
+
+    return {"upload_id": upload_id}
