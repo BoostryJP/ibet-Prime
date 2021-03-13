@@ -1,38 +1,67 @@
-FROM python:3.8.7-alpine3.13
+FROM ubuntu:20.04
 
 # make application directory
 RUN mkdir -p /app/ibet-Prime/
 
-# install packages
-RUN apk update \
- && apk add --no-cache --virtual .build-deps \
-      make \
-      gcc \
-      musl-dev \
-      postgresql-dev \
-      libffi-dev \
-      autoconf \
-      automake \
-      libtool \
-      curl
-
 # add apl user/group
-# NOTE: '/bin/bash' was added when 'libtool' installed.
-RUN addgroup -g 1000 apl \
- && adduser -G apl -D -s /bin/bash -u 1000 apl \
+RUN groupadd -g 1000 apl \
+ && useradd -g apl -s /bin/bash -u 1000 -p apl apl \
  && echo 'apl ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
  && chown -R apl:apl /app
 
-# Python requirements
+# install packages
+RUN apt-get update -q \
+ && apt-get install -y --no-install-recommends \
+ unzip \
+ build-essential \
+ ca-certificates \
+ curl \
+ libbz2-dev \
+ libreadline-dev \
+ libsqlite3-dev \
+ libssl-dev \
+ zlib1g-dev \
+ libffi-dev \
+ python3-dev \
+ libpq-dev \
+ automake \
+ pkg-config \
+ libtool \
+ libgmp-dev \
+ language-pack-ja-base \
+ language-pack-ja \
+ git \
+ libyaml-cpp-dev
+
+# remove unnessesory package files
+RUN apt clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# install pyenv
+RUN git clone https://github.com/pyenv/pyenv.git /home/apl/.pyenv
+RUN chown -R apl:apl /home/apl
+
+USER apl
+RUN echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~apl/.bash_profile \
+ && echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~apl/.bash_profile \
+ && echo 'eval "$(pyenv init -)"' >> ~apl/.bash_profile \
+ && echo 'export LANG=ja_JP.utf8' >> ~apl/.bash_profile
+
+# install python
+USER apl
+RUN . ~/.bash_profile \
+ && pyenv install 3.8.7 \
+ && pyenv global 3.8.7 \
+ && pip install --upgrade pip
+
+# install python packages
 USER apl
 COPY requirements.txt /app/requirements.txt
-RUN pip install --upgrade pip setuptools \
+RUN . ~/.bash_profile \
  && pip install -r /app/requirements.txt \
- && rm -f /app/requirements.txt \
- && echo 'export LANG=ja_JP.utf8' >> ~/.bash_profile \
- && echo 'export PATH=$PATH:$HOME/.local/bin' >> ~/.bash_profile
+ && rm -f /app/requirements.txt
 
 # app deploy
+USER root
 COPY --chown=apl:apl LICENSE /app/ibet-Prime/
 RUN mkdir -p /app/ibet-Prime/bin/
 COPY --chown=apl:apl bin/ /app/ibet-Prime/bin/
@@ -49,7 +78,8 @@ RUN find /app/ibet-Prime/ -type d -name __pycache__ | xargs rm -fr \
  && chmod -R 755 /app/ibet-Prime/
 
 # command deploy
-COPY --chown=apl:apl run.sh healthcheck.sh /app/
+USER apl
+COPY run.sh healthcheck.sh /app/
 
 EXPOSE 5000
 CMD /app/run.sh
