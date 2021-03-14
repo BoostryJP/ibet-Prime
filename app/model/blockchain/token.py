@@ -211,11 +211,9 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
         )
 
         if data.face_value:
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions.\
                 setFaceValue(data.face_value).\
                 buildTransaction({
-                    "nonce": nonce,
                     "chainId": CHAIN_ID,
                     "from": tx_from,
                     "gas": TX_GAS_LIMIT,
@@ -228,11 +226,9 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
 
         if data.interest_rate:
             _interest_rate = int(data.interest_rate * 10000)
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions.\
                 setInterestRate(_interest_rate).\
                 buildTransaction({
-                    "nonce": nonce,
                     "chainId": CHAIN_ID,
                     "from": tx_from,
                     "gas": TX_GAS_LIMIT,
@@ -248,11 +244,9 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             for i, item in enumerate(data.interest_payment_date):
                 _interest_payment_date[f"interestPaymentDate{i + 1}"] = item
             _interest_payment_date_string = json.dumps(_interest_payment_date)
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions.\
                 setInterestPaymentDate(_interest_payment_date_string).\
                 buildTransaction({
-                    "nonce": nonce,
                     "chainId": CHAIN_ID,
                     "from": tx_from,
                     "gas": TX_GAS_LIMIT,
@@ -264,11 +258,9 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(timeout_error)
 
         if data.redemption_value:
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions.\
                 setRedemptionValue(data.redemption_value).\
                 buildTransaction({
-                    "nonce": nonce,
                     "chainId": CHAIN_ID,
                     "from": tx_from,
                     "gas": TX_GAS_LIMIT,
@@ -280,11 +272,9 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(timeout_error)
 
         if data.transferable:
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions.\
                 setTransferable(data.transferable).\
                 buildTransaction({
-                    "nonce": nonce,
                     "chainId": CHAIN_ID,
                     "from": tx_from,
                     "gas": TX_GAS_LIMIT,
@@ -297,11 +287,9 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
 
         if data.image_url:
             for i, _image_url in enumerate(data.image_url):
-                nonce = web3.eth.getTransactionCount(tx_from)
                 tx = bond_contract.functions.\
                     setImageURL(i, _image_url).\
                     buildTransaction({
-                        "nonce": nonce,
                         "chainId": CHAIN_ID,
                         "from": tx_from,
                         "gas": TX_GAS_LIMIT,
@@ -313,11 +301,9 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                     raise SendTransactionError(timeout_error)
 
         if data.status:
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions. \
                 setStatus(data.status). \
                 buildTransaction({
-                    "nonce": nonce,
                     "chainId": CHAIN_ID,
                     "from": tx_from,
                     "gas": TX_GAS_LIMIT,
@@ -329,11 +315,9 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(timeout_error)
 
         if data.initial_offering_status:
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions. \
                 setInitialOfferingStatus(data.initial_offering_status). \
                 buildTransaction({
-                    "nonce": nonce,
                     "chainId": CHAIN_ID,
                     "from": tx_from,
                     "gas": TX_GAS_LIMIT,
@@ -345,9 +329,7 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(timeout_error)
 
         if data.is_redeemed:
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions.redeem().buildTransaction({
-                "nonce": nonce,
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -359,11 +341,9 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(timeout_error)
 
         if data.tradable_exchange_contract_address:
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions. \
                 setTradableExchange(data.tradable_exchange_contract_address). \
                 buildTransaction({
-                    "nonce": nonce,
                     "chainId": CHAIN_ID,
                     "from": tx_from,
                     "gas": TX_GAS_LIMIT,
@@ -375,11 +355,9 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(timeout_error)
 
         if data.personal_info_contract_address:
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions. \
                 setPersonalInfoAddress(data.personal_info_contract_address). \
                 buildTransaction({
-                    "nonce": nonce,
                     "chainId": CHAIN_ID,
                     "from": tx_from,
                     "gas": TX_GAS_LIMIT,
@@ -391,11 +369,9 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(timeout_error)
 
         if data.contact_information:
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions. \
                 setContactInformation(data.contact_information). \
                 buildTransaction({
-                    "nonce": nonce,
                     "chainId": CHAIN_ID,
                     "from": tx_from,
                     "gas": TX_GAS_LIMIT,
@@ -407,11 +383,9 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(timeout_error)
 
         if data.privacy_policy:
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions. \
                 setPrivacyPolicy(data.privacy_policy). \
                 buildTransaction({
-                    "nonce": nonce,
                     "chainId": CHAIN_ID,
                     "from": tx_from,
                     "gas": TX_GAS_LIMIT,
@@ -436,11 +410,9 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             _from = data.transfer_from
             _to = data.transfer_to
             _amount = data.amount
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions. \
                 transferFrom(_from, _to, _amount). \
                 buildTransaction({
-                    "nonce": nonce,
                     "chainId": CHAIN_ID,
                     "from": tx_from,
                     "gas": TX_GAS_LIMIT,
@@ -465,11 +437,9 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             )
             _target_address = data.account_address
             _amount = data.amount
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions. \
                 issueFrom(_target_address, ZERO_ADDRESS, _amount). \
                 buildTransaction({
-                    "nonce": nonce,
                     "chainId": CHAIN_ID,
                     "from": tx_from,
                     "gas": TX_GAS_LIMIT,
@@ -602,11 +572,9 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
         )
 
         if data.tradable_exchange_contract_address:
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = share_contract.functions.setTradableExchange(
                 data.tradable_exchange_contract_address
             ).buildTransaction({
-                "nonce": nonce,
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -618,11 +586,9 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(timeout_error)
 
         if data.personal_info_contract_address:
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = share_contract.functions.setPersonalInfoAddress(
                 data.personal_info_contract_address
             ).buildTransaction({
-                "nonce": nonce,
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -635,13 +601,11 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
 
         if data.dividends:
             _dividends = int(data.dividends * 100)
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = share_contract.functions.setDividendInformation(
                 _dividends,
                 data.dividend_record_date,
                 data.dividend_payment_date
             ).buildTransaction({
-                "nonce": nonce,
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -653,11 +617,9 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(timeout_error)
 
         if data.cancellation_date:
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = share_contract.functions.setCancellationDate(
                 data.cancellation_date
             ).buildTransaction({
-                "nonce": nonce,
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -670,12 +632,10 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
 
         if data.image_url:
             for _class, _image_url in enumerate(data.image_url):
-                nonce = web3.eth.getTransactionCount(tx_from)
                 tx = share_contract.functions.setReferenceUrls(
                     _class,
                     _image_url
                 ).buildTransaction({
-                    "nonce": nonce,
                     "chainId": CHAIN_ID,
                     "from": tx_from,
                     "gas": TX_GAS_LIMIT,
@@ -687,11 +647,9 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                     raise SendTransactionError(timeout_error)
 
         if data.contact_information:
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = share_contract.functions.setContactInformation(
                 data.contact_information
             ).buildTransaction({
-                "nonce": nonce,
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -703,11 +661,9 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(timeout_error)
 
         if data.privacy_policy:
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = share_contract.functions.setPrivacyPolicy(
                 data.privacy_policy
             ).buildTransaction({
-                "nonce": nonce,
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -719,11 +675,9 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(timeout_error)
 
         if data.status:
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = share_contract.functions.setStatus(
                 data.status
             ).buildTransaction({
-                "nonce": nonce,
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -735,11 +689,9 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(timeout_error)
 
         if data.transferable:
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = share_contract.functions.setTransferable(
                 data.transferable
             ).buildTransaction({
-                "nonce": nonce,
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -751,11 +703,9 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(timeout_error)
 
         if data.offering_status:
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = share_contract.functions.setOfferingStatus(
                 data.offering_status
             ).buildTransaction({
-                "nonce": nonce,
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -780,11 +730,9 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             _from = data.transfer_from
             _to = data.transfer_to
             _amount = data.amount
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = share_contract.functions. \
                 transferFrom(_from, _to, _amount). \
                 buildTransaction({
-                    "nonce": nonce,
                     "chainId": CHAIN_ID,
                     "from": tx_from,
                     "gas": TX_GAS_LIMIT,
@@ -809,11 +757,9 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             )
             _target_address = data.account_address
             _amount = data.amount
-            nonce = web3.eth.getTransactionCount(tx_from)
             tx = bond_contract.functions. \
                 issueFrom(_target_address, ZERO_ADDRESS, _amount). \
                 buildTransaction({
-                    "nonce": nonce,
                     "chainId": CHAIN_ID,
                     "from": tx_from,
                     "gas": TX_GAS_LIMIT,

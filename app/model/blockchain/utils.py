@@ -18,14 +18,18 @@ SPDX-License-Identifier: Apache-2.0
 """
 from typing import Tuple
 import json
+import time
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from web3.exceptions import TimeExhausted
 from eth_utils import to_checksum_address
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 
-from config import WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT
+from config import WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT, DATABASE_URL
 from app.exceptions import SendTransactionError
+from app.model.db import TransactionLock
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
@@ -71,12 +75,9 @@ class ContractUtils:
         )
 
         try:
-            # Get nonce
-            nonce = web3.eth.getTransactionCount(deployer)
             # Build transaction
             tx = contract.constructor(*args).buildTransaction(
                 transaction={
-                    "nonce": nonce,
                     "chainId": CHAIN_ID,
                     "from": deployer,
                     "gas": TX_GAS_LIMIT,
@@ -121,14 +122,45 @@ class ContractUtils:
     @staticmethod
     def send_transaction(transaction: dict, private_key: str):
         """Send transaction"""
-        signed_tx = web3.eth.account.sign_transaction(
-            transaction_dict=transaction,
-            private_key=private_key
-        )
-        tx_hash = web3.eth.sendRawTransaction(signed_tx.rawTransaction.hex())
-        txn_receipt = web3.eth.waitForTransactionReceipt(
-            transaction_hash=tx_hash,
-            timeout=10
-        )
+        _tx_from = transaction["from"]
+
+        # local database session
+        DB_URI = DATABASE_URL
+        db_engine = create_engine(DB_URI, echo=False)
+        local_session = Session(autocommit=False, autoflush=True, bind=db_engine)
+
+        # exclusive control within transaction execution address
+        # 10-sec timeout
+        start_time = time.time()
+        while True:
+            if time.time() - start_time > 10:
+                local_session.close()
+                raise TimeExhausted
+            else:
+                # lock record
+                _tm = local_session.query(TransactionLock). \
+                    filter(TransactionLock.tx_from == _tx_from). \
+                    populate_existing(). \
+                    with_for_update(). \
+                    first()
+                break
+
+        try:
+            nonce = web3.eth.getTransactionCount(_tx_from)
+            transaction["nonce"] = nonce
+            signed_tx = web3.eth.account.sign_transaction(
+                transaction_dict=transaction,
+                private_key=private_key
+            )
+            tx_hash = web3.eth.sendRawTransaction(signed_tx.rawTransaction.hex())
+            txn_receipt = web3.eth.waitForTransactionReceipt(
+                transaction_hash=tx_hash,
+                timeout=10
+            )
+        except:
+            raise
+        finally:
+            local_session.rollback()  # unlock record
+            local_session.close()
 
         return tx_hash.hex(), txn_receipt

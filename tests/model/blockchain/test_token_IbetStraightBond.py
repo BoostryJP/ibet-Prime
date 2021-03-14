@@ -37,7 +37,7 @@ class TestCreate:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self):
+    def test_normal_1(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -148,7 +148,7 @@ class TestGet:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self):
+    def test_normal_1(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -204,7 +204,7 @@ class TestAddSupply:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self):
+    def test_normal_1(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -272,7 +272,7 @@ class TestAddSupply:
 
     # <Error_2>
     # invalid private key
-    def test_error_2(self):
+    def test_error_2(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
