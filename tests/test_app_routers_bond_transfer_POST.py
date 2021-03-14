@@ -84,7 +84,6 @@ class TestAppRoutersBondTransferPOST:
 
         # assertion
         IbetStraightBondContract_mock.assert_any_call(
-            contract_address=_token_address,
             data=req_param,
             tx_from=_admin_address,
             private_key=ANY

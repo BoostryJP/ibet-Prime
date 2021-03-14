@@ -33,7 +33,7 @@ from config import PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE, EOA_PASSWORD_PATTERN, E
 from app.database import db_session
 from app.model.schema import AccountCreateKeyRequest, AccountResponse, AccountGenerateRsaKeyRequest
 from app.model.utils import E2EEUtils
-from app.model.db import Account, AccountRsaKeyTemporary, AccountRsaStatus
+from app.model.db import Account, AccountRsaKeyTemporary, AccountRsaStatus, TransactionLock
 from app.exceptions import InvalidParameterError
 from app import log
 
@@ -70,6 +70,12 @@ async def create_key(
     _account.eoa_password = E2EEUtils.encrypt(eoa_password)
     _account.rsa_status = AccountRsaStatus.UNSET.value
     db.add(_account)
+
+    # Insert initial transaction execution management record
+    _tm = TransactionLock()
+    _tm.tx_from = addr
+    db.add(_tm)
+
     db.commit()
 
     return {

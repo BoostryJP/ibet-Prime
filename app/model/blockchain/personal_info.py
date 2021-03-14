@@ -150,7 +150,6 @@ class PersonalInfoContract:
             )
             tx = self.personal_info_contract.functions.modify(account_address, ciphertext). \
                 buildTransaction({
-                    "nonce": web3.eth.getTransactionCount(self.issuer.issuer_address),
                     "chainId": CHAIN_ID,
                     "from": self.issuer.issuer_address,
                     "gas": TX_GAS_LIMIT,

@@ -445,7 +445,6 @@ async def transfer_ownership(
 
     try:
         IbetShareContract.transfer(
-            contract_address=token.token_address,
             data=token,
             tx_from=issuer_address,
             private_key=private_key
