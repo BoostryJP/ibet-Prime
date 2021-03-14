@@ -79,12 +79,12 @@ RUN find /app/ibet-Prime/ -type d -name __pycache__ | xargs rm -fr \
 
 # test build layer
 USER root
-RUN mkdir -p /app/ibet-Prime/cov/
 RUN mkdir -p /app/ibet-Prime/tests/
 COPY --chown=apl:apl tests/ /app/ibet-Prime/tests/
 RUN chmod -R 755 /app/ibet-Prime/tests/
 
 USER apl
+RUN mkdir -p /app/ibet-Prime/cov/
 RUN . ~/.bash_profile \
  && pip install -r /app/ibet-Prime/tests/requirements.txt
 
