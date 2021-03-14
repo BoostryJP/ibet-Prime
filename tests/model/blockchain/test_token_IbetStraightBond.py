@@ -24,7 +24,7 @@ from eth_keyfile import decode_keyfile_json
 from config import ZERO_ADDRESS
 from app.model.blockchain import IbetStraightBondContract
 from app.model.blockchain.utils import ContractUtils
-from app.model.schema import IbetStraightBondAdd
+from app.model.schema import IbetStraightBondAdd, IbetStraightBondTransfer
 from app.exceptions import SendTransactionError
 
 from tests.account_config import config_eth_account
@@ -88,7 +88,6 @@ class TestCreate:
         )
 
         arguments = []
-
         with pytest.raises(SendTransactionError):
             IbetStraightBondContract.create(
                 args=arguments,
@@ -197,6 +196,168 @@ class TestGet:
         assert bond_contract.personal_info_contract_address == ZERO_ADDRESS
 
 
+class TestTransfer:
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    def test_normal_1(self, db):
+        from_account = config_eth_account("user1")
+        from_address = from_account.get("address")
+        from_private_key = decode_keyfile_json(
+            raw_keyfile_json=from_account.get("keyfile_json"),
+            password=from_account.get("password").encode("utf-8")
+        )
+
+        to_account = config_eth_account("user2")
+        to_address = to_account.get("address")
+
+        # deploy token
+        arguments = [
+            "テスト債券", "TEST", 10000, 20000,
+            "20211231", 30000,
+            "20211231", "リターン内容",
+            "発行目的"
+        ]
+        token_address, abi, tx_hash = IbetStraightBondContract.create(
+            args=arguments,
+            tx_from=from_address,
+            private_key=from_private_key
+        )
+
+        # transfer
+        _data = {
+            "token_address": token_address,
+            "transfer_from": from_address,
+            "transfer_to": to_address,
+            "amount": 10
+        }
+        _transfer_data = IbetStraightBondTransfer(**_data)
+        IbetStraightBondContract.transfer(
+            data=_transfer_data,
+            tx_from=from_address,
+            private_key=from_private_key
+        )
+
+        # assertion
+        from_balance = IbetStraightBondContract.get_account_balance(
+            contract_address=token_address,
+            account_address=from_address
+        )
+        to_balance = IbetStraightBondContract.get_account_balance(
+            contract_address=token_address,
+            account_address=to_address
+        )
+        assert from_balance == arguments[2] - 10
+        assert to_balance == 10
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
+    # validation (IbetStraightBondTransfer)
+    # required field
+    def test_error_1(self):
+        _data = {}
+        with pytest.raises(ValidationError) as exc_info:
+            IbetStraightBondTransfer(**_data)
+        assert exc_info.value.errors() == [
+            {
+                "loc": ("token_address",),
+                "msg": "field required",
+                "type": "value_error.missing"
+            }, {
+                "loc": ("transfer_from",),
+                "msg": "field required",
+                "type": "value_error.missing"
+            }, {
+                "loc": ("transfer_to",),
+                "msg": "field required",
+                "type": "value_error.missing"
+            }, {
+                "loc": ("amount",),
+                "msg": "field required",
+                "type": "value_error.missing"
+            }
+        ]
+
+    # <Error_2>
+    # validation (IbetStraightBondTransfer)
+    # invalid parameter
+    def test_error_2(self):
+        _data = {
+            "token_address": "invalid contract address",
+            "transfer_from": "invalid transfer_from address",
+            "transfer_to": "invalid transfer_to address",
+            "amount": 0
+        }
+        with pytest.raises(ValidationError) as exc_info:
+            IbetStraightBondTransfer(**_data)
+        assert exc_info.value.errors() == [
+            {
+                "loc": ("token_address",),
+                "msg": "token_address is not a valid address",
+                "type": "value_error"
+            }, {
+                "loc": ("transfer_from",),
+                "msg": "transfer_from is not a valid address",
+                "type": "value_error"
+            }, {
+                "loc": ("transfer_to",),
+                "msg": "transfer_to is not a valid address",
+                "type": "value_error"
+            }, {
+                "loc": ("amount",),
+                "msg": "amount must be greater than 0",
+                "type": "value_error"
+            }
+        ]
+
+    # <Error_3>
+    # invalid private key
+    def test_error_3(self, db):
+        from_account = config_eth_account("user1")
+        from_address = from_account.get("address")
+        from_private_key = decode_keyfile_json(
+            raw_keyfile_json=from_account.get("keyfile_json"),
+            password=from_account.get("password").encode("utf-8")
+        )
+
+        to_account = config_eth_account("user2")
+        to_address = to_account.get("address")
+
+        # deploy token
+        arguments = [
+            "テスト債券", "TEST", 10000, 20000,
+            "20211231", 30000,
+            "20211231", "リターン内容",
+            "発行目的"
+        ]
+        token_address, abi, tx_hash = IbetStraightBondContract.create(
+            args=arguments,
+            tx_from=from_address,
+            private_key=from_private_key
+        )
+
+        # transfer
+        _data = {
+            "token_address": token_address,
+            "transfer_from": from_address,
+            "transfer_to": to_address,
+            "amount": 10
+        }
+        _transfer_data = IbetStraightBondTransfer(**_data)
+        with pytest.raises(SendTransactionError):
+            IbetStraightBondContract.transfer(
+                data=_transfer_data,
+                tx_from=from_address,
+                private_key="invalid_private_key"
+            )
+
+
 class TestAddSupply:
 
     ###########################################################################
@@ -247,32 +408,49 @@ class TestAddSupply:
     ###########################################################################
 
     # <Error_1>
-    # invalid parameter (IbetStraightBondAdd)
+    # validation (IbetStraightBondAdd)
+    # required field
     def test_error_1(self):
-        test_account = config_eth_account("user1")
-        issuer_address = test_account.get("address")
-
         _data = {}
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValidationError) as exc_info:
             IbetStraightBondAdd(**_data)
-
-        _data = {
-            "account_address": issuer_address[:-1],  # short address
-            "amount": 1
-        }
-        with pytest.raises(ValidationError):
-            IbetStraightBondAdd(**_data)
-
-        _data = {
-            "account_address": issuer_address,
-            "amount": -1  # short address
-        }
-        with pytest.raises(ValidationError):
-            IbetStraightBondAdd(**_data)
+        assert exc_info.value.errors() == [
+            {
+                "loc": ("account_address",), 
+                "msg": "field required", 
+                "type": "value_error.missing"
+            }, {
+                "loc": ("amount",), 
+                "msg": "field required", 
+                "type": "value_error.missing"
+            }
+        ]
 
     # <Error_2>
+    # validation (IbetStraightBondAdd)
+    # invalid parameter
+    def test_error_2(self):
+        _data = {
+            "account_address": "invalid account address",
+            "amount": 0
+        }
+        with pytest.raises(ValidationError) as exc_info:
+            IbetStraightBondAdd(**_data)
+        assert exc_info.value.errors() == [
+            {
+                "loc": ("account_address",), 
+                "msg": "account_address is not a valid address", 
+                "type": "value_error"
+            }, {
+                "loc": ("amount",), 
+                "msg": "amount must be greater than 0",
+                "type": "value_error"
+            }
+        ]
+
+    # <Error_3>
     # invalid private key
-    def test_error_2(self, db):
+    def test_error_3(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(

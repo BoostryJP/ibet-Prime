@@ -397,15 +397,14 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(timeout_error)
 
     @staticmethod
-    def transfer(contract_address: str,
-                 data: IbetStraightBondTransfer,
+    def transfer(data: IbetStraightBondTransfer,
                  tx_from: str,
                  private_key: str):
         """Transfer ownership"""
         try:
             bond_contract = ContractUtils.get_contract(
                 contract_name="IbetStraightBond",
-                contract_address=contract_address
+                contract_address=data.token_address
             )
             _from = data.transfer_from
             _to = data.transfer_to
@@ -450,6 +449,21 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             raise SendTransactionError(timeout_error)
         except Exception as err:
             raise SendTransactionError(err)
+
+    @staticmethod
+    def get_account_balance(contract_address: str, account_address: str):
+        """Get account balance
+
+        :param contract_address: contract address
+        :param account_address: account address
+        :return: account balance
+        """
+        bond_contract = ContractUtils.get_contract(
+            contract_name="IbetStraightBond",
+            contract_address=contract_address
+        )
+        balance = bond_contract.functions.balanceOf(account_address).call()
+        return balance
 
 
 class IbetShareContract(IbetStandardTokenInterfaceContract):
@@ -717,15 +731,14 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(timeout_error)
 
     @staticmethod
-    def transfer(contract_address: str,
-                 data: IbetShareTransfer,
+    def transfer(data: IbetShareTransfer,
                  tx_from: str,
                  private_key: str):
         """Transfer ownership"""
         try:
             share_contract = ContractUtils.get_contract(
                 contract_name="IbetShare",
-                contract_address=contract_address
+                contract_address=data.token_address
             )
             _from = data.transfer_from
             _to = data.transfer_to
@@ -770,3 +783,18 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             raise SendTransactionError(timeout_error)
         except Exception as err:
             raise SendTransactionError(err)
+
+    @staticmethod
+    def get_account_balance(contract_address: str, account_address: str):
+        """Get account balance
+
+        :param contract_address: contract address
+        :param account_address: account address
+        :return: account balance
+        """
+        bond_contract = ContractUtils.get_contract(
+            contract_name="IbetShare",
+            contract_address=contract_address
+        )
+        balance = bond_contract.functions.balanceOf(account_address).call()
+        return balance
