@@ -497,6 +497,7 @@ async def bulk_transfer_ownership(
     _bulk_transfer_upload = BulkTransferUpload()
     _bulk_transfer_upload.upload_id = upload_id
     _bulk_transfer_upload.issuer_address = issuer_address
+    _bulk_transfer_upload.token_type = TokenType.IBET_SHARE
     _bulk_transfer_upload.status = 0
     db.add(_bulk_transfer_upload)
 
@@ -516,3 +517,91 @@ async def bulk_transfer_ownership(
     db.commit()
 
     return {"upload_id": upload_id}
+
+
+# GET: /share/bulk_transfer
+@router.get("/bulk_transfer")
+async def list_bulk_transfer_upload(
+        issuer_address: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """List bulk transfer upload"""
+
+    # Headers Validate
+    headers_validate([{
+        "name": "issuer-address",
+        "value": issuer_address,
+        "validator": address_is_valid_address
+    }])
+
+    # Get bulk transfer upload list
+    if issuer_address is None:
+        _uploads = db.query(BulkTransferUpload). \
+            filter(BulkTransferUpload.token_type == TokenType.IBET_SHARE). \
+            order_by(BulkTransferUpload.issuer_address). \
+            all()
+    else:
+        _uploads = db.query(BulkTransferUpload). \
+            filter(BulkTransferUpload.issuer_address == issuer_address). \
+            filter(BulkTransferUpload.token_type == TokenType.IBET_SHARE). \
+            all()
+    if len(_uploads) < 1:
+        raise HTTPException(status_code=404, detail="bulk transfer upload list not found")
+
+    uploads = []
+    for _upload in _uploads:
+        uploads.append({
+            "issuer_address": _upload.issuer_address,
+            "token_type": _upload.token_type,
+            "upload_id": _upload.upload_id,
+            "status": _upload.status
+        })
+
+    return uploads
+
+
+# GET: /share/bulk_transfer/{upload_id}
+@router.get("/bulk_transfer/{upload_id}")
+async def retrieve_bulk_transfer(
+        upload_id: str,
+        issuer_address: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Retrieve bulk transfer"""
+
+    # Headers Validate
+    headers_validate([{
+        "name": "issuer-address",
+        "value": issuer_address,
+        "validator": address_is_valid_address
+    }])
+
+    # Get bulk transfer upload list
+    if issuer_address is None:
+        _bulk_transfers = db.query(BulkTransfer). \
+            filter(BulkTransfer.upload_id == upload_id). \
+            filter(BulkTransfer.token_type == TokenType.IBET_SHARE). \
+            order_by(BulkTransfer.issuer_address). \
+            all()
+    else:
+        _bulk_transfers = db.query(BulkTransfer). \
+            filter(BulkTransfer.issuer_address == issuer_address). \
+            filter(BulkTransfer.upload_id == upload_id). \
+            filter(BulkTransfer.token_type == TokenType.IBET_SHARE). \
+            all()
+
+    bulk_transfers = []
+    for _bulk_transfer in _bulk_transfers:
+        bulk_transfers.append({
+            "issuer_address": _bulk_transfer.issuer_address,
+            "token_type": _bulk_transfer.token_type,
+            "upload_id": _bulk_transfer.upload_id,
+            "token_address": _bulk_transfer.token_address,
+            "from_address": _bulk_transfer.from_address,
+            "to_address": _bulk_transfer.to_address,
+            "amount": _bulk_transfer.amount,
+            "status": _bulk_transfer.status
+        })
+
+    if len(bulk_transfers) < 1:
+        raise HTTPException(status_code=404, detail="bulk transfer not found")
+
+    return bulk_transfers

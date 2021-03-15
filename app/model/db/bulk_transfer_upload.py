@@ -29,5 +29,7 @@ class BulkTransferUpload(Base):
     upload_id = Column(String(36), primary_key=True)
     # issuer address
     issuer_address = Column(String(42), nullable=False, index=True)
+    # token type
+    token_type = Column(String(40), nullable=False)
     # processing status (pending:0, succeeded:1, failed:2)
     status = Column(Integer, nullable=False, index=True)
