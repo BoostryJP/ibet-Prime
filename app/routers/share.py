@@ -497,6 +497,7 @@ async def bulk_transfer_ownership(
     _bulk_transfer_upload = BulkTransferUpload()
     _bulk_transfer_upload.upload_id = upload_id
     _bulk_transfer_upload.issuer_address = issuer_address
+    _bulk_transfer_upload.token_type = TokenType.IBET_SHARE
     _bulk_transfer_upload.status = 0
     db.add(_bulk_transfer_upload)
 
