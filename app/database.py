@@ -19,8 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from config import DATABASE_URL, DB_ECHO, DB_AUTOCOMMIT
-
+from config import DATABASE_URL, DATABASE_SCHEMA, DB_ECHO, DB_AUTOCOMMIT
 
 options = {
     "pool_recycle": 3600,
@@ -42,3 +41,10 @@ def db_session():
         yield db
     finally:
         db.close()
+
+
+def get_db_schema():
+    if DATABASE_SCHEMA and engine.name != "mysql":
+        return DATABASE_SCHEMA
+    else:
+        return None

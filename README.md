@@ -34,6 +34,11 @@ Install packages
 $ pip install -r requirements.txt
 ```
 
+Create database tables
+```bash
+$ ./bin/run_migration.sh init
+```
+
 You can start (or stop) the API server with:
 ```bash
 $ ./bin/run_server.sh start(stop)
