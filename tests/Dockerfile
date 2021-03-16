@@ -69,7 +69,9 @@ RUN mkdir -p /app/ibet-Prime/contracts/
 COPY --chown=apl:apl contracts/ /app/ibet-Prime/contracts/
 RUN mkdir -p /app/ibet-Prime/conf/
 COPY --chown=apl:apl conf/ /app/ibet-Prime/conf/
-COPY --chown=apl:apl config.py server.py /app/ibet-Prime/
+COPY --chown=apl:apl config.py server.py alembic.ini /app/ibet-Prime/
+RUN mkdir -p /app/ibet-Prime/migrations/
+COPY --chown=apl:apl migrations/ /app/ibet-Prime/migrations/
 RUN mkdir -p /app/ibet-Prime/batch/
 COPY --chown=apl:apl batch/ /app/ibet-Prime/batch/
 RUN mkdir -p /app/ibet-Prime/app/
