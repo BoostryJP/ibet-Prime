@@ -22,10 +22,208 @@ from pydantic.error_wrappers import ValidationError
 from eth_keyfile import decode_keyfile_json
 
 from app.model.blockchain import IbetShareContract
-from app.model.schema import IbetShareAdd, IbetShareTransfer
+from app.model.schema import IbetShareAdd, IbetShareTransfer, IbetShareUpdate
 from app.exceptions import SendTransactionError
 
 from tests.account_config import config_eth_account
+
+
+class TestUpdate:
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    # All items are None
+    def test_normal_1(self):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式", "TEST", 10000, 20000,
+            1, "20211231", "20211231",
+            "20221231"
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # update
+        _data = {}
+        _add_data = IbetShareUpdate(**_data)
+        IbetShareContract.update(
+            contract_address=contract_address,
+            data=_add_data,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # assertion
+        share_contract = IbetShareContract.get(contract_address=contract_address)
+        assert share_contract.cancellation_date == "20221231"
+        assert share_contract.dividend_record_date == "20211231"
+        assert share_contract.dividend_payment_date == "20211231"
+        assert share_contract.dividends == 0.01
+        assert share_contract.tradable_exchange_contract_address == "0x0000000000000000000000000000000000000000"
+        assert share_contract.personal_info_contract_address == "0x0000000000000000000000000000000000000000"
+        assert share_contract.image_url == ["", "", ""]
+        assert share_contract.transferable == False
+        assert share_contract.status == True
+        assert share_contract.offering_status == False
+        assert share_contract.contact_information == ""
+        assert share_contract.privacy_policy == ""
+
+    # <Normal_2>
+    # Update all items
+    def test_normal_2(self):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式", "TEST", 10000, 20000,
+            1, "20211231", "20211231",
+            "20221231"
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # update
+        _data = {
+            "cancellation_date": "20211231",
+            "dividend_record_date": "20210930",
+            "dividend_payment_date": "20211001",
+            "dividends": 0.01,
+            "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",
+            "personal_info_contract_address": "0x0000000000000000000000000000000000000002",
+            "image_url": ["image_1"],
+            "transferable": False,
+            "status": False,
+            "offering_status": True,
+            "contact_information": "contact info test",
+            "privacy_policy": "privacy policy test"
+        }
+        _add_data = IbetShareUpdate(**_data)
+        IbetShareContract.update(
+            contract_address=contract_address,
+            data=_add_data,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # assertion
+        share_contract = IbetShareContract.get(contract_address=contract_address)
+        assert share_contract.cancellation_date == "20211231"
+        assert share_contract.dividend_record_date == "20210930"
+        assert share_contract.dividend_payment_date == "20211001"
+        assert share_contract.dividends == 0.01
+        assert share_contract.tradable_exchange_contract_address == "0x0000000000000000000000000000000000000001"
+        assert share_contract.personal_info_contract_address == "0x0000000000000000000000000000000000000002"
+        assert share_contract.image_url == ["image_1", "", ""]
+        assert share_contract.transferable == False
+        assert share_contract.status == False
+        assert share_contract.offering_status == True
+        assert share_contract.contact_information == "contact info test"
+        assert share_contract.privacy_policy == "privacy policy test"
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
+    # Validation (IbetShareUpdate)
+    # invalid parameter
+    def test_error_1(self):
+        # update
+        _data = {
+            "dividends": 0.001,
+            "tradable_exchange_contract_address": "invalid contract address",
+            "personal_info_contract_address": "invalid contract address",
+        }
+        with pytest.raises(ValidationError) as exc_info:
+            IbetShareUpdate(**_data)
+        assert exc_info.value.errors() == [
+            {
+                "loc": ("dividends",),
+                "msg": "dividends must be rounded to 2 decimal places",
+                "type": "value_error"
+            }, {
+                "loc": ("tradable_exchange_contract_address",),
+                "msg": "tradable_exchange_contract_address is not a valid address",
+                "type": "value_error"
+            }, {
+                "loc": ("personal_info_contract_address",),
+                "msg": "personal_info_contract_address is not a valid address",
+                "type": "value_error"
+            }
+        ]
+
+    # Error_2
+    # invalid parameter (dividends)
+    def test_error_2(self):
+        # update
+        _data = {
+            "dividends": 0.01
+        }
+        with pytest.raises(ValidationError) as exc_info:
+            IbetShareUpdate(**_data)
+        assert exc_info.value.errors() == [
+            {
+                "loc": ("dividends",),
+                "msg": "all items are required to update the dividend information",
+                "type": "value_error"
+            }
+        ]
+
+    # <Error_3>
+    # invalid private key
+    def test_error_3(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式", "TEST", 10000, 20000,
+            1, "20211231", "20211231",
+            "20221231"
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # update
+        _data = {
+            "cancellation_date": "20211231"
+        }
+        _add_data = IbetShareUpdate(**_data)
+        with pytest.raises(SendTransactionError):
+            IbetShareContract.update(
+                contract_address=contract_address,
+                data=_add_data,
+                tx_from=issuer_address,
+                private_key="invalid private key"
+            )
 
 
 class TestTransfer:

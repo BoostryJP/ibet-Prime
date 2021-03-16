@@ -210,7 +210,7 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             contract_address=contract_address
         )
 
-        if data.face_value:
+        if data.face_value is not None:
             tx = bond_contract.functions.\
                 setFaceValue(data.face_value).\
                 buildTransaction({
@@ -223,8 +223,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
-        if data.interest_rate:
+        if data.interest_rate is not None:
             _interest_rate = int(data.interest_rate * 10000)
             tx = bond_contract.functions.\
                 setInterestRate(_interest_rate).\
@@ -238,8 +240,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
-        if data.interest_payment_date:
+        if data.interest_payment_date is not None:
             _interest_payment_date = {}
             for i, item in enumerate(data.interest_payment_date):
                 _interest_payment_date[f"interestPaymentDate{i + 1}"] = item
@@ -256,8 +260,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
-        if data.redemption_value:
+        if data.redemption_value is not None:
             tx = bond_contract.functions.\
                 setRedemptionValue(data.redemption_value).\
                 buildTransaction({
@@ -270,8 +276,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
-        if data.transferable:
+        if data.transferable is not None:
             tx = bond_contract.functions.\
                 setTransferable(data.transferable).\
                 buildTransaction({
@@ -284,8 +292,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
-        if data.image_url:
+        if data.image_url is not None:
             for i, _image_url in enumerate(data.image_url):
                 tx = bond_contract.functions.\
                     setImageURL(i, _image_url).\
@@ -299,8 +309,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                     ContractUtils.send_transaction(transaction=tx, private_key=private_key)
                 except TimeExhausted as timeout_error:
                     raise SendTransactionError(timeout_error)
+                except Exception as err:
+                    raise SendTransactionError(err)
 
-        if data.status:
+        if data.status is not None:
             tx = bond_contract.functions. \
                 setStatus(data.status). \
                 buildTransaction({
@@ -313,8 +325,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
-        if data.initial_offering_status:
+        if data.initial_offering_status is not None:
             tx = bond_contract.functions. \
                 setInitialOfferingStatus(data.initial_offering_status). \
                 buildTransaction({
@@ -327,8 +341,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
-        if data.is_redeemed:
+        if data.is_redeemed is not None:
             tx = bond_contract.functions.redeem().buildTransaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
@@ -339,8 +355,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
-        if data.tradable_exchange_contract_address:
+        if data.tradable_exchange_contract_address is not None:
             tx = bond_contract.functions. \
                 setTradableExchange(data.tradable_exchange_contract_address). \
                 buildTransaction({
@@ -353,8 +371,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
-        if data.personal_info_contract_address:
+        if data.personal_info_contract_address is not None:
             tx = bond_contract.functions. \
                 setPersonalInfoAddress(data.personal_info_contract_address). \
                 buildTransaction({
@@ -367,8 +387,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
-        if data.contact_information:
+        if data.contact_information is not None:
             tx = bond_contract.functions. \
                 setContactInformation(data.contact_information). \
                 buildTransaction({
@@ -381,8 +403,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
-        if data.privacy_policy:
+        if data.privacy_policy is not None:
             tx = bond_contract.functions. \
                 setPrivacyPolicy(data.privacy_policy). \
                 buildTransaction({
@@ -395,6 +419,8 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
     @staticmethod
     def transfer(data: IbetStraightBondTransfer,
@@ -585,7 +611,7 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             contract_address=contract_address
         )
 
-        if data.tradable_exchange_contract_address:
+        if data.tradable_exchange_contract_address is not None:
             tx = share_contract.functions.setTradableExchange(
                 data.tradable_exchange_contract_address
             ).buildTransaction({
@@ -598,8 +624,10 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
-        if data.personal_info_contract_address:
+        if data.personal_info_contract_address is not None:
             tx = share_contract.functions.setPersonalInfoAddress(
                 data.personal_info_contract_address
             ).buildTransaction({
@@ -612,8 +640,10 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
-        if data.dividends:
+        if data.dividends is not None:
             _dividends = int(data.dividends * 100)
             tx = share_contract.functions.setDividendInformation(
                 _dividends,
@@ -629,8 +659,10 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
-        if data.cancellation_date:
+        if data.cancellation_date is not None:
             tx = share_contract.functions.setCancellationDate(
                 data.cancellation_date
             ).buildTransaction({
@@ -643,8 +675,10 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
-        if data.image_url:
+        if data.image_url is not None:
             for _class, _image_url in enumerate(data.image_url):
                 tx = share_contract.functions.setReferenceUrls(
                     _class,
@@ -659,8 +693,10 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                     ContractUtils.send_transaction(transaction=tx, private_key=private_key)
                 except TimeExhausted as timeout_error:
                     raise SendTransactionError(timeout_error)
+                except Exception as err:
+                    raise SendTransactionError(err)
 
-        if data.contact_information:
+        if data.contact_information is not None:
             tx = share_contract.functions.setContactInformation(
                 data.contact_information
             ).buildTransaction({
@@ -673,8 +709,10 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
-        if data.privacy_policy:
+        if data.privacy_policy is not None:
             tx = share_contract.functions.setPrivacyPolicy(
                 data.privacy_policy
             ).buildTransaction({
@@ -687,8 +725,10 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
-        if data.status:
+        if data.status is not None:
             tx = share_contract.functions.setStatus(
                 data.status
             ).buildTransaction({
@@ -701,8 +741,10 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
-        if data.transferable:
+        if data.transferable is not None:
             tx = share_contract.functions.setTransferable(
                 data.transferable
             ).buildTransaction({
@@ -715,8 +757,10 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
-        if data.offering_status:
+        if data.offering_status is not None:
             tx = share_contract.functions.setOfferingStatus(
                 data.offering_status
             ).buildTransaction({
@@ -729,6 +773,8 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
 
     @staticmethod
     def transfer(data: IbetShareTransfer,

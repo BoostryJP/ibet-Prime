@@ -24,7 +24,7 @@ from eth_keyfile import decode_keyfile_json
 from config import ZERO_ADDRESS
 from app.model.blockchain import IbetStraightBondContract
 from app.model.blockchain.utils import ContractUtils
-from app.model.schema import IbetStraightBondAdd, IbetStraightBondTransfer
+from app.model.schema import IbetStraightBondUpdate, IbetStraightBondAdd, IbetStraightBondTransfer
 from app.exceptions import SendTransactionError
 
 from tests.account_config import config_eth_account
@@ -194,6 +194,198 @@ class TestGet:
         assert bond_contract.initial_offering_status is False
         assert bond_contract.is_redeemed is False
         assert bond_contract.personal_info_contract_address == ZERO_ADDRESS
+
+
+class TestUpdate:
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    # All items are None
+    def test_normal_1(self):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト債券", "TEST", 10000, 20000,
+            "20211231", 30000,
+            "20211231", "リターン内容",
+            "発行目的"
+        ]
+        contract_address, abi, tx_hash = IbetStraightBondContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # update
+        _data = {}
+        _add_data = IbetStraightBondUpdate(**_data)
+        IbetStraightBondContract.update(
+            contract_address=contract_address,
+            data=_add_data,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # assertion
+        bond_contract = IbetStraightBondContract.get(contract_address=contract_address)
+        assert bond_contract.face_value == 20000
+        assert bond_contract.interest_rate == 0
+        assert bond_contract.interest_payment_date == ["", "", "", "", "", "", "", "", "", "", "", ""]
+        assert bond_contract.redemption_value == 30000
+        assert bond_contract.transferable == True
+        assert bond_contract.image_url == ["", "", ""]
+        assert bond_contract.status == True
+        assert bond_contract.initial_offering_status == False
+        assert bond_contract.is_redeemed == False
+        assert bond_contract.tradable_exchange_contract_address == "0x0000000000000000000000000000000000000000"
+        assert bond_contract.personal_info_contract_address == "0x0000000000000000000000000000000000000000"
+        assert bond_contract.contact_information == ""
+        assert bond_contract.privacy_policy == ""
+
+    # <Normal_2>
+    # Update all items
+    def test_normal_2(self):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト債券", "TEST", 10000, 20000,
+            "20211231", 30000,
+            "20211231", "リターン内容",
+            "発行目的"
+        ]
+        contract_address, abi, tx_hash = IbetStraightBondContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # update
+        _data = {
+            "face_value": 20001,
+            "interest_rate": 0.0001,
+            "interest_payment_date": ["0331", "0930"],
+            "redemption_value": 30001,
+            "transferable": False,
+            "image_url": ["image_1"],
+            "status": False,
+            "initial_offering_status": True,
+            "is_redeemed": True,
+            "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",
+            "personal_info_contract_address": "0x0000000000000000000000000000000000000002",
+            "contact_information": "contact info test",
+            "privacy_policy": "privacy policy test"
+        }
+        _add_data = IbetStraightBondUpdate(**_data)
+        IbetStraightBondContract.update(
+            contract_address=contract_address,
+            data=_add_data,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # assertion
+        bond_contract = IbetStraightBondContract.get(contract_address=contract_address)
+        assert bond_contract.face_value == 20001
+        assert bond_contract.interest_rate == 0.0001
+        assert bond_contract.interest_payment_date == ["0331", "0930", "", "", "", "", "", "", "", "", "", ""]
+        assert bond_contract.redemption_value == 30001
+        assert bond_contract.transferable == False
+        assert bond_contract.image_url == ["image_1", "", ""]
+        assert bond_contract.status == False
+        assert bond_contract.initial_offering_status == True
+        assert bond_contract.is_redeemed == True
+        assert bond_contract.tradable_exchange_contract_address == "0x0000000000000000000000000000000000000001"
+        assert bond_contract.personal_info_contract_address == "0x0000000000000000000000000000000000000002"
+        assert bond_contract.contact_information == "contact info test"
+        assert bond_contract.privacy_policy == "privacy policy test"
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
+    # Validation (IbetStraightBondUpdate)
+    # invalid parameter
+    def test_error_1(self):
+        # update
+        _data = {
+            "interest_rate": 0.00001,
+            "interest_payment_date": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"],
+            "tradable_exchange_contract_address": "invalid contract address",
+            "personal_info_contract_address": "invalid contract address",
+        }
+        with pytest.raises(ValidationError) as exc_info:
+            IbetStraightBondUpdate(**_data)
+        assert exc_info.value.errors() == [
+            {
+                "loc": ("interest_rate",),
+                "msg": "interest_rate must be rounded to 4 decimal places",
+                "type": "value_error"
+            }, {
+                "loc": ("interest_payment_date",),
+                "msg": "list length of interest_payment_date must be less than 13",
+                "type": "value_error"
+            }, {
+                "loc": ("tradable_exchange_contract_address",),
+                "msg": "tradable_exchange_contract_address is not a valid address",
+                "type": "value_error"
+            }, {
+                "loc": ("personal_info_contract_address",),
+                "msg": "personal_info_contract_address is not a valid address",
+                "type": "value_error"
+            }
+        ]
+
+    # <Error_2>
+    # invalid private key
+    def test_error_2(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト債券", "TEST", 10000, 20000,
+            "20211231", 30000,
+            "20211231", "リターン内容",
+            "発行目的"
+        ]
+        contract_address, abi, tx_hash = IbetStraightBondContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # update
+        _data = {
+            "face_value": 20001
+        }
+        _add_data = IbetStraightBondUpdate(**_data)
+        with pytest.raises(SendTransactionError):
+            IbetStraightBondContract.update(
+                contract_address=contract_address,
+                data=_add_data,
+                tx_from=issuer_address,
+                private_key="invalid private key"
+            )
 
 
 class TestTransfer:
