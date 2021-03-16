@@ -12,6 +12,7 @@ Generate Migration Script
 ### Prerequisites
 * Migration Setup is completed.
 * env:DATABASE_SCHEMA is not set.
+because DATABASE_SCHEMA is included in created index name.
 
 ### Generate Script
 ```bash
