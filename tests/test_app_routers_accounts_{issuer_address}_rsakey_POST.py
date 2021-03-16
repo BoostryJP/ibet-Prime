@@ -201,7 +201,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
             "detail": [
                 {
                     "loc": ["body", "rsa_passphrase"],
-                    "msg": "rsa_passphrase is not a Base64-decoded encrypted data",
+                    "msg": "rsa_passphrase is not a Base64-encoded encrypted data",
                     "type": "value_error"
                 }
             ]
