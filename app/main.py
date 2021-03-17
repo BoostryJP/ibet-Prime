@@ -24,12 +24,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from config import SERVER_NAME
 from app.routers import index, account, bond, share
-from app.database import engine
-from app.model import db
 from app.exceptions import *
-
-# Create Database
-db.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="ibet Prime",

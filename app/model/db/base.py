@@ -25,6 +25,8 @@ from sqlalchemy import Column
 from sqlalchemy import DateTime
 from sqlalchemy.ext.declarative import declarative_base
 
+from app.database import get_db_schema
+
 
 class BaseModel(object):
     created = Column(DateTime, default=datetime.utcnow)
@@ -39,3 +41,7 @@ class BaseModel(object):
 
 
 Base = declarative_base(cls=BaseModel)
+
+schema = get_db_schema()
+if schema is not None:
+    setattr(Base, "__table_args__", {"schema": schema})

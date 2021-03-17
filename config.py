@@ -45,6 +45,7 @@ if 'pytest' in sys.modules:  # for unit test
         "TEST_DATABASE_URL") or 'postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb_test'
 else:
     DATABASE_URL = os.environ.get("DATABASE_URL") or 'postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb'
+DATABASE_SCHEMA = os.environ.get('DATABASE_SCHEMA')
 DB_ECHO = True if CONFIG['database']['echo'] == 'yes' else False
 DB_AUTOCOMMIT = True
 
@@ -91,6 +92,11 @@ PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE = \
 # - 0:File, Set the file path to E2EE_RSA_RESOURCE.
 # - 1:AWS SecretsManager, Set the SecretsManagerARN to E2EE_RSA_RESOURCE.
 if "pytest" in sys.modules:  # for unit test
+    E2EE_RSA_RESOURCE_MODE = int(os.environ.get("E2EE_RSA_RESOURCE_MODE")) \
+        if os.environ.get("E2EE_RSA_RESOURCE_MODE") else 0
+    E2EE_RSA_RESOURCE = os.environ.get("E2EE_RSA_RESOURCE") or "tests/data/rsa_private.pem"
+    E2EE_RSA_PASSPHRASE = os.environ.get("E2EE_RSA_PASSPHRASE") or "password"
+elif "alembic" in sys.modules or "manage.py" in sys.argv[0]:  # for migration
     E2EE_RSA_RESOURCE_MODE = int(os.environ.get("E2EE_RSA_RESOURCE_MODE")) \
         if os.environ.get("E2EE_RSA_RESOURCE_MODE") else 0
     E2EE_RSA_RESOURCE = os.environ.get("E2EE_RSA_RESOURCE") or "tests/data/rsa_private.pem"

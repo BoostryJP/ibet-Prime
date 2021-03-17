@@ -7,6 +7,16 @@ services:
       - POSTGRES_USER=apluser
       - POSTGRES_PASSWORD=apluserpass
       - POSTGRES_DB=apldb
+  mysql:
+    image: mysql:5.7
+    environment:
+      - MYSQL_USER=apluser
+      - MYSQL_PASSWORD=apluserpass
+      - MYSQL_DATABASE=apldb
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+      - MYSQL_ROOT_PASSWORD=password
+    ports:
+      - 3306:3306
   ganache-cli:
     image: "trufflesuite/ganache-cli:latest"
     ports:
@@ -25,4 +35,17 @@ services:
       - ganache-cli:quorum
     depends_on:
       - postgres
+      - ganache-cli
+  ibet-prime-mysql:
+    build:
+      context: ./
+      dockerfile: ./tests/Dockerfile
+    environment:
+      - TEST_DATABASE_URL=mysql+pymysql://apluser:apluserpass@mysql:3306/apldb
+      - WEB3_HTTP_PROVIDER=http://quorum:8545
+    links:
+      - mysql:mysql
+      - ganache-cli:quorum
+    depends_on:
+      - mysql
       - ganache-cli
