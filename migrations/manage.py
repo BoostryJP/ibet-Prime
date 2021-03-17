@@ -16,27 +16,28 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from fastapi import APIRouter
+import sys
+import os
 
-from config import E2EE_REQUEST_ENABLED
-from app.model.utils import E2EEUtils
-from app.model.schema import E2EEResponse
+path = os.path.join(os.path.dirname(__file__), '../')
+sys.path.append(path)
 
-router = APIRouter(tags=["index"])
+from sqlalchemy import Table
+
+from app.database import engine, get_db_schema
+from app.model.db import Base
 
 
-# GET: /e2ee
-@router.get("/e2ee", response_model=E2EEResponse)
-def e2e_encryption_key():
-    """Get E2EE info"""
+def reset():
+    meta = Base.metadata
+    meta.bind = engine
+    table = Table("alembic_version", meta, schema=get_db_schema())
+    if table.exists():
+        table.drop()
 
-    if not E2EE_REQUEST_ENABLED:
-        return {
-            "public_key": None
-        }
 
-    _, public_key = E2EEUtils.get_key()
-    
-    return {
-        "public_key": public_key
-    }
+argv = sys.argv
+
+if len(argv) > 0:
+    if argv[1] == "reset":
+        reset()

@@ -56,6 +56,22 @@ async def issue_token(
         "validator": address_is_valid_address
     }])
 
+    # Validate update items
+    _data = {
+        "interest_rate": token.interest_rate,
+        "interest_payment_date": token.interest_payment_date,
+        "transferable": token.transferable,
+        "image_url": token.image_url,
+        "status": token.status,
+        "initial_offering_status": token.initial_offering_status,
+        "is_redeemed": token.is_redeemed,
+        "tradable_exchange_contract_address": token.tradable_exchange_contract_address,
+        "personal_info_contract_address": token.personal_info_contract_address,
+        "contact_information": token.contact_information,
+        "privacy_policy": token.privacy_policy
+    }
+    _update_data = IbetStraightBondUpdate(**_data)
+
     # Get Account
     _account = db.query(Account). \
         filter(Account.issuer_address == issuer_address). \
@@ -71,7 +87,7 @@ async def issue_token(
         password=decrypt_password.encode("utf-8")
     )
 
-    # Deploy Arguments
+    # Deploy
     arguments = [
         token.name,
         token.symbol,
@@ -83,11 +99,20 @@ async def issue_token(
         token.return_amount,
         token.purpose
     ]
-
-    # Deploy
     try:
         contract_address, abi, tx_hash = IbetStraightBondContract.create(
             args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+    except SendTransactionError:
+        raise SendTransactionError("failed to send transaction")
+
+    # Update
+    try:
+        IbetStraightBondContract.update(
+            contract_address=contract_address,
+            data=_update_data,
             tx_from=issuer_address,
             private_key=private_key
         )

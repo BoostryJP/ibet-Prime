@@ -83,7 +83,7 @@ class TestAppRoutersAccountsPOST:
             },
             "detail": [{
                 "loc": ["body", "eoa_password"],
-                "msg": "eoa_password is not a Base64-decoded encrypted data",
+                "msg": "eoa_password is not a Base64-encoded encrypted data",
                 "type": "value_error"
             }]
         }

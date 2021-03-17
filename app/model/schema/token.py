@@ -52,27 +52,28 @@ class IbetStraightBondCreate(BaseModel):
 
     @validator("interest_rate")
     def interest_rate_4_decimal_places(cls, v):
-        float_data = float(v * 10 ** 4)
-        int_data = int(v * 10 ** 4)
-        if not math.isclose(int_data, float_data):
-            raise ValueError("interest_rate must be less than or equal to four decimal places")
+        if v is not None:
+            float_data = float(v * 10 ** 4)
+            int_data = int(v * 10 ** 4)
+            if not math.isclose(int_data, float_data):
+                raise ValueError("interest_rate must be less than or equal to four decimal places")
         return v
 
     @validator("tradable_exchange_contract_address")
     def tradable_exchange_contract_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if v is not None and not Web3.isAddress(v):
             raise ValueError("tradable_exchange_contract_address is not a valid address")
         return v
 
     @validator("personal_info_contract_address")
     def personal_info_contract_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if v is not None and not Web3.isAddress(v):
             raise ValueError("personal_info_contract_address is not a valid address")
         return v
 
     @validator("image_url")
     def image_list_length_is_less_than_3(cls, v):
-        if len(v) >= 4:
+        if v is not None and len(v) >= 4:
             raise ValueError("The length of the list must be less than or equal to 3")
 
 
@@ -94,27 +95,28 @@ class IbetStraightBondUpdate(BaseModel):
 
     @validator("interest_rate")
     def interest_rate_4_decimal_places(cls, v):
-        float_data = float(v * 10 ** 4)
-        int_data = int(v * 10 ** 4)
-        if not math.isclose(int_data, float_data):
-            raise ValueError("interest_rate must be rounded to 4 decimal places")
+        if v is not None:
+            float_data = float(v * 10 ** 4)
+            int_data = int(v * 10 ** 4)
+            if not math.isclose(int_data, float_data):
+                raise ValueError("interest_rate must be rounded to 4 decimal places")
         return v
 
     @validator("interest_payment_date")
     def interest_payment_date_list_length_less_than_13(cls, v):
-        if len(v) >= 13:
+        if v is not None and len(v) >= 13:
             raise ValueError("list length of interest_payment_date must be less than 13")
         return v
 
     @validator("tradable_exchange_contract_address")
     def tradable_exchange_contract_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if v is not None and not Web3.isAddress(v):
             raise ValueError("tradable_exchange_contract_address is not a valid address")
         return v
 
     @validator("personal_info_contract_address")
     def personal_info_contract_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if v is not None and not Web3.isAddress(v):
             raise ValueError("personal_info_contract_address is not a valid address")
         return v
 
@@ -190,27 +192,28 @@ class IbetShareCreate(BaseModel):
 
     @validator("dividends")
     def dividends_2_decimal_places(cls, v):
-        float_data = float(v * 10 ** 4)
-        int_data = int(v * 10 ** 4)
-        if not math.isclose(int_data, float_data):
-            raise ValueError("dividends must be less than or equal to four decimal places")
+        if v is not None:
+            float_data = float(v * 10 ** 4)
+            int_data = int(v * 10 ** 4)
+            if not math.isclose(int_data, float_data):
+                raise ValueError("dividends must be less than or equal to four decimal places")
         return v
 
     @validator("tradable_exchange_contract_address")
     def tradable_exchange_contract_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if v is not None and not Web3.isAddress(v):
             raise ValueError("tradable_exchange_contract_address is not a valid address")
         return v
 
     @validator("personal_info_contract_address")
     def personal_info_contract_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if v is not None and not Web3.isAddress(v):
             raise ValueError("personal_info_contract_address is not a valid address")
         return v
 
     @validator("image_url")
     def image_list_length_is_less_than_3(cls, v):
-        if len(v) >= 4:
+        if v is not None and len(v) >= 4:
             raise ValueError("The length of the list must be less than or equal to 3")
 
 
@@ -231,27 +234,29 @@ class IbetShareUpdate(BaseModel):
 
     @validator("dividends")
     def dividends_2_decimal_places(cls, v):
-        float_data = float(v * 10 ** 2)
-        int_data = int(v * 10 ** 2)
-        if not math.isclose(int_data, float_data):
-            raise ValueError("dividends must be rounded to 2 decimal places")
+        if v is not None:
+            float_data = float(v * 10 ** 2)
+            int_data = int(v * 10 ** 2)
+            if not math.isclose(int_data, float_data):
+                raise ValueError("dividends must be rounded to 2 decimal places")
         return v
 
     @validator("dividends")
     def dividend_information_all_required(cls, v, values, **kwargs):
-        if values["dividend_record_date"] is None or values["dividend_payment_date"] is None:
-            raise ValueError("all items are required to update the dividend information")
+        if v is not None:
+            if values["dividend_record_date"] is None or values["dividend_payment_date"] is None:
+                raise ValueError("all items are required to update the dividend information")
         return v
 
     @validator("tradable_exchange_contract_address")
     def tradable_exchange_contract_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if v is not None and not Web3.isAddress(v):
             raise ValueError("tradable_exchange_contract_address is not a valid address")
         return v
 
     @validator("personal_info_contract_address")
     def personal_info_contract_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if v is not None and not Web3.isAddress(v):
             raise ValueError("personal_info_contract_address is not a valid address")
         return v
 

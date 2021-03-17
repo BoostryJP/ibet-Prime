@@ -52,7 +52,7 @@ class E2EEUtils:
         """Encrypt data
 
         :param data: Data to encrypt
-        :return: Base64-decoded encrypted data
+        :return: Base64-encoded encrypted data
         """
         crypto_data = E2EEUtils.__get_crypto_data()
         if crypto_data.get("public_key") is None:
@@ -68,7 +68,7 @@ class E2EEUtils:
     def decrypt(base64_encrypt_data: str):
         """Decrypt data
 
-        :param base64_encrypt_data: Base64-decoded encrypted data
+        :param base64_encrypt_data: Base64-encoded encrypted data
         :return: Decrypted data
         """
         crypto_data = E2EEUtils.__get_crypto_data()
@@ -171,4 +171,4 @@ def check_value_is_encrypted(name, value):
         try:
             E2EEUtils.decrypt(value)
         except ValueError:
-            raise ValueError(f"{name} is not a Base64-decoded encrypted data")
+            raise ValueError(f"{name} is not a Base64-encoded encrypted data")
