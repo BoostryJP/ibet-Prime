@@ -16,8 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from app.model.db import Account, Token, TokenType, \
-    BulkTransfer, BulkTransferUpload
+from app.model.db import Account, TokenType, BulkTransferUpload
 from tests.account_config import config_eth_account
 
 
@@ -28,14 +27,14 @@ class TestAppRoutersBondBulkTransferGET:
 
     upload_issuer_list = [
        {
-           "address" : config_eth_account("user1")["address"],
-           "keyfile" : config_eth_account("user1")["keyfile_json"]
-       },{
-           "address" : config_eth_account("user2")["address"],
-           "keyfile" : config_eth_account("user2")["keyfile_json"]
-       },{
-           "address" : config_eth_account("user3")["address"],
-           "keyfile" : config_eth_account("user3")["keyfile_json"]
+           "address": config_eth_account("user1")["address"],
+           "keyfile": config_eth_account("user1")["keyfile_json"]
+       }, {
+           "address": config_eth_account("user2")["address"],
+           "keyfile": config_eth_account("user2")["keyfile_json"]
+       }, {
+           "address": config_eth_account("user3")["address"],
+           "keyfile": config_eth_account("user3")["keyfile_json"]
        }
     ]
 
@@ -104,7 +103,7 @@ class TestAppRoutersBondBulkTransferGET:
         # assertion
         assert resp.status_code == 200
         assumed_response = []
-        for i in range(0,3):
+        for i in range(0, 3):
             assumed_response.append({
                 "issuer_address": self.upload_issuer_list[i]["address"],
                 "token_type": TokenType.IBET_STRAIGHT_BOND,
@@ -112,7 +111,9 @@ class TestAppRoutersBondBulkTransferGET:
                 "status": i
             })
 
-        assert sorted(resp.json(), key=lambda x:x['upload_id']) == sorted(assumed_response, key=lambda x:x['upload_id'])
+        sorted_resp = sorted(resp.json(), key=lambda x: x['upload_id'])
+        sorted_assumed = sorted(assumed_response, key=lambda x: x['upload_id'])
+        assert sorted_resp == sorted_assumed
 
     ###########################################################################
     # Error Case
