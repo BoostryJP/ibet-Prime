@@ -28,7 +28,7 @@ from app.exceptions import *
 
 app = FastAPI(
     title="ibet Prime",
-    version="0.0.1"
+    version="0.1.0"
 )
 
 
