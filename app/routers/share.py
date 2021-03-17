@@ -49,12 +49,25 @@ async def issue_token(
         db: Session = Depends(db_session)):
     """Issue ibetShare token"""
 
-    # Headers Validate
+    # Validate headers
     headers_validate([{
         "name": "issuer-address",
         "value": issuer_address,
         "validator": address_is_valid_address
     }])
+
+    # Validate update items
+    _data = {
+        "tradable_exchange_contract_address": token.tradable_exchange_contract_address,
+        "personal_info_contract_address": token.personal_info_contract_address,
+        "image_url": token.image_url,
+        "transferable": token.transferable,
+        "status": token.status,
+        "offering_status": token.offering_status,
+        "contact_information": token.contact_information,
+        "privacy_policy": token.privacy_policy
+    }
+    _update_data = IbetShareUpdate(**_data)
 
     # Get Account
     _account = db.query(Account). \
@@ -71,7 +84,7 @@ async def issue_token(
         password=decrypt_password.encode("utf-8")
     )
 
-    # Deploy Arguments
+    # Deploy
     arguments = [
         token.name,
         token.symbol,
@@ -82,11 +95,20 @@ async def issue_token(
         token.dividend_payment_date,
         token.cancellation_date
     ]
-
-    # Deploy
     try:
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+    except SendTransactionError:
+        raise SendTransactionError("failed to send transaction")
+
+    # Update
+    try:
+        IbetShareContract.update(
+            contract_address=contract_address,
+            data=_update_data,
             tx_from=issuer_address,
             private_key=private_key
         )
