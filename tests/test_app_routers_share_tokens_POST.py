@@ -16,8 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from unittest import mock
-from unittest.mock import MagicMock, ANY
+from unittest.mock import patch
+from unittest.mock import ANY
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
@@ -57,61 +57,64 @@ class TestAppRoutersShareTokensPOST:
         token_before = db.query(Token).all()
 
         # mock
-        IbetShareContract.create = MagicMock(
+        IbetShareContract_create = patch(
+            target="app.model.blockchain.token.IbetShareContract.create",
             return_value=("contract_address_test1", "abi_test1", "tx_hash_test1")
         )
-        IbetShareContract.update = MagicMock(
+        IbetShareContract_update = patch(
+            target="app.model.blockchain.token.IbetShareContract.update",
             return_value=None
         )
 
-        # request target api
-        req_param = {
-            "name": "name_test1",
-            "symbol": "symbol_test1",
-            "issue_price": 1000,
-            "total_supply": 10000,
-            "dividends": 123.45,
-            "dividend_record_date": "20211231",
-            "dividend_payment_date": "20211231",
-            "cancellation_date": "20221231"
-        }
-        resp = client.post(
-            self.apiurl,
-            json=req_param,
-            headers={
-                "issuer-address": test_account["address"]
+        with IbetShareContract_create, IbetShareContract_update:
+            # request target api
+            req_param = {
+                "name": "name_test1",
+                "symbol": "symbol_test1",
+                "issue_price": 1000,
+                "total_supply": 10000,
+                "dividends": 123.45,
+                "dividend_record_date": "20211231",
+                "dividend_payment_date": "20211231",
+                "cancellation_date": "20221231"
             }
-        )
+            resp = client.post(
+                self.apiurl,
+                json=req_param,
+                headers={
+                    "issuer-address": test_account["address"]
+                }
+            )
 
-        # assertion
-        IbetShareContract.create.assert_called_with(
-            args=[
-                "name_test1", "symbol_test1", 1000, 10000, 12345,
-                "20211231", "20211231", "20221231"
-            ],
-            tx_from=test_account["address"],
-            private_key=ANY
-        )
-        IbetShareContract.update.assert_called_with(
-            contract_address="contract_address_test1",
-            data=IbetShareUpdate(),
-            tx_from=test_account["address"],
-            private_key=ANY
-        )
+            # assertion
+            IbetShareContract.create.assert_called_with(
+                args=[
+                    "name_test1", "symbol_test1", 1000, 10000, 12345,
+                    "20211231", "20211231", "20221231"
+                ],
+                tx_from=test_account["address"],
+                private_key=ANY
+            )
+            IbetShareContract.update.assert_called_with(
+                contract_address="contract_address_test1",
+                data=IbetShareUpdate(),
+                tx_from=test_account["address"],
+                private_key=ANY
+            )
 
-        assert resp.status_code == 200
-        assert resp.json()["token_address"] == "contract_address_test1"
+            assert resp.status_code == 200
+            assert resp.json()["token_address"] == "contract_address_test1"
 
-        token_after = db.query(Token).all()
-        assert 0 == len(token_before)
-        assert 1 == len(token_after)
-        token_1 = token_after[0]
-        assert token_1.id == 1
-        assert token_1.type == TokenType.IBET_SHARE
-        assert token_1.tx_hash == "tx_hash_test1"
-        assert token_1.issuer_address == test_account["address"]
-        assert token_1.token_address == "contract_address_test1"
-        assert token_1.abi == "abi_test1"
+            token_after = db.query(Token).all()
+            assert 0 == len(token_before)
+            assert 1 == len(token_after)
+            token_1 = token_after[0]
+            assert token_1.id == 1
+            assert token_1.type == TokenType.IBET_SHARE
+            assert token_1.tx_hash == "tx_hash_test1"
+            assert token_1.issuer_address == test_account["address"]
+            assert token_1.token_address == "contract_address_test1"
+            assert token_1.abi == "abi_test1"
 
     # <Normal_2>
     # include updates
@@ -128,83 +131,85 @@ class TestAppRoutersShareTokensPOST:
         token_before = db.query(Token).all()
 
         # mock
-        IbetShareContract.create = MagicMock(
+        IbetShareContract_create = patch(
+            target="app.model.blockchain.token.IbetShareContract.create",
             return_value=("contract_address_test1", "abi_test1", "tx_hash_test1")
         )
-        IbetShareContract.update = MagicMock(
+        IbetShareContract_update = patch(
+            target="app.model.blockchain.token.IbetShareContract.update",
             return_value=None
         )
 
-        # request target api
-        req_param = {
-            "name": "name_test1",
-            "symbol": "symbol_test1",
-            "issue_price": 1000,
-            "total_supply": 10000,
-            "dividends": 123.45,
-            "dividend_record_date": "20211231",
-            "dividend_payment_date": "20211231",
-            "cancellation_date": "20221231",
-            "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
-            "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-            "image_url": ["image_1"],  # update
-            "transferable": False,  # update
-            "status": False,  # update
-            "offering_status": True,  # update
-            "contact_information": "contact info test",  # update
-            "privacy_policy": "privacy policy test"  # update
-        }
-        resp = client.post(
-            self.apiurl,
-            json=req_param,
-            headers={
-                "issuer-address": test_account["address"]
+        with IbetShareContract_create, IbetShareContract_update:
+            # request target api
+            req_param = {
+                "name": "name_test1",
+                "symbol": "symbol_test1",
+                "issue_price": 1000,
+                "total_supply": 10000,
+                "dividends": 123.45,
+                "dividend_record_date": "20211231",
+                "dividend_payment_date": "20211231",
+                "cancellation_date": "20221231",
+                "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
+                "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+                "image_url": ["image_1"],  # update
+                "transferable": False,  # update
+                "status": False,  # update
+                "offering_status": True,  # update
+                "contact_information": "contact info test",  # update
+                "privacy_policy": "privacy policy test"  # update
             }
-        )
+            resp = client.post(
+                self.apiurl,
+                json=req_param,
+                headers={
+                    "issuer-address": test_account["address"]
+                }
+            )
 
-        # assertion
-        IbetShareContract.create.assert_called_with(
-            args=[
-                "name_test1", "symbol_test1", 1000, 10000, 12345,
-                "20211231", "20211231", "20221231"
-            ],
-            tx_from=test_account["address"],
-            private_key=ANY
-        )
-        IbetShareContract.update.assert_called_with(
-            contract_address="contract_address_test1",
-            data=IbetShareUpdate(
-                cancellation_date=None,
-                dividend_record_date=None,
-                dividend_payment_date=None,
-                dividends=None,
-                tradable_exchange_contract_address="0x0000000000000000000000000000000000000001",
-                personal_info_contract_address="0x0000000000000000000000000000000000000002",
-                image_url=None,
-                transferable=False,
-                status=False,
-                offering_status=True,
-                contact_information="contact info test",
-                privacy_policy="privacy policy test"
-            ),
-            tx_from=test_account["address"],
-            private_key=ANY
-        )
+            # assertion
+            IbetShareContract.create.assert_called_with(
+                args=[
+                    "name_test1", "symbol_test1", 1000, 10000, 12345,
+                    "20211231", "20211231", "20221231"
+                ],
+                tx_from=test_account["address"],
+                private_key=ANY
+            )
+            IbetShareContract.update.assert_called_with(
+                contract_address="contract_address_test1",
+                data=IbetShareUpdate(
+                    cancellation_date=None,
+                    dividend_record_date=None,
+                    dividend_payment_date=None,
+                    dividends=None,
+                    tradable_exchange_contract_address="0x0000000000000000000000000000000000000001",
+                    personal_info_contract_address="0x0000000000000000000000000000000000000002",
+                    image_url=None,
+                    transferable=False,
+                    status=False,
+                    offering_status=True,
+                    contact_information="contact info test",
+                    privacy_policy="privacy policy test"
+                ),
+                tx_from=test_account["address"],
+                private_key=ANY
+            )
 
-        assert resp.status_code == 200
-        assert resp.json()["token_address"] == "contract_address_test1"
+            assert resp.status_code == 200
+            assert resp.json()["token_address"] == "contract_address_test1"
 
-        token_after = db.query(Token).all()
-        assert 0 == len(token_before)
-        assert 1 == len(token_after)
-        token_1 = token_after[0]
-        assert token_1.id == 1
-        assert token_1.type == TokenType.IBET_SHARE
-        assert token_1.tx_hash == "tx_hash_test1"
-        assert token_1.issuer_address == test_account["address"]
-        assert token_1.token_address == "contract_address_test1"
-        assert token_1.abi == "abi_test1"
-
+            token_after = db.query(Token).all()
+            assert 0 == len(token_before)
+            assert 1 == len(token_after)
+            token_1 = token_after[0]
+            assert token_1.id == 1
+            assert token_1.type == TokenType.IBET_SHARE
+            assert token_1.tx_hash == "tx_hash_test1"
+            assert token_1.issuer_address == test_account["address"]
+            assert token_1.token_address == "contract_address_test1"
+            assert token_1.abi == "abi_test1"
 
     ###########################################################################
     # Error Case
@@ -412,36 +417,40 @@ class TestAppRoutersShareTokensPOST:
         db.add(account)
 
         # mock
-        IbetShareContract.create = MagicMock(side_effect=SendTransactionError())
-
-        # request target api
-        req_param = {
-            "name": "name_test1",
-            "symbol": "symbol_test1",
-            "issue_price": 1000,
-            "total_supply": 10000,
-            "dividends": 123.45,
-            "dividend_record_date": "20211231",
-            "dividend_payment_date": "20211231",
-            "cancellation_date": "20221231"
-        }
-        resp = client.post(
-            self.apiurl,
-            json=req_param,
-            headers={
-                "issuer-address": test_account_1["address"]
-            }
+        IbetShareContract_create = patch(
+            target="app.model.blockchain.token.IbetShareContract.create",
+            side_effect=SendTransactionError()
         )
 
-        # assertion
-        assert resp.status_code == 400
-        assert resp.json() == {
-            "meta": {
-                "code": 2,
-                "title": "SendTransactionError"
-            },
-            "detail": "failed to send transaction"
-        }
+        with IbetShareContract_create:
+            # request target api
+            req_param = {
+                "name": "name_test1",
+                "symbol": "symbol_test1",
+                "issue_price": 1000,
+                "total_supply": 10000,
+                "dividends": 123.45,
+                "dividend_record_date": "20211231",
+                "dividend_payment_date": "20211231",
+                "cancellation_date": "20221231"
+            }
+            resp = client.post(
+                self.apiurl,
+                json=req_param,
+                headers={
+                    "issuer-address": test_account_1["address"]
+                }
+            )
+
+            # assertion
+            assert resp.status_code == 400
+            assert resp.json() == {
+                "meta": {
+                    "code": 2,
+                    "title": "SendTransactionError"
+                },
+                "detail": "failed to send transaction"
+            }
 
     # <Error_4_2>
     # Send Transaction Error
@@ -458,44 +467,49 @@ class TestAppRoutersShareTokensPOST:
         db.add(account)
 
         # mock
-        IbetShareContract.create = MagicMock(
+        IbetShareContract_create = patch(
+            target="app.model.blockchain.token.IbetShareContract.create",
             return_value=("contract_address_test1", "abi_test1", "tx_hash_test1")
         )
-        IbetShareContract.update = MagicMock(side_effect=SendTransactionError())
-
-        # request target api
-        req_param = {
-            "name": "name_test1",
-            "symbol": "symbol_test1",
-            "issue_price": 1000,
-            "total_supply": 10000,
-            "dividends": 123.45,
-            "dividend_record_date": "20211231",
-            "dividend_payment_date": "20211231",
-            "cancellation_date": "20221231",
-            "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
-            "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-            "image_url": ["image_1"],  # update
-            "transferable": False,  # update
-            "status": False,  # update
-            "offering_status": True,  # update
-            "contact_information": "contact info test",  # update
-            "privacy_policy": "privacy policy test"  # update
-        }
-        resp = client.post(
-            self.apiurl,
-            json=req_param,
-            headers={
-                "issuer-address": test_account_1["address"]
-            }
+        IbetShareContract_update = patch(
+            target="app.model.blockchain.token.IbetShareContract.update",
+            side_effect=SendTransactionError()
         )
 
-        # assertion
-        assert resp.status_code == 400
-        assert resp.json() == {
-            "meta": {
-                "code": 2,
-                "title": "SendTransactionError"
-            },
-            "detail": "failed to send transaction"
-        }
+        with IbetShareContract_create, IbetShareContract_update:
+            # request target api
+            req_param = {
+                "name": "name_test1",
+                "symbol": "symbol_test1",
+                "issue_price": 1000,
+                "total_supply": 10000,
+                "dividends": 123.45,
+                "dividend_record_date": "20211231",
+                "dividend_payment_date": "20211231",
+                "cancellation_date": "20221231",
+                "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
+                "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+                "image_url": ["image_1"],  # update
+                "transferable": False,  # update
+                "status": False,  # update
+                "offering_status": True,  # update
+                "contact_information": "contact info test",  # update
+                "privacy_policy": "privacy policy test"  # update
+            }
+            resp = client.post(
+                self.apiurl,
+                json=req_param,
+                headers={
+                    "issuer-address": test_account_1["address"]
+                }
+            )
+
+            # assertion
+            assert resp.status_code == 400
+            assert resp.json() == {
+                "meta": {
+                    "code": 2,
+                    "title": "SendTransactionError"
+                },
+                "detail": "failed to send transaction"
+            }

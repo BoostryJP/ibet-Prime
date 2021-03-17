@@ -36,7 +36,7 @@ class TestUpdate:
 
     # <Normal_1>
     # All items are None
-    def test_normal_1(self):
+    def test_normal_1(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -83,7 +83,7 @@ class TestUpdate:
 
     # <Normal_2>
     # Update all items
-    def test_normal_2(self):
+    def test_normal_2(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(

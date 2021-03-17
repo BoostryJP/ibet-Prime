@@ -16,7 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from unittest.mock import MagicMock, ANY
+from unittest.mock import ANY, patch
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
@@ -56,62 +56,65 @@ class TestAppRoutersBondTokensPOST:
         token_before = db.query(Token).all()
 
         # mock
-        IbetStraightBondContract.create = MagicMock(
+        IbetStraightBondContract_create = patch(
+            target="app.model.blockchain.token.IbetStraightBondContract.create",
             return_value=("contract_address_test1", "abi_test1", "tx_hash_test1")
         )
-        IbetStraightBondContract.update = MagicMock(
+        IbetStraightBondContract_update = patch(
+            target="app.model.blockchain.token.IbetStraightBondContract.update",
             return_value=None
         )
 
-        # request target api
-        req_param = {
-            "name": "name_test1",
-            "symbol": "symbol_test1",
-            "total_supply": 10000,
-            "face_value": 200,
-            "redemption_date": "redemption_date_test1",
-            "redemption_value": 4000,
-            "return_date": "return_date_test1",
-            "return_amount": "return_amount_test1",
-            "purpose": "purpose_test1",
-        }
-        resp = client.post(
-            self.apiurl,
-            json=req_param,
-            headers={
-                "issuer-address": test_account["address"]
+        with IbetStraightBondContract_create, IbetStraightBondContract_update:
+            # request target api
+            req_param = {
+                "name": "name_test1",
+                "symbol": "symbol_test1",
+                "total_supply": 10000,
+                "face_value": 200,
+                "redemption_date": "redemption_date_test1",
+                "redemption_value": 4000,
+                "return_date": "return_date_test1",
+                "return_amount": "return_amount_test1",
+                "purpose": "purpose_test1",
             }
-        )
+            resp = client.post(
+                self.apiurl,
+                json=req_param,
+                headers={
+                    "issuer-address": test_account["address"]
+                }
+            )
 
-        # assertion
-        IbetStraightBondContract.create.assert_called_with(
-            args=[
-                "name_test1", "symbol_test1", 10000, 200, "redemption_date_test1", 4000,
-                "return_date_test1", "return_amount_test1", "purpose_test1"
-            ],
-            tx_from=test_account["address"],
-            private_key=ANY
-        )
-        IbetStraightBondContract.update.assert_called_with(
-            contract_address="contract_address_test1",
-            data=IbetStraightBondUpdate(),
-            tx_from=test_account["address"],
-            private_key=ANY
-        )
+            # assertion
+            IbetStraightBondContract.create.assert_called_with(
+                args=[
+                    "name_test1", "symbol_test1", 10000, 200, "redemption_date_test1", 4000,
+                    "return_date_test1", "return_amount_test1", "purpose_test1"
+                ],
+                tx_from=test_account["address"],
+                private_key=ANY
+            )
+            IbetStraightBondContract.update.assert_called_with(
+                contract_address="contract_address_test1",
+                data=IbetStraightBondUpdate(),
+                tx_from=test_account["address"],
+                private_key=ANY
+            )
 
-        assert resp.status_code == 200
-        assert resp.json()["token_address"] == "contract_address_test1"
+            assert resp.status_code == 200
+            assert resp.json()["token_address"] == "contract_address_test1"
 
-        token_after = db.query(Token).all()
-        assert 0 == len(token_before)
-        assert 1 == len(token_after)
-        token_1 = token_after[0]
-        assert token_1.id == 1
-        assert token_1.type == TokenType.IBET_STRAIGHT_BOND
-        assert token_1.tx_hash == "tx_hash_test1"
-        assert token_1.issuer_address == test_account["address"]
-        assert token_1.token_address == "contract_address_test1"
-        assert token_1.abi == "abi_test1"
+            token_after = db.query(Token).all()
+            assert 0 == len(token_before)
+            assert 1 == len(token_after)
+            token_1 = token_after[0]
+            assert token_1.id == 1
+            assert token_1.type == TokenType.IBET_STRAIGHT_BOND
+            assert token_1.tx_hash == "tx_hash_test1"
+            assert token_1.issuer_address == test_account["address"]
+            assert token_1.token_address == "contract_address_test1"
+            assert token_1.abi == "abi_test1"
 
     # <Normal_2>
     # include updates
@@ -128,89 +131,92 @@ class TestAppRoutersBondTokensPOST:
         token_before = db.query(Token).all()
 
         # mock
-        IbetStraightBondContract.create = MagicMock(
+        IbetStraightBondContract_create = patch(
+            target="app.model.blockchain.token.IbetStraightBondContract.create",
             return_value=("contract_address_test1", "abi_test1", "tx_hash_test1")
         )
-        IbetStraightBondContract.update = MagicMock(
+        IbetStraightBondContract_update = patch(
+            target="app.model.blockchain.token.IbetStraightBondContract.update",
             return_value=None
         )
 
-        # request target api
-        req_param = {
-            "name": "name_test1",
-            "symbol": "symbol_test1",
-            "total_supply": 10000,
-            "face_value": 200,
-            "redemption_date": "redemption_date_test1",
-            "redemption_value": 4000,
-            "return_date": "return_date_test1",
-            "return_amount": "return_amount_test1",
-            "purpose": "purpose_test1",
-            "interest_rate": 0.0001,  # update
-            "interest_payment_date": ["0331", "0930"],  # update
-            "transferable": False,  # update
-            "image_url": ["image_1"],  # update
-            "status": False,  # update
-            "initial_offering_status": True,  # update
-            "is_redeemed": True,  # update
-            "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
-            "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-            "contact_information": "contact info test",  # update
-            "privacy_policy": "privacy policy test"  # update
-        }
-        resp = client.post(
-            self.apiurl,
-            json=req_param,
-            headers={
-                "issuer-address": test_account["address"]
+        with IbetStraightBondContract_create, IbetStraightBondContract_update:
+            # request target api
+            req_param = {
+                "name": "name_test1",
+                "symbol": "symbol_test1",
+                "total_supply": 10000,
+                "face_value": 200,
+                "redemption_date": "redemption_date_test1",
+                "redemption_value": 4000,
+                "return_date": "return_date_test1",
+                "return_amount": "return_amount_test1",
+                "purpose": "purpose_test1",
+                "interest_rate": 0.0001,  # update
+                "interest_payment_date": ["0331", "0930"],  # update
+                "transferable": False,  # update
+                "image_url": ["image_1"],  # update
+                "status": False,  # update
+                "initial_offering_status": True,  # update
+                "is_redeemed": True,  # update
+                "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
+                "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+                "contact_information": "contact info test",  # update
+                "privacy_policy": "privacy policy test"  # update
             }
-        )
+            resp = client.post(
+                self.apiurl,
+                json=req_param,
+                headers={
+                    "issuer-address": test_account["address"]
+                }
+            )
 
-        # assertion
-        IbetStraightBondContract.create.assert_called_with(
-            args=[
-                "name_test1", "symbol_test1",
-                10000, 200,
-                "redemption_date_test1", 4000,
-                "return_date_test1", "return_amount_test1",
-                "purpose_test1"
-            ],
-            tx_from=test_account["address"],
-            private_key=ANY
-        )
+            # assertion
+            IbetStraightBondContract.create.assert_called_with(
+                args=[
+                    "name_test1", "symbol_test1",
+                    10000, 200,
+                    "redemption_date_test1", 4000,
+                    "return_date_test1", "return_amount_test1",
+                    "purpose_test1"
+                ],
+                tx_from=test_account["address"],
+                private_key=ANY
+            )
 
-        IbetStraightBondContract.update.assert_called_with(
-            contract_address="contract_address_test1",
-            data=IbetStraightBondUpdate(
-                interest_rate=0.0001, 
-                interest_payment_date=["0331", "0930"],
-                transferable=False, 
-                image_url=None, 
-                status=False, 
-                initial_offering_status=True, 
-                is_redeemed=True, 
-                tradable_exchange_contract_address="0x0000000000000000000000000000000000000001", 
-                personal_info_contract_address="0x0000000000000000000000000000000000000002", 
-                contact_information="contact info test", 
-                privacy_policy="privacy policy test"
-            ),
-            tx_from=test_account["address"],
-            private_key=ANY
-        )
+            IbetStraightBondContract.update.assert_called_with(
+                contract_address="contract_address_test1",
+                data=IbetStraightBondUpdate(
+                    interest_rate=0.0001,
+                    interest_payment_date=["0331", "0930"],
+                    transferable=False,
+                    image_url=None,
+                    status=False,
+                    initial_offering_status=True,
+                    is_redeemed=True,
+                    tradable_exchange_contract_address="0x0000000000000000000000000000000000000001",
+                    personal_info_contract_address="0x0000000000000000000000000000000000000002",
+                    contact_information="contact info test",
+                    privacy_policy="privacy policy test"
+                ),
+                tx_from=test_account["address"],
+                private_key=ANY
+            )
 
-        assert resp.status_code == 200
-        assert resp.json()["token_address"] == "contract_address_test1"
+            assert resp.status_code == 200
+            assert resp.json()["token_address"] == "contract_address_test1"
 
-        token_after = db.query(Token).all()
-        assert 0 == len(token_before)
-        assert 1 == len(token_after)
-        token_1 = token_after[0]
-        assert token_1.id == 1
-        assert token_1.type == TokenType.IBET_STRAIGHT_BOND
-        assert token_1.tx_hash == "tx_hash_test1"
-        assert token_1.issuer_address == test_account["address"]
-        assert token_1.token_address == "contract_address_test1"
-        assert token_1.abi == "abi_test1"
+            token_after = db.query(Token).all()
+            assert 0 == len(token_before)
+            assert 1 == len(token_after)
+            token_1 = token_after[0]
+            assert token_1.id == 1
+            assert token_1.type == TokenType.IBET_STRAIGHT_BOND
+            assert token_1.tx_hash == "tx_hash_test1"
+            assert token_1.issuer_address == test_account["address"]
+            assert token_1.token_address == "contract_address_test1"
+            assert token_1.abi == "abi_test1"
 
 
     ###########################################################################
@@ -465,37 +471,41 @@ class TestAppRoutersBondTokensPOST:
         db.add(account)
 
         # mock
-        IbetStraightBondContract.create = MagicMock(side_effect=SendTransactionError())
-
-        # request target api
-        req_param = {
-            "name": "name_test1",
-            "symbol": "symbol_test1",
-            "total_supply": 10000,
-            "face_value": 200,
-            "redemption_date": "redemption_date_test1",
-            "redemption_value": 4000,
-            "return_date": "redemption_value_test1",
-            "return_amount": "return_amount_test1",
-            "purpose": "purpose_test1",
-        }
-        resp = client.post(
-            self.apiurl,
-            json=req_param,
-            headers={
-                "issuer-address": test_account_1["address"]
-            }
+        IbetStraightBondContract_create = patch(
+            target="app.model.blockchain.token.IbetStraightBondContract.create",
+            side_effect=SendTransactionError()
         )
 
-        # assertion
-        assert resp.status_code == 400
-        assert resp.json() == {
-            "meta": {
-                "code": 2,
-                "title": "SendTransactionError"
-            },
-            "detail": "failed to send transaction"
-        }
+        with IbetStraightBondContract_create:
+            # request target api
+            req_param = {
+                "name": "name_test1",
+                "symbol": "symbol_test1",
+                "total_supply": 10000,
+                "face_value": 200,
+                "redemption_date": "redemption_date_test1",
+                "redemption_value": 4000,
+                "return_date": "redemption_value_test1",
+                "return_amount": "return_amount_test1",
+                "purpose": "purpose_test1",
+            }
+            resp = client.post(
+                self.apiurl,
+                json=req_param,
+                headers={
+                    "issuer-address": test_account_1["address"]
+                }
+            )
+
+            # assertion
+            assert resp.status_code == 400
+            assert resp.json() == {
+                "meta": {
+                    "code": 2,
+                    "title": "SendTransactionError"
+                },
+                "detail": "failed to send transaction"
+            }
 
     # <Error_4_2>
     # Send Transaction Error
@@ -511,48 +521,53 @@ class TestAppRoutersBondTokensPOST:
         db.add(account)
 
         # mock
-        IbetStraightBondContract.create = MagicMock(
+        IbetStraightBondContract_create = patch(
+            target="app.model.blockchain.token.IbetStraightBondContract.create",
             return_value=("contract_address_test1", "abi_test1", "tx_hash_test1")
         )
-        IbetStraightBondContract.update = MagicMock(side_effect=SendTransactionError())
-
-        # request target api
-        req_param = {
-            "name": "name_test1",
-            "symbol": "symbol_test1",
-            "total_supply": 10000,
-            "face_value": 200,
-            "redemption_date": "redemption_date_test1",
-            "redemption_value": 4000,
-            "return_date": "return_date_test1",
-            "return_amount": "return_amount_test1",
-            "purpose": "purpose_test1",
-            "interest_rate": 0.0001,  # update
-            "interest_payment_date": ["0331", "0930"],  # update
-            "transferable": False,  # update
-            "image_url": ["image_1"],  # update
-            "status": False,  # update
-            "initial_offering_status": True,  # update
-            "is_redeemed": True,  # update
-            "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
-            "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-            "contact_information": "contact info test",  # update
-            "privacy_policy": "privacy policy test"  # update
-        }
-        resp = client.post(
-            self.apiurl,
-            json=req_param,
-            headers={
-                "issuer-address": test_account["address"]
-            }
+        IbetStraightBondContract_update = patch(
+            target="app.model.blockchain.token.IbetStraightBondContract.update",
+            side_effect=SendTransactionError()
         )
 
-        # assertion
-        assert resp.status_code == 400
-        assert resp.json() == {
-            "meta": {
-                "code": 2,
-                "title": "SendTransactionError"
-            },
-            "detail": "failed to send transaction"
-        }
+        with IbetStraightBondContract_create, IbetStraightBondContract_update:
+            # request target api
+            req_param = {
+                "name": "name_test1",
+                "symbol": "symbol_test1",
+                "total_supply": 10000,
+                "face_value": 200,
+                "redemption_date": "redemption_date_test1",
+                "redemption_value": 4000,
+                "return_date": "return_date_test1",
+                "return_amount": "return_amount_test1",
+                "purpose": "purpose_test1",
+                "interest_rate": 0.0001,  # update
+                "interest_payment_date": ["0331", "0930"],  # update
+                "transferable": False,  # update
+                "image_url": ["image_1"],  # update
+                "status": False,  # update
+                "initial_offering_status": True,  # update
+                "is_redeemed": True,  # update
+                "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
+                "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+                "contact_information": "contact info test",  # update
+                "privacy_policy": "privacy policy test"  # update
+            }
+            resp = client.post(
+                self.apiurl,
+                json=req_param,
+                headers={
+                    "issuer-address": test_account["address"]
+                }
+            )
+
+            # assertion
+            assert resp.status_code == 400
+            assert resp.json() == {
+                "meta": {
+                    "code": 2,
+                    "title": "SendTransactionError"
+                },
+                "detail": "failed to send transaction"
+            }
