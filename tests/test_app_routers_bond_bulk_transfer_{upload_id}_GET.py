@@ -21,27 +21,26 @@ from tests.account_config import config_eth_account
 
 
 class TestAppRoutersBondBulkTransferGET:
-
     # target API endpoint
     test_url = "/bond/bulk_transfer/{}"
 
     upload_issuer_list = [
-       {
-           "address": config_eth_account("user1")["address"],
-           "keyfile": config_eth_account("user1")["keyfile_json"]
-       }, {
-           "address": config_eth_account("user2")["address"],
-           "keyfile": config_eth_account("user2")["keyfile_json"]
-       }, {
-           "address": config_eth_account("user3")["address"],
-           "keyfile": config_eth_account("user3")["keyfile_json"]
-       }
+        {
+            "address": config_eth_account("user1")["address"],
+            "keyfile": config_eth_account("user1")["keyfile_json"]
+        }, {
+            "address": config_eth_account("user2")["address"],
+            "keyfile": config_eth_account("user2")["keyfile_json"]
+        }, {
+            "address": config_eth_account("user3")["address"],
+            "keyfile": config_eth_account("user3")["keyfile_json"]
+        }
     ]
 
     upload_id_list = [
         "0c961f7d-e1ad-40e5-988b-cca3d6009643",  # 0: under progress
         "de778f46-864e-4ec0-b566-21bd31cf63ff",  # 1: succeeded
-        "cf33d48f-9e6e-4a36-a55e-5bbcbda69c80"   # 2: failed
+        "cf33d48f-9e6e-4a36-a55e-5bbcbda69c80"  # 2: failed
     ]
 
     bulk_transfer_token = "0xbB4138520af85fAfdDAACc7F0AabfE188334D0ca"
@@ -168,7 +167,7 @@ class TestAppRoutersBondBulkTransferGET:
                 "code": 1,
                 "title": "RequestValidationError"
             },
-            "detail":  [
+            "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",

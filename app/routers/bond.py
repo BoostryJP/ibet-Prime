@@ -49,7 +49,7 @@ async def issue_token(
         db: Session = Depends(db_session)):
     """Issue ibetStraightBond token"""
 
-    # Headers Validate
+    # Validate Headers
     headers_validate([{
         "name": "issuer-address",
         "value": issuer_address,
@@ -114,7 +114,7 @@ async def list_all_tokens(
         db: Session = Depends(db_session)):
     """List all issued tokens"""
 
-    # Headers Validate
+    # Validate Headers
     headers_validate([{
         "name": "issuer-address",
         "value": issuer_address,
@@ -173,7 +173,7 @@ async def update_token(
         db: Session = Depends(db_session)):
     """Update a token"""
 
-    # Headers Validate
+    # Validate Headers
     headers_validate([{
         "name": "issuer-address",
         "value": issuer_address,
@@ -227,7 +227,7 @@ async def additional_issue(
         db: Session = Depends(db_session)):
     """Add token"""
 
-    # Headers Validate
+    # Validate Headers
     headers_validate([{
         "name": "issuer-address",
         "value": issuer_address,
@@ -280,7 +280,7 @@ async def list_all_holders(
         db: Session = Depends(db_session)):
     """List all bond token holders"""
 
-    # Headers Validate
+    # Validate Headers
     headers_validate([{
         "name": "issuer-address",
         "value": issuer_address,
@@ -351,7 +351,7 @@ async def retrieve_holder(
         db: Session = Depends(db_session)):
     """Retrieve bond token holder"""
 
-    # Headers Validate
+    # Validate Headers
     headers_validate([{
         "name": "issuer-address",
         "value": issuer_address,
@@ -417,7 +417,7 @@ async def transfer_ownership(
         db: Session = Depends(db_session)):
     """Transfer token ownership"""
 
-    # Headers Validate
+    # Validate Headers
     headers_validate([{
         "name": "issuer-address",
         "value": issuer_address,
@@ -468,7 +468,7 @@ async def bulk_transfer_ownership(
         db: Session = Depends(db_session)):
     """Bulk transfer token ownership"""
 
-    # Headers Validate
+    # Validate Headers
     headers_validate([{
         "name": "issuer-address",
         "value": issuer_address,
@@ -531,7 +531,7 @@ async def list_bulk_transfer_upload(
         db: Session = Depends(db_session)):
     """List bulk transfer upload"""
 
-    # Headers Validate
+    # Validate Headers
     headers_validate([{
         "name": "issuer-address",
         "value": issuer_address,
@@ -549,8 +549,6 @@ async def list_bulk_transfer_upload(
             filter(BulkTransferUpload.issuer_address == issuer_address). \
             filter(BulkTransferUpload.token_type == TokenType.IBET_STRAIGHT_BOND). \
             all()
-    if len(_uploads) < 1:
-        raise HTTPException(status_code=404, detail="bulk transfer upload list not found")
 
     uploads = []
     for _upload in _uploads:
@@ -572,7 +570,7 @@ async def retrieve_bulk_transfer(
         db: Session = Depends(db_session)):
     """Retrieve bulk transfer"""
 
-    # Headers Validate
+    # Validate Headers
     headers_validate([{
         "name": "issuer-address",
         "value": issuer_address,

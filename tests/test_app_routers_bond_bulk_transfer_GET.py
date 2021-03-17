@@ -21,27 +21,26 @@ from tests.account_config import config_eth_account
 
 
 class TestAppRoutersBondBulkTransferGET:
-
     # target API endpoint
     test_url = "/bond/bulk_transfer"
 
     upload_issuer_list = [
-       {
-           "address": config_eth_account("user1")["address"],
-           "keyfile": config_eth_account("user1")["keyfile_json"]
-       }, {
-           "address": config_eth_account("user2")["address"],
-           "keyfile": config_eth_account("user2")["keyfile_json"]
-       }, {
-           "address": config_eth_account("user3")["address"],
-           "keyfile": config_eth_account("user3")["keyfile_json"]
-       }
+        {
+            "address": config_eth_account("user1")["address"],
+            "keyfile": config_eth_account("user1")["keyfile_json"]
+        }, {
+            "address": config_eth_account("user2")["address"],
+            "keyfile": config_eth_account("user2")["keyfile_json"]
+        }, {
+            "address": config_eth_account("user3")["address"],
+            "keyfile": config_eth_account("user3")["keyfile_json"]
+        }
     ]
 
     upload_id_list = [
         "0c961f7d-e1ad-40e5-988b-cca3d6009643",  # 0: under progress
         "de778f46-864e-4ec0-b566-21bd31cf63ff",  # 1: succeeded
-        "cf33d48f-9e6e-4a36-a55e-5bbcbda69c80"   # 2: failed
+        "cf33d48f-9e6e-4a36-a55e-5bbcbda69c80"  # 2: failed
     ]
 
     ###########################################################################
@@ -136,30 +135,11 @@ class TestAppRoutersBondBulkTransferGET:
                 "code": 1,
                 "title": "RequestValidationError"
             },
-            "detail":  [
+            "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error"
                 }
             ]
-        }
-
-    # <Error_2>
-    # NotFound
-    # Upload list not found
-    def test_error_2(self, client, db):
-        # request target API
-        resp = client.get(
-            self.test_url
-        )
-
-        # assertion
-        assert resp.status_code == 404
-        assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "bulk transfer upload list not found",
         }
