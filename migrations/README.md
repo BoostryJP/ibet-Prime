@@ -106,7 +106,7 @@ def downgrade():
 *After(Manually modify)*
 ```
 from sqlalchemy.orm.session import Session
-from app.model.db import Account  # Target Tabele Model
+from app.model.db import Account  # Target Table Model
 
 def upgrade():
     session = Session(bind=op.get_bind())
