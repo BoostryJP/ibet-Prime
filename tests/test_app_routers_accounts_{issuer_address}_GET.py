@@ -48,7 +48,8 @@ class TestAppRoutersAccountsIssuerAddressGET:
         assert resp.json() == {
             "issuer_address": _admin_account["address"],
             "rsa_public_key": None,
-            "rsa_status": AccountRsaStatus.UNSET.value
+            "rsa_status": AccountRsaStatus.UNSET.value,
+            "is_deleted": False
         }
 
     # <Normal_2>
@@ -73,7 +74,8 @@ class TestAppRoutersAccountsIssuerAddressGET:
         assert resp.json() == {
             "issuer_address": _admin_account["address"],
             "rsa_public_key": _admin_account["rsa_public_key"],
-            "rsa_status": AccountRsaStatus.CHANGING.value
+            "rsa_status": AccountRsaStatus.CHANGING.value,
+            "is_deleted": False
         }
 
     ###########################################################################

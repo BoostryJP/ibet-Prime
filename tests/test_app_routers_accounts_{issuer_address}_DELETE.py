@@ -20,16 +20,16 @@ from app.model.db import Account, AccountRsaStatus
 from tests.account_config import config_eth_account
 
 
-class TestAppRoutersAccountsGET:
+class TestAppRoutersAccountsIssuerAddressDELETE:
+
     # target API endpoint
-    apiurl = "/accounts"
+    base_url = "/accounts/{}"
 
     ###########################################################################
     # Normal Case
     ###########################################################################
 
     # <Normal_1>
-    # rsa_public_key is None
     def test_normal_1(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
@@ -40,56 +40,39 @@ class TestAppRoutersAccountsGET:
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         db.add(account)
 
-        resp = client.get(self.apiurl)
+        # request target API
+        resp = client.delete(self.base_url.format(_admin_address))
 
+        # assertion
         assert resp.status_code == 200
-        assert resp.json() == [
-            {
-                "issuer_address": _admin_account["address"],
-                "rsa_public_key": None,
-                "rsa_status": AccountRsaStatus.UNSET.value,
-                "is_deleted": False
-            }
-        ]
-
-    # <Normal_2>
-    # rsa_public_key is not None
-    def test_normal_2(self, client, db):
-        _admin_account = config_eth_account("user1")
-        _admin_address = _admin_account["address"]
-        _admin_keyfile = _admin_account["keyfile_json"]
-        _admin_rsa_public_key = _admin_account["rsa_public_key"]
-
-        # prepare data
-        account = Account()
-        account.issuer_address = _admin_address
-        account.keyfile = _admin_keyfile
-        account.rsa_public_key = _admin_rsa_public_key
-        account.rsa_status = AccountRsaStatus.CHANGING.value
-        db.add(account)
-
-        resp = client.get(self.apiurl)
-
-        assert resp.status_code == 200
-        assert resp.json() == [
-            {
-                "issuer_address": _admin_account["address"],
-                "rsa_public_key": _admin_account["rsa_public_key"],
-                "rsa_status": AccountRsaStatus.CHANGING.value,
-                "is_deleted": False
-            }
-        ]
-
-    # <Normal_3>
-    # No data
-    def test_normal_3(self, client, db):
-        resp = client.get(self.apiurl)
-
-        assert resp.status_code == 200
-        assert resp.json() == []
+        assert resp.json() == {
+            "issuer_address": _admin_account["address"],
+            "rsa_public_key": None,
+            "rsa_status": AccountRsaStatus.UNSET.value,
+            "is_deleted": True
+        }
+        _account_after = db.query(Account).first()
+        assert _account_after.issuer_address == _admin_account["address"]
+        assert _account_after.is_deleted == True
 
     ###########################################################################
     # Error Case
     ###########################################################################
+
+    # <Error_1>
+    # No data
+    def test_error_1(self, client, db):
+        # request target api
+        resp = client.delete(self.base_url.format("non_existent_issuer_address"))
+
+        # assertion
+        assert resp.status_code == 404
+        assert resp.json() == {
+            "meta": {
+                "code": 1, "title": "NotFound"
+            },
+            "detail": "issuer is not exists"
+        }

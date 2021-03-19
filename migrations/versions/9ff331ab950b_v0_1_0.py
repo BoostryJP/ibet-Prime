@@ -1,8 +1,8 @@
 """v0.1.0
 
-Revision ID: 221964195d6e
+Revision ID: 9ff331ab950b
 Revises: 
-Create Date: 2021-03-17 21:13:59.609612
+Create Date: 2021-03-19 21:03:52.102757
 
 """
 from alembic import op
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from app.database import get_db_schema
 
 # revision identifiers, used by Alembic.
-revision = '221964195d6e'
+revision = '9ff331ab950b'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -30,6 +30,7 @@ def upgrade():
     sa.Column('rsa_public_key', sa.String(length=2000), nullable=True),
     sa.Column('rsa_passphrase', sa.String(length=2000), nullable=True),
     sa.Column('rsa_status', sa.Integer(), nullable=True),
+    sa.Column('is_deleted', sa.Boolean(), nullable=True),
     sa.PrimaryKeyConstraint('issuer_address')
     , schema=get_db_schema())
     op.create_table('account_rsa_key_temporary',
