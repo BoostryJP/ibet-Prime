@@ -119,7 +119,8 @@ class TestProcessor:
         _bulk_transfer_upload = db.query(BulkTransferUpload). \
             order_by(BulkTransferUpload.upload_id).all()
         _bulk_transfer = db.query(BulkTransfer). \
-            order_by(BulkTransfer.upload_id).all()
+            order_by(BulkTransfer.upload_id).\
+            order_by(BulkTransfer.status).all() \
 
         # Upload id[0]: STRAIGHT_BOND do nothing, when upload_id status default 1
         assert _bulk_transfer_upload[0].upload_id == _bulk_transfer[0].upload_id
@@ -139,8 +140,8 @@ class TestProcessor:
         assert _bulk_transfer_upload[2].upload_id == _bulk_transfer[4].upload_id
         assert _bulk_transfer_upload[2].upload_id == _bulk_transfer[5].upload_id
         assert _bulk_transfer_upload[2].status == 2
-        assert _bulk_transfer[4].status == 2
-        assert _bulk_transfer[5].status == 1
+        assert _bulk_transfer[4].status == 1
+        assert _bulk_transfer[5].status == 2
 
         # Upload id[3]: SHARE do nothing, when upload_id status default 1
         assert _bulk_transfer_upload[3].upload_id == _bulk_transfer[6].upload_id
@@ -160,8 +161,8 @@ class TestProcessor:
         assert _bulk_transfer_upload[5].upload_id == _bulk_transfer[10].upload_id
         assert _bulk_transfer_upload[5].upload_id == _bulk_transfer[11].upload_id
         assert _bulk_transfer_upload[5].status == 2
-        assert _bulk_transfer[10].status == 2
-        assert _bulk_transfer[11].status == 1
+        assert _bulk_transfer[10].status == 1
+        assert _bulk_transfer[11].status == 2
 
     ###########################################################################
     # Error Case
