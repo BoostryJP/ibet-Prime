@@ -56,7 +56,8 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         assert resp.json() == {
             "issuer_address": _user_1["address"],
             "rsa_public_key": None,
-            "rsa_status": AccountRsaStatus.CREATING.value
+            "rsa_status": AccountRsaStatus.CREATING.value,
+            "is_deleted": False
         }
         _account_after = db.query(Account).first()
         assert _account_after.issuer_address == _user_1["address"]
@@ -100,7 +101,8 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         assert resp.json() == {
             "issuer_address": _user_1["address"],
             "rsa_public_key": _user_1["rsa_public_key"],
-            "rsa_status": AccountRsaStatus.CHANGING.value
+            "rsa_status": AccountRsaStatus.CHANGING.value,
+            "is_deleted": False
         }
         _temporary_after = db.query(AccountRsaKeyTemporary).all()
         assert len(_temporary_before) == 0
@@ -142,7 +144,8 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         assert resp.json() == {
             "issuer_address": _user_1["address"],
             "rsa_public_key": None,
-            "rsa_status": AccountRsaStatus.CREATING.value
+            "rsa_status": AccountRsaStatus.CREATING.value,
+            "is_deleted": False
         }
         _account_after = db.query(Account).first()
         assert _account_after.issuer_address == _user_1["address"]

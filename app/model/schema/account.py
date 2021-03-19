@@ -57,3 +57,4 @@ class AccountResponse(BaseModel):
     issuer_address: str
     rsa_public_key: Optional[str]
     rsa_status: int
+    is_deleted: bool

@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
 
-from sqlalchemy import Column, JSON, String, Integer
+from sqlalchemy import Column, JSON, String, Integer, Boolean
 
 from .base import Base
 
@@ -41,6 +41,8 @@ class Account(Base):
     rsa_passphrase = Column(String(2000))
     # rsa status
     rsa_status = Column(Integer)
+    # delete flag
+    is_deleted = Column(Boolean, default=False)
 
 
 class AccountRsaKeyTemporary(Base):
