@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import pytest
 
 from app.model.db import Account, BulkTransfer, BulkTransferUpload, TokenType
-from batch.bulk_transfer import Sinks, DBSink, Processor
+from batch.processor_bulk_transfer import Sinks, DBSink, Processor
 from app.model.utils import E2EEUtils
 from tests.account_config import config_eth_account
 

@@ -40,7 +40,7 @@ JST = timezone(timedelta(hours=+9), "JST")
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
-process_name = "Bulk-Transfer"
+process_name = "PROCESSOR-Bulk-Transfer"
 LOG = batch_log.get_logger(process_name=process_name)
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
