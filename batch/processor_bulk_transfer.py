@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from typing import List
 import os
 import sys
 import time
@@ -27,7 +28,7 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
-from config import WEB3_HTTP_PROVIDER, DATABASE_URL
+from config import WEB3_HTTP_PROVIDER, DATABASE_URL, BULK_TRANSFER_INTERVAL
 from app.model.utils import E2EEUtils
 from app.model.db import Account, BulkTransferUpload, BulkTransfer, TokenType
 from app.model.blockchain import IbetStraightBondContract, IbetShareContract
@@ -57,13 +58,13 @@ class Sinks:
     def register(self, sink):
         self.sinks.append(sink)
 
-    def on_completed_upload(self, *args, **kwargs):
+    def on_finish_upload_process(self, *args, **kwargs):
         for sink in self.sinks:
-            sink.on_completed_upload(*args, **kwargs)
+            sink.on_finish_upload_process(*args, **kwargs)
 
-    def on_completed(self, *args, **kwargs):
+    def on_finish_transfer_process(self, *args, **kwargs):
         for sink in self.sinks:
-            sink.on_completed(*args, **kwargs)
+            sink.on_finish_transfer_process(*args, **kwargs)
 
     def flush(self, *args, **kwargs):
         for sink in self.sinks:
@@ -74,7 +75,7 @@ class DBSink:
     def __init__(self, db):
         self.db = db
 
-    def on_completed_upload(self, upload_id, status):
+    def on_finish_upload_process(self, upload_id, status):
         transfer_upload_record = self.db.query(BulkTransferUpload). \
             filter(BulkTransferUpload.upload_id == upload_id). \
             first()
@@ -82,7 +83,7 @@ class DBSink:
             transfer_upload_record.status = status
             self.db.merge(transfer_upload_record)
 
-    def on_completed(self, record_id, status):
+    def on_finish_transfer_process(self, record_id, status):
         transfer_record = self.db.query(BulkTransfer). \
             filter(BulkTransfer.id == record_id). \
             first()
@@ -98,97 +99,97 @@ class Processor:
     def __init__(self, sink, db):
         self.sink = sink
         self.db = db
-        self.token_list = []
-        self.upload_list = []
-        self.transfer_list = []
 
-    def _get_bulk_transfer_lists(self):
-        self.upload_list = []
-        bulk_transfer_upload = self.db.query(BulkTransferUpload). \
+    def _get_uploads(self) -> List[BulkTransferUpload]:
+        upload_list = self.db.query(BulkTransferUpload). \
             filter(BulkTransferUpload.status == 0). \
             all()
+        return upload_list
 
-        for _upload in bulk_transfer_upload:
-            self.upload_list.append(_upload)
-
-        self.transfer_list = []
-        bulk_transfer = self.db.query(BulkTransfer). \
+    def _get_transfer_data(self, upload_id) -> List[BulkTransfer]:
+        transfer_list = self.db.query(BulkTransfer). \
+            filter(BulkTransfer.upload_id == upload_id). \
+            filter(BulkTransfer.status == 0). \
             all()
-        for _transfer in bulk_transfer:
-            self.transfer_list.append(_transfer)
+        return transfer_list
 
     def process(self):
-        self._get_bulk_transfer_lists()
-        if len(self.upload_list) < 1:
-            LOG.info(f"<{process_name}> bulk transfer upload list is None")
+        upload_list = self._get_uploads()
+        if len(upload_list) < 1:
             return
 
-        for _upload in self.upload_list:
+        for _upload in upload_list:
+            LOG.info(f"START upload_id:{_upload.upload_id}")
             _upload_status = 1
-            for _t in self.transfer_list:
-                if not _upload.upload_id == _t.upload_id:
-                    continue
-                # transfer run only status == 0
-                if _t.status == 1:
-                    continue
-                elif _t.status == 2:
-                    _upload_status = 2
-                    continue
-                # Get Account
-                _account = self.db.query(Account). \
-                    filter(Account.issuer_address == _t.issuer_address). \
-                    first()
-                if _account is None:
-                    self.sink.on_completed(_t.id, 2)
-                    _upload_status = 2
-                    LOG.info(f"<{process_name}> bulk transfer id=<{_t.id}> not found")
-                    continue
 
-                # Get private key
+            # Get issuer's private key
+            try:
+                _account = self.db.query(Account). \
+                    filter(Account.issuer_address == _upload.issuer_address). \
+                    first()
+                if _account is None:  # If issuer does not exist, update the status of the upload to ERROR
+                    LOG.warning(f"Issuer of the upload_id:{_upload.upload_id} does not exist")
+                    self.sink.on_finish_upload_process(
+                        upload_id=_upload.upload_id,
+                        status=2
+                    )
+                    self.sink.flush()
+                    continue
                 keyfile_json = _account.keyfile
                 decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
                 private_key = decode_keyfile_json(
                     raw_keyfile_json=keyfile_json,
                     password=decrypt_password.encode("utf-8")
                 )
+            except Exception as err:
+                LOG.exception(
+                    f"Could not get the private key of the issuer of upload_id:{_upload.upload_id}",
+                    err)
+                self.sink.on_finish_upload_process(
+                    upload_id=_upload.upload_id,
+                    status=2
+                )
+                self.sink.flush()
+                continue
 
+            # Transfer
+            transfer_list = self._get_transfer_data(upload_id=_upload.upload_id)
+            for _transfer in transfer_list:
                 token = {
-                           "token_address": _t.token_address,
-                           "transfer_from": _t.from_address,
-                           "transfer_to": _t.to_address,
-                           "amount": _t.amount
+                    "token_address": _transfer.token_address,
+                    "transfer_from": _transfer.from_address,
+                    "transfer_to": _transfer.to_address,
+                    "amount": _transfer.amount
                 }
-                if _t.token_type == TokenType.IBET_SHARE:
-                    _transfer_data = IbetShareTransfer(**token)
-                    try:
+                try:
+                    if _transfer.token_type == TokenType.IBET_SHARE:
+                        _transfer_data = IbetShareTransfer(**token)
                         IbetShareContract.transfer(
                             data=_transfer_data,
-                            tx_from=_t.issuer_address,
+                            tx_from=_transfer.issuer_address,
                             private_key=private_key
                         )
-                        self.sink.on_completed(_t.id, 1)
-                        self.sink.flush()
-                    except SendTransactionError:
-                        self.sink.on_completed(_t.id, 2)
-                        self.sink.flush()
-                        _upload_status = 2
-                        LOG.info(f"<{process_name}> bulk transfer id=<{_t.id}> failed")
-                elif _t.token_type == TokenType.IBET_STRAIGHT_BOND:
-                    _transfer_data = IbetStraightBondTransfer(**token)
-                    try:
+                    elif _transfer.token_type == TokenType.IBET_STRAIGHT_BOND:
+                        _transfer_data = IbetStraightBondTransfer(**token)
                         IbetStraightBondContract.transfer(
                             data=_transfer_data,
-                            tx_from=_t.issuer_address,
+                            tx_from=_transfer.issuer_address,
                             private_key=private_key
                         )
-                        self.sink.on_completed(_t.id, 1)
-                        self.sink.flush()
-                    except SendTransactionError:
-                        self.sink.on_completed(_t.id, 2)
-                        self.sink.flush()
-                        _upload_status = 2
-                        LOG.info(f"<{process_name}> bulk transfer id=<{_t.id}> failed")
-            self.sink.on_completed_upload(_upload.upload_id, _upload_status)
+                    self.sink.on_finish_transfer_process(
+                        record_id=_transfer.id,
+                        status=1
+                    )
+                except SendTransactionError:
+                    LOG.warning(f"Failed to send transaction: id=<{_transfer.id}>")
+                    self.sink.on_finish_transfer_process(
+                        record_id=_transfer.id,
+                        status=2
+                    )
+                    _upload_status = 2  # Error
+                self.sink.flush()
+
+            self.sink.on_finish_upload_process(_upload.upload_id, _upload_status)
             self.sink.flush()
 
 
@@ -205,7 +206,7 @@ def main():
             processor.process()
         except Exception as ex:
             LOG.error(ex)
-        time.sleep(10)
+        time.sleep(BULK_TRANSFER_INTERVAL)
 
 
 if __name__ == "__main__":

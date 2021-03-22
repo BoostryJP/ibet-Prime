@@ -157,6 +157,8 @@ class ContractUtils:
                 transaction_hash=tx_hash,
                 timeout=10
             )
+            if txn_receipt["status"] == 0:
+                raise SendTransactionError
         except:
             raise
         finally:
