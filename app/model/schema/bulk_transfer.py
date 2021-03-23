@@ -16,26 +16,33 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from fastapi import APIRouter
-
-from config import E2EE_REQUEST_ENABLED
-from app.model.utils import E2EEUtils
-from app.model.schema import E2EEResponse
-
-router = APIRouter(tags=["index"])
+from pydantic import BaseModel
 
 
-# GET: /e2ee
-@router.get(
-    "/e2ee",
-    response_model=E2EEResponse
-)
-def e2e_encryption_key():
-    """Get E2EE public key"""
+############################
+# RESPONSE
+############################
 
-    if not E2EE_REQUEST_ENABLED:
-        return {"public_key": None}
+class BulkTransferUploadIdResponse(BaseModel):
+    """bulk transfer upload id"""
+    upload_id: str
 
-    _, public_key = E2EEUtils.get_key()
-    
-    return {"public_key": public_key}
+
+class BulkTransferUploadResponse(BaseModel):
+    """bulk transfer upload"""
+    upload_id: str
+    issuer_address: str
+    token_type: str
+    status: int
+
+
+class BulkTransferResponse(BaseModel):
+    """bulk transfer data"""
+    upload_id: str
+    issuer_address: str
+    token_address: str
+    token_type: str
+    from_address: str
+    to_address: str
+    amount: int
+    status: int

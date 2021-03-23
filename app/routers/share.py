@@ -25,14 +25,33 @@ from sqlalchemy.orm import Session
 from eth_keyfile import decode_keyfile_json
 
 from app.database import db_session
-from app.model.schema import IbetShareCreate, IbetShareUpdate, \
-    IbetShareTransfer, IbetShareAdd, \
-    IbetShareResponse, HolderResponse
+from app.model.schema import (
+    IbetShareCreate,
+    IbetShareUpdate,
+    IbetShareTransfer,
+    IbetShareAdd,
+    IbetShareResponse,
+    TokenAddressResponse,
+    HolderResponse,
+    BulkTransferUploadIdResponse,
+    BulkTransferUploadResponse,
+    BulkTransferResponse
+)
 from app.model.utils import E2EEUtils, headers_validate, address_is_valid_address
-from app.model.db import Account, Token, TokenType, IDXPosition, IDXPersonalInfo, \
-    BulkTransfer, BulkTransferUpload
+from app.model.db import (
+    Account,
+    Token,
+    TokenType,
+    IDXPosition,
+    IDXPersonalInfo,
+    BulkTransfer,
+    BulkTransferUpload
+)
 from app.model.blockchain import IbetShareContract
-from app.exceptions import InvalidParameterError, SendTransactionError
+from app.exceptions import (
+    InvalidParameterError,
+    SendTransactionError
+)
 
 router = APIRouter(
     prefix="/share",
@@ -42,7 +61,10 @@ router = APIRouter(
 
 
 # POST: /share/tokens
-@router.post("/tokens")
+@router.post(
+    "/tokens",
+    response_model=TokenAddressResponse
+)
 async def issue_token(
         token: IbetShareCreate,
         issuer_address: str = Header(...),
@@ -129,7 +151,10 @@ async def issue_token(
 
 
 # GET: /share/tokens
-@router.get("/tokens", response_model=List[IbetShareResponse])
+@router.get(
+    "/tokens",
+    response_model=List[IbetShareResponse]
+)
 async def list_all_tokens(
         issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
@@ -164,7 +189,10 @@ async def list_all_tokens(
 
 
 # GET: /share/tokens/{token_address}
-@router.get("/tokens/{token_address}", response_model=IbetShareResponse)
+@router.get(
+    "/tokens/{token_address}",
+    response_model=IbetShareResponse
+)
 async def retrieve_token(
         token_address: str,
         db: Session = Depends(db_session)):
@@ -184,7 +212,10 @@ async def retrieve_token(
 
 
 # POST: /share/tokens/{token_address}
-@router.post("/tokens/{token_address}")
+@router.post(
+    "/tokens/{token_address}",
+    response_model=None
+)
 async def update_token(
         token_address: str,
         token: IbetShareUpdate,
@@ -238,7 +269,10 @@ async def update_token(
 
 
 # POST: /share/tokens/{token_address}/add
-@router.post("/tokens/{token_address}/add")
+@router.post(
+    "/tokens/{token_address}/add",
+    response_model=None
+)
 async def additional_issue(
         token_address: str,
         token: IbetShareAdd,
@@ -292,7 +326,10 @@ async def additional_issue(
 
 
 # GET: /share/tokens/{token_address}/holders
-@router.get("/tokens/{token_address}/holders", response_model=List[HolderResponse])
+@router.get(
+    "/tokens/{token_address}/holders",
+    response_model=List[HolderResponse]
+)
 async def list_all_holders(
         token_address: str,
         issuer_address: str = Header(...),
@@ -360,7 +397,10 @@ async def list_all_holders(
 
 
 # GET: /share/tokens/{token_address}/holders/{account_address}
-@router.get("/tokens/{token_address}/holders/{account_address}", response_model=HolderResponse)
+@router.get(
+    "/tokens/{token_address}/holders/{account_address}",
+    response_model=HolderResponse
+)
 async def retrieve_holder(
         token_address: str,
         account_address: str,
@@ -427,7 +467,10 @@ async def retrieve_holder(
 
 
 # POST: /share/transfer
-@router.post("/transfer")
+@router.post(
+    "/transfer",
+    response_model=None
+)
 async def transfer_ownership(
         token: IbetShareTransfer,
         issuer_address: str = Header(...),
@@ -478,7 +521,10 @@ async def transfer_ownership(
 
 
 # POST: /share/bulk_transfer
-@router.post("/bulk_transfer")
+@router.post(
+    "/bulk_transfer",
+    response_model=BulkTransferUploadIdResponse
+)
 async def bulk_transfer_ownership(
         tokens: List[IbetShareTransfer],
         issuer_address: str = Header(...),
@@ -538,11 +584,14 @@ async def bulk_transfer_ownership(
 
     db.commit()
 
-    return {"upload_id": upload_id}
+    return {"upload_id": str(upload_id)}
 
 
 # GET: /share/bulk_transfer
-@router.get("/bulk_transfer")
+@router.get(
+    "/bulk_transfer",
+    response_model=List[BulkTransferUploadResponse]
+)
 async def list_bulk_transfer_upload(
         issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
@@ -580,7 +629,10 @@ async def list_bulk_transfer_upload(
 
 
 # GET: /share/bulk_transfer/{upload_id}
-@router.get("/bulk_transfer/{upload_id}")
+@router.get(
+    "/bulk_transfer/{upload_id}",
+    response_model=List[BulkTransferResponse]
+)
 async def retrieve_bulk_transfer(
         upload_id: str,
         issuer_address: Optional[str] = Header(None),

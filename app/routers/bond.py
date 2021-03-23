@@ -25,14 +25,33 @@ from sqlalchemy.orm import Session
 from eth_keyfile import decode_keyfile_json
 
 from app.database import db_session
-from app.model.schema import IbetStraightBondCreate, IbetStraightBondUpdate, \
-    IbetStraightBondTransfer, IbetStraightBondAdd, \
-    IbetStraightBondResponse, HolderResponse
+from app.model.schema import (
+    IbetStraightBondCreate,
+    IbetStraightBondUpdate,
+    IbetStraightBondTransfer,
+    IbetStraightBondAdd,
+    IbetStraightBondResponse,
+    TokenAddressResponse,
+    HolderResponse,
+    BulkTransferUploadIdResponse,
+    BulkTransferUploadResponse,
+    BulkTransferResponse
+)
 from app.model.utils import E2EEUtils, headers_validate, address_is_valid_address
-from app.model.db import Account, Token, TokenType, IDXPosition, IDXPersonalInfo, \
-    BulkTransfer, BulkTransferUpload
+from app.model.db import (
+    Account,
+    Token,
+    TokenType,
+    IDXPosition,
+    IDXPersonalInfo,
+    BulkTransfer,
+    BulkTransferUpload
+)
 from app.model.blockchain import IbetStraightBondContract
-from app.exceptions import InvalidParameterError, SendTransactionError
+from app.exceptions import (
+    InvalidParameterError,
+    SendTransactionError
+)
 
 router = APIRouter(
     prefix="/bond",
@@ -42,7 +61,10 @@ router = APIRouter(
 
 
 # POST: /bond/tokens
-@router.post("/tokens")
+@router.post(
+    "/tokens",
+    response_model=TokenAddressResponse
+)
 async def issue_token(
         token: IbetStraightBondCreate,
         issuer_address: str = Header(...),
@@ -133,7 +155,10 @@ async def issue_token(
 
 
 # GET: /bond/tokens
-@router.get("/tokens", response_model=List[IbetStraightBondResponse])
+@router.get(
+    "/tokens",
+    response_model=List[IbetStraightBondResponse]
+)
 async def list_all_tokens(
         issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
@@ -170,7 +195,10 @@ async def list_all_tokens(
 
 
 # GET: /bond/tokens/{token_address}
-@router.get("/tokens/{token_address}", response_model=IbetStraightBondResponse)
+@router.get(
+    "/tokens/{token_address}",
+    response_model=IbetStraightBondResponse
+)
 async def retrieve_token(
         token_address: str,
         db: Session = Depends(db_session)):
@@ -190,7 +218,10 @@ async def retrieve_token(
 
 
 # POST: /bond/tokens/{token_address}
-@router.post("/tokens/{token_address}")
+@router.post(
+    "/tokens/{token_address}",
+    response_model=None
+)
 async def update_token(
         token_address: str,
         token: IbetStraightBondUpdate,
@@ -244,7 +275,10 @@ async def update_token(
 
 
 # POST: /bond/tokens/{token_address}/add
-@router.post("/tokens/{token_address}/add")
+@router.post(
+    "/tokens/{token_address}/add",
+    response_model=None
+)
 async def additional_issue(
         token_address: str,
         token: IbetStraightBondAdd,
@@ -298,7 +332,10 @@ async def additional_issue(
 
 
 # GET: /bond/tokens/{token_address}/holders
-@router.get("/tokens/{token_address}/holders", response_model=List[HolderResponse])
+@router.get(
+    "/tokens/{token_address}/holders",
+    response_model=List[HolderResponse]
+)
 async def list_all_holders(
         token_address: str,
         issuer_address: str = Header(...),
@@ -368,7 +405,10 @@ async def list_all_holders(
 
 
 # GET: /bond/tokens/{token_address}/holders/{account_address}
-@router.get("/tokens/{token_address}/holders/{account_address}", response_model=HolderResponse)
+@router.get(
+    "/tokens/{token_address}/holders/{account_address}",
+    response_model=HolderResponse
+)
 async def retrieve_holder(
         token_address: str,
         account_address: str,
@@ -435,7 +475,10 @@ async def retrieve_holder(
 
 
 # POST: /bond/transfer
-@router.post("/transfer")
+@router.post(
+    "/transfer",
+    response_model=None
+)
 async def transfer_ownership(
         token: IbetStraightBondTransfer,
         issuer_address: str = Header(...),
@@ -486,7 +529,10 @@ async def transfer_ownership(
 
 
 # POST: /bond/bulk_transfer
-@router.post("/bulk_transfer")
+@router.post(
+    "/bulk_transfer",
+    response_model=BulkTransferUploadIdResponse
+)
 async def bulk_transfer_ownership(
         tokens: List[IbetStraightBondTransfer],
         issuer_address: str = Header(...),
@@ -546,11 +592,14 @@ async def bulk_transfer_ownership(
 
     db.commit()
 
-    return {"upload_id": upload_id}
+    return {"upload_id": str(upload_id)}
 
 
 # GET: /bond/bulk_transfer
-@router.get("/bulk_transfer")
+@router.get(
+    "/bulk_transfer",
+    response_model=List[BulkTransferUploadResponse]
+)
 async def list_bulk_transfer_upload(
         issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
@@ -588,7 +637,10 @@ async def list_bulk_transfer_upload(
 
 
 # GET: /bond/bulk_transfer/{upload_id}
-@router.get("/bulk_transfer/{upload_id}")
+@router.get(
+    "/bulk_transfer/{upload_id}",
+    response_model=List[BulkTransferResponse]
+)
 async def retrieve_bulk_transfer(
         upload_id: str,
         issuer_address: Optional[str] = Header(None),

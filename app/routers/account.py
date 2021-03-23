@@ -43,7 +43,10 @@ router = APIRouter(tags=["account"])
 
 
 # POST: /accounts
-@router.post("/accounts", response_model=AccountResponse)
+@router.post(
+    "/accounts",
+    response_model=AccountResponse
+)
 async def create_key(
         data: AccountCreateKeyRequest,
         db: Session = Depends(db_session)):
@@ -88,7 +91,10 @@ async def create_key(
 
 
 # GET: /accounts
-@router.get("/accounts", response_model=List[AccountResponse])
+@router.get(
+    "/accounts",
+    response_model=List[AccountResponse]
+)
 async def list_all_accounts(db: Session = Depends(db_session)):
     """List all accounts"""
 
@@ -108,7 +114,10 @@ async def list_all_accounts(db: Session = Depends(db_session)):
 
 
 # GET: /accounts/{issuer_address}
-@router.get("/accounts/{issuer_address}", response_model=AccountResponse)
+@router.get(
+    "/accounts/{issuer_address}",
+    response_model=AccountResponse
+)
 async def retrieve_account(issuer_address: str, db: Session = Depends(db_session)):
     """Retrieve an account"""
 
@@ -127,7 +136,10 @@ async def retrieve_account(issuer_address: str, db: Session = Depends(db_session
 
 
 # DELETE: /accounts/{issuer_address}
-@router.delete("/accounts/{issuer_address}", response_model=AccountResponse)
+@router.delete(
+    "/accounts/{issuer_address}",
+    response_model=AccountResponse
+)
 async def delete_account(issuer_address: str, db: Session = Depends(db_session)):
     """Logically delete an account"""
 
@@ -150,7 +162,10 @@ async def delete_account(issuer_address: str, db: Session = Depends(db_session))
 
 
 # POST: /accounts/{issuer_address}/rsakey
-@router.post("/accounts/{issuer_address}/rsakey", response_model=AccountResponse)
+@router.post(
+    "/accounts/{issuer_address}/rsakey",
+    response_model=AccountResponse
+)
 async def generate_rsa_key(
         issuer_address: str,
         data: AccountGenerateRsaKeyRequest,

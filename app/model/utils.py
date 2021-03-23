@@ -19,7 +19,6 @@ SPDX-License-Identifier: Apache-2.0
 from typing import Dict
 import base64
 import binascii
-import json
 from datetime import datetime, timedelta
 
 import boto3
