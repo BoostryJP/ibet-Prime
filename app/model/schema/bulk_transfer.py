@@ -16,28 +16,33 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from .index import E2EEResponse
-from .account import (
-    AccountCreateKeyRequest,
-    AccountGenerateRsaKeyRequest,
-    AccountResponse
-)
-from .token import (
-    IbetStraightBondCreate,
-    IbetStraightBondUpdate,
-    IbetStraightBondTransfer,
-    IbetStraightBondAdd,
-    IbetShareCreate,
-    IbetShareUpdate,
-    IbetShareTransfer,
-    IbetShareAdd,
-    TokenAddressResponse,
-    IbetStraightBondResponse,
-    IbetShareResponse
-)
-from .holder import HolderResponse
-from .bulk_transfer import (
-    BulkTransferUploadIdResponse,
-    BulkTransferUploadResponse,
-    BulkTransferResponse
-)
+from pydantic import BaseModel
+
+
+############################
+# RESPONSE
+############################
+
+class BulkTransferUploadIdResponse(BaseModel):
+    """bulk transfer upload id"""
+    upload_id: str
+
+
+class BulkTransferUploadResponse(BaseModel):
+    """bulk transfer upload"""
+    upload_id: str
+    issuer_address: str
+    token_type: str
+    status: int
+
+
+class BulkTransferResponse(BaseModel):
+    """bulk transfer data"""
+    upload_id: str
+    issuer_address: str
+    token_address: str
+    token_type: str
+    from_address: str
+    to_address: str
+    amount: int
+    status: int
