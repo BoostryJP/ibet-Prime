@@ -205,8 +205,8 @@ class TestProcessor:
         assert _utox.account_address == user_address_1
         assert _utox.token_address == token_address_2
         assert _utox.amount == 60  # spend to user2(70 - 10)
-        assert _utox.block_number > latest_block
-        assert _utox.block_timestamp > pre_datetime
+        assert _utox.block_number is not None
+        assert _utox.block_timestamp is not None
         _utox = _utox_list[3]
         assert _utox.transaction_hash is not None
         assert _utox.account_address == user_address_2
