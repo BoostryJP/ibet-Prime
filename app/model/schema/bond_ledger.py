@@ -16,15 +16,20 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from .base import Base
-from .account import Account, AccountRsaKeyTemporary, AccountRsaStatus
-from .token import Token, TokenType
-from .bond_ledger import BondLedger
-from .bulk_transfer_upload import BulkTransferUpload
-from .bulk_transfer import BulkTransfer
-from .idx_transfer import IDXTransfer
-from .idx_position import IDXPosition
-from .idx_personal_info import IDXPersonalInfo, IDXPersonalInfoBlockNumber
-from .tx_management import TransactionLock
-from .utxo import UTXO, UTXOBlockNumber
-from .localized.corporate_bond_ledger_template_JPN import CorporateBondLedgerTemplateJPN
+from pydantic import BaseModel
+
+
+############################
+# REQUEST
+############################
+
+############################
+# RESPONSE
+############################
+
+class BondLedgerResponse(BaseModel):
+    """Bond Ledger schema (Response)"""
+    id: int
+    token_address: str
+    country_code: str
+    created: str

@@ -29,7 +29,9 @@ from app.database import get_db_schema
 
 
 class BaseModel(object):
+    # created datetime(UTC)
     created = Column(DateTime, default=datetime.utcnow)
+    # modified datetime(UTC)
     modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     @staticmethod

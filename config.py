@@ -110,3 +110,7 @@ if E2EE_RSA_RESOURCE_MODE == 1:
 else:
     AWS_REGION_NAME = ""
 E2EE_REQUEST_ENABLED = False if os.environ.get("E2EE_REQUEST_ENABLED") == "0" else True
+
+# Functions by country enable
+COUNTRY_FUNCTIONS = [code.strip().upper() for code in os.environ.get("COUNTRY_FUNCTIONS").split(",")] if os.environ.get(
+    "COUNTRY_FUNCTIONS") else ["JPN"]

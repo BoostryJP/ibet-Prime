@@ -21,7 +21,6 @@ import json
 import os
 import sys
 import time
-import logging
 from datetime import datetime, timezone, timedelta
 JST = timezone(timedelta(hours=+9), "JST")
 
@@ -187,7 +186,7 @@ class Processor:
                         )
                         self.sink.flush()
             except Exception as err:
-                logging.error(err)
+                LOG.error(err)
 
     def __sync_personal_info_modify(self, block_from, block_to):
         for _personal_info_contract in self.personal_info_contract_list:
@@ -211,7 +210,7 @@ class Processor:
                         )
                         self.sink.flush()
             except Exception as err:
-                logging.error(err)
+                LOG.error(err)
 
 
 _sink = Sinks()
@@ -222,8 +221,8 @@ LOG.info("Service started successfully")
 while True:
     try:
         processor.process()
-        logging.debug("Processed")
+        LOG.debug("Processed")
     except Exception as ex:
-        logging.exception(ex)
+        LOG.exception(ex)
 
     time.sleep(10)
