@@ -315,6 +315,11 @@ class IbetShareAdd(BaseModel):
 # RESPONSE
 ############################
 
+class TokenAddressResponse(BaseModel):
+    """token address"""
+    token_address: str
+
+
 class IbetStraightBondResponse(BaseModel):
     """ibet Straight Bond schema (Response)"""
     issuer_address: str

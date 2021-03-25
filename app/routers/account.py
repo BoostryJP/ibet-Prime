@@ -43,7 +43,10 @@ router = APIRouter(tags=["account"])
 
 
 # POST: /accounts
-@router.post("/accounts", response_model=AccountResponse)
+@router.post(
+    "/accounts",
+    response_model=AccountResponse
+)
 async def create_key(
         data: AccountCreateKeyRequest,
         db: Session = Depends(db_session)):
@@ -69,6 +72,7 @@ async def create_key(
     _account.keyfile = keyfile_json
     _account.eoa_password = E2EEUtils.encrypt(eoa_password)
     _account.rsa_status = AccountRsaStatus.UNSET.value
+    _account.is_deleted = False
     db.add(_account)
 
     # Insert initial transaction execution management record
@@ -81,12 +85,16 @@ async def create_key(
     return {
         "issuer_address": _account.issuer_address,
         "rsa_public_key": "",
-        "rsa_status": _account.rsa_status
+        "rsa_status": _account.rsa_status,
+        "is_deleted": _account.is_deleted
     }
 
 
 # GET: /accounts
-@router.get("/accounts", response_model=List[AccountResponse])
+@router.get(
+    "/accounts",
+    response_model=List[AccountResponse]
+)
 async def list_all_accounts(db: Session = Depends(db_session)):
     """List all accounts"""
 
@@ -98,18 +106,21 @@ async def list_all_accounts(db: Session = Depends(db_session)):
         account_list.append({
             "issuer_address": _account.issuer_address,
             "rsa_public_key": _account.rsa_public_key,
-            "rsa_status": _account.rsa_status
+            "rsa_status": _account.rsa_status,
+            "is_deleted": _account.is_deleted
         })
 
     return account_list
 
 
 # GET: /accounts/{issuer_address}
-@router.get("/accounts/{issuer_address}", response_model=AccountResponse)
+@router.get(
+    "/accounts/{issuer_address}",
+    response_model=AccountResponse
+)
 async def retrieve_account(issuer_address: str, db: Session = Depends(db_session)):
     """Retrieve an account"""
 
-    # Register key data to the DB
     _account = db.query(Account). \
         filter(Account.issuer_address == issuer_address). \
         first()
@@ -119,12 +130,42 @@ async def retrieve_account(issuer_address: str, db: Session = Depends(db_session
     return {
         "issuer_address": _account.issuer_address,
         "rsa_public_key": _account.rsa_public_key,
-        "rsa_status": _account.rsa_status
+        "rsa_status": _account.rsa_status,
+        "is_deleted": _account.is_deleted
+    }
+
+
+# DELETE: /accounts/{issuer_address}
+@router.delete(
+    "/accounts/{issuer_address}",
+    response_model=AccountResponse
+)
+async def delete_account(issuer_address: str, db: Session = Depends(db_session)):
+    """Logically delete an account"""
+
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
+        first()
+    if _account is None:
+        raise HTTPException(status_code=404, detail="issuer is not exists")
+
+    _account.is_deleted = True
+    db.merge(_account)
+    db.commit()
+
+    return {
+        "issuer_address": _account.issuer_address,
+        "rsa_public_key": _account.rsa_public_key,
+        "rsa_status": _account.rsa_status,
+        "is_deleted": _account.is_deleted
     }
 
 
 # POST: /accounts/{issuer_address}/rsakey
-@router.post("/accounts/{issuer_address}/rsakey", response_model=AccountResponse)
+@router.post(
+    "/accounts/{issuer_address}/rsakey",
+    response_model=AccountResponse
+)
 async def generate_rsa_key(
         issuer_address: str,
         data: AccountGenerateRsaKeyRequest,
@@ -176,5 +217,6 @@ async def generate_rsa_key(
     return {
         "issuer_address": issuer_address,
         "rsa_public_key": _account.rsa_public_key,
-        "rsa_status": rsa_status
+        "rsa_status": rsa_status,
+        "is_deleted": _account.is_deleted
     }

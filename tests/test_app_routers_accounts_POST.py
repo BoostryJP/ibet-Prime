@@ -47,6 +47,7 @@ class TestAppRoutersAccountsPOST:
         assert resp.json()["issuer_address"] is not None
         assert resp.json()["rsa_public_key"] == ""
         assert resp.json()["rsa_status"] == AccountRsaStatus.UNSET.value
+        assert resp.json()["is_deleted"] is False
 
         accounts_after = db.query(Account).all()
 
@@ -60,6 +61,7 @@ class TestAppRoutersAccountsPOST:
         assert account_1.rsa_public_key is None
         assert account_1.rsa_passphrase is None
         assert account_1.rsa_status == AccountRsaStatus.UNSET.value
+        assert account_1.is_deleted is False
 
     ###########################################################################
     # Error Case
