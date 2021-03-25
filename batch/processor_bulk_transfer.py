@@ -21,12 +21,16 @@ import os
 import sys
 import time
 from datetime import timezone, timedelta
+JST = timezone(timedelta(hours=+9), "JST")
 
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
+
+path = os.path.join(os.path.dirname(__file__), "../")
+sys.path.append(path)
 
 from config import WEB3_HTTP_PROVIDER, DATABASE_URL, BULK_TRANSFER_INTERVAL
 from app.model.utils import E2EEUtils
@@ -36,11 +40,6 @@ from app.model.schema import IbetShareTransfer, IbetStraightBondTransfer
 from app.exceptions import SendTransactionError
 
 import batch_log
-
-JST = timezone(timedelta(hours=+9), "JST")
-path = os.path.join(os.path.dirname(__file__), "../")
-sys.path.append(path)
-
 process_name = "PROCESSOR-Bulk-Transfer"
 LOG = batch_log.get_logger(process_name=process_name)
 
