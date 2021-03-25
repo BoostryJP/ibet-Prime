@@ -36,6 +36,7 @@ from .token import (
     IbetShareResponse
 )
 from .holder import HolderResponse
+from .transfer import TransferResponse, TransferHistoryResponse
 from .bulk_transfer import (
     BulkTransferUploadIdResponse,
     BulkTransferUploadResponse,
