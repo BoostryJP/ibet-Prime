@@ -16,7 +16,10 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from typing import List
 from pydantic import BaseModel
+
+from app.model.schema import ResultSetResponse
 
 
 ############################
@@ -33,3 +36,9 @@ class BondLedgerResponse(BaseModel):
     token_address: str
     country_code: str
     created: str
+
+
+class ListAllBondLedgerHistoryResponse(BaseModel):
+    """List All Bond Ledger History schema (Response)"""
+    result_set: ResultSetResponse
+    bond_ledgers: List[BondLedgerResponse]

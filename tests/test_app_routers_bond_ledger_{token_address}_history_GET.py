@@ -47,20 +47,28 @@ class TestAppBondLedgerTokenAddressHistoryGET:
         _token.abi = {}
         db.add(_token)
 
-        mock_resp = [
-            {
-                "id": 1,
-                "token_address": token_address,
-                "country_code": "JPN",
-                "created": "2021/12/31 10:20:30 +0900",
+        mock_resp = {
+            "result_set": {
+                "count": 1,
+                "offset": 2,
+                "limit": 3,
+                "total": 4
             },
-            {
-                "id": 2,
-                "token_address": token_address,
-                "country_code": "JPN",
-                "created": "2021/12/31 20:30:40 +0900",
-            }
-        ]
+            "bond_ledgers": [
+                {
+                    "id": 1,
+                    "token_address": token_address,
+                    "country_code": "JPN",
+                    "created": "2021/12/31 10:20:30 +0900",
+                },
+                {
+                    "id": 2,
+                    "token_address": token_address,
+                    "country_code": "JPN",
+                    "created": "2021/12/31 20:30:40 +0900",
+                }
+            ]
+        }
         mock_localized_func.side_effect = [
             mock_resp
         ]
@@ -68,14 +76,18 @@ class TestAppBondLedgerTokenAddressHistoryGET:
         # request target API
         resp = client.get(
             self.base_url.format(token_address),
+            params={
+                "locale": "jpn",
+                "offset": 2,
+                "limit": 3,
+            },
             headers={
-                "country-code": "jpn",
                 "issuer-address": issuer_address,
             }
         )
 
         # assertion
-        mock_localized_func.assert_any_call(token_address, db)
+        mock_localized_func.assert_any_call(token_address, 2, 3, db)
 
         assert resp.status_code == 200
         assert resp.json() == mock_resp
@@ -103,7 +115,7 @@ class TestAppBondLedgerTokenAddressHistoryGET:
             },
             "detail": [
                 {
-                    "loc": ["header", "country-code"],
+                    "loc": ["query", "locale"],
                     "msg": "field required",
                     "type": "value_error.missing"
                 },
@@ -125,8 +137,12 @@ class TestAppBondLedgerTokenAddressHistoryGET:
         # request target API
         resp = client.get(
             self.base_url.format(token_address),
+            params={
+                "locale": "usa",
+                "offset": 2,
+                "limit": 3,
+            },
             headers={
-                "country-code": "usa",
                 "issuer-address": issuer_address,
             }
         )
@@ -138,7 +154,7 @@ class TestAppBondLedgerTokenAddressHistoryGET:
                 "code": 1,
                 "title": "NotFound"
             },
-            "detail": "Not Supported country-code:usa"
+            "detail": "Not Supported locale:usa"
         }
 
     # <Error_3>
@@ -151,8 +167,12 @@ class TestAppBondLedgerTokenAddressHistoryGET:
         # request target API
         resp = client.get(
             self.base_url.format(token_address),
+            params={
+                "locale": "jpn",
+                "offset": 2,
+                "limit": 3,
+            },
             headers={
-                "country-code": "jpn",
                 "issuer-address": issuer_address,
             }
         )

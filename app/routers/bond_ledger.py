@@ -24,10 +24,10 @@ from pydantic import BaseConfig
 from pydantic.fields import ModelField
 from sqlalchemy.orm import Session
 
-from config import COUNTRY_FUNCTIONS
+from config import SYSTEM_LOCALE
 from app.database import db_session
 from app.model.db import Token, TokenType, BondLedger
-from app.model.schema import BondLedgerResponse, CreateUpdateBondLedgerTemplateRequestJPN
+from app.model.schema import ListAllBondLedgerHistoryResponse, CreateUpdateBondLedgerTemplateRequestJPN
 from app.routers.localized import bond_ledger_JPN
 from app.exceptions import InvalidParameterError
 
@@ -40,24 +40,26 @@ router = APIRouter(
 
 # GET: /bond_ledger/{token_address}/history
 # NOTE: Localized Function
-@router.get("/{token_address}/history", response_model=List[BondLedgerResponse])
+@router.get("/{token_address}/history", response_model=ListAllBondLedgerHistoryResponse)
 async def list_all_bond_ledger_history(
         token_address: str,
-        country_code: str = Header(...),
         issuer_address: str = Header(...),
+        locale: str = Query(..., description="Supported: JPN"),
+        offset: int = Query(None),
+        limit: int = Query(None),
         db: Session = Depends(db_session)):
     """List all Bond Ledger"""
 
     # Function Enabled Check
-    country_code_upper = country_code.upper()
-    if country_code_upper not in COUNTRY_FUNCTIONS:
-        raise HTTPException(status_code=404, detail=f"Not Supported country-code:{country_code}")
+    locale_upper = locale.upper()
+    if locale_upper not in SYSTEM_LOCALE:
+        raise HTTPException(status_code=404, detail=f"Not Supported locale:{locale}")
 
     # API Localized Supported Check
-    if country_code_upper == "JPN":
+    if locale_upper == "JPN":
         pass
     else:
-        raise HTTPException(status_code=404, detail=f"Not Supported country-code:{country_code}")
+        raise HTTPException(status_code=404, detail=f"Not Supported locale:{locale}")
 
     # Issuer Management Token Check
     _token = db.query(Token). \
@@ -70,8 +72,8 @@ async def list_all_bond_ledger_history(
 
     # Localized
     resp = None
-    if country_code_upper == "JPN":
-        resp = bond_ledger_JPN.list_all_bond_ledger_history(token_address, db)
+    if locale_upper == "JPN":
+        resp = bond_ledger_JPN.list_all_bond_ledger_history(token_address, offset, limit, db)
 
     return resp
 
@@ -83,22 +85,22 @@ async def list_all_bond_ledger_history(
 async def retrieve_bond_ledger_history(
         token_address: str,
         ledger_id: int,
-        country_code: str = Header(...),
         issuer_address: str = Header(...),
+        locale: str = Query(..., description="Supported: JPN"),
         latest_flg: int = Query(..., ge=0, le=1),
         db: Session = Depends(db_session)):
     """Retrieve Bond Ledger"""
 
     # Function Enabled Check
-    country_code_upper = country_code.upper()
-    if country_code_upper not in COUNTRY_FUNCTIONS:
-        raise HTTPException(status_code=404, detail=f"Not Supported country-code:{country_code}")
+    locale_upper = locale.upper()
+    if locale_upper not in SYSTEM_LOCALE:
+        raise HTTPException(status_code=404, detail=f"Not Supported locale:{locale}")
 
     # API Localized Supported Check
-    if country_code_upper == "JPN":
+    if locale_upper == "JPN":
         pass
     else:
-        raise HTTPException(status_code=404, detail=f"Not Supported country-code:{country_code}")
+        raise HTTPException(status_code=404, detail=f"Not Supported locale:{locale}")
 
     # Issuer Management Token Check
     _token = db.query(Token). \
@@ -113,14 +115,14 @@ async def retrieve_bond_ledger_history(
     _bond_ledger = db.query(BondLedger). \
         filter(BondLedger.id == ledger_id). \
         filter(BondLedger.token_address == token_address). \
-        filter(BondLedger.country_code == country_code_upper). \
+        filter(BondLedger.country_code == locale_upper). \
         first()
     if _bond_ledger is None:
         raise InvalidParameterError("ledger does not exist")
 
     # Localized
     resp = None
-    if country_code_upper == "JPN":
+    if locale_upper == "JPN":
         resp = bond_ledger_JPN.retrieve_bond_ledger_history(token_address, ledger_id, issuer_address, latest_flg, db)
 
     return resp
@@ -132,21 +134,21 @@ async def retrieve_bond_ledger_history(
             response_description="Successful Response (structures differs depending on localize.)")
 async def retrieve_bond_ledger_template(
         token_address: str,
-        country_code: str = Header(...),
         issuer_address: str = Header(...),
+        locale: str = Query(..., description="Supported: JPN"),
         db: Session = Depends(db_session)):
     """Retrieve Bond Ledger Template"""
 
     # Function Enabled Check
-    country_code_upper = country_code.upper()
-    if country_code_upper not in COUNTRY_FUNCTIONS:
-        raise HTTPException(status_code=404, detail=f"Not Supported country-code:{country_code}")
+    locale_upper = locale.upper()
+    if locale_upper not in SYSTEM_LOCALE:
+        raise HTTPException(status_code=404, detail=f"Not Supported locale:{locale}")
 
     # API Localized Supported Check
-    if country_code_upper == "JPN":
+    if locale_upper == "JPN":
         pass
     else:
-        raise HTTPException(status_code=404, detail=f"Not Supported country-code:{country_code}")
+        raise HTTPException(status_code=404, detail=f"Not Supported locale:{locale}")
 
     # Issuer Management Token Check
     _token = db.query(Token). \
@@ -159,7 +161,7 @@ async def retrieve_bond_ledger_template(
 
     # Localized
     resp = None
-    if country_code_upper == "JPN":
+    if locale_upper == "JPN":
         resp = bond_ledger_JPN.retrieve_bond_ledger_template(token_address, issuer_address, db)
 
     return resp
@@ -171,23 +173,23 @@ async def retrieve_bond_ledger_template(
 async def create_update_bond_ledger_template(
         request: Request,
         token_address: str,
-        country_code: str = Header(...),
         issuer_address: str = Header(...),
+        locale: str = Query(..., description="Supported: JPN"),
         # NOTE: for Swagger(Request-body is able to input, when API execute.)
         template: dict = Body(..., description="structures differs depending on localize."),
         db: Session = Depends(db_session)):
     """Create or Update Bond Ledger Template"""
 
     # Function Enabled Check
-    country_code_upper = country_code.upper()
-    if country_code_upper not in COUNTRY_FUNCTIONS:
-        raise HTTPException(status_code=404, detail=f"Not Supported country-code:{country_code}")
+    locale_upper = locale.upper()
+    if locale_upper not in SYSTEM_LOCALE:
+        raise HTTPException(status_code=404, detail=f"Not Supported locale:{locale}")
 
     # API Localized Supported Check
-    if country_code_upper == "JPN":
+    if locale_upper == "JPN":
         _request_model = CreateUpdateBondLedgerTemplateRequestJPN
     else:
-        raise HTTPException(status_code=404, detail=f"Not Supported country-code:{country_code}")
+        raise HTTPException(status_code=404, detail=f"Not Supported locale:{locale}")
 
     # Request-body validation and mapping to model
     body = await request.json()
@@ -208,7 +210,7 @@ async def create_update_bond_ledger_template(
         raise InvalidParameterError("token does not exist")
 
     # Localized
-    if country_code_upper == "JPN":
+    if locale_upper == "JPN":
         bond_ledger_JPN.create_update_bond_ledger_template(token_address, template, issuer_address, db)
 
     return

@@ -26,3 +26,11 @@ from pydantic import BaseModel
 class E2EEResponse(BaseModel):
     """E2EE schema (Response)"""
     public_key: Optional[str]
+
+
+class ResultSetResponse(BaseModel):
+    """Result Set schema (Response)"""
+    count: int
+    offset: Optional[int]
+    limit: Optional[int]
+    total: int

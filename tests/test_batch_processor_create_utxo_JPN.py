@@ -630,9 +630,9 @@ class TestProcessor:
         _template_1.payment_amount = 3000
         _template_1.payment_date = "20301231"
         _template_1.payment_status = False
-        _template_1.ledger_admin_name = "ledger_admin_name_test1"
-        _template_1.ledger_admin_address = "ledger_admin_address_test1"
-        _template_1.ledger_admin_location = "ledger_admin_location_test1"
+        _template_1.hq_name = "hq_name_test1"
+        _template_1.hq_address = "hq_address_test1"
+        _template_1.hq_office_address = "hq_office_address_test1"
         db.add(_template_1)
 
         _template_2 = CorporateBondLedgerTemplateJPN()
@@ -646,9 +646,9 @@ class TestProcessor:
         _template_2.payment_amount = 6000
         _template_2.payment_date = "20310101"
         _template_2.payment_status = True
-        _template_2.ledger_admin_name = "ledger_admin_name_test2"
-        _template_2.ledger_admin_address = "ledger_admin_address_test2"
-        _template_2.ledger_admin_location = "ledger_admin_location_test2"
+        _template_2.hq_name = "hq_name_test2"
+        _template_2.hq_address = "hq_address_test2"
+        _template_2.hq_office_address = "hq_office_address_test2"
         db.add(_template_2)
 
         _utxo_1 = UTXO()
@@ -731,9 +731,9 @@ class TestProcessor:
                 "社債の種類": "bond_type_test1"
             },
             "社債原簿管理人": {
-                "氏名または名称": "ledger_admin_name_test1",
-                "住所": "ledger_admin_address_test1",
-                "事務取扱場所": "ledger_admin_location_test1"
+                "氏名または名称": "hq_name_test1",
+                "住所": "hq_address_test1",
+                "事務取扱場所": "hq_office_address_test1"
             },
             "社債権者": [
                 {
@@ -779,9 +779,9 @@ class TestProcessor:
                 "社債の種類": "bond_type_test1"
             },
             "社債原簿管理人": {
-                "氏名または名称": "ledger_admin_name_test1",
-                "住所": "ledger_admin_address_test1",
-                "事務取扱場所": "ledger_admin_location_test1"
+                "氏名または名称": "hq_name_test1",
+                "住所": "hq_address_test1",
+                "事務取扱場所": "hq_office_address_test1"
             },
             "社債権者": [
                 {
@@ -848,9 +848,9 @@ class TestProcessor:
                 "社債の種類": "bond_type_test1"
             },
             "社債原簿管理人": {
-                "氏名または名称": "ledger_admin_name_test1",
-                "住所": "ledger_admin_address_test1",
-                "事務取扱場所": "ledger_admin_location_test1"
+                "氏名または名称": "hq_name_test1",
+                "住所": "hq_address_test1",
+                "事務取扱場所": "hq_office_address_test1"
             },
             "社債権者": [
                 {
@@ -917,9 +917,9 @@ class TestProcessor:
                 "社債の種類": "bond_type_test2"
             },
             "社債原簿管理人": {
-                "氏名または名称": "ledger_admin_name_test2",
-                "住所": "ledger_admin_address_test2",
-                "事務取扱場所": "ledger_admin_location_test2"
+                "氏名または名称": "hq_name_test2",
+                "住所": "hq_address_test2",
+                "事務取扱場所": "hq_office_address_test2"
             },
             "社債権者": [
                 {

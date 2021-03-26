@@ -29,7 +29,7 @@ from web3.middleware import geth_poa_middleware
 path = os.path.join(os.path.dirname(__file__), '../')
 sys.path.append(path)
 
-from config import DATABASE_URL, WEB3_HTTP_PROVIDER, ZERO_ADDRESS, COUNTRY_FUNCTIONS
+from config import DATABASE_URL, WEB3_HTTP_PROVIDER, ZERO_ADDRESS, SYSTEM_LOCALE
 from app.model.db import UTXO, UTXOBlockNumber, Token
 from app.model.blockchain.utils import ContractUtils
 import batch_log
@@ -203,7 +203,7 @@ class Processor:
                     )
 
                     # Localized
-                    for country_code in COUNTRY_FUNCTIONS:
+                    for country_code in SYSTEM_LOCALE:
                         if country_code == "JPN":
                             create_utxo_JPN.on_bond_ledger(token_contract.address, self.db)
 

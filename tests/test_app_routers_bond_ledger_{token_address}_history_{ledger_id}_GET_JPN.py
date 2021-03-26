@@ -60,13 +60,13 @@ class TestAppBondLedgerTokenAddressHistoryLedgerIdGETJPN:
 
         # request target API
         req_param = {
+            "locale": "jpn",
             "latest_flg": 0
         }
         resp = client.get(
             self.base_url.format(token_address, 1),
             params=req_param,
             headers={
-                "country-code": "jpn",
                 "issuer-address": issuer_address,
             }
         )
@@ -191,9 +191,9 @@ class TestAppBondLedgerTokenAddressHistoryLedgerIdGETJPN:
         _template.payment_amount = 30
         _template.payment_date = "20211231"
         _template.payment_status = False
-        _template.ledger_admin_name = "ledger_admin_name_test"
-        _template.ledger_admin_address = "ledger_admin_address_test"
-        _template.ledger_admin_location = "ledger_admin_location_test"
+        _template.hq_name = "hq_name_test"
+        _template.hq_address = "hq_address_test"
+        _template.hq_office_address = "hq_office_address_test"
         db.add(_template)
 
         _idx_personal_info_1 = IDXPersonalInfo()
@@ -216,13 +216,13 @@ class TestAppBondLedgerTokenAddressHistoryLedgerIdGETJPN:
         # request target API
         with token_get_mock as token_get_mock_patch, personal_get_info_mock as personal_get_info_mock_patch:
             req_param = {
+                "locale": "jpn",
                 "latest_flg": 1
             }
             resp = client.get(
                 self.base_url.format(token_address, 1),
                 params=req_param,
                 headers={
-                    "country-code": "jpn",
                     "issuer-address": issuer_address,
                 }
             )
@@ -247,9 +247,9 @@ class TestAppBondLedgerTokenAddressHistoryLedgerIdGETJPN:
                 "社債の種類": "bond_type_test"
             },
             "社債原簿管理人": {
-                "氏名または名称": "ledger_admin_name_test",
-                "住所": "ledger_admin_address_test",
-                "事務取扱場所": "ledger_admin_location_test"
+                "氏名または名称": "hq_name_test",
+                "住所": "hq_address_test",
+                "事務取扱場所": "hq_office_address_test"
             },
             "社債権者": [
                 {
@@ -413,9 +413,9 @@ class TestAppBondLedgerTokenAddressHistoryLedgerIdGETJPN:
         _template.payment_amount = 30
         _template.payment_date = "20211231"
         _template.payment_status = False
-        _template.ledger_admin_name = "ledger_admin_name_test"
-        _template.ledger_admin_address = "ledger_admin_address_test"
-        _template.ledger_admin_location = "ledger_admin_location_test"
+        _template.hq_name = "hq_name_test"
+        _template.hq_address = "hq_address_test"
+        _template.hq_office_address = "hq_office_address_test"
         db.add(_template)
 
         # Mock
@@ -429,13 +429,13 @@ class TestAppBondLedgerTokenAddressHistoryLedgerIdGETJPN:
             personal_get_info_mock_patch.side_effect = [personal_info_1, personal_info_2]
 
             req_param = {
+                "locale": "jpn",
                 "latest_flg": 1
             }
             resp = client.get(
                 self.base_url.format(token_address, 1),
                 params=req_param,
                 headers={
-                    "country-code": "jpn",
                     "issuer-address": issuer_address,
                 }
             )
@@ -463,9 +463,9 @@ class TestAppBondLedgerTokenAddressHistoryLedgerIdGETJPN:
                 "社債の種類": "bond_type_test"
             },
             "社債原簿管理人": {
-                "氏名または名称": "ledger_admin_name_test",
-                "住所": "ledger_admin_address_test",
-                "事務取扱場所": "ledger_admin_location_test"
+                "氏名または名称": "hq_name_test",
+                "住所": "hq_address_test",
+                "事務取扱場所": "hq_office_address_test"
             },
             "社債権者": [
                 {

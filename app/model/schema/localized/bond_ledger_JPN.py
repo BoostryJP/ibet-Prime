@@ -34,9 +34,9 @@ class CreateUpdateBondLedgerTemplateRequestJPN(BaseModel):
     payment_amount: Optional[int]
     payment_date: Optional[str]
     payment_status: Optional[bool]
-    ledger_admin_name: str
-    ledger_admin_address: str
-    ledger_admin_location: str
+    hq_name: str
+    hq_address: str
+    hq_office_address: str
 
     @validator("bond_name")
     def bond_name_length_is_less_than_200(cls, v):
@@ -86,20 +86,20 @@ class CreateUpdateBondLedgerTemplateRequestJPN(BaseModel):
                 raise ValueError("The date format must be YYYYMMDD")
         return v
 
-    @validator("ledger_admin_name")
-    def ledger_admin_name_length_is_less_than_200(cls, v):
+    @validator("hq_name")
+    def hq_name_length_is_less_than_200(cls, v):
         if len(v) > 200:
             raise ValueError("The length must be less than or equal to 200")
         return v
 
-    @validator("ledger_admin_address")
-    def ledger_admin_address_length_is_less_than_200(cls, v):
+    @validator("hq_address")
+    def hq_address_length_is_less_than_200(cls, v):
         if len(v) > 200:
             raise ValueError("The length must be less than or equal to 200")
         return v
 
-    @validator("ledger_admin_location")
-    def ledger_admin_location_length_is_less_than_200(cls, v):
+    @validator("hq_office_address")
+    def hq_office_address_length_is_less_than_200(cls, v):
         if len(v) > 200:
             raise ValueError("The length must be less than or equal to 200")
         return v

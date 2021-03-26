@@ -57,9 +57,9 @@ class TestAppBondLedgerTokenAddressTemplateGET:
             "payment_amount": 30,
             "payment_date": "20211231",
             "payment_status": False,
-            "ledger_admin_name": "ledger_admin_name_test",
-            "ledger_admin_address": "ledger_admin_address_test",
-            "ledger_admin_location": "ledger_admin_location_test",
+            "hq_name": "hq_name_test",
+            "hq_address": "hq_address_test",
+            "hq_office_address": "hq_location_test",
         }
         mock_localized_func.side_effect = [
             mock_resp
@@ -68,8 +68,10 @@ class TestAppBondLedgerTokenAddressTemplateGET:
         # request target API
         resp = client.get(
             self.base_url.format(token_address),
+            params={
+                "locale": "jpn",
+            },
             headers={
-                "country-code": "jpn",
                 "issuer-address": issuer_address,
             }
         )
@@ -103,7 +105,7 @@ class TestAppBondLedgerTokenAddressTemplateGET:
             },
             "detail": [
                 {
-                    "loc": ["header", "country-code"],
+                    "loc": ["query", "locale"],
                     "msg": "field required",
                     "type": "value_error.missing"
                 },
@@ -125,8 +127,10 @@ class TestAppBondLedgerTokenAddressTemplateGET:
         # request target API
         resp = client.get(
             self.base_url.format(token_address),
+            params={
+                "locale": "usa",
+            },
             headers={
-                "country-code": "usa",
                 "issuer-address": issuer_address,
             }
         )
@@ -138,7 +142,7 @@ class TestAppBondLedgerTokenAddressTemplateGET:
                 "code": 1,
                 "title": "NotFound"
             },
-            "detail": "Not Supported country-code:usa"
+            "detail": "Not Supported locale:usa"
         }
 
     # <Error_3>
@@ -151,8 +155,10 @@ class TestAppBondLedgerTokenAddressTemplateGET:
         # request target API
         resp = client.get(
             self.base_url.format(token_address),
+            params={
+                "locale": "jpn",
+            },
             headers={
-                "country-code": "jpn",
                 "issuer-address": issuer_address,
             }
         )

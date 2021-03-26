@@ -16,7 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from datetime import timezone, timedelta
+from typing import Optional
+from datetime import timezone
 
 from sqlalchemy.orm import Session
 
@@ -25,32 +26,49 @@ from app.model.db import BondLedger, IDXPersonalInfo, CorporateBondLedgerTemplat
 from app.model.schema import CreateUpdateBondLedgerTemplateRequestJPN
 from app.exceptions import InvalidParameterError
 
-JST = timezone(timedelta(hours=+9), "JST")
-
 
 # GET: /bond_ledger/{token_address}/history
 def list_all_bond_ledger_history(
         token_address: str,
+        offset: Optional[int],
+        limit: Optional[int],
         db: Session):
     """List all Bond Ledger (JPN)"""
 
-    _bond_ledger_list = db.query(BondLedger). \
+    query = db.query(BondLedger). \
         filter(BondLedger.token_address == token_address). \
-        filter(BondLedger.country_code == "JPN"). \
-        order_by(BondLedger.id). \
-        all()
+        filter(BondLedger.country_code == "JPN").\
+        order_by(BondLedger.id)
+    count = query.count()
 
-    resp = []
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+
+    _bond_ledger_list = query.all()
+
+    bond_ledgers = []
     for _bond_ledger in _bond_ledger_list:
-        created_jst = _bond_ledger.bond_ledger_created.replace(tzinfo=timezone.utc).astimezone(JST)
-        created_formatted = created_jst.strftime("%Y/%m/%d %H:%M:%S %z")
+        created_formatted = _bond_ledger.bond_ledger_created. \
+            replace(tzinfo=timezone.utc).strftime("%Y/%m/%d %H:%M:%S %z")
         bond_ledger_dict = {
             "id": _bond_ledger.id,
             "token_address": _bond_ledger.token_address,
             "country_code": _bond_ledger.country_code,
             "created": created_formatted,
         }
-        resp.append(bond_ledger_dict)
+        bond_ledgers.append(bond_ledger_dict)
+
+    resp = {
+        "result_set": {
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": count
+        },
+        "bond_ledgers": bond_ledgers
+    }
 
     return resp
 
@@ -92,11 +110,11 @@ def retrieve_bond_ledger_history(
         payment_info["払込状況"] = _ledger_template.payment_status
         bond_info["社債の種類"] = _ledger_template.bond_type
 
-        # Update Ledger Admin
-        ledger_admin = resp["社債原簿管理人"]
-        ledger_admin["氏名または名称"] = _ledger_template.ledger_admin_name
-        ledger_admin["住所"] = _ledger_template.ledger_admin_address
-        ledger_admin["事務取扱場所"] = _ledger_template.ledger_admin_location
+        # Update Headquarters
+        headquarters = resp["社債原簿管理人"]
+        headquarters["氏名または名称"] = _ledger_template.hq_name
+        headquarters["住所"] = _ledger_template.hq_address
+        headquarters["事務取扱場所"] = _ledger_template.hq_office_address
 
         # Update Corporate Creditors
         _token_contract = IbetStraightBondContract.get(token_address)
@@ -145,9 +163,9 @@ def retrieve_bond_ledger_template(
         "payment_amount": _ledger_template.payment_amount,
         "payment_date": _ledger_template.payment_date,
         "payment_status": _ledger_template.payment_status,
-        "ledger_admin_name": _ledger_template.ledger_admin_name,
-        "ledger_admin_address": _ledger_template.ledger_admin_address,
-        "ledger_admin_location": _ledger_template.ledger_admin_location,
+        "hq_name": _ledger_template.hq_name,
+        "hq_address": _ledger_template.hq_address,
+        "hq_office_address": _ledger_template.hq_office_address,
     }
 
     return resp
@@ -180,9 +198,9 @@ def create_update_bond_ledger_template(
     _ledger_template.payment_amount = template.payment_amount
     _ledger_template.payment_date = template.payment_date
     _ledger_template.payment_status = template.payment_status
-    _ledger_template.ledger_admin_name = template.ledger_admin_name
-    _ledger_template.ledger_admin_address = template.ledger_admin_address
-    _ledger_template.ledger_admin_location = template.ledger_admin_location
+    _ledger_template.hq_name = template.hq_name
+    _ledger_template.hq_address = template.hq_address
+    _ledger_template.hq_office_address = template.hq_office_address
 
     db.merge(_ledger_template)
     db.commit()

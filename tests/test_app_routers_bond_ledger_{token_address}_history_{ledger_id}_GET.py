@@ -63,13 +63,13 @@ class TestAppBondLedgerTokenAddressHistoryLedgerIdGET:
 
         # request target API
         req_param = {
+            "locale": "jpn",
             "latest_flg": 0
         }
         resp = client.get(
             self.base_url.format(token_address, 1),
             params=req_param,
             headers={
-                "country-code": "jpn",
                 "issuer-address": issuer_address,
             }
         )
@@ -103,12 +103,12 @@ class TestAppBondLedgerTokenAddressHistoryLedgerIdGET:
             },
             "detail": [
                 {
-                    "loc": ["query", "latest_flg"],
+                    "loc": ["query", "locale"],
                     "msg": "field required",
                     "type": "value_error.missing"
                 },
                 {
-                    "loc": ["header", "country-code"],
+                    "loc": ["query", "latest_flg"],
                     "msg": "field required",
                     "type": "value_error.missing"
                 },
@@ -129,13 +129,13 @@ class TestAppBondLedgerTokenAddressHistoryLedgerIdGET:
 
         # request target API
         req_param = {
+            "locale": "jpn",
             "latest_flg": -1
         }
         resp = client.get(
             self.base_url.format(token_address, 1),
             params=req_param,
             headers={
-                "country-code": "usa",
                 "issuer-address": issuer_address,
             }
         )
@@ -161,13 +161,13 @@ class TestAppBondLedgerTokenAddressHistoryLedgerIdGET:
 
         # request target API
         req_param = {
+            "locale": "jpn",
             "latest_flg": 2
         }
         resp = client.get(
             self.base_url.format(token_address, 1),
             params=req_param,
             headers={
-                "country-code": "usa",
                 "issuer-address": issuer_address,
             }
         )
@@ -200,13 +200,13 @@ class TestAppBondLedgerTokenAddressHistoryLedgerIdGET:
 
         # request target API
         req_param = {
+            "locale": "usa",
             "latest_flg": 0
         }
         resp = client.get(
             self.base_url.format(token_address, 1),
             params=req_param,
             headers={
-                "country-code": "usa",
                 "issuer-address": issuer_address,
             }
         )
@@ -218,7 +218,7 @@ class TestAppBondLedgerTokenAddressHistoryLedgerIdGET:
                 "code": 1,
                 "title": "NotFound"
             },
-            "detail": "Not Supported country-code:usa"
+            "detail": "Not Supported locale:usa"
         }
 
     # <Error_4>
@@ -230,13 +230,13 @@ class TestAppBondLedgerTokenAddressHistoryLedgerIdGET:
 
         # request target API
         req_param = {
+            "locale": "jpn",
             "latest_flg": 0
         }
         resp = client.get(
             self.base_url.format(token_address, 1),
             params=req_param,
             headers={
-                "country-code": "jpn",
                 "issuer-address": issuer_address,
             }
         )
@@ -269,13 +269,13 @@ class TestAppBondLedgerTokenAddressHistoryLedgerIdGET:
 
         # request target API
         req_param = {
+            "locale": "jpn",
             "latest_flg": 0
         }
         resp = client.get(
             self.base_url.format(token_address, 1),
             params=req_param,
             headers={
-                "country-code": "jpn",
                 "issuer-address": issuer_address,
             }
         )

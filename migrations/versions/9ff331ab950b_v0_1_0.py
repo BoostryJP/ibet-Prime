@@ -1,18 +1,16 @@
 """v0.1.0
-
-Revision ID: 8126fe3c0d4a
-Revises: 
-Create Date: 2021-03-25 19:24:47.202557
-
+Revision ID: 9ff331ab950b
+Revises:
+Create Date: 2021-03-19 21:03:52.102757
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
+
 
 from app.database import get_db_schema
 
 # revision identifiers, used by Alembic.
-revision = '8126fe3c0d4a'
+revision = '9ff331ab950b'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -42,16 +40,6 @@ def upgrade():
     sa.Column('rsa_passphrase', sa.String(length=2000), nullable=True),
     sa.PrimaryKeyConstraint('issuer_address')
     , schema=get_db_schema())
-    op.create_table('bond_ledger',
-    sa.Column('created', sa.DateTime(), nullable=True),
-    sa.Column('modified', sa.DateTime(), nullable=True),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('token_address', sa.String(length=42), nullable=True),
-    sa.Column('ledger', sa.JSON(), nullable=True),
-    sa.Column('country_code', sa.String(length=3), nullable=True),
-    sa.Column('bond_ledger_created', sa.DateTime(), nullable=False),
-    sa.PrimaryKeyConstraint('id')
-    , schema=get_db_schema())
     op.create_table('bulk_transfer',
     sa.Column('created', sa.DateTime(), nullable=True),
     sa.Column('modified', sa.DateTime(), nullable=True),
@@ -80,27 +68,6 @@ def upgrade():
     , schema=get_db_schema())
     op.create_index(op.f('ix_bulk_transfer_upload_issuer_address'), 'bulk_transfer_upload', ['issuer_address'], unique=False, schema=get_db_schema())
     op.create_index(op.f('ix_bulk_transfer_upload_status'), 'bulk_transfer_upload', ['status'], unique=False, schema=get_db_schema())
-    op.create_table('corporate_bond_ledger_template_jpn',
-    sa.Column('created', sa.DateTime(), nullable=True),
-    sa.Column('modified', sa.DateTime(), nullable=True),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('token_address', sa.String(length=42), nullable=True),
-    sa.Column('issuer_address', sa.String(length=42), nullable=True),
-    sa.Column('bond_name', sa.String(length=200), nullable=False),
-    sa.Column('bond_description', sa.String(length=1000), nullable=False),
-    sa.Column('bond_type', sa.String(length=1000), nullable=False),
-    sa.Column('total_amount', sa.BigInteger(), nullable=False),
-    sa.Column('face_value', sa.Integer(), nullable=False),
-    sa.Column('payment_amount', sa.BigInteger(), nullable=True),
-    sa.Column('payment_date', sa.String(length=8), nullable=True),
-    sa.Column('payment_status', sa.Boolean(), nullable=False),
-    sa.Column('ledger_admin_name', sa.String(length=200), nullable=False),
-    sa.Column('ledger_admin_address', sa.String(length=200), nullable=False),
-    sa.Column('ledger_admin_location', sa.String(length=200), nullable=False),
-    sa.PrimaryKeyConstraint('id')
-    , schema=get_db_schema())
-    op.create_index(op.f('ix_corporate_bond_ledger_template_jpn_issuer_address'), 'corporate_bond_ledger_template_jpn', ['issuer_address'], unique=False, schema=get_db_schema())
-    op.create_index(op.f('ix_corporate_bond_ledger_template_jpn_token_address'), 'corporate_bond_ledger_template_jpn', ['token_address'], unique=False, schema=get_db_schema())
     op.create_table('idx_personal_info',
     sa.Column('created', sa.DateTime(), nullable=True),
     sa.Column('modified', sa.DateTime(), nullable=True),
@@ -163,45 +130,11 @@ def upgrade():
     sa.Column('tx_from', sa.String(length=42), nullable=False),
     sa.PrimaryKeyConstraint('tx_from')
     , schema=get_db_schema())
-    op.create_table('utxo',
-    sa.Column('created', sa.DateTime(), nullable=True),
-    sa.Column('modified', sa.DateTime(), nullable=True),
-    sa.Column('transaction_hash', sa.String(length=66), nullable=False),
-    sa.Column('account_address', sa.String(length=42), nullable=True),
-    sa.Column('token_address', sa.String(length=42), nullable=True),
-    sa.Column('amount', sa.Integer(), nullable=True),
-    sa.Column('block_number', sa.BigInteger(), nullable=True),
-    sa.Column('block_timestamp', sa.DateTime(), nullable=True),
-    sa.PrimaryKeyConstraint('transaction_hash')
-    , schema=get_db_schema())
-    op.create_index(op.f('ix_utxo_account_address'), 'utxo', ['account_address'], unique=False, schema=get_db_schema())
-    op.create_index(op.f('ix_utxo_token_address'), 'utxo', ['token_address'], unique=False, schema=get_db_schema())
-    op.create_table('utxo_block_number',
-    sa.Column('created', sa.DateTime(), nullable=True),
-    sa.Column('modified', sa.DateTime(), nullable=True),
-    sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False),
-    sa.Column('latest_block_number', sa.BigInteger(), nullable=True),
-    sa.PrimaryKeyConstraint('id')
-    , schema=get_db_schema())
-    op.drop_table('bond_ledger_block_number', schema=get_db_schema())
     # ### end Alembic commands ###
 
 
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
-    op.create_table('bond_ledger_block_number',
-    sa.Column('created', postgresql.TIMESTAMP(), autoincrement=False, nullable=True),
-    sa.Column('modified', postgresql.TIMESTAMP(), autoincrement=False, nullable=True),
-    sa.Column('id', sa.BIGINT(), autoincrement=True, nullable=False),
-    sa.Column('latest_block_number', sa.BIGINT(), autoincrement=False, nullable=True),
-    sa.Column('country_code', sa.VARCHAR(length=3), autoincrement=False, nullable=True),
-    sa.PrimaryKeyConstraint('id', name='bond_ledger_block_number_pkey'),
-    sa.UniqueConstraint('country_code', name='bond_ledger_block_number_country_code_key')
-    , schema=get_db_schema())
-    op.drop_table('utxo_block_number', schema=get_db_schema())
-    op.drop_index(op.f('ix_utxo_token_address'), table_name='utxo', schema=get_db_schema())
-    op.drop_index(op.f('ix_utxo_account_address'), table_name='utxo', schema=get_db_schema())
-    op.drop_table('utxo', schema=get_db_schema())
     op.drop_table('tx_management', schema=get_db_schema())
     op.drop_table('token', schema=get_db_schema())
     op.drop_index(op.f('ix_idx_transfer_transfer_to'), table_name='idx_transfer', schema=get_db_schema())
@@ -216,9 +149,6 @@ def downgrade():
     op.drop_index(op.f('ix_idx_personal_info_issuer_address'), table_name='idx_personal_info', schema=get_db_schema())
     op.drop_index(op.f('ix_idx_personal_info_account_address'), table_name='idx_personal_info', schema=get_db_schema())
     op.drop_table('idx_personal_info', schema=get_db_schema())
-    op.drop_index(op.f('ix_corporate_bond_ledger_template_jpn_token_address'), table_name='corporate_bond_ledger_template_jpn', schema=get_db_schema())
-    op.drop_index(op.f('ix_corporate_bond_ledger_template_jpn_issuer_address'), table_name='corporate_bond_ledger_template_jpn', schema=get_db_schema())
-    op.drop_table('corporate_bond_ledger_template_jpn', schema=get_db_schema())
     op.drop_index(op.f('ix_bulk_transfer_upload_status'), table_name='bulk_transfer_upload', schema=get_db_schema())
     op.drop_index(op.f('ix_bulk_transfer_upload_issuer_address'), table_name='bulk_transfer_upload', schema=get_db_schema())
     op.drop_table('bulk_transfer_upload', schema=get_db_schema())
@@ -226,7 +156,6 @@ def downgrade():
     op.drop_index(op.f('ix_bulk_transfer_status'), table_name='bulk_transfer', schema=get_db_schema())
     op.drop_index(op.f('ix_bulk_transfer_issuer_address'), table_name='bulk_transfer', schema=get_db_schema())
     op.drop_table('bulk_transfer', schema=get_db_schema())
-    op.drop_table('bond_ledger', schema=get_db_schema())
     op.drop_table('account_rsa_key_temporary', schema=get_db_schema())
     op.drop_table('account', schema=get_db_schema())
     # ### end Alembic commands ###

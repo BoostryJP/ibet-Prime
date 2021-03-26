@@ -57,15 +57,17 @@ class TestAppBondLedgerTokenAddressTemplatePOSTJPN:
             "payment_amount": 30,
             "payment_date": "20211231",
             "payment_status": False,
-            "ledger_admin_name": "ledger_admin_name_test",
-            "ledger_admin_address": "ledger_admin_address_test",
-            "ledger_admin_location": "ledger_admin_location_test",
+            "hq_name": "hq_name_test",
+            "hq_address": "hq_address_test",
+            "hq_office_address": "hq_office_address_test",
         }
         resp = client.post(
             self.base_url.format(token_address),
             json=req_param,
+            params={
+                "locale": "jpn",
+            },
             headers={
-                "country-code": "jpn",
                 "issuer-address": issuer_address,
             }
         )
@@ -84,9 +86,9 @@ class TestAppBondLedgerTokenAddressTemplatePOSTJPN:
         assert _templete.payment_amount == 30
         assert _templete.payment_date == "20211231"
         assert _templete.payment_status == False
-        assert _templete.ledger_admin_name == "ledger_admin_name_test"
-        assert _templete.ledger_admin_address == "ledger_admin_address_test"
-        assert _templete.ledger_admin_location == "ledger_admin_location_test"
+        assert _templete.hq_name == "hq_name_test"
+        assert _templete.hq_address == "hq_address_test"
+        assert _templete.hq_office_address == "hq_office_address_test"
 
     # <Normal_2>
     # Update
@@ -115,9 +117,9 @@ class TestAppBondLedgerTokenAddressTemplatePOSTJPN:
         _templete.payment_amount = 30
         _templete.payment_date = "20211231"
         _templete.payment_status = False
-        _templete.ledger_admin_name = "ledger_admin_name_test"
-        _templete.ledger_admin_address = "ledger_admin_address_test"
-        _templete.ledger_admin_location = "ledger_admin_location_test"
+        _templete.hq_name = "hq_name_test"
+        _templete.hq_address = "hq_address_test"
+        _templete.hq_office_address = "hq_office_address_test"
 
         # request target API
         req_param = {
@@ -129,15 +131,17 @@ class TestAppBondLedgerTokenAddressTemplatePOSTJPN:
             "payment_amount": 60,
             "payment_date": "20301231",
             "payment_status": True,
-            "ledger_admin_name": "ledger_admin_name_test_mod",
-            "ledger_admin_address": "ledger_admin_address_test_mod",
-            "ledger_admin_location": "ledger_admin_location_test_mod",
+            "hq_name": "hq_name_test_mod",
+            "hq_address": "hq_address_test_mod",
+            "hq_office_address": "hq_office_address_test_mod",
         }
         resp = client.post(
             self.base_url.format(token_address),
             json=req_param,
+            params={
+                "locale": "jpn",
+            },
             headers={
-                "country-code": "jpn",
                 "issuer-address": issuer_address,
             }
         )
@@ -156,9 +160,9 @@ class TestAppBondLedgerTokenAddressTemplatePOSTJPN:
         assert _templete.payment_amount == 60
         assert _templete.payment_date == "20301231"
         assert _templete.payment_status == True
-        assert _templete.ledger_admin_name == "ledger_admin_name_test_mod"
-        assert _templete.ledger_admin_address == "ledger_admin_address_test_mod"
-        assert _templete.ledger_admin_location == "ledger_admin_location_test_mod"
+        assert _templete.hq_name == "hq_name_test_mod"
+        assert _templete.hq_address == "hq_address_test_mod"
+        assert _templete.hq_office_address == "hq_office_address_test_mod"
 
     ###########################################################################
     # Error Case
@@ -191,17 +195,19 @@ class TestAppBondLedgerTokenAddressTemplatePOSTJPN:
         _templete.payment_amount = 30
         _templete.payment_date = "20211231"
         _templete.payment_status = False
-        _templete.ledger_admin_name = "ledger_admin_name_test"
-        _templete.ledger_admin_address = "ledger_admin_address_test"
-        _templete.ledger_admin_location = "ledger_admin_location_test"
+        _templete.hq_name = "hq_name_test"
+        _templete.hq_address = "hq_address_test"
+        _templete.hq_office_address = "hq_office_address_test"
 
         # request target API
         req_param = {}
         resp = client.post(
             self.base_url.format(token_address),
             json=req_param,
+            params={
+                "locale": "jpn",
+            },
             headers={
-                "country-code": "jpn",
                 "issuer-address": issuer_address,
             }
         )
@@ -240,17 +246,17 @@ class TestAppBondLedgerTokenAddressTemplatePOSTJPN:
                     "type": "value_error.missing"
                 },
                 {
-                    "loc": ["body", "ledger_admin_name"],
+                    "loc": ["body", "hq_name"],
                     "msg": "field required",
                     "type": "value_error.missing"
                 },
                 {
-                    "loc": ["body", "ledger_admin_address"],
+                    "loc": ["body", "hq_address"],
                     "msg": "field required",
                     "type": "value_error.missing"
                 },
                 {
-                    "loc": ["body", "ledger_admin_location"],
+                    "loc": ["body", "hq_office_address"],
                     "msg": "field required",
                     "type": "value_error.missing"
                 }
@@ -284,9 +290,9 @@ class TestAppBondLedgerTokenAddressTemplatePOSTJPN:
         _templete.payment_amount = 30
         _templete.payment_date = "20211231"
         _templete.payment_status = False
-        _templete.ledger_admin_name = "ledger_admin_name_test"
-        _templete.ledger_admin_address = "ledger_admin_address_test"
-        _templete.ledger_admin_location = "ledger_admin_location_test"
+        _templete.hq_name = "hq_name_test"
+        _templete.hq_address = "hq_address_test"
+        _templete.hq_office_address = "hq_office_address_test"
 
         # request target API
         req_param = {
@@ -327,21 +333,23 @@ class TestAppBondLedgerTokenAddressTemplatePOSTJPN:
             "face_value": 100_000_001,
             "payment_amount": 1_000_000_000_001,
             "payment_date": "2021/12/31",
-            "ledger_admin_name": "1234567890123456789012345678901234567890123456789012345678901234567890"
+            "hq_name": "1234567890123456789012345678901234567890123456789012345678901234567890"
+                       "1234567890123456789012345678901234567890123456789012345678901234567890"
+                       "1234567890123456789012345678901234567890123456789012345678901",
+            "hq_address": "1234567890123456789012345678901234567890123456789012345678901234567890"
+                          "1234567890123456789012345678901234567890123456789012345678901234567890"
+                          "1234567890123456789012345678901234567890123456789012345678901",
+            "hq_office_address": "1234567890123456789012345678901234567890123456789012345678901234567890"
                                  "1234567890123456789012345678901234567890123456789012345678901234567890"
                                  "1234567890123456789012345678901234567890123456789012345678901",
-            "ledger_admin_address": "1234567890123456789012345678901234567890123456789012345678901234567890"
-                                    "1234567890123456789012345678901234567890123456789012345678901234567890"
-                                    "1234567890123456789012345678901234567890123456789012345678901",
-            "ledger_admin_location": "1234567890123456789012345678901234567890123456789012345678901234567890"
-                                     "1234567890123456789012345678901234567890123456789012345678901234567890"
-                                     "1234567890123456789012345678901234567890123456789012345678901",
         }
         resp = client.post(
             self.base_url.format(token_address),
             json=req_param,
+            params={
+                "locale": "jpn",
+            },
             headers={
-                "country-code": "jpn",
                 "issuer-address": issuer_address,
             }
         )
@@ -390,17 +398,17 @@ class TestAppBondLedgerTokenAddressTemplatePOSTJPN:
                     "type": "value_error"
                 },
                 {
-                    "loc": ["body", "ledger_admin_name"],
+                    "loc": ["body", "hq_name"],
                     "msg": "The length must be less than or equal to 200",
                     "type": "value_error"
                 },
                 {
-                    "loc": ["body", "ledger_admin_address"],
+                    "loc": ["body", "hq_address"],
                     "msg": "The length must be less than or equal to 200",
                     "type": "value_error"
                 },
                 {
-                    "loc": ["body", "ledger_admin_location"],
+                    "loc": ["body", "hq_office_address"],
                     "msg": "The length must be less than or equal to 200",
                     "type": "value_error"
                 }
@@ -417,15 +425,17 @@ class TestAppBondLedgerTokenAddressTemplatePOSTJPN:
             "payment_amount": -1,
             "payment_date": "20301131",  # Invalid date
             "payment_status": True,
-            "ledger_admin_name": "ledger_admin_name_test_mod",
-            "ledger_admin_address": "ledger_admin_address_test_mod",
-            "ledger_admin_location": "ledger_admin_location_test_mod",
+            "hq_name": "hq_name_test_mod",
+            "hq_address": "hq_address_test_mod",
+            "hq_office_address": "hq_office_address_test_mod",
         }
         resp = client.post(
             self.base_url.format(token_address),
             json=req_param,
+            params={
+                "locale": "jpn",
+            },
             headers={
-                "country-code": "jpn",
                 "issuer-address": issuer_address,
             }
         )

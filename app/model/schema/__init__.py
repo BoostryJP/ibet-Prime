@@ -16,14 +16,17 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from .index import E2EEResponse
+from .index import (
+    E2EEResponse,
+    ResultSetResponse
+)
 from .account import (
     AccountCreateKeyRequest,
     AccountGenerateRsaKeyRequest,
     AccountResponse
 )
 from .bond_ledger import (
-    BondLedgerResponse
+    ListAllBondLedgerHistoryResponse
 )
 from .token import (
     IbetStraightBondCreate,
