@@ -25,6 +25,7 @@ from web3.middleware import geth_poa_middleware
 from web3.exceptions import TimeExhausted
 from eth_utils import to_checksum_address
 from sqlalchemy import create_engine
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from config import WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT, DATABASE_URL
@@ -45,6 +46,10 @@ class ContractUtils:
         :return: ABI, bytecode, deployedBytecode
         """
         contract_json = json.load(open(f"contracts/{contract_name}.json", "r"))
+
+        if "bytecode" not in contract_json.keys():
+            contract_json["bytecode"] = None
+            contract_json["deployedBytecode"] = None
 
         return contract_json["abi"], \
                contract_json["bytecode"], \
@@ -125,8 +130,14 @@ class ContractUtils:
         _tx_from = transaction["from"]
 
         # local database session
-        DB_URI = DATABASE_URL
-        db_engine = create_engine(DB_URI, echo=False)
+        DB_URI = DATABASE_URL.replace(
+            "postgresql://", "postgresql+psycopg2://"
+        )
+        db_engine = create_engine(
+            DB_URI,
+            connect_args={'options': '-c lock_timeout=10000'},
+            echo=False
+        )
         local_session = Session(autocommit=False, autoflush=True, bind=db_engine)
 
         # exclusive control within transaction execution address
@@ -138,12 +149,16 @@ class ContractUtils:
                 raise TimeExhausted
             else:
                 # lock record
-                _tm = local_session.query(TransactionLock). \
-                    filter(TransactionLock.tx_from == _tx_from). \
-                    populate_existing(). \
-                    with_for_update(). \
-                    first()
-                break
+                try:
+                    _tm = local_session.query(TransactionLock). \
+                        filter(TransactionLock.tx_from == _tx_from). \
+                        populate_existing(). \
+                        with_for_update(). \
+                        first()
+                    break
+                except OperationalError:
+                    local_session.close()
+                    raise TimeExhausted
 
         try:
             nonce = web3.eth.getTransactionCount(_tx_from)
