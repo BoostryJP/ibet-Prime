@@ -71,7 +71,10 @@ class ContractUtils:
         :return: contract address, ABI, transaction hash
         """
         contract_file = f"contracts/{contract_name}.json"
-        contract_json = json.load(open(contract_file, "r"))
+        try:
+            contract_json = json.load(open(contract_file, "r"))
+        except FileNotFoundError as file_not_found_err:
+            raise SendTransactionError(file_not_found_err)
 
         contract = web3.eth.contract(
             abi=contract_json["abi"],
@@ -130,43 +133,37 @@ class ContractUtils:
         _tx_from = transaction["from"]
 
         # local database session
-        DB_URI = DATABASE_URL.replace(
-            "postgresql://", "postgresql+psycopg2://"
-        )
+        DB_URI = DATABASE_URL
         db_engine = create_engine(
             DB_URI,
-            connect_args={'options': '-c lock_timeout=10000'},
+            connect_args={"options": "-c lock_timeout=10000"},
             echo=False
         )
         local_session = Session(autocommit=False, autoflush=True, bind=db_engine)
 
-        # exclusive control within transaction execution address
+        # Exclusive control within transaction execution address
         # 10-sec timeout
-        start_time = time.time()
-        while True:
-            if time.time() - start_time > 10:
-                local_session.close()
-                raise TimeExhausted
-            else:
-                # lock record
-                try:
-                    _tm = local_session.query(TransactionLock). \
-                        filter(TransactionLock.tx_from == _tx_from). \
-                        populate_existing(). \
-                        with_for_update(). \
-                        first()
-                    break
-                except OperationalError:
-                    local_session.close()
-                    raise TimeExhausted
+        # Lock record
+        try:
+            _tm = local_session.query(TransactionLock). \
+                filter(TransactionLock.tx_from == _tx_from). \
+                populate_existing(). \
+                with_for_update(). \
+                first()
+        except OperationalError as op_err:
+            local_session.rollback()
+            local_session.close()
+            raise SendTransactionError(op_err)
 
         try:
+            # Get nonce
             nonce = web3.eth.getTransactionCount(_tx_from)
             transaction["nonce"] = nonce
             signed_tx = web3.eth.account.sign_transaction(
                 transaction_dict=transaction,
                 private_key=private_key
             )
+            # Send Transaction
             tx_hash = web3.eth.sendRawTransaction(signed_tx.rawTransaction.hex())
             txn_receipt = web3.eth.waitForTransactionReceipt(
                 transaction_hash=tx_hash,

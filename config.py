@@ -41,10 +41,11 @@ AUTH_LOGFILE = os.environ.get('AUTH_LOGFILE') or '/dev/stdout'
 
 # Database
 if 'pytest' in sys.modules:  # for unit test
-    DATABASE_URL = os.environ.get(
-        "TEST_DATABASE_URL") or 'postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb_test'
+    DATABASE_URL = os.environ.get("TEST_DATABASE_URL") or \
+                   'postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb_test'
 else:
-    DATABASE_URL = os.environ.get("DATABASE_URL") or 'postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb'
+    DATABASE_URL = os.environ.get("DATABASE_URL") or \
+                   'postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb'
 DATABASE_SCHEMA = os.environ.get('DATABASE_SCHEMA')
 DB_ECHO = True if CONFIG['database']['echo'] == 'yes' else False
 DB_AUTOCOMMIT = True

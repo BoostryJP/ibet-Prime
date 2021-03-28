@@ -16,7 +16,6 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import asyncio
 from unittest.mock import patch
 
 import pytest
@@ -24,20 +23,20 @@ import json
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
-from web3.exceptions import TimeExhausted
 from eth_keyfile import decode_keyfile_json
 
-from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from app.exceptions import SendTransactionError
-from config import WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT, DATABASE_URL
+from config import WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT
 from app.model.blockchain.utils import ContractUtils
 from app.model.db import TransactionLock
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+
+ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 
 class TestGetContractCode:
@@ -94,45 +93,41 @@ class TestGetContractCode:
 
 
 class TestDeployContract:
-    account_list = [
-        config_eth_account("user1"),
-        config_eth_account("user2")
-    ]
-
+    test_account = config_eth_account("user1")
     eoa_password = "password"
     private_key = decode_keyfile_json(
-        raw_keyfile_json=account_list[0]["keyfile_json"],
+        raw_keyfile_json=test_account["keyfile_json"],
         password=eoa_password.encode("utf-8")
     )
 
     test_contract_name = "IbetCoupon"
     test_arg = [
-        "sample_coupon_name", "sample", 100, account_list[1]["address"], "details",
-        "return_details", "memo", '20210531', True, "contractInformation",
-        "PrivacyPolicy"
+        "test_coupon_name",
+        "TEST",
+        100,
+        ZERO_ADDRESS,
+        "test_details",
+        "test_return_details",
+        "test_memo",
+        "20210531",
+        True,
+        "test_contract_information",
+        "test_privacy_policy"
     ]
 
     ###########################################################################
     # Normal Case
     ###########################################################################
     # <Normal_1>
-    def test_normal_1(self):
-        # mock
-        ContractUtils_send_transaction = patch(
-            target="app.model.blockchain.utils.ContractUtils.send_transaction",
-            return_value=("tx_hash", {"status": 1})
+    def test_normal_1(self, db):
+        rtn_contract_address, rtn_abi, rtn_tx_hash = ContractUtils.deploy_contract(
+            contract_name=self.test_contract_name,
+            args=self.test_arg,
+            deployer=self.test_account["address"],
+            private_key=self.private_key
         )
-
-        with ContractUtils_send_transaction:
-            rtn_contract_address, rtn_abi, rtn_tx_hash = ContractUtils.deploy_contract(
-                contract_name=self.test_contract_name,
-                args=self.test_arg,
-                deployer=self.account_list[0]["address"],
-                private_key=self.private_key
-            )
-            expected_abi = json.load(open(f"contracts/{self.test_contract_name}.json", 'r'))["abi"]
-            assert rtn_abi == expected_abi
-            assert rtn_tx_hash == "tx_hash"
+        expected_abi = json.load(open(f"contracts/{self.test_contract_name}.json", 'r'))["abi"]
+        assert rtn_abi == expected_abi
 
     ###########################################################################
     # Error Case
@@ -140,30 +135,22 @@ class TestDeployContract:
     # <Error_1>
     # Contract name does not exist
     def test_error_1(self):
-        # mock
-        ContractConstructor_buildTransaction = patch(
-            target="web3.contract.ContractConstructor.buildTransaction",
-            side_effect=TimeExhausted("TIME EXHAUSTED")
-        )
-
-        with ContractConstructor_buildTransaction:
-            with pytest.raises(SendTransactionError) as ex_info:
-                ContractUtils.deploy_contract(
-                    contract_name=self.test_contract_name,
-                    args=self.test_arg,
-                    deployer=self.account_list[0]["address"],
-                    private_key=self.private_key
-                )
-            assert str(ex_info.typename) == "SendTransactionError"
-            assert str(ex_info.value) == "TIME EXHAUSTED"
+        with pytest.raises(SendTransactionError) as ex_info:
+            ContractUtils.deploy_contract(
+                contract_name="NOT_EXIST_CONTRACT",
+                args=self.test_arg,
+                deployer=self.test_account["address"],
+                private_key=self.private_key
+            )
+        assert str(ex_info.typename) == "SendTransactionError"
 
     # <Error_2>
-    # Contract name does not exist
+    # Send transaction error
     def test_error_2(self):
         # mock
         ContractUtils_send_transaction = patch(
             target="app.model.blockchain.utils.ContractUtils.send_transaction",
-            side_effect=ConnectionError("TEST ERROR")
+            side_effect=SendTransactionError
         )
 
         with ContractUtils_send_transaction:
@@ -171,22 +158,17 @@ class TestDeployContract:
                 ContractUtils.deploy_contract(
                     contract_name=self.test_contract_name,
                     args=self.test_arg,
-                    deployer=self.account_list[0]["address"],
+                    deployer=self.test_account["address"],
                     private_key=self.private_key
                 )
         assert str(ex_info.typename) == "SendTransactionError"
-        assert str(ex_info.value) == "TEST ERROR"
 
 
 class TestGetContract:
-    account_list = [
-        config_eth_account("user1"),
-        config_eth_account("user2")
-    ]
-
+    test_account = config_eth_account("user1")
     eoa_password = "password"
     private_key = decode_keyfile_json(
-        raw_keyfile_json=account_list[0]["keyfile_json"],
+        raw_keyfile_json=test_account["keyfile_json"],
         password=eoa_password.encode("utf-8")
     )
 
@@ -231,30 +213,33 @@ class TestGetContract:
     def test_error_2(self):
         with pytest.raises(FileNotFoundError):
             ContractUtils.get_contract(
-                contract_name="NoExistContract",
+                contract_name="NotExistContract",
                 contract_address="0x986eBe386b1D04C8d57387b60628fD8BBeEFF1b6"
             )
 
 
 class TestSendTransaction:
-    account_list = [
-        config_eth_account("user1"),
-        config_eth_account("user2")
-    ]
-
+    test_account = config_eth_account("user1")
     eoa_password = "password"
     private_key = decode_keyfile_json(
-        raw_keyfile_json=account_list[0]["keyfile_json"],
+        raw_keyfile_json=test_account["keyfile_json"],
         password=eoa_password.encode("utf-8")
     )
 
     test_contract_name = "IbetCoupon"
     test_arg = [
-        "sample_coupon_name", "sample", 100, account_list[1]["address"], "details",
-        "return_details", "memo", '20210531', True, "contractInformation",
-        "PrivacyPolicy"
+        "test_coupon_name",
+        "TEST",
+        100,
+        ZERO_ADDRESS,
+        "test_details",
+        "test_return_details",
+        "test_memo",
+        "20210531",
+        True,
+        "test_contract_information",
+        "test_privacy_policy"
     ]
-
     contract_file = f"contracts/{test_contract_name}.json"
     contract_json = json.load(open(contract_file, "r"))
 
@@ -274,7 +259,7 @@ class TestSendTransaction:
         tx = contract.constructor(*self.test_arg).buildTransaction(
             transaction={
                 "chainId": CHAIN_ID,
-                "from": self.account_list[0]["address"],
+                "from": self.test_account["address"],
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0,
             }
@@ -288,12 +273,14 @@ class TestSendTransaction:
         assert rtn_tx_hash == rtn_receipt["transactionHash"].hex()
         assert rtn_receipt["status"] == 1
         assert rtn_receipt["to"] is None
-        assert rtn_receipt["from"] == self.account_list[0]["address"]
+        assert rtn_receipt["from"] == self.test_account["address"]
         assert web3.isAddress(rtn_receipt["contractAddress"])
 
     ###########################################################################
     # Error Case
     ###########################################################################
+    # <Error_1>
+    # Transaction Error
     def test_error_1(self, db: Session):
         # Contract
         contract = web3.eth.contract(
@@ -306,7 +293,7 @@ class TestSendTransaction:
         tx = contract.constructor(*self.test_arg).buildTransaction(
             transaction={
                 "chainId": CHAIN_ID,
-                "from": self.account_list[0]["address"],
+                "from": self.test_account["address"],
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0,
             }
@@ -328,6 +315,8 @@ class TestSendTransaction:
                     private_key=self.private_key
                 )
 
+    # <Error_2>
+    # Value Error
     def test_error_2(self, db: Session):
         # Contract
         contract = web3.eth.contract(
@@ -340,7 +329,7 @@ class TestSendTransaction:
         tx = contract.constructor(*self.test_arg).buildTransaction(
             transaction={
                 "chainId": CHAIN_ID,
-                "from": self.account_list[0]["address"],
+                "from": self.test_account["address"],
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0,
             }
@@ -359,41 +348,12 @@ class TestSendTransaction:
                     private_key=self.private_key
                 )
 
-    async def send_transaction(self, tx: dict):
-        ContractUtils.send_transaction(
-            transaction=tx,
-            private_key=self.private_key
-        )
-
-    @staticmethod
-    async def tx_lock_record(tx_from: str):
-        DB_URI = DATABASE_URL.replace(
-            "postgresql://", "postgresql+psycopg2://"
-        )
-        # 10-sec timeout
-        db_engine = create_engine(
-            DB_URI,
-            connect_args={'options': '-c lock_timeout=10000'},
-            echo=False
-        )
-        local_session = Session(autocommit=False, autoflush=True, bind=db_engine)
-
-        # exclusive control within transaction execution address
-        # lock record
-        try:
-            _tm = local_session.query(TransactionLock). \
-                filter(TransactionLock.tx_from == tx_from). \
-                populate_existing(). \
-                with_for_update(). \
-                first()
-            await asyncio.sleep(10)
-        finally:
-            local_session.close()
-
+    # <Error_3>
+    # Timeout waiting for lock release
     def test_error_3(self, db: Session):
-        # prepare data : TX
+        # prepare data : TX lock
         _tx_mng = TransactionLock()
-        _tx_mng.tx_from = self.account_list[0]["address"]
+        _tx_mng.tx_from = self.test_account["address"]
         db.add(_tx_mng)
         db.commit()
 
@@ -408,17 +368,24 @@ class TestSendTransaction:
         tx = contract.constructor(*self.test_arg).buildTransaction(
             transaction={
                 "chainId": CHAIN_ID,
-                "from": self.account_list[0]["address"],
+                "from": self.test_account["address"],
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0,
             }
         )
 
-        loop = asyncio.get_event_loop()
-        gather = asyncio.gather(
-            self.tx_lock_record(self.account_list[0]["address"]),
-            self.send_transaction(tx)
-        )
-        with pytest.raises(TimeExhausted) as ex_info:
-            loop.run_until_complete(gather)
-        assert ex_info.typename == "TimeExhausted"
+        # Transaction Lock
+        db.query(TransactionLock). \
+            filter(TransactionLock.tx_from == self.test_account["address"]). \
+            populate_existing(). \
+            with_for_update(). \
+            first()
+
+        with pytest.raises(SendTransactionError) as ex_info:
+            ContractUtils.send_transaction(
+                transaction=tx,
+                private_key=self.private_key
+            )
+        assert ex_info.typename == "SendTransactionError"
+
+        db.rollback()
