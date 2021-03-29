@@ -120,10 +120,11 @@ class Processor:
         utxo_block_number = self.__get_utxo_block_number()
         latest_block = web3.eth.blockNumber
 
-        if utxo_block_number == latest_block:
+        if utxo_block_number >= latest_block:
             LOG.debug("skip process")
             pass
         else:
+            LOG.info(f"syncing from={utxo_block_number}, to={latest_block}")
             for token_contract in self.token_contract_list:
                 self.__process_transfer(token_contract, utxo_block_number, latest_block)
             self.__set_utxo_block_number(latest_block)
