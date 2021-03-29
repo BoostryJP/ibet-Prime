@@ -19,8 +19,9 @@ SPDX-License-Identifier: Apache-2.0
 import uuid
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Query
 from fastapi.exceptions import HTTPException
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
 from eth_keyfile import decode_keyfile_json
 
@@ -33,6 +34,7 @@ from app.model.schema import (
     IbetStraightBondResponse,
     TokenAddressResponse,
     HolderResponse,
+    TransferHistoryResponse,
     BulkTransferUploadIdResponse,
     BulkTransferUploadResponse,
     BulkTransferResponse
@@ -45,7 +47,8 @@ from app.model.db import (
     IDXPosition,
     IDXPersonalInfo,
     BulkTransfer,
-    BulkTransferUpload
+    BulkTransferUpload,
+    IDXTransfer
 )
 from app.model.blockchain import IbetStraightBondContract
 from app.exceptions import (
@@ -474,9 +477,9 @@ async def retrieve_holder(
     return holder
 
 
-# POST: /bond/transfer
+# POST: /bond/transfers
 @router.post(
-    "/transfer",
+    "/transfers",
     response_model=None
 )
 async def transfer_ownership(
@@ -526,6 +529,61 @@ async def transfer_ownership(
         raise SendTransactionError("failed to send transaction")
 
     return
+
+
+# GET: /bond/transfers/{token_address}
+@router.get(
+    "/transfers/{token_address}",
+    response_model=TransferHistoryResponse
+)
+async def list_transfer_history(
+        token_address: str,
+        offset: Optional[int] = Query(None),
+        limit: Optional[int] = Query(None),
+        db: Session = Depends(db_session)
+):
+    """List token transfer history"""
+    # Get token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.token_address == token_address). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+
+    # Get transfer history
+    query = db.query(IDXTransfer). \
+        filter(IDXTransfer.token_address == token_address).\
+        order_by(desc(IDXTransfer.id))
+    total = query.count()
+
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+    _transfers = query.all()
+    count = query.count()
+
+    transfer_history = []
+    for _transfer in _transfers:
+        transfer_history.append({
+            "transaction_hash": _transfer.transaction_hash,
+            "token_address": token_address,
+            "from_address": _transfer.transfer_from,
+            "to_address": _transfer.transfer_to,
+            "amount": _transfer.amount,
+            "block_timestamp": _transfer.block_timestamp.strftime("%Y/%m/%d %H:%M:%S")
+        })
+
+    return {
+        "result_set": {
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": total
+        },
+        "transfer_history": transfer_history
+    }
 
 
 # POST: /bond/bulk_transfer

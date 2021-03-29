@@ -25,6 +25,7 @@ from web3.middleware import geth_poa_middleware
 from web3.exceptions import TimeExhausted
 from eth_utils import to_checksum_address
 from sqlalchemy import create_engine
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from config import WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT, DATABASE_URL
@@ -46,6 +47,10 @@ class ContractUtils:
         """
         contract_json = json.load(open(f"contracts/{contract_name}.json", "r"))
 
+        if "bytecode" not in contract_json.keys():
+            contract_json["bytecode"] = None
+            contract_json["deployedBytecode"] = None
+
         return contract_json["abi"], \
                contract_json["bytecode"], \
                contract_json["deployedBytecode"]
@@ -66,7 +71,10 @@ class ContractUtils:
         :return: contract address, ABI, transaction hash
         """
         contract_file = f"contracts/{contract_name}.json"
-        contract_json = json.load(open(contract_file, "r"))
+        try:
+            contract_json = json.load(open(contract_file, "r"))
+        except FileNotFoundError as file_not_found_err:
+            raise SendTransactionError(file_not_found_err)
 
         contract = web3.eth.contract(
             abi=contract_json["abi"],
@@ -126,32 +134,36 @@ class ContractUtils:
 
         # local database session
         DB_URI = DATABASE_URL
-        db_engine = create_engine(DB_URI, echo=False)
+        db_engine = create_engine(
+            DB_URI,
+            connect_args={"options": "-c lock_timeout=10000"},
+            echo=False
+        )
         local_session = Session(autocommit=False, autoflush=True, bind=db_engine)
 
-        # exclusive control within transaction execution address
+        # Exclusive control within transaction execution address
         # 10-sec timeout
-        start_time = time.time()
-        while True:
-            if time.time() - start_time > 10:
-                local_session.close()
-                raise TimeExhausted
-            else:
-                # lock record
-                _tm = local_session.query(TransactionLock). \
-                    filter(TransactionLock.tx_from == _tx_from). \
-                    populate_existing(). \
-                    with_for_update(). \
-                    first()
-                break
+        # Lock record
+        try:
+            _tm = local_session.query(TransactionLock). \
+                filter(TransactionLock.tx_from == _tx_from). \
+                populate_existing(). \
+                with_for_update(). \
+                first()
+        except OperationalError as op_err:
+            local_session.rollback()
+            local_session.close()
+            raise SendTransactionError(op_err)
 
         try:
+            # Get nonce
             nonce = web3.eth.getTransactionCount(_tx_from)
             transaction["nonce"] = nonce
             signed_tx = web3.eth.account.sign_transaction(
                 transaction_dict=transaction,
                 private_key=private_key
             )
+            # Send Transaction
             tx_hash = web3.eth.sendRawTransaction(signed_tx.rawTransaction.hex())
             txn_receipt = web3.eth.waitForTransactionReceipt(
                 transaction_hash=tx_hash,

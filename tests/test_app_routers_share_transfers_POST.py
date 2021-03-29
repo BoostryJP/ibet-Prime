@@ -25,18 +25,17 @@ from app.exceptions import SendTransactionError
 from tests.account_config import config_eth_account
 
 
-class TestAppRoutersBondTransferPOST:
-
+class TestAppRoutersShareTransfersPOST:
     # target API endpoint
-    test_url = "/bond/transfer"
+    test_url = "/share/transfers"
 
     ###########################################################################
     # Normal Case
     ###########################################################################
 
     # <Normal_1>
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.transfer")
-    def test_normal_1(self, IbetStraightBondContract_mock, client, db):
+    @mock.patch("app.model.blockchain.token.IbetShareContract.transfer")
+    def test_normal_1(self, IbetShareContract_mock, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -57,7 +56,7 @@ class TestAppRoutersBondTransferPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _admin_address
         token.token_address = _token_address
@@ -65,7 +64,7 @@ class TestAppRoutersBondTransferPOST:
         db.add(token)
 
         # mock
-        IbetStraightBondContract_mock.side_effect = [None]
+        IbetShareContract_mock.side_effect = [None]
 
         # request target API
         req_param = {
@@ -83,7 +82,7 @@ class TestAppRoutersBondTransferPOST:
         )
 
         # assertion
-        IbetStraightBondContract_mock.assert_any_call(
+        IbetShareContract_mock.assert_any_call(
             data=req_param,
             tx_from=_admin_address,
             private_key=ANY
@@ -98,6 +97,8 @@ class TestAppRoutersBondTransferPOST:
     # <Error_1>
     # RequestValidationError: token_address, transfer_from, transfer_to, amount
     def test_error_1(self, client, db):
+        _admin_account = config_eth_account("user1")
+        _admin_address = _admin_account["address"]
         _transfer_from = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
         _transfer_to = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
@@ -113,7 +114,7 @@ class TestAppRoutersBondTransferPOST:
             self.test_url,
             json=req_param,
             headers={
-                "issuer-address": "issuer-address"
+                "issuer-address": _admin_address
             }
         )
 
@@ -148,7 +149,6 @@ class TestAppRoutersBondTransferPOST:
     # <Error_2>
     # RequestValidationError: headers and body required
     def test_error_2(self, client, db):
-
         # request target API
         resp = client.post(
             self.test_url
@@ -177,7 +177,11 @@ class TestAppRoutersBondTransferPOST:
 
     # <Error_3>
     # RequestValidationError: issuer-address
-    def test_normal_3(self, client, db):
+    def test_error_3(self, client, db):
+        _admin_account = config_eth_account("user1")
+        _admin_address = _admin_account["address"]
+        _admin_keyfile = _admin_account["keyfile_json"]
+
         _transfer_from_account = config_eth_account("user2")
         _transfer_from = _transfer_from_account["address"]
 
@@ -293,18 +297,18 @@ class TestAppRoutersBondTransferPOST:
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 404
         assert resp.json() == {
             "meta": {
                 "code": 1,
-                "title": "InvalidParameterError"
+                "title": "NotFound"
             },
             "detail": "token not found"
         }
 
     # <Error_6>
     # Send Transaction Error
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.transfer",
+    @mock.patch("app.model.blockchain.token.IbetShareContract.transfer",
                 MagicMock(side_effect=SendTransactionError()))
     def test_error_6(self, client, db):
         _admin_account = config_eth_account("user1")
@@ -327,7 +331,7 @@ class TestAppRoutersBondTransferPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.type = TokenType.IBET_SHARE
         token.tx_hash = ""
         token.issuer_address = _admin_address
         token.token_address = _token_address
