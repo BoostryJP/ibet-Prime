@@ -17,8 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from .index import (
-    E2EEResponse,
-    ResultSetResponse
+    E2EEResponse
 )
 from .account import (
     AccountCreateKeyRequest,

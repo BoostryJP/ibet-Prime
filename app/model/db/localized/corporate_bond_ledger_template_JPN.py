@@ -55,12 +55,12 @@ class CorporateBondLedgerTemplateJPN(Base):
     # payment information - status
     # 社債情報.払込情報.払込状況
     payment_status = Column(Boolean, nullable=False)
-    # corporate bond headquarters name
+    # bond ledger administrator - name
     # 社債原簿管理人.氏名または名称
-    hq_name = Column(String(200), nullable=False)
-    # corporate bond headquarters address
+    ledger_admin_name = Column(String(200), nullable=False)
+    # bond ledger administrator - headquarters
     # 社債原簿管理人.住所
-    hq_address = Column(String(200), nullable=False)
-    # corporate bond headquarters office address
+    ledger_admin_headquarters = Column(String(200), nullable=False)
+    # bond ledger administrator - office address
     # 社債原簿管理人.事務取扱場所
-    hq_office_address = Column(String(200), nullable=False)
+    ledger_admin_office_address = Column(String(200), nullable=False)

@@ -50,13 +50,13 @@ def on_bond_ledger(token_address: str, db: Session):
         first()
 
     bond_info = __get_bond_info(_template)
-    headquarters = __get_headquarters(_template)
+    ledger_admin = __get_ledger_admin(_template)
     creditors = __get_creditors(token_contract, db)
 
     ledger = {
         "社債原簿作成日": created_date,
         "社債情報": bond_info,
-        "社債原簿管理人": headquarters,
+        "社債原簿管理人": ledger_admin,
         "社債権者": creditors
     }
 
@@ -96,19 +96,19 @@ def __get_bond_info(_template: CorporateBondLedgerTemplateJPN):
     return bond_info
 
 
-def __get_headquarters(_template: CorporateBondLedgerTemplateJPN):
-    headquarters = {
+def __get_ledger_admin(_template: CorporateBondLedgerTemplateJPN):
+    ledger_admin = {
         "氏名または名称": "",
         "住所": "",
         "事務取扱場所": ""
     }
     if _template is not None:
         # Update with template
-        headquarters["氏名または名称"] = _template.hq_name
-        headquarters["住所"] = _template.hq_address
-        headquarters["事務取扱場所"] = _template.hq_office_address
+        ledger_admin["氏名または名称"] = _template.ledger_admin_name
+        ledger_admin["住所"] = _template.ledger_admin_headquarters
+        ledger_admin["事務取扱場所"] = _template.ledger_admin_office_address
 
-    return headquarters
+    return ledger_admin
 
 
 def __get_creditors(token_contract: IbetStraightBondContract, db: Session):

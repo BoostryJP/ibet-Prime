@@ -57,9 +57,9 @@ class TestAppBondLedgerTokenAddressTemplateGET:
             "payment_amount": 30,
             "payment_date": "20211231",
             "payment_status": False,
-            "hq_name": "hq_name_test",
-            "hq_address": "hq_address_test",
-            "hq_office_address": "hq_location_test",
+            "ledger_admin_name": "ledger_admin_name_test",
+            "ledger_admin_headquarters": "ledger_admin_headquarters_test",
+            "ledger_admin_office_address": "ledger_admin_office_address_test",
         }
         mock_localized_func.side_effect = [
             mock_resp

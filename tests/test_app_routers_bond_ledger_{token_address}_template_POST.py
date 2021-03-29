@@ -59,9 +59,9 @@ class TestAppBondLedgerTokenAddressTemplatePOST:
             "payment_amount": 30,
             "payment_date": "20211231",
             "payment_status": False,
-            "hq_name": "hq_name_test",
-            "hq_address": "hq_address_test",
-            "hq_office_address": "hq_office_address_test",
+            "ledger_admin_name": "ledger_admin_name_test",
+            "ledger_admin_headquarters": "ledger_admin_headquarters_test",
+            "ledger_admin_office_address": "ledger_admin_office_address_test",
         }
         resp = client.post(
             self.base_url.format(token_address),
@@ -86,9 +86,9 @@ class TestAppBondLedgerTokenAddressTemplatePOST:
         assert args_template.payment_amount == 30
         assert args_template.payment_date == "20211231"
         assert args_template.payment_status == False
-        assert args_template.hq_name == "hq_name_test"
-        assert args_template.hq_address == "hq_address_test"
-        assert args_template.hq_office_address == "hq_office_address_test"
+        assert args_template.ledger_admin_name == "ledger_admin_name_test"
+        assert args_template.ledger_admin_headquarters == "ledger_admin_headquarters_test"
+        assert args_template.ledger_admin_office_address == "ledger_admin_office_address_test"
 
         assert resp.status_code == 200
 
@@ -149,9 +149,9 @@ class TestAppBondLedgerTokenAddressTemplatePOST:
             "payment_amount": 30,
             "payment_date": "20211231",
             "payment_status": False,
-            "hq_name": "hq_name_test",
-            "hq_address": "hq_address_test",
-            "hq_office_address": "hq_office_address_test",
+            "ledger_admin_name": "ledger_admin_name_test",
+            "ledger_admin_headquarters": "ledger_admin_headquarters_test",
+            "ledger_admin_office_address": "ledger_admin_office_address_test",
         }
         resp = client.post(
             self.base_url.format(token_address),
@@ -191,9 +191,9 @@ class TestAppBondLedgerTokenAddressTemplatePOST:
             "payment_amount": 30,
             "payment_date": "20211231",
             "payment_status": False,
-            "hq_name": "hq_name_test",
-            "hq_address": "hq_address_test",
-            "hq_office_address": "hq_office_address_test",
+            "ledger_admin_name": "ledger_admin_name_test",
+            "ledger_admin_headquarters": "ledger_admin_headquarters_test",
+            "ledger_admin_office_address": "ledger_admin_office_address_test",
         }
         resp = client.post(
             self.base_url.format(token_address),

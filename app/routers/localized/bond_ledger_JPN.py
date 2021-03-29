@@ -111,10 +111,10 @@ def retrieve_bond_ledger_history(
         bond_info["社債の種類"] = _ledger_template.bond_type
 
         # Update Headquarters
-        headquarters = resp["社債原簿管理人"]
-        headquarters["氏名または名称"] = _ledger_template.hq_name
-        headquarters["住所"] = _ledger_template.hq_address
-        headquarters["事務取扱場所"] = _ledger_template.hq_office_address
+        ledger_admin = resp["社債原簿管理人"]
+        ledger_admin["氏名または名称"] = _ledger_template.ledger_admin_name
+        ledger_admin["住所"] = _ledger_template.ledger_admin_headquarters
+        ledger_admin["事務取扱場所"] = _ledger_template.ledger_admin_office_address
 
         # Update Corporate Creditors
         _token_contract = IbetStraightBondContract.get(token_address)
@@ -163,9 +163,9 @@ def retrieve_bond_ledger_template(
         "payment_amount": _ledger_template.payment_amount,
         "payment_date": _ledger_template.payment_date,
         "payment_status": _ledger_template.payment_status,
-        "hq_name": _ledger_template.hq_name,
-        "hq_address": _ledger_template.hq_address,
-        "hq_office_address": _ledger_template.hq_office_address,
+        "ledger_admin_name": _ledger_template.ledger_admin_name,
+        "ledger_admin_headquarters": _ledger_template.ledger_admin_headquarters,
+        "ledger_admin_office_address": _ledger_template.ledger_admin_office_address,
     }
 
     return resp
@@ -198,9 +198,9 @@ def create_update_bond_ledger_template(
     _ledger_template.payment_amount = template.payment_amount
     _ledger_template.payment_date = template.payment_date
     _ledger_template.payment_status = template.payment_status
-    _ledger_template.hq_name = template.hq_name
-    _ledger_template.hq_address = template.hq_address
-    _ledger_template.hq_office_address = template.hq_office_address
+    _ledger_template.ledger_admin_name = template.ledger_admin_name
+    _ledger_template.ledger_admin_headquarters = template.ledger_admin_headquarters
+    _ledger_template.ledger_admin_office_address = template.ledger_admin_office_address
 
     db.merge(_ledger_template)
     db.commit()

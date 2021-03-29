@@ -54,9 +54,9 @@ class TestAppBondLedgerTokenAddressTemplateGETJPN:
         _template.payment_amount = 30
         _template.payment_date = "20211231"
         _template.payment_status = False
-        _template.hq_name = "hq_name_test"
-        _template.hq_address = "hq_address_test"
-        _template.hq_office_address = "hq_office_address_test"
+        _template.ledger_admin_name = "ledger_admin_name_test"
+        _template.ledger_admin_headquarters = "ledger_admin_headquarters_test"
+        _template.ledger_admin_office_address = "ledger_admin_office_address_test"
         db.add(_template)
 
         # request target API
@@ -82,9 +82,9 @@ class TestAppBondLedgerTokenAddressTemplateGETJPN:
             "payment_amount": 30,
             "payment_date": "20211231",
             "payment_status": False,
-            "hq_name": "hq_name_test",
-            "hq_address": "hq_address_test",
-            "hq_office_address": "hq_office_address_test",
+            "ledger_admin_name": "ledger_admin_name_test",
+            "ledger_admin_headquarters": "ledger_admin_headquarters_test",
+            "ledger_admin_office_address": "ledger_admin_office_address_test",
         }
 
     ###########################################################################

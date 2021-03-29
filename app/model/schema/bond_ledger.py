@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 from typing import List
 from pydantic import BaseModel
 
-from app.model.schema import ResultSetResponse
+from .result_set import ResultSet
 
 
 ############################
@@ -40,5 +40,5 @@ class BondLedgerResponse(BaseModel):
 
 class ListAllBondLedgerHistoryResponse(BaseModel):
     """List All Bond Ledger History schema (Response)"""
-    result_set: ResultSetResponse
+    result_set: ResultSet
     bond_ledgers: List[BondLedgerResponse]

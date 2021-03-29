@@ -191,9 +191,9 @@ class TestAppBondLedgerTokenAddressHistoryLedgerIdGETJPN:
         _template.payment_amount = 30
         _template.payment_date = "20211231"
         _template.payment_status = False
-        _template.hq_name = "hq_name_test"
-        _template.hq_address = "hq_address_test"
-        _template.hq_office_address = "hq_office_address_test"
+        _template.ledger_admin_name = "ledger_admin_name_test"
+        _template.ledger_admin_headquarters = "ledger_admin_headquarters_test"
+        _template.ledger_admin_office_address = "ledger_admin_office_address_test"
         db.add(_template)
 
         _idx_personal_info_1 = IDXPersonalInfo()
@@ -247,9 +247,9 @@ class TestAppBondLedgerTokenAddressHistoryLedgerIdGETJPN:
                 "社債の種類": "bond_type_test"
             },
             "社債原簿管理人": {
-                "氏名または名称": "hq_name_test",
-                "住所": "hq_address_test",
-                "事務取扱場所": "hq_office_address_test"
+                "氏名または名称": "ledger_admin_name_test",
+                "住所": "ledger_admin_headquarters_test",
+                "事務取扱場所": "ledger_admin_office_address_test"
             },
             "社債権者": [
                 {
@@ -413,9 +413,9 @@ class TestAppBondLedgerTokenAddressHistoryLedgerIdGETJPN:
         _template.payment_amount = 30
         _template.payment_date = "20211231"
         _template.payment_status = False
-        _template.hq_name = "hq_name_test"
-        _template.hq_address = "hq_address_test"
-        _template.hq_office_address = "hq_office_address_test"
+        _template.ledger_admin_name = "ledger_admin_name_test"
+        _template.ledger_admin_headquarters = "ledger_admin_headquarters_test"
+        _template.ledger_admin_office_address = "ledger_admin_office_address_test"
         db.add(_template)
 
         # Mock
@@ -463,9 +463,9 @@ class TestAppBondLedgerTokenAddressHistoryLedgerIdGETJPN:
                 "社債の種類": "bond_type_test"
             },
             "社債原簿管理人": {
-                "氏名または名称": "hq_name_test",
-                "住所": "hq_address_test",
-                "事務取扱場所": "hq_office_address_test"
+                "氏名または名称": "ledger_admin_name_test",
+                "住所": "ledger_admin_headquarters_test",
+                "事務取扱場所": "ledger_admin_office_address_test"
             },
             "社債権者": [
                 {
