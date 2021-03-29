@@ -124,9 +124,10 @@ class Processor:
             LOG.debug("skip process")
             pass
         else:
-            LOG.info(f"syncing from={utxo_block_number}, to={latest_block}")
+            block_from = utxo_block_number + 1
+            LOG.info(f"syncing from={block_from}, to={latest_block}")
             for token_contract in self.token_contract_list:
-                self.__process_transfer(token_contract, utxo_block_number, latest_block)
+                self.__process_transfer(token_contract, block_from, latest_block)
             self.__set_utxo_block_number(latest_block)
             self.sink.flush()
 
