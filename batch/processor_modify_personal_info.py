@@ -19,7 +19,6 @@ SPDX-License-Identifier: Apache-2.0
 import os
 import sys
 import time
-import logging
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -201,9 +200,9 @@ def main():
     while True:
         try:
             processor.process()
-            logging.debug("Processed")
+            LOG.debug("Processed")
         except Exception as ex:
-            logging.exception(ex)
+            LOG.exception(ex)
 
         time.sleep(10)
 

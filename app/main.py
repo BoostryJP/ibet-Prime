@@ -23,7 +23,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from config import SERVER_NAME
-from app.routers import index, account, bond, share
+from app.routers import index, account, bond, bond_ledger, share
 from app.exceptions import *
 
 app = FastAPI(
@@ -44,6 +44,7 @@ async def root():
 app.include_router(index.router)
 app.include_router(account.router)
 app.include_router(bond.router)
+app.include_router(bond_ledger.router)
 app.include_router(share.router)
 
 

@@ -21,7 +21,6 @@ import json
 import os
 import sys
 import time
-import logging
 from datetime import datetime, timezone, timedelta
 JST = timezone(timedelta(hours=+9), "JST")
 
@@ -104,11 +103,11 @@ class Processor:
         self.__refresh_personal_info_list()
         block_number = self.__get_block_number()  # most recent blockNumber that has been synchronized with DB
         latest_block = web3.eth.blockNumber  # latest blockNumber
-        LOG.info(f"syncing from={block_number}, to={latest_block}")
-        if block_number == latest_block:
+
+        if block_number >= latest_block:
             LOG.debug("skip Process")
         else:
-            self.__sync_all(block_number, latest_block)
+            self.__sync_all(block_number + 1, latest_block)
             self.__set_block_number(latest_block)
             self.sink.flush()
 
@@ -162,6 +161,7 @@ class Processor:
         self.db.merge(_block_number)
 
     def __sync_all(self, block_from: int, block_to: int):
+        LOG.info(f"syncing from={block_from}, to={block_to}")
         self.__sync_personal_info_register(block_from, block_to)
         self.__sync_personal_info_modify(block_from, block_to)
 
@@ -187,7 +187,7 @@ class Processor:
                         )
                         self.sink.flush()
             except Exception as err:
-                logging.error(err)
+                LOG.error(err)
 
     def __sync_personal_info_modify(self, block_from, block_to):
         for _personal_info_contract in self.personal_info_contract_list:
@@ -211,7 +211,7 @@ class Processor:
                         )
                         self.sink.flush()
             except Exception as err:
-                logging.error(err)
+                LOG.error(err)
 
 
 _sink = Sinks()
@@ -222,8 +222,8 @@ LOG.info("Service started successfully")
 while True:
     try:
         processor.process()
-        logging.debug("Processed")
+        LOG.debug("Processed")
     except Exception as ex:
-        logging.exception(ex)
+        LOG.exception(ex)
 
     time.sleep(10)

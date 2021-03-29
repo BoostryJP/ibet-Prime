@@ -122,11 +122,11 @@ class Processor:
 
     def sync_new_logs(self):
         self.get_token_list()
-        blockTo = web3.eth.blockNumber
-        if blockTo == self.latest_block:
+        block_to = web3.eth.blockNumber
+        if self.latest_block >= block_to:
             return
-        self.__sync_all(self.latest_block + 1, blockTo)
-        self.latest_block = blockTo
+        self.__sync_all(self.latest_block + 1, block_to)
+        self.latest_block = block_to
 
     def __sync_all(self, block_from: int, block_to: int):
         LOG.info(f"syncing from={block_from}, to={block_to}")

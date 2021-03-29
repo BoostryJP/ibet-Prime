@@ -115,3 +115,7 @@ E2EE_REQUEST_ENABLED = False if os.environ.get("E2EE_REQUEST_ENABLED") == "0" el
 # Bulk Transfer
 BULK_TRANSFER_INTERVAL = int(os.environ.get("BULK_TRANSFER_INTERVAL")) \
     if os.environ.get("BULK_TRANSFER_INTERVAL") else 10
+
+# System locale
+SYSTEM_LOCALE = [code.strip().upper() for code in os.environ.get("SYSTEM_LOCALE").split(",")] \
+    if os.environ.get("SYSTEM_LOCALE") else ["JPN"]
