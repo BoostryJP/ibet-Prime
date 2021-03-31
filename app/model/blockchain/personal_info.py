@@ -24,19 +24,22 @@ import sys
 import logging
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
-from datetime import timezone, timedelta
-
-JST = timezone(timedelta(hours=+9), "JST")
-
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
+from web3.middleware import (
+    geth_poa_middleware,
+    local_filter_middleware
+)
 from web3.exceptions import TimeExhausted
 from eth_keyfile import decode_keyfile_json
 
 path = os.path.join(os.path.dirname(__file__), '../')
 sys.path.append(path)
 
-from config import WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT
+from config import (
+    WEB3_HTTP_PROVIDER,
+    CHAIN_ID,
+    TX_GAS_LIMIT
+)
 from app.model.blockchain.utils import ContractUtils
 from app.model.db import Account
 from app.model.utils import E2EEUtils
@@ -44,6 +47,7 @@ from app.exceptions import SendTransactionError
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+web3.middleware_onion.add(local_filter_middleware)
 
 
 class PersonalInfoContract:
@@ -169,10 +173,10 @@ class PersonalInfoContract:
         :param block_to: block to
         :return: event entries
         """
-        event_filter = self.personal_info_contract.events.Register.createFilter(
-            fromBlock=block_from,
-            toBlock=block_to
-        )
+        _build_filter = self.personal_info_contract.events.Register.build_filter()
+        _build_filter.fromBlock = block_from
+        _build_filter.toBlock = block_to
+        event_filter = _build_filter.deploy(web3)
         return event_filter.get_all_entries()
 
     def get_modify_event(self, block_from, block_to):
@@ -182,8 +186,8 @@ class PersonalInfoContract:
         :param block_to: block to
         :return: event entries
         """
-        event_filter = self.personal_info_contract.events.Modify.createFilter(
-            fromBlock=block_from,
-            toBlock=block_to
-        )
+        _build_filter = self.personal_info_contract.events.Modify.build_filter()
+        _build_filter.fromBlock = block_from
+        _build_filter.toBlock = block_to
+        event_filter = _build_filter.deploy(web3)
         return event_filter.get_all_entries()

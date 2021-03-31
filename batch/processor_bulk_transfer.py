@@ -20,9 +20,6 @@ from typing import List
 import os
 import sys
 import time
-from datetime import timezone, timedelta
-JST = timezone(timedelta(hours=+9), "JST")
-
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
