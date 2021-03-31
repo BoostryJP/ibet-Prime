@@ -223,8 +223,6 @@ class Processor:
                     for country_code in SYSTEM_LOCALE:
                         if country_code == "JPN":
                             create_utxo_JPN.on_bond_ledger(token_contract.address, self.db)
-
-            web3.eth.uninstallFilter(_event_filter.filter_id)
         except Exception as e:
             LOG.exception(e)
 

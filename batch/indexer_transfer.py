@@ -175,7 +175,6 @@ class Processor:
                             amount=args["value"],
                             block_timestamp=block_timestamp
                         )
-                web3.eth.uninstallFilter(event_filter.filter_id)
             except Exception as e:
                 LOG.error(e)
 

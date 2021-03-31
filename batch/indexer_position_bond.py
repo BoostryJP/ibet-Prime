@@ -177,7 +177,6 @@ class Processor:
                         account_address=account,
                         balance=balance
                     )
-                web3.eth.uninstallFilter(event_filter.filter_id)
             except Exception as e:
                 LOG.exception(e)
 
@@ -212,7 +211,6 @@ class Processor:
                         account_address=to_account,
                         balance=to_account_balance,
                     )
-                web3.eth.uninstallFilter(event_filter.filter_id)
             except Exception as e:
                 LOG.exception(e)
 
@@ -238,7 +236,6 @@ class Processor:
                         account_address=account,
                         balance=balance
                     )
-                web3.eth.uninstallFilter(event_filter.filter_id)
             except Exception as e:
                 LOG.exception(e)
 
@@ -264,7 +261,6 @@ class Processor:
                         account_address=account,
                         balance=balance
                     )
-                web3.eth.uninstallFilter(event_filter.filter_id)
             except Exception as e:
                 LOG.exception(e)
 
