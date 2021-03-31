@@ -19,25 +19,41 @@ SPDX-License-Identifier: Apache-2.0
 import os
 import sys
 import time
-
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
-
+from sqlalchemy.orm import (
+    sessionmaker,
+    scoped_session
+)
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
+from web3.middleware import (
+    geth_poa_middleware,
+    local_filter_middleware
+)
 from eth_utils import to_checksum_address
 
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
-from config import WEB3_HTTP_PROVIDER, DATABASE_URL, ZERO_ADDRESS, INDEXER_SYNC_INTERVAL
-from app.model.db import Token, TokenType, IDXPosition
+from config import (
+    WEB3_HTTP_PROVIDER,
+    DATABASE_URL,
+    ZERO_ADDRESS,
+    INDEXER_SYNC_INTERVAL
+)
+from app.model.db import (
+    Token,
+    TokenType,
+    IDXPosition
+)
 import batch_log
+
 process_name = "INDEXER-Position-Share"
 LOG = batch_log.get_logger(process_name=process_name)
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+web3.middleware_onion.add(local_filter_middleware)
+
 engine = create_engine(DATABASE_URL, echo=False)
 db_session = scoped_session(sessionmaker())
 db_session.configure(bind=engine)
@@ -163,10 +179,10 @@ class Processor:
         """
         for token in self.token_list:
             try:
-                event_filter = token.events.Issue.createFilter(
-                    fromBlock=block_from,
-                    toBlock=block_to
-                )
+                _build_filter = token.events.Issue.build_filter()
+                _build_filter.fromBlock = block_from
+                _build_filter.toBlock = block_to
+                event_filter = _build_filter.deploy(web3)
                 for event in event_filter.get_all_entries():
                     args = event["args"]
                     account = args.get("target_address", ZERO_ADDRESS)
@@ -189,10 +205,10 @@ class Processor:
         """
         for token in self.token_list:
             try:
-                event_filter = token.events.Transfer.createFilter(
-                    fromBlock=block_from,
-                    toBlock=block_to
-                )
+                _build_filter = token.events.Transfer.build_filter()
+                _build_filter.fromBlock = block_from
+                _build_filter.toBlock = block_to
+                event_filter = _build_filter.deploy(web3)
                 for event in event_filter.get_all_entries():
                     args = event["args"]
                     # from address
@@ -224,10 +240,10 @@ class Processor:
         """
         for token in self.token_list:
             try:
-                event_filter = token.events.Lock.createFilter(
-                    fromBlock=block_from,
-                    toBlock=block_to
-                )
+                _build_filter = token.events.Lock.build_filter()
+                _build_filter.fromBlock = block_from
+                _build_filter.toBlock = block_to
+                event_filter = _build_filter.deploy(web3)
                 for event in event_filter.get_all_entries():
                     args = event["args"]
                     account = args.get("from", ZERO_ADDRESS)
@@ -250,10 +266,10 @@ class Processor:
         """
         for token in self.token_list:
             try:
-                event_filter = token.events.Unlock.createFilter(
-                    fromBlock=block_from,
-                    toBlock=block_to
-                )
+                _build_filter = token.events.Unlock.build_filter()
+                _build_filter.fromBlock = block_from
+                _build_filter.toBlock = block_to
+                event_filter = _build_filter.deploy(web3)
                 for event in event_filter.get_all_entries():
                     args = event["args"]
                     account = args.get("to", ZERO_ADDRESS)
@@ -276,10 +292,10 @@ class Processor:
         """
         for token in self.token_list:
             try:
-                event_filter = token.events.Redeem.createFilter(
-                    fromBlock=block_from,
-                    toBlock=block_to
-                )
+                _build_filter = token.events.Redeem.build_filter()
+                _build_filter.fromBlock = block_from
+                _build_filter.toBlock = block_to
+                event_filter = _build_filter.deploy(web3)
                 for event in event_filter.get_all_entries():
                     args = event["args"]
                     account = args.get("target_address", ZERO_ADDRESS)
@@ -292,6 +308,7 @@ class Processor:
                 web3.eth.uninstallFilter(event_filter.filter_id)
             except Exception as e:
                 LOG.exception(e)
+
 
 _sink = Sinks()
 _sink.register(DBSink(db_session))
