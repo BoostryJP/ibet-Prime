@@ -149,33 +149,38 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
         # get data from contract
         bond_token = IbetStraightBondContract()
 
-        bond_token.issuer_address = bond_contract.functions.owner().call()
-        bond_token.token_address = contract_address
-        bond_token.name = bond_contract.functions.name().call()
-        bond_token.symbol = bond_contract.functions.symbol().call()
-        bond_token.total_supply = bond_contract.functions.totalSupply().call()
-        bond_token.image_url = [
-            bond_contract.functions.getImageURL(0).call(),
-            bond_contract.functions.getImageURL(1).call(),
-            bond_contract.functions.getImageURL(2).call()
-        ]
-        bond_token.contact_information = bond_contract.functions.contactInformation().call()
-        bond_token.privacy_policy = bond_contract.functions.privacyPolicy().call()
-        bond_token.tradable_exchange_contract_address = bond_contract.functions.tradableExchange().call()
-        bond_token.status = bond_contract.functions.status().call()
-        bond_token.face_value = bond_contract.functions.faceValue().call()
-        bond_token.redemption_date = bond_contract.functions.redemptionDate().call()
-        bond_token.redemption_value = bond_contract.functions.redemptionValue().call()
-        bond_token.return_date = bond_contract.functions.returnDate().call()
-        bond_token.return_amount = bond_contract.functions.returnAmount().call()
-        bond_token.purpose = bond_contract.functions.purpose().call()
-        bond_token.interest_rate = float(
-            Decimal(str(bond_contract.functions.interestRate().call())) * Decimal("0.0001")
-        )
-        bond_token.transferable = bond_contract.functions.transferable().call()
-        bond_token.initial_offering_status = bond_contract.functions.initialOfferingStatus().call()
-        bond_token.is_redeemed = bond_contract.functions.isRedeemed().call()
-        bond_token.personal_info_contract_address = bond_contract.functions.personalInfoAddress().call()
+        try:
+            bond_token.issuer_address = bond_contract.functions.owner().call()
+            bond_token.token_address = contract_address
+            bond_token.name = bond_contract.functions.name().call()
+            bond_token.symbol = bond_contract.functions.symbol().call()
+            bond_token.total_supply = bond_contract.functions.totalSupply().call()
+            bond_token.image_url = [
+                bond_contract.functions.getImageURL(0).call(),
+                bond_contract.functions.getImageURL(1).call(),
+                bond_contract.functions.getImageURL(2).call()
+            ]
+            bond_token.contact_information = bond_contract.functions.contactInformation().call()
+            bond_token.privacy_policy = bond_contract.functions.privacyPolicy().call()
+            bond_token.tradable_exchange_contract_address = bond_contract.functions.tradableExchange().call()
+            bond_token.status = bond_contract.functions.status().call()
+            bond_token.face_value = bond_contract.functions.faceValue().call()
+            bond_token.redemption_date = bond_contract.functions.redemptionDate().call()
+            bond_token.redemption_value = bond_contract.functions.redemptionValue().call()
+            bond_token.return_date = bond_contract.functions.returnDate().call()
+            bond_token.return_amount = bond_contract.functions.returnAmount().call()
+            bond_token.purpose = bond_contract.functions.purpose().call()
+            bond_token.interest_rate = float(
+                Decimal(str(bond_contract.functions.interestRate().call())) * Decimal("0.0001")
+            )
+            bond_token.transferable = bond_contract.functions.transferable().call()
+            bond_token.initial_offering_status = bond_contract.functions.initialOfferingStatus().call()
+            bond_token.is_redeemed = bond_contract.functions.isRedeemed().call()
+            bond_token.personal_info_contract_address = bond_contract.functions.personalInfoAddress().call()
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
 
         interest_payment_date_list = []
         interest_payment_date_string = bond_contract.functions.interestPaymentDate().call().replace("'", '"')
@@ -209,6 +214,15 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             contract_name="IbetStraightBond",
             contract_address=contract_address
         )
+
+        # Check contract_address status
+        try:
+            if not bond_contract.functions.status().call():
+                raise SendTransactionError(f"contract:{contract_address} status is False")
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
 
         if data.face_value is not None:
             tx = bond_contract.functions.\
@@ -432,6 +446,10 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 contract_name="IbetStraightBond",
                 contract_address=data.token_address
             )
+            # Check bond_contract status
+            if not bond_contract.functions.status().call():
+                raise SendTransactionError(f"contract:{data.token_address} status is False")
+
             _from = data.transfer_from
             _to = data.transfer_to
             _amount = data.amount
@@ -460,6 +478,11 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 contract_name="IbetStraightBond",
                 contract_address=contract_address
             )
+
+            # Check bond_contract status
+            if not bond_contract.functions.status().call():
+                raise SendTransactionError(f"contract:{contract_address} status is False")
+
             _target_address = data.account_address
             _amount = data.amount
             tx = bond_contract.functions. \
@@ -484,11 +507,16 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
         :param account_address: account address
         :return: account balance
         """
-        bond_contract = ContractUtils.get_contract(
-            contract_name="IbetStraightBond",
-            contract_address=contract_address
-        )
-        balance = bond_contract.functions.balanceOf(account_address).call()
+        try:
+            bond_contract = ContractUtils.get_contract(
+                contract_name="IbetStraightBond",
+                contract_address=contract_address
+            )
+            balance = bond_contract.functions.balanceOf(account_address).call()
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
         return balance
 
 
@@ -567,30 +595,34 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
 
         # get data from contract
         share_token = IbetShareContract()
-
-        share_token.issuer_address = share_contract.functions.owner().call()
-        share_token.token_address = contract_address
-        share_token.name = share_contract.functions.name().call()
-        share_token.symbol = share_contract.functions.symbol().call()
-        share_token.total_supply = share_contract.functions.totalSupply().call()
-        share_token.image_url = [
-            share_contract.functions.referenceUrls(0).call(),
-            share_contract.functions.referenceUrls(1).call(),
-            share_contract.functions.referenceUrls(2).call()
-        ]
-        share_token.contact_information = share_contract.functions.contactInformation().call()
-        share_token.privacy_policy = share_contract.functions.privacyPolicy().call()
-        share_token.tradable_exchange_contract_address = share_contract.functions.tradableExchange().call()
-        share_token.status = share_contract.functions.status().call()
-        share_token.issue_price = share_contract.functions.issuePrice().call()
-        _dividend_info = share_contract.functions.dividendInformation().call()
-        share_token.dividends = float(Decimal(str(_dividend_info[0])) * Decimal("0.01"))
-        share_token.dividend_record_date = _dividend_info[1]
-        share_token.dividend_payment_date = _dividend_info[2]
-        share_token.cancellation_date = share_contract.functions.cancellationDate().call()
-        share_token.transferable = share_contract.functions.transferable().call()
-        share_token.offering_status = share_contract.functions.offeringStatus().call()
-        share_token.personal_info_contract_address = share_contract.functions.personalInfoAddress().call()
+        try:
+            share_token.issuer_address = share_contract.functions.owner().call()
+            share_token.token_address = contract_address
+            share_token.name = share_contract.functions.name().call()
+            share_token.symbol = share_contract.functions.symbol().call()
+            share_token.total_supply = share_contract.functions.totalSupply().call()
+            share_token.image_url = [
+                share_contract.functions.referenceUrls(0).call(),
+                share_contract.functions.referenceUrls(1).call(),
+                share_contract.functions.referenceUrls(2).call()
+            ]
+            share_token.contact_information = share_contract.functions.contactInformation().call()
+            share_token.privacy_policy = share_contract.functions.privacyPolicy().call()
+            share_token.tradable_exchange_contract_address = share_contract.functions.tradableExchange().call()
+            share_token.status = share_contract.functions.status().call()
+            share_token.issue_price = share_contract.functions.issuePrice().call()
+            _dividend_info = share_contract.functions.dividendInformation().call()
+            share_token.dividends = float(Decimal(str(_dividend_info[0])) * Decimal("0.01"))
+            share_token.dividend_record_date = _dividend_info[1]
+            share_token.dividend_payment_date = _dividend_info[2]
+            share_token.cancellation_date = share_contract.functions.cancellationDate().call()
+            share_token.transferable = share_contract.functions.transferable().call()
+            share_token.offering_status = share_contract.functions.offeringStatus().call()
+            share_token.personal_info_contract_address = share_contract.functions.personalInfoAddress().call()
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
 
         if TOKEN_CACHE:
             IbetShareContract.cache[contract_address] = {
@@ -610,6 +642,14 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             contract_name="IbetShare",
             contract_address=contract_address
         )
+        try:
+            # Check contract_address status
+            if not share_contract.functions.status().call():
+                raise SendTransactionError(f"contract:{contract_address} status is False")
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
 
         if data.tradable_exchange_contract_address is not None:
             tx = share_contract.functions.setTradableExchange(
@@ -786,6 +826,10 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 contract_name="IbetShare",
                 contract_address=data.token_address
             )
+            # Check bond_contract status
+            if not share_contract.functions.status().call():
+                raise SendTransactionError(f"contract:{data.token_address} status is False")
+
             _from = data.transfer_from
             _to = data.transfer_to
             _amount = data.amount
@@ -810,13 +854,18 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                    private_key: str):
         """Add token supply"""
         try:
-            bond_contract = ContractUtils.get_contract(
+            share_contract = ContractUtils.get_contract(
                 contract_name="IbetShare",
                 contract_address=contract_address
             )
+
+            # Check bond_contract status
+            if not share_contract.functions.status().call():
+                raise SendTransactionError(f"contract:{contract_address} status is False")
+
             _target_address = data.account_address
             _amount = data.amount
-            tx = bond_contract.functions. \
+            tx = share_contract.functions. \
                 issueFrom(_target_address, ZERO_ADDRESS, _amount). \
                 buildTransaction({
                     "chainId": CHAIN_ID,
@@ -838,9 +887,14 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
         :param account_address: account address
         :return: account balance
         """
-        bond_contract = ContractUtils.get_contract(
-            contract_name="IbetShare",
-            contract_address=contract_address
-        )
-        balance = bond_contract.functions.balanceOf(account_address).call()
+        try:
+            share_contract = ContractUtils.get_contract(
+                contract_name="IbetShare",
+                contract_address=contract_address
+            )
+            balance = share_contract.functions.balanceOf(account_address).call()
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
         return balance
