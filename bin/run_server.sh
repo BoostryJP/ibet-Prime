@@ -26,7 +26,6 @@ function start () {
   WORKER_TIMEOUT=${WORKER_TIMEOUT:-30}
   WORKER_MAX_REQUESTS=${WORKER_MAX_REQUESTS:-500}
   WORKER_MAX_REQUESTS_JITTER=${WORKER_MAX_REQUESTS_JITTER:-200}
-  ACCESS_LOGFILE=${ACCESS_LOGFILE:-/dev/stdout}
 
   gunicorn --worker-class server.AppUvicornWorker \
            --workers ${WORKER_COUNT} \
@@ -34,7 +33,6 @@ function start () {
            --timeout ${WORKER_TIMEOUT} \
            --max-requests ${WORKER_MAX_REQUESTS} \
            --max-requests-jitter ${WORKER_MAX_REQUESTS_JITTER} \
-           --access-logfile ${ACCESS_LOGFILE} \
            app.main:app
 }
 

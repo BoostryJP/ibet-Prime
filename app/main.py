@@ -35,11 +35,19 @@ from app.routers import (
     share
 )
 from app.exceptions import *
+from app.log import output_access_log
 
 app = FastAPI(
     title="ibet Prime",
     version="0.1.0"
 )
+
+
+@app.middleware("http")
+async def api_call_handler(request: Request, call_next):
+    response = await call_next(request)
+    output_access_log(request, response)
+    return response
 
 
 ###############################################################
