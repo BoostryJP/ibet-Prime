@@ -16,33 +16,47 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-
 import json
 import os
 import sys
 import time
-from datetime import datetime, timezone, timedelta
-JST = timezone(timedelta(hours=+9), "JST")
-
+from datetime import datetime
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import (
+    sessionmaker,
+    scoped_session
+)
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
+from web3.middleware import (
+    geth_poa_middleware,
+    local_filter_middleware
+)
 from web3.exceptions import BadFunctionCallOutput
 from eth_utils import to_checksum_address
 
 path = os.path.join(os.path.dirname(__file__), '../')
 sys.path.append(path)
 
-from config import WEB3_HTTP_PROVIDER, DATABASE_URL, ZERO_ADDRESS
-from app.model.db import Token, IDXPersonalInfo, IDXPersonalInfoBlockNumber
+from config import (
+    WEB3_HTTP_PROVIDER,
+    DATABASE_URL,
+    ZERO_ADDRESS
+)
+from app.model.db import (
+    Token,
+    IDXPersonalInfo,
+    IDXPersonalInfoBlockNumber
+)
 from app.model.blockchain import PersonalInfoContract
 import batch_log
+
 process_name = "INDEXER-Personal-Info"
 LOG = batch_log.get_logger(process_name=process_name)
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+web3.middleware_onion.add(local_filter_middleware)
+
 engine = create_engine(DATABASE_URL, echo=False)
 db_session = scoped_session(sessionmaker())
 db_session.configure(bind=engine)
@@ -174,8 +188,8 @@ class Processor:
                     account_address = args.get("account_address", ZERO_ADDRESS)
                     link_address = args.get("link_address", ZERO_ADDRESS)
                     if link_address == _personal_info_contract.issuer.issuer_address:
-                        block = web3.eth.getBlock(event["blockNumber"])
-                        timestamp = datetime.fromtimestamp(block["timestamp"])
+                        block = web3.eth.get_block(event["blockNumber"])
+                        timestamp = datetime.utcfromtimestamp(block["timestamp"])
                         decrypted_personal_info = _personal_info_contract.get_info(
                             account_address=account_address
                         )
@@ -198,8 +212,8 @@ class Processor:
                     account_address = args.get("account_address", ZERO_ADDRESS)
                     link_address = args.get("link_address", ZERO_ADDRESS)
                     if link_address == _personal_info_contract.issuer.eth_account:
-                        block = web3.eth.getBlock(event["blockNumber"])
-                        timestamp = datetime.fromtimestamp(block["timestamp"])
+                        block = web3.eth.get_block(event["blockNumber"])
+                        timestamp = datetime.utcfromtimestamp(block["timestamp"])
                         decrypted_personal_info = _personal_info_contract.get_info(
                             account_address=account_address
                         )

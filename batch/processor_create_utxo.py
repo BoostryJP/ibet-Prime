@@ -20,17 +20,31 @@ import os
 import sys
 import time
 from datetime import datetime
-
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import (
+    sessionmaker,
+    scoped_session
+)
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
+from web3.middleware import (
+    geth_poa_middleware,
+    local_filter_middleware
+)
 
 path = os.path.join(os.path.dirname(__file__), '../')
 sys.path.append(path)
 
-from config import DATABASE_URL, WEB3_HTTP_PROVIDER, ZERO_ADDRESS, SYSTEM_LOCALE
-from app.model.db import UTXO, UTXOBlockNumber, Token
+from config import (
+    DATABASE_URL,
+    WEB3_HTTP_PROVIDER,
+    ZERO_ADDRESS,
+    SYSTEM_LOCALE
+)
+from app.model.db import (
+    UTXO,
+    UTXOBlockNumber,
+    Token
+)
 from app.model.blockchain.utils import ContractUtils
 import batch_log
 from batch.localized import create_utxo_JPN
@@ -44,6 +58,7 @@ db_session.configure(bind=engine)
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+web3.middleware_onion.add(local_filter_middleware)
 
 
 class Sinks:
@@ -165,10 +180,10 @@ class Processor:
     def __process_transfer(self, token_contract, block_from: int, block_to: int):
         try:
             # When a Transfer event occurs
-            _event_filter = token_contract.events.Transfer.createFilter(
-                fromBlock=block_from,
-                toBlock=block_to
-            )
+            _build_filter = token_contract.events.Transfer.build_filter()
+            _build_filter.fromBlock = block_from
+            _build_filter.toBlock = block_to
+            _event_filter = _build_filter.deploy(web3)
             for event in _event_filter.get_all_entries():
 
                 # Get contract event args
@@ -179,7 +194,7 @@ class Processor:
 
                 transaction_hash = event["transactionHash"].hex()
                 block_number = event["blockNumber"]
-                block_timestamp = datetime.utcfromtimestamp(web3.eth.getBlock(block_number)["timestamp"])  # UTC
+                block_timestamp = datetime.utcfromtimestamp(web3.eth.get_block(block_number)["timestamp"])  # UTC
 
                 if amount is not None and amount <= sys.maxsize:
                     # Update UTXO（from account）
@@ -208,8 +223,6 @@ class Processor:
                     for country_code in SYSTEM_LOCALE:
                         if country_code == "JPN":
                             create_utxo_JPN.on_bond_ledger(token_contract.address, self.db)
-
-            web3.eth.uninstallFilter(_event_filter.filter_id)
         except Exception as e:
             LOG.exception(e)
 
