@@ -16,7 +16,12 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import Column, Integer, String, JSON
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    JSON
+)
 
 from .base import Base
 

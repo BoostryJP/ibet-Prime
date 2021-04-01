@@ -21,14 +21,31 @@ import sys
 import time
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import (
+    sessionmaker,
+    scoped_session
+)
 
 path = os.path.join(os.path.dirname(__file__), '../')
 sys.path.append(path)
 
-from config import DATABASE_URL, ZERO_ADDRESS
-from app.model.db import Token, TokenType, IDXPersonalInfo, Account, AccountRsaKeyTemporary, AccountRsaStatus
-from app.model.blockchain import PersonalInfoContract, IbetShareContract, IbetStraightBondContract
+from config import (
+    DATABASE_URL,
+    ZERO_ADDRESS
+)
+from app.model.db import (
+    Token,
+    TokenType,
+    IDXPersonalInfo,
+    Account,
+    AccountRsaKeyTemporary,
+    AccountRsaStatus
+)
+from app.model.blockchain import (
+    PersonalInfoContract,
+    IbetShareContract,
+    IbetStraightBondContract
+)
 import batch_log
 
 process_name = "PROCESSOR-Modify-Personal-Info"

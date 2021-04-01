@@ -16,7 +16,10 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import Dict, Any
+from typing import (
+    Dict,
+    Any
+)
 
 from pydantic import BaseModel
 

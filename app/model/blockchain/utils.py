@@ -18,7 +18,6 @@ SPDX-License-Identifier: Apache-2.0
 """
 from typing import Tuple
 import json
-import time
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
@@ -28,7 +27,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
-from config import WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT, DATABASE_URL
+from config import (
+    WEB3_HTTP_PROVIDER,
+    CHAIN_ID,
+    TX_GAS_LIMIT,
+    DATABASE_URL
+)
 from app.exceptions import SendTransactionError
 from app.model.db import TransactionLock
 

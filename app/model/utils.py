@@ -19,7 +19,10 @@ SPDX-License-Identifier: Apache-2.0
 from typing import Dict
 import base64
 import binascii
-from datetime import datetime, timedelta
+from datetime import (
+    datetime,
+    timedelta
+)
 from pydantic.errors import MissingError
 
 import boto3
@@ -151,7 +154,7 @@ class E2EEUtils:
         return E2EEUtils.cache
 
 
-def headers_validate(**kwargs):
+def validate_headers(**kwargs):
     """Header-Parameters Validation Function
 
     :param kwargs: keyword is header name(Replace hyphens with underscores).

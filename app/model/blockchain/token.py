@@ -16,20 +16,36 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import Dict, List
+from typing import (
+    Dict,
+    List
+)
 import json
 from decimal import Decimal
-from datetime import datetime, timedelta
+from datetime import (
+    datetime,
+    timedelta
+)
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from web3.exceptions import TimeExhausted
 
-from config import TOKEN_CACHE, TOKEN_CACHE_TTL, \
-    WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT, ZERO_ADDRESS
+from config import (
+    TOKEN_CACHE,
+    TOKEN_CACHE_TTL,
+    WEB3_HTTP_PROVIDER,
+    CHAIN_ID,
+    TX_GAS_LIMIT,
+    ZERO_ADDRESS
+)
 from app.model.schema import (
-    IbetStraightBondUpdate, IbetStraightBondTransfer, IbetStraightBondAdd,
-    IbetShareUpdate, IbetShareTransfer, IbetShareAdd
+    IbetStraightBondUpdate,
+    IbetStraightBondTransfer,
+    IbetStraightBondAdd,
+    IbetShareUpdate,
+    IbetShareTransfer,
+    IbetShareAdd
 )
 from app.exceptions import SendTransactionError
 from app import log
@@ -211,14 +227,14 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
         )
 
         if data.face_value is not None:
-            tx = bond_contract.functions.\
-                setFaceValue(data.face_value).\
+            tx = bond_contract.functions. \
+                setFaceValue(data.face_value). \
                 buildTransaction({
-                    "chainId": CHAIN_ID,
-                    "from": tx_from,
-                    "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0
-                })
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
@@ -228,14 +244,14 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
 
         if data.interest_rate is not None:
             _interest_rate = int(data.interest_rate * 10000)
-            tx = bond_contract.functions.\
-                setInterestRate(_interest_rate).\
+            tx = bond_contract.functions. \
+                setInterestRate(_interest_rate). \
                 buildTransaction({
-                    "chainId": CHAIN_ID,
-                    "from": tx_from,
-                    "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0
-                })
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
@@ -248,14 +264,14 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             for i, item in enumerate(data.interest_payment_date):
                 _interest_payment_date[f"interestPaymentDate{i + 1}"] = item
             _interest_payment_date_string = json.dumps(_interest_payment_date)
-            tx = bond_contract.functions.\
-                setInterestPaymentDate(_interest_payment_date_string).\
+            tx = bond_contract.functions. \
+                setInterestPaymentDate(_interest_payment_date_string). \
                 buildTransaction({
-                    "chainId": CHAIN_ID,
-                    "from": tx_from,
-                    "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0
-                })
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
@@ -264,14 +280,14 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(err)
 
         if data.redemption_value is not None:
-            tx = bond_contract.functions.\
-                setRedemptionValue(data.redemption_value).\
+            tx = bond_contract.functions. \
+                setRedemptionValue(data.redemption_value). \
                 buildTransaction({
-                    "chainId": CHAIN_ID,
-                    "from": tx_from,
-                    "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0
-                })
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
@@ -280,14 +296,14 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(err)
 
         if data.transferable is not None:
-            tx = bond_contract.functions.\
-                setTransferable(data.transferable).\
+            tx = bond_contract.functions. \
+                setTransferable(data.transferable). \
                 buildTransaction({
-                    "chainId": CHAIN_ID,
-                    "from": tx_from,
-                    "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0
-                })
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
@@ -297,14 +313,14 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
 
         if data.image_url is not None:
             for i, _image_url in enumerate(data.image_url):
-                tx = bond_contract.functions.\
-                    setImageURL(i, _image_url).\
+                tx = bond_contract.functions. \
+                    setImageURL(i, _image_url). \
                     buildTransaction({
-                        "chainId": CHAIN_ID,
-                        "from": tx_from,
-                        "gas": TX_GAS_LIMIT,
-                        "gasPrice": 0
-                    })
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0
+                })
                 try:
                     ContractUtils.send_transaction(transaction=tx, private_key=private_key)
                 except TimeExhausted as timeout_error:
@@ -316,11 +332,11 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             tx = bond_contract.functions. \
                 setStatus(data.status). \
                 buildTransaction({
-                    "chainId": CHAIN_ID,
-                    "from": tx_from,
-                    "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0
-                })
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
@@ -332,11 +348,11 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             tx = bond_contract.functions. \
                 setInitialOfferingStatus(data.initial_offering_status). \
                 buildTransaction({
-                    "chainId": CHAIN_ID,
-                    "from": tx_from,
-                    "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0
-                })
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
@@ -362,11 +378,11 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             tx = bond_contract.functions. \
                 setTradableExchange(data.tradable_exchange_contract_address). \
                 buildTransaction({
-                    "chainId": CHAIN_ID,
-                    "from": tx_from,
-                    "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0
-                })
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
@@ -378,11 +394,11 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             tx = bond_contract.functions. \
                 setPersonalInfoAddress(data.personal_info_contract_address). \
                 buildTransaction({
-                    "chainId": CHAIN_ID,
-                    "from": tx_from,
-                    "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0
-                })
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
@@ -394,11 +410,11 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             tx = bond_contract.functions. \
                 setContactInformation(data.contact_information). \
                 buildTransaction({
-                    "chainId": CHAIN_ID,
-                    "from": tx_from,
-                    "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0
-                })
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
@@ -410,11 +426,11 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             tx = bond_contract.functions. \
                 setPrivacyPolicy(data.privacy_policy). \
                 buildTransaction({
-                    "chainId": CHAIN_ID,
-                    "from": tx_from,
-                    "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0
-                })
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             except TimeExhausted as timeout_error:
@@ -438,11 +454,11 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             tx = bond_contract.functions. \
                 transferFrom(_from, _to, _amount). \
                 buildTransaction({
-                    "chainId": CHAIN_ID,
-                    "from": tx_from,
-                    "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0
-                })
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
@@ -465,11 +481,11 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             tx = bond_contract.functions. \
                 issueFrom(_target_address, ZERO_ADDRESS, _amount). \
                 buildTransaction({
-                    "chainId": CHAIN_ID,
-                    "from": tx_from,
-                    "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0
-                })
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
@@ -792,11 +808,11 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             tx = share_contract.functions. \
                 transferFrom(_from, _to, _amount). \
                 buildTransaction({
-                    "chainId": CHAIN_ID,
-                    "from": tx_from,
-                    "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0
-                })
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
@@ -819,11 +835,11 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             tx = bond_contract.functions. \
                 issueFrom(_target_address, ZERO_ADDRESS, _amount). \
                 buildTransaction({
-                    "chainId": CHAIN_ID,
-                    "from": tx_from,
-                    "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0
-                })
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)

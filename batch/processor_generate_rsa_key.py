@@ -22,14 +22,23 @@ import time
 
 from Crypto import Random
 from Crypto.PublicKey import RSA
-from sqlalchemy import create_engine, or_
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy import (
+    create_engine,
+    or_
+)
+from sqlalchemy.orm import (
+    sessionmaker,
+    scoped_session
+)
 
 path = os.path.join(os.path.dirname(__file__), '../')
 sys.path.append(path)
 
 from config import DATABASE_URL
-from app.model.db import Account, AccountRsaStatus
+from app.model.db import (
+    Account,
+    AccountRsaStatus
+)
 from app.model.utils import E2EEUtils
 import batch_log
 

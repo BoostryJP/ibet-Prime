@@ -16,10 +16,16 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import List, Optional
+from typing import (
+    List,
+    Optional
+)
 import math
 
-from pydantic import BaseModel, validator
+from pydantic import (
+    BaseModel,
+    validator
+)
 from web3 import Web3
 
 

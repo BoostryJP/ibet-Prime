@@ -29,14 +29,29 @@ from web3.middleware import geth_poa_middleware
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
-from config import WEB3_HTTP_PROVIDER, DATABASE_URL, BULK_TRANSFER_INTERVAL
+from config import (
+    WEB3_HTTP_PROVIDER,
+    DATABASE_URL,
+    BULK_TRANSFER_INTERVAL
+)
 from app.model.utils import E2EEUtils
-from app.model.db import Account, BulkTransferUpload, BulkTransfer, TokenType
-from app.model.blockchain import IbetStraightBondContract, IbetShareContract
-from app.model.schema import IbetShareTransfer, IbetStraightBondTransfer
+from app.model.db import (
+    Account,
+    BulkTransferUpload,
+    BulkTransfer,
+    TokenType
+)
+from app.model.blockchain import (
+    IbetStraightBondContract,
+    IbetShareContract
+)
+from app.model.schema import (
+    IbetShareTransfer,
+    IbetStraightBondTransfer
+)
 from app.exceptions import SendTransactionError
-
 import batch_log
+
 process_name = "PROCESSOR-Bulk-Transfer"
 LOG = batch_log.get_logger(process_name=process_name)
 

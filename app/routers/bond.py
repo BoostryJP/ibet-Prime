@@ -50,7 +50,7 @@ from app.model.schema import (
 )
 from app.model.utils import (
     E2EEUtils,
-    headers_validate,
+    validate_headers,
     address_is_valid_address,
     eoa_password_is_required,
     eoa_password_is_encrypted_value,
@@ -98,7 +98,7 @@ async def issue_token(
     """Issue ibetStraightBond token"""
 
     # Validate Headers
-    headers_validate(issuer_address=(issuer_address, address_is_valid_address),
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
                      eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
 
     # Validate update items
@@ -197,7 +197,7 @@ async def list_all_tokens(
     """List all issued tokens"""
 
     # Validate Headers
-    headers_validate(issuer_address=(issuer_address, address_is_valid_address))
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get issued token list
     if issuer_address is None:
@@ -260,7 +260,7 @@ async def update_token(
     """Update a token"""
 
     # Validate Headers
-    headers_validate(issuer_address=(issuer_address, address_is_valid_address),
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
                      eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
 
     # Get Account
@@ -325,7 +325,7 @@ async def additional_issue(
     """Add token"""
 
     # Validate Headers
-    headers_validate(issuer_address=(issuer_address, address_is_valid_address),
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
                      eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
 
     # Get Account
@@ -387,7 +387,7 @@ async def list_all_holders(
     """List all bond token holders"""
 
     # Validate Headers
-    headers_validate(issuer_address=(issuer_address, address_is_valid_address))
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get Account
     _account = db.query(Account). \
@@ -457,7 +457,7 @@ async def retrieve_holder(
     """Retrieve bond token holder"""
 
     # Validate Headers
-    headers_validate(issuer_address=(issuer_address, address_is_valid_address))
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get Issuer
     _account = db.query(Account). \
@@ -524,7 +524,7 @@ async def transfer_ownership(
     """Transfer token ownership"""
 
     # Validate Headers
-    headers_validate(issuer_address=(issuer_address, address_is_valid_address),
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
                      eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
 
     # Get Account
@@ -641,7 +641,7 @@ async def bulk_transfer_ownership(
     """Bulk transfer token ownership"""
 
     # Validate Headers
-    headers_validate(issuer_address=(issuer_address, address_is_valid_address),
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
                      eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
 
     if len(tokens) < 1:
@@ -714,7 +714,7 @@ async def list_bulk_transfer_upload(
     """List bulk transfer upload"""
 
     # Validate Headers
-    headers_validate(issuer_address=(issuer_address, address_is_valid_address))
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get bulk transfer upload list
     if issuer_address is None:
@@ -752,7 +752,7 @@ async def retrieve_bulk_transfer(
     """Retrieve bulk transfer"""
 
     # Validate Headers
-    headers_validate(issuer_address=(issuer_address, address_is_valid_address))
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get bulk transfer upload list
     if issuer_address is None:

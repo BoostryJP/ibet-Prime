@@ -40,7 +40,7 @@ from sqlalchemy.orm import Session
 from config import SYSTEM_LOCALE
 from app.database import db_session
 from app.model.utils import (
-    headers_validate,
+    validate_headers,
     address_is_valid_address
 )
 from app.model.db import (
@@ -75,7 +75,7 @@ async def list_all_bond_ledger_history(
     """List all Bond Ledger"""
 
     # Validate Headers
-    headers_validate(issuer_address=(issuer_address, address_is_valid_address))
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Function Enabled Check
     locale_upper = locale.upper()
@@ -119,7 +119,7 @@ async def retrieve_bond_ledger_history(
     """Retrieve Bond Ledger"""
 
     # Validate Headers
-    headers_validate(issuer_address=(issuer_address, address_is_valid_address))
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Function Enabled Check
     locale_upper = locale.upper()
@@ -170,7 +170,7 @@ async def retrieve_bond_ledger_template(
     """Retrieve Bond Ledger Template"""
 
     # Validate Headers
-    headers_validate(issuer_address=(issuer_address, address_is_valid_address))
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Function Enabled Check
     locale_upper = locale.upper()
@@ -214,7 +214,7 @@ async def create_update_bond_ledger_template(
     """Create or Update Bond Ledger Template"""
 
     # Validate Headers
-    headers_validate(issuer_address=(issuer_address, address_is_valid_address))
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Function Enabled Check
     locale_upper = locale.upper()

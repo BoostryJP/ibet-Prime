@@ -16,14 +16,24 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from fastapi import FastAPI, Request, status
+from fastapi import (
+    FastAPI,
+    Request,
+    status
+)
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from config import SERVER_NAME
-from app.routers import index, account, bond, bond_ledger, share
+from app.routers import (
+    index,
+    account,
+    bond,
+    bond_ledger,
+    share
+)
 from app.exceptions import *
 
 app = FastAPI(
