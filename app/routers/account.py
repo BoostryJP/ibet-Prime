@@ -20,7 +20,10 @@ from typing import List
 import secrets
 import re
 
-from fastapi import APIRouter, Depends
+from fastapi import (
+    APIRouter,
+    Depends
+)
 from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
 from sha3 import keccak_256
@@ -28,12 +31,27 @@ from coincurve import PublicKey
 from eth_utils import to_checksum_address
 import eth_keyfile
 
-from config import PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE, EOA_PASSWORD_PATTERN, EOA_PASSWORD_PATTERN_MSG, \
-    PERSONAL_INFO_RSA_PASSPHRASE_PATTERN, PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG, E2EE_REQUEST_ENABLED
+from config import (
+    PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE,
+    EOA_PASSWORD_PATTERN,
+    EOA_PASSWORD_PATTERN_MSG,
+    PERSONAL_INFO_RSA_PASSPHRASE_PATTERN,
+    PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG,
+    E2EE_REQUEST_ENABLED
+)
 from app.database import db_session
-from app.model.schema import AccountCreateKeyRequest, AccountResponse, AccountGenerateRsaKeyRequest
+from app.model.schema import (
+    AccountCreateKeyRequest,
+    AccountResponse,
+    AccountGenerateRsaKeyRequest
+)
 from app.model.utils import E2EEUtils
-from app.model.db import Account, AccountRsaKeyTemporary, AccountRsaStatus, TransactionLock
+from app.model.db import (
+    Account,
+    AccountRsaKeyTemporary,
+    AccountRsaStatus,
+    TransactionLock
+)
 from app.exceptions import InvalidParameterError
 from app import log
 

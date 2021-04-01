@@ -16,13 +16,18 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from app.model.db import Account, Token, TokenType, \
-    BulkTransfer, BulkTransferUpload
+from app.model.db import (
+    Account,
+    Token,
+    TokenType,
+    BulkTransfer,
+    BulkTransferUpload
+)
+from app.model.utils import E2EEUtils
 from tests.account_config import config_eth_account
 
 
 class TestAppRoutersBondBulkTransferPOST:
-
     # target API endpoint
     test_url = "/bond/bulk_transfer"
 
@@ -60,6 +65,7 @@ class TestAppRoutersBondBulkTransferPOST:
         account = Account()
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
         # prepare data : Tokens
@@ -89,7 +95,10 @@ class TestAppRoutersBondBulkTransferPOST:
         resp = client.post(
             self.test_url,
             json=req_param,
-            headers={"issuer-address": self.admin_address}
+            headers={
+                "issuer-address": self.admin_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            }
         )
 
         # assertion
@@ -156,14 +165,14 @@ class TestAppRoutersBondBulkTransferPOST:
                 "code": 1,
                 "title": "RequestValidationError"
             },
-            "detail":  [
+            "detail": [
                 {
-                    "loc": ["body", 0, "token_address"], 
-                    "msg": "token_address is not a valid address", 
+                    "loc": ["body", 0, "token_address"],
+                    "msg": "token_address is not a valid address",
                     "type": "value_error"
                 }, {
-                    "loc": ["body", 0, "transfer_from"], 
-                    "msg": "transfer_from is not a valid address", 
+                    "loc": ["body", 0, "transfer_from"],
+                    "msg": "transfer_from is not a valid address",
                     "type": "value_error"
                 }, {
                     "loc": ["body", 0, "transfer_to"],
@@ -181,7 +190,6 @@ class TestAppRoutersBondBulkTransferPOST:
     # RequestValidationError
     # headers and body required
     def test_error_2(self, client, db):
-
         # request target API
         resp = client.post(
             self.test_url
@@ -209,13 +217,75 @@ class TestAppRoutersBondBulkTransferPOST:
         }
 
     # <Error_3>
+    # RequestValidationError
+    # issuer-address, eoa-password(required)
+    def test_error_3(self, client, db):
+        # request target API
+        req_param = []
+        resp = client.post(
+            self.test_url,
+            json=req_param,
+            headers={
+                "issuer-address": "admin_address"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [{
+                "loc": ["header", "issuer-address"],
+                "msg": "issuer-address is not a valid address",
+                "type": "value_error"
+            }, {
+                "loc": ["header", "eoa-password"],
+                "msg": "field required",
+                "type": "value_error.missing"
+            }]
+        }
+
+    # <Error_4>
+    # RequestValidationError
+    # eoa-password(not decrypt)
+    def test_error_4(self, client, db):
+        # request target API
+        req_param = []
+        resp = client.post(
+            self.test_url,
+            json=req_param,
+            headers={
+                "issuer-address": self.admin_address,
+                "eoa-password": "password"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [{
+                "loc": ["header", "eoa-password"],
+                "msg": "eoa-password is not a Base64-encoded encrypted data",
+                "type": "value_error"
+            }]
+        }
+
+    # <Error_5>
     # InvalidParameterError
     # list length is 0
-    def test_error_3(self, client, db):
+    def test_error_5(self, client, db):
         # prepare data : Account(Issuer)
         account = Account()
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
         # request target API
@@ -223,7 +293,10 @@ class TestAppRoutersBondBulkTransferPOST:
         resp = client.post(
             self.test_url,
             json=req_param,
-            headers={"issuer-address": self.admin_address}
+            headers={
+                "issuer-address": self.admin_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            }
         )
 
         # assertion
@@ -236,10 +309,10 @@ class TestAppRoutersBondBulkTransferPOST:
             "detail": "list length is zero"
         }
 
-    # <Error_4>
-    # InvalidParameterError
+    # <Error_6>
+    # AuthorizationError
     # issuer does not exist
-    def test_error_4(self, client, db):
+    def test_error_6(self, client, db):
         # request target API
         req_param = [
             {
@@ -257,27 +330,31 @@ class TestAppRoutersBondBulkTransferPOST:
         resp = client.post(
             self.test_url,
             json=req_param,
-            headers={"issuer-address": self.admin_address}
+            headers={
+                "issuer-address": self.admin_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            }
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 401
         assert resp.json() == {
             "meta": {
                 "code": 1,
-                "title": "InvalidParameterError"
+                "title": "AuthorizationError"
             },
             "detail": "issuer does not exist"
         }
 
-    # <Error_5>
-    # InvalidParameterError
-    # token not found
+    # <Error_7>
+    # AuthorizationError
+    # password mismatch
     def test_error_5(self, client, db):
         # prepare data : Account(Issuer)
         account = Account()
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
         # request target API
@@ -292,7 +369,48 @@ class TestAppRoutersBondBulkTransferPOST:
         resp = client.post(
             self.test_url,
             json=req_param,
-            headers={"issuer-address": self.admin_address}
+            headers={
+                "issuer-address": self.admin_address,
+                "eoa-password": E2EEUtils.encrypt("password_test")
+            }
+        )
+
+        assert resp.status_code == 401
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "AuthorizationError"
+            },
+            "detail": "password mismatch"
+        }
+
+    # <Error_8>
+    # InvalidParameterError
+    # token not found
+    def test_error_8(self, client, db):
+        # prepare data : Account(Issuer)
+        account = Account()
+        account.issuer_address = self.admin_address
+        account.keyfile = self.admin_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        # request target API
+        req_param = [
+            {
+                "token_address": self.req_tokens[0],
+                "transfer_from": self.transfer_from,
+                "transfer_to": self.transfer_to,
+                "amount": 10
+            }
+        ]
+        resp = client.post(
+            self.test_url,
+            json=req_param,
+            headers={
+                "issuer-address": self.admin_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            }
         )
 
         assert resp.status_code == 400

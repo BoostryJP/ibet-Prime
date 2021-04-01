@@ -82,7 +82,8 @@ class TestAppRoutersBondTokensPOST:
                 self.apiurl,
                 json=req_param,
                 headers={
-                    "issuer-address": test_account["address"]
+                    "issuer-address": test_account["address"],
+                    "eoa-password": E2EEUtils.encrypt("password")
                 }
             )
 
@@ -168,7 +169,8 @@ class TestAppRoutersBondTokensPOST:
                 self.apiurl,
                 json=req_param,
                 headers={
-                    "issuer-address": test_account["address"]
+                    "issuer-address": test_account["address"],
+                    "eoa-password": E2EEUtils.encrypt("password")
                 }
             )
 
@@ -217,7 +219,6 @@ class TestAppRoutersBondTokensPOST:
             assert token_1.issuer_address == test_account["address"]
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
-
 
     ###########################################################################
     # Error Case
@@ -334,9 +335,8 @@ class TestAppRoutersBondTokensPOST:
 
     # <Error_2_2>
     # Validation Error
-    # issuer-address
+    # issuer-address, eoa-password(required)
     def test_error_2_2(self, client, db):
-
         # request target api
         req_param = {
             "name": "name_test1",
@@ -368,14 +368,65 @@ class TestAppRoutersBondTokensPOST:
                 "loc": ["header", "issuer-address"],
                 "msg": "issuer-address is not a valid address",
                 "type": "value_error"
+            }, {
+                "loc": ["header", "eoa-password"],
+                "msg": "field required",
+                "type": "value_error.missing"
             }]
         }
 
     # <Error_2_3>
     # Validation Error
-    # update items
+    # eoa-password(not decrypt)
     def test_error_2_3(self, client, db):
+        test_account_1 = config_eth_account("user1")
 
+        # prepare data
+        account = Account()
+        account.issuer_address = test_account_1["address"]
+        account.keyfile = test_account_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        # request target api
+        req_param = {
+            "name": "name_test1",
+            "symbol": "symbol_test1",
+            "total_supply": 10000,
+            "face_value": 200,
+            "redemption_date": "redemption_date_test1",
+            "redemption_value": 4000,
+            "return_date": "redemption_value_test1",
+            "return_amount": "return_amount_test1",
+            "purpose": "purpose_test1",
+        }
+        resp = client.post(
+            self.apiurl,
+            json=req_param,
+            headers={
+                "issuer-address": test_account_1["address"],
+                "eoa-password": "password"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [{
+                "loc": ["header", "eoa-password"],
+                "msg": "eoa-password is not a Base64-encoded encrypted data",
+                "type": "value_error"
+            }]
+        }
+
+    # <Error_2_4>
+    # Validation Error
+    # update items
+    def test_error_2_4(self, client, db):
         # request target api
         req_param = {
             "name": "name_test1",
@@ -413,9 +464,9 @@ class TestAppRoutersBondTokensPOST:
             ]
         }
 
-    # <Error_3>
+    # <Error_3-1>
     # Not Exists Address
-    def test_error_3(self, client, db):
+    def test_error_3_1(self, client, db):
         test_account_1 = config_eth_account("user1")
         test_account_2 = config_eth_account("user2")
 
@@ -442,18 +493,62 @@ class TestAppRoutersBondTokensPOST:
             self.apiurl,
             json=req_param,
             headers={
-                "issuer-address": test_account_2["address"]
+                "issuer-address": test_account_2["address"],
+                "eoa-password": E2EEUtils.encrypt("password")
             }
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 401
         assert resp.json() == {
             "meta": {
                 "code": 1,
-                "title": "InvalidParameterError"
+                "title": "AuthorizationError"
             },
             "detail": "issuer does not exist"
+        }
+
+    # <Error_3-2>
+    # Password Mismatch
+    def test_error_3_2(self, client, db):
+        test_account_1 = config_eth_account("user1")
+
+        # prepare data
+        account = Account()
+        account.issuer_address = test_account_1["address"]
+        account.keyfile = test_account_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        # request target api
+        req_param = {
+            "name": "name_test1",
+            "symbol": "symbol_test1",
+            "total_supply": 10000,
+            "face_value": 200,
+            "redemption_date": "redemption_date_test1",
+            "redemption_value": 4000,
+            "return_date": "redemption_value_test1",
+            "return_amount": "return_amount_test1",
+            "purpose": "purpose_test1",
+        }
+        resp = client.post(
+            self.apiurl,
+            json=req_param,
+            headers={
+                "issuer-address": test_account_1["address"],
+                "eoa-password": E2EEUtils.encrypt("password_test")
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 401
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "AuthorizationError"
+            },
+            "detail": "password mismatch"
         }
 
     # <Error_4_1>
@@ -493,7 +588,8 @@ class TestAppRoutersBondTokensPOST:
                 self.apiurl,
                 json=req_param,
                 headers={
-                    "issuer-address": test_account_1["address"]
+                    "issuer-address": test_account_1["address"],
+                    "eoa-password": E2EEUtils.encrypt("password")
                 }
             )
 
@@ -558,7 +654,8 @@ class TestAppRoutersBondTokensPOST:
                 self.apiurl,
                 json=req_param,
                 headers={
-                    "issuer-address": test_account["address"]
+                    "issuer-address": test_account["address"],
+                    "eoa-password": E2EEUtils.encrypt("password")
                 }
             )
 
