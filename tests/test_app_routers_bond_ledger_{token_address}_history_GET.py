@@ -128,8 +128,42 @@ class TestAppBondLedgerTokenAddressHistoryGET:
         }
 
     # <Error_2>
-    # Not Supported
+    # Parameter Error(issuer-address)
     def test_error_2(self, client, db):
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(token_address),
+            params={
+                "locale": "jpn",
+                "offset": 2,
+                "limit": 3,
+            },
+            headers={
+                "issuer-address": "test",
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "loc": ["header", "issuer-address"],
+                    "msg": "issuer-address is not a valid address",
+                    "type": "value_error"
+                }
+            ]
+        }
+
+    # <Error_3>
+    # Not Supported
+    def test_error_3(self, client, db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -157,9 +191,9 @@ class TestAppBondLedgerTokenAddressHistoryGET:
             "detail": "Not Supported locale:usa"
         }
 
-    # <Error_3>
+    # <Error_4>
     # Token Not Found
-    def test_error_3(self, client, db):
+    def test_error_4(self, client, db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"

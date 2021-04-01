@@ -21,8 +21,15 @@ from datetime import timezone
 
 from sqlalchemy.orm import Session
 
-from app.model.blockchain import IbetStraightBondContract, PersonalInfoContract
-from app.model.db import BondLedger, IDXPersonalInfo, CorporateBondLedgerTemplateJPN
+from app.model.blockchain import (
+    IbetStraightBondContract,
+    PersonalInfoContract
+)
+from app.model.db import (
+    BondLedger,
+    IDXPersonalInfo,
+    CorporateBondLedgerTemplateJPN
+)
 from app.model.schema import CreateUpdateBondLedgerTemplateRequestJPN
 from app.exceptions import InvalidParameterError
 
@@ -37,7 +44,7 @@ def list_all_bond_ledger_history(
 
     query = db.query(BondLedger). \
         filter(BondLedger.token_address == token_address). \
-        filter(BondLedger.country_code == "JPN").\
+        filter(BondLedger.country_code == "JPN"). \
         order_by(BondLedger.id)
     count = query.count()
 

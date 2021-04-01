@@ -89,7 +89,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             self.base_url.format(_token_address),
             json=req_param,
             headers={
-                "issuer-address": _issuer_address
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
             }
         )
 
@@ -136,7 +137,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             self.base_url.format(_token_address),
             json=req_param,
             headers={
-                "issuer-address": _issuer_address
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
             }
         )
 
@@ -327,7 +329,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         }
 
     # <Error_6>
-    # RequestValidationError: issuer-address
+    # RequestValidationError: issuer-address, eoa-password(required)
     def test_error_6(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -354,13 +356,49 @@ class TestAppRoutersShareTokensTokenAddressPOST:
                 "loc": ["header", "issuer-address"],
                 "msg": "issuer-address is not a valid address",
                 "type": "value_error"
+            }, {
+                "loc": ["header", "eoa-password"],
+                "msg": "field required",
+                "type": "value_error.missing"
             }]
         }
 
     # <Error_7>
-    # InvalidParameterError: issuer does not exist
+    # RequestValidationError: eoa-password(not decrypt)
+    def test_error_7(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # request target API
+        req_param = {}
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": "password"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [{
+                "loc": ["header", "eoa-password"],
+                "msg": "eoa-password is not a Base64-encoded encrypted data",
+                "type": "value_error"
+            }]
+        }
+
+    # <Error_8>
+    # AuthorizationError: issuer does not exist
     @mock.patch("app.model.blockchain.token.IbetShareContract.update")
-    def test_error_7(self, IbetShareContract_mock, client, db):
+    def test_error_8(self, IbetShareContract_mock, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -383,24 +421,25 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             self.base_url.format(_token_address),
             json=req_param,
             headers={
-                "issuer-address": _issuer_address
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
             }
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 401
         assert resp.json() == {
             "meta": {
                 "code": 1,
-                "title": "InvalidParameterError"
+                "title": "AuthorizationError"
             },
             "detail": "issuer does not exist"
         }
 
-    # <Error_8>
-    # token not found
+    # <Error_9>
+    # AuthorizationError: password mismatch
     @mock.patch("app.model.blockchain.token.IbetShareContract.update")
-    def test_error_8(self, IbetShareContract_mock, client, db):
+    def test_error_9(self, IbetShareContract_mock, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -422,7 +461,48 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             self.base_url.format(_token_address),
             json=req_param,
             headers={
-                "issuer-address": _issuer_address
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password_test")
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 401
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "AuthorizationError"
+            },
+            "detail": "password mismatch"
+        }
+
+    # <Error_10>
+    # token not found
+    @mock.patch("app.model.blockchain.token.IbetShareContract.update")
+    def test_error_10(self, IbetShareContract_mock, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        # mock
+        IbetShareContract_mock.side_effect = [None]
+
+        # request target API
+        req_param = {}
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
             }
         )
 
@@ -436,11 +516,11 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "detail": "token not found"
         }
 
-    # <Error_9>
+    # <Error_11>
     # Send Transaction Error
     @mock.patch("app.model.blockchain.token.IbetShareContract.update",
                 MagicMock(side_effect=SendTransactionError()))
-    def test_error_9(self, client, db):
+    def test_error_11(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]

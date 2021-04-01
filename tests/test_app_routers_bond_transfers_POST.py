@@ -26,7 +26,6 @@ from tests.account_config import config_eth_account
 
 
 class TestAppRoutersBondTransfersPOST:
-
     # target API endpoint
     test_url = "/bond/transfers"
 
@@ -78,7 +77,8 @@ class TestAppRoutersBondTransfersPOST:
             self.test_url,
             json=req_param,
             headers={
-                "issuer-address": _admin_address
+                "issuer-address": _admin_address,
+                "eoa-password": E2EEUtils.encrypt("password")
             }
         )
 
@@ -148,7 +148,6 @@ class TestAppRoutersBondTransfersPOST:
     # <Error_2>
     # RequestValidationError: headers and body required
     def test_error_2(self, client, db):
-
         # request target API
         resp = client.post(
             self.test_url
@@ -176,7 +175,7 @@ class TestAppRoutersBondTransfersPOST:
         }
 
     # <Error_3>
-    # RequestValidationError: issuer-address
+    # RequestValidationError: issuer-address, eoa-password(required)
     def test_normal_3(self, client, db):
         _transfer_from_account = config_eth_account("user2")
         _transfer_from = _transfer_from_account["address"]
@@ -212,12 +211,59 @@ class TestAppRoutersBondTransfersPOST:
                 "loc": ["header", "issuer-address"],
                 "msg": "issuer-address is not a valid address",
                 "type": "value_error"
+            }, {
+                "loc": ["header", "eoa-password"],
+                "msg": "field required",
+                "type": "value_error.missing"
             }]
         }
 
     # <Error_4>
-    # InvalidParameterError: issuer does not exist
-    def test_error_4(self, client, db):
+    # RequestValidationError: eoa-password(not decrypt)
+    def test_normal_4(self, client, db):
+        _admin_account = config_eth_account("user1")
+        _admin_address = _admin_account["address"]
+        _transfer_from_account = config_eth_account("user2")
+        _transfer_from = _transfer_from_account["address"]
+
+        _transfer_to_account = config_eth_account("user3")
+        _transfer_to = _transfer_to_account["address"]
+
+        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
+
+        # request target API
+        req_param = {
+            "token_address": _token_address,
+            "transfer_from": _transfer_from,
+            "transfer_to": _transfer_to,
+            "amount": 10
+        }
+        resp = client.post(
+            self.test_url,
+            json=req_param,
+            headers={
+                "issuer-address": _admin_address,
+                "eoa-password": "password"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [{
+                "loc": ["header", "eoa-password"],
+                "msg": "eoa-password is not a Base64-encoded encrypted data",
+                "type": "value_error"
+            }]
+        }
+
+    # <Error_5>
+    # AuthorizationError: issuer does not exist
+    def test_error_5(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -241,23 +287,24 @@ class TestAppRoutersBondTransfersPOST:
             self.test_url,
             json=req_param,
             headers={
-                "issuer-address": _admin_address  # Non-existent issuer
+                "issuer-address": _admin_address,  # Non-existent issuer
+                "eoa-password": E2EEUtils.encrypt("password")
             }
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 401
         assert resp.json() == {
             "meta": {
                 "code": 1,
-                "title": "InvalidParameterError"
+                "title": "AuthorizationError"
             },
             "detail": "issuer does not exist"
         }
 
-    # <Error_5>
-    # InvalidParameterError: token not found
-    def test_error_5(self, client, db):
+    # <Error_6>
+    # AuthorizationError: password mismatch
+    def test_error_6(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -288,7 +335,56 @@ class TestAppRoutersBondTransfersPOST:
             self.test_url,
             json=req_param,
             headers={
-                "issuer-address": _admin_address
+                "issuer-address": _admin_address,
+                "eoa-password": E2EEUtils.encrypt("password_test")
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 401
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "AuthorizationError"
+            },
+            "detail": "password mismatch"
+        }
+
+    # <Error_7>
+    # InvalidParameterError: token not found
+    def test_error_7(self, client, db):
+        _admin_account = config_eth_account("user1")
+        _admin_address = _admin_account["address"]
+        _admin_keyfile = _admin_account["keyfile_json"]
+
+        _transfer_from_account = config_eth_account("user2")
+        _transfer_from = _transfer_from_account["address"]
+
+        _transfer_to_account = config_eth_account("user3")
+        _transfer_to = _transfer_to_account["address"]
+
+        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _admin_address
+        account.keyfile = _admin_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        # request target API
+        req_param = {
+            "token_address": _token_address,
+            "transfer_from": _transfer_from,
+            "transfer_to": _transfer_to,
+            "amount": 10
+        }
+        resp = client.post(
+            self.test_url,
+            json=req_param,
+            headers={
+                "issuer-address": _admin_address,
+                "eoa-password": E2EEUtils.encrypt("password")
             }
         )
 
@@ -302,11 +398,11 @@ class TestAppRoutersBondTransfersPOST:
             "detail": "token not found"
         }
 
-    # <Error_6>
+    # <Error_8>
     # Send Transaction Error
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.transfer",
                 MagicMock(side_effect=SendTransactionError()))
-    def test_error_6(self, client, db):
+    def test_error_8(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -345,7 +441,8 @@ class TestAppRoutersBondTransfersPOST:
             self.test_url,
             json=req_param,
             headers={
-                "issuer-address": _admin_address
+                "issuer-address": _admin_address,
+                "eoa-password": E2EEUtils.encrypt("password")
             }
         )
 

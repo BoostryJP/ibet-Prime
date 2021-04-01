@@ -21,7 +21,11 @@ import logging
 
 from fastapi import Request
 
-from config import LOG_LEVEL, APP_ENV, AUTH_LOGFILE
+from config import (
+    LOG_LEVEL,
+    APP_ENV,
+    AUTH_LOGFILE
+)
 
 logging.basicConfig(level=LOG_LEVEL)
 LOG = logging.getLogger("issuer_api")

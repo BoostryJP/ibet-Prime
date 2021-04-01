@@ -18,7 +18,13 @@ SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, JSON, DateTime, BigInteger
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    JSON,
+    DateTime
+)
 
 from .base import Base
 

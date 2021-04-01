@@ -18,7 +18,13 @@ SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
 
-from sqlalchemy import Column, JSON, String, Integer, Boolean
+from sqlalchemy import (
+    Column,
+    JSON,
+    String,
+    Integer,
+    Boolean
+)
 
 from .base import Base
 

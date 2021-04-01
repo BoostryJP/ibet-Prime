@@ -19,7 +19,11 @@ SPDX-License-Identifier: Apache-2.0
 from typing import Dict
 import base64
 import binascii
-from datetime import datetime, timedelta
+from datetime import (
+    datetime,
+    timedelta
+)
+from pydantic.errors import MissingError
 
 import boto3
 from Crypto.Cipher import PKCS1_OAEP
@@ -28,7 +32,14 @@ from fastapi.exceptions import RequestValidationError
 from pydantic.error_wrappers import ErrorWrapper
 from web3 import Web3
 
-from config import E2EE_RSA_RESOURCE_MODE, E2EE_RSA_RESOURCE, E2EE_RSA_PASSPHRASE, AWS_REGION_NAME
+from config import (
+    E2EE_RSA_RESOURCE_MODE,
+    E2EE_RSA_RESOURCE,
+    E2EE_RSA_PASSPHRASE,
+    AWS_REGION_NAME,
+    EOA_PASSWORD_CHECK_ENABLED,
+    E2EE_REQUEST_ENABLED
+)
 
 
 class E2EEUtils:
@@ -143,17 +154,37 @@ class E2EEUtils:
         return E2EEUtils.cache
 
 
-def headers_validate(validators: list):
-    errors = []
-    for v in validators:
-        name = v.get("name")
-        value = v.get("value")
-        validator = v.get("validator")
+def validate_headers(**kwargs):
+    """Header-Parameters Validation Function
 
-        try:
-            validator(name, value)
-        except Exception as err:
-            errors.append(ErrorWrapper(exc=err, loc=("header", name)))
+    :param kwargs: keyword is header name(Replace hyphens with underscores).
+                   value is tuple({header-param}, {valid-func}),
+                   {valid-func} can be specified even in list.
+    :raises Exception: wrong call
+    :raises RequestValidationError: detected validation error
+
+    Call examples
+
+    e.g.) headers_validate(issuer_address=(issuer_address, address_is_valid_address))
+
+    e.g.) headers_validate(eoa_password=(pwd_encrypt_str, [eoa_password_is_required, eoa_password_is_encrypted_value]))
+    """
+
+    errors = []
+    for name, v in kwargs.items():
+        if not isinstance(v, tuple) or len(v) != 2:
+            raise Exception
+        name = name.replace("_", "-")
+        value, validators = v
+        if not isinstance(validators, list):
+            validators = [validators]
+        for valid_func in validators:
+            if not callable(valid_func):
+                raise Exception
+            try:
+                valid_func(name, value)
+            except Exception as err:
+                errors.append(ErrorWrapper(exc=err, loc=("header", name)))
 
     if len(errors) > 0:
         raise RequestValidationError(errors)
@@ -163,6 +194,25 @@ def address_is_valid_address(name, value):
     if value:
         if not Web3.isAddress(value):
             raise ValueError(f"{name} is not a valid address")
+
+
+def eoa_password_is_required(_, value):
+    if EOA_PASSWORD_CHECK_ENABLED:
+        if not value:
+            raise MissingError
+
+
+def eoa_password_is_encrypted_value(name, value):
+    if E2EE_REQUEST_ENABLED:
+        check_value_is_encrypted(name, value)
+
+
+def check_password(checked_pwd, correct_pwd):
+    if E2EE_REQUEST_ENABLED:
+        decrypt_pwd = E2EEUtils.decrypt(checked_pwd)
+        return decrypt_pwd == correct_pwd
+    else:
+        return checked_pwd == correct_pwd
 
 
 def check_value_is_encrypted(name, value):

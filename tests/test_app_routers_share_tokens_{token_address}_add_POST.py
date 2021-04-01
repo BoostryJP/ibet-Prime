@@ -68,7 +68,8 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
             self.base_url.format(_token_address),
             json=req_param,
             headers={
-                "issuer-address": _issuer_address
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
             }
         )
 
@@ -159,7 +160,7 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
         }
 
     # <Error_3>
-    # RequestValidationError: issuer-address
+    # RequestValidationError: issuer-address, eoa-password(required)
     def test_error_3(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -189,11 +190,15 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
                 "loc": ["header", "issuer-address"],
                 "msg": "issuer-address is not a valid address",
                 "type": "value_error"
+            }, {
+                "loc": ["header", "eoa-password"],
+                "msg": "field required",
+                "type": "value_error.missing"
             }]
         }
 
     # <Error_4>
-    # issuer does not exist
+    # RequestValidationError: eoa-password(not decrypt)
     def test_error_4(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -219,23 +224,70 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
             self.base_url.format(_token_address),
             json=req_param,
             headers={
-                "issuer-address": _issuer_address
+                "issuer-address": _issuer_address,
+                "eoa-password": "password"
             }
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 422
         assert resp.json() == {
             "meta": {
                 "code": 1,
-                "title": "InvalidParameterError"
+                "title": "RequestValidationError"
+            },
+            "detail": [{
+                "loc": ["header", "eoa-password"],
+                "msg": "eoa-password is not a Base64-encoded encrypted data",
+                "type": "value_error"
+            }]
+        }
+
+    # <Error_5>
+    # issuer does not exist
+    def test_error_5(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "token_address_test"
+
+        # prepare data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        db.add(token)
+
+        # request target API
+        req_param = {
+            "account_address": _issuer_address,
+            "amount": 10
+        }
+
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 401
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "AuthorizationError"
             },
             "detail": "issuer does not exist"
         }
 
-    # <Error_5>
-    # token not found
-    def test_error_5(self, client, db):
+    # <Error_6>
+    # password mismatch
+    def test_error_6(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -257,7 +309,46 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
             self.base_url.format(_token_address),
             json=req_param,
             headers={
-                "issuer-address": _issuer_address
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password_test")
+            }
+        )
+
+        assert resp.status_code == 401
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "AuthorizationError"
+            },
+            "detail": "password mismatch"
+        }
+
+    # <Error_7>
+    # token not found
+    def test_error_7(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "token_address_test"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        # request target API
+        req_param = {
+            "account_address": _issuer_address,
+            "amount": 10
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
             }
         )
 
@@ -270,11 +361,11 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
             "detail": "token not found"
         }
 
-    # <Error_6>
+    # <Error_8>
     # Send Transaction Error
     @mock.patch("app.model.blockchain.token.IbetShareContract.add_supply",
                 MagicMock(side_effect=SendTransactionError()))
-    def test_error_6(self, client, db):
+    def test_error_8(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -304,7 +395,8 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
             self.base_url.format(_token_address),
             json=req_param,
             headers={
-                "issuer-address": _issuer_address
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
             }
         )
 

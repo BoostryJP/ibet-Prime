@@ -17,9 +17,18 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import uuid
-from typing import List, Optional
+from typing import (
+    List,
+    Optional
+)
 
-from fastapi import APIRouter, Depends, Header, Query
+from fastapi import (
+    APIRouter,
+    Depends,
+    Header,
+    Query,
+    Request
+)
 from fastapi.exceptions import HTTPException
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
@@ -39,7 +48,14 @@ from app.model.schema import (
     BulkTransferUploadResponse,
     BulkTransferResponse
 )
-from app.model.utils import E2EEUtils, headers_validate, address_is_valid_address
+from app.model.utils import (
+    E2EEUtils,
+    validate_headers,
+    address_is_valid_address,
+    eoa_password_is_required,
+    eoa_password_is_encrypted_value,
+    check_password
+)
 from app.model.db import (
     Account,
     Token,
@@ -53,7 +69,12 @@ from app.model.db import (
 from app.model.blockchain import IbetShareContract
 from app.exceptions import (
     InvalidParameterError,
-    SendTransactionError
+    SendTransactionError,
+    AuthorizationError
+)
+from app.log import (
+    auth_info,
+    auth_error
 )
 
 router = APIRouter(
@@ -69,17 +90,16 @@ router = APIRouter(
     response_model=TokenAddressResponse
 )
 async def issue_token(
+        request: Request,
         token: IbetShareCreate,
         issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Issue ibetShare token"""
 
     # Validate Headers
-    headers_validate([{
-        "name": "issuer-address",
-        "value": issuer_address,
-        "validator": address_is_valid_address
-    }])
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
+                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
 
     # Validate update items
     _data = {
@@ -99,11 +119,20 @@ async def issue_token(
         filter(Account.issuer_address == issuer_address). \
         first()
     if _account is None:
-        raise InvalidParameterError("issuer does not exist")
+        auth_error(request, issuer_address, "issuer does not exist")
+        raise AuthorizationError("issuer does not exist")
+
+    # Check Password
+    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
+    result = check_password(eoa_password, decrypt_password)
+    if not result:
+        auth_error(request, issuer_address, "password mismatch")
+        raise AuthorizationError("password mismatch")
+
+    auth_info(request, issuer_address, "authentication succeed")
 
     # Get private key
     keyfile_json = _account.keyfile
-    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
     private_key = decode_keyfile_json(
         raw_keyfile_json=keyfile_json,
         password=decrypt_password.encode("utf-8")
@@ -161,13 +190,8 @@ async def issue_token(
 async def list_all_tokens(
         issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
-
     # Validate Headers
-    headers_validate([{
-        "name": "issuer-address",
-        "value": issuer_address,
-        "validator": address_is_valid_address
-    }])
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     """List all issued tokens"""
     # Get issued token list
@@ -220,29 +244,37 @@ async def retrieve_token(
     response_model=None
 )
 async def update_token(
+        request: Request,
         token_address: str,
         token: IbetShareUpdate,
         issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Update a token"""
 
     # Validate Headers
-    headers_validate([{
-        "name": "issuer-address",
-        "value": issuer_address,
-        "validator": address_is_valid_address
-    }])
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
+                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
 
     # Get Account
     _account = db.query(Account). \
         filter(Account.issuer_address == issuer_address). \
         first()
     if _account is None:
-        raise InvalidParameterError("issuer does not exist")
+        auth_error(request, issuer_address, "issuer does not exist")
+        raise AuthorizationError("issuer does not exist")
+
+    # Check Password
+    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
+    result = check_password(eoa_password, decrypt_password)
+    if not result:
+        auth_error(request, issuer_address, "password mismatch")
+        raise AuthorizationError("password mismatch")
+
+    auth_info(request, issuer_address, "authentication succeed")
 
     # Get private key
     keyfile_json = _account.keyfile
-    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
     private_key = decode_keyfile_json(
         raw_keyfile_json=keyfile_json,
         password=decrypt_password.encode("utf-8")
@@ -277,29 +309,37 @@ async def update_token(
     response_model=None
 )
 async def additional_issue(
+        request: Request,
         token_address: str,
         token: IbetShareAdd,
         issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Add token"""
 
     # Validate Headers
-    headers_validate([{
-        "name": "issuer-address",
-        "value": issuer_address,
-        "validator": address_is_valid_address
-    }])
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
+                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
 
     # Get Account
     _account = db.query(Account). \
         filter(Account.issuer_address == issuer_address). \
         first()
     if _account is None:
-        raise InvalidParameterError("issuer does not exist")
+        auth_error(request, issuer_address, "issuer does not exist")
+        raise AuthorizationError("issuer does not exist")
+
+    # Check Password
+    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
+    result = check_password(eoa_password, decrypt_password)
+    if not result:
+        auth_error(request, issuer_address, "password mismatch")
+        raise AuthorizationError("password mismatch")
+
+    auth_info(request, issuer_address, "authentication succeed")
 
     # Get private key
     keyfile_json = _account.keyfile
-    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
     private_key = decode_keyfile_json(
         raw_keyfile_json=keyfile_json,
         password=decrypt_password.encode("utf-8")
@@ -340,11 +380,7 @@ async def list_all_holders(
     """List all share token holders"""
 
     # Validate Headers
-    headers_validate([{
-        "name": "issuer-address",
-        "value": issuer_address,
-        "validator": address_is_valid_address
-    }])
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get Account
     _account = db.query(Account). \
@@ -412,11 +448,7 @@ async def retrieve_holder(
     """Retrieve share token holder"""
 
     # Validate Headers
-    headers_validate([{
-        "name": "issuer-address",
-        "value": issuer_address,
-        "validator": address_is_valid_address
-    }])
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get Issuer
     _account = db.query(Account). \
@@ -475,28 +507,36 @@ async def retrieve_holder(
     response_model=None
 )
 async def transfer_ownership(
+        request: Request,
         token: IbetShareTransfer,
         issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Transfer token ownership"""
 
     # Validate Headers
-    headers_validate([{
-        "name": "issuer-address",
-        "value": issuer_address,
-        "validator": address_is_valid_address
-    }])
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
+                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
 
     # Get Account
     _account = db.query(Account). \
         filter(Account.issuer_address == issuer_address). \
         first()
     if _account is None:
-        raise InvalidParameterError("issuer does not exist")
+        auth_error(request, issuer_address, "issuer does not exist")
+        raise AuthorizationError("issuer does not exist")
+
+    # Check Password
+    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
+    result = check_password(eoa_password, decrypt_password)
+    if not result:
+        auth_error(request, issuer_address, "password mismatch")
+        raise AuthorizationError("password mismatch")
+
+    auth_info(request, issuer_address, "authentication succeed")
 
     # Get private key
     keyfile_json = _account.keyfile
-    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
     private_key = decode_keyfile_json(
         raw_keyfile_json=keyfile_json,
         password=decrypt_password.encode("utf-8")
@@ -545,7 +585,7 @@ async def list_transfer_history(
 
     # Get transfer history
     query = db.query(IDXTransfer). \
-        filter(IDXTransfer.token_address == token_address).\
+        filter(IDXTransfer.token_address == token_address). \
         order_by(desc(IDXTransfer.id))
     total = query.count()
 
@@ -584,17 +624,16 @@ async def list_transfer_history(
     response_model=BulkTransferUploadIdResponse
 )
 async def bulk_transfer_ownership(
+        request: Request,
         tokens: List[IbetShareTransfer],
         issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Bulk transfer token ownership"""
 
     # Validate Headers
-    headers_validate([{
-        "name": "issuer-address",
-        "value": issuer_address,
-        "validator": address_is_valid_address
-    }])
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
+                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
 
     if len(tokens) < 1:
         raise InvalidParameterError("list length is zero")
@@ -604,7 +643,17 @@ async def bulk_transfer_ownership(
         filter(Account.issuer_address == issuer_address). \
         first()
     if _account is None:
-        raise InvalidParameterError("issuer does not exist")
+        auth_error(request, issuer_address, "issuer does not exist")
+        raise AuthorizationError("issuer does not exist")
+
+    # Check Password
+    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
+    result = check_password(eoa_password, decrypt_password)
+    if not result:
+        auth_error(request, issuer_address, "password mismatch")
+        raise AuthorizationError("password mismatch")
+
+    auth_info(request, issuer_address, "authentication succeed")
 
     # Verify that the tokens are issued by the issuer_address
     for _token in tokens:
@@ -656,11 +705,7 @@ async def list_bulk_transfer_upload(
     """List bulk transfer upload"""
 
     # Validate Headers
-    headers_validate([{
-        "name": "issuer-address",
-        "value": issuer_address,
-        "validator": address_is_valid_address
-    }])
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get bulk transfer upload list
     if issuer_address is None:
@@ -698,11 +743,7 @@ async def retrieve_bulk_transfer(
     """Retrieve bulk transfer"""
 
     # Validate Headers
-    headers_validate([{
-        "name": "issuer-address",
-        "value": issuer_address,
-        "validator": address_is_valid_address
-    }])
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get bulk transfer upload list
     if issuer_address is None:

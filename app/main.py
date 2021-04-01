@@ -16,14 +16,24 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from fastapi import FastAPI, Request, status
+from fastapi import (
+    FastAPI,
+    Request,
+    status
+)
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from config import SERVER_NAME
-from app.routers import index, account, bond, bond_ledger, share
+from app.routers import (
+    index,
+    account,
+    bond,
+    bond_ledger,
+    share
+)
 from app.exceptions import *
 
 app = FastAPI(
@@ -93,13 +103,26 @@ async def invalid_parameter_error_handler(request: Request, exc: InvalidParamete
 
 # 400:SendTransactionError
 @app.exception_handler(SendTransactionError)
-async def invalid_parameter_error_handler(request: Request, exc: SendTransactionError):
+async def send_transaction_error_handler(request: Request, exc: SendTransactionError):
     meta = {
         "code": 2,
         "title": "SendTransactionError"
     }
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
+        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
+    )
+
+
+# 401:AuthorizationError
+@app.exception_handler(AuthorizationError)
+async def authorization_error_handler(request: Request, exc: AuthorizationError):
+    meta = {
+        "code": 1,
+        "title": "AuthorizationError"
+    }
+    return JSONResponse(
+        status_code=status.HTTP_401_UNAUTHORIZED,
         content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
     )
 

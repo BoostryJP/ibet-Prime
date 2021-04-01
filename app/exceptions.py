@@ -24,3 +24,7 @@ class InvalidParameterError(Exception):
 
 class SendTransactionError(Exception):
     pass
+
+
+class AuthorizationError(Exception):
+    pass

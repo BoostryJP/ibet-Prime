@@ -16,18 +16,42 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import Dict, List, Any
+from typing import (
+    Dict,
+    Any
+)
 
-from fastapi import APIRouter, Header, Query, Depends, Request, Body
-from fastapi.exceptions import HTTPException, RequestValidationError
+from fastapi import (
+    APIRouter,
+    Header,
+    Query,
+    Depends,
+    Request,
+    Body
+)
+from fastapi.exceptions import (
+    HTTPException,
+    RequestValidationError
+)
 from pydantic import BaseConfig
 from pydantic.fields import ModelField
 from sqlalchemy.orm import Session
 
 from config import SYSTEM_LOCALE
 from app.database import db_session
-from app.model.db import Token, TokenType, BondLedger
-from app.model.schema import ListAllBondLedgerHistoryResponse, CreateUpdateBondLedgerTemplateRequestJPN
+from app.model.utils import (
+    validate_headers,
+    address_is_valid_address
+)
+from app.model.db import (
+    Token,
+    TokenType,
+    BondLedger
+)
+from app.model.schema import (
+    ListAllBondLedgerHistoryResponse,
+    CreateUpdateBondLedgerTemplateRequestJPN
+)
 from app.routers.localized import bond_ledger_JPN
 from app.exceptions import InvalidParameterError
 
@@ -49,6 +73,9 @@ async def list_all_bond_ledger_history(
         limit: int = Query(None),
         db: Session = Depends(db_session)):
     """List all Bond Ledger"""
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Function Enabled Check
     locale_upper = locale.upper()
@@ -90,6 +117,9 @@ async def retrieve_bond_ledger_history(
         latest_flg: int = Query(..., ge=0, le=1),
         db: Session = Depends(db_session)):
     """Retrieve Bond Ledger"""
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Function Enabled Check
     locale_upper = locale.upper()
@@ -139,6 +169,9 @@ async def retrieve_bond_ledger_template(
         db: Session = Depends(db_session)):
     """Retrieve Bond Ledger Template"""
 
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
+
     # Function Enabled Check
     locale_upper = locale.upper()
     if locale_upper not in SYSTEM_LOCALE:
@@ -179,6 +212,9 @@ async def create_update_bond_ledger_template(
         template: dict = Body(..., description="structures differs depending on localize."),
         db: Session = Depends(db_session)):
     """Create or Update Bond Ledger Template"""
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Function Enabled Check
     locale_upper = locale.upper()

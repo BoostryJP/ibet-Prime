@@ -86,6 +86,7 @@ PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG = \
 PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE = \
     os.environ.get("PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE") or \
     "password"
+EOA_PASSWORD_CHECK_ENABLED = False if os.environ.get("EOA_PASSWORD_CHECK_ENABLED") == "0" else True
 
 # End to End Encryption (RSA)
 # NOTE:

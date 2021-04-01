@@ -17,7 +17,10 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from typing import Optional
-from pydantic import BaseModel, validator
+from pydantic import (
+    BaseModel,
+    validator
+)
 
 from config import E2EE_REQUEST_ENABLED
 from app.model.utils import check_value_is_encrypted
