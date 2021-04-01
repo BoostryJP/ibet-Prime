@@ -102,20 +102,22 @@ def auth_error(req: Request, address: str, msg: str):
 
 
 def output_access_log(req: Request, res: Response):
-    address = ZERO_ADDRESS
-    headers = req.scope.get("headers", [])
-    for header in headers:
-        key_bytes, value_bytes = header
-        if "issuer-address" == key_bytes.decode():
-            address = value_bytes.decode()
-
-    method = req.scope.get("method", "")
-    http_version = req.scope.get("http_version", "")
     url = __get_url(req)
-    status_code = res.status_code
-    access_msg = ACCESS_FORMAT % (method, url, http_version, status_code)
-    msg = __auth_format(req, address, access_msg)
-    ACCESS_LOG.info(msg)
+    if url != "/":
+        method = req.scope.get("method", "")
+        http_version = req.scope.get("http_version", "")
+        status_code = res.status_code
+        access_msg = ACCESS_FORMAT % (method, url, http_version, status_code)
+
+        address = ZERO_ADDRESS
+        headers = req.scope.get("headers", [])
+        for header in headers:
+            key_bytes, value_bytes = header
+            if "issuer-address" == key_bytes.decode():
+                address = value_bytes.decode()
+
+        msg = __auth_format(req, address, access_msg)
+        ACCESS_LOG.info(msg)
 
 
 def __auth_format(req: Request, address: str, msg: str):
