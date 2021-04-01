@@ -38,6 +38,7 @@ CONFIG.read(INI_FILE)
 # Logging
 LOG_LEVEL = CONFIG['logging']['level']
 AUTH_LOGFILE = os.environ.get('AUTH_LOGFILE') or '/dev/stdout'
+ACCESS_LOGFILE = os.environ.get('ACCESS_LOGFILE') or '/dev/stdout'
 
 # Database
 if 'pytest' in sys.modules:  # for unit test
