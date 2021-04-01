@@ -29,8 +29,7 @@ from config import (
     LOG_LEVEL,
     APP_ENV,
     AUTH_LOGFILE,
-    ACCESS_LOGFILE,
-    ZERO_ADDRESS
+    ACCESS_LOGFILE
 )
 
 logging.basicConfig(level=LOG_LEVEL)
@@ -109,7 +108,7 @@ def output_access_log(req: Request, res: Response):
         status_code = res.status_code
         access_msg = ACCESS_FORMAT % (method, url, http_version, status_code)
 
-        address = ZERO_ADDRESS
+        address = "None"  # Initial value
         headers = req.scope.get("headers", [])
         for header in headers:
             key_bytes, value_bytes = header
