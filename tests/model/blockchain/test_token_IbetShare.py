@@ -16,16 +16,322 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import os
 import pytest
 
+from binascii import Error
 from pydantic.error_wrappers import ValidationError
 from eth_keyfile import decode_keyfile_json
-
+from unittest.mock import patch
+from web3.exceptions import (
+    BadFunctionCallOutput,
+    InvalidAddress,
+    TimeExhausted,
+    TransactionNotFound,
+    ValidationError as Web3ValidationError
+)
+from config import ZERO_ADDRESS
 from app.model.blockchain import IbetShareContract
-from app.model.schema import IbetShareAdd, IbetShareTransfer, IbetShareUpdate
+from app.model.blockchain.utils import ContractUtils
+from app.model.schema import (
+    IbetShareAdd,
+    IbetShareTransfer,
+    IbetShareUpdate
+)
 from app.exceptions import SendTransactionError
 
 from tests.account_config import config_eth_account
+
+
+class TestCreate:
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    def test_normal_1(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # execute the function
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231"
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # assertion
+        share_contract = ContractUtils.get_contract(
+            contract_name="IbetShare",
+            contract_address=contract_address
+        )
+        _dividend_info = share_contract.functions.dividendInformation().call()
+        assert share_contract.functions.owner().call() == issuer_address
+        assert share_contract.functions.name().call() == "テスト株式"
+        assert share_contract.functions.symbol().call() == "TEST"
+        assert share_contract.functions.issuePrice().call() == 10000
+        assert share_contract.functions.totalSupply().call() == 20000
+        assert _dividend_info[0] == 1  # dividends
+        assert _dividend_info[1] == "20211231"  # dividendRecordDate
+        assert _dividend_info[2] == "20211231"  # dividendPaymentDate
+        assert share_contract.functions.cancellationDate().call() == "20221231"
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
+    # Invalid argument (args length)
+    def test_error_1(self):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # execute the function
+        arguments = []
+        with pytest.raises(SendTransactionError) as exc_info:
+            IbetShareContract.create(
+                args=arguments,
+                tx_from=issuer_address,
+                private_key=private_key
+            )
+
+        # assertion
+        assert isinstance(exc_info.value.args[0], TypeError)
+        assert exc_info.match("Incorrect argument count.")
+
+    # <Error_2>
+    # Invalid argument type (args)
+    def test_error_2(self):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # execute the function
+        arguments = [
+            0,
+            0,
+            "string",
+            "string",
+            "string",
+            0,
+            0,
+            0
+        ]  # invalid types
+        with pytest.raises(SendTransactionError) as exc_info:
+            IbetShareContract.create(
+                args=arguments,
+                tx_from=issuer_address,
+                private_key=private_key
+            )
+
+        # assertion
+        assert isinstance(exc_info.value.args[0], TypeError)
+        assert exc_info.match("One or more arguments could not be encoded to the necessary ABI type.")
+
+    # <Error_3>
+    # Invalid argument type (tx_from)
+    def test_error_3(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # execute the function
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231"
+        ]
+        with pytest.raises(SendTransactionError) as exc_info:
+            IbetShareContract.create(
+                args=arguments,
+                tx_from=issuer_address[:-1],  # short address
+                private_key=private_key
+            )
+
+        # assertion
+        assert isinstance(exc_info.value.args[0], InvalidAddress)
+        assert exc_info.match("ENS name: \'.+\' is invalid.")
+
+    # <Error_4>
+    # Invalid argument type (private_key)
+    def test_error_4(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+
+        # execute the function
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231"
+        ]
+        with pytest.raises(SendTransactionError) as exc_info:
+            IbetShareContract.create(
+                args=arguments,
+                tx_from=issuer_address,
+                private_key="some_private_key"
+            )
+
+        # assertion
+        assert isinstance(exc_info.value.args[0], Error)
+        assert exc_info.match("Non-hexadecimal digit found")
+
+
+class TestGet:
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    # TOKEN_CACHE is False
+    def test_normal_1(self, db):
+        os.putenv('TOKEN_CACHE', '0')
+
+        # prepare account
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231"
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # execute the function
+        share_contract = IbetShareContract.get(contract_address=contract_address)
+
+        # assertion
+        assert share_contract.issuer_address == issuer_address
+        assert share_contract.token_address == contract_address
+        assert share_contract.name == "テスト株式"
+        assert share_contract.symbol == "TEST"
+        assert share_contract.issue_price == 10000
+        assert share_contract.total_supply == 20000
+        assert share_contract.dividends == 0.01  # dividends
+        assert share_contract.dividend_record_date == "20211231"  # dividendRecordDate
+        assert share_contract.dividend_payment_date == "20211231"  # dividendPaymentDate
+        assert share_contract.cancellation_date == "20221231"
+
+    # <Normal_2>
+    # TOKEN_CACHE is True
+    def test_normal_2(self, db):
+        os.putenv('TOKEN_CACHE', '1')
+
+        # prepare account
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231"
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # cache put
+        IbetShareContract.get(contract_address=contract_address)
+
+        # execute the function
+        share_contract = IbetShareContract.get(contract_address=contract_address)
+
+        # assertion
+        assert share_contract.issuer_address == issuer_address
+        assert share_contract.token_address == contract_address
+        assert share_contract.name == "テスト株式"
+        assert share_contract.symbol == "TEST"
+        assert share_contract.issue_price == 10000
+        assert share_contract.total_supply == 20000
+        assert share_contract.dividends == 0.01  # dividends
+        assert share_contract.dividend_record_date == "20211231"  # dividendRecordDate
+        assert share_contract.dividend_payment_date == "20211231"  # dividendPaymentDate
+        assert share_contract.cancellation_date == "20221231"
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
+    # Invalid argument type (contract_address does not exists)
+    def test_error_1(self):
+        # execute the function
+        with pytest.raises(BadFunctionCallOutput) as exc_info:
+            IbetShareContract.get(contract_address=ZERO_ADDRESS)
+        # assertion
+        assert exc_info.match("Could not transact with/call contract function,")
+        assert exc_info.match(", is contract deployed correctly and chain synced?")
+
+    # <Error_2>
+    # Invalid argument type (contract_address is not address)
+    def test_error_2(self):
+        # execute the function
+        with pytest.raises(ValueError) as exc_info:
+            IbetShareContract.get(contract_address=ZERO_ADDRESS[:-1])
+        # assertion
+        assert exc_info.match("Unknown format.*, attempted to normalize to.*")
 
 
 class TestUpdate:
@@ -72,12 +378,12 @@ class TestUpdate:
         assert share_contract.dividend_record_date == "20211231"
         assert share_contract.dividend_payment_date == "20211231"
         assert share_contract.dividends == 0.01
-        assert share_contract.tradable_exchange_contract_address == "0x0000000000000000000000000000000000000000"
-        assert share_contract.personal_info_contract_address == "0x0000000000000000000000000000000000000000"
+        assert share_contract.tradable_exchange_contract_address == ZERO_ADDRESS
+        assert share_contract.personal_info_contract_address == ZERO_ADDRESS
         assert share_contract.image_url == ["", "", ""]
-        assert share_contract.transferable == False
-        assert share_contract.status == True
-        assert share_contract.offering_status == False
+        assert share_contract.transferable is False
+        assert share_contract.status is True
+        assert share_contract.offering_status is False
         assert share_contract.contact_information == ""
         assert share_contract.privacy_policy == ""
 
@@ -135,20 +441,80 @@ class TestUpdate:
         assert share_contract.tradable_exchange_contract_address == "0x0000000000000000000000000000000000000001"
         assert share_contract.personal_info_contract_address == "0x0000000000000000000000000000000000000002"
         assert share_contract.image_url == ["image_1", "", ""]
-        assert share_contract.transferable == False
-        assert share_contract.status == False
-        assert share_contract.offering_status == True
+        assert share_contract.transferable is False
+        assert share_contract.status is False
+        assert share_contract.offering_status is True
         assert share_contract.contact_information == "contact info test"
         assert share_contract.privacy_policy == "privacy policy test"
+
+    # <Normal_3>
+    # contract_address does not exists)
+    def test_normal_3(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+        # update
+        _data = {
+            "interest_rate": 0.0001
+        }
+        _add_data = IbetShareUpdate(**_data)
+        IbetShareContract.update(
+            contract_address=ZERO_ADDRESS,
+            data=_add_data,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+        with pytest.raises(BadFunctionCallOutput) as exc_info:
+            IbetShareContract.get(contract_address=ZERO_ADDRESS)
+        assert exc_info.match("Could not transact with/call contract function,")
+        assert exc_info.match(", is contract deployed correctly and chain synced?")
 
     ###########################################################################
     # Error Case
     ###########################################################################
 
     # <Error_1>
+    # Invalid argument type (contract_address is not address)
+    def test_error_1(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+        # deploy token
+        arguments = [
+            "テスト株式", "TEST", 10000, 20000,
+            1, "20211231", "20211231",
+            "20221231"
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # update
+        _data = {
+            "interest_rate": 0.0001,
+        }
+        _add_data = IbetShareUpdate(**_data)
+        with pytest.raises(ValueError) as exc_info:
+            IbetShareContract.update(
+                contract_address=contract_address[:-1],  # short
+                data=_add_data,
+                tx_from=issuer_address,
+                private_key=private_key
+            )
+        assert exc_info.match("Unknown format.*, attempted to normalize to.*")
+
+    # <Error_2>
     # Validation (IbetShareUpdate)
     # invalid parameter
-    def test_error_1(self):
+    def test_error_2(self):
         # update
         _data = {
             "dividends": 0.001,
@@ -173,9 +539,9 @@ class TestUpdate:
             }
         ]
 
-    # Error_2
+    # <Error_3>
     # invalid parameter (dividends)
-    def test_error_2(self):
+    def test_error_3(self):
         # update
         _data = {
             "dividends": 0.01
@@ -190,9 +556,46 @@ class TestUpdate:
             }
         ]
 
-    # <Error_3>
+    # <Error_4>
+    # invalid tx_from
+    def test_error_4(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式", "TEST", 10000, 20000,
+            1, "20211231", "20211231",
+            "20221231"
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # update
+        _data = {
+            "cancellation_date": "20211231"
+        }
+        _add_data = IbetShareUpdate(**_data)
+        with pytest.raises(SendTransactionError) as exc_info:
+            IbetShareContract.update(
+                contract_address=contract_address,
+                data=_add_data,
+                tx_from="invalid_tx_from",
+                private_key="invalid private key"
+            )
+        assert isinstance(exc_info.value.args[0], InvalidAddress)
+        assert exc_info.match("ENS name: \'invalid_tx_from\' is invalid.")
+
+    # <Error_5>
     # invalid private key
-    def test_error_3(self, db):
+    def test_error_5(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -224,6 +627,92 @@ class TestUpdate:
                 tx_from=issuer_address,
                 private_key="invalid private key"
             )
+
+    # <Error_6>
+    # TimeExhausted
+    def test_error_6(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式", "TEST", 10000, 20000,
+            1, "20211231", "20211231",
+            "20221231"
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # mock
+        Web3_sendRawTransaction = patch(
+            target="web3.eth.Eth.waitForTransactionReceipt",
+            side_effect=TimeExhausted
+        )
+
+        # update
+        _data = {
+            "cancellation_date": "20211231"
+        }
+        _add_data = IbetShareUpdate(**_data)
+        with Web3_sendRawTransaction:
+            with pytest.raises(SendTransactionError) as exc_info:
+                IbetShareContract.update(
+                    contract_address=contract_address,
+                    data=_add_data,
+                    tx_from=issuer_address,
+                    private_key=private_key
+                )
+        assert isinstance(exc_info.value.args[0], TimeExhausted)
+
+    # <Error_7>
+    # Error
+    def test_error_7(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式", "TEST", 10000, 20000,
+            1, "20211231", "20211231",
+            "20221231"
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # mock
+        Web3_sendRawTransaction = patch(
+            target="web3.eth.Eth.waitForTransactionReceipt",
+            side_effect=TransactionNotFound
+        )
+
+        # update
+        _data = {
+            "cancellation_date": "20211231"
+        }
+        _add_data = IbetShareUpdate(**_data)
+        with Web3_sendRawTransaction:
+            with pytest.raises(SendTransactionError) as exc_info:
+                IbetShareContract.update(
+                    contract_address=contract_address,
+                    data=_add_data,
+                    tx_from=issuer_address,
+                    private_key=private_key
+                )
+        assert isinstance(exc_info.value.args[0], TransactionNotFound)
 
 
 class TestTransfer:
@@ -346,8 +835,50 @@ class TestTransfer:
         ]
 
     # <Error_3>
-    # invalid private key
+    # invalid tx_from
     def test_error_3(self, db):
+        from_account = config_eth_account("user1")
+        from_address = from_account.get("address")
+        from_private_key = decode_keyfile_json(
+            raw_keyfile_json=from_account.get("keyfile_json"),
+            password=from_account.get("password").encode("utf-8")
+        )
+
+        to_account = config_eth_account("user2")
+        to_address = to_account.get("address")
+
+        # deploy token
+        arguments = [
+            "テスト株式", "TEST", 10000, 20000,
+            1, "20211231", "20211231",
+            "20221231"
+        ]
+        token_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=from_address,
+            private_key=from_private_key
+        )
+
+        # transfer
+        _data = {
+            "token_address": token_address,
+            "transfer_from": from_address,
+            "transfer_to": to_address,
+            "amount": 10
+        }
+        _transfer_data = IbetShareTransfer(**_data)
+        with pytest.raises(SendTransactionError) as exc_info:
+            IbetShareContract.transfer(
+                data=_transfer_data,
+                tx_from="invalid_tx_from",
+                private_key=from_private_key
+            )
+        assert isinstance(exc_info.value.args[0], InvalidAddress)
+        assert exc_info.match("ENS name: \'invalid_tx_from\' is invalid.")
+
+    # <Error_4>
+    # invalid private key
+    def test_error_4(self, db):
         from_account = config_eth_account("user1")
         from_address = from_account.get("address")
         from_private_key = decode_keyfile_json(
@@ -384,6 +915,102 @@ class TestTransfer:
                 tx_from=from_address,
                 private_key="invalid_private_key"
             )
+
+    # <Error_5>
+    # TimeExhausted
+    def test_error_5(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        to_account = config_eth_account("user2")
+        to_address = to_account.get("address")
+
+        # deploy token
+        arguments = [
+            "テスト株式", "TEST", 10000, 20000,
+            1, "20211231", "20211231",
+            "20221231"
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # mock
+        Web3_sendRawTransaction = patch(
+            target="web3.eth.Eth.waitForTransactionReceipt",
+            side_effect=TimeExhausted
+        )
+
+        # transfer
+        _data = {
+            "token_address": contract_address,
+            "transfer_from": issuer_address,
+            "transfer_to": to_address,
+            "amount": 10
+        }
+        _transfer_data = IbetShareTransfer(**_data)
+        with Web3_sendRawTransaction:
+            with pytest.raises(SendTransactionError) as exc_info:
+                IbetShareContract.transfer(
+                    data=_transfer_data,
+                    tx_from=issuer_address,
+                    private_key=private_key
+                )
+        assert isinstance(exc_info.value.args[0], TimeExhausted)
+
+    # <Error_6>
+    # Error
+    def test_error_6(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        to_account = config_eth_account("user2")
+        to_address = to_account.get("address")
+
+        # deploy token
+        arguments = [
+            "テスト株式", "TEST", 10000, 20000,
+            1, "20211231", "20211231",
+            "20221231"
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # mock
+        Web3_sendRawTransaction = patch(
+            target="web3.eth.Eth.waitForTransactionReceipt",
+            side_effect=TransactionNotFound
+        )
+
+        # transfer
+        _data = {
+            "token_address": contract_address,
+            "transfer_from": issuer_address,
+            "transfer_to": to_address,
+            "amount": 10
+        }
+        _transfer_data = IbetShareTransfer(**_data)
+        with Web3_sendRawTransaction:
+            with pytest.raises(SendTransactionError) as exc_info:
+                IbetShareContract.transfer(
+                    data=_transfer_data,
+                    tx_from=issuer_address,
+                    private_key=private_key
+                )
+        assert isinstance(exc_info.value.args[0], TransactionNotFound)
 
 
 class TestAddSupply:
@@ -430,37 +1057,119 @@ class TestAddSupply:
         share_contract = IbetShareContract.get(contract_address=contract_address)
         assert share_contract.total_supply == arguments[3] + 10
 
+    # <Normal_2>
+    # contract_address does not exists
+    def test_normal_2(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+        # add supply
+        _data = {
+            "account_address": issuer_address,
+            "amount": 10
+        }
+        _add_data = IbetShareAdd(**_data)
+        IbetShareContract.add_supply(
+            contract_address=ZERO_ADDRESS,
+            data=_add_data,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+        with pytest.raises(BadFunctionCallOutput) as exc_info:
+            IbetShareContract.get(contract_address=ZERO_ADDRESS)
+        assert exc_info.match("Could not transact with/call contract function,")
+        assert exc_info.match(", is contract deployed correctly and chain synced?")
+
     ###########################################################################
     # Error Case
     ###########################################################################
 
     # <Error_1>
+    # Invalid argument type (contract_address is not address)
+    def test_error_1(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+        # deploy token
+        arguments = [
+            "テスト株式", "TEST", 10000, 20000,
+            1, "20211231", "20211231",
+            "20221231"
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # add supply
+        _data = {
+            "account_address": issuer_address,
+            "amount": 10
+        }
+        _add_data = IbetShareAdd(**_data)
+        with pytest.raises(SendTransactionError) as exc_info:
+            IbetShareContract.add_supply(
+                contract_address=contract_address[:-1],  # short
+                data=_add_data,
+                tx_from=issuer_address,
+                private_key=private_key
+            )
+        assert isinstance(exc_info.value.args[0], ValueError)
+        assert exc_info.match("Unknown format.*, attempted to normalize to.*")
+
+    # <Error_2>
     # invalid parameter (IbetShareAdd)
-    def test_error_1(self):
+    def test_error_2(self):
+        _data = {}
+        with pytest.raises(ValidationError) as exc_info:
+            IbetShareAdd(**_data)
+        assert exc_info.value.errors() == [
+            {
+                "loc": ("account_address",),
+                "msg": "field required",
+                "type": "value_error.missing"
+            }, {
+                "loc": ("amount",),
+                "msg": "field required",
+                "type": "value_error.missing"
+            }
+        ]
+
+    # <Error_3>
+    # invalid parameter (IbetShareAdd)
+    def test_error_3(self):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
 
-        _data = {}
-        with pytest.raises(ValidationError):
-            IbetShareAdd(**_data)
-
         _data = {
             "account_address": issuer_address[:-1],  # short address
-            "amount": 1
+            "amount": -1  # negative value
         }
-        with pytest.raises(ValidationError):
-            IbetShareAdd(**_data)
 
-        _data = {
-            "account_address": issuer_address,
-            "amount": -1  # short address
-        }
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValidationError) as exc_info:
             IbetShareAdd(**_data)
+        assert exc_info.value.errors() == [
+            {
+                "loc": ("account_address",),
+                "msg": "account_address is not a valid address",
+                "type": "value_error"
+            }, {
+                "loc": ("amount",),
+                "msg": "amount must be greater than 0",
+                "type": "value_error"
+            }
+        ]
 
-    # <Error_2>
-    # invalid private key
-    def test_error_2(self, db):
+    # <Error_4>
+    # invalid tx_from
+    def test_error_4(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -486,10 +1195,286 @@ class TestAddSupply:
             "amount": 10
         }
         _add_data = IbetShareAdd(**_data)
-        with pytest.raises(SendTransactionError):
+        with pytest.raises(SendTransactionError) as exc_info:
+            IbetShareContract.add_supply(
+                contract_address=contract_address,
+                data=_add_data,
+                tx_from="invalid_tx_from",
+                private_key=private_key
+            )
+        assert isinstance(exc_info.value.args[0], InvalidAddress)
+        assert exc_info.match("ENS name: \'invalid_tx_from\' is invalid.")
+
+    # <Error_5>
+    # invalid private key
+    def test_error_5(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式", "TEST", 10000, 20000,
+            1, "20211231", "20211231",
+            "20221231"
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # add supply
+        _data = {
+            "account_address": issuer_address,
+            "amount": 10
+        }
+        _add_data = IbetShareAdd(**_data)
+        with pytest.raises(SendTransactionError) as exc_info:
             IbetShareContract.add_supply(
                 contract_address=contract_address,
                 data=_add_data,
                 tx_from=test_account.get("address"),
                 private_key="invalid_private_key"
             )
+        assert isinstance(exc_info.value.args[0], Error)
+        assert exc_info.match("Non-hexadecimal digit found")
+
+    # <Error_6>
+    # TimeExhausted
+    def test_error_6(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式", "TEST", 10000, 20000,
+            1, "20211231", "20211231",
+            "20221231"
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # mock
+        Web3_sendRawTransaction = patch(
+            target="web3.eth.Eth.waitForTransactionReceipt",
+            side_effect=TimeExhausted
+        )
+
+        # add supply
+        _data = {
+            "account_address": issuer_address,
+            "amount": 10
+        }
+        _add_data = IbetShareAdd(**_data)
+        with Web3_sendRawTransaction:
+            with pytest.raises(SendTransactionError) as exc_info:
+                IbetShareContract.add_supply(
+                    contract_address=contract_address,
+                    data=_add_data,
+                    tx_from=issuer_address,
+                    private_key=private_key
+                )
+        assert exc_info.type(SendTransactionError(TimeExhausted))
+
+    # <Error_7>
+    # Error
+    def test_error_7(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式", "TEST", 10000, 20000,
+            1, "20211231", "20211231",
+            "20221231"
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # mock
+        Web3_sendRawTransaction = patch(
+            target="web3.eth.Eth.waitForTransactionReceipt",
+            side_effect=TransactionNotFound
+        )
+
+        # add supply
+        _data = {
+            "account_address": issuer_address,
+            "amount": 10
+        }
+        _add_data = IbetShareAdd(**_data)
+        with Web3_sendRawTransaction:
+            with pytest.raises(SendTransactionError) as exc_info:
+                IbetShareContract.add_supply(
+                    contract_address=contract_address,
+                    data=_add_data,
+                    tx_from=issuer_address,
+                    private_key=private_key
+                )
+        assert isinstance(exc_info.value.args[0], TransactionNotFound)
+
+
+class TestGetAccountBalance:
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    def test_normal_1(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231"
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # assertion
+        balance = IbetShareContract.get_account_balance(
+            contract_address=contract_address,
+            account_address=issuer_address
+        )
+        assert balance == arguments[3]
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
+    # invalid contract_address
+    def test_error_1(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231"
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # execute the function
+        with pytest.raises(ValueError) as exc_info:
+            IbetShareContract.get_account_balance(
+                contract_address[:-1],  # short
+                issuer_address
+            )
+
+        # assertion
+        assert exc_info.match(f"Unknown format {contract_address[:-1]}, attempted to normalize to ")
+
+    # <Error_2>
+    # invalid contract_address : not deployed contract_address
+    def test_error_2(self):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+
+        # execute the function
+        with pytest.raises(BadFunctionCallOutput) as exc_info:
+            IbetShareContract.get_account_balance(
+                ZERO_ADDRESS,
+                issuer_address
+            )
+
+        # assertion
+        assert exc_info.match("Could not transact with/call contract function,")
+        assert exc_info.match(", is contract deployed correctly and chain synced?")
+
+    # <Error_3>
+    # invalid account_address
+    def test_error_3(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231"
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # execute the function
+        with pytest.raises(Web3ValidationError):
+            IbetShareContract.get_account_balance(
+                contract_address,
+                issuer_address[:-1]  # short
+            )
+
+    # <Error_4>
+    # invalid contract_address : not deployed contract_address
+    def test_error_4(self):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+
+        # execute the function
+        with pytest.raises(BadFunctionCallOutput) as exc_info:
+            IbetShareContract.get_account_balance(
+                ZERO_ADDRESS,
+                issuer_address
+            )
+
+        # assertion
+        assert exc_info.match("Could not transact with/call contract function,")
+        assert exc_info.match(", is contract deployed correctly and chain synced?")

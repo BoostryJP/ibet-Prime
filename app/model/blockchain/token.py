@@ -826,13 +826,13 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                    private_key: str):
         """Add token supply"""
         try:
-            bond_contract = ContractUtils.get_contract(
+            share_contract = ContractUtils.get_contract(
                 contract_name="IbetShare",
                 contract_address=contract_address
             )
             _target_address = data.account_address
             _amount = data.amount
-            tx = bond_contract.functions. \
+            tx = share_contract.functions. \
                 issueFrom(_target_address, ZERO_ADDRESS, _amount). \
                 buildTransaction({
                     "chainId": CHAIN_ID,
@@ -854,9 +854,9 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
         :param account_address: account address
         :return: account balance
         """
-        bond_contract = ContractUtils.get_contract(
+        share_contract = ContractUtils.get_contract(
             contract_name="IbetShare",
             contract_address=contract_address
         )
-        balance = bond_contract.functions.balanceOf(account_address).call()
+        balance = share_contract.functions.balanceOf(account_address).call()
         return balance
