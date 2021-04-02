@@ -257,17 +257,6 @@ class TestGet:
             tx_from=issuer_address,
             private_key=private_key
         )
-        # update interest_payment_date
-        _data = {
-            "interest_payment_date": ["0331", "0930"],
-        }
-        _add_data = IbetStraightBondUpdate(**_data)
-        IbetStraightBondContract.update(
-            contract_address=contract_address,
-            data=_add_data,
-            tx_from=issuer_address,
-            private_key=private_key
-        )
 
         # create cache
         IbetStraightBondContract.get(contract_address=contract_address)
@@ -289,7 +278,7 @@ class TestGet:
         assert bond_contract.return_amount == arguments[7]
         assert bond_contract.purpose == arguments[8]
         assert bond_contract.interest_rate == 0
-        assert bond_contract.interest_payment_date == ["0331", "0930", "", "", "", "", "", "", "", "", "", ""]
+        assert bond_contract.interest_payment_date == ["", "", "", "", "", "", "", "", "", "", "", ""]
         assert bond_contract.transferable is True
         assert bond_contract.initial_offering_status is False
         assert bond_contract.is_redeemed is False
@@ -302,9 +291,8 @@ class TestGet:
     # Invalid argument type (contract_address does not exists)
     def test_error_1(self):
         # get token data
-        with pytest.raises(SendTransactionError) as exc_info:
+        with pytest.raises(BadFunctionCallOutput) as exc_info:
             IbetStraightBondContract.get(contract_address=ZERO_ADDRESS)
-        assert isinstance(exc_info.value.args[0], BadFunctionCallOutput)
         assert exc_info.match("Could not transact with/call contract function,")
         assert exc_info.match(", is contract deployed correctly and chain synced?")
 
@@ -315,72 +303,6 @@ class TestGet:
         with pytest.raises(ValueError) as exc_info:
             IbetStraightBondContract.get(contract_address=ZERO_ADDRESS[:-1])
         assert exc_info.match("Unknown format.*, attempted to normalize to.*")
-
-    # <Error_3>
-    # TimeExhausted
-    def test_error_3(self, db):
-        test_account = config_eth_account("user1")
-        issuer_address = test_account.get("address")
-        private_key = decode_keyfile_json(
-            raw_keyfile_json=test_account.get("keyfile_json"),
-            password=test_account.get("password").encode("utf-8")
-        )
-
-        # deploy token
-        arguments = [
-            "テスト債券", "TEST", 10000, 20000,
-            "20211231", 30000,
-            "20211231", "リターン内容",
-            "発行目的"
-        ]
-        # deploy token
-        contract_address, abi, tx_hash = IbetStraightBondContract.create(
-            args=arguments,
-            tx_from=issuer_address,
-            private_key=private_key
-        )
-        # mock
-        Web3_call = patch(
-            target="web3.eth.Eth.call",
-            side_effect=TimeExhausted
-        )
-        with Web3_call:
-            with pytest.raises(SendTransactionError) as exc_info:
-                IbetStraightBondContract.get(contract_address=contract_address)
-        assert isinstance(exc_info.value.args[0], TimeExhausted)
-
-    # <Error_4>
-    # Exception
-    def test_error_4(self, db):
-        test_account = config_eth_account("user1")
-        issuer_address = test_account.get("address")
-        private_key = decode_keyfile_json(
-            raw_keyfile_json=test_account.get("keyfile_json"),
-            password=test_account.get("password").encode("utf-8")
-        )
-
-        # deploy token
-        arguments = [
-            "テスト債券", "TEST", 10000, 20000,
-            "20211231", 30000,
-            "20211231", "リターン内容",
-            "発行目的"
-        ]
-        # deploy token
-        contract_address, abi, tx_hash = IbetStraightBondContract.create(
-            args=arguments,
-            tx_from=issuer_address,
-            private_key=private_key
-        )
-        # mock
-        Web3_call = patch(
-            target="web3.eth.Eth.call",
-            side_effect=TransactionNotFound
-        )
-        with Web3_call:
-            with pytest.raises(SendTransactionError) as exc_info:
-                IbetStraightBondContract.get(contract_address=contract_address)
-        assert isinstance(exc_info.value.args[0], TransactionNotFound)
 
 
 class TestUpdate:
@@ -501,13 +423,9 @@ class TestUpdate:
         assert bond_contract.contact_information == "contact info test"
         assert bond_contract.privacy_policy == "privacy policy test"
 
-    ###########################################################################
-    # Error Case
-    ###########################################################################
-
-    # <Error_1>
+    # <Normal_3>
     # contract_address does not exists
-    def test_error_1(self, db):
+    def test_normal_3(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -519,20 +437,24 @@ class TestUpdate:
             "interest_rate": 0.0001
         }
         _add_data = IbetStraightBondUpdate(**_data)
-        with pytest.raises(SendTransactionError) as exc_info:
-            IbetStraightBondContract.update(
+        IbetStraightBondContract.update(
                 contract_address=ZERO_ADDRESS,
                 data=_add_data,
                 tx_from=issuer_address,
                 private_key=private_key
-            )
-        assert isinstance(exc_info.value.args[0], BadFunctionCallOutput)
+        )
+        with pytest.raises(BadFunctionCallOutput) as exc_info:
+            IbetStraightBondContract.get(contract_address=ZERO_ADDRESS)
         assert exc_info.match("Could not transact with/call contract function,")
         assert exc_info.match(", is contract deployed correctly and chain synced?")
 
-    # <Error_2>
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
     # Invalid argument type (contract_address is not address)
-    def test_error_2(self, db):
+    def test_error_1(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -566,10 +488,10 @@ class TestUpdate:
             )
         assert exc_info.match("Unknown format.*, attempted to normalize to.*")
 
-    # <Error_3>
+    # <Error_2>
     # Validation (IbetStraightBondUpdate)
     # invalid parameter
-    def test_error_3(self):
+    def test_error_2(self):
         # update
         _data = {
             "interest_rate": 0.00001,
@@ -599,10 +521,10 @@ class TestUpdate:
             }
         ]
 
-    # <Error_4>
+    # <Error_3>
     # Validation (IbetStraightBondUpdate)
     # invalid parameter (interest_rate)
-    def test_error_4(self):
+    def test_error_3(self):
         # update
         _data = {
             "interest_rate": 0.00001,
@@ -617,9 +539,9 @@ class TestUpdate:
             }
         ]
 
-    # <Error_5>
+    # <Error_4>
     # invalid tx_from
-    def test_error_5(self, db):
+    def test_error_4(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -655,9 +577,9 @@ class TestUpdate:
         assert isinstance(exc_info.value.args[0], InvalidAddress)
         assert exc_info.match("ENS name: \'DUMMY\' is invalid.")
 
-    # <Error_6>
+    # <Error_5>
     # invalid private key
-    def test_error_6(self, db):
+    def test_error_5(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -693,9 +615,9 @@ class TestUpdate:
         assert isinstance(exc_info.value.args[0], Error)
         assert exc_info.match("Non-hexadecimal digit found")
 
-    # <Error_7>
+    # <Error_6>
     # TimeExhausted
-    def test_error_7(self, db):
+    def test_error_6(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -737,9 +659,9 @@ class TestUpdate:
                 )
         assert isinstance(exc_info.value.args[0], TimeExhausted)
 
-    # <Error_8>
+    # <Error_7>
     # Error
-    def test_error_8(self, db):
+    def test_error_7(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1132,13 +1054,9 @@ class TestAddSupply:
         bond_contract = IbetStraightBondContract.get(contract_address=contract_address)
         assert bond_contract.total_supply == arguments[2] + 10
 
-    ###########################################################################
-    # Error Case
-    ###########################################################################
-
-    # <Error_1>
+    # <Normal_2>
     # contract_address does not exists
-    def test_error_1(self, db):
+    def test_normal_2(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1151,20 +1069,24 @@ class TestAddSupply:
             "amount": 10
         }
         _add_data = IbetStraightBondAdd(**_data)
-        with pytest.raises(SendTransactionError) as exc_info:
-            IbetStraightBondContract.add_supply(
-                contract_address=ZERO_ADDRESS,
-                data=_add_data,
-                tx_from=issuer_address,
-                private_key=private_key
-            )
-        assert isinstance(exc_info.value.args[0], BadFunctionCallOutput)
+        IbetStraightBondContract.add_supply(
+            contract_address=ZERO_ADDRESS,
+            data=_add_data,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+        with pytest.raises(BadFunctionCallOutput) as exc_info:
+            IbetStraightBondContract.get(contract_address=ZERO_ADDRESS)
         assert exc_info.match("Could not transact with/call contract function,")
         assert exc_info.match(", is contract deployed correctly and chain synced?")
 
-    # <Error_2>
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
     # Invalid argument type (contract_address is not address)
-    def test_error_2(self, db):
+    def test_error_1(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1190,19 +1112,20 @@ class TestAddSupply:
             "amount": 10
         }
         _add_data = IbetStraightBondAdd(**_data)
-        with pytest.raises(ValueError) as exc_info:
-            IbetStraightBondContract.update(
+        with pytest.raises(SendTransactionError) as exc_info:
+            IbetStraightBondContract.add_supply(
                 contract_address=contract_address[:-1],  # short
                 data=_add_data,
                 tx_from=issuer_address,
                 private_key=private_key
-            )
+        )
+        assert isinstance(exc_info.value.args[0], ValueError)
         assert exc_info.match("Unknown format.*, attempted to normalize to.*")
 
-    # <Error_3>
+    # <Error_2>
     # validation (IbetStraightBondAdd)
     # required field
-    def test_error_3(self):
+    def test_error_2(self):
         _data = {}
         with pytest.raises(ValidationError) as exc_info:
             IbetStraightBondAdd(**_data)
@@ -1218,10 +1141,10 @@ class TestAddSupply:
             }
         ]
 
-    # <Error_4>
+    # <Error_3>
     # validation (IbetStraightBondAdd)
     # invalid parameter
-    def test_error_4(self):
+    def test_error_3(self):
         _data = {
             "account_address": "invalid account address",
             "amount": 0
@@ -1240,9 +1163,9 @@ class TestAddSupply:
             }
         ]
 
-    # <Error_5>
+    # <Error_4>
     # invalid tx_from
-    def test_error_5(self, db):
+    def test_error_4(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1279,9 +1202,9 @@ class TestAddSupply:
         assert isinstance(exc_info.value.args[0], InvalidAddress)
         assert exc_info.match("ENS name: \'invalid_tx_from\' is invalid.")
 
-    # <Error_6>
+    # <Error_5>
     # invalid private key
-    def test_error_6(self, db):
+    def test_error_5(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1318,9 +1241,9 @@ class TestAddSupply:
         assert isinstance(exc_info.value.args[0], Error)
         assert exc_info.match("Non-hexadecimal digit found")
 
-    # <Error_7>
+    # <Error_6>
     # TimeExhausted
-    def test_error_7(self, db):
+    def test_error_6(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1363,9 +1286,9 @@ class TestAddSupply:
                 )
         assert exc_info.type(SendTransactionError(TimeExhausted))
 
-    # <Error_8>
+    # <Error_7>
     # Error
-    def test_error_8(self, db):
+    def test_error_7(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1505,12 +1428,11 @@ class TestGetAccountBalance:
             private_key=private_key
         )
 
-        with pytest.raises(SendTransactionError) as exc_info:
+        with pytest.raises(ValueError) as exc_info:
             IbetStraightBondContract.get_account_balance(
                 contract_address[:-1],      # short
                 issuer_address
             )
-        assert isinstance(exc_info.value.args[0], ValueError)
         assert exc_info.match(f"Unknown format {contract_address[:-1]}, attempted to normalize to ")
 
     # <Error_2>
@@ -1518,12 +1440,11 @@ class TestGetAccountBalance:
     def test_error_2(self):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
-        with pytest.raises(SendTransactionError) as exc_info:
+        with pytest.raises(BadFunctionCallOutput) as exc_info:
             IbetStraightBondContract.get_account_balance(
                 ZERO_ADDRESS,
                 issuer_address
             )
-        assert isinstance(exc_info.value.args[0], BadFunctionCallOutput)
         assert exc_info.match("Could not transact with/call contract function,")
         assert exc_info.match(", is contract deployed correctly and chain synced?")
 
@@ -1549,96 +1470,21 @@ class TestGetAccountBalance:
             private_key=private_key
         )
 
-        with pytest.raises(SendTransactionError) as exc_info:
+        with pytest.raises(Web3ValidationError) as exc_info:
             IbetStraightBondContract.get_account_balance(
                 contract_address,
                 issuer_address[:-1]         # short
             )
-        assert isinstance(exc_info.value.args[0], Web3ValidationError)
 
     # <Error_4>
     # invalid contract_address : not deployed contract_address
     def test_error_4(self):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
-        with pytest.raises(SendTransactionError) as exc_info:
+        with pytest.raises(BadFunctionCallOutput) as exc_info:
             IbetStraightBondContract.get_account_balance(
                 ZERO_ADDRESS,
                 issuer_address
             )
-        assert isinstance(exc_info.value.args[0], BadFunctionCallOutput)
         assert exc_info.match("Could not transact with/call contract function,")
         assert exc_info.match(", is contract deployed correctly and chain synced?")
-
-    # <Error_5>
-    # TimeExhausted
-    def test_error_5(self, db):
-        test_account = config_eth_account("user1")
-        issuer_address = test_account.get("address")
-        private_key = decode_keyfile_json(
-            raw_keyfile_json=test_account.get("keyfile_json"),
-            password=test_account.get("password").encode("utf-8")
-        )
-        # deploy token
-        arguments = [
-            "テスト債券", "TEST", 10000, 20000,
-            "20211231", 30000,
-            "20211231", "リターン内容",
-            "発行目的"
-        ]
-        # deploy token
-        contract_address, abi, tx_hash = IbetStraightBondContract.create(
-            args=arguments,
-            tx_from=issuer_address,
-            private_key=private_key
-        )
-
-        # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.call",
-            side_effect=TimeExhausted
-        )
-
-        with Web3_sendRawTransaction:
-            with pytest.raises(SendTransactionError) as exc_info:
-                IbetStraightBondContract.get_account_balance(
-                    contract_address,
-                    issuer_address
-                )
-        assert isinstance(exc_info.value.args[0], TimeExhausted)
-
-    # <Error_6>
-    # Exception
-    def test_error_6(self, db):
-        test_account = config_eth_account("user1")
-        issuer_address = test_account.get("address")
-        private_key = decode_keyfile_json(
-            raw_keyfile_json=test_account.get("keyfile_json"),
-            password=test_account.get("password").encode("utf-8")
-        )
-        # deploy token
-        arguments = [
-            "テスト債券", "TEST", 10000, 20000,
-            "20211231", 30000,
-            "20211231", "リターン内容",
-            "発行目的"
-        ]
-        contract_address, abi, tx_hash = IbetStraightBondContract.create(
-            args=arguments,
-            tx_from=issuer_address,
-            private_key=private_key
-        )
-
-        # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.call",
-            side_effect=TransactionNotFound
-        )
-
-        with Web3_sendRawTransaction:
-            with pytest.raises(SendTransactionError) as exc_info:
-                IbetStraightBondContract.get_account_balance(
-                    contract_address,
-                    issuer_address
-                )
-        assert isinstance(exc_info.value.args[0], TransactionNotFound)
