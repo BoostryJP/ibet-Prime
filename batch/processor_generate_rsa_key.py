@@ -106,6 +106,7 @@ class Processor:
             LOG.info(f"Generate End: issuer_address={account.issuer_address}")
 
             self.sink.on_completed(account.issuer_address, rsa_private_pem, rsa_public_pem)
+            self.sink.flush()
 
     def __get_account_list(self):
         account_list = self.db.query(Account). \
