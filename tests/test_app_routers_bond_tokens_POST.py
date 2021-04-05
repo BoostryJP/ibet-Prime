@@ -505,7 +505,7 @@ class TestAppRoutersBondTokensPOST:
                 "code": 1,
                 "title": "AuthorizationError"
             },
-            "detail": "issuer does not exist"
+            "detail": "issuer does not exist, or password mismatch"
         }
 
     # <Error_3-2>
@@ -548,7 +548,7 @@ class TestAppRoutersBondTokensPOST:
                 "code": 1,
                 "title": "AuthorizationError"
             },
-            "detail": "password mismatch"
+            "detail": "issuer does not exist, or password mismatch"
         }
 
     # <Error_4_1>

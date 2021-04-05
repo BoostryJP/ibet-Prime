@@ -124,7 +124,7 @@ async def issue_token(
         first()
     if _account is None:
         auth_error(request, issuer_address, "issuer does not exist")
-        raise AuthorizationError("issuer does not exist")
+        raise AuthorizationError("issuer does not exist, or password mismatch")
     decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
 
     # Check Password
@@ -132,7 +132,7 @@ async def issue_token(
         result = check_password(eoa_password, decrypt_password)
         if not result:
             auth_error(request, issuer_address, "password mismatch")
-            raise AuthorizationError("password mismatch")
+            raise AuthorizationError("issuer does not exist, or password mismatch")
         auth_info(request, issuer_address, "authentication succeed")
 
     # Get private key
@@ -270,7 +270,7 @@ async def update_token(
         first()
     if _account is None:
         auth_error(request, issuer_address, "issuer does not exist")
-        raise AuthorizationError("issuer does not exist")
+        raise AuthorizationError("issuer does not exist, or password mismatch")
     decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
 
     # Check Password
@@ -278,7 +278,7 @@ async def update_token(
         result = check_password(eoa_password, decrypt_password)
         if not result:
             auth_error(request, issuer_address, "password mismatch")
-            raise AuthorizationError("password mismatch")
+            raise AuthorizationError("issuer does not exist, or password mismatch")
         auth_info(request, issuer_address, "authentication succeed")
 
     # Get private key
@@ -335,7 +335,7 @@ async def additional_issue(
         first()
     if _account is None:
         auth_error(request, issuer_address, "issuer does not exist")
-        raise AuthorizationError("issuer does not exist")
+        raise AuthorizationError("issuer does not exist, or password mismatch")
     decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
 
     # Check Password
@@ -343,7 +343,7 @@ async def additional_issue(
         result = check_password(eoa_password, decrypt_password)
         if not result:
             auth_error(request, issuer_address, "password mismatch")
-            raise AuthorizationError("password mismatch")
+            raise AuthorizationError("issuer does not exist, or password mismatch")
         auth_info(request, issuer_address, "authentication succeed")
 
     # Get private key
@@ -534,7 +534,7 @@ async def transfer_ownership(
         first()
     if _account is None:
         auth_error(request, issuer_address, "issuer does not exist")
-        raise AuthorizationError("issuer does not exist")
+        raise AuthorizationError("issuer does not exist, or password mismatch")
     decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
 
     # Check Password
@@ -542,7 +542,7 @@ async def transfer_ownership(
         result = check_password(eoa_password, decrypt_password)
         if not result:
             auth_error(request, issuer_address, "password mismatch")
-            raise AuthorizationError("password mismatch")
+            raise AuthorizationError("issuer does not exist, or password mismatch")
         auth_info(request, issuer_address, "authentication succeed")
 
     # Get private key
@@ -654,7 +654,7 @@ async def bulk_transfer_ownership(
         first()
     if _account is None:
         auth_error(request, issuer_address, "issuer does not exist")
-        raise AuthorizationError("issuer does not exist")
+        raise AuthorizationError("issuer does not exist, or password mismatch")
     decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
 
     # Check Password
@@ -662,7 +662,7 @@ async def bulk_transfer_ownership(
         result = check_password(eoa_password, decrypt_password)
         if not result:
             auth_error(request, issuer_address, "password mismatch")
-            raise AuthorizationError("password mismatch")
+            raise AuthorizationError("issuer does not exist, or password mismatch")
         auth_info(request, issuer_address, "authentication succeed")
 
     # Verify that the tokens are issued by the issuer_address

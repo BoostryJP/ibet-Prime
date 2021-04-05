@@ -343,13 +343,13 @@ class TestAppRoutersBondBulkTransferPOST:
                 "code": 1,
                 "title": "AuthorizationError"
             },
-            "detail": "issuer does not exist"
+            "detail": "issuer does not exist, or password mismatch"
         }
 
     # <Error_7>
     # AuthorizationError
     # password mismatch
-    def test_error_5(self, client, db):
+    def test_error_7(self, client, db):
         # prepare data : Account(Issuer)
         account = Account()
         account.issuer_address = self.admin_address
@@ -381,7 +381,7 @@ class TestAppRoutersBondBulkTransferPOST:
                 "code": 1,
                 "title": "AuthorizationError"
             },
-            "detail": "password mismatch"
+            "detail": "issuer does not exist, or password mismatch"
         }
 
     # <Error_8>
