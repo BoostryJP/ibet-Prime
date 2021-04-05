@@ -178,6 +178,14 @@ async def issue_token(
     _token.token_address = contract_address
     _token.abi = abi
     db.add(_token)
+
+    # Insert initial position data
+    _position = IDXPosition()
+    _position.token_address = contract_address
+    _position.account_address = issuer_address
+    _position.balance = token.total_supply
+    db.add(_position)
+
     db.commit()
 
     return {"token_address": _token.token_address}

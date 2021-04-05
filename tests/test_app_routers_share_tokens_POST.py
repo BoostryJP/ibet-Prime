@@ -24,7 +24,12 @@ from web3.middleware import geth_poa_middleware
 
 import config
 from app.exceptions import SendTransactionError
-from app.model.db import Account, Token, TokenType
+from app.model.db import (
+    Account,
+    Token,
+    TokenType,
+    IDXPosition
+)
 from app.model.schema import IbetShareUpdate
 from app.model.utils import E2EEUtils
 from app.model.blockchain.token import IbetShareContract
@@ -116,6 +121,11 @@ class TestAppRoutersShareTokensPOST:
             assert token_1.issuer_address == test_account["address"]
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
+
+            position = db.query(IDXPosition).first()
+            assert position.token_address == "contract_address_test1"
+            assert position.account_address == test_account["address"]
+            assert position.balance == req_param["total_supply"]
 
     # <Normal_2>
     # include updates
@@ -212,6 +222,11 @@ class TestAppRoutersShareTokensPOST:
             assert token_1.issuer_address == test_account["address"]
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
+
+            position = db.query(IDXPosition).first()
+            assert position.token_address == "contract_address_test1"
+            assert position.account_address == test_account["address"]
+            assert position.balance == req_param["total_supply"]
 
     ###########################################################################
     # Error Case
@@ -366,9 +381,9 @@ class TestAppRoutersShareTokensPOST:
             }]
         }
 
-    # <Error_4>
+    # <Error_2_3>
     # Validation Error: eoa-password(not decrypt)
-    def test_error_4(self, client, db):
+    def test_error_2_3(self, client, db):
         test_account_1 = config_eth_account("user1")
 
         # prepare data
@@ -412,9 +427,9 @@ class TestAppRoutersShareTokensPOST:
             }]
         }
 
-    # <Error_5-1>
+    # <Error_3_1>
     # Not Exists Address
-    def test_error_5(self, client, db):
+    def test_error_3_1(self, client, db):
         test_account_1 = config_eth_account("user1")
         test_account_2 = config_eth_account("user2")
 
@@ -455,9 +470,9 @@ class TestAppRoutersShareTokensPOST:
             "detail": "issuer does not exist, or password mismatch"
         }
 
-    # <Error_5-2>
+    # <Error_3_2>
     # Password Mismatch
-    def test_error_2(self, client, db):
+    def test_error_3_2(self, client, db):
         test_account_1 = config_eth_account("user1")
         test_account_2 = config_eth_account("user2")
 
@@ -498,10 +513,10 @@ class TestAppRoutersShareTokensPOST:
             "detail": "issuer does not exist, or password mismatch"
         }
 
-    # <Error_6_1>
+    # <Error_4_1>
     # Send Transaction Error
     # IbetShareContract.create
-    def test_error_6_1(self, client, db):
+    def test_error_4_1(self, client, db):
         test_account_1 = config_eth_account("user1")
         test_account_2 = config_eth_account("user2")
 
@@ -549,10 +564,10 @@ class TestAppRoutersShareTokensPOST:
                 "detail": "failed to send transaction"
             }
 
-    # <Error_6_2>
+    # <Error_4_2>
     # Send Transaction Error
     # IbetShareContract.update
-    def test_error_6_2(self, client, db):
+    def test_error_4_2(self, client, db):
         test_account_1 = config_eth_account("user1")
         test_account_2 = config_eth_account("user2")
 
