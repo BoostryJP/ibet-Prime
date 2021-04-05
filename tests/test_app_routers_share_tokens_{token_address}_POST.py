@@ -433,7 +433,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
                 "code": 1,
                 "title": "AuthorizationError"
             },
-            "detail": "issuer does not exist"
+            "detail": "issuer does not exist, or password mismatch"
         }
 
     # <Error_9>
@@ -473,7 +473,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
                 "code": 1,
                 "title": "AuthorizationError"
             },
-            "detail": "password mismatch"
+            "detail": "issuer does not exist, or password mismatch"
         }
 
     # <Error_10>

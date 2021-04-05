@@ -340,7 +340,7 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
                 "code": 1,
                 "title": "AuthorizationError"
             },
-            "detail": "issuer does not exist"
+            "detail": "issuer does not exist, or password mismatch"
         }
 
     # <Error_7>
@@ -378,7 +378,7 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
                 "code": 1,
                 "title": "AuthorizationError"
             },
-            "detail": "password mismatch"
+            "detail": "issuer does not exist, or password mismatch"
         }
 
     # <Error_8>
