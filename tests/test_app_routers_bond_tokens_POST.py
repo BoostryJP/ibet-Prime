@@ -23,7 +23,12 @@ from web3.middleware import geth_poa_middleware
 
 import config
 from app.exceptions import SendTransactionError
-from app.model.db import Account, Token, TokenType
+from app.model.db import (
+    Account,
+    Token,
+    TokenType,
+    IDXPosition
+)
 from app.model.schema import IbetStraightBondUpdate
 from app.model.utils import E2EEUtils
 from app.model.blockchain.token import IbetStraightBondContract
@@ -116,6 +121,11 @@ class TestAppRoutersBondTokensPOST:
             assert token_1.issuer_address == test_account["address"]
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
+
+            position = db.query(IDXPosition).first()
+            assert position.token_address == "contract_address_test1"
+            assert position.account_address == test_account["address"]
+            assert position.balance == req_param["total_supply"]
 
     # <Normal_2>
     # include updates
@@ -219,6 +229,11 @@ class TestAppRoutersBondTokensPOST:
             assert token_1.issuer_address == test_account["address"]
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
+
+            position = db.query(IDXPosition).first()
+            assert position.token_address == "contract_address_test1"
+            assert position.account_address == test_account["address"]
+            assert position.balance == req_param["total_supply"]
 
     ###########################################################################
     # Error Case
@@ -464,7 +479,7 @@ class TestAppRoutersBondTokensPOST:
             ]
         }
 
-    # <Error_3-1>
+    # <Error_3_1>
     # Not Exists Address
     def test_error_3_1(self, client, db):
         test_account_1 = config_eth_account("user1")
@@ -508,7 +523,7 @@ class TestAppRoutersBondTokensPOST:
             "detail": "issuer does not exist, or password mismatch"
         }
 
-    # <Error_3-2>
+    # <Error_3_2>
     # Password Mismatch
     def test_error_3_2(self, client, db):
         test_account_1 = config_eth_account("user1")
