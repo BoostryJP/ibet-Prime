@@ -46,7 +46,8 @@ from app.model.schema import (
     TransferHistoryResponse,
     BulkTransferUploadIdResponse,
     BulkTransferUploadResponse,
-    BulkTransferResponse
+    BulkTransferResponse,
+    IbetStraightBondScheduledUpdate
 )
 from app.model.utils import (
     E2EEUtils,
@@ -64,7 +65,8 @@ from app.model.db import (
     IDXPersonalInfo,
     BulkTransfer,
     BulkTransferUpload,
-    IDXTransfer
+    IDXTransfer,
+    ScheduledEvents
 )
 from app.model.blockchain import IbetStraightBondContract
 from app.exceptions import (
@@ -382,6 +384,64 @@ async def additional_issue(
         raise SendTransactionError("failed to send transaction")
 
     return
+
+
+# POST: /bond/tokens/{token_address}/scheduled_event
+@router.post(
+    "/tokens/{token_address}/scheduled_event",
+    response_model=None
+)
+async def update_token_scheduled_events(
+        request: Request,
+        token_address: str,
+        event_data: IbetStraightBondScheduledUpdate,
+        issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Update a token according to schedule"""
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
+                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
+
+    # Get Account
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
+        first()
+    if _account is None:
+        auth_error(request, issuer_address, "issuer does not exist")
+        raise AuthorizationError("issuer does not exist")
+
+    # Check Password
+    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
+    result = check_password(eoa_password, decrypt_password)
+    if not result:
+        auth_error(request, issuer_address, "password mismatch")
+        raise AuthorizationError("password mismatch")
+
+    auth_info(request, issuer_address, "authentication succeed")
+
+    # Get Token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+
+    # Register Events
+    _scheduled_event = ScheduledEvents()
+    _scheduled_event.issuer_address = issuer_address
+    _scheduled_event.token_address = token_address
+    _scheduled_event.token_type = TokenType.IBET_STRAIGHT_BOND
+    _scheduled_event.start_time = event_data.start_time
+    _scheduled_event.event_type = event_data.event_type
+    _scheduled_event.data = event_data.data.dict()
+    _scheduled_event.status = 0
+    db.add(_scheduled_event)
+    db.commit()
+
+    return None
 
 
 # GET: /bond/tokens/{token_address}/holders
