@@ -56,5 +56,5 @@ from .localized.bond_ledger_JPN import (
 from .scheduled_events import (
     IbetStraightBondScheduledUpdate,
     IbetShareScheduledUpdate,
-    ScheduledEventsResponse
+    ScheduledEventResponse
 )

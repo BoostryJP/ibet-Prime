@@ -18,6 +18,7 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
+    DateTime,
     JSON
 )
 
@@ -36,6 +37,8 @@ class ScheduledEvents(Base):
     token_address = Column(String(42), nullable=False)
     # token type
     token_type = Column(String(40), nullable=False)
+    # datetime when the event is scheduled (UTC)
+    scheduled_datetime = Column(DateTime, nullable=False)
     # event type
     event_type = Column(String(40), nullable=False)
     # event processing status (pending:0, succeeded:1, failed:2)
