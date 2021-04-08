@@ -53,3 +53,8 @@ from .bulk_transfer import (
 from .localized.bond_ledger_JPN import (
     CreateUpdateBondLedgerTemplateRequestJPN
 )
+from .scheduled_events import (
+    IbetStraightBondScheduledUpdate,
+    IbetShareScheduledUpdate,
+    ScheduledEventResponse
+)

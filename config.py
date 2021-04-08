@@ -121,3 +121,8 @@ BULK_TRANSFER_INTERVAL = int(os.environ.get("BULK_TRANSFER_INTERVAL")) \
 # System locale
 SYSTEM_LOCALE = [code.strip().upper() for code in os.environ.get("SYSTEM_LOCALE").split(",")] \
     if os.environ.get("SYSTEM_LOCALE") else ["JPN"]
+
+# Scheduled Events
+SCHEDULED_EVENTS_INTERVAL = int(os.environ.get("SCHEDULED_EVENTS_INTERVAL")) \
+    if os.environ.get("SCHEDULED_EVENTS_INTERVAL") else 60
+

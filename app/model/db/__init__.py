@@ -38,3 +38,7 @@ from .idx_personal_info import (
 from .tx_management import TransactionLock
 from .utxo import UTXO, UTXOBlockNumber
 from .localized.corporate_bond_ledger_template_JPN import CorporateBondLedgerTemplateJPN
+from .scheduled_events import (
+    ScheduledEvents,
+    ScheduledEventType
+)

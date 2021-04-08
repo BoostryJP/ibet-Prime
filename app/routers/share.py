@@ -46,7 +46,8 @@ from app.model.schema import (
     TransferHistoryResponse,
     BulkTransferUploadIdResponse,
     BulkTransferUploadResponse,
-    BulkTransferResponse
+    BulkTransferResponse,
+    IbetShareScheduledUpdate
 )
 from app.model.utils import (
     E2EEUtils,
@@ -64,7 +65,8 @@ from app.model.db import (
     IDXPersonalInfo,
     BulkTransfer,
     BulkTransferUpload,
-    IDXTransfer
+    IDXTransfer,
+    ScheduledEvents
 )
 from app.model.blockchain import IbetShareContract
 from app.exceptions import (
@@ -375,6 +377,66 @@ async def additional_issue(
         raise SendTransactionError("failed to send transaction")
 
     return
+
+
+# POST: /share/tokens/{token_address}/scheduled_events
+@router.post(
+    "/tokens/{token_address}/scheduled_events",
+    response_model=None
+)
+async def schedule_token_update_event(
+        request: Request,
+        token_address: str,
+        event_data: IbetShareScheduledUpdate,
+        issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Update a token according to schedule"""
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value])
+    )
+
+    # Get Account
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
+        first()
+    if _account is None:
+        auth_error(request, issuer_address, "issuer does not exist")
+        raise AuthorizationError("issuer does not exist")
+    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
+
+    # Check Password
+    if EOA_PASSWORD_CHECK_ENABLED:
+        result = check_password(eoa_password, decrypt_password)
+        if not result:
+            auth_error(request, issuer_address, "password mismatch")
+            raise AuthorizationError("issuer does not exist, or password mismatch")
+        auth_info(request, issuer_address, "authentication succeed")
+
+    # Get Token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+
+    # Register Events
+    _scheduled_event = ScheduledEvents()
+    _scheduled_event.issuer_address = issuer_address
+    _scheduled_event.token_address = token_address
+    _scheduled_event.token_type = TokenType.IBET_SHARE
+    _scheduled_event.scheduled_datetime = event_data.scheduled_datetime
+    _scheduled_event.event_type = event_data.event_type
+    _scheduled_event.data = event_data.data.dict()
+    _scheduled_event.status = 0
+    db.add(_scheduled_event)
+    db.commit()
+
+    return None
 
 
 # GET: /share/tokens/{token_address}/holders
