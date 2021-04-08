@@ -43,15 +43,6 @@ class IbetStraightBondScheduledUpdate(BaseModel):
     event_type: str
     data: IbetStraightBondUpdate
 
-    # @validator("scheduled_datetime")
-    # def scheduled_datetime_is_isoformat(cls, v):
-    #     if v is not None:
-    #         try:
-    #            datetime.fromisoformat(v.strftime())
-    #         except ValueError:
-    #             raise
-    #     return v
-
     @validator("event_type")
     def event_type_is_supported(cls, v):
         if v is not None and v != ScheduledEventType.UPDATE:
