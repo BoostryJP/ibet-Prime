@@ -47,7 +47,8 @@ from app.model.schema import (
     BulkTransferUploadIdResponse,
     BulkTransferUploadResponse,
     BulkTransferResponse,
-    IbetShareScheduledUpdate
+    IbetShareScheduledUpdate,
+    ScheduledEventResponse
 )
 from app.model.utils import (
     E2EEUtils,
@@ -377,6 +378,50 @@ async def additional_issue(
         raise SendTransactionError("failed to send transaction")
 
     return
+
+
+# GET: /share/tokens/{token_address}/scheduled_events
+@router.get(
+    "/tokens/{token_address}/scheduled_events",
+    response_model=List[ScheduledEventResponse]
+)
+async def retrieve_token_events(
+        token_address: str,
+        issuer_address: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Retrieve token event"""
+    # Get Token
+    if issuer_address is None:
+        _token_events = db.query(ScheduledEvents). \
+            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
+            filter(ScheduledEvents.token_address == token_address). \
+            order_by(ScheduledEvents.scheduled_datetime). \
+            all()
+    else:
+        _token_events = db.query(ScheduledEvents). \
+            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
+            filter(ScheduledEvents.issuer_address == issuer_address). \
+            filter(ScheduledEvents.token_address == token_address). \
+            order_by(ScheduledEvents.scheduled_datetime). \
+            all()
+
+    if len(_token_events) == 0:
+        raise HTTPException(status_code=404, detail="token event not found")
+
+    # Get contract data
+    token_events = []
+    for _token_event in _token_events:
+        token_events.append(
+            {
+                "token_address": token_address,
+                "token_type": TokenType.IBET_SHARE,
+                "scheduled_datetime": _token_event.scheduled_datetime,
+                "event_type": _token_event.event_type,
+                "status": _token_event.status,
+                "data": _token_event.data
+            }
+        )
+    return token_events
 
 
 # POST: /share/tokens/{token_address}/scheduled_events
