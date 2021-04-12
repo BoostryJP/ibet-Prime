@@ -412,9 +412,6 @@ async def retrieve_token_events(
             order_by(ScheduledEvents.scheduled_datetime). \
             all()
 
-    if len(_token_events) == 0:
-        return []
-
     # Get contract data
     token_events = []
     for _token_event in _token_events:

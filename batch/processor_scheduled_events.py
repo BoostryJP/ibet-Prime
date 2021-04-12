@@ -22,16 +22,16 @@ import sys
 import time
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
-from web3 import Web3
-from web3.middleware import geth_poa_middleware
+from sqlalchemy.orm import (
+    sessionmaker,
+    scoped_session
+)
 
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
 from datetime import datetime
 from config import (
-    WEB3_HTTP_PROVIDER,
     DATABASE_URL,
     SCHEDULED_EVENTS_INTERVAL
 )
@@ -56,8 +56,6 @@ import batch_log
 process_name = "PROCESSOR-Scheduled-Events"
 LOG = batch_log.get_logger(process_name=process_name)
 
-web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 engine = create_engine(DATABASE_URL, echo=False)
 db_session = scoped_session(sessionmaker())
 db_session.configure(bind=engine)
@@ -137,9 +135,7 @@ class Processor:
                     password=decrypt_password.encode("utf-8")
                 )
             except Exception as err:
-                LOG.exception(
-                    f"Could not get the private key of the issuer of id:{_event.id}",
-                    err)
+                LOG.exception(f"Could not get the private key of the issuer of id:{_event.id}", err)
                 self.sink.on_finish_event_process(
                     record_id=_event.id,
                     status=2
