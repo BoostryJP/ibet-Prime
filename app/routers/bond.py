@@ -413,7 +413,7 @@ async def retrieve_token_events(
             all()
 
     if len(_token_events) == 0:
-        raise HTTPException(status_code=404, detail="token event not found")
+        return []
 
     # Get contract data
     token_events = []

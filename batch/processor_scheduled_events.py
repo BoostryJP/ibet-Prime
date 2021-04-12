@@ -30,7 +30,6 @@ path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
 from datetime import datetime
-from tzlocal import get_localzone
 from config import (
     WEB3_HTTP_PROVIDER,
     DATABASE_URL,
@@ -109,8 +108,7 @@ class Processor:
         return events_list
 
     def process(self):
-        system_tz = get_localzone()
-        process_start_time = datetime.now(system_tz)
+        process_start_time = datetime.utcnow()
         events_list = self._get_events(process_start_time)
         if len(events_list) < 1:
             return

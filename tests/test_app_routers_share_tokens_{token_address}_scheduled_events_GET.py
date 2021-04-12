@@ -173,14 +173,9 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
         assert resp.status_code == 200
         assert resp.json() == assumed_resp
 
-    ###########################################################################
-    # Error Case
-    ###########################################################################
-
-    # <Error_1>
-    # NotFound
+    # <Normal_3>
     # token event not found
-    def test_error_1(self, client, db):
+    def test_normal_3(self, client, db):
         test_account = config_eth_account("user2")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -194,6 +189,10 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
         )
 
         # assertion
-        assert resp.status_code == 404
-        assert resp.json()["meta"] == {"code": 1, "title": "NotFound"}
-        assert resp.json()["detail"] == "token event not found"
+        assert resp.status_code == 200
+        assert resp.json() == []
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
