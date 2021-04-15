@@ -49,6 +49,8 @@ class Account(Base):
     rsa_status = Column(Integer)
     # delete flag
     is_deleted = Column(Boolean, default=False)
+    # token list contract address
+    token_list_contract_address = Column(String(42))
 
 
 class AccountRsaKeyTemporary(Base):

@@ -20,4 +20,5 @@ from .token import (
     IbetStraightBondContract,
     IbetShareContract
 )
+from .token_list import TokenListContract
 from .personal_info import PersonalInfoContract

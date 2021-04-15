@@ -69,7 +69,10 @@ from app.model.db import (
     IDXTransfer,
     ScheduledEvents
 )
-from app.model.blockchain import IbetShareContract
+from app.model.blockchain import (
+    IbetShareContract,
+    TokenListContract
+)
 from app.exceptions import (
     InvalidParameterError,
     SendTransactionError,
@@ -161,6 +164,29 @@ async def issue_token(
         )
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
+
+    # Deploy token list
+    if _account.token_list_contract_address is None:
+        try:
+            token_list_contract_address, token_list_abi, token_list_tx_hash = TokenListContract.create(
+                account_address=issuer_address,
+                private_key=private_key
+            )
+            _account.token_list_contract_address = token_list_contract_address
+        except SendTransactionError:
+            raise SendTransactionError("failed to deploy token list contract")
+
+    # Register token_address token list
+    try:
+        TokenListContract.register(
+            token_list_address=_account.token_list_contract_address,
+            token_address=contract_address,
+            token_template=TokenType.IBET_SHARE,
+            account_address=issuer_address,
+            private_key=private_key
+        )
+    except SendTransactionError:
+        raise SendTransactionError("failed to register token address token list")
 
     # Update
     try:
