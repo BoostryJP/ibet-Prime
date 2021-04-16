@@ -24,6 +24,7 @@ function start () {
   # TOKEN_LIST_CONTRACT_ADDRESS is HEX_ADDRESS
   if [[ ! ${TOKEN_LIST_CONTRACT_ADDRESS} =~ 0x[0-9a-fA-F]{40} ]]; then
     echo 'Please set the "TOKEN_LIST_CONTRACT_ADDRESS" environment variable and try again.' >&2
+    exit 1
   fi
 
   # gunicorn parameters
