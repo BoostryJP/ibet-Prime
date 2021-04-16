@@ -33,6 +33,7 @@ from app.model.db import (
 from app.model.schema import IbetShareUpdate
 from app.model.utils import E2EEUtils
 from app.model.blockchain.token import IbetShareContract
+from app.model.blockchain.token_list import TokenListContract
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
@@ -70,8 +71,14 @@ class TestAppRoutersShareTokensPOST:
             target="app.model.blockchain.token.IbetShareContract.update",
             return_value=None
         )
+        TokenListContract_register = patch(
+            target="app.model.blockchain.token_list.TokenListContract.register",
+            return_value=None
+        )
 
-        with IbetShareContract_create, IbetShareContract_update:
+        with IbetShareContract_create, \
+                IbetShareContract_update, \
+                TokenListContract_register:
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -105,6 +112,13 @@ class TestAppRoutersShareTokensPOST:
                 contract_address="contract_address_test1",
                 data=IbetShareUpdate(),
                 tx_from=test_account["address"],
+                private_key=ANY
+            )
+            TokenListContract.register.assert_called_with(
+                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
+                token_address="contract_address_test1",
+                token_template=TokenType.IBET_SHARE,
+                account_address=test_account["address"],
                 private_key=ANY
             )
 
@@ -150,8 +164,14 @@ class TestAppRoutersShareTokensPOST:
             target="app.model.blockchain.token.IbetShareContract.update",
             return_value=None
         )
+        TokenListContract_register = patch(
+            target="app.model.blockchain.token_list.TokenListContract.register",
+            return_value=None
+        )
 
-        with IbetShareContract_create, IbetShareContract_update:
+        with IbetShareContract_create, \
+                IbetShareContract_update, \
+                TokenListContract_register:
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -206,6 +226,13 @@ class TestAppRoutersShareTokensPOST:
                     privacy_policy="privacy policy test"
                 ),
                 tx_from=test_account["address"],
+                private_key=ANY
+            )
+            TokenListContract.register.assert_called_with(
+                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
+                token_address="contract_address_test1",
+                token_template=TokenType.IBET_SHARE,
+                account_address=test_account["address"],
                 private_key=ANY
             )
 
@@ -587,8 +614,14 @@ class TestAppRoutersShareTokensPOST:
             target="app.model.blockchain.token.IbetShareContract.update",
             side_effect=SendTransactionError()
         )
+        TokenListContract_register = patch(
+            target="app.model.blockchain.token_list.TokenListContract.register",
+            return_value=None
+        )
 
-        with IbetShareContract_create, IbetShareContract_update:
+        with IbetShareContract_create, \
+                IbetShareContract_update, \
+                TokenListContract_register:
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -625,4 +658,73 @@ class TestAppRoutersShareTokensPOST:
                     "title": "SendTransactionError"
                 },
                 "detail": "failed to send transaction"
+            }
+
+    # <Error_5>
+    # Send Transaction Error
+    # TokenListContract.register
+    def test_error_5(self, client, db):
+        test_account_1 = config_eth_account("user1")
+        test_account_2 = config_eth_account("user2")
+
+        # prepare data
+        account = Account()
+        account.issuer_address = test_account_1["address"]
+        account.keyfile = test_account_2["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        # mock
+        IbetShareContract_create = patch(
+            target="app.model.blockchain.token.IbetShareContract.create",
+            return_value=("contract_address_test1", "abi_test1", "tx_hash_test1")
+        )
+        IbetShareContract_update = patch(
+            target="app.model.blockchain.token.IbetShareContract.update",
+            return_value=None
+        )
+        TokenListContract_register = patch(
+            target="app.model.blockchain.token_list.TokenListContract.register",
+            side_effect=SendTransactionError()
+        )
+
+        with IbetShareContract_create, \
+                IbetShareContract_update, \
+                TokenListContract_register:
+            # request target api
+            req_param = {
+                "name": "name_test1",
+                "symbol": "symbol_test1",
+                "issue_price": 1000,
+                "total_supply": 10000,
+                "dividends": 123.45,
+                "dividend_record_date": "20211231",
+                "dividend_payment_date": "20211231",
+                "cancellation_date": "20221231",
+                "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
+                "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+                "image_url": ["image_1"],  # update
+                "transferable": False,  # update
+                "status": False,  # update
+                "offering_status": True,  # update
+                "contact_information": "contact info test",  # update
+                "privacy_policy": "privacy policy test"  # update
+            }
+            resp = client.post(
+                self.apiurl,
+                json=req_param,
+                headers={
+                    "issuer-address": test_account_1["address"],
+                    "eoa-password": E2EEUtils.encrypt("password")
+                }
+            )
+
+            # assertion
+            assert resp.status_code == 400
+            assert resp.json() == {
+                "meta": {
+                    "code": 2,
+                    "title": "SendTransactionError"
+                },
+                "detail": "failed to register token address token list"
             }
