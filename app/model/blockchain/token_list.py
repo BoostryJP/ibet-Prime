@@ -37,22 +37,6 @@ web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 class TokenListContract:
 
     @staticmethod
-    def create(account_address: str, private_key: str) -> Tuple[str, dict, str]:
-        """Deploy token
-
-        :param account_address: deployer_address
-        :param private_key: deployer's private key
-        :return: contract address, ABI, transaction hash
-        """
-        contract_address, abi, tx_hash = ContractUtils.deploy_contract(
-            contract_name="TokenList",
-            args=[],
-            deployer=account_address,
-            private_key=private_key
-        )
-        return contract_address, abi, tx_hash
-
-    @staticmethod
     def register(
             token_list_address: str,
             token_address: str,

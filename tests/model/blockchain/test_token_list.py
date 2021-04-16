@@ -26,6 +26,7 @@ from web3 import Web3
 from web3.exceptions import InvalidAddress, ValidationError
 from web3.middleware import geth_poa_middleware
 
+import config
 from app.exceptions import SendTransactionError
 from app.model.blockchain import (
     IbetStraightBondContract,
@@ -41,103 +42,29 @@ web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
-class TestCreateTokenList:
-
-    ###########################################################################
-    # Normal Case
-    ###########################################################################
-    # <Normal_1>
-    def test_normal_1(self, db):
-        test_account = config_eth_account("user1")
-        issuer_address = test_account.get("address")
-        private_key = decode_keyfile_json(
-            raw_keyfile_json=test_account.get("keyfile_json"),
-            password=test_account.get("password").encode("utf-8")
-        )
-
-        # execute the function
-        contract_address, abi, tx_hash = TokenListContract.create(
-            account_address=issuer_address,
-            private_key=private_key
-        )
-
-        token_list_contract = ContractUtils.get_contract(
-            contract_name="TokenList",
-            contract_address=contract_address
-        )
-        assert token_list_contract.functions.owner().call() == issuer_address
-        assert token_list_contract.functions.getListLength().call() == 0
-
-    ###########################################################################
-    # Error Case
-    ###########################################################################
-    # <Error_1>
-    # Invalid argument ( issuer_address )
-    def test_error_1(self, db):
-        test_account = config_eth_account("user1")
-        issuer_address = test_account.get("address")
-        private_key = decode_keyfile_json(
-            raw_keyfile_json=test_account.get("keyfile_json"),
-            password=test_account.get("password").encode("utf-8")
-        )
-
-        # execute the function
-        with pytest.raises(SendTransactionError) as exc_info:
-            TokenListContract.create(
-                account_address=issuer_address[:-1],
-                private_key=private_key
-            )
-
-        assert isinstance(exc_info.value.args[0], InvalidAddress)
-        assert exc_info.match(f"ENS name: '{issuer_address[:-1]}' is invalid.")
-
-    # <Error_2>
-    # Invalid argument ( private_key )
-    def test_error_2(self, db):
-        test_account = config_eth_account("user1")
-        issuer_address = test_account.get("address")
-
-        # execute the function
-        with pytest.raises(SendTransactionError) as exc_info:
-            TokenListContract.create(
-                account_address=issuer_address,
-                private_key="dummy"
-            )
-
-        assert isinstance(exc_info.value.args[0], Error)
-        assert exc_info.match("Non-hexadecimal digit found")
-
-    # <Error_3>
-    # SendTransactionError : ContractUtils
-    def test_error_3(self):
-        test_account = config_eth_account("user1")
-        issuer_address = test_account.get("address")
-        private_key = decode_keyfile_json(
-            raw_keyfile_json=test_account.get("keyfile_json"),
-            password=test_account.get("password").encode("utf-8")
-        )
-
-        # mock
-        TokenListContract_create = patch(
-            target="app.model.blockchain.utils.ContractUtils.deploy_contract",
-            side_effect=SendTransactionError()
-        )
-        # execute the function
-        with TokenListContract_create:
-            with pytest.raises(SendTransactionError):
-                TokenListContract.create(
-                    account_address=issuer_address,
-                    private_key=private_key
-                )
+@pytest.fixture
+def contract_list():
+    test_account = config_eth_account("user1")
+    deployer_address = test_account.get("address")
+    private_key = decode_keyfile_json(
+        raw_keyfile_json=test_account.get("keyfile_json"),
+        password=test_account.get("password").encode("utf-8")
+    )
+    contract_address, abi, tx_hash = ContractUtils.deploy_contract(
+        contract_name="TokenList",
+        args=[],
+        deployer=deployer_address,
+        private_key=private_key
+    )
+    config.TOKEN_LIST_CONTRACT_ADDRESS = contract_address
 
 
 class TestRegisterTokenList:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
     # <Normal_1> token_template is IbetShare
-    def test_normal_1(self, db):
+    def test_normal_1(self, db, contract_list):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -145,11 +72,6 @@ class TestRegisterTokenList:
             password=test_account.get("password").encode("utf-8")
         )
 
-        # execute the function
-        contract_address, abi, tx_hash = TokenListContract.create(
-            account_address=issuer_address,
-            private_key=private_key
-        )
         # execute the function
         arguments = [
             "テスト株式",
@@ -170,7 +92,7 @@ class TestRegisterTokenList:
         TokenListContract.register(
             token_address=share_token_address,
             token_template=TokenType.IBET_SHARE,
-            token_list_address=contract_address,
+            token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
             account_address=issuer_address,
             private_key=private_key
         )
@@ -178,7 +100,7 @@ class TestRegisterTokenList:
         # assertion : list length
         token_list_contract = ContractUtils.get_contract(
             contract_name="TokenList",
-            contract_address=contract_address
+            contract_address=config.TOKEN_LIST_CONTRACT_ADDRESS
         )
         assert token_list_contract.functions.getListLength().call() == 1
 
@@ -203,7 +125,7 @@ class TestRegisterTokenList:
         TokenListContract.register(
             token_address=bond_token_address,
             token_template=TokenType.IBET_STRAIGHT_BOND,
-            token_list_address=contract_address,
+            token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
             account_address=issuer_address,
             private_key=private_key
         )
@@ -211,7 +133,7 @@ class TestRegisterTokenList:
         # assertion
         token_list_contract = ContractUtils.get_contract(
             contract_name="TokenList",
-            contract_address=contract_address
+            contract_address=config.TOKEN_LIST_CONTRACT_ADDRESS
         )
         assert token_list_contract.functions.getListLength().call() == 2
         _share_token = token_list_contract.functions.getTokenByAddress(share_token_address).call()
@@ -226,8 +148,8 @@ class TestRegisterTokenList:
     ###########################################################################
     # Error Case
     ###########################################################################
-    # <Error_1> Invalid argument: token_list_address
-    def test_error_1(self, db):
+    # <Error_1> Invalid argument: token_address
+    def test_error_1(self, db, contract_list):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -235,76 +157,37 @@ class TestRegisterTokenList:
             password=test_account.get("password").encode("utf-8")
         )
 
-        # execute the function
-        contract_address, abi, tx_hash = TokenListContract.create(
-            account_address=issuer_address,
-            private_key=private_key
-        )
-
         with pytest.raises(SendTransactionError) as exc_info:
             TokenListContract.register(
-                token_address=ZERO_ADDRESS,
+                token_address="dummy_token_address",
                 token_template=TokenType.IBET_SHARE,
-                token_list_address=contract_address[:-1],
-                account_address=issuer_address,
-                private_key=private_key
-            )
-        print(exc_info)
-        assert isinstance(exc_info.value.args[0], ValueError)
-        assert exc_info.match(f"Unknown format {contract_address[:-1]}, ")
-
-    # <Error_2> Invalid argument: token_address
-    def test_error_2(self, db):
-        test_account = config_eth_account("user1")
-        issuer_address = test_account.get("address")
-        private_key = decode_keyfile_json(
-            raw_keyfile_json=test_account.get("keyfile_json"),
-            password=test_account.get("password").encode("utf-8")
-        )
-
-        # execute the function
-        contract_address, abi, tx_hash = TokenListContract.create(
-            account_address=issuer_address,
-            private_key=private_key
-        )
-
-        with pytest.raises(SendTransactionError) as exc_info:
-            TokenListContract.register(
-                token_address="this_is_not_address",
-                token_template=TokenType.IBET_STRAIGHT_BOND,
-                token_list_address=contract_address,
+                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                 account_address=issuer_address,
                 private_key=private_key
             )
         assert isinstance(exc_info.value.args[0], ValidationError)
 
-    # <Error_3> Invalid argument: token_list_address
-    def test_error_3(self, db):
+    # <Error_2> Invalid argument: token_list_address
+    def test_error_2(self, db, contract_list):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
             raw_keyfile_json=test_account.get("keyfile_json"),
             password=test_account.get("password").encode("utf-8")
-        )
-
-        # execute the function
-        contract_address, abi, tx_hash = TokenListContract.create(
-            account_address=issuer_address,
-            private_key=private_key
         )
 
         with pytest.raises(SendTransactionError) as exc_info:
             TokenListContract.register(
                 token_address=ZERO_ADDRESS,
                 token_template=TokenType.IBET_STRAIGHT_BOND,
-                token_list_address=contract_address[:-1],
+                token_list_address="dummy_token_list_address",
                 account_address=issuer_address,
                 private_key=private_key
             )
         assert isinstance(exc_info.value.args[0], ValueError)
 
-    # <Error_4> Invalid argument: account_address
-    def test_error_4(self, db):
+    # <Error_3> Invalid argument: account_address
+    def test_error_3(self, db, contract_list):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -312,49 +195,33 @@ class TestRegisterTokenList:
             password=test_account.get("password").encode("utf-8")
         )
 
-        # execute the function
-        contract_address, abi, tx_hash = TokenListContract.create(
-            account_address=issuer_address,
-            private_key=private_key
-        )
-
         with pytest.raises(SendTransactionError) as exc_info:
             TokenListContract.register(
                 token_address=ZERO_ADDRESS,
                 token_template=TokenType.IBET_SHARE,
-                token_list_address=contract_address,
+                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                 account_address=issuer_address[:-1],
                 private_key=private_key
             )
         assert isinstance(exc_info.value.args[0], InvalidAddress)
 
-    # <Error_5> Invalid argument: private_key
-    def test_error_5(self, db):
+    # <Error_4> Invalid argument: private_key
+    def test_error_4(self, db, contract_list):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
-        private_key = decode_keyfile_json(
-            raw_keyfile_json=test_account.get("keyfile_json"),
-            password=test_account.get("password").encode("utf-8")
-        )
-
-        # execute the function
-        contract_address, abi, tx_hash = TokenListContract.create(
-            account_address=issuer_address,
-            private_key=private_key
-        )
 
         with pytest.raises(SendTransactionError) as exc_info:
             TokenListContract.register(
                 token_address=ZERO_ADDRESS,
                 token_template=TokenType.IBET_SHARE,
-                token_list_address=contract_address,
+                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                 account_address=issuer_address,
                 private_key="not private key"
             )
         assert isinstance(exc_info.value.args[0], Error)
 
-    # <Error_6> SendTransactionError : ContractUtils
-    def test_error_6(self, db):
+    # <Error_5> SendTransactionError : ContractUtils
+    def test_error_5(self, db, contract_list):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -362,24 +229,19 @@ class TestRegisterTokenList:
             password=test_account.get("password").encode("utf-8")
         )
 
-        contract_address, abi, tx_hash = TokenListContract.create(
-            account_address=issuer_address,
-            private_key=private_key
-        )
-
         # mock
-        TokenListContract_create = patch(
+        ContractUtils_send_transaction = patch(
             target="app.model.blockchain.utils.ContractUtils.send_transaction",
             side_effect=SendTransactionError()
         )
 
         # execute the function
-        with TokenListContract_create:
+        with ContractUtils_send_transaction:
             with pytest.raises(SendTransactionError):
                 TokenListContract.register(
                     token_address=ZERO_ADDRESS,
                     token_template=TokenType.IBET_SHARE,
-                    token_list_address=contract_address,
+                    token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                     account_address=issuer_address,
                     private_key=private_key
                 )

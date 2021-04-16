@@ -21,6 +21,11 @@ source ~/.bash_profile
 
 function start () {
 
+  # TOKEN_LIST_CONTRACT_ADDRESS is HEX_ADDRESS
+  if [[ ! ${TOKEN_LIST_CONTRACT_ADDRESS} =~ 0x[0-9a-fA-F]{40} ]]; then
+    echo 'Please set the "TOKEN_LIST_CONTRACT_ADDRESS" environment variable and try again.' >&2
+  fi
+
   # gunicorn parameters
   WORKER_COUNT=${WORKER_COUNT:-2}
   WORKER_TIMEOUT=${WORKER_TIMEOUT:-30}

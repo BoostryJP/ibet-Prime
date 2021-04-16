@@ -46,7 +46,6 @@ class TestAppRoutersBondTokensPOST:
     ###########################################################################
     # Normal Case
     ###########################################################################
-
     # <Normal_1>
     # create only
     def test_normal_1(self, client, db):
@@ -70,10 +69,6 @@ class TestAppRoutersBondTokensPOST:
             target="app.model.blockchain.token.IbetStraightBondContract.update",
             return_value=None
         )
-        TokenListContract_create = patch(
-            target="app.model.blockchain.token_list.TokenListContract.create",
-            return_value=(config.ZERO_ADDRESS, {"test": "data"}, "TX_HASH_TEST")
-        )
         TokenListContract_register = patch(
             target="app.model.blockchain.token_list.TokenListContract.register",
             return_value=None
@@ -81,7 +76,6 @@ class TestAppRoutersBondTokensPOST:
 
         with IbetStraightBondContract_create, \
                 IbetStraightBondContract_update, \
-                TokenListContract_create, \
                 TokenListContract_register:
             # request target api
             req_param = {
@@ -119,12 +113,8 @@ class TestAppRoutersBondTokensPOST:
                 tx_from=test_account["address"],
                 private_key=ANY
             )
-            TokenListContract.create.assert_called_with(
-                account_address=test_account["address"],
-                private_key=ANY
-            )
             TokenListContract.register.assert_called_with(
-                token_list_address=config.ZERO_ADDRESS,
+                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                 token_address="contract_address_test1",
                 token_template=TokenType.IBET_STRAIGHT_BOND,
                 account_address=test_account["address"],
@@ -173,10 +163,6 @@ class TestAppRoutersBondTokensPOST:
             target="app.model.blockchain.token.IbetStraightBondContract.update",
             return_value=None
         )
-        TokenListContract_create = patch(
-            target="app.model.blockchain.token_list.TokenListContract.create",
-            return_value=(config.ZERO_ADDRESS, {"test": "data"}, "TX_HASH_TEST")
-        )
         TokenListContract_register = patch(
             target="app.model.blockchain.token_list.TokenListContract.register",
             return_value=None
@@ -184,7 +170,6 @@ class TestAppRoutersBondTokensPOST:
 
         with IbetStraightBondContract_create, \
                 IbetStraightBondContract_update, \
-                TokenListContract_create, \
                 TokenListContract_register:
             # request target api
             req_param = {
@@ -249,12 +234,8 @@ class TestAppRoutersBondTokensPOST:
                 tx_from=test_account["address"],
                 private_key=ANY
             )
-            TokenListContract.create.assert_called_with(
-                account_address=test_account["address"],
-                private_key=ANY
-            )
             TokenListContract.register.assert_called_with(
-                token_list_address=config.ZERO_ADDRESS,
+                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                 token_address="contract_address_test1",
                 token_template=TokenType.IBET_STRAIGHT_BOND,
                 account_address=test_account["address"],
@@ -290,7 +271,6 @@ class TestAppRoutersBondTokensPOST:
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
-        account.token_list_contract_address = "token_list_address_test"
         db.add(account)
 
         token_before = db.query(Token).all()
@@ -374,7 +354,7 @@ class TestAppRoutersBondTokensPOST:
                 private_key=ANY
             )
             TokenListContract.register.assert_called_with(
-                token_list_address="token_list_address_test",
+                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                 token_address="contract_address_test1",
                 token_template=TokenType.IBET_STRAIGHT_BOND,
                 account_address=test_account["address"],
@@ -805,10 +785,6 @@ class TestAppRoutersBondTokensPOST:
             target="app.model.blockchain.token.IbetStraightBondContract.update",
             side_effect=SendTransactionError()
         )
-        TokenListContract_create = patch(
-            target="app.model.blockchain.token_list.TokenListContract.create",
-            return_value=(config.ZERO_ADDRESS, {"test": "data"}, "TX_HASH_TEST")
-        )
         TokenListContract_register = patch(
             target="app.model.blockchain.token_list.TokenListContract.register",
             return_value=None
@@ -816,7 +792,6 @@ class TestAppRoutersBondTokensPOST:
 
         with IbetStraightBondContract_create, \
                 IbetStraightBondContract_update, \
-                TokenListContract_create, \
                 TokenListContract_register:
             # request target api
             req_param = {
@@ -860,87 +835,10 @@ class TestAppRoutersBondTokensPOST:
                 "detail": "failed to send transaction"
             }
 
-    # <Error_5_1>
-    # Send Transaction Error
-    # TokenListContract.create
-    def test_error_5_1(self, client, db):
-        test_account = config_eth_account("user1")
-
-        # prepare data
-        account = Account()
-        account.issuer_address = test_account["address"]
-        account.keyfile = test_account["keyfile_json"]
-        account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
-
-        # mock
-        IbetStraightBondContract_create = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.create",
-            return_value=("contract_address_test1", "abi_test1", "tx_hash_test1")
-        )
-        IbetStraightBondContract_update = patch(
-            target="app.model.blockchain.token.IbetStraightBondContract.update",
-            return_value=None
-        )
-        TokenListContract_create = patch(
-            target="app.model.blockchain.token_list.TokenListContract.create",
-            side_effect=SendTransactionError()
-        )
-        TokenListContract_register = patch(
-            target="app.model.blockchain.token_list.TokenListContract.register",
-            return_value=None
-        )
-
-        with IbetStraightBondContract_create, \
-                IbetStraightBondContract_update, \
-                TokenListContract_create, \
-                TokenListContract_register:
-            # request target api
-            req_param = {
-                "name": "name_test1",
-                "symbol": "symbol_test1",
-                "total_supply": 10000,
-                "face_value": 200,
-                "redemption_date": "redemption_date_test1",
-                "redemption_value": 4000,
-                "return_date": "return_date_test1",
-                "return_amount": "return_amount_test1",
-                "purpose": "purpose_test1",
-                "interest_rate": 0.0001,  # update
-                "interest_payment_date": ["0331", "0930"],  # update
-                "transferable": False,  # update
-                "image_url": ["image_1"],  # update
-                "status": False,  # update
-                "initial_offering_status": True,  # update
-                "is_redeemed": True,  # update
-                "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
-                "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-                "contact_information": "contact info test",  # update
-                "privacy_policy": "privacy policy test"  # update
-            }
-            resp = client.post(
-                self.apiurl,
-                json=req_param,
-                headers={
-                    "issuer-address": test_account["address"],
-                    "eoa-password": E2EEUtils.encrypt("password")
-                }
-            )
-
-            # assertion
-            assert resp.status_code == 400
-            assert resp.json() == {
-                "meta": {
-                    "code": 2,
-                    "title": "SendTransactionError"
-                },
-                "detail": "failed to deploy token list contract"
-            }
-
-    # <Error_5_2>
+    # <Error_5>
     # Send Transaction Error
     # TokenListContract.register
-    def test_error_5_2(self, client, db):
+    def test_error_5(self, client, db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -959,10 +857,6 @@ class TestAppRoutersBondTokensPOST:
             target="app.model.blockchain.token.IbetStraightBondContract.update",
             return_value=None
         )
-        TokenListContract_create = patch(
-            target="app.model.blockchain.token_list.TokenListContract.create",
-            return_value=(config.ZERO_ADDRESS, {"test": "data"}, "TX_HASH_TEST")
-        )
         TokenListContract_register = patch(
             target="app.model.blockchain.token_list.TokenListContract.register",
             side_effect=SendTransactionError()
@@ -970,7 +864,6 @@ class TestAppRoutersBondTokensPOST:
 
         with IbetStraightBondContract_create, \
                 IbetStraightBondContract_update, \
-                TokenListContract_create, \
                 TokenListContract_register:
             # request target api
             req_param = {
