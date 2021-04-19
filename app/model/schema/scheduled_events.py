@@ -62,12 +62,18 @@ class IbetShareScheduledUpdate(BaseModel):
             raise ValueError("event_type is not supported")
         return v
 
+
 ############################
 # RESPONSE
 ############################
+class ScheduledEventIdResponse(BaseModel):
+    """scheduled event (Response)"""
+    scheduled_event_id: int
+
 
 class ScheduledEventResponse(BaseModel):
     """scheduled event (Response)"""
+    scheduled_event_id: int
     token_address: str
     token_type: str
     scheduled_datetime: datetime

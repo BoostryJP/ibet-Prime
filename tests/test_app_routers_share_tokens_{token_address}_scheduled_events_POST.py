@@ -93,7 +93,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
             "event_type": "Update",
             "data": update_data
         }
-        resp = client.post(
+        resp_1 = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
@@ -106,8 +106,20 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
             filter(ScheduledEvents.token_address == _token_address). \
             first()
 
+        resp_2 = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            }
+        )
+
         # assertion
-        assert resp.status_code == 200
+        assert resp_1.status_code == 200
+        assert resp_1.json() == {"scheduled_event_id": 1}
+        assert resp_2.status_code == 200
+        assert resp_2.json() == {"scheduled_event_id": 2}
         assert _scheduled_event.token_type == TokenType.IBET_SHARE
         assert _scheduled_event.scheduled_datetime == datetime_now_utc.replace(tzinfo=None)
         assert _scheduled_event.event_type == ScheduledEventType.UPDATE
@@ -180,6 +192,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
 
         # assertion
         assert resp.status_code == 200
+        assert resp.json() == {"scheduled_event_id": 1}
         assert _scheduled_event.token_type == TokenType.IBET_SHARE
         assert _scheduled_event.scheduled_datetime == \
                datetime_now_jst.astimezone(timezone.utc).replace(tzinfo=None)
