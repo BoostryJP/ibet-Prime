@@ -81,6 +81,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
 
         assumed_resp = [
             {
+                "scheduled_event_id": 1,
                 "token_address": _token_address,
                 "token_type": TokenType.IBET_SHARE,
                 "scheduled_datetime": datetime_now_str,
@@ -148,16 +149,18 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
 
         assumed_resp = [
             {
+                "scheduled_event_id": 1,
                 "token_address": _token_address,
                 "token_type": TokenType.IBET_SHARE,
-                "scheduled_datetime": datetime_str_list[1].isoformat(),
+                "scheduled_datetime": datetime_str_list[0].isoformat(),
                 "event_type": ScheduledEventType.UPDATE,
                 "status": 0,
                 "data": update_data
             }, {
+                "scheduled_event_id": 2,
                 "token_address": _token_address,
                 "token_type": TokenType.IBET_SHARE,
-                "scheduled_datetime": datetime_str_list[0].isoformat(),
+                "scheduled_datetime": datetime_str_list[1].isoformat(),
                 "event_type": ScheduledEventType.UPDATE,
                 "status": 0,
                 "data": update_data

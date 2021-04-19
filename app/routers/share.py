@@ -49,6 +49,7 @@ from app.model.schema import (
     BulkTransferUploadResponse,
     BulkTransferResponse,
     IbetShareScheduledUpdate,
+    ScheduledEventIdResponse,
     ScheduledEventResponse
 )
 from app.model.utils import (
@@ -401,7 +402,7 @@ async def additional_issue(
     "/tokens/{token_address}/scheduled_events",
     response_model=List[ScheduledEventResponse]
 )
-async def retrieve_token_events(
+async def list_all_token_events(
         token_address: str,
         issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
@@ -411,14 +412,14 @@ async def retrieve_token_events(
         _token_events = db.query(ScheduledEvents). \
             filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
             filter(ScheduledEvents.token_address == token_address). \
-            order_by(ScheduledEvents.scheduled_datetime). \
+            order_by(ScheduledEvents.id). \
             all()
     else:
         _token_events = db.query(ScheduledEvents). \
             filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
             filter(ScheduledEvents.issuer_address == issuer_address). \
             filter(ScheduledEvents.token_address == token_address). \
-            order_by(ScheduledEvents.scheduled_datetime). \
+            order_by(ScheduledEvents.id). \
             all()
 
     # Get contract data
@@ -426,6 +427,7 @@ async def retrieve_token_events(
     for _token_event in _token_events:
         token_events.append(
             {
+                "scheduled_event_id": _token_event.id,
                 "token_address": token_address,
                 "token_type": TokenType.IBET_SHARE,
                 "scheduled_datetime": _token_event.scheduled_datetime,
@@ -437,10 +439,51 @@ async def retrieve_token_events(
     return token_events
 
 
+# GET: /share/tokens/{token_address}/scheduled_events/{scheduled_event_id}
+@router.get(
+    "/tokens/{token_address}/scheduled_events/{scheduled_event_id}",
+    response_model=ScheduledEventResponse
+)
+async def retrieve_token_events(
+        token_address: str,
+        scheduled_event_id: int,
+        issuer_address: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Retrieve token event"""
+    # Get Token
+    if issuer_address is None:
+        _token_event = db.query(ScheduledEvents). \
+            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
+            filter(ScheduledEvents.id == scheduled_event_id). \
+            filter(ScheduledEvents.token_address == token_address). \
+            first()
+    else:
+        _token_event = db.query(ScheduledEvents). \
+            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
+            filter(ScheduledEvents.id == scheduled_event_id). \
+            filter(ScheduledEvents.issuer_address == issuer_address). \
+            filter(ScheduledEvents.token_address == token_address). \
+            first()
+
+    if _token_event is None:
+        raise HTTPException(status_code=404, detail="scheduled event scheduled_event_id not found")
+
+    # Get contract data
+    return {
+        "scheduled_event_id": _token_event.id,
+        "token_address": token_address,
+        "token_type": TokenType.IBET_SHARE,
+        "scheduled_datetime": _token_event.scheduled_datetime,
+        "event_type": _token_event.event_type,
+        "status": _token_event.status,
+        "data": _token_event.data
+    }
+
+
 # POST: /share/tokens/{token_address}/scheduled_events
 @router.post(
     "/tokens/{token_address}/scheduled_events",
-    response_model=None
+    response_model=ScheduledEventIdResponse
 )
 async def schedule_token_update_event(
         request: Request,
@@ -494,7 +537,50 @@ async def schedule_token_update_event(
     db.add(_scheduled_event)
     db.commit()
 
-    return None
+    return {"scheduled_event_id": _scheduled_event.id}
+
+
+# DELETE: /share/tokens/{token_address}/scheduled_events/{scheduled_event_id}
+@router.delete(
+    "/tokens/{token_address}/scheduled_events/{scheduled_event_id}",
+    response_model=ScheduledEventResponse
+)
+async def delete_token_event(
+        token_address: str,
+        scheduled_event_id: int,
+        issuer_address: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Retrieve token event"""
+    # Get Token
+    if issuer_address is None:
+        _token_event = db.query(ScheduledEvents). \
+            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
+            filter(ScheduledEvents.id == scheduled_event_id). \
+            filter(ScheduledEvents.token_address == token_address). \
+            first()
+    else:
+        _token_event = db.query(ScheduledEvents). \
+            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
+            filter(ScheduledEvents.id == scheduled_event_id). \
+            filter(ScheduledEvents.issuer_address == issuer_address). \
+            filter(ScheduledEvents.token_address == token_address). \
+            first()
+    if _token_event is None:
+        raise HTTPException(status_code=404, detail="scheduled event scheduled_event_id not found")
+
+    # Get contract data
+    rtn = {
+        "scheduled_event_id": _token_event.id,
+        "token_address": token_address,
+        "token_type": TokenType.IBET_SHARE,
+        "scheduled_datetime": _token_event.scheduled_datetime,
+        "event_type": _token_event.event_type,
+        "status": _token_event.status,
+        "data": _token_event.data
+    }
+    db.delete(_token_event)
+    db.commit()
+    return rtn
 
 
 # GET: /share/tokens/{token_address}/holders
