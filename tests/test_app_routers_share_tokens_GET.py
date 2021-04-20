@@ -54,6 +54,8 @@ class TestAppRoutersShareTokensGET:
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         db.add(token)
+        db.commit()
+        _issue_datetime = token.created.isoformat()
 
         # request target API
         mock_token = IbetShareContract()
@@ -109,7 +111,8 @@ class TestAppRoutersShareTokensGET:
                 "cancellation_date": "20221231",
                 "transferable": True,
                 "offering_status": True,
-                "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679"
+                "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
+                "issue_datetime": _issue_datetime
             }
         ]
 
@@ -132,6 +135,8 @@ class TestAppRoutersShareTokensGET:
         token_1.token_address = "token_address_test1"
         token_1.abi = "abi_test1"
         db.add(token_1)
+        db.commit()
+        _issue_datetime_1 = token_1.created.isoformat()
 
         mock_token_1 = IbetShareContract()
         mock_token_1.issuer_address = issuer_address_1
@@ -165,6 +170,8 @@ class TestAppRoutersShareTokensGET:
         token_2.token_address = "token_address_test2"
         token_2.abi = "abi_test2"
         db.add(token_2)
+        db.commit()
+        _issue_datetime_2 = token_2.created.isoformat()
 
         mock_token_2 = IbetShareContract()
         mock_token_2.issuer_address = issuer_address_2
@@ -225,7 +232,8 @@ class TestAppRoutersShareTokensGET:
                 "cancellation_date": "20221231",
                 "transferable": True,
                 "offering_status": True,
-                "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679"
+                "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
+                "issue_datetime": _issue_datetime_1
             },
             {
                 "issuer_address": issuer_address_2,
@@ -249,7 +257,8 @@ class TestAppRoutersShareTokensGET:
                 "cancellation_date": "20221231",
                 "transferable": True,
                 "offering_status": True,
-                "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679"
+                "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
+                "issue_datetime": _issue_datetime_2
             }
         ]
 
@@ -291,6 +300,8 @@ class TestAppRoutersShareTokensGET:
         token_1.token_address = "token_address_test1"
         token_1.abi = "abi_test1"
         db.add(token_1)
+        db.commit()
+        _issue_datetime = token_1.created.isoformat()
 
         mock_token = IbetShareContract()
         mock_token.issuer_address = issuer_address_1
@@ -354,7 +365,8 @@ class TestAppRoutersShareTokensGET:
                 "cancellation_date": "20221231",
                 "transferable": True,
                 "offering_status": True,
-                "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679"
+                "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
+                "issue_datetime": _issue_datetime
             }
         ]
 
@@ -377,6 +389,8 @@ class TestAppRoutersShareTokensGET:
         token_1.token_address = "token_address_test1"
         token_1.abi = "abi_test1"
         db.add(token_1)
+        db.commit()
+        _issue_datetime_1 = token_1.created.isoformat()
 
         mock_token_1 = IbetShareContract()
         mock_token_1.issuer_address = issuer_address_1
@@ -410,6 +424,8 @@ class TestAppRoutersShareTokensGET:
         token_2.token_address = "token_address_test2"
         token_2.abi = "abi_test2"
         db.add(token_2)
+        db.commit()
+        _issue_datetime_2 = token_2.created.isoformat()
 
         mock_token_2 = IbetShareContract()
         mock_token_2.issuer_address = issuer_address_1
@@ -479,7 +495,8 @@ class TestAppRoutersShareTokensGET:
                 "cancellation_date": "20221231",
                 "transferable": True,
                 "offering_status": True,
-                "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679"
+                "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
+                "issue_datetime": _issue_datetime_1
             },
             {
                 "issuer_address": issuer_address_1,
@@ -503,7 +520,8 @@ class TestAppRoutersShareTokensGET:
                 "cancellation_date": "20221231",
                 "transferable": True,
                 "offering_status": True,
-                "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679"
+                "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
+                "issue_datetime": _issue_datetime_2
             }
         ]
 
