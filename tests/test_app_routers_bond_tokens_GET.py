@@ -54,6 +54,8 @@ class TestAppRoutersBondTokensGET:
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         db.add(token)
+        db.commit()
+        _issue_datetime = token.created.isoformat()
 
         mock_token = IbetStraightBondContract()
         mock_token.issuer_address = token.issuer_address
@@ -134,6 +136,7 @@ class TestAppRoutersBondTokensGET:
                     "interestPaymentDate9_test1", "interestPaymentDate10_test1",
                     "interestPaymentDate11_test1", "interestPaymentDate12_test1",
                 ],
+                "issue_datetime": _issue_datetime
             },
         ]
 
@@ -157,6 +160,8 @@ class TestAppRoutersBondTokensGET:
         token_1.token_address = "token_address_test1"
         token_1.abi = "abi_test1"
         db.add(token_1)
+        db.commit()
+        _issue_datetime_1 = token_1.created.isoformat()
 
         mock_token_1 = IbetStraightBondContract()
         mock_token_1.issuer_address = token_1.issuer_address
@@ -201,6 +206,8 @@ class TestAppRoutersBondTokensGET:
         token_2.token_address = "token_address_test2"
         token_2.abi = "abi_test2"
         db.add(token_2)
+        db.commit()
+        _issue_datetime_2 = token_2.created.isoformat()
 
         mock_token_2 = IbetStraightBondContract()
         mock_token_2.issuer_address = token_2.issuer_address
@@ -282,6 +289,7 @@ class TestAppRoutersBondTokensGET:
                     "interestPaymentDate9_test1", "interestPaymentDate10_test1",
                     "interestPaymentDate11_test1", "interestPaymentDate12_test1",
                 ],
+                "issue_datetime": _issue_datetime_1
             },
             {
                 "issuer_address": token_2.issuer_address,
@@ -317,6 +325,7 @@ class TestAppRoutersBondTokensGET:
                     "interestPaymentDate9_test2", "interestPaymentDate10_test2",
                     "interestPaymentDate11_test2", "interestPaymentDate12_test2",
                 ],
+                "issue_datetime": _issue_datetime_2
             },
         ]
 
@@ -361,6 +370,8 @@ class TestAppRoutersBondTokensGET:
         token_1.token_address = "token_address_test1"
         token_1.abi = "abi_test1"
         db.add(token_1)
+        db.commit()
+        _issue_datetime = token_1.created.isoformat()
 
         mock_token = IbetStraightBondContract()
         mock_token.issuer_address = token_1.issuer_address
@@ -450,6 +461,7 @@ class TestAppRoutersBondTokensGET:
                     "interestPaymentDate9_test1", "interestPaymentDate10_test1",
                     "interestPaymentDate11_test1", "interestPaymentDate12_test1",
                 ],
+                "issue_datetime": _issue_datetime,
             },
         ]
 
@@ -473,6 +485,8 @@ class TestAppRoutersBondTokensGET:
         token_1.token_address = "token_address_test1"
         token_1.abi = "abi_test1"
         db.add(token_1)
+        db.commit()
+        _issue_datetime_1 = token_1.created.isoformat()
 
         mock_token_1 = IbetStraightBondContract()
         mock_token_1.issuer_address = token_1.issuer_address
@@ -517,6 +531,8 @@ class TestAppRoutersBondTokensGET:
         token_2.token_address = "token_address_test2"
         token_2.abi = "abi_test2"
         db.add(token_2)
+        db.commit()
+        _issue_datetime_2 = token_2.created.isoformat()
 
         mock_token_2 = IbetStraightBondContract()
         mock_token_2.issuer_address = token_2.issuer_address
@@ -607,6 +623,7 @@ class TestAppRoutersBondTokensGET:
                     "interestPaymentDate9_test1", "interestPaymentDate10_test1",
                     "interestPaymentDate11_test1", "interestPaymentDate12_test1",
                 ],
+                "issue_datetime": _issue_datetime_1,
             },
             {
                 "issuer_address": issuer_address_1,
@@ -642,6 +659,7 @@ class TestAppRoutersBondTokensGET:
                     "interestPaymentDate9_test2", "interestPaymentDate10_test2",
                     "interestPaymentDate11_test2", "interestPaymentDate12_test2",
                 ],
+                "issue_datetime": _issue_datetime_2,
             },
         ]
 

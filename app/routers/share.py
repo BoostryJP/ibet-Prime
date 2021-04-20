@@ -237,9 +237,9 @@ async def list_all_tokens(
     # Get contract data
     share_tokens = []
     for token in tokens:
-        share_tokens.append(
-            IbetShareContract.get(contract_address=token.token_address).__dict__
-        )
+        share_token = IbetShareContract.get(contract_address=token.token_address).__dict__
+        share_token["issue_datetime"] = token.created.isoformat()
+        share_tokens.append(share_token)
 
     return share_tokens
 
@@ -263,6 +263,7 @@ async def retrieve_token(
 
     # Get contract data
     share_token = IbetShareContract.get(contract_address=token_address).__dict__
+    share_token["issue_datetime"] = _token.created.isoformat()
 
     return share_token
 

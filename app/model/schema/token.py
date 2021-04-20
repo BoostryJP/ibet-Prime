@@ -350,6 +350,7 @@ class IbetStraightBondResponse(BaseModel):
     image_url: List[str]
     contact_information: str
     privacy_policy: str
+    issue_datetime: str
 
 
 class IbetShareResponse(BaseModel):
@@ -372,3 +373,4 @@ class IbetShareResponse(BaseModel):
     personal_info_contract_address: str
     contact_information: str
     privacy_policy: str
+    issue_datetime: str

@@ -41,6 +41,8 @@ class TestAppRoutersBondTokensTokenAddressGET:
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         db.add(token)
+        db.commit()
+        _issue_datetime = token.created.isoformat()
 
         # request target API
         mock_token = IbetStraightBondContract()
@@ -118,6 +120,7 @@ class TestAppRoutersBondTokensTokenAddressGET:
                 "interestPaymentDate9_test1", "interestPaymentDate10_test1",
                 "interestPaymentDate11_test1", "interestPaymentDate12_test1",
             ],
+            "issue_datetime": _issue_datetime,
         }
 
         assert resp.status_code == 200

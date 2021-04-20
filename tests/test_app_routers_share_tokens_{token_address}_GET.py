@@ -41,6 +41,8 @@ class TestAppRoutersShareTokensTokenAddressGET:
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         db.add(token)
+        db.commit()
+        _issue_time = token.created.isoformat()
 
         # request target API
         mock_token = IbetShareContract()
@@ -95,7 +97,8 @@ class TestAppRoutersShareTokensTokenAddressGET:
             "cancellation_date": "20221231",
             "transferable": True,
             "offering_status": True,
-            "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679"
+            "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
+            "issue_datetime": _issue_time
         }
 
         assert resp.status_code == 200

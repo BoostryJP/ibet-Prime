@@ -244,9 +244,9 @@ async def list_all_tokens(
     # Get contract data
     bond_tokens = []
     for token in tokens:
-        bond_tokens.append(
-            IbetStraightBondContract.get(contract_address=token.token_address).__dict__
-        )
+        bond_token = IbetStraightBondContract.get(contract_address=token.token_address).__dict__
+        bond_token["issue_datetime"] = token.created.isoformat()
+        bond_tokens.append(bond_token)
 
     return bond_tokens
 
@@ -270,6 +270,7 @@ async def retrieve_token(
 
     # Get contract data
     bond_token = IbetStraightBondContract.get(contract_address=token_address).__dict__
+    bond_token["issue_datetime"] = _token.created.isoformat()
 
     return bond_token
 
