@@ -33,6 +33,7 @@ from fastapi.exceptions import HTTPException
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 from eth_keyfile import decode_keyfile_json
+from pytz import timezone
 
 import config
 from app.database import db_session
@@ -91,6 +92,8 @@ router = APIRouter(
     tags=["share"],
     responses={404: {"description": "Not found"}},
 )
+
+local_tz = timezone(config.TZ)
 
 
 # POST: /share/tokens
@@ -238,7 +241,7 @@ async def list_all_tokens(
     share_tokens = []
     for token in tokens:
         share_token = IbetShareContract.get(contract_address=token.token_address).__dict__
-        share_token["issue_datetime"] = token.created.isoformat()
+        share_token["issue_datetime"] = local_tz.localize(token.created).isoformat()
         share_tokens.append(share_token)
 
     return share_tokens
@@ -263,7 +266,7 @@ async def retrieve_token(
 
     # Get contract data
     share_token = IbetShareContract.get(contract_address=token_address).__dict__
-    share_token["issue_datetime"] = _token.created.isoformat()
+    share_token["issue_datetime"] = local_tz.localize(_token.created).isoformat()
 
     return share_token
 
@@ -431,7 +434,7 @@ async def list_all_token_events(
                 "scheduled_event_id": _token_event.id,
                 "token_address": token_address,
                 "token_type": TokenType.IBET_SHARE,
-                "scheduled_datetime": _token_event.scheduled_datetime,
+                "scheduled_datetime": local_tz.localize(_token_event.scheduled_datetime).isoformat(),
                 "event_type": _token_event.event_type,
                 "status": _token_event.status,
                 "data": _token_event.data
@@ -474,7 +477,7 @@ async def retrieve_token_events(
         "scheduled_event_id": _token_event.id,
         "token_address": token_address,
         "token_type": TokenType.IBET_SHARE,
-        "scheduled_datetime": _token_event.scheduled_datetime,
+        "scheduled_datetime": local_tz.localize(_token_event.scheduled_datetime).isoformat(),
         "event_type": _token_event.event_type,
         "status": _token_event.status,
         "data": _token_event.data
@@ -574,7 +577,7 @@ async def delete_token_event(
         "scheduled_event_id": _token_event.id,
         "token_address": token_address,
         "token_type": TokenType.IBET_SHARE,
-        "scheduled_datetime": _token_event.scheduled_datetime,
+        "scheduled_datetime": local_tz.localize(_token_event.scheduled_datetime).isoformat(),
         "event_type": _token_event.event_type,
         "status": _token_event.status,
         "data": _token_event.data

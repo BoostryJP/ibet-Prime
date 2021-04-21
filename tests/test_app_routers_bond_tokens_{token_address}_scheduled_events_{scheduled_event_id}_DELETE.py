@@ -18,12 +18,12 @@ SPDX-License-Identifier: Apache-2.0
 """
 from datetime import (
     datetime,
-    timezone,
     timedelta
 )
 
-from pytz import timezone as tz
+from pytz import timezone
 
+from config import TZ
 from app.model.db import (
     TokenType,
     ScheduledEvents,
@@ -35,6 +35,7 @@ from tests.account_config import config_eth_account
 class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
     # target API endpoint
     base_url = "/bond/tokens/{}/scheduled_events/{}"
+    local_tz = timezone(TZ)
 
     ###########################################################################
     # Normal Case
@@ -49,8 +50,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
         _token_address = "token_address_test"
 
         # prepare data
-        datetime_now_utc = datetime.now(timezone.utc)
-        datetime_now_str = datetime_now_utc.isoformat()
+        datetime_now_utc = datetime.utcnow()
         update_data = {
             "face_value": 10000,
             "interest_rate": 0.5,
@@ -76,7 +76,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
         token_event.token_address = _token_address
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
-        token_event.scheduled_datetime = datetime_now_str
+        token_event.scheduled_datetime = datetime_now_utc
         token_event.status = 0
         token_event.data = update_data
         db.add(token_event)
@@ -85,7 +85,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
             "scheduled_event_id": 1,
             "token_address": _token_address,
             "token_type": TokenType.IBET_STRAIGHT_BOND,
-            "scheduled_datetime": datetime_now_str,
+            "scheduled_datetime": self.local_tz.localize(datetime_now_utc).isoformat(),
             "event_type": ScheduledEventType.UPDATE,
             "status": 0,
             "data": update_data
@@ -123,11 +123,11 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
         _token_address = "token_address_test"
 
         # prepare data
-        datetime_str_list = []
-        datetime_jst = datetime.now(tz("Asia/Tokyo")) + timedelta(hours=1)
-        datetime_str_list.append(datetime_jst.astimezone(timezone.utc).replace(tzinfo=None))
-        datetime_jst = datetime.now(tz("Asia/Tokyo"))
-        datetime_str_list.append(datetime_jst.astimezone(timezone.utc).replace(tzinfo=None))
+        datetime_list = []
+        datetime_utc = datetime.utcnow() + timedelta(hours=1)
+        datetime_list.append(datetime_utc)
+        datetime_utc = datetime.utcnow()
+        datetime_list.append(datetime_utc)
         update_data = {
             "face_value": 10000,
             "interest_rate": 0.5,
@@ -148,13 +148,13 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
             "privacy_policy": "プライバシーポリシーtest"
         }
 
-        for datetime_str in datetime_str_list:
+        for _datetime in datetime_list:
             token_event = ScheduledEvents()
             token_event.issuer_address = _issuer_address
             token_event.token_address = _token_address
             token_event.token_type = TokenType.IBET_STRAIGHT_BOND
             token_event.event_type = ScheduledEventType.UPDATE
-            token_event.scheduled_datetime = datetime_str.isoformat()
+            token_event.scheduled_datetime = _datetime
             token_event.status = 0
             token_event.data = update_data
             db.add(token_event)
@@ -163,7 +163,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
             "scheduled_event_id": 2,
             "token_address": _token_address,
             "token_type": TokenType.IBET_STRAIGHT_BOND,
-            "scheduled_datetime": datetime_str_list[1].isoformat(),
+            "scheduled_datetime": self.local_tz.localize(datetime_list[1]).isoformat(),
             "event_type": ScheduledEventType.UPDATE,
             "status": 0,
             "data": update_data

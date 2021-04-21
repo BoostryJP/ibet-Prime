@@ -17,7 +17,9 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from unittest import mock
+from pytz import timezone
 
+from config import TZ
 from app.model.blockchain import IbetShareContract
 from app.model.db import Token, TokenType
 
@@ -25,6 +27,7 @@ from app.model.db import Token, TokenType
 class TestAppRoutersShareTokensTokenAddressGET:
     # target API endpoint
     base_apiurl = "/share/tokens/"
+    local_tz = timezone(TZ)
 
     ###########################################################################
     # Normal Case
@@ -42,7 +45,7 @@ class TestAppRoutersShareTokensTokenAddressGET:
         token.abi = "abi_test1"
         db.add(token)
         db.commit()
-        _issue_time = token.created.isoformat()
+        _issue_time = self.local_tz.localize(token.created).isoformat()
 
         # request target API
         mock_token = IbetShareContract()

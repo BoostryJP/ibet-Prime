@@ -16,8 +16,10 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import pytz
 from unittest import mock
 
+from config import TZ
 from app.model.blockchain import IbetStraightBondContract
 from app.model.db import Token, TokenType
 
@@ -25,6 +27,7 @@ from app.model.db import Token, TokenType
 class TestAppRoutersBondTokensTokenAddressGET:
     # target API endpoint
     base_apiurl = "/bond/tokens/"
+    local_tz = pytz.timezone(TZ)
 
     ###########################################################################
     # Normal Case
@@ -42,7 +45,7 @@ class TestAppRoutersBondTokensTokenAddressGET:
         token.abi = "abi_test1"
         db.add(token)
         db.commit()
-        _issue_datetime = token.created.isoformat()
+        _issue_datetime = self.local_tz.localize(token.created).isoformat()
 
         # request target API
         mock_token = IbetStraightBondContract()

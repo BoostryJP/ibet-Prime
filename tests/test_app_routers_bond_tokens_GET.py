@@ -16,17 +16,20 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import pytz
 from unittest import mock
 from unittest.mock import call
 
 from app.model.blockchain import IbetStraightBondContract
 from app.model.db import Token, TokenType
+from config import TZ
 from tests.account_config import config_eth_account
 
 
 class TestAppRoutersBondTokensGET:
     # target API endpoint
     apiurl = "/bond/tokens"
+    local_tz = pytz.timezone(TZ)
 
     ###########################################################################
     # Normal Case
@@ -55,7 +58,7 @@ class TestAppRoutersBondTokensGET:
         token.abi = "abi_test1"
         db.add(token)
         db.commit()
-        _issue_datetime = token.created.isoformat()
+        _issue_datetime = self.local_tz.localize(token.created).isoformat()
 
         mock_token = IbetStraightBondContract()
         mock_token.issuer_address = token.issuer_address
@@ -161,7 +164,7 @@ class TestAppRoutersBondTokensGET:
         token_1.abi = "abi_test1"
         db.add(token_1)
         db.commit()
-        _issue_datetime_1 = token_1.created.isoformat()
+        _issue_datetime_1 = self.local_tz.localize(token_1.created).isoformat()
 
         mock_token_1 = IbetStraightBondContract()
         mock_token_1.issuer_address = token_1.issuer_address
@@ -207,7 +210,7 @@ class TestAppRoutersBondTokensGET:
         token_2.abi = "abi_test2"
         db.add(token_2)
         db.commit()
-        _issue_datetime_2 = token_2.created.isoformat()
+        _issue_datetime_2 = self.local_tz.localize(token_2.created).isoformat()
 
         mock_token_2 = IbetStraightBondContract()
         mock_token_2.issuer_address = token_2.issuer_address
@@ -371,7 +374,7 @@ class TestAppRoutersBondTokensGET:
         token_1.abi = "abi_test1"
         db.add(token_1)
         db.commit()
-        _issue_datetime = token_1.created.isoformat()
+        _issue_datetime = self.local_tz.localize(token_1.created).isoformat()
 
         mock_token = IbetStraightBondContract()
         mock_token.issuer_address = token_1.issuer_address
@@ -486,7 +489,7 @@ class TestAppRoutersBondTokensGET:
         token_1.abi = "abi_test1"
         db.add(token_1)
         db.commit()
-        _issue_datetime_1 = token_1.created.isoformat()
+        _issue_datetime_1 = self.local_tz.localize(token_1.created).isoformat()
 
         mock_token_1 = IbetStraightBondContract()
         mock_token_1.issuer_address = token_1.issuer_address
@@ -532,7 +535,7 @@ class TestAppRoutersBondTokensGET:
         token_2.abi = "abi_test2"
         db.add(token_2)
         db.commit()
-        _issue_datetime_2 = token_2.created.isoformat()
+        _issue_datetime_2 = self.local_tz.localize(token_2.created).isoformat()
 
         mock_token_2 = IbetStraightBondContract()
         mock_token_2.issuer_address = token_2.issuer_address
