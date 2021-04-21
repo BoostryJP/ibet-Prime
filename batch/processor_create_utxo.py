@@ -26,10 +26,7 @@ from sqlalchemy.orm import (
     scoped_session
 )
 from web3 import Web3
-from web3.middleware import (
-    geth_poa_middleware,
-    local_filter_middleware
-)
+from web3.middleware import geth_poa_middleware
 
 path = os.path.join(os.path.dirname(__file__), '../')
 sys.path.append(path)
@@ -58,7 +55,6 @@ db_session.configure(bind=engine)
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
-web3.middleware_onion.add(local_filter_middleware)
 
 
 class Sinks:
@@ -180,11 +176,11 @@ class Processor:
     def __process_transfer(self, token_contract, block_from: int, block_to: int):
         try:
             # When a Transfer event occurs
-            _build_filter = token_contract.events.Transfer.build_filter()
-            _build_filter.fromBlock = block_from
-            _build_filter.toBlock = block_to
-            _event_filter = _build_filter.deploy(web3)
-            for event in _event_filter.get_all_entries():
+            events = token_contract.events.Transfer.getLogs(
+                fromBlock=block_from,
+                toBlock=block_to
+            )
+            for event in events:
 
                 # Get contract event args
                 args = event["args"]

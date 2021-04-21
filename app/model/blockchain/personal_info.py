@@ -25,10 +25,7 @@ import logging
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from web3 import Web3
-from web3.middleware import (
-    geth_poa_middleware,
-    local_filter_middleware
-)
+from web3.middleware import geth_poa_middleware
 from web3.exceptions import TimeExhausted
 from eth_keyfile import decode_keyfile_json
 
@@ -47,7 +44,6 @@ from app.exceptions import SendTransactionError
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
-web3.middleware_onion.add(local_filter_middleware)
 
 
 class PersonalInfoContract:
@@ -173,11 +169,11 @@ class PersonalInfoContract:
         :param block_to: block to
         :return: event entries
         """
-        _build_filter = self.personal_info_contract.events.Register.build_filter()
-        _build_filter.fromBlock = block_from
-        _build_filter.toBlock = block_to
-        event_filter = _build_filter.deploy(web3)
-        return event_filter.get_all_entries()
+        events = self.personal_info_contract.events.Register.getLogs(
+            fromBlock=block_from,
+            toBlock=block_to
+        )
+        return events
 
     def get_modify_event(self, block_from, block_to):
         """Get Modify event
@@ -186,8 +182,8 @@ class PersonalInfoContract:
         :param block_to: block to
         :return: event entries
         """
-        _build_filter = self.personal_info_contract.events.Modify.build_filter()
-        _build_filter.fromBlock = block_from
-        _build_filter.toBlock = block_to
-        event_filter = _build_filter.deploy(web3)
-        return event_filter.get_all_entries()
+        events = self.personal_info_contract.events.Modify.getLogs(
+            fromBlock=block_from,
+            toBlock=block_to
+        )
+        return events

@@ -27,10 +27,7 @@ from sqlalchemy.orm import (
     scoped_session
 )
 from web3 import Web3
-from web3.middleware import (
-    geth_poa_middleware,
-    local_filter_middleware
-)
+from web3.middleware import geth_poa_middleware
 from web3.exceptions import BadFunctionCallOutput
 from eth_utils import to_checksum_address
 
@@ -55,7 +52,6 @@ LOG = batch_log.get_logger(process_name=process_name)
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
-web3.middleware_onion.add(local_filter_middleware)
 
 engine = create_engine(DATABASE_URL, echo=False)
 db_session = scoped_session(sessionmaker())
