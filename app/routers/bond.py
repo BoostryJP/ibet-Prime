@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import uuid
+import pytz
 from typing import (
     List,
     Optional
@@ -84,7 +85,10 @@ from app.log import (
     auth_info,
     auth_error
 )
-from config import EOA_PASSWORD_CHECK_ENABLED
+from config import (
+    EOA_PASSWORD_CHECK_ENABLED,
+    TZ
+)
 
 router = APIRouter(
     prefix="/bond",
@@ -92,6 +96,7 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
+local_tz = pytz.timezone(TZ)
 
 # POST: /bond/tokens
 @router.post(
@@ -245,7 +250,7 @@ async def list_all_tokens(
     bond_tokens = []
     for token in tokens:
         bond_token = IbetStraightBondContract.get(contract_address=token.token_address).__dict__
-        bond_token["issue_datetime"] = token.created.isoformat()
+        bond_token["issue_datetime"] = local_tz.localize(token.created).isoformat()
         bond_tokens.append(bond_token)
 
     return bond_tokens
@@ -270,7 +275,7 @@ async def retrieve_token(
 
     # Get contract data
     bond_token = IbetStraightBondContract.get(contract_address=token_address).__dict__
-    bond_token["issue_datetime"] = _token.created.isoformat()
+    bond_token["issue_datetime"] = local_tz.localize(_token.created).isoformat()
 
     return bond_token
 
@@ -438,7 +443,7 @@ async def list_all_token_events(
                 "scheduled_event_id": _token_event.id,
                 "token_address": token_address,
                 "token_type": TokenType.IBET_STRAIGHT_BOND,
-                "scheduled_datetime": _token_event.scheduled_datetime,
+                "scheduled_datetime": local_tz.localize(_token_event.scheduled_datetime).isoformat(),
                 "event_type": _token_event.event_type,
                 "status": _token_event.status,
                 "data": _token_event.data
@@ -481,7 +486,7 @@ async def retrieve_token_event(
         "scheduled_event_id": _token_event.id,
         "token_address": token_address,
         "token_type": TokenType.IBET_STRAIGHT_BOND,
-        "scheduled_datetime": _token_event.scheduled_datetime,
+        "scheduled_datetime": local_tz.localize(_token_event.scheduled_datetime).isoformat(),
         "event_type": _token_event.event_type,
         "status": _token_event.status,
         "data": _token_event.data
@@ -580,7 +585,7 @@ async def delete_token_event(
         "scheduled_event_id": _token_event.id,
         "token_address": token_address,
         "token_type": TokenType.IBET_STRAIGHT_BOND,
-        "scheduled_datetime": _token_event.scheduled_datetime,
+        "scheduled_datetime": local_tz.localize(_token_event.scheduled_datetime).isoformat(),
         "event_type": _token_event.event_type,
         "status": _token_event.status,
         "data": _token_event.data

@@ -18,7 +18,9 @@ SPDX-License-Identifier: Apache-2.0
 """
 from unittest import mock
 from unittest.mock import call
+from pytz import timezone
 
+from config import TZ
 from app.model.blockchain import IbetShareContract
 from app.model.db import Token, TokenType
 from tests.account_config import config_eth_account
@@ -27,6 +29,7 @@ from tests.account_config import config_eth_account
 class TestAppRoutersShareTokensGET:
     # target API endpoint
     apiurl = "/share/tokens"
+    local_tz = timezone(TZ)
 
     ###########################################################################
     # Normal Case
@@ -55,7 +58,7 @@ class TestAppRoutersShareTokensGET:
         token.abi = "abi_test1"
         db.add(token)
         db.commit()
-        _issue_datetime = token.created.isoformat()
+        _issue_datetime = self.local_tz.localize(token.created).isoformat()
 
         # request target API
         mock_token = IbetShareContract()
@@ -136,7 +139,7 @@ class TestAppRoutersShareTokensGET:
         token_1.abi = "abi_test1"
         db.add(token_1)
         db.commit()
-        _issue_datetime_1 = token_1.created.isoformat()
+        _issue_datetime_1 = self.local_tz.localize(token_1.created).isoformat()
 
         mock_token_1 = IbetShareContract()
         mock_token_1.issuer_address = issuer_address_1
@@ -171,7 +174,7 @@ class TestAppRoutersShareTokensGET:
         token_2.abi = "abi_test2"
         db.add(token_2)
         db.commit()
-        _issue_datetime_2 = token_2.created.isoformat()
+        _issue_datetime_2 = self.local_tz.localize(token_2.created).isoformat()
 
         mock_token_2 = IbetShareContract()
         mock_token_2.issuer_address = issuer_address_2
@@ -301,7 +304,7 @@ class TestAppRoutersShareTokensGET:
         token_1.abi = "abi_test1"
         db.add(token_1)
         db.commit()
-        _issue_datetime = token_1.created.isoformat()
+        _issue_datetime = self.local_tz.localize(token_1.created).isoformat()
 
         mock_token = IbetShareContract()
         mock_token.issuer_address = issuer_address_1
@@ -390,7 +393,7 @@ class TestAppRoutersShareTokensGET:
         token_1.abi = "abi_test1"
         db.add(token_1)
         db.commit()
-        _issue_datetime_1 = token_1.created.isoformat()
+        _issue_datetime_1 = self.local_tz.localize(token_1.created).isoformat()
 
         mock_token_1 = IbetShareContract()
         mock_token_1.issuer_address = issuer_address_1
@@ -425,7 +428,7 @@ class TestAppRoutersShareTokensGET:
         token_2.abi = "abi_test2"
         db.add(token_2)
         db.commit()
-        _issue_datetime_2 = token_2.created.isoformat()
+        _issue_datetime_2 = self.local_tz.localize(token_2.created).isoformat()
 
         mock_token_2 = IbetShareContract()
         mock_token_2.issuer_address = issuer_address_1
