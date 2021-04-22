@@ -90,6 +90,7 @@ class TestCreate:
         assert _dividend_info[1] == "20211231"  # dividendRecordDate
         assert _dividend_info[2] == "20211231"  # dividendPaymentDate
         assert share_contract.functions.cancellationDate().call() == "20221231"
+        assert share_contract.functions.transferApprovalRequired().call() is False
 
     ###########################################################################
     # Error Case
@@ -386,6 +387,7 @@ class TestUpdate:
         assert share_contract.offering_status is False
         assert share_contract.contact_information == ""
         assert share_contract.privacy_policy == ""
+        assert share_contract.transfer_approval_required is False
 
     # <Normal_2>
     # Update all items
@@ -422,7 +424,8 @@ class TestUpdate:
             "status": False,
             "offering_status": True,
             "contact_information": "contact info test",
-            "privacy_policy": "privacy policy test"
+            "privacy_policy": "privacy policy test",
+            "transfer_approval_required": True
         }
         _add_data = IbetShareUpdate(**_data)
         IbetShareContract.update(
@@ -446,6 +449,7 @@ class TestUpdate:
         assert share_contract.offering_status is True
         assert share_contract.contact_information == "contact info test"
         assert share_contract.privacy_policy == "privacy policy test"
+        assert share_contract.transfer_approval_required is True
 
     # <Normal_3>
     # contract_address does not exists)

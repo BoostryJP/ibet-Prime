@@ -195,6 +195,7 @@ class IbetShareCreate(BaseModel):
     personal_info_contract_address: Optional[str]
     contact_information: Optional[str]
     privacy_policy: Optional[str]
+    transfer_approval_required: Optional[bool]
 
     @validator("dividends")
     def dividends_2_decimal_places(cls, v):
@@ -237,6 +238,7 @@ class IbetShareUpdate(BaseModel):
     offering_status: Optional[bool]
     contact_information: Optional[str]
     privacy_policy: Optional[str]
+    transfer_approval_required: Optional[bool]
 
     @validator("dividends")
     def dividends_2_decimal_places(cls, v):

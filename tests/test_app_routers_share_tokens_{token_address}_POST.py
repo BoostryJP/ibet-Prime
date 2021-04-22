@@ -83,7 +83,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "status": False,
             "offering_status": False,
             "contact_information": "問い合わせ先test",
-            "privacy_policy": "プライバシーポリシーtest"
+            "privacy_policy": "プライバシーポリシーtest",
+            "transfer_approval_required": False
         }
         resp = client.post(
             self.base_url.format(_token_address),

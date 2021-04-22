@@ -84,7 +84,8 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
             "status": False,
             "offering_status": False,
             "contact_information": "問い合わせ先test",
-            "privacy_policy": "プライバシーポリシーtest"
+            "privacy_policy": "プライバシーポリシーtest",
+            "transfer_approval_required": False
         }
 
         # request target API
@@ -168,7 +169,8 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
             "status": False,
             "offering_status": False,
             "contact_information": "問い合わせ先test",
-            "privacy_policy": "プライバシーポリシーtest"
+            "privacy_policy": "プライバシーポリシーtest",
+            "transfer_approval_required": True
         }
 
         # request target API

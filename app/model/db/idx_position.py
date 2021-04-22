@@ -36,9 +36,12 @@ class IDXPosition(Base):
     account_address = Column(String(42), index=True)
     # balance
     balance = Column(BigInteger)
+    # pendingTransfer
+    pending_transfer = Column(BigInteger)
 
     def json(self):
         return {
             "account_address": self.account_address,
-            "balance": self.balance
+            "balance": self.balance,
+            "pending_transfer": self.pending_transfer
         }
