@@ -517,6 +517,7 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
     transferable: bool
     offering_status: bool
     personal_info_contract_address: str
+    transfer_approval_required: bool
 
     # Cache
     cache = {}
@@ -575,6 +576,8 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                     share_token.offering_status = share_contract.functions.offeringStatus().call()
                     share_token.contact_information = share_contract.functions.contactInformation().call()
                     share_token.privacy_policy = share_contract.functions.privacyPolicy().call()
+                    share_token.transfer_approval_required = \
+                        share_contract.functions.transferApprovalRequired().call()
                     return share_token
 
         # When cache is not used
@@ -607,6 +610,7 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
         share_token.transferable = share_contract.functions.transferable().call()
         share_token.offering_status = share_contract.functions.offeringStatus().call()
         share_token.personal_info_contract_address = share_contract.functions.personalInfoAddress().call()
+        share_token.transfer_approval_required = share_contract.functions.transferApprovalRequired().call()
 
         if TOKEN_CACHE:
             IbetShareContract.cache[contract_address] = {
@@ -792,6 +796,22 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             except Exception as err:
                 raise SendTransactionError(err)
 
+        if data.transfer_approval_required is not None:
+            tx = share_contract.functions.setTransferApprovalRequired(
+                data.transfer_approval_required
+            ).buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            try:
+                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
+#
     @staticmethod
     def transfer(data: IbetShareTransfer,
                  tx_from: str,

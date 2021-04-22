@@ -75,12 +75,13 @@ class DBSink:
     def __init__(self, db):
         self.db = db
 
-    def on_position(self, token_address: str, account_address: str, balance: int):
-        """Update balance data
+    def on_position(self, token_address: str, account_address: str, balance: int, pending_transfer: int):
+        """Update balance and pending_transfer data
 
         :param token_address: token address
         :param account_address: account address
         :param balance: balance
+        :param pending_transfer: pending transfer
         :return: None
         """
         position = self.db.query(IDXPosition). \
@@ -93,8 +94,10 @@ class DBSink:
             position.token_address = token_address
             position.account_address = account_address
             position.balance = balance
+            position.pending_transfer = pending_transfer
         else:
             position.balance = balance
+            position.pending_transfer = pending_transfer
         self.db.merge(position)
 
     def flush(self):
@@ -158,10 +161,12 @@ class Processor:
             try:
                 issuer_address = token.functions.owner().call()
                 balance = token.functions.balanceOf(issuer_address).call()
+                pending_transfer = token.functions.pendingTransfer(issuer_address).call()
                 self.sink.on_position(
                     token_address=to_checksum_address(token.address),
                     account_address=issuer_address,
-                    balance=balance
+                    balance=balance,
+                    pending_transfer=pending_transfer
                 )
             except Exception as e:
                 LOG.exception(e)
@@ -183,10 +188,12 @@ class Processor:
                     args = event["args"]
                     account = args.get("target_address", ZERO_ADDRESS)
                     balance = token.functions.balanceOf(account).call()
+                    pending_transfer = token.functions.pendingTransfer(account).call()
                     self.sink.on_position(
                         token_address=to_checksum_address(token.address),
                         account_address=account,
-                        balance=balance
+                        balance=balance,
+                        pending_transfer=pending_transfer
                     )
             except Exception as e:
                 LOG.exception(e)
@@ -209,18 +216,22 @@ class Processor:
                     # from address
                     from_account = args.get("from", ZERO_ADDRESS)
                     from_account_balance = token.functions.balanceOf(from_account).call()
+                    pending_transfer = token.functions.pendingTransfer(from_account).call()
                     self.sink.on_position(
                         token_address=to_checksum_address(token.address),
                         account_address=from_account,
-                        balance=from_account_balance
+                        balance=from_account_balance,
+                        pending_transfer=pending_transfer
                     )
                     # to address
                     to_account = args.get("to", ZERO_ADDRESS)
                     to_account_balance = token.functions.balanceOf(to_account).call()
+                    pending_transfer = token.functions.pendingTransfer(from_account).call()
                     self.sink.on_position(
                         token_address=to_checksum_address(token.address),
                         account_address=to_account,
                         balance=to_account_balance,
+                        pending_transfer=pending_transfer
                     )
             except Exception as e:
                 LOG.exception(e)
@@ -242,10 +253,12 @@ class Processor:
                     args = event["args"]
                     account = args.get("from", ZERO_ADDRESS)
                     balance = token.functions.balanceOf(account).call()
+                    pending_transfer = token.functions.pendingTransfer(account).call()
                     self.sink.on_position(
                         token_address=to_checksum_address(token.address),
                         account_address=account,
-                        balance=balance
+                        balance=balance,
+                        pending_transfer=pending_transfer
                     )
             except Exception as e:
                 LOG.exception(e)
@@ -267,10 +280,12 @@ class Processor:
                     args = event["args"]
                     account = args.get("to", ZERO_ADDRESS)
                     balance = token.functions.balanceOf(account).call()
+                    pending_transfer = token.functions.pendingTransfer(account).call()
                     self.sink.on_position(
                         token_address=to_checksum_address(token.address),
                         account_address=account,
-                        balance=balance
+                        balance=balance,
+                        pending_transfer=pending_transfer
                     )
             except Exception as e:
                 LOG.exception(e)
@@ -292,10 +307,12 @@ class Processor:
                     args = event["args"]
                     account = args.get("target_address", ZERO_ADDRESS)
                     balance = token.functions.balanceOf(account).call()
+                    pending_transfer = token.functions.pendingTransfer(account).call()
                     self.sink.on_position(
                         token_address=to_checksum_address(token.address),
                         account_address=account,
-                        balance=balance
+                        balance=balance,
+                        pending_transfer=pending_transfer
                     )
             except Exception as e:
                 LOG.exception(e)
