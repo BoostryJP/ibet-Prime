@@ -62,7 +62,7 @@ class IDXTransferApproval(Base):
             "to_address": self.to_address,
             "value": self.value,
             "application_datetime": self.application_datetime,
-            "application_blocktimestamp": self.application_blocktimestampc,
+            "application_blocktimestamp": self.application_blocktimestamp,
             "approval_datetime": self.approval_datetime,
             "approval_blocktimestamp": self.approval_blocktimestamp,
             "cancelled": self.cancelled
