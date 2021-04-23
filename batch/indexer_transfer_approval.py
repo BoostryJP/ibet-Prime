@@ -43,6 +43,7 @@ from config import (
 )
 from app.model.db import (
     Token,
+    TokenType,
     IDXTransferApproval
 )
 import batch_log
@@ -163,7 +164,9 @@ class Processor:
 
     def get_token_list(self):
         self.token_list = []
-        issued_token_list = self.db.query(Token).all()
+        issued_token_list = self.db.query(Token).\
+            filter(Token.type == TokenType.IBET_SHARE).\
+            all()
         for issued_token in issued_token_list:
             token_contract = web3.eth.contract(
                 address=issued_token.token_address,
