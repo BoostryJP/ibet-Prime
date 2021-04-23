@@ -121,16 +121,18 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             if contract_address in IbetStraightBondContract.cache:
                 token_cache = IbetStraightBondContract.cache[contract_address]
                 if token_cache.get("expiration_datetime") > datetime.utcnow():
-                    # get data from cache
+                    # Get data from cache
                     bond_token = token_cache["token"]
+                    # Get data from contract
+                    # NOTE: For updatable items, the data should be retrieved directly from the blockchain.
                     bond_token.total_supply = bond_contract.functions.totalSupply().call()
                     bond_token.face_value = bond_contract.functions.faceValue().call()
                     bond_token.interest_rate = float(
                         Decimal(str(bond_contract.functions.interestRate().call())) * Decimal("0.0001")
                     )
                     interest_payment_date_list = []
-                    interest_payment_date_string = bond_contract.functions.interestPaymentDate().call().replace("'",
-                                                                                                                '"')
+                    interest_payment_date_string = \
+                        bond_contract.functions.interestPaymentDate().call().replace("'", '"')
                     interest_payment_date = {}
                     try:
                         if interest_payment_date_string != "":
@@ -162,7 +164,7 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
         # Or, if there is no data in the cache
         # Or, if the cache has expired
 
-        # get data from contract
+        # Get data from contract
         bond_token = IbetStraightBondContract()
 
         bond_token.issuer_address = bond_contract.functions.owner().call()
@@ -518,6 +520,7 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
     offering_status: bool
     personal_info_contract_address: str
     transfer_approval_required: bool
+    principal_value: int
 
     # Cache
     cache = {}
@@ -556,8 +559,10 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             if contract_address in IbetShareContract.cache:
                 token_cache = IbetShareContract.cache[contract_address]
                 if token_cache.get("expiration_datetime") > datetime.utcnow():
-                    # get data from cache
+                    # Get data from cache
                     share_token = token_cache["token"]
+                    # Get data from contract
+                    # NOTE: For updatable items, the data should be retrieved directly from the blockchain.
                     share_token.total_supply = share_contract.functions.totalSupply().call()
                     share_token.cancellation_date = share_contract.functions.cancellationDate().call()
                     _dividend_info = share_contract.functions.dividendInformation().call()
@@ -576,15 +581,15 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                     share_token.offering_status = share_contract.functions.offeringStatus().call()
                     share_token.contact_information = share_contract.functions.contactInformation().call()
                     share_token.privacy_policy = share_contract.functions.privacyPolicy().call()
-                    share_token.transfer_approval_required = \
-                        share_contract.functions.transferApprovalRequired().call()
+                    share_token.transfer_approval_required = share_contract.functions.transferApprovalRequired().call()
+                    share_token.principal_value = share_contract.functions.principalValue().call()
                     return share_token
 
         # When cache is not used
         # Or, if there is no data in the cache
         # Or, if the cache has expired
 
-        # get data from contract
+        # Get data from contract
         share_token = IbetShareContract()
 
         share_token.issuer_address = share_contract.functions.owner().call()
@@ -611,6 +616,7 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
         share_token.offering_status = share_contract.functions.offeringStatus().call()
         share_token.personal_info_contract_address = share_contract.functions.personalInfoAddress().call()
         share_token.transfer_approval_required = share_contract.functions.transferApprovalRequired().call()
+        share_token.principal_value = share_contract.functions.principalValue().call()
 
         if TOKEN_CACHE:
             IbetShareContract.cache[contract_address] = {
@@ -811,7 +817,23 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(timeout_error)
             except Exception as err:
                 raise SendTransactionError(err)
-#
+
+        if data.principal_value is not None:
+            tx = share_contract.functions.setPrincipalValue(
+                data.principal_value
+            ).buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            try:
+                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
+
     @staticmethod
     def transfer(data: IbetShareTransfer,
                  tx_from: str,

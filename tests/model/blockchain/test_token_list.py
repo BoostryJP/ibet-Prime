@@ -81,7 +81,8 @@ class TestRegisterTokenList:
             1,
             "20211231",
             "20211231",
-            "20221231"
+            "20221231",
+            10000
         ]
         share_token_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
