@@ -141,6 +141,7 @@ class TestAppRoutersShareTokensPOST:
             assert position.token_address == "contract_address_test1"
             assert position.account_address == test_account["address"]
             assert position.balance == req_param["total_supply"]
+            assert position.pending_transfer == 0
 
     # <Normal_2>
     # include updates
@@ -258,6 +259,7 @@ class TestAppRoutersShareTokensPOST:
             assert position.token_address == "contract_address_test1"
             assert position.account_address == test_account["address"]
             assert position.balance == req_param["total_supply"]
+            assert position.pending_transfer == 0
 
     ###########################################################################
     # Error Case
