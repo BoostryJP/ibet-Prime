@@ -43,7 +43,9 @@ from .token import (
 from .holder import HolderResponse
 from .transfer import (
     TransferResponse,
-    TransferHistoryResponse
+    TransferHistoryResponse,
+    TransferApprovalResponse,
+    TransferApprovalHistoryResponse
 )
 from .bulk_transfer import (
     BulkTransferUploadIdResponse,

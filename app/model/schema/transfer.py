@@ -40,3 +40,23 @@ class TransferHistoryResponse(BaseModel):
     """transfer history"""
     result_set: ResultSet
     transfer_history: List[TransferResponse]
+
+
+class TransferApprovalResponse(BaseModel):
+    """transfer approval data"""
+    token_address: str
+    application_id: int
+    from_address: str
+    to_address: str
+    amount: int
+    application_datetime: str
+    application_blocktimestamp: str
+    approval_datetime: str
+    approval_blocktimestamp: str
+    cancelled: bool
+
+
+class TransferApprovalHistoryResponse(BaseModel):
+    """transfer approval history"""
+    result_set: ResultSet
+    transfer_approval_history: List[TransferApprovalResponse]
