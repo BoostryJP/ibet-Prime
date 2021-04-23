@@ -46,6 +46,7 @@ from app.model.schema import (
     TokenAddressResponse,
     HolderResponse,
     TransferHistoryResponse,
+    TransferApprovalHistoryResponse,
     BulkTransferUploadIdResponse,
     BulkTransferUploadResponse,
     BulkTransferResponse,
@@ -70,6 +71,7 @@ from app.model.db import (
     BulkTransfer,
     BulkTransferUpload,
     IDXTransfer,
+    IDXTransferApproval,
     ScheduledEvents
 )
 from app.model.blockchain import (
@@ -828,7 +830,7 @@ async def list_transfer_history(
             "from_address": _transfer.transfer_from,
             "to_address": _transfer.transfer_to,
             "amount": _transfer.amount,
-            "block_timestamp": _transfer.block_timestamp.strftime("%Y/%m/%d %H:%M:%S")
+            "block_timestamp": local_tz.localize(_transfer.block_timestamp).isoformat()
         })
 
     return {
@@ -839,6 +841,65 @@ async def list_transfer_history(
             "total": total
         },
         "transfer_history": transfer_history
+    }
+
+
+# GET: /share/transfer_approvals/{token_address}
+@router.get(
+    "/transfer_approvals/{token_address}",
+    response_model=TransferApprovalHistoryResponse
+)
+async def list_transfer_approval_history(
+        token_address: str,
+        offset: Optional[int] = Query(None),
+        limit: Optional[int] = Query(None),
+        db: Session = Depends(db_session)
+):
+    """List token transfer approval history"""
+    # Get token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.token_address == token_address). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+
+    # Get transfer approval history
+    query = db.query(IDXTransferApproval). \
+        filter(IDXTransferApproval.token_address == token_address). \
+        order_by(desc(IDXTransferApproval.id))
+    total = query.count()
+
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+    _transfer_approvals = query.all()
+    count = query.count()
+
+    transfer_approval_history = []
+    for _transfer_approval in _transfer_approvals:
+        transfer_approval_history.append({
+            "token_address": token_address,
+            "application_id": _transfer_approval.application_id,
+            "from_address": _transfer_approval.from_address,
+            "to_address": _transfer_approval.to_address,
+            "amount": _transfer_approval.amount,
+            "application_datetime": local_tz.localize(_transfer_approval.application_datetime).isoformat(),
+            "application_blocktimestamp": local_tz.localize(_transfer_approval.application_blocktimestamp).isoformat(),
+            "approval_datetime": local_tz.localize(_transfer_approval.approval_datetime).isoformat(),
+            "approval_blocktimestamp": local_tz.localize(_transfer_approval.approval_blocktimestamp).isoformat(),
+            "cancelled": _transfer_approval.cancelled
+        })
+
+    return {
+        "result_set": {
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": total
+        },
+        "transfer_approval_history": transfer_approval_history
     }
 
 

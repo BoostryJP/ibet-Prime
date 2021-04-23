@@ -17,7 +17,6 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import uuid
-import pytz
 from typing import (
     List,
     Optional
@@ -34,6 +33,7 @@ from fastapi.exceptions import HTTPException
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 from eth_keyfile import decode_keyfile_json
+import pytz
 
 import config
 from app.database import db_session
@@ -836,7 +836,7 @@ async def list_transfer_history(
             "from_address": _transfer.transfer_from,
             "to_address": _transfer.transfer_to,
             "amount": _transfer.amount,
-            "block_timestamp": _transfer.block_timestamp.strftime("%Y/%m/%d %H:%M:%S")
+            "block_timestamp": local_tz.localize(_transfer.block_timestamp).isoformat()
         })
 
     return {

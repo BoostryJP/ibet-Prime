@@ -17,7 +17,17 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
-from app.model.db import Token, TokenType, IDXTransfer
+
+from pytz import timezone
+
+import config
+from app.model.db import (
+    Token,
+    TokenType,
+    IDXTransfer
+)
+
+local_tz = timezone(config.TZ)
 
 
 class TestAppRoutersBondTransfersGET:
@@ -31,7 +41,7 @@ class TestAppRoutersBondTransfersGET:
     test_transfer_from = "test_transfer_from"
     test_transfer_to = "test_transfer_to"
     test_block_timestamp = datetime(year=2019, month=9, day=2)
-    test_block_timestamp_str = "2019/09/02 00:00:00"
+    test_block_timestamp_str = local_tz.localize(test_block_timestamp).isoformat()
 
     ###########################################################################
     # Normal Case
