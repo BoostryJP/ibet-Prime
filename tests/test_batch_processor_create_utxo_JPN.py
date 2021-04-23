@@ -78,7 +78,8 @@ def deploy_share_token_contract(address, private_key):
         int(0.03 * 100),
         "token.dividend_record_date",
         "token.dividend_payment_date",
-        "token.cancellation_date"
+        "token.cancellation_date",
+        100
     ]
 
     contract_address, _, _ = IbetShareContract.create(arguments, address, private_key)
@@ -115,7 +116,7 @@ class TestProcessor:
     ###########################################################################
 
     # <Normal_1>
-    # Skip(Other than Bond)
+    # Skip bond ledger creation (Other than Bond)
     def test_normal_1(self, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]

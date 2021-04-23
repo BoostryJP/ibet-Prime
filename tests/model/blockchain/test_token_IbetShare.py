@@ -67,7 +67,8 @@ class TestCreate:
             1,
             "20211231",
             "20211231",
-            "20221231"
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -90,7 +91,7 @@ class TestCreate:
         assert _dividend_info[1] == "20211231"  # dividendRecordDate
         assert _dividend_info[2] == "20211231"  # dividendPaymentDate
         assert share_contract.functions.cancellationDate().call() == "20221231"
-        assert share_contract.functions.transferApprovalRequired().call() is False
+        assert share_contract.functions.principalValue().call() == 10000
 
     ###########################################################################
     # Error Case
@@ -138,7 +139,8 @@ class TestCreate:
             "string",
             0,
             0,
-            0
+            0,
+            "string"
         ]  # invalid types
         with pytest.raises(SendTransactionError) as exc_info:
             IbetShareContract.create(
@@ -170,7 +172,8 @@ class TestCreate:
             1,
             "20211231",
             "20211231",
-            "20221231"
+            "20221231",
+            10000
         ]
         with pytest.raises(SendTransactionError) as exc_info:
             IbetShareContract.create(
@@ -198,7 +201,8 @@ class TestCreate:
             1,
             "20211231",
             "20211231",
-            "20221231"
+            "20221231",
+            10000
         ]
         with pytest.raises(SendTransactionError) as exc_info:
             IbetShareContract.create(
@@ -240,7 +244,8 @@ class TestGet:
             1,
             "20211231",
             "20211231",
-            "20221231"
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -262,6 +267,7 @@ class TestGet:
         assert share_contract.dividend_record_date == "20211231"  # dividendRecordDate
         assert share_contract.dividend_payment_date == "20211231"  # dividendPaymentDate
         assert share_contract.cancellation_date == "20221231"
+        assert share_contract.principal_value == 10000
 
     # <Normal_2>
     # TOKEN_CACHE is True
@@ -285,7 +291,8 @@ class TestGet:
             1,
             "20211231",
             "20211231",
-            "20221231"
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -310,6 +317,7 @@ class TestGet:
         assert share_contract.dividend_record_date == "20211231"  # dividendRecordDate
         assert share_contract.dividend_payment_date == "20211231"  # dividendPaymentDate
         assert share_contract.cancellation_date == "20221231"
+        assert share_contract.principal_value == 10000
 
     ###########################################################################
     # Error Case
@@ -353,9 +361,15 @@ class TestUpdate:
 
         # deploy token
         arguments = [
-            "テスト株式", "TEST", 10000, 20000,
-            1, "20211231", "20211231",
-            "20221231"
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -388,6 +402,7 @@ class TestUpdate:
         assert share_contract.contact_information == ""
         assert share_contract.privacy_policy == ""
         assert share_contract.transfer_approval_required is False
+        assert share_contract.principal_value == 10000
 
     # <Normal_2>
     # Update all items
@@ -401,9 +416,15 @@ class TestUpdate:
 
         # deploy token
         arguments = [
-            "テスト株式", "TEST", 10000, 20000,
-            1, "20211231", "20211231",
-            "20221231"
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -425,7 +446,8 @@ class TestUpdate:
             "offering_status": True,
             "contact_information": "contact info test",
             "privacy_policy": "privacy policy test",
-            "transfer_approval_required": True
+            "transfer_approval_required": True,
+            "principal_value": 9000
         }
         _add_data = IbetShareUpdate(**_data)
         IbetShareContract.update(
@@ -450,9 +472,10 @@ class TestUpdate:
         assert share_contract.contact_information == "contact info test"
         assert share_contract.privacy_policy == "privacy policy test"
         assert share_contract.transfer_approval_required is True
+        assert share_contract.principal_value == 9000
 
     # <Normal_3>
-    # contract_address does not exists)
+    # contract_address does not exists
     def test_normal_3(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
@@ -460,6 +483,7 @@ class TestUpdate:
             raw_keyfile_json=test_account.get("keyfile_json"),
             password=test_account.get("password").encode("utf-8")
         )
+
         # update
         _data = {
             "interest_rate": 0.0001
@@ -473,6 +497,8 @@ class TestUpdate:
         )
         with pytest.raises(BadFunctionCallOutput) as exc_info:
             IbetShareContract.get(contract_address=ZERO_ADDRESS)
+
+        # assertion
         assert exc_info.match("Could not transact with/call contract function,")
         assert exc_info.match(", is contract deployed correctly and chain synced?")
 
@@ -489,11 +515,18 @@ class TestUpdate:
             raw_keyfile_json=test_account.get("keyfile_json"),
             password=test_account.get("password").encode("utf-8")
         )
+
         # deploy token
         arguments = [
-            "テスト株式", "TEST", 10000, 20000,
-            1, "20211231", "20211231",
-            "20221231"
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -513,6 +546,8 @@ class TestUpdate:
                 tx_from=issuer_address,
                 private_key=private_key
             )
+
+        # assertion
         assert exc_info.match("Unknown format.*, attempted to normalize to.*")
 
     # <Error_2>
@@ -572,9 +607,15 @@ class TestUpdate:
 
         # deploy token
         arguments = [
-            "テスト株式", "TEST", 10000, 20000,
-            1, "20211231", "20211231",
-            "20221231"
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -609,9 +650,15 @@ class TestUpdate:
 
         # deploy token
         arguments = [
-            "テスト株式", "TEST", 10000, 20000,
-            1, "20211231", "20211231",
-            "20221231"
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -644,9 +691,15 @@ class TestUpdate:
 
         # deploy token
         arguments = [
-            "テスト株式", "TEST", 10000, 20000,
-            1, "20211231", "20211231",
-            "20221231"
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -673,10 +726,12 @@ class TestUpdate:
                     tx_from=issuer_address,
                     private_key=private_key
                 )
+
+        # assertion
         assert isinstance(exc_info.value.args[0], TimeExhausted)
 
     # <Error_7>
-    # Error
+    # Transaction Error
     def test_error_7(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
@@ -687,9 +742,15 @@ class TestUpdate:
 
         # deploy token
         arguments = [
-            "テスト株式", "TEST", 10000, 20000,
-            1, "20211231", "20211231",
-            "20221231"
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -716,6 +777,8 @@ class TestUpdate:
                     tx_from=issuer_address,
                     private_key=private_key
                 )
+
+        # assertion
         assert isinstance(exc_info.value.args[0], TransactionNotFound)
 
 
@@ -739,9 +802,15 @@ class TestTransfer:
 
         # deploy token
         arguments = [
-            "テスト株式", "TEST", 10000, 20000,
-            1, "20211231", "20211231",
-            "20221231"
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
         ]
         token_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -853,9 +922,15 @@ class TestTransfer:
 
         # deploy token
         arguments = [
-            "テスト株式", "TEST", 10000, 20000,
-            1, "20211231", "20211231",
-            "20221231"
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
         ]
         token_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -895,9 +970,15 @@ class TestTransfer:
 
         # deploy token
         arguments = [
-            "テスト株式", "TEST", 10000, 20000,
-            1, "20211231", "20211231",
-            "20221231"
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
         ]
         token_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -935,9 +1016,15 @@ class TestTransfer:
 
         # deploy token
         arguments = [
-            "テスト株式", "TEST", 10000, 20000,
-            1, "20211231", "20211231",
-            "20221231"
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -983,9 +1070,15 @@ class TestTransfer:
 
         # deploy token
         arguments = [
-            "テスト株式", "TEST", 10000, 20000,
-            1, "20211231", "20211231",
-            "20221231"
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -1034,9 +1127,15 @@ class TestAddSupply:
 
         # deploy token
         arguments = [
-            "テスト株式", "TEST", 10000, 20000,
-            1, "20211231", "20211231",
-            "20221231"
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -1102,9 +1201,15 @@ class TestAddSupply:
         )
         # deploy token
         arguments = [
-            "テスト株式", "TEST", 10000, 20000,
-            1, "20211231", "20211231",
-            "20221231"
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -1183,9 +1288,15 @@ class TestAddSupply:
 
         # deploy token
         arguments = [
-            "テスト株式", "TEST", 10000, 20000,
-            1, "20211231", "20211231",
-            "20221231"
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -1221,9 +1332,15 @@ class TestAddSupply:
 
         # deploy token
         arguments = [
-            "テスト株式", "TEST", 10000, 20000,
-            1, "20211231", "20211231",
-            "20221231"
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -1259,9 +1376,15 @@ class TestAddSupply:
 
         # deploy token
         arguments = [
-            "テスト株式", "TEST", 10000, 20000,
-            1, "20211231", "20211231",
-            "20221231"
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -1303,9 +1426,15 @@ class TestAddSupply:
 
         # deploy token
         arguments = [
-            "テスト株式", "TEST", 10000, 20000,
-            1, "20211231", "20211231",
-            "20221231"
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -1360,7 +1489,8 @@ class TestGetAccountBalance:
             1,
             "20211231",
             "20211231",
-            "20221231"
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -1397,7 +1527,8 @@ class TestGetAccountBalance:
             1,
             "20211231",
             "20211231",
-            "20221231"
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -1451,7 +1582,8 @@ class TestGetAccountBalance:
             1,
             "20211231",
             "20211231",
-            "20221231"
+            "20221231",
+            10000
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,

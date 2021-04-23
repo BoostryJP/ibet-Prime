@@ -88,7 +88,8 @@ class TestAppRoutersShareTokensPOST:
                 "dividends": 123.45,
                 "dividend_record_date": "20211231",
                 "dividend_payment_date": "20211231",
-                "cancellation_date": "20221231"
+                "cancellation_date": "20221231",
+                "principal_value": 1000
             }
             resp = client.post(
                 self.apiurl,
@@ -103,7 +104,7 @@ class TestAppRoutersShareTokensPOST:
             IbetShareContract.create.assert_called_with(
                 args=[
                     "name_test1", "symbol_test1", 1000, 10000, 12345,
-                    "20211231", "20211231", "20221231"
+                    "20211231", "20211231", "20221231", 1000
                 ],
                 tx_from=test_account["address"],
                 private_key=ANY
@@ -190,7 +191,8 @@ class TestAppRoutersShareTokensPOST:
                 "offering_status": True,  # update
                 "contact_information": "contact info test",  # update
                 "privacy_policy": "privacy policy test",  # update
-                "transfer_approval_required": True
+                "transfer_approval_required": True,
+                "principal_value": 1000
             }
             resp = client.post(
                 self.apiurl,
@@ -205,7 +207,7 @@ class TestAppRoutersShareTokensPOST:
             IbetShareContract.create.assert_called_with(
                 args=[
                     "name_test1", "symbol_test1", 1000, 10000, 12345,
-                    "20211231", "20211231", "20221231"
+                    "20211231", "20211231", "20221231", 1000
                 ],
                 tx_from=test_account["address"],
                 private_key=ANY
@@ -224,7 +226,8 @@ class TestAppRoutersShareTokensPOST:
                     status=False,
                     offering_status=True,
                     contact_information="contact info test",
-                    privacy_policy="privacy policy test"
+                    privacy_policy="privacy policy test",
+                    principal_valu=1000
                 ),
                 tx_from=test_account["address"],
                 private_key=ANY
@@ -314,7 +317,8 @@ class TestAppRoutersShareTokensPOST:
                 "http://test.test/test",
                 "http://test.test/test",
                 "http://test.test/test"
-            ]
+            ],
+            "principal_value": 1000
         }
         resp = client.post(
             self.apiurl,
@@ -381,7 +385,8 @@ class TestAppRoutersShareTokensPOST:
             "dividends": 123.45,
             "dividend_record_date": "20211231",
             "dividend_payment_date": "20211231",
-            "cancellation_date": "20221231"
+            "cancellation_date": "20221231",
+            "principal_value": 1000
         }
         resp = client.post(
             self.apiurl,
@@ -430,7 +435,8 @@ class TestAppRoutersShareTokensPOST:
             "dividends": 123.45,
             "dividend_record_date": "20211231",
             "dividend_payment_date": "20211231",
-            "cancellation_date": "20221231"
+            "cancellation_date": "20221231",
+            "principal_value": 1000
         }
         resp = client.post(
             self.apiurl,
@@ -477,7 +483,8 @@ class TestAppRoutersShareTokensPOST:
             "dividends": 123.45,
             "dividend_record_date": "20211231",
             "dividend_payment_date": "20211231",
-            "cancellation_date": "20221231"
+            "cancellation_date": "20221231",
+            "principal_value": 1000
         }
         resp = client.post(
             self.apiurl,
@@ -520,7 +527,8 @@ class TestAppRoutersShareTokensPOST:
             "dividends": 123.45,
             "dividend_record_date": "20211231",
             "dividend_payment_date": "20211231",
-            "cancellation_date": "20221231"
+            "cancellation_date": "20221231",
+            "principal_value": 1000
         }
         resp = client.post(
             self.apiurl,
@@ -571,7 +579,8 @@ class TestAppRoutersShareTokensPOST:
                 "dividends": 123.45,
                 "dividend_record_date": "20211231",
                 "dividend_payment_date": "20211231",
-                "cancellation_date": "20221231"
+                "cancellation_date": "20221231",
+                "principal_value": 1000
             }
             resp = client.post(
                 self.apiurl,
@@ -633,6 +642,7 @@ class TestAppRoutersShareTokensPOST:
                 "dividend_record_date": "20211231",
                 "dividend_payment_date": "20211231",
                 "cancellation_date": "20221231",
+                "principal_value": 1000,
                 "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
                 "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
                 "image_url": ["image_1"],  # update
@@ -702,6 +712,7 @@ class TestAppRoutersShareTokensPOST:
                 "dividend_record_date": "20211231",
                 "dividend_payment_date": "20211231",
                 "cancellation_date": "20221231",
+                "principal_value": 1000,
                 "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
                 "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
                 "image_url": ["image_1"],  # update

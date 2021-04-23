@@ -182,6 +182,7 @@ class IbetShareCreate(BaseModel):
     name: str
     symbol: str
     issue_price: int
+    principal_value: int
     total_supply: int
     dividends: float
     dividend_record_date: str
@@ -239,6 +240,7 @@ class IbetShareUpdate(BaseModel):
     contact_information: Optional[str]
     privacy_policy: Optional[str]
     transfer_approval_required: Optional[bool]
+    principal_value: Optional[int]
 
     @validator("dividends")
     def dividends_2_decimal_places(cls, v):
@@ -362,6 +364,7 @@ class IbetShareResponse(BaseModel):
     name: str
     symbol: str
     issue_price: int
+    principal_value: int
     total_supply: int
     dividends: float
     dividend_record_date: str
@@ -369,6 +372,7 @@ class IbetShareResponse(BaseModel):
     cancellation_date: str
     image_url: List[str]
     transferable: bool
+    transfer_approval_required: bool
     status: bool
     offering_status: bool
     tradable_exchange_contract_address: str

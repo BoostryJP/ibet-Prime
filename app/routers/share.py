@@ -114,6 +114,7 @@ async def issue_token(
                      eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
 
     # Validate update items
+    # Note: Items set at the time of issue do not need to be updated.
     _data = {
         "tradable_exchange_contract_address": token.tradable_exchange_contract_address,
         "personal_info_contract_address": token.personal_info_contract_address,
@@ -159,7 +160,8 @@ async def issue_token(
         int(token.dividends * 100),
         token.dividend_record_date,
         token.dividend_payment_date,
-        token.cancellation_date
+        token.cancellation_date,
+        token.principal_value
     ]
     try:
         contract_address, abi, tx_hash = IbetShareContract.create(

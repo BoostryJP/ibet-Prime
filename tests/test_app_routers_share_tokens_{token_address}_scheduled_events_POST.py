@@ -85,7 +85,8 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
             "offering_status": False,
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
-            "transfer_approval_required": False
+            "transfer_approval_required": False,
+            "principal_value": 900
         }
 
         # request target API
@@ -114,7 +115,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
                 "issuer-address": _issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
             }
-        )
+        )  # second time
 
         # assertion
         assert resp_1.status_code == 200
@@ -170,7 +171,8 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
             "offering_status": False,
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
-            "transfer_approval_required": True
+            "transfer_approval_required": True,
+            "principal_value": 900
         }
 
         # request target API
