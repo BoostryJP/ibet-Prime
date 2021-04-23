@@ -71,6 +71,8 @@ class TestAppRoutersShareTokensTokenAddressGET:
         mock_token.transferable = True
         mock_token.offering_status = True
         mock_token.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token.principal_value = 1000
+        mock_token.transfer_approval_required = False
         mock_get.side_effect = [mock_token]
 
         resp = client.get(self.base_apiurl + "token_address_test1")
@@ -94,11 +96,13 @@ class TestAppRoutersShareTokensTokenAddressGET:
             "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
             "status": True,
             "issue_price": 1000,
+            "principal_value": 1000,
             "dividends": 123.45,
             "dividend_record_date": "20211231",
             "dividend_payment_date": "20211231",
             "cancellation_date": "20221231",
             "transferable": True,
+            "transfer_approval_required": False,
             "offering_status": True,
             "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
             "issue_datetime": _issue_time

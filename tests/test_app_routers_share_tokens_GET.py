@@ -84,6 +84,8 @@ class TestAppRoutersShareTokensGET:
         mock_token.transferable = True
         mock_token.offering_status = True
         mock_token.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token.principal_value = 1000
+        mock_token.transfer_approval_required = False
         mock_get.side_effect = [mock_token]
 
         resp = client.get(self.apiurl)
@@ -108,11 +110,13 @@ class TestAppRoutersShareTokensGET:
                 "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
                 "status": True,
                 "issue_price": 1000,
+                "principal_value": 1000,
                 "dividends": 123.45,
                 "dividend_record_date": "20211231",
                 "dividend_payment_date": "20211231",
                 "cancellation_date": "20221231",
                 "transferable": True,
+                "transfer_approval_required": False,
                 "offering_status": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
                 "issue_datetime": _issue_datetime
@@ -164,6 +168,8 @@ class TestAppRoutersShareTokensGET:
         mock_token_1.transferable = True
         mock_token_1.offering_status = True
         mock_token_1.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token_1.principal_value = 1000
+        mock_token_1.transfer_approval_required = False
 
         # 2nd Data
         token_2 = Token()
@@ -199,6 +205,8 @@ class TestAppRoutersShareTokensGET:
         mock_token_2.transferable = True
         mock_token_2.offering_status = True
         mock_token_2.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token_2.principal_value = 1000
+        mock_token_2.transfer_approval_required = False
 
         mock_get.side_effect = [
             mock_token_1, mock_token_2
@@ -229,11 +237,13 @@ class TestAppRoutersShareTokensGET:
                 "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
                 "status": True,
                 "issue_price": 1000,
+                "principal_value": 1000,
                 "dividends": 123.45,
                 "dividend_record_date": "20211231",
                 "dividend_payment_date": "20211231",
                 "cancellation_date": "20221231",
                 "transferable": True,
+                "transfer_approval_required": False,
                 "offering_status": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
                 "issue_datetime": _issue_datetime_1
@@ -254,11 +264,13 @@ class TestAppRoutersShareTokensGET:
                 "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
                 "status": True,
                 "issue_price": 1000,
+                "principal_value": 1000,
                 "dividends": 123.45,
                 "dividend_record_date": "20211231",
                 "dividend_payment_date": "20211231",
                 "cancellation_date": "20221231",
                 "transferable": True,
+                "transfer_approval_required": False,
                 "offering_status": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
                 "issue_datetime": _issue_datetime_2
@@ -329,6 +341,8 @@ class TestAppRoutersShareTokensGET:
         mock_token.transferable = True
         mock_token.offering_status = True
         mock_token.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token.principal_value = 1000
+        mock_token.transfer_approval_required = False
         mock_get.side_effect = [mock_token]
 
         # No Target Data
@@ -362,11 +376,13 @@ class TestAppRoutersShareTokensGET:
                 "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
                 "status": True,
                 "issue_price": 1000,
+                "principal_value": 1000,
                 "dividends": 123.45,
                 "dividend_record_date": "20211231",
                 "dividend_payment_date": "20211231",
                 "cancellation_date": "20221231",
                 "transferable": True,
+                "transfer_approval_required": False,
                 "offering_status": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
                 "issue_datetime": _issue_datetime
@@ -418,6 +434,8 @@ class TestAppRoutersShareTokensGET:
         mock_token_1.transferable = True
         mock_token_1.offering_status = True
         mock_token_1.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token_1.principal_value = 1000
+        mock_token_1.transfer_approval_required = False
 
         # 2nd Data
         token_2 = Token()
@@ -453,6 +471,8 @@ class TestAppRoutersShareTokensGET:
         mock_token_2.transferable = True
         mock_token_2.offering_status = True
         mock_token_2.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token_2.principal_value = 1000
+        mock_token_2.transfer_approval_required = False
 
         mock_get.side_effect = [
             mock_token_1, mock_token_2
@@ -492,11 +512,13 @@ class TestAppRoutersShareTokensGET:
                 "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
                 "status": True,
                 "issue_price": 1000,
+                "principal_value": 1000,
                 "dividends": 123.45,
                 "dividend_record_date": "20211231",
                 "dividend_payment_date": "20211231",
                 "cancellation_date": "20221231",
                 "transferable": True,
+                "transfer_approval_required": False,
                 "offering_status": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
                 "issue_datetime": _issue_datetime_1
@@ -507,6 +529,7 @@ class TestAppRoutersShareTokensGET:
                 "name": "testtoken2",
                 "symbol": "test2",
                 "total_supply": 10000,
+                "principal_value": 1000,
                 "image_url": [
                     "http://hoge1.test/test2.png",
                     "http://hoge2.test/test2.png",
@@ -522,6 +545,7 @@ class TestAppRoutersShareTokensGET:
                 "dividend_payment_date": "20211231",
                 "cancellation_date": "20221231",
                 "transferable": True,
+                "transfer_approval_required": False,
                 "offering_status": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
                 "issue_datetime": _issue_datetime_2

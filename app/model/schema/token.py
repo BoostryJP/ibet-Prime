@@ -364,6 +364,7 @@ class IbetShareResponse(BaseModel):
     name: str
     symbol: str
     issue_price: int
+    principal_value: int
     total_supply: int
     dividends: float
     dividend_record_date: str
@@ -371,6 +372,7 @@ class IbetShareResponse(BaseModel):
     cancellation_date: str
     image_url: List[str]
     transferable: bool
+    transfer_approval_required: bool
     status: bool
     offering_status: bool
     tradable_exchange_contract_address: str
