@@ -86,7 +86,7 @@ class DBSink:
             transfer_record.amount = amount
             transfer_record.block_timestamp = block_timestamp
             self.db.merge(transfer_record)
-            LOG.info(f"Transfer: transaction_hash={transaction_hash}")
+            LOG.debug(f"Transfer: transaction_hash={transaction_hash}")
 
     def flush(self):
         self.db.commit()

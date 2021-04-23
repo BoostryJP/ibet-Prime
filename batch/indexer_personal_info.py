@@ -87,7 +87,7 @@ class DBSink:
             _personal_info.personal_info = personal_info
             _personal_info.modified = timestamp
             self.db.merge(_personal_info)
-            LOG.info(f"Modify: account_address={account_address}, issuer_address={issuer_address}")
+            LOG.debug(f"Modify: account_address={account_address}, issuer_address={issuer_address}")
         else:
             _personal_info = IDXPersonalInfo()
             _personal_info.account_address = account_address
@@ -96,7 +96,7 @@ class DBSink:
             _personal_info.created = timestamp
             _personal_info.modified = timestamp
             self.db.add(_personal_info)
-            LOG.info(f"Register: account_address={account_address}, issuer_address={issuer_address}")
+            LOG.debug(f"Register: account_address={account_address}, issuer_address={issuer_address}")
 
     def flush(self):
         self.db.commit()

@@ -88,7 +88,7 @@ class DBSink:
             filter(IDXPosition.account_address == account_address). \
             first()
         if position is None:
-            LOG.info(f"Position created (Bond): token_address={token_address}, account_address={account_address}")
+            LOG.debug(f"Position created (Bond): token_address={token_address}, account_address={account_address}")
             position = IDXPosition()
             position.token_address = token_address
             position.account_address = account_address
@@ -145,11 +145,26 @@ class Processor:
 
     def __sync_all(self, block_from: int, block_to: int):
         LOG.info("syncing from={}, to={}".format(block_from, block_to))
+        self.__sync_issuer()
         self.__sync_issue(block_from, block_to)
         self.__sync_transfer(block_from, block_to)
         self.__sync_lock(block_from, block_to)
         self.__sync_unlock(block_from, block_to)
         self.sink.flush()
+
+    def __sync_issuer(self):
+        """Synchronize issuer position"""
+        for token in self.token_list:
+            try:
+                issuer_address = token.functions.owner().call()
+                balance = token.functions.balanceOf(issuer_address).call()
+                self.sink.on_position(
+                    token_address=to_checksum_address(token.address),
+                    account_address=issuer_address,
+                    balance=balance
+                )
+            except Exception as e:
+                LOG.exception(e)
 
     def __sync_issue(self, block_from: int, block_to: int):
         """Synchronize Issue events
