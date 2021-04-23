@@ -16,7 +16,13 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from app.model.db import Account, Token, TokenType, IDXPosition, IDXPersonalInfo
+from app.model.db import (
+    Account,
+    Token,
+    TokenType,
+    IDXPosition,
+    IDXPersonalInfo
+)
 from tests.account_config import config_eth_account
 
 
@@ -52,6 +58,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         idx_position_1.token_address = _token_address
         idx_position_1.account_address = _account_address_1
         idx_position_1.balance = 10
+        idx_position_1.pending_transfer = 5
         db.add(idx_position_1)
 
         idx_personal_info_1 = IDXPersonalInfo()
@@ -78,17 +85,18 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-                "account_address": _account_address_1,
-                "personal_information": {
-                    "key_manager": "key_manager_test1",
-                    "name": "name_test1",
-                    "postal_code": "postal_code_test1",
-                    "address": "address_test1",
-                    "email": "email_test1",
-                    "birth": "birth_test1"
-                },
-                "balance": 10
-            }
+            "account_address": _account_address_1,
+            "personal_information": {
+                "key_manager": "key_manager_test1",
+                "name": "name_test1",
+                "postal_code": "postal_code_test1",
+                "address": "address_test1",
+                "email": "email_test1",
+                "birth": "birth_test1"
+            },
+            "balance": 10,
+            "pending_transfer": 5
+        }
 
     # <Normal_2>
     # PersonalInfo not registry
@@ -115,6 +123,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         idx_position_1.token_address = _token_address
         idx_position_1.account_address = _account_address_1
         idx_position_1.balance = 10
+        idx_position_1.pending_transfer = 5
         db.add(idx_position_1)
 
         # request target API
@@ -128,17 +137,18 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-                "account_address": _account_address_1,
-                "personal_information": {
-                    "key_manager": None,
-                    "name": None,
-                    "postal_code": None,
-                    "address": None,
-                    "email": None,
-                    "birth": None
-                },
-                "balance": 10
-            }
+            "account_address": _account_address_1,
+            "personal_information": {
+                "key_manager": None,
+                "name": None,
+                "postal_code": None,
+                "address": None,
+                "email": None,
+                "birth": None
+            },
+            "balance": 10,
+            "pending_transfer": 5
+        }
 
     ###########################################################################
     # Error Case

@@ -213,6 +213,7 @@ async def issue_token(
     _position.token_address = contract_address
     _position.account_address = issuer_address
     _position.balance = token.total_supply
+    _position.pending_transfer = 0
     db.add(_position)
 
     db.commit()
@@ -658,7 +659,8 @@ async def list_all_holders(
         holders.append({
             "account_address": _holder.account_address,
             "personal_information": _personal_info,
-            "balance": _holder.balance
+            "balance": _holder.balance,
+            "pending_transfer": _holder.pending_transfer
         })
 
     return holders
@@ -724,7 +726,8 @@ async def retrieve_holder(
     holder = {
         "account_address": _holder.account_address,
         "personal_information": _personal_info,
-        "balance": _holder.balance
+        "balance": _holder.balance,
+        "pending_transfer": _holder.pending_transfer
     }
 
     return holder

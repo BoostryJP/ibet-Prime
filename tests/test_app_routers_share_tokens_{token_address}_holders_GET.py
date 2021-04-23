@@ -16,7 +16,13 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from app.model.db import Account, Token, TokenType, IDXPosition, IDXPersonalInfo
+from app.model.db import (
+    Account,
+    Token,
+    TokenType,
+    IDXPosition,
+    IDXPersonalInfo
+)
 from tests.account_config import config_eth_account
 
 
@@ -85,6 +91,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         idx_position_1.token_address = _token_address
         idx_position_1.account_address = _account_address_1
         idx_position_1.balance = 10
+        idx_position_1.pending_transfer = 5
         db.add(idx_position_1)
 
         idx_personal_info_1 = IDXPersonalInfo()
@@ -121,7 +128,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
                     "email": "email_test1",
                     "birth": "birth_test1"
                 },
-                "balance": 10
+                "balance": 10,
+                "pending_transfer": 5
             }
         ]
 
@@ -151,6 +159,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         idx_position_1.token_address = _token_address
         idx_position_1.account_address = _account_address_1
         idx_position_1.balance = 10
+        idx_position_1.pending_transfer = 5
         db.add(idx_position_1)
 
         idx_personal_info_1 = IDXPersonalInfo()
@@ -170,6 +179,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         idx_position_2.token_address = _token_address
         idx_position_2.account_address = _account_address_2
         idx_position_2.balance = 20
+        idx_position_2.pending_transfer = 10
         db.add(idx_position_2)
 
         # request target API
@@ -193,7 +203,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
                     "email": "email_test1",
                     "birth": "birth_test1"
                 },
-                "balance": 10
+                "balance": 10,
+                "pending_transfer": 5
             },
             {
                 "account_address": _account_address_2,
@@ -205,7 +216,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
                     "email": None,
                     "birth": None
                 },
-                "balance": 20
+                "balance": 20,
+                "pending_transfer": 10
             }
         ]
 

@@ -93,6 +93,7 @@ class DBSink:
             position.token_address = token_address
             position.account_address = account_address
             position.balance = balance
+            position.pending_transfer = 0
         else:
             position.balance = balance
         self.db.merge(position)
