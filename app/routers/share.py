@@ -125,7 +125,8 @@ async def issue_token(
         "status": token.status,
         "offering_status": token.offering_status,
         "contact_information": token.contact_information,
-        "privacy_policy": token.privacy_policy
+        "privacy_policy": token.privacy_policy,
+        "transfer_approval_required": token.transfer_approval_required
     }
     _update_data = IbetShareUpdate(**_data)
 
