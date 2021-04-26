@@ -192,7 +192,7 @@ class TestAppRoutersShareTokensPOST:
                 "offering_status": True,  # update
                 "contact_information": "contact info test",  # update
                 "privacy_policy": "privacy policy test",  # update
-                "transfer_approval_required": True,
+                "transfer_approval_required": True,  # update
                 "principal_value": 1000
             }
             resp = client.post(
@@ -228,7 +228,7 @@ class TestAppRoutersShareTokensPOST:
                     offering_status=True,
                     contact_information="contact info test",
                     privacy_policy="privacy policy test",
-                    principal_valu=1000
+                    transfer_approval_required=True
                 ),
                 tx_from=test_account["address"],
                 private_key=ANY
