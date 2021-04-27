@@ -16,19 +16,19 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from sqlalchemy import (
+    Column,
+    Integer,
+    Boolean
+)
+
+from .base import Base
 
 
-class InvalidParameterError(Exception):
-    pass
+class Node(Base):
+    """Ethereum Node Information"""
+    __tablename__ = "node"
 
-
-class SendTransactionError(Exception):
-    pass
-
-
-class AuthorizationError(Exception):
-    pass
-
-
-class ServiceUnavailableError(Exception):
-    pass
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    # node synchronized status
+    is_synced = Column(Boolean, nullable=False)

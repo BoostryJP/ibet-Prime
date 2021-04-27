@@ -36,6 +36,7 @@ from .idx_personal_info import (
     IDXPersonalInfo,
     IDXPersonalInfoBlockNumber
 )
+from .node import Node
 from .tx_management import TransactionLock
 from .utxo import UTXO, UTXOBlockNumber
 from .localized.corporate_bond_ledger_template_JPN import CorporateBondLedgerTemplateJPN

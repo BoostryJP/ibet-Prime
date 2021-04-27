@@ -159,3 +159,16 @@ async def method_not_allowed_error_handler(request: Request, exc: StarletteHTTPE
         status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
         content=jsonable_encoder({"meta": meta}),
     )
+
+
+# 503:ServiceUnavailable
+@app.exception_handler(ServiceUnavailableError)
+async def service_unavailable_error_handler(request: Request, exc: ServiceUnavailableError):
+    meta = {
+        "code": 1,
+        "title": "ServiceUnavailableError"
+    }
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
+    )
