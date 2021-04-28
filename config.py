@@ -130,3 +130,17 @@ TZ = os.environ.get("TZ") or "Asia/Tokyo"
 SCHEDULED_EVENTS_INTERVAL = int(os.environ.get("SCHEDULED_EVENTS_INTERVAL")) \
     if os.environ.get("SCHEDULED_EVENTS_INTERVAL") else 60
 
+# block sync monitor
+# monitoring interval(second)
+BLOCK_SYNC_STATUS_SLEEP_INTERVAL = int(os.environ.get("BLOCK_SYNC_STATUS_SLEEP_INTERVAL")) \
+    if os.environ.get("BLOCK_SYNC_STATUS_SLEEP_INTERVAL") else 3
+# number of monitoring data period
+BLOCK_SYNC_STATUS_CALC_PERIOD = int(os.environ.get("BLOCK_SYNC_STATUS_CALC_PERIOD")) \
+    if os.environ.get("BLOCK_SYNC_STATUS_CALC_PERIOD") else 3
+# Threshold of block generation speed for judging synchronous stop(%)
+if APP_ENV == "local":
+    BLOCK_GENERATION_SPEED_THRESHOLD = int(os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD")) \
+        if os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD") else 0
+else:
+    BLOCK_GENERATION_SPEED_THRESHOLD = int(os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD")) \
+        if os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD") else 20

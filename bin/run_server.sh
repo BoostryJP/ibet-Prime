@@ -43,7 +43,7 @@ function start () {
 }
 
 function stop () {
-  ps -ef | grep gunicorn | awk '{print $1}' | xargs kill -9
+  ps -ef | grep gunicorn | awk '{print $2}' | xargs kill -9
 }
 
 case "$1" in
