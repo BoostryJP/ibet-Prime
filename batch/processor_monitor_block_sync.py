@@ -73,7 +73,6 @@ def web3_exception_handler_middleware(
             except Exception as ex:
                 # Throw Web3WrapperException if an error occurred in Web3(connection error, timeout, etc),
                 # Web3WrapperException is handled in this module.
-                print("ccccccccccccccccccc")
                 raise Web3WrapperException(ex)
         else:
             return make_request(method, params)
