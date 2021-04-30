@@ -435,7 +435,7 @@ class TestAppRoutersShareTokensPOST:
                         "body",
                         "dividends"
                     ],
-                    "msg": "dividends must be less than or equal to four decimal places",
+                    "msg": "dividends must be rounded to 2 decimal places",
                     "type": "value_error"
                 },
                 {
