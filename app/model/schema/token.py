@@ -201,10 +201,10 @@ class IbetShareCreate(BaseModel):
     @validator("dividends")
     def dividends_2_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10 ** 4)
-            int_data = int(v * 10 ** 4)
+            float_data = float(v * 10 ** 2)
+            int_data = int(v * 10 ** 2)
             if not math.isclose(int_data, float_data):
-                raise ValueError("dividends must be less than or equal to four decimal places")
+                raise ValueError("dividends must be rounded to 2 decimal places")
         return v
 
     @validator("tradable_exchange_contract_address")
