@@ -184,10 +184,10 @@ class IbetShareCreate(BaseModel):
     issue_price: int
     principal_value: int
     total_supply: int
-    dividends: float
-    dividend_record_date: str
-    dividend_payment_date: str
-    cancellation_date: str
+    dividends: Optional[float]
+    dividend_record_date: Optional[str]
+    dividend_payment_date: Optional[str]
+    cancellation_date: Optional[str]
     image_url: Optional[List[str]]
     transferable: Optional[bool]
     status: Optional[bool]

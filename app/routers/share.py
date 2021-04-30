@@ -155,15 +155,19 @@ async def issue_token(
     )
 
     # Deploy
+    _dividends = token.dividends if token.dividends is not None else 0
+    _dividend_record_date = token.dividend_record_date if token.dividend_record_date is not None else ""
+    _dividend_payment_date = token.dividend_payment_date if token.dividend_payment_date is not None else ""
+    _cancellation_date = token.cancellation_date if token.cancellation_date is not None else ""
     arguments = [
         token.name,
         token.symbol,
         token.issue_price,
         token.total_supply,
-        int(token.dividends * 100),
-        token.dividend_record_date,
-        token.dividend_payment_date,
-        token.cancellation_date,
+        int(_dividends * 100),
+        _dividend_record_date,
+        _dividend_payment_date,
+        _cancellation_date,
         token.principal_value
     ]
     try:
