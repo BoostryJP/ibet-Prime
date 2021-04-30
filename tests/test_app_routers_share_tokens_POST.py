@@ -48,9 +48,9 @@ class TestAppRoutersShareTokensPOST:
     # Normal Case
     ###########################################################################
 
-    # <Normal_1>
+    # <Normal_1_1>
     # create only
-    def test_normal_1(self, client, db):
+    def test_normal_1_1(self, client, db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -105,6 +105,98 @@ class TestAppRoutersShareTokensPOST:
                 args=[
                     "name_test1", "symbol_test1", 1000, 10000, 12345,
                     "20211231", "20211231", "20221231", 1000
+                ],
+                tx_from=test_account["address"],
+                private_key=ANY
+            )
+            IbetShareContract.update.assert_called_with(
+                contract_address="contract_address_test1",
+                data=IbetShareUpdate(),
+                tx_from=test_account["address"],
+                private_key=ANY
+            )
+            TokenListContract.register.assert_called_with(
+                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
+                token_address="contract_address_test1",
+                token_template=TokenType.IBET_SHARE,
+                account_address=test_account["address"],
+                private_key=ANY
+            )
+
+            assert resp.status_code == 200
+            assert resp.json()["token_address"] == "contract_address_test1"
+
+            token_after = db.query(Token).all()
+            assert 0 == len(token_before)
+            assert 1 == len(token_after)
+            token_1 = token_after[0]
+            assert token_1.id == 1
+            assert token_1.type == TokenType.IBET_SHARE
+            assert token_1.tx_hash == "tx_hash_test1"
+            assert token_1.issuer_address == test_account["address"]
+            assert token_1.token_address == "contract_address_test1"
+            assert token_1.abi == "abi_test1"
+
+            position = db.query(IDXPosition).first()
+            assert position.token_address == "contract_address_test1"
+            assert position.account_address == test_account["address"]
+            assert position.balance == req_param["total_supply"]
+            assert position.pending_transfer == 0
+
+    # <Normal_1_2>
+    # create only
+    # No input for dividends and cancellation_date.
+    def test_normal_1_2(self, client, db):
+        test_account = config_eth_account("user1")
+
+        # prepare data
+        account = Account()
+        account.issuer_address = test_account["address"]
+        account.keyfile = test_account["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token_before = db.query(Token).all()
+
+        # mock
+        IbetShareContract_create = patch(
+            target="app.model.blockchain.token.IbetShareContract.create",
+            return_value=("contract_address_test1", "abi_test1", "tx_hash_test1")
+        )
+        IbetShareContract_update = patch(
+            target="app.model.blockchain.token.IbetShareContract.update",
+            return_value=None
+        )
+        TokenListContract_register = patch(
+            target="app.model.blockchain.token_list.TokenListContract.register",
+            return_value=None
+        )
+
+        with IbetShareContract_create, \
+                IbetShareContract_update, \
+                TokenListContract_register:
+            # request target api
+            req_param = {
+                "name": "name_test1",
+                "symbol": "symbol_test1",
+                "issue_price": 1000,
+                "total_supply": 10000,
+                "principal_value": 1000
+            }
+            resp = client.post(
+                self.apiurl,
+                json=req_param,
+                headers={
+                    "issuer-address": test_account["address"],
+                    "eoa-password": E2EEUtils.encrypt("password")
+                }
+            )
+
+            # assertion
+            IbetShareContract.create.assert_called_with(
+                args=[
+                    "name_test1", "symbol_test1", 1000, 10000, 0,
+                    "", "", "", 1000
                 ],
                 tx_from=test_account["address"],
                 private_key=ANY
