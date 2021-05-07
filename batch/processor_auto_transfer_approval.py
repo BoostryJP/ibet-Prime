@@ -21,6 +21,7 @@ from typing import List
 import os
 import sys
 import time
+
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -149,9 +150,7 @@ class Processor:
                     password=decrypt_password.encode("utf-8")
                 )
             except Exception as err:
-                LOG.exception(
-                    f"Could not get the private key of the issuer of token_address:{application.token_address}",
-                    err)
+                LOG.exception(f"Could not get the private key: token_address = {application.token_address}", err)
                 continue
 
             try:
