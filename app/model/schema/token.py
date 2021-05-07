@@ -323,13 +323,13 @@ class IbetShareAdd(BaseModel):
 
 class IbetShareApproveTransfer(BaseModel):
     """ibet Share schema (ApproveTransfer)"""
-    application_for_transfer_index: int
+    application_id: int
     data: str
 
 
 class IbetShareCancelTransfer(BaseModel):
     """ibet Share schema (CancelTransfer)"""
-    application_for_transfer_index: int
+    application_id: int
     data: str
 
 ############################

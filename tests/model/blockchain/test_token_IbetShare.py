@@ -1620,9 +1620,11 @@ class TestGetAccountBalance:
 
 
 class TestApproveTransfer:
+
     ###########################################################################
     # Normal Case
     ###########################################################################
+
     # <Normal_1>
     def test_normal_1(self, db):
         test_account = config_eth_account("user1")
@@ -1710,7 +1712,7 @@ class TestApproveTransfer:
 
         # Transfer approve
         approve_data = {
-            "application_for_transfer_index": 0,
+            "application_id": 0,
             "data": "approve transfer test"
         }
         _approve_transfer_data = IbetShareApproveTransfer(**approve_data)
@@ -1738,19 +1740,20 @@ class TestApproveTransfer:
     ###########################################################################
     # Error Case
     ###########################################################################
+
     # <Error_1>
     # invalid application index : not integer, data : missing
     def test_error_1(self, db):
         # Transfer approve
         approve_data = {
-            "application_for_transfer_index": "not-integer",
+            "application_id": "not-integer",
         }
         with pytest.raises(ValidationError) as ex_info:
             _approve_transfer_data = IbetShareApproveTransfer(**approve_data)
 
         assert ex_info.value.errors() == [
             {
-                'loc': ('application_for_transfer_index',),
+                'loc': ('application_id',),
                 'msg': 'value is not a valid integer',
                 'type': 'type_error.integer'
             }, {
@@ -1772,7 +1775,7 @@ class TestApproveTransfer:
 
         # Transfer approve
         approve_data = {
-            "application_for_transfer_index": 0,
+            "application_id": 0,
             "data": "test_data"
         }
         _approve_transfer_data = IbetShareApproveTransfer(**approve_data)
@@ -1816,7 +1819,7 @@ class TestApproveTransfer:
 
         # Transfer approve
         approve_data = {
-            "application_for_transfer_index": 0,
+            "application_id": 0,
             "data": "test_data"
         }
         _approve_transfer_data = IbetShareApproveTransfer(**approve_data)
@@ -1860,7 +1863,7 @@ class TestApproveTransfer:
 
         # Transfer approve
         approve_data = {
-            "application_for_transfer_index": 0,
+            "application_id": 0,
             "data": "test_data"
         }
         _approve_transfer_data = IbetShareApproveTransfer(**approve_data)
@@ -1875,9 +1878,11 @@ class TestApproveTransfer:
 
 
 class TestCancelTransfer:
+
     ###########################################################################
     # Normal Case
     ###########################################################################
+
     # <Normal_1>
     def test_normal_1(self, db):
         test_account = config_eth_account("user1")
@@ -1965,7 +1970,7 @@ class TestCancelTransfer:
 
         # Transfer approve
         cancel_data = {
-            "application_for_transfer_index": 0,
+            "application_id": 0,
             "data": "approve transfer test"
         }
         _approve_transfer_data = IbetShareCancelTransfer(**cancel_data)
@@ -1993,19 +1998,20 @@ class TestCancelTransfer:
     ###########################################################################
     # Error Case
     ###########################################################################
+
     # <Error_1>
     # invalid application index : not integer, data : missing
     def test_error_1(self, db):
         # Transfer approve
         cancel_data = {
-            "application_for_transfer_index": "not-integer",
+            "application_id": "not-integer",
         }
         with pytest.raises(ValidationError) as ex_info:
             _approve_transfer_data = IbetShareCancelTransfer(**cancel_data)
 
         assert ex_info.value.errors() == [
             {
-                'loc': ('application_for_transfer_index',),
+                'loc': ('application_id',),
                 'msg': 'value is not a valid integer',
                 'type': 'type_error.integer'
             }, {
@@ -2027,7 +2033,7 @@ class TestCancelTransfer:
 
         # Transfer cancel
         cancel_data = {
-            "application_for_transfer_index": 0,
+            "application_id": 0,
             "data": "test_data"
         }
         _cancel_transfer_data = IbetShareCancelTransfer(**cancel_data)
@@ -2071,7 +2077,7 @@ class TestCancelTransfer:
 
         # Transfer cancel
         cancel_data = {
-            "application_for_transfer_index": 0,
+            "application_id": 0,
             "data": "test_data"
         }
         _cancel_transfer_data = IbetShareCancelTransfer(**cancel_data)
@@ -2115,7 +2121,7 @@ class TestCancelTransfer:
 
         # Transfer cancel
         cancel_data = {
-            "application_for_transfer_index": 0,
+            "application_id": 0,
             "data": "test_data"
         }
         _cancel_transfer_data = IbetShareCancelTransfer(**cancel_data)

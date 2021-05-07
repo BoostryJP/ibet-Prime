@@ -54,9 +54,11 @@ def processor(db):
 
 
 class TestProcessor:
+
     ###########################################################################
     # Normal Case
     ###########################################################################
+
     # <Normal_1>
     # tx_receipt status is 1 (Success)
     @pytest.mark.freeze_time('2021-04-27 12:34:56')
@@ -169,7 +171,7 @@ class TestProcessor:
         assert transfer_approval_history is None
 
         _expected = {
-            "application_for_transfer_index": 0,
+            "application_id": 0,
             "data": str(datetime.datetime.utcnow().timestamp())
         }
 
@@ -248,7 +250,7 @@ class TestProcessor:
         assert transfer_approval_history is None
 
         _expected = {
-            "application_for_transfer_index": 0,
+            "application_id": 0,
             "data": str(datetime.datetime.utcnow().timestamp())
         }
 
@@ -282,6 +284,7 @@ class TestProcessor:
     ###########################################################################
     # Error Case
     ###########################################################################
+
     # <Error_1>
     # exception during getting the private key
     def test_error_1(self, processor, db):
@@ -378,7 +381,7 @@ class TestProcessor:
 
         # Assertion: Skipped
         _expected = {
-            "application_for_transfer_index": 0,
+            "application_id": 0,
             "data": str(datetime.datetime.utcnow().timestamp())
         }
 

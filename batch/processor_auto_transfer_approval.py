@@ -157,7 +157,7 @@ class Processor:
             try:
                 now = str(datetime.datetime.utcnow().timestamp())
                 _data = {
-                    "application_for_transfer_index": application.application_id,
+                    "application_id": application.application_id,
                     "data": now
                 }
                 tx_hash, tx_receipt = IbetShareContract.approve_transfer(

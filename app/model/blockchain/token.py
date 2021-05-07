@@ -917,7 +917,7 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 contract_address=contract_address
             )
             tx = share_contract.functions. \
-                approveTransfer(data.application_for_transfer_index, data.data). \
+                approveTransfer(data.application_id, data.data). \
                 buildTransaction({
                     "chainId": CHAIN_ID,
                     "from": tx_from,
@@ -943,7 +943,7 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 contract_address=contract_address
             )
             tx = share_contract.functions. \
-                cancelTransfer(data.application_for_transfer_index, data.data). \
+                cancelTransfer(data.application_id, data.data). \
                 buildTransaction({
                     "chainId": CHAIN_ID,
                     "from": tx_from,
