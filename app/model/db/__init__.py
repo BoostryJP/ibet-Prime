@@ -37,6 +37,7 @@ from .idx_personal_info import (
     IDXPersonalInfoBlockNumber
 )
 from .node import Node
+from .transfer_appoval_history import TransferApprovalHistory
 from .tx_management import TransactionLock
 from .utxo import UTXO, UTXOBlockNumber
 from .localized.corporate_bond_ledger_template_JPN import CorporateBondLedgerTemplateJPN

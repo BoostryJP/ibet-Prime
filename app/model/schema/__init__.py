@@ -32,6 +32,8 @@ from .token import (
     IbetStraightBondUpdate,
     IbetStraightBondTransfer,
     IbetStraightBondAdd,
+    IbetShareApproveTransfer,
+    IbetShareCancelTransfer,
     IbetShareCreate,
     IbetShareUpdate,
     IbetShareTransfer,

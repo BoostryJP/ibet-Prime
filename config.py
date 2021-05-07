@@ -144,3 +144,6 @@ if APP_ENV == "local":
 else:
     BLOCK_GENERATION_SPEED_THRESHOLD = int(os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD")) \
         if os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD") else 20
+# auto transfer approval interval(second)
+AUTO_TRANSFER_APPROVAL_INTERVAL = int(os.environ.get("AUTO_TRANSFER_APPROVAL_INTERVAL")) \
+    if os.environ.get("AUTO_TRANSFER_APPROVAL_INTERVAL") else 10

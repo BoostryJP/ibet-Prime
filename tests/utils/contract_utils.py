@@ -20,7 +20,12 @@ import json
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
-from config import WEB3_HTTP_PROVIDER, TX_GAS_LIMIT
+from config import (
+    WEB3_HTTP_PROVIDER,
+    TX_GAS_LIMIT,
+    CHAIN_ID
+)
+from app.exceptions import SendTransactionError
 from app.model.blockchain.utils import ContractUtils
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
@@ -51,6 +56,92 @@ class TestContractUtils:
                 contract_address = tx["contractAddress"]
 
         return contract_address, contract_json["abi"], tx_hash
+
+    @staticmethod
+    def set_personal_info(contract_address: str, tx_from: str, private_key: str, personal_info_contract_address: str):
+        try:
+            share_contract = ContractUtils.get_contract(
+                contract_name="IbetShare",
+                contract_address=contract_address
+            )
+            tx = share_contract.functions. \
+                setPersonalInfoAddress(personal_info_contract_address). \
+                buildTransaction({
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0
+                })
+            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+        except Exception as ex_info:
+            raise SendTransactionError(ex_info)
+
+    @staticmethod
+    def set_transfer_approval_required(contract_address: str, tx_from: str, private_key: str):
+        try:
+            share_contract = ContractUtils.get_contract(
+                contract_name="IbetShare",
+                contract_address=contract_address
+            )
+            tx = share_contract.functions. \
+                setTransferApprovalRequired(True). \
+                buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+        except Exception as ex_info:
+            raise SendTransactionError(ex_info)
+
+    @staticmethod
+    def apply_for_transfer(contract_address: str, tx_from: str, private_key: str,
+                            to_address: str, value: int, data: str):
+        try:
+            share_contract = ContractUtils.get_contract(
+                contract_name="IbetShare",
+                contract_address=contract_address
+            )
+            tx = share_contract.functions. \
+                applyForTransfer(to_address, value, data). \
+                buildTransaction({
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0
+                })
+            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+        except Exception as ex_info:
+            raise SendTransactionError(ex_info)
+
+    @staticmethod
+    def register_personal_info(issuer_address: str, to_address: str, private_key: str) -> str:
+        try:
+            contract_address, abi, tx_hash = ContractUtils.deploy_contract(
+                contract_name="PersonalInfo",
+                deployer=to_address,
+                args={},
+                private_key=private_key
+            )
+            personal_info_contract = ContractUtils.get_contract(
+                contract_name="PersonalInfo",
+                contract_address=contract_address
+            )
+            tx = personal_info_contract.functions. \
+                register(issuer_address, "encrypted_personal_info"). \
+                buildTransaction({
+                    "chainId": CHAIN_ID,
+                    "from": to_address,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0
+                })
+            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            return contract_address
+        except Exception as ex_info:
+            raise SendTransactionError(ex_info)
+
+    ###########################################################################
 
 
 # Issue IbetStraightBond Token
