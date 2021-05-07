@@ -321,6 +321,17 @@ class IbetShareAdd(BaseModel):
         return v
 
 
+class IbetShareApproveTransfer(BaseModel):
+    """ibet Share schema (ApproveTransfer)"""
+    application_id: int
+    data: str
+
+
+class IbetShareCancelTransfer(BaseModel):
+    """ibet Share schema (CancelTransfer)"""
+    application_id: int
+    data: str
+
 ############################
 # RESPONSE
 ############################

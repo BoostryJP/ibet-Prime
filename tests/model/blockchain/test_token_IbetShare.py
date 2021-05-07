@@ -18,8 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 import os
 import pytest
-
 from binascii import Error
+
 from pydantic.error_wrappers import ValidationError
 from eth_keyfile import decode_keyfile_json
 from unittest.mock import patch
@@ -30,17 +30,24 @@ from web3.exceptions import (
     TransactionNotFound,
     ValidationError as Web3ValidationError
 )
+
 from config import ZERO_ADDRESS
 from app.model.blockchain import IbetShareContract
 from app.model.blockchain.utils import ContractUtils
 from app.model.schema import (
     IbetShareAdd,
     IbetShareTransfer,
-    IbetShareUpdate
+    IbetShareUpdate,
+    IbetShareApproveTransfer,
+    IbetShareCancelTransfer
 )
 from app.exceptions import SendTransactionError
 
 from tests.account_config import config_eth_account
+from tests.utils.contract_utils import (
+    PersonalInfoContractTestUtils,
+    IbetShareContractTestUtils
+)
 
 
 class TestCreate:
@@ -1614,3 +1621,509 @@ class TestGetAccountBalance:
         # assertion
         assert exc_info.match("Could not transact with/call contract function,")
         assert exc_info.match(", is contract deployed correctly and chain synced?")
+
+
+class TestApproveTransfer:
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    def test_normal_1(self, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8")
+        )
+
+        to_account = config_eth_account("user2")
+        to_address = to_account.get("address")
+        to_pk = decode_keyfile_json(
+            raw_keyfile_json=to_account.get("keyfile_json"),
+            password=to_account.get("password").encode("utf-8")
+        )
+
+        deployer = config_eth_account("user3")
+        deployer_address = deployer.get("address")
+        deployer_pk = decode_keyfile_json(
+            raw_keyfile_json=deployer.get("keyfile_json"),
+            password=deployer.get("password").encode("utf-8")
+        )
+
+        # deploy new personal info contract (from deployer)
+        personal_info_contract_address, _, _ = ContractUtils.deploy_contract(
+            contract_name="PersonalInfo",
+            args=[],
+            deployer=deployer_address,
+            private_key=deployer_pk
+        )
+
+        # deploy ibet share token (from issuer)
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
+        ]
+        token_address, _, _ = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # update token (from issuer)
+        update_data = {
+            "personal_info_contract_address": personal_info_contract_address,
+            "transfer_approval_required": True
+        }
+        IbetShareContract.update(
+            contract_address=token_address,
+            data=IbetShareUpdate(**update_data),
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # register personal info (to_account)
+        PersonalInfoContractTestUtils.register(
+            contract_address=personal_info_contract_address,
+            tx_from=to_address,
+            private_key=to_pk,
+            args=[issuer_address, "test_personal_info"]
+        )
+
+        # apply transfer (from issuer)
+        IbetShareContractTestUtils.apply_for_transfer(
+            contract_address=token_address,
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+            args=[to_address, 10, "test_data"]
+        )
+
+        # approve transfer (from issuer)
+        approve_data = {
+            "application_id": 0,
+            "data": "approve transfer test"
+        }
+        IbetShareContract.approve_transfer(
+            contract_address=token_address,
+            data=IbetShareApproveTransfer(**approve_data),
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # assertion
+        share_token = ContractUtils.get_contract(
+            contract_name="IbetShare",
+            contract_address=token_address
+        )
+        applications = share_token.functions.applicationsForTransfer(0).call()
+        assert applications[0] == issuer_address
+        assert applications[1] == to_address
+        assert applications[2] == 10
+        assert applications[3] is False
+        pendingTransfer = share_token.functions.pendingTransfer(issuer_address).call()
+        issuer_value = share_token.functions.balanceOf(issuer_address).call()
+        to_value = share_token.functions.balanceOf(to_address).call()
+        assert pendingTransfer == 0
+        assert issuer_value == (20000 - 10)
+        assert to_value == 10
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
+    # invalid application index : not integer, data : missing
+    def test_error_1(self, db):
+        # Transfer approve
+        approve_data = {
+            "application_id": "not-integer",
+        }
+        with pytest.raises(ValidationError) as ex_info:
+            _approve_transfer_data = IbetShareApproveTransfer(**approve_data)
+
+        assert ex_info.value.errors() == [
+            {
+                'loc': ('application_id',),
+                'msg': 'value is not a valid integer',
+                'type': 'type_error.integer'
+            }, {
+                'loc': ('data',),
+                'msg': 'field required',
+                'type': 'value_error.missing'
+            }
+        ]
+
+    # <Error_2>
+    # invalid contract_address : does not exists
+    def test_error_2(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # Transfer approve
+        approve_data = {
+            "application_id": 0,
+            "data": "test_data"
+        }
+        _approve_transfer_data = IbetShareApproveTransfer(**approve_data)
+        with pytest.raises(SendTransactionError) as ex_info:
+            IbetShareContract.approve_transfer(
+                contract_address="not address",
+                data=_approve_transfer_data,
+                tx_from=issuer_address,
+                private_key=private_key
+            )
+        assert ex_info.match("when sending a str, it must be a hex string. Got: 'not address'")
+
+    # <Error_3>
+    # invalid issuer_address : does not exists
+    def test_error_3(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
+        ]
+
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # Transfer approve
+        approve_data = {
+            "application_id": 0,
+            "data": "test_data"
+        }
+        _approve_transfer_data = IbetShareApproveTransfer(**approve_data)
+        with pytest.raises(SendTransactionError) as ex_info:
+            IbetShareContract.approve_transfer(
+                contract_address=contract_address,
+                data=_approve_transfer_data,
+                tx_from=issuer_address[:-1],
+                private_key=private_key
+            )
+        assert ex_info.match(f"ENS name: '{issuer_address[:-1]}' is invalid.")
+
+    # <Error_4>
+    # invalid private_key : not properly
+    def test_error_4(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
+        ]
+
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # Transfer approve
+        approve_data = {
+            "application_id": 0,
+            "data": "test_data"
+        }
+        _approve_transfer_data = IbetShareApproveTransfer(**approve_data)
+        with pytest.raises(SendTransactionError) as ex_info:
+            IbetShareContract.approve_transfer(
+                contract_address=contract_address,
+                data=_approve_transfer_data,
+                tx_from=issuer_address,
+                private_key="dummy-private"
+            )
+        assert ex_info.match("Non-hexadecimal digit found")
+
+
+class TestCancelTransfer:
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    def test_normal_1(self, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8")
+        )
+
+        to_account = config_eth_account("user2")
+        to_address = to_account.get("address")
+        to_pk = decode_keyfile_json(
+            raw_keyfile_json=to_account.get("keyfile_json"),
+            password=to_account.get("password").encode("utf-8")
+        )
+
+        deployer = config_eth_account("user3")
+        deployer_address = deployer.get("address")
+        deployer_pk = decode_keyfile_json(
+            raw_keyfile_json=deployer.get("keyfile_json"),
+            password=deployer.get("password").encode("utf-8")
+        )
+
+        # deploy new personal info contract (from deployer)
+        personal_info_contract_address, _, _ = ContractUtils.deploy_contract(
+            contract_name="PersonalInfo",
+            args=[],
+            deployer=deployer_address,
+            private_key=deployer_pk
+        )
+
+        # deploy ibet share token (from issuer)
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
+        ]
+        token_address, _, _ = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # update token (from issuer)
+        update_data = {
+            "personal_info_contract_address": personal_info_contract_address,
+            "transfer_approval_required": True
+        }
+        IbetShareContract.update(
+            contract_address=token_address,
+            data=IbetShareUpdate(**update_data),
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # register personal info (to_account)
+        PersonalInfoContractTestUtils.register(
+            contract_address=personal_info_contract_address,
+            tx_from=to_address,
+            private_key=to_pk,
+            args=[issuer_address, "test_personal_info"]
+        )
+
+        # apply transfer (from issuer)
+        IbetShareContractTestUtils.apply_for_transfer(
+            contract_address=token_address,
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+            args=[to_address, 10, "test_data"]
+        )
+
+        # cancel transfer (from issuer)
+        cancel_data = {
+            "application_id": 0,
+            "data": "approve transfer test"
+        }
+        _approve_transfer_data = IbetShareCancelTransfer(**cancel_data)
+
+        IbetShareContract.cancel_transfer(
+            contract_address=token_address,
+            data=_approve_transfer_data,
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # assertion
+        share_token = ContractUtils.get_contract(
+            contract_name="IbetShare",
+            contract_address=token_address
+        )
+        applications = share_token.functions.applicationsForTransfer(0).call()
+        assert applications[0] == issuer_address
+        assert applications[1] == to_address
+        assert applications[2] == 10
+        assert applications[3] is False
+        pendingTransfer = share_token.functions.pendingTransfer(issuer_address).call()
+        issuer_value = share_token.functions.balanceOf(issuer_address).call()
+        to_value = share_token.functions.balanceOf(to_address).call()
+        assert pendingTransfer == 0
+        assert issuer_value == 20000
+        assert to_value == 0
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
+    # invalid application index : not integer, data : missing
+    def test_error_1(self, db):
+        # Transfer approve
+        cancel_data = {
+            "application_id": "not-integer",
+        }
+        with pytest.raises(ValidationError) as ex_info:
+            _approve_transfer_data = IbetShareCancelTransfer(**cancel_data)
+
+        assert ex_info.value.errors() == [
+            {
+                'loc': ('application_id',),
+                'msg': 'value is not a valid integer',
+                'type': 'type_error.integer'
+            }, {
+                'loc': ('data',),
+                'msg': 'field required',
+                'type': 'value_error.missing'
+            }
+        ]
+
+    # <Error_2>
+    # invalid contract_address : does not exists
+    def test_error_2(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # Transfer cancel
+        cancel_data = {
+            "application_id": 0,
+            "data": "test_data"
+        }
+        _cancel_transfer_data = IbetShareCancelTransfer(**cancel_data)
+        with pytest.raises(SendTransactionError) as ex_info:
+            IbetShareContract.cancel_transfer(
+                contract_address="not address",
+                data=_cancel_transfer_data,
+                tx_from=issuer_address,
+                private_key=private_key
+            )
+        assert ex_info.match("when sending a str, it must be a hex string. Got: 'not address'")
+
+    # <Error_3>
+    # invalid issuer_address : does not exists
+    def test_error_3(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
+        ]
+
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # Transfer cancel
+        cancel_data = {
+            "application_id": 0,
+            "data": "test_data"
+        }
+        _cancel_transfer_data = IbetShareCancelTransfer(**cancel_data)
+        with pytest.raises(SendTransactionError) as ex_info:
+            IbetShareContract.cancel_transfer(
+                contract_address=contract_address,
+                data=_cancel_transfer_data,
+                tx_from=issuer_address[:-1],
+                private_key=private_key
+            )
+        assert ex_info.match(f"ENS name: '{issuer_address[:-1]}' is invalid.")
+
+    # <Error_4>
+    # invalid private_key : not properly
+    def test_error_4(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
+        ]
+
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # Transfer cancel
+        cancel_data = {
+            "application_id": 0,
+            "data": "test_data"
+        }
+        _cancel_transfer_data = IbetShareCancelTransfer(**cancel_data)
+        with pytest.raises(SendTransactionError) as ex_info:
+            IbetShareContract.cancel_transfer(
+                contract_address=contract_address,
+                data=_cancel_transfer_data,
+                tx_from=issuer_address,
+                private_key="dummy-private"
+            )
+        assert ex_info.match("Non-hexadecimal digit found")

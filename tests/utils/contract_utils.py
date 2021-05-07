@@ -16,109 +16,60 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import json
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
-from config import WEB3_HTTP_PROVIDER, TX_GAS_LIMIT
 from app.model.blockchain.utils import ContractUtils
+from config import (
+    WEB3_HTTP_PROVIDER,
+    TX_GAS_LIMIT,
+    CHAIN_ID
+)
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
+"""
+Helper Methods for Contract Testing
 
-class TestContractUtils:
+Helper methods to make it easier for test code to handle operations 
+on contracts that are not executed by the issuer.
+"""
+
+
+class PersonalInfoContractTestUtils:
 
     @staticmethod
-    def deploy_contract(contract_name: str, args: list, deployer: dict):
-        contract_file = f"contracts/{contract_name}.json"
-        contract_json = json.load(open(contract_file, "r"))
-        contract = web3.eth.contract(
-            abi=contract_json["abi"],
-            bytecode=contract_json["bytecode"],
-            bytecode_runtime=contract_json["deployedBytecode"],
+    def register(contract_address: str, tx_from: str, private_key: str, args: list):
+        personal_info_contract = ContractUtils.get_contract(
+            contract_name="PersonalInfo",
+            contract_address=contract_address
         )
-
-        tx_hash = contract.constructor(*args).transact({
-            "from": deployer["address"],
-            "gas": TX_GAS_LIMIT
-        })
-        tx = web3.eth.waitForTransactionReceipt(tx_hash)
-
-        contract_address = ""
-        if tx is not None:
-            if "contractAddress" in tx.keys():
-                contract_address = tx["contractAddress"]
-
-        return contract_address, contract_json["abi"], tx_hash
+        tx = personal_info_contract.functions. \
+            register(*args). \
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
 
-# Issue IbetStraightBond Token
-def issue_bond_token(invoker: dict, attribute: dict):
-    arguments = [
-        attribute["name"], attribute["symbol"], attribute["totalSupply"],
-        attribute["faceValue"],
-        attribute["redemptionDate"], attribute["redemptionValue"],
-        attribute["returnDate"], attribute["returnAmount"],
-        attribute["purpose"]
-    ]
+class IbetShareContractTestUtils:
 
-    contract_address, abi, tx_hash = TestContractUtils.deploy_contract(
-        contract_name="IbetStraightBond",
-        args=arguments,
-        deployer=invoker
-    )
-
-    # Other settings
-    token_contract = ContractUtils.get_contract("IbetStraightBond", contract_address)
-    transaction = {
-        "from": invoker["address"],
-        "gas": TX_GAS_LIMIT
-    }
-
-    if attribute.get("tradableExchange") is not None:
-        token_contract.functions.\
-            setTradableExchange(attribute["tradableExchange"]).\
-            transact(transaction=transaction)
-
-    if attribute.get("personalInfoAddress") is not None:
-        token_contract.functions.\
-            setPersonalInfoAddress(attribute["personalInfoAddress"]).\
-            transact(transaction=transaction)
-
-    if attribute.get("contactInformation") is not None:
-        token_contract.functions.\
-            setContactInformation(attribute["contactInformation"]).\
-            transact(transaction=transaction)
-
-    if attribute.get("privacyPolicy") is not None:
-        token_contract.functions.\
-            setPrivacyPolicy(attribute["privacyPolicy"]).\
-            transact(transaction=transaction)
-
-    if attribute.get("imageURL") is not None:
-        for (_class, _url) in enumerate(attribute["imageURL"]):
-            token_contract.functions.\
-                setImageURL(_class, _url).\
-                transact(transaction=transaction)
-
-    if attribute.get("interestRate") is not None:
-        token_contract.functions.\
-            setInterestRate(attribute["interestRate"]).\
-            transact(transaction=transaction)
-
-    interest_payment_date = {
-        f"interestPaymentDate{index}": attribute[f"interestPaymentDate{index}"] for index in range(1, 13)
-        if f"interestPaymentDate{index}" in attribute and attribute[f"interestPaymentDate{index}"] is not None
-    }
-    if interest_payment_date != {}:
-        token_contract.functions.\
-            setInterestPaymentDate(json.dumps(interest_payment_date)). \
-            transact(transaction=transaction)
-
-    if attribute.get("transferable") is not None:
-        token_contract.functions.\
-            setTransferable(attribute["transferable"]).\
-            transact(transaction=transaction)
-
-    return {"address": contract_address, "abi": abi, "tx_hash": tx_hash}
+    @staticmethod
+    def apply_for_transfer(contract_address: str, tx_from: str, private_key: str, args: list):
+        share_contract = ContractUtils.get_contract(
+            contract_name="IbetShare",
+            contract_address=contract_address
+        )
+        tx = share_contract.functions.\
+            applyForTransfer(*args).\
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)

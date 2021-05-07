@@ -45,7 +45,9 @@ from app.model.schema import (
     IbetStraightBondAdd,
     IbetShareUpdate,
     IbetShareTransfer,
-    IbetShareAdd
+    IbetShareAdd,
+    IbetShareApproveTransfer,
+    IbetShareCancelTransfer
 )
 from app.exceptions import SendTransactionError
 from app import log
@@ -902,3 +904,55 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
         )
         balance = share_contract.functions.balanceOf(account_address).call()
         return balance
+
+    @staticmethod
+    def approve_transfer(contract_address: str,
+                         data: IbetShareApproveTransfer,
+                         tx_from: str,
+                         private_key: str):
+        """Approve Transfer"""
+        try:
+            share_contract = ContractUtils.get_contract(
+                contract_name="IbetShare",
+                contract_address=contract_address
+            )
+            tx = share_contract.functions. \
+                approveTransfer(data.application_id, data.data). \
+                buildTransaction({
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0
+                })
+            tx_hash, txn_receipt = ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            return tx_hash, txn_receipt
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+    @staticmethod
+    def cancel_transfer(contract_address: str,
+                         data: IbetShareCancelTransfer,
+                         tx_from: str,
+                         private_key: str):
+        """Approve Transfer"""
+        try:
+            share_contract = ContractUtils.get_contract(
+                contract_name="IbetShare",
+                contract_address=contract_address
+            )
+            tx = share_contract.functions. \
+                cancelTransfer(data.application_id, data.data). \
+                buildTransaction({
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0
+                })
+            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
