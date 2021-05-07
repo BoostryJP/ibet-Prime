@@ -29,6 +29,13 @@ from config import (
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
+"""
+Helper Methods for Contract Testing
+
+Helper methods to make it easier for test code to handle operations 
+on contracts that are not executed by the issuer.
+"""
+
 
 class PersonalInfoContractTestUtils:
 
