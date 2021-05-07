@@ -18,8 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 import os
 import pytest
-
 from binascii import Error
+
 from pydantic.error_wrappers import ValidationError
 from eth_keyfile import decode_keyfile_json
 from unittest.mock import patch
@@ -30,6 +30,7 @@ from web3.exceptions import (
     TransactionNotFound,
     ValidationError as Web3ValidationError
 )
+
 from config import ZERO_ADDRESS
 from app.model.blockchain import IbetShareContract
 from app.model.blockchain.utils import ContractUtils
@@ -43,7 +44,10 @@ from app.model.schema import (
 from app.exceptions import SendTransactionError
 
 from tests.account_config import config_eth_account
-from tests.utils.contract_utils import TestContractUtils
+from tests.utils.contract_utils import (
+    PersonalInfoContractTestUtils,
+    IbetShareContractTestUtils
+)
 
 
 class TestCreate:
@@ -1627,21 +1631,36 @@ class TestApproveTransfer:
 
     # <Normal_1>
     def test_normal_1(self, db):
-        test_account = config_eth_account("user1")
-        issuer_address = test_account.get("address")
-        private_key = decode_keyfile_json(
-            raw_keyfile_json=test_account.get("keyfile_json"),
-            password=test_account.get("password").encode("utf-8")
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8")
         )
 
         to_account = config_eth_account("user2")
         to_address = to_account.get("address")
-        to_private_key = decode_keyfile_json(
+        to_pk = decode_keyfile_json(
             raw_keyfile_json=to_account.get("keyfile_json"),
             password=to_account.get("password").encode("utf-8")
         )
 
-        # deploy token
+        deployer = config_eth_account("user3")
+        deployer_address = deployer.get("address")
+        deployer_pk = decode_keyfile_json(
+            raw_keyfile_json=deployer.get("keyfile_json"),
+            password=deployer.get("password").encode("utf-8")
+        )
+
+        # deploy new personal info contract (from deployer)
+        personal_info_contract_address, _, _ = ContractUtils.deploy_contract(
+            contract_name="PersonalInfo",
+            args=[],
+            deployer=deployer_address,
+            private_key=deployer_pk
+        )
+
+        # deploy ibet share token (from issuer)
         arguments = [
             "テスト株式",
             "TEST",
@@ -1653,86 +1672,65 @@ class TestApproveTransfer:
             "20221231",
             10000
         ]
-
-        contract_address, abi, tx_hash = IbetShareContract.create(
+        token_address, _, _ = IbetShareContract.create(
             args=arguments,
             tx_from=issuer_address,
-            private_key=private_key
+            private_key=issuer_pk
         )
 
-        # register issuer personal
-        personal_info_contract_address = TestContractUtils.register_personal_info(
-            issuer_address=issuer_address,
-            to_address=to_address,
-            private_key=to_private_key
-        )
-
-        # set personal info
-        TestContractUtils.set_personal_info(
-            contract_address=contract_address,
+        # update token (from issuer)
+        update_data = {
+            "personal_info_contract_address": personal_info_contract_address,
+            "transfer_approval_required": True
+        }
+        IbetShareContract.update(
+            contract_address=token_address,
+            data=IbetShareUpdate(**update_data),
             tx_from=issuer_address,
-            private_key=private_key,
-            personal_info_contract_address=personal_info_contract_address
+            private_key=issuer_pk
         )
 
-        # set transfer approval_required
-        TestContractUtils.set_transfer_approval_required(
-            contract_address=contract_address,
+        # register personal info (to_account)
+        PersonalInfoContractTestUtils.register(
+            contract_address=personal_info_contract_address,
+            tx_from=to_address,
+            private_key=to_pk,
+            args=[issuer_address, "test_personal_info"]
+        )
+
+        # apply transfer (from issuer)
+        IbetShareContractTestUtils.apply_for_transfer(
+            contract_address=token_address,
             tx_from=issuer_address,
-            private_key=private_key
+            private_key=issuer_pk,
+            args=[to_address, 10, "test_data"]
         )
 
-        # apply transfer
-        TestContractUtils.apply_for_transfer(
-            contract_address=contract_address,
-            to_address=to_address,
-            value=10,
-            data="test data",
-            tx_from=issuer_address,
-            private_key=private_key
-        )
-
-        share_contract = ContractUtils.get_contract(
-            contract_name="IbetShare",
-            contract_address=contract_address
-        )
-
-        # check value
-        applications = share_contract.functions.applicationsForTransfer(0).call()
-        assert applications[0] == issuer_address
-        assert applications[1] == to_address
-        assert applications[2] == 10
-        assert applications[3] is True
-        issuer_pendingTransfer = share_contract.functions.pendingTransfer(issuer_address).call()
-        issuer_value = share_contract.functions.balanceOf(issuer_address).call()
-        to_value = share_contract.functions.balanceOf(to_address).call()
-        assert issuer_pendingTransfer == 10
-        assert issuer_value == (20000 - 10)
-        assert to_value == 0
-
-        # Transfer approve
+        # approve transfer (from issuer)
         approve_data = {
             "application_id": 0,
             "data": "approve transfer test"
         }
-        _approve_transfer_data = IbetShareApproveTransfer(**approve_data)
-
         IbetShareContract.approve_transfer(
-            contract_address=contract_address,
-            data=_approve_transfer_data,
+            contract_address=token_address,
+            data=IbetShareApproveTransfer(**approve_data),
             tx_from=issuer_address,
-            private_key=private_key
+            private_key=issuer_pk
         )
 
         # assertion
-        applications = share_contract.functions.applicationsForTransfer(0).call()
+        share_token = ContractUtils.get_contract(
+            contract_name="IbetShare",
+            contract_address=token_address
+        )
+        applications = share_token.functions.applicationsForTransfer(0).call()
         assert applications[0] == issuer_address
         assert applications[1] == to_address
         assert applications[2] == 10
         assert applications[3] is False
-        pendingTransfer = share_contract.functions.pendingTransfer(issuer_address).call()
-        issuer_value = share_contract.functions.balanceOf(issuer_address).call()
-        to_value = share_contract.functions.balanceOf(to_address).call()
+        pendingTransfer = share_token.functions.pendingTransfer(issuer_address).call()
+        issuer_value = share_token.functions.balanceOf(issuer_address).call()
+        to_value = share_token.functions.balanceOf(to_address).call()
         assert pendingTransfer == 0
         assert issuer_value == (20000 - 10)
         assert to_value == 10
@@ -1885,21 +1883,36 @@ class TestCancelTransfer:
 
     # <Normal_1>
     def test_normal_1(self, db):
-        test_account = config_eth_account("user1")
-        issuer_address = test_account.get("address")
-        private_key = decode_keyfile_json(
-            raw_keyfile_json=test_account.get("keyfile_json"),
-            password=test_account.get("password").encode("utf-8")
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8")
         )
 
         to_account = config_eth_account("user2")
         to_address = to_account.get("address")
-        to_private_key = decode_keyfile_json(
+        to_pk = decode_keyfile_json(
             raw_keyfile_json=to_account.get("keyfile_json"),
             password=to_account.get("password").encode("utf-8")
         )
 
-        # deploy token
+        deployer = config_eth_account("user3")
+        deployer_address = deployer.get("address")
+        deployer_pk = decode_keyfile_json(
+            raw_keyfile_json=deployer.get("keyfile_json"),
+            password=deployer.get("password").encode("utf-8")
+        )
+
+        # deploy new personal info contract (from deployer)
+        personal_info_contract_address, _, _ = ContractUtils.deploy_contract(
+            contract_name="PersonalInfo",
+            args=[],
+            deployer=deployer_address,
+            private_key=deployer_pk
+        )
+
+        # deploy ibet share token (from issuer)
         arguments = [
             "テスト株式",
             "TEST",
@@ -1911,64 +1924,41 @@ class TestCancelTransfer:
             "20221231",
             10000
         ]
-
-        contract_address, abi, tx_hash = IbetShareContract.create(
+        token_address, _, _ = IbetShareContract.create(
             args=arguments,
             tx_from=issuer_address,
-            private_key=private_key
+            private_key=issuer_pk
         )
 
-        # register issuer personal
-        personal_info_contract_address = TestContractUtils.register_personal_info(
-            issuer_address=issuer_address,
-            to_address=to_address,
-            private_key=to_private_key
-        )
-
-        # set personal info
-        TestContractUtils.set_personal_info(
-            contract_address=contract_address,
+        # update token (from issuer)
+        update_data = {
+            "personal_info_contract_address": personal_info_contract_address,
+            "transfer_approval_required": True
+        }
+        IbetShareContract.update(
+            contract_address=token_address,
+            data=IbetShareUpdate(**update_data),
             tx_from=issuer_address,
-            private_key=private_key,
-            personal_info_contract_address=personal_info_contract_address
+            private_key=issuer_pk
         )
 
-        # set transfer approval_required
-        TestContractUtils.set_transfer_approval_required(
-            contract_address=contract_address,
+        # register personal info (to_account)
+        PersonalInfoContractTestUtils.register(
+            contract_address=personal_info_contract_address,
+            tx_from=to_address,
+            private_key=to_pk,
+            args=[issuer_address, "test_personal_info"]
+        )
+
+        # apply transfer (from issuer)
+        IbetShareContractTestUtils.apply_for_transfer(
+            contract_address=token_address,
             tx_from=issuer_address,
-            private_key=private_key
+            private_key=issuer_pk,
+            args=[to_address, 10, "test_data"]
         )
 
-        # apply transfer
-        TestContractUtils.apply_for_transfer(
-            contract_address=contract_address,
-            to_address=to_address,
-            value=10,
-            data="test data",
-            tx_from=issuer_address,
-            private_key=private_key
-        )
-
-        share_contract = ContractUtils.get_contract(
-            contract_name="IbetShare",
-            contract_address=contract_address
-        )
-
-        # check value
-        applications = share_contract.functions.applicationsForTransfer(0).call()
-        assert applications[0] == issuer_address
-        assert applications[1] == to_address
-        assert applications[2] == 10
-        assert applications[3] is True
-        issuer_pendingTransfer = share_contract.functions.pendingTransfer(issuer_address).call()
-        issuer_value = share_contract.functions.balanceOf(issuer_address).call()
-        to_value = share_contract.functions.balanceOf(to_address).call()
-        assert issuer_pendingTransfer == 10
-        assert issuer_value == (20000 - 10)
-        assert to_value == 0
-
-        # Transfer approve
+        # cancel transfer (from issuer)
         cancel_data = {
             "application_id": 0,
             "data": "approve transfer test"
@@ -1976,21 +1966,25 @@ class TestCancelTransfer:
         _approve_transfer_data = IbetShareCancelTransfer(**cancel_data)
 
         IbetShareContract.cancel_transfer(
-            contract_address=contract_address,
+            contract_address=token_address,
             data=_approve_transfer_data,
             tx_from=issuer_address,
-            private_key=private_key
+            private_key=issuer_pk
         )
 
         # assertion
-        applications = share_contract.functions.applicationsForTransfer(0).call()
+        share_token = ContractUtils.get_contract(
+            contract_name="IbetShare",
+            contract_address=token_address
+        )
+        applications = share_token.functions.applicationsForTransfer(0).call()
         assert applications[0] == issuer_address
         assert applications[1] == to_address
         assert applications[2] == 10
         assert applications[3] is False
-        pendingTransfer = share_contract.functions.pendingTransfer(issuer_address).call()
-        issuer_value = share_contract.functions.balanceOf(issuer_address).call()
-        to_value = share_contract.functions.balanceOf(to_address).call()
+        pendingTransfer = share_token.functions.pendingTransfer(issuer_address).call()
+        issuer_value = share_token.functions.balanceOf(issuer_address).call()
+        to_value = share_token.functions.balanceOf(to_address).call()
         assert pendingTransfer == 0
         assert issuer_value == 20000
         assert to_value == 0
