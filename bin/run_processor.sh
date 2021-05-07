@@ -27,6 +27,6 @@ python batch/processor_bulk_transfer.py &
 python batch/processor_create_utxo.py &
 python batch/processor_scheduled_events.py &
 python batch/processor_monitor_block_sync.py &
-python batch/batch/processor_auto_transfer_approval.py &
+python batch/processor_auto_transfer_approval.py &
 
 tail -f /dev/null
