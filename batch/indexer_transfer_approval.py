@@ -94,7 +94,7 @@ class DBSink:
         :param application_id: application id
         :param from_address: transfer from
         :param to_address: transfer to
-        :param value: transfer amount
+        :param amount: transfer amount
         :param optional_data_applicant: optional data (ApplyForTransfer)
         :param optional_data_approver: optional data (ApproveTransfer)
         :param block_timestamp: block timestamp

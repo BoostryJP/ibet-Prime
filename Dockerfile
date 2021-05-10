@@ -43,7 +43,7 @@ RUN chown -R apl:apl /home/apl
 USER apl
 RUN echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~apl/.bash_profile \
  && echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~apl/.bash_profile \
- && echo 'eval "$(pyenv init -)"' >> ~apl/.bash_profile \
+ && echo 'eval "$(pyenv init --path)"' >> ~apl/.bash_profile \
  && echo 'export LANG=ja_JP.utf8' >> ~apl/.bash_profile
 
 # install python
