@@ -83,7 +83,7 @@ class DBSink:
                              token_address: str, application_id: int,
                              from_address: Optional[str] = None,
                              to_address: Optional[str] = None,
-                             value: Optional[int] = None,
+                             amount: Optional[int] = None,
                              optional_data_applicant: Optional[str] = None,
                              optional_data_approver: Optional[str] = None,
                              block_timestamp: Optional[int] = None):
@@ -111,7 +111,7 @@ class DBSink:
                 transfer_approval.application_id = application_id
                 transfer_approval.from_address = from_address
                 transfer_approval.to_address = to_address
-            transfer_approval.value = value
+            transfer_approval.amount = amount
             try:
                 transfer_approval.application_datetime = datetime.fromtimestamp(
                     float(optional_data_applicant),
@@ -235,7 +235,7 @@ class Processor:
                             application_id=args.get("index"),
                             from_address=args.get("from", ZERO_ADDRESS),
                             to_address=args.get("to", ZERO_ADDRESS),
-                            value=args.get("value"),
+                            amount=args.get("value"),
                             optional_data_applicant=args.get("data"),
                             block_timestamp=block_timestamp
                         )

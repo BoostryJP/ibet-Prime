@@ -884,6 +884,11 @@ async def list_transfer_approval_history(
 
     transfer_approval_history = []
     for _transfer_approval in _transfer_approvals:
+        if _transfer_approval.cancelled is None:
+            cancelled = False
+        else:
+            cancelled = _transfer_approval.cancelled
+
         transfer_approval_history.append({
             "token_address": token_address,
             "application_id": _transfer_approval.application_id,
@@ -894,7 +899,7 @@ async def list_transfer_approval_history(
             "application_blocktimestamp": local_tz.localize(_transfer_approval.application_blocktimestamp).isoformat(),
             "approval_datetime": local_tz.localize(_transfer_approval.approval_datetime).isoformat(),
             "approval_blocktimestamp": local_tz.localize(_transfer_approval.approval_blocktimestamp).isoformat(),
-            "cancelled": _transfer_approval.cancelled
+            "cancelled": cancelled
         })
 
     return {
