@@ -77,7 +77,7 @@ EOA_PASSWORD_PATTERN = \
     os.environ.get("EOA_PASSWORD_PATTERN") or \
     "^[a-zA-Z0-9]{8,}$"
 EOA_PASSWORD_PATTERN_MSG = \
-    os.environ.get("EAO_PASSWORD_PATTERN_MSG") or \
+    os.environ.get("EOA_PASSWORD_PATTERN_MSG") or \
     "password is need 8 or higher length of alphanumeric characters"
 PERSONAL_INFO_RSA_PASSPHRASE_PATTERN = \
     os.environ.get("PERSONAL_INFO_RSA_PASSPHRASE_PATTERN") or \
