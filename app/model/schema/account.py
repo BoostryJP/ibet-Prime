@@ -51,6 +51,42 @@ class AccountGenerateRsaKeyRequest(BaseModel):
         return v
 
 
+class AccountChangeEOAPasswordRequest(BaseModel):
+    """Account Change EOA Password schema (REQUEST)"""
+    old_eoa_password: str
+    eoa_password: str
+
+    @validator("old_eoa_password")
+    def old_eoa_password_is_encrypted_value(cls, v):
+        if E2EE_REQUEST_ENABLED:
+            check_value_is_encrypted("old_eoa_password", v)
+        return v
+
+    @validator("eoa_password")
+    def eoa_password_is_encrypted_value(cls, v):
+        if E2EE_REQUEST_ENABLED:
+            check_value_is_encrypted("eoa_password", v)
+        return v
+
+
+class AccountChangeRSAPassphraseRequest(BaseModel):
+    """Account Change RSA Passphrase schema (REQUEST)"""
+    old_rsa_passphrase: str
+    rsa_passphrase: str
+
+    @validator("old_rsa_passphrase")
+    def old_rsa_passphrase_is_encrypted_value(cls, v):
+        if E2EE_REQUEST_ENABLED:
+            check_value_is_encrypted("old_rsa_passphrase", v)
+        return v
+
+    @validator("rsa_passphrase")
+    def rsa_passphrase_is_encrypted_value(cls, v):
+        if E2EE_REQUEST_ENABLED:
+            check_value_is_encrypted("rsa_passphrase", v)
+        return v
+
+
 ############################
 # RESPONSE
 ############################

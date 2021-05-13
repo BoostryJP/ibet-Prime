@@ -22,6 +22,8 @@ from .index import (
 from .account import (
     AccountCreateKeyRequest,
     AccountGenerateRsaKeyRequest,
+    AccountChangeEOAPasswordRequest,
+    AccountChangeRSAPassphraseRequest,
     AccountResponse
 )
 from .bond_ledger import (

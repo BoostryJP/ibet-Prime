@@ -28,6 +28,7 @@ from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
 from sha3 import keccak_256
 from coincurve import PublicKey
+from Crypto.PublicKey import RSA
 from eth_utils import to_checksum_address
 import eth_keyfile
 
@@ -43,7 +44,9 @@ from app.database import db_session
 from app.model.schema import (
     AccountCreateKeyRequest,
     AccountResponse,
-    AccountGenerateRsaKeyRequest
+    AccountGenerateRsaKeyRequest,
+    AccountChangeEOAPasswordRequest,
+    AccountChangeRSAPassphraseRequest
 )
 from app.model.utils import E2EEUtils
 from app.model.db import (
@@ -238,3 +241,94 @@ async def generate_rsa_key(
         "rsa_status": rsa_status,
         "is_deleted": _account.is_deleted
     }
+
+
+# POST: /accounts/{issuer_address}/eoa_password
+@router.post("/accounts/{issuer_address}/eoa_password")
+async def change_eoa_password(
+        issuer_address: str,
+        data: AccountChangeEOAPasswordRequest,
+        db: Session = Depends(db_session)):
+    """Change EOA Password"""
+
+    # Get Account
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
+        first()
+    if _account is None:
+        raise HTTPException(status_code=404, detail="issuer is not exists")
+
+    # Check Password Policy
+    eoa_password = E2EEUtils.decrypt(data.eoa_password) if E2EE_REQUEST_ENABLED else data.eoa_password
+    if not re.match(EOA_PASSWORD_PATTERN, eoa_password):
+        raise InvalidParameterError(EOA_PASSWORD_PATTERN_MSG)
+
+    # Check Old Password
+    old_eoa_password = E2EEUtils.decrypt(data.old_eoa_password) if E2EE_REQUEST_ENABLED else data.old_eoa_password
+    correct_eoa_password = E2EEUtils.decrypt(_account.eoa_password)
+    if old_eoa_password != correct_eoa_password:
+        raise InvalidParameterError("old password mismatch")
+
+    # Get Ethereum Key
+    old_keyfile_json = _account.keyfile
+    private_key = eth_keyfile.decode_keyfile_json(
+        raw_keyfile_json=old_keyfile_json,
+        password=old_eoa_password.encode("utf-8")
+    )
+
+    # Create New Ethereum Key File
+    keyfile_json = eth_keyfile.create_keyfile_json(
+        private_key=private_key,
+        password=eoa_password.encode("utf-8"),
+        kdf="pbkdf2"
+    )
+
+    # Update data to the DB
+    _account.keyfile = keyfile_json
+    _account.eoa_password = E2EEUtils.encrypt(eoa_password)
+    db.merge(_account)
+
+    db.commit()
+
+    return
+
+
+# POST: /accounts/{issuer_address}/rsa_passphrase
+@router.post("/accounts/{issuer_address}/rsa_passphrase")
+async def change_rsa_passphrase(
+        issuer_address: str,
+        data: AccountChangeRSAPassphraseRequest,
+        db: Session = Depends(db_session)):
+    """Change RSA Passphrase"""
+
+    # Get Account
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
+        first()
+    if _account is None:
+        raise HTTPException(status_code=404, detail="issuer is not exists")
+
+    # Check Old Passphrase
+    old_rsa_passphrase = E2EEUtils.decrypt(data.old_rsa_passphrase) if E2EE_REQUEST_ENABLED else data.old_rsa_passphrase
+    correct_rsa_passphrase = E2EEUtils.decrypt(_account.rsa_passphrase)
+    if old_rsa_passphrase != correct_rsa_passphrase:
+        raise InvalidParameterError("old passphrase mismatch")
+
+    # Check Password Policy
+    rsa_passphrase = E2EEUtils.decrypt(data.rsa_passphrase) if E2EE_REQUEST_ENABLED else data.rsa_passphrase
+    if not re.match(PERSONAL_INFO_RSA_PASSPHRASE_PATTERN, rsa_passphrase):
+        raise InvalidParameterError(PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG)
+
+    # Create New RSA Private Key
+    old_rsa_private_key = _account.rsa_private_key
+    rsa_key = RSA.importKey(old_rsa_private_key, old_rsa_passphrase)
+    rsa_private_key = rsa_key.exportKey(format="PEM", passphrase=rsa_passphrase).decode()
+
+    # Update data to the DB
+    _account.rsa_private_key = rsa_private_key
+    _account.rsa_passphrase = E2EEUtils.encrypt(rsa_passphrase)
+    db.merge(_account)
+
+    db.commit()
+
+    return
