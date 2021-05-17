@@ -98,6 +98,7 @@ router = APIRouter(
 
 local_tz = pytz.timezone(TZ)
 
+
 # POST: /bond/tokens
 @router.post(
     "/tokens",
@@ -251,7 +252,8 @@ async def list_all_tokens(
     bond_tokens = []
     for token in tokens:
         bond_token = IbetStraightBondContract.get(contract_address=token.token_address).__dict__
-        bond_token["issue_datetime"] = local_tz.localize(token.created).isoformat()
+        issue_datetime_utc = pytz.timezone("UTC").localize(token.created)
+        bond_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
         bond_tokens.append(bond_token)
 
     return bond_tokens
@@ -276,7 +278,8 @@ async def retrieve_token(
 
     # Get contract data
     bond_token = IbetStraightBondContract.get(contract_address=token_address).__dict__
-    bond_token["issue_datetime"] = local_tz.localize(_token.created).isoformat()
+    issue_datetime_utc = pytz.timezone("UTC").localize(_token.created)
+    bond_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
 
     return bond_token
 
@@ -439,12 +442,13 @@ async def list_all_token_events(
     # Get contract data
     token_events = []
     for _token_event in _token_events:
+        scheduled_datetime_utc = pytz.timezone("UTC").localize(_token_event.scheduled_datetime)
         token_events.append(
             {
                 "scheduled_event_id": _token_event.id,
                 "token_address": token_address,
                 "token_type": TokenType.IBET_STRAIGHT_BOND,
-                "scheduled_datetime": local_tz.localize(_token_event.scheduled_datetime).isoformat(),
+                "scheduled_datetime": scheduled_datetime_utc.astimezone(local_tz).isoformat(),
                 "event_type": _token_event.event_type,
                 "status": _token_event.status,
                 "data": _token_event.data
@@ -483,11 +487,12 @@ async def retrieve_token_event(
         raise HTTPException(status_code=404, detail="scheduled event scheduled_event_id not found")
 
     # Get contract data
+    scheduled_datetime_utc = pytz.timezone("UTC").localize(_token_event.scheduled_datetime)
     return {
         "scheduled_event_id": _token_event.id,
         "token_address": token_address,
         "token_type": TokenType.IBET_STRAIGHT_BOND,
-        "scheduled_datetime": local_tz.localize(_token_event.scheduled_datetime).isoformat(),
+        "scheduled_datetime": scheduled_datetime_utc.astimezone(local_tz).isoformat(),
         "event_type": _token_event.event_type,
         "status": _token_event.status,
         "data": _token_event.data
@@ -582,11 +587,12 @@ async def delete_token_event(
     if _token_event is None:
         raise HTTPException(status_code=404, detail="scheduled event scheduled_event_id not found")
 
+    scheduled_datetime_utc = pytz.timezone("UTC").localize(_token_event.scheduled_datetime)
     rtn = {
         "scheduled_event_id": _token_event.id,
         "token_address": token_address,
         "token_type": TokenType.IBET_STRAIGHT_BOND,
-        "scheduled_datetime": local_tz.localize(_token_event.scheduled_datetime).isoformat(),
+        "scheduled_datetime": scheduled_datetime_utc.astimezone(local_tz).isoformat(),
         "event_type": _token_event.event_type,
         "status": _token_event.status,
         "data": _token_event.data
@@ -830,13 +836,14 @@ async def list_transfer_history(
 
     transfer_history = []
     for _transfer in _transfers:
+        block_timestamp_utc = pytz.timezone("UTC").localize(_transfer.block_timestamp)
         transfer_history.append({
             "transaction_hash": _transfer.transaction_hash,
             "token_address": token_address,
             "from_address": _transfer.transfer_from,
             "to_address": _transfer.transfer_to,
             "amount": _transfer.amount,
-            "block_timestamp": local_tz.localize(_transfer.block_timestamp).isoformat()
+            "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat()
         })
 
     return {

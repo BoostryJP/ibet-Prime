@@ -16,7 +16,10 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import List
+from typing import (
+    List,
+    Optional
+)
 from pydantic import BaseModel
 
 from .result_set import ResultSet
@@ -51,8 +54,8 @@ class TransferApprovalResponse(BaseModel):
     amount: int
     application_datetime: str
     application_blocktimestamp: str
-    approval_datetime: str
-    approval_blocktimestamp: str
+    approval_datetime: Optional[str]
+    approval_blocktimestamp: Optional[str]
     cancelled: bool
 
 

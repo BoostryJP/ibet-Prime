@@ -45,7 +45,7 @@ class TestAppRoutersShareTokensTokenAddressGET:
         token.abi = "abi_test1"
         db.add(token)
         db.commit()
-        _issue_time = self.local_tz.localize(token.created).isoformat()
+        _issue_time = timezone("UTC").localize(token.created).astimezone(self.local_tz).isoformat()
 
         # request target API
         mock_token = IbetShareContract()

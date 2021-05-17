@@ -85,7 +85,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
             "scheduled_event_id": 1,
             "token_address": _token_address,
             "token_type": TokenType.IBET_STRAIGHT_BOND,
-            "scheduled_datetime": self.local_tz.localize(datetime_now_utc).isoformat(),
+            "scheduled_datetime": timezone("UTC").localize(datetime_now_utc).astimezone(self.local_tz).isoformat(),
             "event_type": ScheduledEventType.UPDATE,
             "status": 0,
             "data": update_data
@@ -163,7 +163,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
             "scheduled_event_id": 2,
             "token_address": _token_address,
             "token_type": TokenType.IBET_STRAIGHT_BOND,
-            "scheduled_datetime": self.local_tz.localize(datetime_list[1]).isoformat(),
+            "scheduled_datetime": timezone("UTC").localize(datetime_list[1]).astimezone(self.local_tz).isoformat(),
             "event_type": ScheduledEventType.UPDATE,
             "status": 0,
             "data": update_data
