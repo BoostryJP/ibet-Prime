@@ -251,7 +251,8 @@ async def list_all_tokens(
     share_tokens = []
     for token in tokens:
         share_token = IbetShareContract.get(contract_address=token.token_address).__dict__
-        share_token["issue_datetime"] = local_tz.localize(token.created).isoformat()
+        issue_datetime_utc = timezone("UTC").localize(token.created)
+        share_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
         share_tokens.append(share_token)
 
     return share_tokens
@@ -276,7 +277,8 @@ async def retrieve_token(
 
     # Get contract data
     share_token = IbetShareContract.get(contract_address=token_address).__dict__
-    share_token["issue_datetime"] = local_tz.localize(_token.created).isoformat()
+    issue_datetime_utc = timezone("UTC").localize(_token.created)
+    share_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
 
     return share_token
 
@@ -439,12 +441,13 @@ async def list_all_token_events(
     # Get contract data
     token_events = []
     for _token_event in _token_events:
+        scheduled_datetime_utc = timezone("UTC").localize(_token_event.scheduled_datetime)
         token_events.append(
             {
                 "scheduled_event_id": _token_event.id,
                 "token_address": token_address,
                 "token_type": TokenType.IBET_SHARE,
-                "scheduled_datetime": local_tz.localize(_token_event.scheduled_datetime).isoformat(),
+                "scheduled_datetime": scheduled_datetime_utc.astimezone(local_tz).isoformat(),
                 "event_type": _token_event.event_type,
                 "status": _token_event.status,
                 "data": _token_event.data
@@ -483,11 +486,12 @@ async def retrieve_token_events(
         raise HTTPException(status_code=404, detail="scheduled event scheduled_event_id not found")
 
     # Get contract data
+    scheduled_datetime_utc = timezone("UTC").localize(_token_event.scheduled_datetime)
     return {
         "scheduled_event_id": _token_event.id,
         "token_address": token_address,
         "token_type": TokenType.IBET_SHARE,
-        "scheduled_datetime": local_tz.localize(_token_event.scheduled_datetime).isoformat(),
+        "scheduled_datetime": scheduled_datetime_utc.astimezone(local_tz).isoformat(),
         "event_type": _token_event.event_type,
         "status": _token_event.status,
         "data": _token_event.data
@@ -582,12 +586,12 @@ async def delete_token_event(
     if _token_event is None:
         raise HTTPException(status_code=404, detail="scheduled event scheduled_event_id not found")
 
-    # Get contract data
+    scheduled_datetime_utc = timezone("UTC").localize(_token_event.scheduled_datetime)
     rtn = {
         "scheduled_event_id": _token_event.id,
         "token_address": token_address,
         "token_type": TokenType.IBET_SHARE,
-        "scheduled_datetime": local_tz.localize(_token_event.scheduled_datetime).isoformat(),
+        "scheduled_datetime": scheduled_datetime_utc.astimezone(local_tz).isoformat(),
         "event_type": _token_event.event_type,
         "status": _token_event.status,
         "data": _token_event.data
@@ -829,13 +833,14 @@ async def list_transfer_history(
 
     transfer_history = []
     for _transfer in _transfers:
+        block_timestamp_utc = timezone("UTC").localize(_transfer.block_timestamp)
         transfer_history.append({
             "transaction_hash": _transfer.transaction_hash,
             "token_address": token_address,
             "from_address": _transfer.transfer_from,
             "to_address": _transfer.transfer_to,
             "amount": _transfer.amount,
-            "block_timestamp": local_tz.localize(_transfer.block_timestamp).isoformat()
+            "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat()
         })
 
     return {
@@ -889,16 +894,21 @@ async def list_transfer_approval_history(
         else:
             cancelled = _transfer_approval.cancelled
 
+        application_datetime_utc = timezone("UTC").localize(_transfer_approval.application_datetime)
+        application_blocktimestamp_utc = timezone("UTC").localize(_transfer_approval.application_blocktimestamp)
+        approval_datetime_utc = timezone("UTC").localize(_transfer_approval.approval_datetime)
+        approval_blocktimestamp_utc = timezone("UTC").localize(_transfer_approval.approval_blocktimestamp)
+
         transfer_approval_history.append({
             "token_address": token_address,
             "application_id": _transfer_approval.application_id,
             "from_address": _transfer_approval.from_address,
             "to_address": _transfer_approval.to_address,
             "amount": _transfer_approval.amount,
-            "application_datetime": local_tz.localize(_transfer_approval.application_datetime).isoformat(),
-            "application_blocktimestamp": local_tz.localize(_transfer_approval.application_blocktimestamp).isoformat(),
-            "approval_datetime": local_tz.localize(_transfer_approval.approval_datetime).isoformat(),
-            "approval_blocktimestamp": local_tz.localize(_transfer_approval.approval_blocktimestamp).isoformat(),
+            "application_datetime": application_datetime_utc.astimezone(local_tz).isoformat(),
+            "application_blocktimestamp": application_blocktimestamp_utc.astimezone(local_tz).isoformat(),
+            "approval_datetime": approval_datetime_utc.astimezone(local_tz).isoformat(),
+            "approval_blocktimestamp": approval_blocktimestamp_utc.astimezone(local_tz).isoformat(),
             "cancelled": cancelled
         })
 

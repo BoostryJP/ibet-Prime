@@ -51,7 +51,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdGET:
 
         # prepare data
         datetime_now_utc = datetime.utcnow()
-        datetime_now_local_tz_str = self.local_tz.localize(datetime_now_utc).isoformat()
+        datetime_now_local_tz_str = timezone("UTC").localize(datetime_now_utc).astimezone(self.local_tz).isoformat()
         update_data = {
             "face_value": 10000,
             "interest_rate": 0.5,
@@ -153,7 +153,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdGET:
             "scheduled_event_id": 2,
             "token_address": _token_address,
             "token_type": TokenType.IBET_STRAIGHT_BOND,
-            "scheduled_datetime": self.local_tz.localize(datetime_list[1]).isoformat(),
+            "scheduled_datetime": timezone("UTC").localize(datetime_list[1]).astimezone(self.local_tz).isoformat(),
             "event_type": ScheduledEventType.UPDATE,
             "status": 0,
             "data": update_data

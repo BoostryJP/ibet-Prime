@@ -50,7 +50,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
 
         # prepare data
         datetime_now_utc = datetime.utcnow()
-        datetime_now_str = self.tz_local.localize(datetime_now_utc).isoformat()
+        datetime_now_str = timezone("UTC").localize(datetime_now_utc).astimezone(self.tz_local).isoformat()
         update_data = {
             "cancellation_date": "20221231",
             "dividends": 345.67,
@@ -153,7 +153,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
                 "scheduled_event_id": 1,
                 "token_address": _token_address,
                 "token_type": TokenType.IBET_SHARE,
-                "scheduled_datetime": self.tz_local.localize(datetime_list[0]).isoformat(),
+                "scheduled_datetime": timezone("UTC").localize(datetime_list[0]).astimezone(self.tz_local).isoformat(),
                 "event_type": ScheduledEventType.UPDATE,
                 "status": 0,
                 "data": update_data
@@ -161,7 +161,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
                 "scheduled_event_id": 2,
                 "token_address": _token_address,
                 "token_type": TokenType.IBET_SHARE,
-                "scheduled_datetime": self.tz_local.localize(datetime_list[1]).isoformat(),
+                "scheduled_datetime": timezone("UTC").localize(datetime_list[1]).astimezone(self.tz_local).isoformat(),
                 "event_type": ScheduledEventType.UPDATE,
                 "status": 0,
                 "data": update_data

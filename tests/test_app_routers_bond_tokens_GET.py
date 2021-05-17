@@ -58,7 +58,7 @@ class TestAppRoutersBondTokensGET:
         token.abi = "abi_test1"
         db.add(token)
         db.commit()
-        _issue_datetime = self.local_tz.localize(token.created).isoformat()
+        _issue_datetime = pytz.timezone("UTC").localize(token.created).astimezone(self.local_tz).isoformat()
 
         mock_token = IbetStraightBondContract()
         mock_token.issuer_address = token.issuer_address
@@ -164,7 +164,7 @@ class TestAppRoutersBondTokensGET:
         token_1.abi = "abi_test1"
         db.add(token_1)
         db.commit()
-        _issue_datetime_1 = self.local_tz.localize(token_1.created).isoformat()
+        _issue_datetime_1 = pytz.timezone("UTC").localize(token_1.created).astimezone(self.local_tz).isoformat()
 
         mock_token_1 = IbetStraightBondContract()
         mock_token_1.issuer_address = token_1.issuer_address
@@ -210,7 +210,7 @@ class TestAppRoutersBondTokensGET:
         token_2.abi = "abi_test2"
         db.add(token_2)
         db.commit()
-        _issue_datetime_2 = self.local_tz.localize(token_2.created).isoformat()
+        _issue_datetime_2 = pytz.timezone("UTC").localize(token_2.created).astimezone(self.local_tz).isoformat()
 
         mock_token_2 = IbetStraightBondContract()
         mock_token_2.issuer_address = token_2.issuer_address
@@ -374,7 +374,7 @@ class TestAppRoutersBondTokensGET:
         token_1.abi = "abi_test1"
         db.add(token_1)
         db.commit()
-        _issue_datetime = self.local_tz.localize(token_1.created).isoformat()
+        _issue_datetime = pytz.timezone("UTC").localize(token_1.created).astimezone(self.local_tz).isoformat()
 
         mock_token = IbetStraightBondContract()
         mock_token.issuer_address = token_1.issuer_address
@@ -489,7 +489,7 @@ class TestAppRoutersBondTokensGET:
         token_1.abi = "abi_test1"
         db.add(token_1)
         db.commit()
-        _issue_datetime_1 = self.local_tz.localize(token_1.created).isoformat()
+        _issue_datetime_1 = pytz.timezone("UTC").localize(token_1.created).astimezone(self.local_tz).isoformat()
 
         mock_token_1 = IbetStraightBondContract()
         mock_token_1.issuer_address = token_1.issuer_address
@@ -535,7 +535,7 @@ class TestAppRoutersBondTokensGET:
         token_2.abi = "abi_test2"
         db.add(token_2)
         db.commit()
-        _issue_datetime_2 = self.local_tz.localize(token_2.created).isoformat()
+        _issue_datetime_2 = pytz.timezone("UTC").localize(token_2.created).astimezone(self.local_tz).isoformat()
 
         mock_token_2 = IbetStraightBondContract()
         mock_token_2.issuer_address = token_2.issuer_address

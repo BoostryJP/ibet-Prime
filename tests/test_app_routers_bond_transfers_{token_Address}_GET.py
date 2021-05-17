@@ -41,7 +41,7 @@ class TestAppRoutersBondTransfersGET:
     test_transfer_from = "test_transfer_from"
     test_transfer_to = "test_transfer_to"
     test_block_timestamp = datetime(year=2019, month=9, day=2)
-    test_block_timestamp_str = local_tz.localize(test_block_timestamp).isoformat()
+    test_block_timestamp_str = timezone("UTC").localize(test_block_timestamp).astimezone(local_tz).isoformat()
 
     ###########################################################################
     # Normal Case

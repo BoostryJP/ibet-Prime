@@ -42,13 +42,13 @@ class TestAppRoutersShareTransferApprovalsGET:
     test_transfer_from = "test_transfer_from"
     test_transfer_to = "test_transfer_to"
     test_application_datetime = datetime(year=2019, month=9, day=1)
-    test_application_datetime_str = local_tz.localize(test_application_datetime).isoformat()
+    test_application_datetime_str = timezone("UTC").localize(test_application_datetime).astimezone(local_tz).isoformat()
     test_application_blocktimestamp = datetime(year=2019, month=9, day=2)
-    test_application_blocktimestamp_str = local_tz.localize(test_application_blocktimestamp).isoformat()
+    test_application_blocktimestamp_str = timezone("UTC").localize(test_application_blocktimestamp).astimezone(local_tz).isoformat()
     test_approval_datetime = datetime(year=2019, month=9, day=3)
-    test_approval_datetime_str = local_tz.localize(test_approval_datetime).isoformat()
+    test_approval_datetime_str = timezone("UTC").localize(test_approval_datetime).astimezone(local_tz).isoformat()
     test_approval_blocktimestamp = datetime(year=2019, month=9, day=4)
-    test_approval_blocktimestamp_str = local_tz.localize(test_approval_blocktimestamp).isoformat()
+    test_approval_blocktimestamp_str = timezone("UTC").localize(test_approval_blocktimestamp).astimezone(local_tz).isoformat()
 
     ###########################################################################
     # Normal Case
