@@ -895,9 +895,22 @@ async def list_transfer_approval_history(
             cancelled = _transfer_approval.cancelled
 
         application_datetime_utc = timezone("UTC").localize(_transfer_approval.application_datetime)
+        application_datetime = application_datetime_utc.astimezone(local_tz).isoformat()
+
         application_blocktimestamp_utc = timezone("UTC").localize(_transfer_approval.application_blocktimestamp)
-        approval_datetime_utc = timezone("UTC").localize(_transfer_approval.approval_datetime)
-        approval_blocktimestamp_utc = timezone("UTC").localize(_transfer_approval.approval_blocktimestamp)
+        application_blocktimestamp = application_blocktimestamp_utc.astimezone(local_tz).isoformat()
+
+        if _transfer_approval.approval_datetime is not None:
+            approval_datetime_utc = timezone("UTC").localize(_transfer_approval.approval_datetime)
+            approval_datetime = approval_datetime_utc.astimezone(local_tz).isoformat()
+        else:
+            approval_datetime = None
+
+        if _transfer_approval.approval_blocktimestamp is not None:
+            approval_blocktimestamp_utc = timezone("UTC").localize(_transfer_approval.approval_blocktimestamp)
+            approval_blocktimestamp = approval_blocktimestamp_utc.astimezone(local_tz).isoformat()
+        else:
+            approval_blocktimestamp = None
 
         transfer_approval_history.append({
             "token_address": token_address,
@@ -905,10 +918,10 @@ async def list_transfer_approval_history(
             "from_address": _transfer_approval.from_address,
             "to_address": _transfer_approval.to_address,
             "amount": _transfer_approval.amount,
-            "application_datetime": application_datetime_utc.astimezone(local_tz).isoformat(),
-            "application_blocktimestamp": application_blocktimestamp_utc.astimezone(local_tz).isoformat(),
-            "approval_datetime": approval_datetime_utc.astimezone(local_tz).isoformat(),
-            "approval_blocktimestamp": approval_blocktimestamp_utc.astimezone(local_tz).isoformat(),
+            "application_datetime": application_datetime,
+            "application_blocktimestamp": application_blocktimestamp,
+            "approval_datetime": approval_datetime,
+            "approval_blocktimestamp": approval_blocktimestamp,
             "cancelled": cancelled
         })
 

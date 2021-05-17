@@ -54,8 +54,8 @@ class TestAppRoutersShareTransferApprovalsGET:
     # Normal Case
     ###########################################################################
 
-    # <Normal_1>
-    def test_normal_1(self, client, db):
+    # <Normal_1_1>
+    def test_normal_1_1(self, client, db):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_SHARE
@@ -129,6 +129,88 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False
+                },
+            ]
+        }
+        assert resp.json() == assumed_response
+
+    # <Normal_1_2>
+    # unapproved data
+    def test_normal_1_2(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_SHARE
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        # prepare data: IDXTransferApproval
+        for i in range(0, 3):
+            _idx_transfer_approval = IDXTransferApproval()
+            _idx_transfer_approval.token_address = self.test_token_address
+            _idx_transfer_approval.application_id = i
+            _idx_transfer_approval.from_address = self.test_transfer_from
+            _idx_transfer_approval.to_address = self.test_transfer_to
+            _idx_transfer_approval.amount = i
+            _idx_transfer_approval.application_datetime = self.test_application_datetime
+            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.approval_datetime = None
+            _idx_transfer_approval.approval_blocktimestamp = None
+            _idx_transfer_approval.cancelled = False
+            db.add(_idx_transfer_approval)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address)
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = {
+            "result_set": {
+                "count": 3,
+                "offset": None,
+                "limit": None,
+                "total": 3
+            },
+            "transfer_approval_history": [
+                {
+                    "token_address": self.test_token_address,
+                    "application_id": 2,
+                    "from_address": self.test_transfer_from,
+                    "to_address": self.test_transfer_to,
+                    "amount": 2,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": None,
+                    "approval_blocktimestamp": None,
+                    "cancelled": False
+                },
+                {
+                    "token_address": self.test_token_address,
+                    "application_id": 1,
+                    "from_address": self.test_transfer_from,
+                    "to_address": self.test_transfer_to,
+                    "amount": 1,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": None,
+                    "approval_blocktimestamp": None,
+                    "cancelled": False
+                },
+                {
+                    "token_address": self.test_token_address,
+                    "application_id": 0,
+                    "from_address": self.test_transfer_from,
+                    "to_address": self.test_transfer_to,
+                    "amount": 0,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": None,
+                    "approval_blocktimestamp": None,
                     "cancelled": False
                 },
             ]
