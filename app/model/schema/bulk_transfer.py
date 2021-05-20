@@ -34,6 +34,7 @@ class BulkTransferUploadResponse(BaseModel):
     issuer_address: str
     token_type: str
     status: int
+    created: str
 
 
 class BulkTransferResponse(BaseModel):
