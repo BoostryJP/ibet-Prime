@@ -960,11 +960,13 @@ async def list_bulk_transfer_upload(
 
     uploads = []
     for _upload in _uploads:
+        created_utc = pytz.timezone("UTC").localize(_upload.created)
         uploads.append({
             "issuer_address": _upload.issuer_address,
             "token_type": _upload.token_type,
             "upload_id": _upload.upload_id,
-            "status": _upload.status
+            "status": _upload.status,
+            "created": created_utc.astimezone(local_tz).isoformat()
         })
 
     return uploads

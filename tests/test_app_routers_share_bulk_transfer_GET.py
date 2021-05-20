@@ -16,8 +16,20 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from app.model.db import Account, TokenType, BulkTransferUpload
+from datetime import datetime
+import pytest
+
+import pytz
+
+from app.model.db import (
+    Account,
+    TokenType,
+    BulkTransferUpload
+)
+from config import TZ
 from tests.account_config import config_eth_account
+
+local_tz = pytz.timezone(TZ)
 
 
 class TestAppRoutersShareBulkTransferGET:
@@ -48,6 +60,8 @@ class TestAppRoutersShareBulkTransferGET:
     ###########################################################################
 
     # <Normal_1>
+    # Issuer specified
+    @pytest.mark.freeze_time("2021-05-20 12:34:56")
     def test_normal_1(self, client, db):
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
@@ -57,12 +71,14 @@ class TestAppRoutersShareBulkTransferGET:
             db.add(account)
 
         # prepare data : BulkTransferUpload
+        utc_now = datetime.utcnow()
         for i in range(0, 3):
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
             bulk_transfer_upload.token_type = TokenType.IBET_SHARE
             bulk_transfer_upload.status = i
+            bulk_transfer_upload.created = utc_now
             db.add(bulk_transfer_upload)
 
         # request target API
@@ -78,20 +94,25 @@ class TestAppRoutersShareBulkTransferGET:
                 "issuer_address": self.upload_issuer_list[1]["address"],
                 "token_type": TokenType.IBET_SHARE,
                 "upload_id": self.upload_id_list[1],
-                "status": 1
+                "status": 1,
+                "created": pytz.timezone("UTC").localize(utc_now).astimezone(local_tz).isoformat()
             }
         ]
         assert resp.json() == assumed_response
 
     # <Normal_2>
+    # No issuer specified
+    @pytest.mark.freeze_time("2021-05-20 12:34:56")
     def test_normal_2(self, client, db):
         # prepare data : BulkTransferUpload
+        utc_now = datetime.utcnow()
         for i in range(0, 3):
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
             bulk_transfer_upload.token_type = TokenType.IBET_SHARE
             bulk_transfer_upload.status = i
+            bulk_transfer_upload.created = utc_now
             db.add(bulk_transfer_upload)
 
         # request target API
@@ -107,7 +128,8 @@ class TestAppRoutersShareBulkTransferGET:
                 "issuer_address": self.upload_issuer_list[i]["address"],
                 "token_type": TokenType.IBET_SHARE,
                 "upload_id": self.upload_id_list[i],
-                "status": i
+                "status": i,
+                "created": pytz.timezone("UTC").localize(utc_now).astimezone(local_tz).isoformat()
             })
 
         assert sorted(resp.json(), key=lambda x: x['upload_id']) == sorted(assumed_response,
