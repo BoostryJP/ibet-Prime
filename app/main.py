@@ -31,7 +31,7 @@ from app.routers import (
     index,
     account,
     bond,
-    bond_ledger,
+    ledger,
     share
 )
 from app.exceptions import *
@@ -62,7 +62,7 @@ async def root():
 app.include_router(index.router)
 app.include_router(account.router)
 app.include_router(bond.router)
-app.include_router(bond_ledger.router)
+app.include_router(ledger.router)
 app.include_router(share.router)
 
 

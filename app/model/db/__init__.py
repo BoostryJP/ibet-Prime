@@ -26,7 +26,6 @@ from .token import (
     Token,
     TokenType
 )
-from .bond_ledger import BondLedger
 from .bulk_transfer_upload import BulkTransferUpload
 from .bulk_transfer import BulkTransfer
 from .idx_transfer import IDXTransfer
@@ -36,11 +35,18 @@ from .idx_personal_info import (
     IDXPersonalInfo,
     IDXPersonalInfoBlockNumber
 )
+from .ledger import (
+    Ledger,
+    LedgerRightsDetails
+)
+from .ledger_template import (
+    LedgerTemplate,
+    LedgerTemplateRights
+)
 from .node import Node
 from .transfer_appoval_history import TransferApprovalHistory
 from .tx_management import TransactionLock
 from .utxo import UTXO, UTXOBlockNumber
-from .localized.corporate_bond_ledger_template_JPN import CorporateBondLedgerTemplateJPN
 from .scheduled_events import (
     ScheduledEvents,
     ScheduledEventType

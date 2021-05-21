@@ -89,8 +89,8 @@ class TestProcessor:
     # Execute Batch Run 1st: No Event
     # Execute Batch Run 2nd: Executed Transfer Event
     # Localized:JPN
-    @mock.patch("batch.localized.create_utxo_JPN.on_bond_ledger")
-    def test_normal_1(self, mock_localized_func, processor, db):
+    @mock.patch("batch.lib.create_ledger.create_ledger")
+    def test_normal_1(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -217,7 +217,7 @@ class TestProcessor:
         _utox_block_number = db.query(UTXOBlockNumber).first()
         assert _utox_block_number.latest_block_number == _utox_list[3].block_number
 
-        mock_localized_func.assert_has_calls([
+        mock_func.assert_has_calls([
             call(token_address_1, db),
             call(token_address_1, db),
             call(token_address_2, db),
