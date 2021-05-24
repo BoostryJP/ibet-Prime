@@ -51,7 +51,8 @@ from app.model.schema import (
     BulkTransferResponse,
     IbetStraightBondScheduledUpdate,
     ScheduledEventIdResponse,
-    ScheduledEventResponse
+    ScheduledEventResponse,
+    ModifyPersonalInfoRequest
 )
 from app.model.utils import (
     E2EEUtils,
@@ -74,7 +75,8 @@ from app.model.db import (
 )
 from app.model.blockchain import (
     IbetStraightBondContract,
-    TokenListContract
+    TokenListContract,
+    PersonalInfoContract
 )
 from app.exceptions import (
     InvalidParameterError,
@@ -737,6 +739,71 @@ async def retrieve_holder(
     }
 
     return holder
+
+
+# POST: /bond/tokens/{token_address}/holders/{account_address}/personal_info
+@router.post(
+    "/tokens/{token_address}/holders/{account_address}/personal_info",
+    response_model=None
+)
+async def modify_holder_personal_info(
+        request: Request,
+        token_address: str,
+        account_address: str,
+        personal_info: ModifyPersonalInfoRequest,
+        issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Modify the holder's personal information"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value])
+    )
+
+    # Get Account
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
+        first()
+    if _account is None:
+        auth_error(request, issuer_address, "issuer does not exist")
+        raise AuthorizationError("issuer does not exist, or password mismatch")
+    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
+
+    # Check Password
+    if EOA_PASSWORD_CHECK_ENABLED:
+        result = check_password(eoa_password, decrypt_password)
+        if not result:
+            auth_error(request, issuer_address, "password mismatch")
+            raise AuthorizationError("issuer does not exist, or password mismatch")
+        auth_info(request, issuer_address, "authentication succeed")
+
+    # Verify that the token is issued by the issuer_address
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        first()
+    if _token is None:
+        raise InvalidParameterError("token not found")
+
+    # Modify Personal Info
+    token_contract = IbetStraightBondContract.get(token_address)
+    try:
+        personal_info_contract = PersonalInfoContract(
+            db=db,
+            issuer_address=issuer_address,
+            contract_address=token_contract.personal_info_contract_address
+        )
+        personal_info_contract.modify_info(
+            account_address=account_address,
+            data=personal_info.dict()
+        )
+    except SendTransactionError:
+        raise SendTransactionError("failed to modify personal information")
+
+    return
 
 
 # POST: /bond/transfers
