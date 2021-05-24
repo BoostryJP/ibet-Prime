@@ -420,12 +420,12 @@ async def additional_issue(
     "/tokens/{token_address}/scheduled_events",
     response_model=List[ScheduledEventResponse]
 )
-async def list_all_token_events(
+async def list_all_scheduled_events(
         token_address: str,
         issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
-    """Retrieve token event"""
-    # Get Token
+    """List all scheduled update events"""
+
     if issuer_address is None:
         _token_events = db.query(ScheduledEvents). \
             filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
@@ -440,64 +440,23 @@ async def list_all_token_events(
             order_by(ScheduledEvents.id). \
             all()
 
-    # Get contract data
     token_events = []
     for _token_event in _token_events:
         scheduled_datetime_utc = timezone("UTC").localize(_token_event.scheduled_datetime)
+        created_utc = timezone("UTC").localize(_token_event.created)
         token_events.append(
             {
-                "scheduled_event_id": _token_event.id,
+                "scheduled_event_id": _token_event.event_id,
                 "token_address": token_address,
                 "token_type": TokenType.IBET_SHARE,
                 "scheduled_datetime": scheduled_datetime_utc.astimezone(local_tz).isoformat(),
                 "event_type": _token_event.event_type,
                 "status": _token_event.status,
-                "data": _token_event.data
+                "data": _token_event.data,
+                "created": created_utc.astimezone(local_tz).isoformat()
             }
         )
     return token_events
-
-
-# GET: /share/tokens/{token_address}/scheduled_events/{scheduled_event_id}
-@router.get(
-    "/tokens/{token_address}/scheduled_events/{scheduled_event_id}",
-    response_model=ScheduledEventResponse
-)
-async def retrieve_token_events(
-        token_address: str,
-        scheduled_event_id: int,
-        issuer_address: Optional[str] = Header(None),
-        db: Session = Depends(db_session)):
-    """Retrieve token event"""
-    # Get Token
-    if issuer_address is None:
-        _token_event = db.query(ScheduledEvents). \
-            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
-            filter(ScheduledEvents.id == scheduled_event_id). \
-            filter(ScheduledEvents.token_address == token_address). \
-            first()
-    else:
-        _token_event = db.query(ScheduledEvents). \
-            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
-            filter(ScheduledEvents.id == scheduled_event_id). \
-            filter(ScheduledEvents.issuer_address == issuer_address). \
-            filter(ScheduledEvents.token_address == token_address). \
-            first()
-
-    if _token_event is None:
-        raise HTTPException(status_code=404, detail="scheduled event scheduled_event_id not found")
-
-    # Get contract data
-    scheduled_datetime_utc = timezone("UTC").localize(_token_event.scheduled_datetime)
-    return {
-        "scheduled_event_id": _token_event.id,
-        "token_address": token_address,
-        "token_type": TokenType.IBET_SHARE,
-        "scheduled_datetime": scheduled_datetime_utc.astimezone(local_tz).isoformat(),
-        "event_type": _token_event.event_type,
-        "status": _token_event.status,
-        "data": _token_event.data
-    }
 
 
 # POST: /share/tokens/{token_address}/scheduled_events
@@ -505,21 +464,22 @@ async def retrieve_token_events(
     "/tokens/{token_address}/scheduled_events",
     response_model=ScheduledEventIdResponse
 )
-async def schedule_token_update_event(
+async def schedule_new_update_event(
         request: Request,
         token_address: str,
         event_data: IbetShareScheduledUpdate,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
-    """Update a token according to schedule"""
+    """Register a new update event"""
+
     # Validate Headers
     validate_headers(
         issuer_address=(issuer_address, address_is_valid_address),
         eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value])
     )
 
-    # Get Account
+    # Authentication
     _account = db.query(Account). \
         filter(Account.issuer_address == issuer_address). \
         first()
@@ -528,7 +488,6 @@ async def schedule_token_update_event(
         raise AuthorizationError("issuer does not exist")
     decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
 
-    # Check Password
     if EOA_PASSWORD_CHECK_ENABLED:
         result = check_password(eoa_password, decrypt_password)
         if not result:
@@ -536,7 +495,7 @@ async def schedule_token_update_event(
             raise AuthorizationError("issuer does not exist, or password mismatch")
         auth_info(request, issuer_address, "authentication succeed")
 
-    # Get Token
+    # Verify that the token is issued by the issuer
     _token = db.query(Token). \
         filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
@@ -545,8 +504,9 @@ async def schedule_token_update_event(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
 
-    # Register Events
+    # Register an event
     _scheduled_event = ScheduledEvents()
+    _scheduled_event.event_id = str(uuid.uuid4())
     _scheduled_event.issuer_address = issuer_address
     _scheduled_event.token_address = token_address
     _scheduled_event.token_type = TokenType.IBET_SHARE
@@ -557,7 +517,49 @@ async def schedule_token_update_event(
     db.add(_scheduled_event)
     db.commit()
 
-    return {"scheduled_event_id": _scheduled_event.id}
+    return {"scheduled_event_id": _scheduled_event.event_id}
+
+
+# GET: /share/tokens/{token_address}/scheduled_events/{scheduled_event_id}
+@router.get(
+    "/tokens/{token_address}/scheduled_events/{scheduled_event_id}",
+    response_model=ScheduledEventResponse
+)
+async def retrieve_token_event(
+        token_address: str,
+        scheduled_event_id: str,
+        issuer_address: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Retrieve a scheduled token event"""
+
+    if issuer_address is None:
+        _token_event = db.query(ScheduledEvents). \
+            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
+            filter(ScheduledEvents.event_id == scheduled_event_id). \
+            filter(ScheduledEvents.token_address == token_address). \
+            first()
+    else:
+        _token_event = db.query(ScheduledEvents). \
+            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
+            filter(ScheduledEvents.event_id == scheduled_event_id). \
+            filter(ScheduledEvents.issuer_address == issuer_address). \
+            filter(ScheduledEvents.token_address == token_address). \
+            first()
+    if _token_event is None:
+        raise HTTPException(status_code=404, detail="event not found")
+
+    scheduled_datetime_utc = timezone("UTC").localize(_token_event.scheduled_datetime)
+    created_utc = timezone("UTC").localize(_token_event.created)
+    return {
+        "scheduled_event_id": _token_event.event_id,
+        "token_address": token_address,
+        "token_type": TokenType.IBET_SHARE,
+        "scheduled_datetime": scheduled_datetime_utc.astimezone(local_tz).isoformat(),
+        "event_type": _token_event.event_type,
+        "status": _token_event.status,
+        "data": _token_event.data,
+        "created": created_utc.astimezone(local_tz).isoformat()
+    }
 
 
 # DELETE: /share/tokens/{token_address}/scheduled_events/{scheduled_event_id}
@@ -566,40 +568,62 @@ async def schedule_token_update_event(
     response_model=ScheduledEventResponse
 )
 async def delete_token_event(
+        request: Request,
         token_address: str,
-        scheduled_event_id: int,
-        issuer_address: Optional[str] = Header(None),
+        scheduled_event_id: str,
+        issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
-    """Retrieve token event"""
-    # Get Token
-    if issuer_address is None:
-        _token_event = db.query(ScheduledEvents). \
-            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
-            filter(ScheduledEvents.id == scheduled_event_id). \
-            filter(ScheduledEvents.token_address == token_address). \
-            first()
-    else:
-        _token_event = db.query(ScheduledEvents). \
-            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
-            filter(ScheduledEvents.id == scheduled_event_id). \
-            filter(ScheduledEvents.issuer_address == issuer_address). \
-            filter(ScheduledEvents.token_address == token_address). \
-            first()
+    """Delete a scheduled event"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value])
+    )
+
+    # Authorization
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
+        first()
+    if _account is None:
+        auth_error(request, issuer_address, "issuer does not exist")
+        raise AuthorizationError("issuer does not exist")
+    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
+
+    if EOA_PASSWORD_CHECK_ENABLED:
+        result = check_password(eoa_password, decrypt_password)
+        if not result:
+            auth_error(request, issuer_address, "password mismatch")
+            raise AuthorizationError("issuer does not exist, or password mismatch")
+        auth_info(request, issuer_address, "authentication succeed")
+
+    # Delete an event
+    _token_event = db.query(ScheduledEvents). \
+        filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
+        filter(ScheduledEvents.event_id == scheduled_event_id). \
+        filter(ScheduledEvents.issuer_address == issuer_address). \
+        filter(ScheduledEvents.token_address == token_address). \
+        first()
     if _token_event is None:
-        raise HTTPException(status_code=404, detail="scheduled event scheduled_event_id not found")
+        raise HTTPException(status_code=404, detail="event not found")
 
     scheduled_datetime_utc = timezone("UTC").localize(_token_event.scheduled_datetime)
+    created_utc = timezone("UTC").localize(_token_event.created)
     rtn = {
-        "scheduled_event_id": _token_event.id,
+        "scheduled_event_id": _token_event.event_id,
         "token_address": token_address,
         "token_type": TokenType.IBET_SHARE,
         "scheduled_datetime": scheduled_datetime_utc.astimezone(local_tz).isoformat(),
         "event_type": _token_event.event_type,
         "status": _token_event.status,
-        "data": _token_event.data
+        "data": _token_event.data,
+        "created": created_utc.astimezone(local_tz).isoformat()
     }
+
     db.delete(_token_event)
     db.commit()
+
     return rtn
 
 

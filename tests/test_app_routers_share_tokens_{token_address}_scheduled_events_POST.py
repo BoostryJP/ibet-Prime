@@ -66,7 +66,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         db.add(token)
 
         # test data
-        datetime_now_utc = datetime.now(timezone.utc)
+        datetime_now_utc = datetime.now(timezone.utc)  # utc
         datetime_now_str = datetime_now_utc.isoformat()
         update_data = {
             "cancellation_date": "20221231",
@@ -103,25 +103,14 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
                 "eoa-password": E2EEUtils.encrypt("password")
             }
         )
+
+        # assertion
         _scheduled_event = db.query(ScheduledEvents). \
             filter(ScheduledEvents.issuer_address == _issuer_address). \
             filter(ScheduledEvents.token_address == _token_address). \
             first()
-
-        resp_2 = client.post(
-            self.base_url.format(_token_address),
-            json=req_param,
-            headers={
-                "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
-        )  # second time
-
-        # assertion
         assert resp_1.status_code == 200
-        assert resp_1.json() == {"scheduled_event_id": 1}
-        assert resp_2.status_code == 200
-        assert resp_2.json() == {"scheduled_event_id": 2}
+        assert resp_1.json() == {"scheduled_event_id": _scheduled_event.event_id}
         assert _scheduled_event.token_type == TokenType.IBET_SHARE
         assert _scheduled_event.scheduled_datetime == datetime_now_utc.replace(tzinfo=None)
         assert _scheduled_event.event_type == ScheduledEventType.UPDATE
@@ -152,7 +141,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         db.add(token)
 
         # test data
-        datetime_now_jst = datetime.now(tz("Asia/Tokyo"))
+        datetime_now_jst = datetime.now(tz("Asia/Tokyo"))  # jst
         datetime_now_str = datetime_now_jst.isoformat()
         update_data = {
             "cancellation_date": "20221231",
@@ -189,17 +178,16 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
                 "eoa-password": E2EEUtils.encrypt("password")
             }
         )
+
+        # assertion
         _scheduled_event = db.query(ScheduledEvents). \
             filter(ScheduledEvents.issuer_address == _issuer_address). \
             filter(ScheduledEvents.token_address == _token_address). \
             first()
-
-        # assertion
         assert resp.status_code == 200
-        assert resp.json() == {"scheduled_event_id": 1}
+        assert resp.json() == {"scheduled_event_id": _scheduled_event.event_id}
         assert _scheduled_event.token_type == TokenType.IBET_SHARE
-        assert _scheduled_event.scheduled_datetime == \
-               datetime_now_jst.astimezone(timezone.utc).replace(tzinfo=None)
+        assert _scheduled_event.scheduled_datetime == datetime_now_jst.astimezone(timezone.utc).replace(tzinfo=None)
         assert _scheduled_event.event_type == ScheduledEventType.UPDATE
         assert _scheduled_event.status == 0
         assert _scheduled_event.data == update_data

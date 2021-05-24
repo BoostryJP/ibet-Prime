@@ -16,10 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from datetime import (
-    datetime,
-    timedelta
-)
+import uuid
+from datetime import datetime
 
 from pytz import timezone
 
@@ -42,7 +40,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdGET:
     ###########################################################################
 
     # <Normal_1>
-    # Timezone of input data is UTC, ScheduledEventType : UPDATE, Set issuer_address.
+    # issuer address is specified
     def test_normal_1(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -51,7 +49,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdGET:
 
         # prepare data
         datetime_now_utc = datetime.utcnow()
-        datetime_now_local_tz_str = timezone("UTC").localize(datetime_now_utc).astimezone(self.local_tz).isoformat()
+        datetime_now_str = timezone("UTC").localize(datetime_now_utc).astimezone(self.local_tz).isoformat()
         update_data = {
             "face_value": 10000,
             "interest_rate": 0.5,
@@ -71,8 +69,10 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdGET:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest"
         }
+        event_id = str(uuid.uuid4())
 
         token_event = ScheduledEvents()
+        token_event.event_id = event_id
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
@@ -80,21 +80,12 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdGET:
         token_event.scheduled_datetime = datetime_now_utc
         token_event.status = 0
         token_event.data = update_data
+        token_event.created = datetime_now_utc
         db.add(token_event)
-
-        assumed_resp = {
-            "scheduled_event_id": 1,
-            "token_address": _token_address,
-            "token_type": TokenType.IBET_STRAIGHT_BOND,
-            "scheduled_datetime": datetime_now_local_tz_str,
-            "event_type": ScheduledEventType.UPDATE,
-            "status": 0,
-            "data": update_data
-        }
 
         # request target API
         resp = client.get(
-            self.base_url.format(_token_address, 1),
+            self.base_url.format(_token_address, event_id),
             headers={
                 "issuer-address": _issuer_address,
             }
@@ -102,10 +93,19 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdGET:
 
         # assertion
         assert resp.status_code == 200
-        assert resp.json() == assumed_resp
+        assert resp.json() == {
+            "scheduled_event_id": event_id,
+            "token_address": _token_address,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
+            "scheduled_datetime": datetime_now_str,
+            "event_type": ScheduledEventType.UPDATE,
+            "status": 0,
+            "data": update_data,
+            "created": datetime_now_str,
+        }
 
     # <Normal_2>
-    # Timezone of input data is JST, ScheduledEventType : UPDATE, Not set issuer_address.
+    # issuer address is not specified
     def test_normal_2(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -113,11 +113,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdGET:
         _token_address = "token_address_test"
 
         # prepare data
-        datetime_list = []
-        datetime_utc = datetime.utcnow() + timedelta(hours=1)
-        datetime_list.append(datetime_utc)
-        datetime_utc = datetime.utcnow()
-        datetime_list.append(datetime_utc)
+        datetime_now_utc = datetime.utcnow()
+        datetime_now_str = timezone("UTC").localize(datetime_now_utc).astimezone(self.local_tz).isoformat()
         update_data = {
             "face_value": 10000,
             "interest_rate": 0.5,
@@ -137,43 +134,44 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdGET:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest"
         }
+        event_id = str(uuid.uuid4())
 
-        for _datetime in datetime_list:
-            token_event = ScheduledEvents()
-            token_event.issuer_address = _issuer_address
-            token_event.token_address = _token_address
-            token_event.token_type = TokenType.IBET_STRAIGHT_BOND
-            token_event.event_type = ScheduledEventType.UPDATE
-            token_event.scheduled_datetime = _datetime
-            token_event.status = 0
-            token_event.data = update_data
-            db.add(token_event)
-
-        assumed_resp = {
-            "scheduled_event_id": 2,
-            "token_address": _token_address,
-            "token_type": TokenType.IBET_STRAIGHT_BOND,
-            "scheduled_datetime": timezone("UTC").localize(datetime_list[1]).astimezone(self.local_tz).isoformat(),
-            "event_type": ScheduledEventType.UPDATE,
-            "status": 0,
-            "data": update_data
-        }
+        token_event = ScheduledEvents()
+        token_event.event_id = event_id
+        token_event.issuer_address = _issuer_address
+        token_event.token_address = _token_address
+        token_event.token_type = TokenType.IBET_STRAIGHT_BOND
+        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.scheduled_datetime = datetime_now_utc
+        token_event.status = 0
+        token_event.data = update_data
+        token_event.created = datetime_now_utc
+        db.add(token_event)
 
         # request target API
         resp = client.get(
-            self.base_url.format(_token_address, 2),
+            self.base_url.format(_token_address, event_id),
         )
 
         # assertion
         assert resp.status_code == 200
-        assert resp.json() == assumed_resp
+        assert resp.json() == {
+            "scheduled_event_id": event_id,
+            "token_address": _token_address,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
+            "scheduled_datetime": datetime_now_str,
+            "event_type": ScheduledEventType.UPDATE,
+            "status": 0,
+            "data": update_data,
+            "created": datetime_now_str
+        }
 
     #########################################################################
     # Error Case
     ###########################################################################
+
     # <Error_1>
-    # RequestValidationError
-    # invalid scheduled_event_id
+    # Event not found
     def test_error_1(self, client, db):
         test_account = config_eth_account("user2")
         _issuer_address = test_account["address"]
@@ -181,33 +179,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdGET:
 
         # request target API
         resp = client.get(
-            self.base_url.format(_token_address, "non-numeric-type"),
-            headers={
-                "issuer-address": _issuer_address,
-            }
-        )
-
-        # assertion
-        assert resp.status_code == 422
-        assert resp.json()["meta"] == {"code": 1, "title": "RequestValidationError"}
-        assert resp.json()["detail"] == [
-            {
-                "loc": ["path", "scheduled_event_id"],
-                "msg": "value is not a valid integer",
-                "type": "type_error.integer"
-            }
-        ]
-
-    # <Error_2>
-    # token event not found
-    def test_error_2(self, client, db):
-        test_account = config_eth_account("user2")
-        _issuer_address = test_account["address"]
-        _token_address = "token_address_test"
-
-        # request target API
-        resp = client.get(
-            self.base_url.format(_token_address, 1),
+            self.base_url.format(_token_address, "test_event_id"),
             headers={
                 "issuer-address": _issuer_address,
             }
@@ -219,5 +191,5 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdGET:
             "meta": {
                 "code": 1, "title": "NotFound"
             },
-            "detail": "scheduled event scheduled_event_id not found"
+            "detail": "event not found"
         }

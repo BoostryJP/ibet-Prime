@@ -31,6 +31,8 @@ class ScheduledEvents(Base):
 
     # sequence id
     id = Column(Integer, primary_key=True, autoincrement=True)
+    # event id (UUID)
+    event_id = Column(String(36), index=True)
     # issuer_address
     issuer_address = Column(String(42), nullable=False)
     # token_address

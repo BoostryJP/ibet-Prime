@@ -16,10 +16,12 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import uuid
 from datetime import (
     datetime,
     timedelta
 )
+
 from pytz import timezone
 
 from config import TZ
@@ -34,14 +36,14 @@ from tests.account_config import config_eth_account
 class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
     # target API endpoint
     base_url = "/share/tokens/{}/scheduled_events"
-    tz_local = timezone(TZ)
+    local_tz = timezone(TZ)
 
     ###########################################################################
     # Normal Case
     ###########################################################################
 
     # <Normal_1>
-    # ScheduledEventType : UPDATE, Set issuer_address.
+    # issuer address is specified
     def test_normal_1(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -50,7 +52,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
 
         # prepare data
         datetime_now_utc = datetime.utcnow()
-        datetime_now_str = timezone("UTC").localize(datetime_now_utc).astimezone(self.tz_local).isoformat()
+        datetime_now_str = timezone("UTC").localize(datetime_now_utc).astimezone(self.local_tz).isoformat()
         update_data = {
             "cancellation_date": "20221231",
             "dividends": 345.67,
@@ -69,8 +71,10 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest"
         }
+        event_id = str(uuid.uuid4())
 
         token_event = ScheduledEvents()
+        token_event.event_id = event_id
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
         token_event.token_type = TokenType.IBET_SHARE
@@ -78,19 +82,8 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
         token_event.scheduled_datetime = datetime_now_utc
         token_event.status = 0
         token_event.data = update_data
+        token_event.created = datetime_now_utc
         db.add(token_event)
-
-        assumed_resp = [
-            {
-                "scheduled_event_id": 1,
-                "token_address": _token_address,
-                "token_type": TokenType.IBET_SHARE,
-                "scheduled_datetime": datetime_now_str,
-                "event_type": ScheduledEventType.UPDATE,
-                "status": 0,
-                "data": update_data
-            }
-        ]
 
         # request target API
         resp = client.get(
@@ -102,10 +95,22 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
 
         # assertion
         assert resp.status_code == 200
-        assert resp.json() == assumed_resp
+        assert resp.json() == [
+            {
+                "scheduled_event_id": event_id,
+                "token_address": _token_address,
+                "token_type": TokenType.IBET_SHARE,
+                "scheduled_datetime": datetime_now_str,
+                "event_type": ScheduledEventType.UPDATE,
+                "status": 0,
+                "data": update_data,
+                "created": datetime_now_str
+            }
+        ]
 
     # <Normal_2>
-    # ScheduledEventType : UPDATE, Not set issuer_address.
+    # issuer address is not specified
+    # Multiple records
     def test_normal_2(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -118,6 +123,9 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
         datetime_list.append(datetime_utc)
         datetime_utc = datetime.utcnow()
         datetime_list.append(datetime_utc)
+
+        uuid_list = [str(uuid.uuid4()), str(uuid.uuid4())]
+
         update_data = {
             "cancellation_date": "20221231",
             "dividends": 345.67,
@@ -137,8 +145,9 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
             "privacy_policy": "プライバシーポリシーtest"
         }
 
-        for _datetime in datetime_list:
+        for i, _datetime in enumerate(datetime_list):
             token_event = ScheduledEvents()
+            token_event.event_id = uuid_list[i]
             token_event.issuer_address = _issuer_address
             token_event.token_address = _token_address
             token_event.token_type = TokenType.IBET_SHARE
@@ -146,27 +155,8 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
             token_event.scheduled_datetime = _datetime
             token_event.status = 0
             token_event.data = update_data
+            token_event.created = _datetime
             db.add(token_event)
-
-        assumed_resp = [
-            {
-                "scheduled_event_id": 1,
-                "token_address": _token_address,
-                "token_type": TokenType.IBET_SHARE,
-                "scheduled_datetime": timezone("UTC").localize(datetime_list[0]).astimezone(self.tz_local).isoformat(),
-                "event_type": ScheduledEventType.UPDATE,
-                "status": 0,
-                "data": update_data
-            }, {
-                "scheduled_event_id": 2,
-                "token_address": _token_address,
-                "token_type": TokenType.IBET_SHARE,
-                "scheduled_datetime": timezone("UTC").localize(datetime_list[1]).astimezone(self.tz_local).isoformat(),
-                "event_type": ScheduledEventType.UPDATE,
-                "status": 0,
-                "data": update_data
-            }
-        ]
 
         # request target API
         resp = client.get(
@@ -175,10 +165,30 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
 
         # assertion
         assert resp.status_code == 200
-        assert resp.json() == assumed_resp
+        assert resp.json() == [
+            {
+                "scheduled_event_id": uuid_list[0],
+                "token_address": _token_address,
+                "token_type": TokenType.IBET_SHARE,
+                "scheduled_datetime": timezone("UTC").localize(datetime_list[0]).astimezone(self.local_tz).isoformat(),
+                "event_type": ScheduledEventType.UPDATE,
+                "status": 0,
+                "data": update_data,
+                "created": timezone("UTC").localize(datetime_list[0]).astimezone(self.local_tz).isoformat(),
+            }, {
+                "scheduled_event_id": uuid_list[1],
+                "token_address": _token_address,
+                "token_type": TokenType.IBET_SHARE,
+                "scheduled_datetime": timezone("UTC").localize(datetime_list[1]).astimezone(self.local_tz).isoformat(),
+                "event_type": ScheduledEventType.UPDATE,
+                "status": 0,
+                "data": update_data,
+                "created": timezone("UTC").localize(datetime_list[1]).astimezone(self.local_tz).isoformat(),
+            }
+        ]
 
     # <Normal_3>
-    # token event not found
+    # No data
     def test_normal_3(self, client, db):
         test_account = config_eth_account("user2")
         _issuer_address = test_account["address"]
@@ -199,4 +209,3 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
     ###########################################################################
     # Error Case
     ###########################################################################
-
