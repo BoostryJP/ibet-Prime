@@ -16,24 +16,26 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from unittest import mock
-
-from app.model.db import Token, TokenType
+from app.model.db import (
+    Token,
+    TokenType,
+    LedgerTemplate,
+    LedgerDetailsTemplate,
+    LedgerDetailsDataType
+)
 from tests.account_config import config_eth_account
 
 
-class TestAppBondLedgerTokenAddressHistoryGET:
+class TestAppRoutersLedgerTokenAddressHistoryTemplateGET:
     # target API endpoint
-    base_url = "/bond_ledger/{}/history"
+    base_url = "/ledger/{token_address}/template"
 
     ###########################################################################
     # Normal Case
     ###########################################################################
 
     # <Normal_1>
-    # Localized:JPN
-    @mock.patch("app.routers.localized.bond_ledger_JPN.list_all_bond_ledger_history")
-    def test_normal_1(self, mock_localized_func, client, db):
+    def test_normal_1(self, client, db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -47,50 +49,105 @@ class TestAppBondLedgerTokenAddressHistoryGET:
         _token.abi = {}
         db.add(_token)
 
-        mock_resp = {
-            "result_set": {
-                "count": 1,
-                "offset": 2,
-                "limit": 3,
-                "total": 4
-            },
-            "bond_ledgers": [
-                {
-                    "id": 1,
-                    "token_address": token_address,
-                    "country_code": "JPN",
-                    "created": "2021/12/31 10:20:30 +0900",
-                },
-                {
-                    "id": 2,
-                    "token_address": token_address,
-                    "country_code": "JPN",
-                    "created": "2021/12/31 20:30:40 +0900",
-                }
-            ]
+        _template = LedgerTemplate()
+        _template.token_address = token_address
+        _template.issuer_address = issuer_address
+        _template.token_name = "テスト原簿"
+        _template.country_code = "JPN"
+        _template.headers = {
+            "hoge": "aaaa",
+            "fuga": "bbbb",
         }
-        mock_localized_func.side_effect = [
-            mock_resp
-        ]
+        _template.footers = {
+            "f-hoge": "f-aaaa",
+            "f-fuga": "f-bbbb",
+        }
+        db.add(_template)
+
+        _details_1 = LedgerDetailsTemplate()
+        _details_1.token_address = token_address
+        _details_1.token_detail_type = "権利_test_1"
+        _details_1.headers = {
+            "test1": "a",
+            "test2": "b"
+        }
+        _details_1.footers = {
+            "f-test1": "a",
+            "f-test2": "b"
+        }
+        _details_1.data_type = LedgerDetailsDataType.IBET_FIN
+        _details_1.data_source = token_address
+        db.add(_details_1)
+
+        _details_2 = LedgerDetailsTemplate()
+        _details_2.token_address = token_address
+        _details_2.token_detail_type = "権利_test_2"
+        _details_2.headers = {
+            "test3": "a",
+            "test4": "b"
+        }
+        _details_2.footers = {
+            "f-test3": "a",
+            "f-test4": "b"
+        }
+        _details_2.data_type = LedgerDetailsDataType.DB
+        _details_2.data_source = "data_id_2"
+        db.add(_details_2)
 
         # request target API
         resp = client.get(
-            self.base_url.format(token_address),
-            params={
-                "locale": "jpn",
-                "offset": 2,
-                "limit": 3,
-            },
+            self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": issuer_address,
             }
         )
 
         # assertion
-        mock_localized_func.assert_any_call(token_address, 2, 3, db)
-
         assert resp.status_code == 200
-        assert resp.json() == mock_resp
+        assert resp.json() == {
+            "token_name": "テスト原簿",
+            "country_code": "JPN",
+            "headers": {
+                "hoge": "aaaa",
+                "fuga": "bbbb",
+            },
+            "details": [
+                {
+                    "token_detail_type": "権利_test_1",
+                    "headers": {
+                        "test1": "a",
+                        "test2": "b"
+                    },
+                    "data": {
+                        "type": "ibetfin",
+                        "source": token_address,
+                    },
+                    "footers": {
+                        "f-test1": "a",
+                        "f-test2": "b"
+                    },
+                },
+                {
+                    "token_detail_type": "権利_test_2",
+                    "headers": {
+                        "test3": "a",
+                        "test4": "b"
+                    },
+                    "data": {
+                        "type": "db",
+                        "source": "data_id_2",
+                    },
+                    "footers": {
+                        "f-test3": "a",
+                        "f-test4": "b"
+                    },
+                }
+            ],
+            "footers": {
+                "f-hoge": "f-aaaa",
+                "f-fuga": "f-bbbb",
+            },
+        }
 
     ###########################################################################
     # Error Case
@@ -103,7 +160,7 @@ class TestAppBondLedgerTokenAddressHistoryGET:
 
         # request target API
         resp = client.get(
-            self.base_url.format(token_address),
+            self.base_url.format(token_address=token_address),
         )
 
         # assertion
@@ -114,11 +171,6 @@ class TestAppBondLedgerTokenAddressHistoryGET:
                 "title": "RequestValidationError"
             },
             "detail": [
-                {
-                    "loc": ["query", "locale"],
-                    "msg": "field required",
-                    "type": "value_error.missing"
-                },
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "field required",
@@ -134,12 +186,7 @@ class TestAppBondLedgerTokenAddressHistoryGET:
 
         # request target API
         resp = client.get(
-            self.base_url.format(token_address),
-            params={
-                "locale": "jpn",
-                "offset": 2,
-                "limit": 3,
-            },
+            self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": "test",
             }
@@ -162,7 +209,7 @@ class TestAppBondLedgerTokenAddressHistoryGET:
         }
 
     # <Error_3>
-    # Not Supported
+    # Token Not Found
     def test_error_3(self, client, db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -170,42 +217,7 @@ class TestAppBondLedgerTokenAddressHistoryGET:
 
         # request target API
         resp = client.get(
-            self.base_url.format(token_address),
-            params={
-                "locale": "usa",
-                "offset": 2,
-                "limit": 3,
-            },
-            headers={
-                "issuer-address": issuer_address,
-            }
-        )
-
-        # assertion
-        assert resp.status_code == 404
-        assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "Not Supported locale:usa"
-        }
-
-    # <Error_4>
-    # Token Not Found
-    def test_error_4(self, client, db):
-        user = config_eth_account("user1")
-        issuer_address = user["address"]
-        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
-
-        # request target API
-        resp = client.get(
-            self.base_url.format(token_address),
-            params={
-                "locale": "jpn",
-                "offset": 2,
-                "limit": 3,
-            },
+            self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": issuer_address,
             }
@@ -219,4 +231,38 @@ class TestAppBondLedgerTokenAddressHistoryGET:
                 "title": "InvalidParameterError"
             },
             "detail": "token does not exist"
+        }
+
+    # <Error_4>
+    # Ledger Template Not Found
+    def test_error_4(self, client, db):
+        user = config_eth_account("user1")
+        issuer_address = user["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        db.add(_token)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(token_address=token_address),
+            headers={
+                "issuer-address": issuer_address,
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "InvalidParameterError"
+            },
+            "detail": "ledger template does not exist"
         }

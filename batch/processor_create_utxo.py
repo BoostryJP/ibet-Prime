@@ -44,7 +44,7 @@ from app.model.db import (
 )
 from app.model.blockchain.utils import ContractUtils
 import batch_log
-from batch.localized import create_utxo_JPN
+from batch.lib import create_ledger
 
 process_name = "PROCESSOR-Create-UTXO"
 LOG = batch_log.get_logger(process_name=process_name)
@@ -215,10 +215,8 @@ class Processor:
                         block_timestamp=block_timestamp
                     )
 
-                    # Localized
-                    for country_code in SYSTEM_LOCALE:
-                        if country_code == "JPN":
-                            create_utxo_JPN.on_bond_ledger(token_contract.address, self.db)
+                    # Other Processing
+                    create_ledger.create_ledger(token_contract.address, self.db)
         except Exception as e:
             LOG.exception(e)
 
