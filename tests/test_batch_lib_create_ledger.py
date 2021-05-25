@@ -289,7 +289,6 @@ class TestBatchLibCreateLedger:
         _template = LedgerTemplate()
         _template.token_address = token_address_1
         _template.issuer_address = issuer_address
-        _template.country_code = "JPN"
         _template.token_name = "受益権テスト"
         _template.headers = {
             "テスト項目1": "テスト値1",
@@ -393,29 +392,12 @@ class TestBatchLibCreateLedger:
         now_ymd = datetime.now(pytz.timezone(TZ)).strftime("%Y/%m/%d")
         assert _ledger.ledger == {
             "created": now_ymd,
-            "token_name": "受益権テスト",
-            "headers": {
-                "テスト項目1": "テスト値1",
-                "テスト項目2": {
-                    "テスト項目A": "テスト値2A",
-                    "テスト項目B": "テスト値2B",
-                },
-                "テスト項目3": {
-                    "テスト項目A": {
-                        "テスト項目a": "テスト値3Aa"
-                    },
-                    "テスト項目B": "テスト値3B",
-                },
-            },
+            "token_name": "",
+            "headers": {},
             "details": [
                 {
                     "token_detail_type": "優先受益権",
-                    "headers": {
-                        "test項目1": "test値1",
-                        "test項目2": {
-                            "test項目A": "test値2A",
-                        },
-                    },
+                    "headers": {},
                     "data": [
                         {
                             "account_address": user_address_2,
@@ -454,62 +436,17 @@ class TestBatchLibCreateLedger:
                             "acquisition_date": "2022/01/02",
                         },
                     ],
-                    "footers": {
-                        "test-item1": "test-value1",
-                        "test-item2": {
-                            "test-itemA": {
-                                "test-itema": "test-value2Aa"
-                            }
-                        },
-                    }
+                    "footers": {}
                 },
                 {
                     "token_detail_type": "劣後受益権",
-                    "headers": {
-                        "d-test項目1": "d-test値1",
-                        "d-test項目2": "d-test値2",
-                    },
-                    "data": [
-                        {
-                            "account_address": "0x0001",
-                            "name": "test_data_name_1",
-                            "address": "test_data_address_1",
-                            "amount": 100,
-                            "price": 200,
-                            "balance": 20000,
-                            "acquisition_date": "2022/03/03",
-                        },
-                        {
-                            "account_address": "0x0002",
-                            "name": "test_data_name_2",
-                            "address": "test_data_address_2",
-                            "amount": 30,
-                            "price": 40,
-                            "balance": 1200,
-                            "acquisition_date": "2022/12/03",
-                        },
-                    ],
-                    "footers": {
-                        "f-d-test項目1": "d-test値1",
-                        "f-d-test項目2": "d-test値2",
-                    }
+                    "headers": {},
+                    "data": [],
+                    "footers": {}
                 },
             ],
-            "footers": {
-                "f-テスト項目1": "f-テスト値1",
-                "f-テスト項目2": {
-                    "f-テスト項目A": "f-テスト値2A",
-                    "f-テスト項目B": "f-テスト値2B",
-                },
-                "f-テスト項目3": {
-                    "f-テスト項目A": {
-                        "f-テスト項目a": "f-テスト値3Aa"
-                    },
-                    "f-テスト項目B": "f-テスト値3B",
-                },
-            }
+            "footers": {}
         }
-        assert _ledger.country_code == "JPN"
 
     # <Normal_2>
     # Bond Token
@@ -667,7 +604,6 @@ class TestBatchLibCreateLedger:
         _template = LedgerTemplate()
         _template.token_address = token_address_1
         _template.issuer_address = issuer_address
-        _template.country_code = "JPN"
         _template.token_name = "受益権テスト"
         _template.headers = {
             "テスト項目1": "テスト値1",
@@ -771,29 +707,12 @@ class TestBatchLibCreateLedger:
         now_ymd = datetime.now(pytz.timezone(TZ)).strftime("%Y/%m/%d")
         assert _ledger.ledger == {
             "created": now_ymd,
-            "token_name": "受益権テスト",
-            "headers": {
-                "テスト項目1": "テスト値1",
-                "テスト項目2": {
-                    "テスト項目A": "テスト値2A",
-                    "テスト項目B": "テスト値2B",
-                },
-                "テスト項目3": {
-                    "テスト項目A": {
-                        "テスト項目a": "テスト値3Aa"
-                    },
-                    "テスト項目B": "テスト値3B",
-                },
-            },
+            "token_name": "",
+            "headers": {},
             "details": [
                 {
                     "token_detail_type": "優先受益権",
-                    "headers": {
-                        "test項目1": "test値1",
-                        "test項目2": {
-                            "test項目A": "test値2A",
-                        },
-                    },
+                    "headers": {},
                     "data": [
                         {
                             "account_address": user_address_2,
@@ -832,62 +751,17 @@ class TestBatchLibCreateLedger:
                             "acquisition_date": "2022/01/02",
                         },
                     ],
-                    "footers": {
-                        "test-item1": "test-value1",
-                        "test-item2": {
-                            "test-itemA": {
-                                "test-itema": "test-value2Aa"
-                            }
-                        },
-                    }
+                    "footers": {}
                 },
                 {
                     "token_detail_type": "劣後受益権",
-                    "headers": {
-                        "d-test項目1": "d-test値1",
-                        "d-test項目2": "d-test値2",
-                    },
-                    "data": [
-                        {
-                            "account_address": "0x0001",
-                            "name": "test_data_name_1",
-                            "address": "test_data_address_1",
-                            "amount": 100,
-                            "price": 200,
-                            "balance": 20000,
-                            "acquisition_date": "2022/03/03",
-                        },
-                        {
-                            "account_address": "0x0002",
-                            "name": "test_data_name_2",
-                            "address": "test_data_address_2",
-                            "amount": 30,
-                            "price": 40,
-                            "balance": 1200,
-                            "acquisition_date": "2022/12/03",
-                        },
-                    ],
-                    "footers": {
-                        "f-d-test項目1": "d-test値1",
-                        "f-d-test項目2": "d-test値2",
-                    }
+                    "headers": {},
+                    "data": [],
+                    "footers": {}
                 },
             ],
-            "footers": {
-                "f-テスト項目1": "f-テスト値1",
-                "f-テスト項目2": {
-                    "f-テスト項目A": "f-テスト値2A",
-                    "f-テスト項目B": "f-テスト値2B",
-                },
-                "f-テスト項目3": {
-                    "f-テスト項目A": {
-                        "f-テスト項目a": "f-テスト値3Aa"
-                    },
-                    "f-テスト項目B": "f-テスト値3B",
-                },
-            }
+            "footers": {}
         }
-        assert _ledger.country_code == "JPN"
 
     # <Normal_3>
     # SKIP: Not Exist Template

@@ -41,7 +41,7 @@ class CreateUpdateLedgerDetailsDataTemplateRequest(BaseModel):
 
     @validator("type")
     def type_length_is_less_than_20(cls, v):
-        if len(v) > 100:
+        if len(v) > 20:
             raise ValueError("The length must be less than or equal to 20")
         return v
 
@@ -69,7 +69,6 @@ class CreateUpdateLedgerDetailsTemplateRequest(BaseModel):
 class CreateUpdateLedgerTemplateRequest(BaseModel):
     """Create or Update Ledger Template schema (Request)"""
     token_name: str
-    country_code: str
     headers: Optional[dict]
     details: List[CreateUpdateLedgerDetailsTemplateRequest]
     footers: Optional[dict]
@@ -78,12 +77,6 @@ class CreateUpdateLedgerTemplateRequest(BaseModel):
     def token_name_length_is_less_than_200(cls, v):
         if len(v) > 200:
             raise ValueError("The length must be less than or equal to 200")
-        return v
-
-    @validator("country_code")
-    def country_code_length_is_less_than_200(cls, v):
-        if len(v) > 3:
-            raise ValueError("The length must be less than or equal to 3")
         return v
 
     @validator("details")
@@ -95,20 +88,12 @@ class CreateUpdateLedgerTemplateRequest(BaseModel):
 
 class CreateUpdateLedgerDetailsDataStructureRequest(BaseModel):
     """Create or Update Ledger Details Data Structure schema (Request)"""
-    account_address: Optional[str]
     name: Optional[str]
     address: Optional[str]
     amount: Optional[int]
     price: Optional[int]
     balance: Optional[int]
     acquisition_date: Optional[str]
-
-    @validator("account_address")
-    def account_address_length_is_less_than_42(cls, v):
-        if v is not None:
-            if len(v) > 42:
-                raise ValueError("The length must be less than or equal to 42")
-        return v
 
     @validator("name")
     def name_length_is_less_than_200(cls, v):
@@ -150,7 +135,6 @@ class LedgerResponse(BaseModel):
     id: int
     token_address: str
     token_type: str
-    country_code: str
     created: datetime
 
 
@@ -162,7 +146,7 @@ class ListAllLedgerHistoryResponse(BaseModel):
 
 class RetrieveLedgerDetailsDataHistoryResponse(BaseModel):
     """Retrieve Ledger Details Data History schema (Response)"""
-    account_address: str
+    account_address: Optional[str]
     name: str
     address: str
     amount: int
@@ -205,7 +189,6 @@ class LedgerDetailsTemplateResponse(BaseModel):
 class LedgerTemplateResponse(BaseModel):
     """Ledger Template schema (Response)"""
     token_name: str
-    country_code: str
     headers: dict
     details: List[LedgerDetailsTemplateResponse]
     footers: dict

@@ -38,7 +38,6 @@ from app.model.db import (
     UTXO,
     IDXPersonalInfo,
     Ledger,
-    LedgerDetailsData,
     LedgerTemplate,
     LedgerDetailsTemplate,
     LedgerDetailsDataType
@@ -74,26 +73,29 @@ def create_ledger(token_address: str, db: Session):
         all()
     ledger_details = []
     for _details in _details_list:
-        # Get ledger details data
-        data_list = __get_details_data_list(_details, _token.type, db)
+        data_list  = []
+        if _details.data_type == LedgerDetailsDataType.IBET_FIN:
+            # Get ledger details dataibetfin)
+            data_list = __get_details_data_list_from_ibetfin(token_address, _token.type, db)
 
+        # NOTE: Merge with template with ledger GET API
         details = {
             "token_detail_type": _details.token_detail_type,
-            "headers": _details.headers,
+            "headers": {},
             "data": data_list,
-            "footers": _details.footers,
+            "footers": {},
         }
         ledger_details.append(details)
 
     created_ymd = utc_tz.localize(datetime.utcnow()).astimezone(local_tz).strftime("%Y/%m/%d")
+    # NOTE: Merge with template with ledger GET API
     ledger = {
         "created": created_ymd,
-        "token_name": _template.token_name,
-        "headers": _template.headers,
+        "token_name": "",
+        "headers": {},
         "details": ledger_details,
-        "footers": _template.footers,
+        "footers": {},
     }
-    country_code = _template.country_code
 
     # Register ledger data to the DB
     # NOTE: DB commit is executed by the caller
@@ -101,33 +103,7 @@ def create_ledger(token_address: str, db: Session):
     _ledger.token_address = token_address
     _ledger.token_type = _token.type
     _ledger.ledger = ledger
-    _ledger.country_code = country_code
     db.add(_ledger)
-
-
-def __get_details_data_list(_details: LedgerDetailsTemplate, token_type: str, db: Session):
-    data_list = []
-    if _details.data_type == LedgerDetailsDataType.DB:
-        _details_data_list = db.query(LedgerDetailsData). \
-            filter(LedgerDetailsData.token_address == _details.token_address). \
-            filter(LedgerDetailsData.data_id == _details.data_source). \
-            order_by(LedgerDetailsData.id). \
-            all()
-        for _details_data in _details_data_list:
-            data_list.append({
-                "account_address": _details_data.account_address,
-                "name": _details_data.name,
-                "address": _details_data.address,
-                "amount": _details_data.amount,
-                "price": _details_data.price,
-                "balance": _details_data.balance,
-                "acquisition_date": _details_data.acquisition_date,
-            })
-    elif _details.data_type == LedgerDetailsDataType.IBET_FIN:
-        # from ibetfin
-        data_list = __get_details_data_list_from_ibetfin(_details.data_source, token_type, db)
-
-    return data_list
 
 
 def __get_details_data_list_from_ibetfin(token_address: str, token_type: str, db: Session):

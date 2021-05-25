@@ -26,7 +26,7 @@ from app.model.db import (
 from tests.account_config import config_eth_account
 
 
-class TestAppRoutersLedgerTokenAddressHistoryTemplateGET:
+class TestAppRoutersLedgerTokenAddressTemplateGET:
     # target API endpoint
     base_url = "/ledger/{token_address}/template"
 
@@ -53,7 +53,6 @@ class TestAppRoutersLedgerTokenAddressHistoryTemplateGET:
         _template.token_address = token_address
         _template.issuer_address = issuer_address
         _template.token_name = "テスト原簿"
-        _template.country_code = "JPN"
         _template.headers = {
             "hoge": "aaaa",
             "fuga": "bbbb",
@@ -106,7 +105,6 @@ class TestAppRoutersLedgerTokenAddressHistoryTemplateGET:
         assert resp.status_code == 200
         assert resp.json() == {
             "token_name": "テスト原簿",
-            "country_code": "JPN",
             "headers": {
                 "hoge": "aaaa",
                 "fuga": "bbbb",

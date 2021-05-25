@@ -53,7 +53,6 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
         _ledger_1.token_address = token_address
         _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_1.ledger = {}
-        _ledger_1.country_code = "JPN"
         _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
         db.add(_ledger_1)
 
@@ -61,7 +60,6 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
         _ledger_2.token_address = token_address
         _ledger_2.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_2.ledger = {}
-        _ledger_2.country_code = "JPN"
         _ledger_2.ledger_created = datetime.strptime("2022/01/02 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
         db.add(_ledger_2)
 
@@ -87,14 +85,12 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
                     "id": 1,
                     "token_address": token_address,
                     "token_type": TokenType.IBET_STRAIGHT_BOND,
-                    "country_code": "JPN",
                     "created": "2022-01-02T00:20:30+09:00",
                 },
                 {
                     "id": 2,
                     "token_address": token_address,
                     "token_type": TokenType.IBET_STRAIGHT_BOND,
-                    "country_code": "JPN",
                     "created": "2022-01-02T09:20:30+09:00",
                 }
             ]
@@ -120,7 +116,6 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
         _ledger_1.token_address = token_address
         _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_1.ledger = {}
-        _ledger_1.country_code = "JPN"
         _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
         db.add(_ledger_1)
 
@@ -128,7 +123,6 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
         _ledger_2.token_address = token_address
         _ledger_2.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_2.ledger = {}
-        _ledger_2.country_code = "JPN"
         _ledger_2.ledger_created = datetime.strptime("2022/01/02 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
         db.add(_ledger_2)
 
@@ -136,7 +130,6 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
         _ledger_3.token_address = token_address
         _ledger_3.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_3.ledger = {}
-        _ledger_3.country_code = "JPN"
         _ledger_3.ledger_created = datetime.strptime("2022/01/02 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/03
         db.add(_ledger_3)
 
@@ -144,7 +137,6 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
         _ledger_4.token_address = token_address
         _ledger_4.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_4.ledger = {}
-        _ledger_4.country_code = "JPN"
         _ledger_4.ledger_created = datetime.strptime("2022/01/03 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/03
         db.add(_ledger_4)
 
@@ -174,14 +166,12 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
                     "id": 2,
                     "token_address": token_address,
                     "token_type": TokenType.IBET_STRAIGHT_BOND,
-                    "country_code": "JPN",
                     "created": "2022-01-02T09:20:30+09:00",
                 },
                 {
                     "id": 3,
                     "token_address": token_address,
                     "token_type": TokenType.IBET_STRAIGHT_BOND,
-                    "country_code": "JPN",
                     "created": "2022-01-03T00:20:30+09:00",
                 }
             ]
