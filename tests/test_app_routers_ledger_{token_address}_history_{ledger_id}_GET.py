@@ -25,9 +25,10 @@ from app.model.db import (
     TokenType,
     IDXPersonalInfo,
     Ledger,
-    LedgerRightsDetails,
+    LedgerDetailsData,
     LedgerTemplate,
-    LedgerTemplateRights
+    LedgerDetailsTemplate,
+LedgerDetailsDataType
 )
 from app.model.blockchain import IbetStraightBondContract
 from tests.account_config import config_eth_account
@@ -61,57 +62,52 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _ledger_1.token_address = token_address
         _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_1.ledger = {
-            "原簿作成日": "2022/12/01",
-            "原簿名称": "テスト原簿",
-            "項目": {
-                "pdf_header_1": {
+            "created": "2022/12/01",
+            "token_name": "テスト原簿",
+            "headers": {
+                "hoge": {
                     "key": "本原簿について",
                     "value": "本社債は株式会社Aが発行した無担保社債である"
                 },
-                "pdf_footer_1": "bbbbbbbbbbbbbbbbbbbbbbbbb",
-                "aaaa": "bbbb"
+                "fuga": "bbbbbbbbbbbbbbbbbbbbbbbbb",
             },
-            "権利": [
+            "details": [
                 {
-                    "権利名称": "権利_test_1",
-                    "項目": {
-                        "pdf_sub_1_header_1": {
-                            "key": "本原簿の説明",
-                            "value": "aaaaaaaaaaaaaaa"
+                    "token_detail_type": "権利_test_1",
+                    "headers": {
+                        "s-hoge": {
+                            "key": "test",
+                            "value": "test2"
                         },
-                        "pdf_sub_1_header_2": {
-                            "key": "本原簿の説明",
-                            "value": "aaaaaaaaaaaaaaa"
-                        },
-                        "aaaa": "cccc"
+                        "s-fuga": "bbbbbbbbbbbbbbbbbbbbbbbbb",
                     },
-                    "明細": [
+                    "data": [
                         {
-                            "アカウントアドレス": "account_address_test_1",
-                            "氏名または名称": "name_test_1",
-                            "住所": "address_test_1",
-                            "保有口数": 2,
-                            "一口あたりの金額": 100,
-                            "保有残高": 200,
-                            "取得日": "2022/01/01",
-                            "金銭以外の財産給付情報": {
-                                "財産の価格": "-",
-                                "給付日": "-",
-                            },
-                            "債権相殺情報": {
-                                "相殺する債権額": "-",
-                                "相殺日": "-",
-                            },
-                            "質権情報": {
-                                "質権者の氏名または名称": "-",
-                                "質権者の住所": "-",
-                                "質権の目的である債券": "-",
-                            },
-                            "備考": "-",
+                            "account_address": "0x001",
+                            "name": "name_test_1",
+                            "address": "address_test_1",
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 30,
+                            "acquisition_date": "2022/12/02"
                         }
-                    ]
-                }
-            ]
+                    ],
+                    "footers": {
+                        "f-s-hoge": {
+                            "key": "test",
+                            "value": "test2"
+                        },
+                        "f-s-fuga": "bbbbbbbbbbbbbbbbbbbbbbbbb",
+                    },
+                },
+            ],
+            "footers": {
+                "f-hoge": {
+                    "key": "本原簿について",
+                    "value": "本社債は株式会社Aが発行した無担保社債である"
+                },
+                "f-fuga": "bbbbbbbbbbbbbbbbbbbbbbbbb",
+            }
         }
         _ledger_1.country_code = "JPN"
         _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
@@ -131,61 +127,56 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "原簿作成日": "2022/12/01",
-            "原簿名称": "テスト原簿",
-            "項目": {
-                "pdf_header_1": {
+            "created": "2022/12/01",
+            "token_name": "テスト原簿",
+            "headers": {
+                "hoge": {
                     "key": "本原簿について",
                     "value": "本社債は株式会社Aが発行した無担保社債である"
                 },
-                "pdf_footer_1": "bbbbbbbbbbbbbbbbbbbbbbbbb",
-                "aaaa": "bbbb"
+                "fuga": "bbbbbbbbbbbbbbbbbbbbbbbbb",
             },
-            "権利": [
+            "details": [
                 {
-                    "権利名称": "権利_test_1",
-                    "項目": {
-                        "pdf_sub_1_header_1": {
-                            "key": "本原簿の説明",
-                            "value": "aaaaaaaaaaaaaaa"
+                    "token_detail_type": "権利_test_1",
+                    "headers": {
+                        "s-hoge": {
+                            "key": "test",
+                            "value": "test2"
                         },
-                        "pdf_sub_1_header_2": {
-                            "key": "本原簿の説明",
-                            "value": "aaaaaaaaaaaaaaa"
-                        },
-                        "aaaa": "cccc"
+                        "s-fuga": "bbbbbbbbbbbbbbbbbbbbbbbbb",
                     },
-                    "明細": [
+                    "data": [
                         {
-                            "アカウントアドレス": "account_address_test_1",
-                            "氏名または名称": "name_test_1",
-                            "住所": "address_test_1",
-                            "保有口数": 2,
-                            "一口あたりの金額": 100,
-                            "保有残高": 200,
-                            "取得日": "2022/01/01",
-                            "金銭以外の財産給付情報": {
-                                "財産の価格": "-",
-                                "給付日": "-",
-                            },
-                            "債権相殺情報": {
-                                "相殺する債権額": "-",
-                                "相殺日": "-",
-                            },
-                            "質権情報": {
-                                "質権者の氏名または名称": "-",
-                                "質権者の住所": "-",
-                                "質権の目的である債券": "-",
-                            },
-                            "備考": "-",
+                            "account_address": "0x001",
+                            "name": "name_test_1",
+                            "address": "address_test_1",
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 30,
+                            "acquisition_date": "2022/12/02"
                         }
-                    ]
-                }
-            ]
+                    ],
+                    "footers": {
+                        "f-s-hoge": {
+                            "key": "test",
+                            "value": "test2"
+                        },
+                        "f-s-fuga": "bbbbbbbbbbbbbbbbbbbbbbbbb",
+                    },
+                },
+            ],
+            "footers": {
+                "f-hoge": {
+                    "key": "本原簿について",
+                    "value": "本社債は株式会社Aが発行した無担保社債である"
+                },
+                "f-fuga": "bbbbbbbbbbbbbbbbbbbbbbbbb",
+            }
         }
 
     # <Normal_2>
-    # Most Recent(JPN)
+    # Most Recent
     def test_normal_2(self, client, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -207,142 +198,117 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _ledger_1.token_address = token_address
         _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_1.ledger = {
-            "原簿作成日": "2022/12/01",
-            "原簿名称": "テスト原簿",
-            "項目": {
-                "pdf_header_1": {
+            "created": "2022/12/01",
+            "token_name": "テスト原簿",
+            "headers": {
+                "hoge": {
                     "key": "本原簿について",
                     "value": "本社債は株式会社Aが発行した無担保社債である"
                 },
-                "pdf_footer_1": "bbbbbbbbbbbbbbbbbbbbbbbbb",
-                "aaaa": "bbbb"
+                "fuga": "bbbbbbbbbbbbbbbbbbbbbbbbb",
             },
-            "権利": [
+            "details": [
                 {
-                    "権利名称": "権利_test_1",  # NOTE: Not Exists Ledger Rights Template(be erased from response)
-                    "項目": {
-                        "pdf_sub_1_header_1": {
-                            "key": "本原簿の説明",
-                            "value": "aaaaaaaaaaaaaaa"
+                    "token_detail_type": "権利_test_1",  # NOTE: Not Exists Ledger Details Template(be erased from response)
+                    "headers": {
+                        "s-hoge": {
+                            "key": "test",
+                            "value": "test2"
                         },
-                        "pdf_sub_1_header_2": {
-                            "key": "本原簿の説明",
-                            "value": "aaaaaaaaaaaaaaa"
-                        },
-                        "aaaa": "cccc"
+                        "s-fuga": "bbbbbbbbbbbbbbbbbbbbbbbbb",
                     },
-                    "明細": [
+                    "data": [
                         {
-                            "アカウントアドレス": account_address_1,
-                            "氏名または名称": "name_test_1",
-                            "住所": "address_test_1",
-                            "保有口数": 2,
-                            "一口あたりの金額": 100,
-                            "保有残高": 200,
-                            "取得日": "2022/01/01",
-                            "金銭以外の財産給付情報": {
-                                "財産の価格": "-",
-                                "給付日": "-",
-                            },
-                            "債権相殺情報": {
-                                "相殺する債権額": "-",
-                                "相殺日": "-",
-                            },
-                            "質権情報": {
-                                "質権者の氏名または名称": "-",
-                                "質権者の住所": "-",
-                                "質権の目的である債券": "-",
-                            },
-                            "備考": "-",
+                            "account_address": "0x001",
+                            "name": "name_test_1",
+                            "address": "address_test_1",
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 30,
+                            "acquisition_date": "2022/12/02"
                         }
-                    ]
+                    ],
+                    "footers": {
+                        "f-s-hoge": {
+                            "key": "test",
+                            "value": "test2"
+                        },
+                        "f-s-fuga": "bbbbbbbbbbbbbbbbbbbbbbbbb",
+                    },
                 },
                 {
-                    "権利名称": "権利_test_2",  # NOTE: Recent from blockchain
-                    "項目": {
-                        "aaaa": "cccc"
+                    "token_detail_type": "権利_test_2",  # NOTE: Recent from blockchain
+                    "headers": {
+                        "s-hoge": {
+                            "key": "test",
+                            "value": "test2"
+                        },
+                        "s-fuga": "bbbbbbbbbbbbbbbbbbbbbbbbb",
                     },
-                    "明細": [
+                    "data": [
                         {
-                            "アカウントアドレス": account_address_1,
-                            "氏名または名称": "name_test_1",
-                            "住所": "address_test_1",
-                            "保有口数": 2,
-                            "一口あたりの金額": 100,
-                            "保有残高": 200,
-                            "取得日": "2022/01/01",
-                            "金銭以外の財産給付情報": {
-                                "財産の価格": "-",
-                                "給付日": "-",
-                            },
-                            "債権相殺情報": {
-                                "相殺する債権額": "-",
-                                "相殺日": "-",
-                            },
-                            "質権情報": {
-                                "質権者の氏名または名称": "-",
-                                "質権者の住所": "-",
-                                "質権の目的である債券": "-",
-                            },
-                            "備考": "-",
+                            "account_address": account_address_1,
+                            "name": "name_test_1",
+                            "address": "address_test_1",
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 30,
+                            "acquisition_date": "2022/12/02"
                         },
                         {
-                            "アカウントアドレス": account_address_2,
-                            "氏名または名称": "name_test_2",
-                            "住所": "address_test_2",
-                            "保有口数": 2,
-                            "一口あたりの金額": 100,
-                            "保有残高": 200,
-                            "取得日": "2022/01/01",
-                            "金銭以外の財産給付情報": {
-                                "財産の価格": "-",
-                                "給付日": "-",
-                            },
-                            "債権相殺情報": {
-                                "相殺する債権額": "-",
-                                "相殺日": "-",
-                            },
-                            "質権情報": {
-                                "質権者の氏名または名称": "-",
-                                "質権者の住所": "-",
-                                "質権の目的である債券": "-",
-                            },
-                            "備考": "-",
+                            "account_address": account_address_2,
+                            "name": "name_test_2",
+                            "address": "address_test_2",
+                            "amount": 100,
+                            "price": 200,
+                            "balance": 300,
+                            "acquisition_date": "2022/12/03"
                         }
-                    ]
+                    ],
+                    "footers": {
+                        "f-s-hoge": {
+                            "key": "test",
+                            "value": "test2"
+                        },
+                        "f-s-fuga": "bbbbbbbbbbbbbbbbbbbbbbbbb",
+                    },
                 },
                 {
-                    "権利名称": "権利_test_3",  # NOTE: Recent from database
-                    "項目": {
-                        "aaaa": "cccc"
+                    "token_detail_type": "権利_test_3",  # NOTE: Recent from database
+                    "headers": {
+                        "s-hoge": {
+                            "key": "test",
+                            "value": "test2"
+                        },
+                        "s-fuga": "bbbbbbbbbbbbbbbbbbbbbbbbb",
                     },
-                    "明細": [
+                    "data": [
                         {
-                            "アカウントアドレス": account_address_1,
-                            "氏名または名称": "name_test_1",
-                            "住所": "address_test_1",
-                            "保有口数": 2,
-                            "一口あたりの金額": 100,
-                            "保有残高": 200,
-                            "取得日": "2022/01/01",
-                            "金銭以外の財産給付情報": {
-                                "財産の価格": "-",
-                                "給付日": "-",
-                            },
-                            "債権相殺情報": {
-                                "相殺する債権額": "-",
-                                "相殺日": "-",
-                            },
-                            "質権情報": {
-                                "質権者の氏名または名称": "-",
-                                "質権者の住所": "-",
-                                "質権の目的である債券": "-",
-                            },
-                            "備考": "-",
+                            "account_address": "0x001",
+                            "name": "name_test_1",
+                            "address": "address_test_1",
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 30,
+                            "acquisition_date": "2022/12/02"
                         }
-                    ]
-                }
-            ]
+                    ],
+                    "footers": {
+                        "f-s-hoge": {
+                            "key": "test",
+                            "value": "test2"
+                        },
+                        "f-s-fuga": "bbbbbbbbbbbbbbbbbbbbbbbbb",
+                    },
+                },
+            ],
+            "footers": {
+                "f-hoge": {
+                    "key": "本原簿について",
+                    "value": "本社債は株式会社Aが発行した無担保社債である"
+                },
+                "f-fuga": "bbbbbbbbbbbbbbbbbbbbbbbbb",
+            }
         }
         _ledger_1.country_code = "JPN"
         _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
@@ -361,550 +327,127 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _template = LedgerTemplate()
         _template.token_address = token_address
         _template.issuer_address = issuer_address
-        _template.ledger_name = "テスト原簿_update"
+        _template.token_name = "テスト原簿_update"
         _template.country_code = "JPN"
-        _template.item = {
+        _template.headers = {
             "hoge": "aaaa",
             "fuga": "bbbb",
         }
-        db.add(_template)
-
-        _rights_1 = LedgerTemplateRights()
-        _rights_1.token_address = token_address
-        _rights_1.rights_name = "権利_test_2"
-        _rights_1.item = {
-            "test1": "a",
-            "test2": "b"
-        }
-        _rights_1.details_item = {
-            "d-test1": "a",
-            "d-test2": "b"
-        }
-        db.add(_rights_1)
-
-        _rights_2 = LedgerTemplateRights()
-        _rights_2.token_address = token_address
-        _rights_2.rights_name = "権利_test_3"
-        _rights_2.item = {
-            "test1-1": "a",
-            "test2-1": "b"
-        }
-        _rights_2.details_item = {
-            "d-test1-1": "a",
-            "d-test2-1": "b"
-        }
-        _rights_2.is_uploaded_details = True
-        db.add(_rights_2)
-
-        _rights_2_details_1 = LedgerRightsDetails()
-        _rights_2_details_1.token_address = token_address
-        _rights_2_details_1.rights_name = "権利_test_3"
-        _rights_2_details_1.account_address = "account_address_test_1"
-        _rights_2_details_1.name = "name_test_1"
-        _rights_2_details_1.address = "address_test_1"
-        _rights_2_details_1.amount = 10
-        _rights_2_details_1.price = 20
-        _rights_2_details_1.balance = 200
-        _rights_2_details_1.acquisition_date = "2020/01/01"
-        db.add(_rights_2_details_1)
-
-        _rights_2_details_2 = LedgerRightsDetails()
-        _rights_2_details_2.token_address = token_address
-        _rights_2_details_2.rights_name = "権利_test_3"
-        _rights_2_details_2.account_address = "account_address_test_2"
-        _rights_2_details_2.name = "name_test_2"
-        _rights_2_details_2.address = "address_test_2"
-        _rights_2_details_2.amount = 20
-        _rights_2_details_2.price = 30
-        _rights_2_details_2.balance = 600
-        _rights_2_details_2.acquisition_date = "2020/01/02"
-        db.add(_rights_2_details_2)
-
-        # NOTE: Add response
-        _rights_3 = LedgerTemplateRights()
-        _rights_3.token_address = token_address
-        _rights_3.rights_name = "権利_test_4"
-        _rights_3.item = {
-            "test1-2": "a",
-            "test2-2": "b"
-        }
-        _rights_3.details_item = {
-            "d-test1-2": "a",
-            "d-test2-2": "b"
-        }
-        db.add(_rights_3)
-
-        # NOTE: Add response
-        _rights_4 = LedgerTemplateRights()
-        _rights_4.token_address = token_address
-        _rights_4.rights_name = "権利_test_5"
-        _rights_4.item = {
-            "test1-3": "a",
-            "test2-3": "b"
-        }
-        _rights_4.details_item = {
-            "d-test1-3": "a",
-            "d-test2-3": "b"
-        }
-        _rights_4.is_uploaded_details = True
-        db.add(_rights_4)
-
-        _rights_4_details_1 = LedgerRightsDetails()
-        _rights_4_details_1.token_address = token_address
-        _rights_4_details_1.rights_name = "権利_test_5"
-        _rights_4_details_1.account_address = "account_address_test_3"
-        _rights_4_details_1.name = "name_test_3"
-        _rights_4_details_1.address = "address_test_3"
-        _rights_4_details_1.amount = 10
-        _rights_4_details_1.price = 20
-        _rights_4_details_1.balance = 200
-        _rights_4_details_1.acquisition_date = "2020/01/01"
-        db.add(_rights_4_details_1)
-
-        _rights_4_details_2 = LedgerRightsDetails()
-        _rights_4_details_2.token_address = token_address
-        _rights_4_details_2.rights_name = "権利_test_5"
-        _rights_4_details_2.account_address = "account_address_test_4"
-        _rights_4_details_2.name = "name_test_4"
-        _rights_4_details_2.address = "address_test_4"
-        _rights_4_details_2.amount = 20
-        _rights_4_details_2.price = 30
-        _rights_4_details_2.balance = 600
-        _rights_4_details_2.acquisition_date = "2020/01/02"
-        db.add(_rights_4_details_2)
-
-        # Mock
-        token = IbetStraightBondContract()
-        token.personal_info_contract_address = personal_info_contract_address
-        token.issuer_address = issuer_address
-        token_get_mock = mock.patch("app.model.blockchain.IbetStraightBondContract.get", return_value=token)
-        personal_get_info_mock = mock.patch("app.model.blockchain.PersonalInfoContract.get_info")
-
-        # request target API
-        with token_get_mock as token_get_mock_patch, personal_get_info_mock as personal_get_info_mock_patch:
-            # Note: account_address_2 only
-            personal_get_info_mock_patch.side_effect = [{
-                "name": "name_contract_2",
-                "address": "address_contract_2",
-            }]
-            resp = client.get(
-                self.base_url.format(token_address=token_address, ledger_id=1),
-                params={
-                    "latest_flg": 1,
-                },
-                headers={
-                    "issuer-address": issuer_address,
-                }
-            )
-
-            # assertion
-            token_get_mock_patch.assert_any_call(token_address)
-            personal_get_info_mock_patch.assert_has_calls([
-                call(account_address_2, default_value="")
-            ])
-
-        # assertion
-        assert resp.status_code == 200
-        assert resp.json() == {
-            "原簿作成日": "2022/12/01",
-            "原簿名称": "テスト原簿_update",
-            "項目": {
-                "hoge": "aaaa",
-                "fuga": "bbbb",
-            },
-            "権利": [
-                {
-                    "権利名称": "権利_test_2",
-                    "項目": {
-                        "test1": "a",
-                        "test2": "b"
-                    },
-                    "明細": [
-                        {
-                            "アカウントアドレス": account_address_1,
-                            "氏名または名称": "name_db_1",
-                            "住所": "address_db_1",
-                            "保有口数": 2,
-                            "一口あたりの金額": 100,
-                            "保有残高": 200,
-                            "取得日": "2022/01/01",
-                            "d-test1": "a",
-                            "d-test2": "b"
-                        },
-                        {
-                            "アカウントアドレス": account_address_2,
-                            "氏名または名称": "name_contract_2",
-                            "住所": "address_contract_2",
-                            "保有口数": 2,
-                            "一口あたりの金額": 100,
-                            "保有残高": 200,
-                            "取得日": "2022/01/01",
-                            "d-test1": "a",
-                            "d-test2": "b"
-                        }
-                    ]
-                },
-                {
-                    "権利名称": "権利_test_3",
-                    "項目": {
-                        "test1-1": "a",
-                        "test2-1": "b"
-                    },
-                    "明細": [
-                        {
-                            "アカウントアドレス": "account_address_test_1",
-                            "氏名または名称": "name_test_1",
-                            "住所": "address_test_1",
-                            "保有口数": 10,
-                            "一口あたりの金額": 20,
-                            "保有残高": 200,
-                            "取得日": "2020/01/01",
-                            "d-test1-1": "a",
-                            "d-test2-1": "b"
-                        },
-                        {
-                            "アカウントアドレス": "account_address_test_2",
-                            "氏名または名称": "name_test_2",
-                            "住所": "address_test_2",
-                            "保有口数": 20,
-                            "一口あたりの金額": 30,
-                            "保有残高": 600,
-                            "取得日": "2020/01/02",
-                            "d-test1-1": "a",
-                            "d-test2-1": "b"
-                        }
-                    ]
-                },
-                {
-                    "権利名称": "権利_test_4",
-                    "項目": {
-                        "test1-2": "a",
-                        "test2-2": "b"
-                    },
-                    "明細": []
-                },
-                {
-                    "権利名称": "権利_test_5",
-                    "項目": {
-                        "test1-3": "a",
-                        "test2-3": "b"
-                    },
-                    "明細": [
-                        {
-                            "アカウントアドレス": "account_address_test_3",
-                            "氏名または名称": "name_test_3",
-                            "住所": "address_test_3",
-                            "保有口数": 10,
-                            "一口あたりの金額": 20,
-                            "保有残高": 200,
-                            "取得日": "2020/01/01",
-                            "d-test1-3": "a",
-                            "d-test2-3": "b"
-                        },
-                        {
-                            "アカウントアドレス": "account_address_test_4",
-                            "氏名または名称": "name_test_4",
-                            "住所": "address_test_4",
-                            "保有口数": 20,
-                            "一口あたりの金額": 30,
-                            "保有残高": 600,
-                            "取得日": "2020/01/02",
-                            "d-test1-3": "a",
-                            "d-test2-3": "b"
-                        }
-                    ]
-                },
-            ]
-        }
-
-    # <Normal_3>
-    # Most Recent(not JPN)
-    def test_normal_3(self, client, db):
-        user_1 = config_eth_account("user1")
-        issuer_address = user_1["address"]
-        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
-        account_address_1 = "0xABCdeF1234567890abCDeF123456789000000001"
-        account_address_2 = "0xaBcdEF1234567890aBCDEF123456789000000002"
-        personal_info_contract_address = "0xabcDEF1234567890AbcDEf123456789000000003"
-
-        # prepare data
-        _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
-        _token.tx_hash = ""
-        _token.issuer_address = issuer_address
-        _token.token_address = token_address
-        _token.abi = {}
-        db.add(_token)
-
-        _ledger_1 = Ledger()
-        _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
-        _ledger_1.ledger = {
-            "created": "2022/12/01",
-            "ledger_name": "テスト原簿",
-            "item": {
-                "pdf_header_1": {
-                    "key": "本原簿について",
-                    "value": "本社債は株式会社Aが発行した無担保社債である"
-                },
-                "pdf_footer_1": "bbbbbbbbbbbbbbbbbbbbbbbbb",
-                "aaaa": "bbbb"
-            },
-            "rights": [
-                {
-                    "rights_name": "権利_test_1",  # NOTE: Not Exists Ledger Rights Template(be erased from response)
-                    "item": {
-                        "pdf_sub_1_header_1": {
-                            "key": "本原簿の説明",
-                            "value": "aaaaaaaaaaaaaaa"
-                        },
-                        "pdf_sub_1_header_2": {
-                            "key": "本原簿の説明",
-                            "value": "aaaaaaaaaaaaaaa"
-                        },
-                        "aaaa": "cccc"
-                    },
-                    "details": [
-                        {
-                            "account_address": account_address_1,
-                            "name": "name_test_1",
-                            "address": "address_test_1",
-                            "amount": 2,
-                            "price": 100,
-                            "balance": 200,
-                            "acquisition_date": "2022/01/01",
-                            "金銭以外の財産給付情報": {
-                                "財産の価格": "-",
-                                "給付日": "-",
-                            },
-                            "債権相殺情報": {
-                                "相殺する債権額": "-",
-                                "相殺日": "-",
-                            },
-                            "質権情報": {
-                                "質権者の氏名または名称": "-",
-                                "質権者の住所": "-",
-                                "質権の目的である債券": "-",
-                            },
-                            "備考": "-",
-                        }
-                    ]
-                },
-                {
-                    "rights_name": "権利_test_2",  # NOTE: Recent from blockchain
-                    "item": {
-                        "aaaa": "cccc"
-                    },
-                    "details": [
-                        {
-                            "account_address": account_address_1,
-                            "name": "name_test_1",
-                            "address": "address_test_1",
-                            "amount": 2,
-                            "price": 100,
-                            "balance": 200,
-                            "acquisition_date": "2022/01/01",
-                            "金銭以外の財産給付情報": {
-                                "財産の価格": "-",
-                                "給付日": "-",
-                            },
-                            "債権相殺情報": {
-                                "相殺する債権額": "-",
-                                "相殺日": "-",
-                            },
-                            "質権情報": {
-                                "質権者の氏名または名称": "-",
-                                "質権者の住所": "-",
-                                "質権の目的である債券": "-",
-                            },
-                            "備考": "-",
-                        },
-                        {
-                            "account_address": account_address_2,
-                            "name": "name_test_2",
-                            "address": "address_test_2",
-                            "amount": 2,
-                            "price": 100,
-                            "balance": 200,
-                            "acquisition_date": "2022/01/01",
-                            "金銭以外の財産給付情報": {
-                                "財産の価格": "-",
-                                "給付日": "-",
-                            },
-                            "債権相殺情報": {
-                                "相殺する債権額": "-",
-                                "相殺日": "-",
-                            },
-                            "質権情報": {
-                                "質権者の氏名または名称": "-",
-                                "質権者の住所": "-",
-                                "質権の目的である債券": "-",
-                            },
-                            "備考": "-",
-                        }
-                    ]
-                },
-                {
-                    "rights_name": "権利_test_3",  # NOTE: Recent from database
-                    "item": {
-                        "aaaa": "cccc"
-                    },
-                    "details": [
-                        {
-                            "account_address": account_address_1,
-                            "name": "name_test_1",
-                            "address": "address_test_1",
-                            "amount": 2,
-                            "price": 100,
-                            "balance": 200,
-                            "acquisition_date": "2022/01/01",
-                            "金銭以外の財産給付情報": {
-                                "財産の価格": "-",
-                                "給付日": "-",
-                            },
-                            "債権相殺情報": {
-                                "相殺する債権額": "-",
-                                "相殺日": "-",
-                            },
-                            "質権情報": {
-                                "質権者の氏名または名称": "-",
-                                "質権者の住所": "-",
-                                "質権の目的である債券": "-",
-                            },
-                            "備考": "-",
-                        }
-                    ]
-                }
-            ]
-        }
-        _ledger_1.country_code = "USA"
-        _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
-        db.add(_ledger_1)
-
-        # Note: account_address_1 only
-        _idx_personal_info_1 = IDXPersonalInfo()
-        _idx_personal_info_1.account_address = account_address_1
-        _idx_personal_info_1.issuer_address = issuer_address
-        _idx_personal_info_1.personal_info = {
-            "name": "name_db_1",
-            "address": "address_db_1"
-        }
-        db.add(_idx_personal_info_1)
-
-        _template = LedgerTemplate()
-        _template.token_address = token_address
-        _template.issuer_address = issuer_address
-        _template.ledger_name = "テスト原簿_update"
-        _template.country_code = "USA"
-        _template.item = {
-            "hoge": "aaaa",
-            "fuga": "bbbb",
+        _template.footers = {
+            "f-hoge": "aaaa",
+            "f-fuga": "bbbb",
         }
         db.add(_template)
 
-        _rights_1 = LedgerTemplateRights()
-        _rights_1.token_address = token_address
-        _rights_1.rights_name = "権利_test_2"
-        _rights_1.item = {
+        _details_1 = LedgerDetailsTemplate()
+        _details_1.token_address = token_address
+        _details_1.token_detail_type = "権利_test_2"
+        _details_1.headers = {
             "test1": "a",
             "test2": "b"
         }
-        _rights_1.details_item = {
-            "d-test1": "a",
-            "d-test2": "b"
+        _details_1.footers = {
+            "f-test1": "a",
+            "f-test2": "b"
         }
-        db.add(_rights_1)
+        _details_1.data_type = LedgerDetailsDataType.IBET_FIN
+        _details_1.data_source =token_address
+        db.add(_details_1)
 
-        _rights_2 = LedgerTemplateRights()
-        _rights_2.token_address = token_address
-        _rights_2.rights_name = "権利_test_3"
-        _rights_2.item = {
+        _details_2 = LedgerDetailsTemplate()
+        _details_2.token_address = token_address
+        _details_2.token_detail_type = "権利_test_3"
+        _details_2.headers = {
             "test1-1": "a",
             "test2-1": "b"
         }
-        _rights_2.details_item = {
-            "d-test1-1": "a",
-            "d-test2-1": "b"
+        _details_2.footers = {
+            "f-test1-1": "a",
+            "f-test2-1": "b"
         }
-        _rights_2.is_uploaded_details = True
-        db.add(_rights_2)
+        _details_2.data_type = LedgerDetailsDataType.DB
+        _details_2.data_source = "data_id_2"
+        db.add(_details_2)
 
-        _rights_2_details_1 = LedgerRightsDetails()
-        _rights_2_details_1.token_address = token_address
-        _rights_2_details_1.rights_name = "権利_test_3"
-        _rights_2_details_1.account_address = "account_address_test_1"
-        _rights_2_details_1.name = "name_test_1"
-        _rights_2_details_1.address = "address_test_1"
-        _rights_2_details_1.amount = 10
-        _rights_2_details_1.price = 20
-        _rights_2_details_1.balance = 200
-        _rights_2_details_1.acquisition_date = "2020/01/01"
-        db.add(_rights_2_details_1)
+        _details_2_data_1 = LedgerDetailsData()
+        _details_2_data_1.token_address = token_address
+        _details_2_data_1.data_id = "data_id_2"
+        _details_2_data_1.account_address = "account_address_test_1"
+        _details_2_data_1.name = "name_test_1"
+        _details_2_data_1.address = "address_test_1"
+        _details_2_data_1.amount = 10
+        _details_2_data_1.price = 20
+        _details_2_data_1.balance = 200
+        _details_2_data_1.acquisition_date = "2020/01/01"
+        db.add(_details_2_data_1)
 
-        _rights_2_details_2 = LedgerRightsDetails()
-        _rights_2_details_2.token_address = token_address
-        _rights_2_details_2.rights_name = "権利_test_3"
-        _rights_2_details_2.account_address = "account_address_test_2"
-        _rights_2_details_2.name = "name_test_2"
-        _rights_2_details_2.address = "address_test_2"
-        _rights_2_details_2.amount = 20
-        _rights_2_details_2.price = 30
-        _rights_2_details_2.balance = 600
-        _rights_2_details_2.acquisition_date = "2020/01/02"
-        db.add(_rights_2_details_2)
+        _details_2_data_2 = LedgerDetailsData()
+        _details_2_data_2.token_address = token_address
+        _details_2_data_2.data_id = "data_id_2"
+        _details_2_data_2.account_address = "account_address_test_2"
+        _details_2_data_2.name = "name_test_2"
+        _details_2_data_2.address = "address_test_2"
+        _details_2_data_2.amount = 20
+        _details_2_data_2.price = 30
+        _details_2_data_2.balance = 600
+        _details_2_data_2.acquisition_date = "2020/01/02"
+        db.add(_details_2_data_2)
 
         # NOTE: Add response
-        _rights_3 = LedgerTemplateRights()
-        _rights_3.token_address = token_address
-        _rights_3.rights_name = "権利_test_4"
-        _rights_3.item = {
+        _details_3 = LedgerDetailsTemplate()
+        _details_3.token_address = token_address
+        _details_3.token_detail_type = "権利_test_4"
+        _details_3.headers = {
             "test1-2": "a",
             "test2-2": "b"
         }
-        _rights_3.details_item = {
-            "d-test1-2": "a",
-            "d-test2-2": "b"
+        _details_3.footers = {
+            "f-test1-2": "a",
+            "f-test2-2": "b"
         }
-        db.add(_rights_3)
+        _details_3.data_type = LedgerDetailsDataType.IBET_FIN
+        _details_3.data_source =token_address
+        db.add(_details_3)
 
         # NOTE: Add response
-        _rights_4 = LedgerTemplateRights()
-        _rights_4.token_address = token_address
-        _rights_4.rights_name = "権利_test_5"
-        _rights_4.item = {
+        _details_4 = LedgerDetailsTemplate()
+        _details_4.token_address = token_address
+        _details_4.token_detail_type = "権利_test_5"
+        _details_4.headers = {
             "test1-3": "a",
             "test2-3": "b"
         }
-        _rights_4.details_item = {
-            "d-test1-3": "a",
-            "d-test2-3": "b"
+        _details_4.footers = {
+            "f-test1-3": "a",
+            "f-test2-3": "b"
         }
-        _rights_4.is_uploaded_details = True
-        db.add(_rights_4)
+        _details_4.data_type = LedgerDetailsDataType.DB
+        _details_4.data_source = "data_id_4"
+        db.add(_details_4)
 
-        _rights_4_details_1 = LedgerRightsDetails()
-        _rights_4_details_1.token_address = token_address
-        _rights_4_details_1.rights_name = "権利_test_5"
-        _rights_4_details_1.account_address = "account_address_test_3"
-        _rights_4_details_1.name = "name_test_3"
-        _rights_4_details_1.address = "address_test_3"
-        _rights_4_details_1.amount = 10
-        _rights_4_details_1.price = 20
-        _rights_4_details_1.balance = 200
-        _rights_4_details_1.acquisition_date = "2020/01/01"
-        db.add(_rights_4_details_1)
+        _details_4_data_1 = LedgerDetailsData()
+        _details_4_data_1.token_address = token_address
+        _details_4_data_1.data_id = "data_id_4"
+        _details_4_data_1.account_address = "account_address_test_3"
+        _details_4_data_1.name = "name_test_3"
+        _details_4_data_1.address = "address_test_3"
+        _details_4_data_1.amount = 10
+        _details_4_data_1.price = 20
+        _details_4_data_1.balance = 200
+        _details_4_data_1.acquisition_date = "2020/01/01"
+        db.add(_details_4_data_1)
 
-        _rights_4_details_2 = LedgerRightsDetails()
-        _rights_4_details_2.token_address = token_address
-        _rights_4_details_2.rights_name = "権利_test_5"
-        _rights_4_details_2.account_address = "account_address_test_4"
-        _rights_4_details_2.name = "name_test_4"
-        _rights_4_details_2.address = "address_test_4"
-        _rights_4_details_2.amount = 20
-        _rights_4_details_2.price = 30
-        _rights_4_details_2.balance = 600
-        _rights_4_details_2.acquisition_date = "2020/01/02"
-        db.add(_rights_4_details_2)
+        _details_4_data_2 = LedgerDetailsData()
+        _details_4_data_2.token_address = token_address
+        _details_4_data_2.data_id = "data_id_4"
+        _details_4_data_2.account_address = "account_address_test_4"
+        _details_4_data_2.name = "name_test_4"
+        _details_4_data_2.address = "address_test_4"
+        _details_4_data_2.amount = 20
+        _details_4_data_2.price = 30
+        _details_4_data_2.balance = 600
+        _details_4_data_2.acquisition_date = "2020/01/02"
+        db.add(_details_4_data_2)
 
         # Mock
         token = IbetStraightBondContract()
@@ -940,50 +483,50 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         assert resp.status_code == 200
         assert resp.json() == {
             "created": "2022/12/01",
-            "ledger_name": "テスト原簿_update",
-            "item": {
+            "token_name": "テスト原簿_update",
+            "headers": {
                 "hoge": "aaaa",
                 "fuga": "bbbb",
             },
-            "rights": [
+            "details": [
                 {
-                    "rights_name": "権利_test_2",
-                    "item": {
+                    "token_detail_type": "権利_test_2",
+                    "headers": {
                         "test1": "a",
                         "test2": "b"
                     },
-                    "details": [
+                    "data": [
                         {
                             "account_address": account_address_1,
                             "name": "name_db_1",
                             "address": "address_db_1",
-                            "amount": 2,
-                            "price": 100,
-                            "balance": 200,
-                            "acquisition_date": "2022/01/01",
-                            "d-test1": "a",
-                            "d-test2": "b"
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 30,
+                            "acquisition_date": "2022/12/02"
                         },
                         {
                             "account_address": account_address_2,
                             "name": "name_contract_2",
                             "address": "address_contract_2",
-                            "amount": 2,
-                            "price": 100,
-                            "balance": 200,
-                            "acquisition_date": "2022/01/01",
-                            "d-test1": "a",
-                            "d-test2": "b"
+                            "amount": 100,
+                            "price": 200,
+                            "balance": 300,
+                            "acquisition_date": "2022/12/03"
                         }
-                    ]
+                    ],
+                    "footers": {
+                        "f-test1": "a",
+                        "f-test2": "b"
+                    },
                 },
                 {
-                    "rights_name": "権利_test_3",
-                    "item": {
+                    "token_detail_type": "権利_test_3",
+                    "headers": {
                         "test1-1": "a",
                         "test2-1": "b"
                     },
-                    "details": [
+                    "data": [
                         {
                             "account_address": "account_address_test_1",
                             "name": "name_test_1",
@@ -992,8 +535,6 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "price": 20,
                             "balance": 200,
                             "acquisition_date": "2020/01/01",
-                            "d-test1-1": "a",
-                            "d-test2-1": "b"
                         },
                         {
                             "account_address": "account_address_test_2",
@@ -1003,26 +544,32 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "price": 30,
                             "balance": 600,
                             "acquisition_date": "2020/01/02",
-                            "d-test1-1": "a",
-                            "d-test2-1": "b"
                         }
-                    ]
+                    ],
+                    "footers": {
+                        "f-test1-1": "a",
+                        "f-test2-1": "b"
+                    },
                 },
                 {
-                    "rights_name": "権利_test_4",
-                    "item": {
+                    "token_detail_type": "権利_test_4",
+                    "headers": {
                         "test1-2": "a",
                         "test2-2": "b"
                     },
-                    "details": []
+                    "data": [],
+                    "footers": {
+                        "f-test1-2": "a",
+                        "f-test2-2": "b"
+                    },
                 },
                 {
-                    "rights_name": "権利_test_5",
-                    "item": {
+                    "token_detail_type": "権利_test_5",
+                    "headers": {
                         "test1-3": "a",
                         "test2-3": "b"
                     },
-                    "details": [
+                    "data": [
                         {
                             "account_address": "account_address_test_3",
                             "name": "name_test_3",
@@ -1031,8 +578,6 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "price": 20,
                             "balance": 200,
                             "acquisition_date": "2020/01/01",
-                            "d-test1-3": "a",
-                            "d-test2-3": "b"
                         },
                         {
                             "account_address": "account_address_test_4",
@@ -1042,231 +587,19 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "price": 30,
                             "balance": 600,
                             "acquisition_date": "2020/01/02",
-                            "d-test1-3": "a",
-                            "d-test2-3": "b"
-                        }
-                    ]
-                },
-            ]
-        }
-
-    # <Normal_4>
-    # Most Recent Default Corporate Bond Ledger
-    def test_normal_4(self, client, db):
-        user_1 = config_eth_account("user1")
-        issuer_address = user_1["address"]
-        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
-        account_address_1 = "0xABCdeF1234567890abCDeF123456789000000001"
-        account_address_2 = "0xaBcdEF1234567890aBCDEF123456789000000002"
-        personal_info_contract_address = "0xabcDEF1234567890AbcDEf123456789000000003"
-
-        # prepare data
-        _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
-        _token.tx_hash = ""
-        _token.issuer_address = issuer_address
-        _token.token_address = token_address
-        _token.abi = {}
-        db.add(_token)
-
-        _ledger_1 = Ledger()
-        _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
-        _ledger_1.ledger = {
-            "原簿作成日": "2022/12/01",
-            "原簿名称": "",
-            "項目": {
-                "社債の説明": "",
-                "社債の総額": None,
-                "各社債の金額": None,
-                "払込情報": {
-                    "払込金額": None,
-                    "払込日": "",
-                    "払込状況": None
-                },
-                "社債の種類": "",
-                "社債原簿管理人": {
-                    "氏名または名称": "",
-                    "住所": "",
-                    "事務取扱場所": ""
-                },
-            },
-            "権利": [
-                {
-                    "権利名称": "社債",
-                    "項目": {},
-                    "明細": [
-                        {
-                            "アカウントアドレス": account_address_1,
-                            "氏名または名称": "name_test_1",
-                            "住所": "address_test_1",
-                            "保有口数": 2,
-                            "一口あたりの金額": 100,
-                            "保有残高": 200,
-                            "取得日": "2022/01/01",
-                            "金銭以外の財産給付情報": {
-                                "財産の価格": "-",
-                                "給付日": "-",
-                            },
-                            "債権相殺情報": {
-                                "相殺する債権額": "-",
-                                "相殺日": "-",
-                            },
-                            "質権情報": {
-                                "質権者の氏名または名称": "-",
-                                "質権者の住所": "-",
-                                "質権の目的である債券": "-",
-                            },
-                            "備考": "-",
                         },
-                        {
-                            "アカウントアドレス": account_address_2,
-                            "氏名または名称": "name_test_2",
-                            "住所": "address_test_2",
-                            "保有口数": 2,
-                            "一口あたりの金額": 100,
-                            "保有残高": 200,
-                            "取得日": "2022/01/01",
-                            "金銭以外の財産給付情報": {
-                                "財産の価格": "-",
-                                "給付日": "-",
-                            },
-                            "債権相殺情報": {
-                                "相殺する債権額": "-",
-                                "相殺日": "-",
-                            },
-                            "質権情報": {
-                                "質権者の氏名または名称": "-",
-                                "質権者の住所": "-",
-                                "質権の目的である債券": "-",
-                            },
-                            "備考": "-",
-                        }
-                    ]
-                }
-            ]
-        }
-        _ledger_1.country_code = "JPN"
-        _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
-        db.add(_ledger_1)
-
-        # Note: account_address_1 only
-        _idx_personal_info_1 = IDXPersonalInfo()
-        _idx_personal_info_1.account_address = account_address_1
-        _idx_personal_info_1.issuer_address = issuer_address
-        _idx_personal_info_1.personal_info = {
-            "name": "name_db_1",
-            "address": "address_db_1"
-        }
-        db.add(_idx_personal_info_1)
-
-        # Mock
-        token = IbetStraightBondContract()
-        token.personal_info_contract_address = personal_info_contract_address
-        token.issuer_address = issuer_address
-        token_get_mock = mock.patch("app.model.blockchain.IbetStraightBondContract.get", return_value=token)
-        personal_get_info_mock = mock.patch("app.model.blockchain.PersonalInfoContract.get_info")
-
-        # request target API
-        with token_get_mock as token_get_mock_patch, personal_get_info_mock as personal_get_info_mock_patch:
-            # Note: account_address_2 only
-            personal_get_info_mock_patch.side_effect = [{
-                "name": "name_contract_2",
-                "address": "address_contract_2",
-            }]
-            resp = client.get(
-                self.base_url.format(token_address=token_address, ledger_id=1),
-                params={
-                    "latest_flg": 1,
+                    ],
+                    "footers": {
+                        "f-test1-3": "a",
+                        "f-test2-3": "b"
+                    },
                 },
-                headers={
-                    "issuer-address": issuer_address,
-                }
-            )
-
-            # assertion
-            token_get_mock_patch.assert_any_call(token_address)
-            personal_get_info_mock_patch.assert_has_calls([
-                call(account_address_2, default_value="")
-            ])
-
-        # assertion
-        assert resp.status_code == 200
-        assert resp.json() == {
-            "原簿作成日": "2022/12/01",
-            "原簿名称": "",
-            "項目": {
-                "社債の説明": "",
-                "社債の総額": None,
-                "各社債の金額": None,
-                "払込情報": {
-                    "払込金額": None,
-                    "払込日": "",
-                    "払込状況": None
-                },
-                "社債の種類": "",
-                "社債原簿管理人": {
-                    "氏名または名称": "",
-                    "住所": "",
-                    "事務取扱場所": ""
-                },
+            ],
+            "footers": {
+                "f-hoge": "aaaa",
+                "f-fuga": "bbbb",
             },
-            "権利": [
-                {
-                    "権利名称": "社債",
-                    "項目": {},
-                    "明細": [
-                        {
-                            "アカウントアドレス": account_address_1,
-                            "氏名または名称": "name_db_1",
-                            "住所": "address_db_1",
-                            "保有口数": 2,
-                            "一口あたりの金額": 100,
-                            "保有残高": 200,
-                            "取得日": "2022/01/01",
-                            "金銭以外の財産給付情報": {
-                                "財産の価格": "-",
-                                "給付日": "-",
-                            },
-                            "債権相殺情報": {
-                                "相殺する債権額": "-",
-                                "相殺日": "-",
-                            },
-                            "質権情報": {
-                                "質権者の氏名または名称": "-",
-                                "質権者の住所": "-",
-                                "質権の目的である債券": "-",
-                            },
-                            "備考": "-",
-                        },
-                        {
-                            "アカウントアドレス": account_address_2,
-                            "氏名または名称": "name_contract_2",
-                            "住所": "address_contract_2",
-                            "保有口数": 2,
-                            "一口あたりの金額": 100,
-                            "保有残高": 200,
-                            "取得日": "2022/01/01",
-                            "金銭以外の財産給付情報": {
-                                "財産の価格": "-",
-                                "給付日": "-",
-                            },
-                            "債権相殺情報": {
-                                "相殺する債権額": "-",
-                                "相殺日": "-",
-                            },
-                            "質権情報": {
-                                "質権者の氏名または名称": "-",
-                                "質権者の住所": "-",
-                                "質権の目的である債券": "-",
-                            },
-                            "備考": "-",
-                        }
-                    ]
-                }
-            ]
         }
-
     ###########################################################################
     # Error Case
     ###########################################################################
@@ -1516,71 +849,4 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 "title": "InvalidParameterError"
             },
             "detail": "ledger template does not exist"
-        }
-
-    # <Error_8>
-    # Country Code Changed
-    def test_error_8(self, client, db):
-        user_1 = config_eth_account("user1")
-        issuer_address = user_1["address"]
-        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
-
-        # prepare data
-        _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
-        _token.tx_hash = ""
-        _token.issuer_address = issuer_address
-        _token.token_address = token_address
-        _token.abi = {}
-        db.add(_token)
-
-        _ledger_1 = Ledger()
-        _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
-        _ledger_1.ledger = {
-            "原簿作成日": "2022/12/01",
-            "原簿名称": "テスト原簿",
-            "項目": {},
-            "権利": [
-                {
-                    "権利名称": "権利_test_1",
-                    "項目": {},
-                    "明細": []
-                },
-            ]
-        }
-        _ledger_1.country_code = "JPN"
-        _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
-        db.add(_ledger_1)
-
-        _template = LedgerTemplate()
-        _template.token_address = token_address
-        _template.issuer_address = issuer_address
-        _template.ledger_name = "テスト原簿_update"
-        _template.country_code = "USA"
-        _template.item = {
-            "hoge": "aaaa",
-            "fuga": "bbbb",
-        }
-        db.add(_template)
-
-        # request target API
-        resp = client.get(
-            self.base_url.format(token_address=token_address, ledger_id=1),
-            params={
-                "latest_flg": 1,
-            },
-            headers={
-                "issuer-address": issuer_address,
-            }
-        )
-
-        # assertion
-        assert resp.status_code == 400
-        assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "cannot be updated because country_code has changed"
         }

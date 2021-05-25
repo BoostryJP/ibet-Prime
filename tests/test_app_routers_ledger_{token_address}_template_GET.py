@@ -20,7 +20,8 @@ from app.model.db import (
     Token,
     TokenType,
     LedgerTemplate,
-    LedgerTemplateRights
+    LedgerDetailsTemplate,
+    LedgerDetailsDataType
 )
 from tests.account_config import config_eth_account
 
@@ -51,40 +52,47 @@ class TestAppRoutersLedgerTokenAddressHistoryTemplateGET:
         _template = LedgerTemplate()
         _template.token_address = token_address
         _template.issuer_address = issuer_address
-        _template.ledger_name = "テスト原簿"
+        _template.token_name = "テスト原簿"
         _template.country_code = "JPN"
-        _template.item = {
+        _template.headers = {
             "hoge": "aaaa",
             "fuga": "bbbb",
         }
+        _template.footers = {
+            "f-hoge": "f-aaaa",
+            "f-fuga": "f-bbbb",
+        }
         db.add(_template)
 
-        _rights_1 = LedgerTemplateRights()
-        _rights_1.token_address = token_address
-        _rights_1.rights_name = "権利_test_1"
-        _rights_1.item = {
+        _details_1 = LedgerDetailsTemplate()
+        _details_1.token_address = token_address
+        _details_1.token_detail_type = "権利_test_1"
+        _details_1.headers = {
             "test1": "a",
             "test2": "b"
         }
-        _rights_1.details_item = {
-            "d-test1": "a",
-            "d-test2": "b"
+        _details_1.footers = {
+            "f-test1": "a",
+            "f-test2": "b"
         }
-        db.add(_rights_1)
+        _details_1.data_type = LedgerDetailsDataType.IBET_FIN
+        _details_1.data_source = token_address
+        db.add(_details_1)
 
-        _rights_2 = LedgerTemplateRights()
-        _rights_2.token_address = token_address
-        _rights_2.rights_name = "権利_test_2"
-        _rights_2.item = {
+        _details_2 = LedgerDetailsTemplate()
+        _details_2.token_address = token_address
+        _details_2.token_detail_type = "権利_test_2"
+        _details_2.headers = {
             "test3": "a",
             "test4": "b"
         }
-        _rights_2.details_item = {
-            "d-test3": "a",
-            "d-test4": "b"
+        _details_2.footers = {
+            "f-test3": "a",
+            "f-test4": "b"
         }
-        _rights_2.is_uploaded_details = True
-        db.add(_rights_2)
+        _details_2.data_type = LedgerDetailsDataType.DB
+        _details_2.data_source = "data_id_2"
+        db.add(_details_2)
 
         # request target API
         resp = client.get(
@@ -97,38 +105,48 @@ class TestAppRoutersLedgerTokenAddressHistoryTemplateGET:
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "ledger_name": "テスト原簿",
+            "token_name": "テスト原簿",
             "country_code": "JPN",
-            "item": {
+            "headers": {
                 "hoge": "aaaa",
                 "fuga": "bbbb",
             },
-            "rights": [
+            "details": [
                 {
-                    "rights_name": "権利_test_1",
-                    "item": {
+                    "token_detail_type": "権利_test_1",
+                    "headers": {
                         "test1": "a",
                         "test2": "b"
                     },
-                    "details_item": {
-                        "d-test1": "a",
-                        "d-test2": "b"
+                    "data": {
+                        "type": "ibetfin",
+                        "source": token_address,
                     },
-                    "is_uploaded_details": False,
+                    "footers": {
+                        "f-test1": "a",
+                        "f-test2": "b"
+                    },
                 },
                 {
-                    "rights_name": "権利_test_2",
-                    "item": {
+                    "token_detail_type": "権利_test_2",
+                    "headers": {
                         "test3": "a",
                         "test4": "b"
                     },
-                    "details_item": {
-                        "d-test3": "a",
-                        "d-test4": "b"
+                    "data": {
+                        "type": "db",
+                        "source": "data_id_2",
                     },
-                    "is_uploaded_details": True,
+                    "footers": {
+                        "f-test3": "a",
+                        "f-test4": "b"
+                    },
                 }
-            ]
+            ],
+            "footers": {
+                "f-hoge": "f-aaaa",
+                "f-fuga": "f-bbbb",
+            },
         }
 
     ###########################################################################

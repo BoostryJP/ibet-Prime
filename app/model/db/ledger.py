@@ -51,70 +51,48 @@ class Ledger(Base):
 
 """
 NOTE: Ledger.ledger's JSON structures
-- 'ledger.item' is set to LedgerTemplate.item
-- 'ledger.rights[].item' is set to LedgerTemplateRights.item
-- LedgerTemplateRights.details_item add in the 'ledger.rights[].details[]'
+- 'ledger.headers' is set to LedgerTemplate.headers
+- 'ledger.footers' is set to LedgerTemplate.footers
+- 'ledger.details[].headers' is set to LedgerDetailsTemplate.headers
+- 'ledger.details[].footers' is set to LedgerDetailsTemplate.footers
 
-[default]
 {
   "created": "string(YYYY/MM/DD)",
-  "rights_name": "string",
-  "item": {},
-  "rights": [
+  "token_name": "string",
+  "headers": {},
+  "details": [
     {
-      "rights_name": "string",
-      "item": {},
-      "details": [
-        "account_address": "string",
-        "name": "string",
-        "address": "string",
-        "amount": 0,
-        "price": 0,
-        "balance": 0,
-        "acquisition_date": "string(YYYY/MM/DD)",
-        item_key: item_value
-      ]
-    }
-  ]
-}
-
-[country_code:JPN]
-{
-  "原簿作成日": "string(YYYY/MM/DD)",
-  "原簿名称": "string",
-  "項目": {},
-  "権利": [
-    {
-      "権利名称": "string",
-      "項目": {},
-      "明細": [
+      "token_detail_type": "string",
+      "header": {},
+      "data": [
         {
-          "アカウントアドレス": "string",
-          "氏名または名称": "string",
-          "住所": "string",
-          "保有口数": 0,
-          "一口あたりの金額": 0,
-          "保有残高": 0,
-          "取得日": "string(YYYY/MM/DD)",
-          item_key: item_value
+          "account_address": "string",
+          "name": "string",
+          "address": "string",
+          "amount": 0,
+          "price": 0,
+          "balance": 0,
+          "acquisition_date": "string(YYYY/MM/DD)"
         }
-      ]
-    }
-  ]
+      ],
+      "footers": {},
+    },
+  ],
+  "footers": {}
 }
 """
 
 
-class LedgerRightsDetails(Base):
-    """Ledger Rights Details"""
-    __tablename__ = "ledger_rights_details"
+class LedgerDetailsData(Base):
+    """Ledger Details Data"""
+    __tablename__ = "ledger_details_data"
 
     # sequence id
     id = Column(Integer, primary_key=True, autoincrement=True)
     # token address
     token_address = Column(String(42), nullable=False)
-    # rights name
-    rights_name = Column(String(100), nullable=False)
+    # data id
+    data_id = Column(String(42), default=False)
     # account address
     account_address = Column(String(42))
     # name

@@ -37,11 +37,12 @@ from .idx_personal_info import (
 )
 from .ledger import (
     Ledger,
-    LedgerRightsDetails
+    LedgerDetailsData
 )
 from .ledger_template import (
     LedgerTemplate,
-    LedgerTemplateRights
+    LedgerDetailsTemplate,
+    LedgerDetailsDataType
 )
 from .node import Node
 from .transfer_appoval_history import TransferApprovalHistory

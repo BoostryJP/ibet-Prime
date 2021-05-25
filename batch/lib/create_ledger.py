@@ -26,10 +26,7 @@ from sqlalchemy.orm import Session
 path = os.path.join(os.path.dirname(__file__), '../../')
 sys.path.append(path)
 
-from config import (
-    SYSTEM_LOCALE,
-    TZ
-)
+from config import TZ
 from app.model.blockchain import (
     IbetShareContract,
     IbetStraightBondContract,
@@ -41,11 +38,11 @@ from app.model.db import (
     UTXO,
     IDXPersonalInfo,
     Ledger,
-    LedgerRightsDetails,
+    LedgerDetailsData,
     LedgerTemplate,
-    LedgerTemplateRights
+    LedgerDetailsTemplate,
+    LedgerDetailsDataType
 )
-from batch.localized import create_ledger_JPN
 
 local_tz = pytz.timezone(TZ)
 utc_tz = pytz.timezone("UTC")
@@ -67,52 +64,36 @@ def create_ledger(token_address: str, db: Session):
     _template = db.query(LedgerTemplate). \
         filter(LedgerTemplate.token_address == token_address). \
         first()
+    if _template is None:
+        return
 
-    if _template is not None:
+    # Get ledger details
+    _details_list = db.query(LedgerDetailsTemplate). \
+        filter(LedgerDetailsTemplate.token_address == token_address). \
+        order_by(LedgerDetailsTemplate.id). \
+        all()
+    ledger_details = []
+    for _details in _details_list:
+        # Get ledger details data
+        data_list = __get_details_data_list(_details, _token.type, db)
 
-        created_key, ledger_name_key, item_key, rights_key, rights_name_key, details_key = \
-            "created", "ledger_name", "item", "rights", "rights_name", "details"
-        if _template.country_code == "JPN":
-            created_key, ledger_name_key, item_key, rights_key, rights_name_key, details_key = \
-                create_ledger_JPN.get_ledger_keys()
-
-        # Set ledger common key
-        created_ymd = utc_tz.localize(datetime.utcnow()).astimezone(local_tz).strftime("%Y/%m/%d")
-        ledger = {
-            created_key: created_ymd,
-            ledger_name_key: _template.ledger_name,
-            item_key: _template.item
+        details = {
+            "token_detail_type": _details.token_detail_type,
+            "headers": _details.headers,
+            "data": data_list,
+            "footers": _details.footers,
         }
+        ledger_details.append(details)
 
-        # Set ledger rights
-        _rights_list = db.query(LedgerTemplateRights). \
-            filter(LedgerTemplateRights.token_address == token_address). \
-            order_by(LedgerTemplateRights.id). \
-            all()
-        ledger_rights = []
-        for _rights in _rights_list:
-            # Set ledger rights common key
-            rights = {
-                rights_name_key: _rights.rights_name,
-                item_key: _rights.item
-            }
-
-            # Set ledger rights details
-            details = __get_rights_details(_rights, _token.type, _template.country_code, db)
-            rights[details_key] = details
-
-            ledger_rights.append(rights)
-
-        ledger[rights_key] = ledger_rights
-        country_code = _template.country_code
-    else:
-        if "JPN" in SYSTEM_LOCALE and _token.type == TokenType.IBET_STRAIGHT_BOND:
-            # Create default corporate bond ledger
-            details = __get_rights_blockchain_details(token_address, _token.type, db)
-            ledger = create_ledger_JPN.get_default_corporate_bond_ledger(details)
-            country_code = "JPN"
-        else:
-            return
+    created_ymd = utc_tz.localize(datetime.utcnow()).astimezone(local_tz).strftime("%Y/%m/%d")
+    ledger = {
+        "created": created_ymd,
+        "token_name": _template.token_name,
+        "headers": _template.headers,
+        "details": ledger_details,
+        "footers": _template.footers,
+    }
+    country_code = _template.country_code
 
     # Register ledger data to the DB
     # NOTE: DB commit is executed by the caller
@@ -124,40 +105,32 @@ def create_ledger(token_address: str, db: Session):
     db.add(_ledger)
 
 
-def __get_rights_details(_rights: LedgerTemplateRights, token_type: str, country_code: str, db: Session):
-    if _rights.is_uploaded_details:
-        _rights_details_list = db.query(LedgerRightsDetails). \
-            filter(LedgerRightsDetails.token_address == _rights.token_address). \
-            filter(LedgerRightsDetails.rights_name == _rights.rights_name). \
-            order_by(LedgerRightsDetails.id). \
+def __get_details_data_list(_details: LedgerDetailsTemplate, token_type: str, db: Session):
+    data_list = []
+    if _details.data_type == LedgerDetailsDataType.DB:
+        _details_data_list = db.query(LedgerDetailsData). \
+            filter(LedgerDetailsData.token_address == _details.token_address). \
+            filter(LedgerDetailsData.data_id == _details.data_source). \
+            order_by(LedgerDetailsData.id). \
             all()
-        details = []
-        for _rights_details in _rights_details_list:
-            details.append({
-                "account_address": _rights_details.account_address,
-                "name": _rights_details.name,
-                "address": _rights_details.address,
-                "amount": _rights_details.amount,
-                "price": _rights_details.price,
-                "balance": _rights_details.balance,
-                "acquisition_date": _rights_details.acquisition_date,
+        for _details_data in _details_data_list:
+            data_list.append({
+                "account_address": _details_data.account_address,
+                "name": _details_data.name,
+                "address": _details_data.address,
+                "amount": _details_data.amount,
+                "price": _details_data.price,
+                "balance": _details_data.balance,
+                "acquisition_date": _details_data.acquisition_date,
             })
-    else:
-        # from blockchain
-        details = __get_rights_blockchain_details(_rights.token_address, token_type, db)
+    elif _details.data_type == LedgerDetailsDataType.IBET_FIN:
+        # from ibetfin
+        data_list = __get_details_data_list_from_ibetfin(_details.data_source, token_type, db)
 
-    # Set ledger rights details item
-    for detail in details:
-        detail.update(_rights.details_item)
-
-    # Convert structured item key language
-    if country_code == "JPN":
-        details = create_ledger_JPN.convert_details_item(details)
-
-    return details
+    return data_list
 
 
-def __get_rights_blockchain_details(token_address: str, token_type: str, db: Session):
+def __get_details_data_list_from_ibetfin(token_address: str, token_type: str, db: Session):
     if token_type == TokenType.IBET_SHARE:
         token_contract = IbetShareContract.get(token_address)
         price = token_contract.principal_value
@@ -193,10 +166,10 @@ def __get_rights_blockchain_details(token_address: str, token_type: str, db: Ses
             else:
                 utxo_grouped[_utxo.account_address][date_ymd] += _utxo.amount
 
-    details = []
+    data_list = []
     for account_address, date_ymd_amount in utxo_grouped.items():
         for date_ymd, amount in date_ymd_amount.items():
-            detail = {
+            details_data = {
                 "account_address": account_address,
                 "name": "",
                 "address": "",
@@ -208,12 +181,12 @@ def __get_rights_blockchain_details(token_address: str, token_type: str, db: Ses
 
             # Update PersonalInfo
             personal_info = __get_personal_info(account_address, issuer_address, personal_info_contract, db)
-            detail["name"] = personal_info.get("name", "")
-            detail["address"] = personal_info.get("address", "")
+            details_data["name"] = personal_info.get("name", "")
+            details_data["address"] = personal_info.get("address", "")
 
-            details.append(detail)
+            data_list.append(details_data)
 
-    return details
+    return data_list
 
 
 def __get_personal_info(account_address: str, issuer_address: str, personal_info_contract: PersonalInfoContract,

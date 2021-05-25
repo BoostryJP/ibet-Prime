@@ -20,7 +20,6 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
-    Boolean,
     JSON
 )
 
@@ -35,33 +34,39 @@ class LedgerTemplate(Base):
     token_address = Column(String(42), primary_key=True)
     # issuer address
     issuer_address = Column(String(42), index=False)
-    # ledger name
-    ledger_name = Column(String(200), nullable=False)
+    # token name
+    token_name = Column(String(200), nullable=False)
     # country code(ISO 3166-1 alpha-3(uppercase))
     country_code = Column(String(3), nullable=False)
-    # item(ledger header, footer, etc)
-    item = Column(JSON, default={})
+    # headers
+    headers = Column(JSON, default={})
+    # footers
+    footers = Column(JSON, default={})
 
 
-class LedgerTemplateRights(Base):
-    """Ledger Template Rights"""
-    __tablename__ = "ledger_template_rights"
+class LedgerDetailsTemplate(Base):
+    """Ledger Details Template"""
+    __tablename__ = "ledger_details_template"
 
     # sequence id
-    # Note: It will be unique in token_address and rights_name,
-    #       but since there is a possibility that multibyte characters will be set in rights_name,
+    # Note: It will be unique in token_address and token_detail_type,
+    #       but since there is a possibility that multibyte characters will be set in token_detail_type,
     #       this column will be primary key.
     id = Column(Integer, primary_key=True, autoincrement=True)
     # token address
     token_address = Column(String(42), nullable=False)
-    # rights name
-    rights_name = Column(String(100), nullable=False)
-    # item(ledger rights header, footer, etc)
-    item = Column(JSON, default={})
-    # details item(items set for each details)
-    # NOTE: The following key is a reserved word and cannot be set.
-    #       - default: account_address, name, address, amount, price, balance, acquisition_date
-    #       - JPN: アカウントアドレス, 氏名または名称, 住所, 保有口数, 一口あたりの金額, 保有残高, 取得日
-    details_item = Column(JSON, default={})
-    # use uploaded details
-    is_uploaded_details = Column(Boolean, default=False)
+    # token detail type
+    token_detail_type = Column(String(100), nullable=False)
+    # headers
+    headers = Column(JSON, default={})
+    # footers
+    footers = Column(JSON, default={})
+    # data type
+    data_type = Column(String(20), default=False)
+    # data source
+    data_source = Column(String(42), default=False)
+
+
+class LedgerDetailsDataType:
+    IBET_FIN = "ibetfin"
+    DB = "db"

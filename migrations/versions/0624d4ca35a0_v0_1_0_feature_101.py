@@ -1,8 +1,8 @@
 """v0.1.0_feature/#101
 
-Revision ID: 06b9019410d9
+Revision ID: 0624d4ca35a0
 Revises: ff1cb5a4411c
-Create Date: 2021-05-21 20:46:16.737967
+Create Date: 2021-05-25 11:59:30.381993
 
 """
 from alembic import op
@@ -12,7 +12,7 @@ from sqlalchemy.dialects import postgresql
 from app.database import get_db_schema
 
 # revision identifiers, used by Alembic.
-revision = '06b9019410d9'
+revision = '0624d4ca35a0'
 down_revision = 'ff1cb5a4411c'
 branch_labels = None
 depends_on = None
@@ -31,12 +31,12 @@ def upgrade():
     sa.Column('ledger_created', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     , schema=get_db_schema())
-    op.create_table('ledger_rights_details',
+    op.create_table('ledger_details_data',
     sa.Column('created', sa.DateTime(), nullable=True),
     sa.Column('modified', sa.DateTime(), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('token_address', sa.String(length=42), nullable=False),
-    sa.Column('rights_name', sa.String(length=100), nullable=False),
+    sa.Column('data_id', sa.String(length=42), nullable=True),
     sa.Column('account_address', sa.String(length=42), nullable=True),
     sa.Column('name', sa.String(length=200), nullable=True),
     sa.Column('address', sa.String(length=200), nullable=True),
@@ -46,26 +46,28 @@ def upgrade():
     sa.Column('acquisition_date', sa.String(length=10), nullable=True),
     sa.PrimaryKeyConstraint('id')
     , schema=get_db_schema())
+    op.create_table('ledger_details_template',
+    sa.Column('created', sa.DateTime(), nullable=True),
+    sa.Column('modified', sa.DateTime(), nullable=True),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('token_address', sa.String(length=42), nullable=False),
+    sa.Column('token_detail_type', sa.String(length=100), nullable=False),
+    sa.Column('headers', sa.JSON(), nullable=True),
+    sa.Column('footers', sa.JSON(), nullable=True),
+    sa.Column('data_type', sa.String(length=20), nullable=True),
+    sa.Column('data_source', sa.String(length=42), nullable=True),
+    sa.PrimaryKeyConstraint('id')
+    , schema=get_db_schema())
     op.create_table('ledger_template',
     sa.Column('created', sa.DateTime(), nullable=True),
     sa.Column('modified', sa.DateTime(), nullable=True),
     sa.Column('token_address', sa.String(length=42), nullable=False),
     sa.Column('issuer_address', sa.String(length=42), nullable=True),
-    sa.Column('ledger_name', sa.String(length=200), nullable=False),
+    sa.Column('token_name', sa.String(length=200), nullable=False),
     sa.Column('country_code', sa.String(length=3), nullable=False),
-    sa.Column('item', sa.JSON(), nullable=True),
+    sa.Column('headers', sa.JSON(), nullable=True),
+    sa.Column('footers', sa.JSON(), nullable=True),
     sa.PrimaryKeyConstraint('token_address')
-    , schema=get_db_schema())
-    op.create_table('ledger_template_rights',
-    sa.Column('created', sa.DateTime(), nullable=True),
-    sa.Column('modified', sa.DateTime(), nullable=True),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('token_address', sa.String(length=42), nullable=False),
-    sa.Column('rights_name', sa.String(length=100), nullable=False),
-    sa.Column('item', sa.JSON(), nullable=True),
-    sa.Column('details_item', sa.JSON(), nullable=True),
-    sa.Column('is_uploaded_details', sa.Boolean(), nullable=True),
-    sa.PrimaryKeyConstraint('id')
     , schema=get_db_schema())
     op.drop_table('bond_ledger', schema=get_db_schema())
     op.drop_index('ix_corporate_bond_ledger_template_jpn_issuer_address', table_name='corporate_bond_ledger_template_jpn', schema=get_db_schema())
@@ -107,8 +109,8 @@ def downgrade():
     sa.Column('bond_ledger_created', postgresql.TIMESTAMP(), autoincrement=False, nullable=False),
     sa.PrimaryKeyConstraint('id', name='bond_ledger_pkey')
     , schema=get_db_schema())
-    op.drop_table('ledger_template_rights', schema=get_db_schema())
     op.drop_table('ledger_template', schema=get_db_schema())
-    op.drop_table('ledger_rights_details', schema=get_db_schema())
+    op.drop_table('ledger_details_template', schema=get_db_schema())
+    op.drop_table('ledger_details_data', schema=get_db_schema())
     op.drop_table('ledger', schema=get_db_schema())
     # ### end Alembic commands ###

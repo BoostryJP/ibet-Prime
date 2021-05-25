@@ -28,8 +28,9 @@ from .account import (
 )
 from .ledger import (
     CreateUpdateLedgerTemplateRequest,
-    CreateLedgerRightsDetailsRequest,
+    CreateLedgerDetailsDataRequest,
     ListAllLedgerHistoryResponse,
+    RetrieveLedgerHistoryResponse,
     LedgerTemplateResponse
 )
 from .token import (
