@@ -36,8 +36,6 @@ class LedgerTemplate(Base):
     issuer_address = Column(String(42), index=False)
     # token name
     token_name = Column(String(200), nullable=False)
-    # country code(ISO 3166-1 alpha-3(uppercase))
-    country_code = Column(String(3), nullable=False)
     # headers
     headers = Column(JSON, default={})
     # footers
@@ -62,9 +60,9 @@ class LedgerDetailsTemplate(Base):
     # footers
     footers = Column(JSON, default={})
     # data type
-    data_type = Column(String(20), default=False)
+    data_type = Column(String(20), nullable=False)
     # data source
-    data_source = Column(String(42), default=False)
+    data_source = Column(String(42))
 
 
 class LedgerDetailsDataType:

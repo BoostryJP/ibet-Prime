@@ -40,10 +40,7 @@ class Ledger(Base):
     # token type
     token_type = Column(String(40), nullable=False)
     # ledger info
-    # NOTE: JSON structures differs depending on localize.
     ledger = Column(JSON, nullable=False)
-    # country code(ISO 3166-1 alpha-3(uppercase))
-    country_code = Column(String(3), nullable=False)
     # created datetime(UTC)
     # NOTE: Because Base's created column is subject to change in the data patch, define another column.
     ledger_created = Column(DateTime, nullable=False, default=datetime.utcnow)
@@ -51,19 +48,17 @@ class Ledger(Base):
 
 """
 NOTE: Ledger.ledger's JSON structures
-- 'ledger.headers' is set to LedgerTemplate.headers
-- 'ledger.footers' is set to LedgerTemplate.footers
-- 'ledger.details[].headers' is set to LedgerDetailsTemplate.headers
-- 'ledger.details[].footers' is set to LedgerDetailsTemplate.footers
+If LedgerDetailsTemplate.data_type is 'db', 'details[].data' is empty.
+This is merged with LedgerTemplate, LedgerDetailsTemplate, and LedgerDetailsData.
 
 {
   "created": "string(YYYY/MM/DD)",
-  "token_name": "string",
+  "token_name": "",
   "headers": {},
   "details": [
     {
       "token_detail_type": "string",
-      "header": {},
+      "headers": {},
       "data": [
         {
           "account_address": "string",
@@ -78,7 +73,7 @@ NOTE: Ledger.ledger's JSON structures
       "footers": {},
     },
   ],
-  "footers": {}
+  "footers": {},
 }
 """
 
@@ -93,8 +88,6 @@ class LedgerDetailsData(Base):
     token_address = Column(String(42), nullable=False)
     # data id
     data_id = Column(String(42), default=False)
-    # account address
-    account_address = Column(String(42))
     # name
     name = Column(String(200))
     # address

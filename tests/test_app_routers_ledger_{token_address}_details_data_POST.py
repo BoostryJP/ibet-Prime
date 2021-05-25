@@ -24,9 +24,9 @@ from app.model.db import (
 from tests.account_config import config_eth_account
 
 
-class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
+class TestAppRoutersLedgerTokenAddressDetailsDataPOST:
     # target API endpoint
-    base_url = "/ledger/{token_address}/details_data/{data_id}"
+    base_url = "/ledger/{token_address}/details_data"
 
     ###########################################################################
     # Normal Case
@@ -37,7 +37,6 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
-        data_id = "data_id_1"
 
         # prepare data
         _token = Token()
@@ -47,18 +46,6 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
         _token.token_address = token_address
         _token.abi = {}
         db.add(_token)
-
-        _details_1_data_1 = LedgerDetailsData()
-        _details_1_data_1.token_address = token_address
-        _details_1_data_1.data_id = data_id
-        _details_1_data_1.account_address = "account_address_test_0"
-        _details_1_data_1.name = "name_test_0"
-        _details_1_data_1.address = "address_test_0"
-        _details_1_data_1.amount = 0
-        _details_1_data_1.price = 1
-        _details_1_data_1.balance = 2
-        _details_1_data_1.acquisition_date = "2000/12/31"
-        db.add(_details_1_data_1)
 
         # request target API
         req_param = {
@@ -82,7 +69,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
             ]
         }
         resp = client.post(
-            self.base_url.format(token_address=token_address, data_id=data_id),
+            self.base_url.format(token_address=token_address),
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
@@ -91,13 +78,14 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
 
         # assertion
         assert resp.status_code == 200
+        assert resp.json()["data_id"] is not None
         _details_data_list = db.query(LedgerDetailsData). \
             order_by(LedgerDetailsData.id). \
             all()
         assert len(_details_data_list) == 2
         _details_data = _details_data_list[0]
-        assert _details_data.id == 2
-        assert _details_data.data_id == data_id
+        assert _details_data.id == 1
+        assert _details_data.data_id == resp.json()["data_id"]
         assert _details_data.name == "name_test_1"
         assert _details_data.address == "address_test_1"
         assert _details_data.amount == 100
@@ -105,8 +93,8 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
         assert _details_data.balance == 20000
         assert _details_data.acquisition_date == "2020/01/01"
         _details_data = _details_data_list[1]
-        assert _details_data.id == 3
-        assert _details_data.data_id == data_id
+        assert _details_data.id == 2
+        assert _details_data.data_id == resp.json()["data_id"]
         assert _details_data.name == "name_test_2"
         assert _details_data.address == "address_test_2"
         assert _details_data.amount == 10
@@ -122,11 +110,10 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
     # Parameter Error
     def test_error_1(self, client, db):
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
-        data_id = "data_id_1"
 
         # request target API
         resp = client.post(
-            self.base_url.format(token_address=token_address, data_id=data_id),
+            self.base_url.format(token_address=token_address),
         )
 
         # assertion
@@ -154,7 +141,6 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
     # Parameter Error(issuer-address)
     def test_error_2(self, client, db):
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
-        data_id = "data_id_1"
 
         # request target API
         req_param = {
@@ -178,7 +164,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
             ]
         }
         resp = client.post(
-            self.base_url.format(token_address=token_address, data_id=data_id),
+            self.base_url.format(token_address=token_address),
             json=req_param,
             headers={
                 "issuer-address": "test",
@@ -207,14 +193,13 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
-        data_id = "data_id_1"
 
         # request target API
         req_param = {
             "dummy": "dummy"
         }
         resp = client.post(
-            self.base_url.format(token_address=token_address, data_id=data_id),
+            self.base_url.format(token_address=token_address),
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
@@ -243,7 +228,6 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
-        data_id = "data_id_1"
 
         # request target API
         req_param = {
@@ -271,7 +255,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
             ]
         }
         resp = client.post(
-            self.base_url.format(token_address=token_address, data_id=data_id),
+            self.base_url.format(token_address=token_address),
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
@@ -310,7 +294,6 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
-        data_id = "data_id_1"
 
         # request target API
         req_param = {
@@ -334,7 +317,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
             ]
         }
         resp = client.post(
-            self.base_url.format(token_address=token_address, data_id=data_id),
+            self.base_url.format(token_address=token_address),
             json=req_param,
             headers={
                 "issuer-address": issuer_address,

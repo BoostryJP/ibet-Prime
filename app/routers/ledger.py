@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import uuid
 import pytz
 from fastapi import (
     APIRouter,
@@ -106,7 +107,6 @@ async def list_all_ledger_history(
             "id": _ledger.id,
             "token_address": _ledger.token_address,
             "token_type": _ledger.token_type,
-            "country_code": _ledger.country_code,
             "created": created_formatted,
         })
 
@@ -152,78 +152,84 @@ async def retrieve_ledger_history(
     if _ledger is None:
         raise InvalidParameterError("ledger does not exist")
 
-    resp = _ledger.ledger
-    if latest_flg == 1:  # most recent
+    # Ledger Template Exist Check
+    _template = db.query(LedgerTemplate). \
+        filter(LedgerTemplate.token_address == token_address). \
+        filter(LedgerTemplate.issuer_address == issuer_address). \
+        first()
+    if _template is None:
+        raise InvalidParameterError("ledger template does not exist")
 
-        _template = db.query(LedgerTemplate). \
-            filter(LedgerTemplate.token_address == token_address). \
-            filter(LedgerTemplate.issuer_address == issuer_address). \
-            first()
+    ledger = _ledger.ledger
 
-        if _template is None:
-            raise InvalidParameterError("ledger template does not exist")
+    # Merge Ledger Template
+    ledger["token_name"] = _template.token_name
+    ledger["headers"] = _template.headers
+    ledger["footers"] = _template.footers
 
-        # Update Ledger Common Key
-        resp["token_name"] = _template.token_name
-        resp["headers"] = _template.headers
-        resp["footers"] = _template.footers
+    # Merge Ledger Details Template
+    _details_list = db.query(LedgerDetailsTemplate). \
+        filter(LedgerDetailsTemplate.token_address == token_address). \
+        order_by(LedgerDetailsTemplate.id). \
+        all()
+    tmp_details = ledger["details"]
+    tmp_details_dict = {}
+    for idx, detail in enumerate(tmp_details):
+        tmp_details_dict[detail["token_detail_type"]] = idx
 
-        # Update Ledger Details
-        _details_list = db.query(LedgerDetailsTemplate). \
-            filter(LedgerDetailsTemplate.token_address == token_address). \
-            order_by(LedgerDetailsTemplate.id). \
-            all()
-        ledger_details = []
-        ledger_in_token_detail_type_dict = {}
-        for i, detail in enumerate(resp["details"]):
-            ledger_in_token_detail_type_dict[detail["token_detail_type"]] = i
-        for _details in _details_list:
-            data_list = []
-            if _details.data_type == LedgerDetailsDataType.IBET_FIN:
-                # NOTE: token_detail_type not in ledger, details data is empty.
-                if _details.token_detail_type in ledger_in_token_detail_type_dict:
-                    # Update existing details data in ledger
-                    i = ledger_in_token_detail_type_dict[_details.token_detail_type]
-                    for data in resp["details"][i]["data"]:
+    ledger_details = []
+    for _details in _details_list:
+        data_list = []
+        if _details.data_type == LedgerDetailsDataType.IBET_FIN:
+            # Update existing details data in ledger(data with the same value of token_detail_type)
+            # NOTE: token_detail_type not in ledger, details data is empty.
+            idx = tmp_details_dict.get(_details.token_detail_type, None)
+            if idx is not None:
+                for data in tmp_details[idx]["data"]:
+                    personal_info = {
+                        "name": data["name"],
+                        "address": data["address"],
+                    }
+                    if latest_flg == 1:  # most recent
                         personal_info = __get_personal_info(
                             token_address, _token.type, data["account_address"], db)
-                        data_list.append({
-                            "account_address": data["account_address"],
-                            "name": personal_info["name"],
-                            "address": personal_info["address"],
-                            "amount": data["amount"],
-                            "price": data["price"],
-                            "balance": data["balance"],
-                            "acquisition_date": data["acquisition_date"],
-                        })
-            elif _details.data_type == LedgerDetailsDataType.DB:
-                # Re-create details data from DB
-                _details_data_list = db.query(LedgerDetailsData). \
-                    filter(LedgerDetailsData.token_address == token_address). \
-                    filter(LedgerDetailsData.data_id == _details.data_source). \
-                    order_by(LedgerDetailsData.id). \
-                    all()
-                for _details_data in _details_data_list:
                     data_list.append({
-                        "account_address": _details_data.account_address,
-                        "name": _details_data.name,
-                        "address": _details_data.address,
-                        "amount": _details_data.amount,
-                        "price": _details_data.price,
-                        "balance": _details_data.balance,
-                        "acquisition_date": _details_data.acquisition_date,
+                        "account_address": data["account_address"],
+                        "name": personal_info["name"],
+                        "address": personal_info["address"],
+                        "amount": data["amount"],
+                        "price": data["price"],
+                        "balance": data["balance"],
+                        "acquisition_date": data["acquisition_date"],
                     })
+        elif _details.data_type == LedgerDetailsDataType.DB:
+            # Get Ledger Details Data
+            _details_data_list = db.query(LedgerDetailsData). \
+                filter(LedgerDetailsData.token_address == token_address). \
+                filter(LedgerDetailsData.data_id == _details.data_source). \
+                order_by(LedgerDetailsData.id). \
+                all()
+            for _details_data in _details_data_list:
+                data_list.append({
+                    "account_address": None,
+                    "name": _details_data.name,
+                    "address": _details_data.address,
+                    "amount": _details_data.amount,
+                    "price": _details_data.price,
+                    "balance": _details_data.balance,
+                    "acquisition_date": _details_data.acquisition_date,
+                })
 
-            details = {
-                "token_detail_type": _details.token_detail_type,
-                "headers": _details.headers,
-                "data": data_list,
-                "footers": _details.footers,
-            }
-            ledger_details.append(details)
+        ledger_details.append({
+            "token_detail_type": _details.token_detail_type,
+            "headers": _details.headers,
+            "data": data_list,
+            "footers": _details.footers,
+        })
 
-        resp["details"] = ledger_details
+    ledger["details"] = ledger_details
 
+    resp = ledger
     return resp
 
 
@@ -272,7 +278,6 @@ async def retrieve_ledger_template(
 
     resp = {
         "token_name": _template.token_name,
-        "country_code": _template.country_code,
         "headers": _template.headers,
         "details": details,
         "footers": _template.footers,
@@ -312,14 +317,12 @@ async def create_update_ledger_template(
         _template.token_address = token_address
         _template.issuer_address = issuer_address
         _template.token_name = data.token_name
-        _template.country_code = data.country_code.upper()
         _template.headers = data.headers
         _template.footers = data.footers
         db.add(_template)
     else:
         # Update Template: Ledger
         _template.token_name = data.token_name
-        _template.country_code = data.country_code.upper()
         _template.headers = data.headers
         _template.footers = data.footers
         db.merge(_template)
@@ -329,8 +332,6 @@ async def create_update_ledger_template(
         filter(LedgerDetailsTemplate.token_address == token_address). \
         all()
     delete_details_token_detail_type = [_details.token_detail_type for _details in _details_list]
-    delete_details_data_id = [_details.data_source for _details in _details_list
-                              if _details.data_type == LedgerDetailsDataType.DB]
 
     for details in data.details:
 
@@ -357,8 +358,6 @@ async def create_update_ledger_template(
             db.merge(_details)
             if details.token_detail_type in delete_details_token_detail_type:
                 delete_details_token_detail_type.remove(details.token_detail_type)
-            if details.data.type == LedgerDetailsDataType.DB and details.data.source in delete_details_data_id:
-                delete_details_data_id.remove(details.data.source)
 
     # Delete Ledger Details Template
     for token_detail_type in delete_details_token_detail_type:
@@ -367,15 +366,6 @@ async def create_update_ledger_template(
             filter(LedgerDetailsTemplate.token_detail_type == token_detail_type). \
             first()
         db.delete(_details)
-
-    # Delete Ledger Details Data
-    for data_id in delete_details_data_id:
-        _details_data_list = db.query(LedgerDetailsData). \
-            filter(LedgerDetailsData.token_address == token_address). \
-            filter(LedgerDetailsData.data_id == data_id). \
-            all()
-        for _details_data in _details_data_list:
-            db.delete(_details_data)
 
     db.commit()
     return
@@ -390,10 +380,32 @@ async def create_rights_details(
         db: Session = Depends(db_session)):
     """Create Ledger Details Data"""
 
-    if False:
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
+
+    # Issuer Management Token Check
+    _token = db.query(Token). \
+        filter(Token.token_address == token_address). \
+        filter(Token.issuer_address == issuer_address). \
+        first()
+    if _token is None:
         raise InvalidParameterError("token does not exist")
 
-    return
+    data_id = str(uuid.uuid4())
+    for data in data.data:
+        _details_data = LedgerDetailsData()
+        _details_data.token_address = token_address
+        _details_data.data_id = data_id
+        _details_data.name = data.name
+        _details_data.address = data.address
+        _details_data.amount = data.amount
+        _details_data.price = data.price
+        _details_data.balance = data.balance
+        _details_data.acquisition_date = data.acquisition_date
+        db.add(_details_data)
+
+    db.commit()
+    return {"data_id": data_id}
 
 
 # POST: /ledger/{token_address}/details_data/{data_id}
@@ -417,22 +429,6 @@ async def update_rights_details(
     if _token is None:
         raise InvalidParameterError("token does not exist")
 
-    # Ledger Template Exist Check
-    _template = db.query(LedgerTemplate). \
-        filter(LedgerTemplate.token_address == token_address). \
-        first()
-    if _template is None:
-        raise InvalidParameterError("ledger template does not exist")
-
-    # Ledger Details Template Exist Check
-    _details = db.query(LedgerDetailsTemplate). \
-        filter(LedgerDetailsTemplate.token_address == token_address). \
-        filter(LedgerDetailsTemplate.data_type == LedgerDetailsDataType.DB). \
-        filter(LedgerDetailsTemplate.data_source == data_id). \
-        first()
-    if _details is None:
-        raise InvalidParameterError("ledger details template does not exist")
-
     # Delete + Insert Ledger Details Data
     _details_data_list = db.query(LedgerDetailsData). \
         filter(LedgerDetailsData.token_address == token_address). \
@@ -444,7 +440,6 @@ async def update_rights_details(
         _details_data = LedgerDetailsData()
         _details_data.token_address = token_address
         _details_data.data_id = data_id
-        _details_data.account_address = data.account_address
         _details_data.name = data.name
         _details_data.address = data.address
         _details_data.amount = data.amount

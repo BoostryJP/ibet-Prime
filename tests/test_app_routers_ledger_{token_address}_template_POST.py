@@ -16,20 +16,17 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from unittest import mock
-
 from app.model.db import (
     Token,
     TokenType,
     LedgerTemplate,
     LedgerDetailsTemplate,
-    LedgerDetailsDataType,
-    LedgerDetailsData
+    LedgerDetailsDataType
 )
 from tests.account_config import config_eth_account
 
 
-class TestAppRoutersLedgerTokenAddressHistoryTemplatePOST:
+class TestAppRoutersLedgerTokenAddressTemplatePOST:
     # target API endpoint
     base_url = "/ledger/{token_address}/template"
 
@@ -56,7 +53,6 @@ class TestAppRoutersLedgerTokenAddressHistoryTemplatePOST:
         # request target API
         req_param = {
             "token_name": "テスト原簿",
-            "country_code": "JPN",
             "headers": {
                 "hoge": "aaa",
                 "fuga": "bbb",
@@ -113,7 +109,6 @@ class TestAppRoutersLedgerTokenAddressHistoryTemplatePOST:
         assert _template.token_address == token_address
         assert _template.issuer_address == issuer_address
         assert _template.token_name == "テスト原簿"
-        assert _template.country_code == "JPN"
         assert _template.headers == {
             "hoge": "aaa",
             "fuga": "bbb",
@@ -175,7 +170,6 @@ class TestAppRoutersLedgerTokenAddressHistoryTemplatePOST:
         _template.token_address = token_address
         _template.issuer_address = issuer_address
         _template.token_name = "テスト原簿"
-        _template.country_code = "JPN"
         _template.headers = {
             "hoge": "aaa",
             "fuga": "bbb",
@@ -201,18 +195,6 @@ class TestAppRoutersLedgerTokenAddressHistoryTemplatePOST:
         _details_1.data_source = "data_id_1"
         db.add(_details_1)
 
-        _details_1_details_1 = LedgerDetailsData()
-        _details_1_details_1.token_address = token_address
-        _details_1_details_1.data_id = "data_id_1"
-        _details_1_details_1.account_address = "dummy1-1"
-        _details_1_details_1.name = "dummy2-1"
-        _details_1_details_1.address = "dummy3-1"
-        _details_1_details_1.amount = 1
-        _details_1_details_1.price = 2
-        _details_1_details_1.balance = 3
-        _details_1_details_1.acquisition_date = "2020/01/01"
-        db.add(_details_1_details_1)
-
         _details_2 = LedgerDetailsTemplate()
         _details_2.token_address = token_address
         _details_2.token_detail_type = "権利_test_3"
@@ -228,34 +210,9 @@ class TestAppRoutersLedgerTokenAddressHistoryTemplatePOST:
         _details_2.data_source = "data_id_2"
         db.add(_details_2)
 
-        _details_2_details_1 = LedgerDetailsData()
-        _details_2_details_1.token_address = token_address
-        _details_2_details_1.data_id = "data_id_2"
-        _details_2_details_1.account_address = "dummy1-1"
-        _details_2_details_1.name = "dummy2-1"
-        _details_2_details_1.address = "dummy3-1"
-        _details_2_details_1.amount = 1
-        _details_2_details_1.price = 2
-        _details_2_details_1.balance = 3
-        _details_2_details_1.acquisition_date = "2020/01/01"
-        db.add(_details_2_details_1)
-
-        _details_2_details_2 = LedgerDetailsData()
-        _details_2_details_2.token_address = token_address
-        _details_2_details_2.data_id = "data_id_2"
-        _details_2_details_2.account_address = "dummy1-2"
-        _details_2_details_2.name = "dummy2-2"
-        _details_2_details_2.address = "dummy3-2"
-        _details_2_details_2.amount = 10
-        _details_2_details_2.price = 20
-        _details_2_details_2.balance = 30
-        _details_2_details_2.acquisition_date = "2020/01/02"
-        db.add(_details_2_details_2)
-
         # request target API
         req_param = {
             "token_name": "テスト原簿_update",
-            "country_code": "USA",
             "headers": {
                 "hoge_update": "aaa_update",
                 "fuga_update": "bbb_update",
@@ -312,7 +269,6 @@ class TestAppRoutersLedgerTokenAddressHistoryTemplatePOST:
         assert _template.token_address == token_address
         assert _template.issuer_address == issuer_address
         assert _template.token_name == "テスト原簿_update"
-        assert _template.country_code == "USA"
         assert _template.headers == {
             "hoge_update": "aaa_update",
             "fuga_update": "bbb_update",
@@ -353,9 +309,6 @@ class TestAppRoutersLedgerTokenAddressHistoryTemplatePOST:
         }
         assert _details.data_type == LedgerDetailsDataType.IBET_FIN
         assert _details.data_source == token_address
-        _details_list = db.query(LedgerDetailsData). \
-            all()
-        assert len(_details_list) == 0
 
     ###########################################################################
     # Error Case
@@ -400,7 +353,6 @@ class TestAppRoutersLedgerTokenAddressHistoryTemplatePOST:
         # request target API
         req_param = {
             "token_name": "テスト原簿",
-            "country_code": "JPN",
             "headers": {
                 "hoge": "aaa",
                 "fuga": "bbb",
@@ -499,11 +451,6 @@ class TestAppRoutersLedgerTokenAddressHistoryTemplatePOST:
                     "type": "value_error.missing"
                 },
                 {
-                    "loc": ["body", "country_code"],
-                    "msg": "field required",
-                    "type": "value_error.missing"
-                },
-                {
                     "loc": ["body", "details"],
                     "msg": "field required",
                     "type": "value_error.missing"
@@ -523,7 +470,6 @@ class TestAppRoutersLedgerTokenAddressHistoryTemplatePOST:
             "token_name": "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
                           "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
                           "1",
-            "country_code": "USAA",
             "headers": {
                 "hoge": "aaa",
                 "fuga": "bbb",
@@ -556,11 +502,6 @@ class TestAppRoutersLedgerTokenAddressHistoryTemplatePOST:
                     "type": "value_error"
                 },
                 {
-                    "loc": ["body", "country_code"],
-                    "msg": 'The length must be less than or equal to 3',
-                    "type": "value_error"
-                },
-                {
                     "loc": ["body", "details"],
                     "msg": "The length must be greater than or equal to 1",
                     "type": "value_error"
@@ -578,7 +519,6 @@ class TestAppRoutersLedgerTokenAddressHistoryTemplatePOST:
         # request target API
         req_param = {
             "token_name": "テスト原簿",
-            "country_code": "JPN",
             "item": {
                 "hoge": "aaa",
                 "fuga": "bbb",
@@ -591,7 +531,7 @@ class TestAppRoutersLedgerTokenAddressHistoryTemplatePOST:
                         "fuga-1": "bbb-1",
                     },
                     "data": {
-                        "type": "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901",
+                        "type": "123456789012345678901",
                         "source": "1234567890123456789012345678901234567890123",
                     },
                     "footers": {
@@ -681,7 +621,6 @@ class TestAppRoutersLedgerTokenAddressHistoryTemplatePOST:
         # request target API
         req_param = {
             "token_name": "テスト原簿",
-            "country_code": "JPN",
             "headers": {
                 "hoge": "aaa",
                 "fuga": "bbb",
