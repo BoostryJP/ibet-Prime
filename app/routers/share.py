@@ -567,7 +567,7 @@ async def retrieve_token_event(
     "/tokens/{token_address}/scheduled_events/{scheduled_event_id}",
     response_model=ScheduledEventResponse
 )
-async def delete_token_event(
+async def delete_scheduled_event(
         request: Request,
         token_address: str,
         scheduled_event_id: str,
