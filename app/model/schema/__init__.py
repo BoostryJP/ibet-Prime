@@ -28,10 +28,11 @@ from .account import (
 )
 from .ledger import (
     CreateUpdateLedgerTemplateRequest,
-    CreateLedgerDetailsDataRequest,
+    CreateUpdateLedgerDetailsDataRequest,
     ListAllLedgerHistoryResponse,
     RetrieveLedgerHistoryResponse,
-    LedgerTemplateResponse
+    LedgerTemplateResponse,
+    LedgerDetailsDataResponse
 )
 from .token import (
     IbetStraightBondCreate,

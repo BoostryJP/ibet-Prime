@@ -48,10 +48,11 @@ from app.model.db import (
 )
 from app.model.schema import (
     CreateUpdateLedgerTemplateRequest,
-    CreateLedgerDetailsDataRequest,
+    CreateUpdateLedgerDetailsDataRequest,
     ListAllLedgerHistoryResponse,
     RetrieveLedgerHistoryResponse,
     LedgerTemplateResponse,
+    LedgerDetailsDataResponse
 )
 from app.exceptions import InvalidParameterError
 
@@ -380,15 +381,30 @@ async def create_update_ledger_template(
     return
 
 
-# POST: /ledger/{token_address}/details_data/{data_id}
-@router.post("/{token_address}/details_data/{data_id}")
+# POST: /ledger/{token_address}/details_data
+@router.post("/{token_address}/details_data", response_model=LedgerDetailsDataResponse)
 async def create_rights_details(
         token_address: str,
-        data_id: str,
-        data: CreateLedgerDetailsDataRequest,
+        data: CreateUpdateLedgerDetailsDataRequest,
         issuer_address: str = Header(...),
         db: Session = Depends(db_session)):
-    """Create Ledger Rights Details"""
+    """Create Ledger Details Data"""
+
+    if False:
+        raise InvalidParameterError("token does not exist")
+
+    return
+
+
+# POST: /ledger/{token_address}/details_data/{data_id}
+@router.post("/{token_address}/details_data/{data_id}")
+async def update_rights_details(
+        token_address: str,
+        data_id: str,
+        data: CreateUpdateLedgerDetailsDataRequest,
+        issuer_address: str = Header(...),
+        db: Session = Depends(db_session)):
+    """Update Ledger Details Data"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))

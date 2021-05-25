@@ -37,7 +37,7 @@ from .result_set import ResultSet
 class CreateUpdateLedgerDetailsDataTemplateRequest(BaseModel):
     """Create or Update Ledger Details Data Template schema (Request)"""
     type: str
-    source: str
+    source: Optional[str]
 
     @validator("type")
     def type_length_is_less_than_20(cls, v):
@@ -93,8 +93,8 @@ class CreateUpdateLedgerTemplateRequest(BaseModel):
         return v
 
 
-class CreateLedgerDetailsDataStructureRequest(BaseModel):
-    """Create Ledger Details Data Structure schema (Request)"""
+class CreateUpdateLedgerDetailsDataStructureRequest(BaseModel):
+    """Create or Update Ledger Details Data Structure schema (Request)"""
     account_address: Optional[str]
     name: Optional[str]
     address: Optional[str]
@@ -136,9 +136,9 @@ class CreateLedgerDetailsDataStructureRequest(BaseModel):
         return v
 
 
-class CreateLedgerDetailsDataRequest(BaseModel):
-    """Create Ledger Details Data schema (Request)"""
-    data: List[CreateLedgerDetailsDataStructureRequest]
+class CreateUpdateLedgerDetailsDataRequest(BaseModel):
+    """Create or Update Ledger Details Data schema (Request)"""
+    data: List[CreateUpdateLedgerDetailsDataStructureRequest]
 
 
 ############################
@@ -209,3 +209,8 @@ class LedgerTemplateResponse(BaseModel):
     headers: dict
     details: List[LedgerDetailsTemplateResponse]
     footers: dict
+
+
+class LedgerDetailsDataResponse(BaseModel):
+    """Ledger Details Data schema (Response)"""
+    data_id: str
