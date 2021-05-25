@@ -68,15 +68,16 @@ class IbetShareScheduledUpdate(BaseModel):
 ############################
 class ScheduledEventIdResponse(BaseModel):
     """scheduled event (Response)"""
-    scheduled_event_id: int
+    scheduled_event_id: str
 
 
 class ScheduledEventResponse(BaseModel):
     """scheduled event (Response)"""
-    scheduled_event_id: int
+    scheduled_event_id: str
     token_address: str
     token_type: str
     scheduled_datetime: datetime
     event_type: str
     status: int
     data: Dict[str, Any]
+    created: str

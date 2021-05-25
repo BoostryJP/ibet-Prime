@@ -16,19 +16,19 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from datetime import (
-    datetime,
-    timedelta
-)
+import uuid
+from datetime import datetime
 
 from pytz import timezone
 
 from config import TZ
 from app.model.db import (
+    Account,
     TokenType,
     ScheduledEvents,
     ScheduledEventType
 )
+from app.model.utils import E2EEUtils
 from tests.account_config import config_eth_account
 
 
@@ -42,7 +42,6 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
     ###########################################################################
 
     # <Normal_1>
-    # Timezone of input data is UTC, ScheduledEventType : UPDATE, Set issuer_address.
     def test_normal_1(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -50,8 +49,15 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
         _token_address = "token_address_test"
 
         # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         datetime_now_utc = datetime.utcnow()
-        update_data = {
+        datetime_now_str = timezone("UTC").localize(datetime_now_utc).astimezone(self.local_tz).isoformat()
+        data = {
             "face_value": 10000,
             "interest_rate": 0.5,
             "interest_payment_date": ["0101", "0701"],
@@ -70,146 +76,62 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest"
         }
+        event_id = str(uuid.uuid4())
 
         token_event = ScheduledEvents()
+        token_event.event_id = event_id
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = datetime_now_utc
         token_event.status = 0
-        token_event.data = update_data
+        token_event.data = data
+        token_event.created = datetime_now_utc
         db.add(token_event)
 
-        assumed_resp = {
-            "scheduled_event_id": 1,
-            "token_address": _token_address,
-            "token_type": TokenType.IBET_STRAIGHT_BOND,
-            "scheduled_datetime": timezone("UTC").localize(datetime_now_utc).astimezone(self.local_tz).isoformat(),
-            "event_type": ScheduledEventType.UPDATE,
-            "status": 0,
-            "data": update_data
-        }
-
         # request target API
         resp = client.delete(
-            self.base_url.format(_token_address, 1),
+            self.base_url.format(_token_address, event_id),
             headers={
                 "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
             }
         )
-        # request get API
-        resp_get = client.get(
-            self.base_url.format(_token_address, 1),
-        )
 
         # assertion
         assert resp.status_code == 200
-        assert resp.json() == assumed_resp
-        assert resp_get.status_code == 404
-        assert resp_get.json() == {
-            "meta": {
-                "code": 1, "title": "NotFound"
-            },
-            "detail": "scheduled event scheduled_event_id not found"
-        }
-
-    # <Normal_2>
-    # Timezone of input data is JST, ScheduledEventType : UPDATE, Not set issuer_address.
-    def test_normal_2(self, client, db):
-        test_account = config_eth_account("user1")
-        _issuer_address = test_account["address"]
-        _keyfile = test_account["keyfile_json"]
-        _token_address = "token_address_test"
-
-        # prepare data
-        datetime_list = []
-        datetime_utc = datetime.utcnow() + timedelta(hours=1)
-        datetime_list.append(datetime_utc)
-        datetime_utc = datetime.utcnow()
-        datetime_list.append(datetime_utc)
-        update_data = {
-            "face_value": 10000,
-            "interest_rate": 0.5,
-            "interest_payment_date": ["0101", "0701"],
-            "redemption_value": 11000,
-            "transferable": False,
-            "image_url": [
-                "http://sampleurl.com/some_image1.png",
-                "http://sampleurl.com/some_image2.png",
-                "http://sampleurl.com/some_image3.png"
-            ],
-            "status": False,
-            "initial_offering_status": False,
-            "is_redeemed": True,
-            "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
-            "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
-            "contact_information": "問い合わせ先test",
-            "privacy_policy": "プライバシーポリシーtest"
-        }
-
-        for _datetime in datetime_list:
-            token_event = ScheduledEvents()
-            token_event.issuer_address = _issuer_address
-            token_event.token_address = _token_address
-            token_event.token_type = TokenType.IBET_STRAIGHT_BOND
-            token_event.event_type = ScheduledEventType.UPDATE
-            token_event.scheduled_datetime = _datetime
-            token_event.status = 0
-            token_event.data = update_data
-            db.add(token_event)
-
-        assumed_resp = {
-            "scheduled_event_id": 2,
+        assert resp.json() == {
+            "scheduled_event_id": event_id,
             "token_address": _token_address,
             "token_type": TokenType.IBET_STRAIGHT_BOND,
-            "scheduled_datetime": timezone("UTC").localize(datetime_list[1]).astimezone(self.local_tz).isoformat(),
+            "scheduled_datetime": datetime_now_str,
             "event_type": ScheduledEventType.UPDATE,
             "status": 0,
-            "data": update_data
+            "data": data,
+            "created": datetime_now_str
         }
-
-        # request target API
-        resp = client.delete(
-            self.base_url.format(_token_address, 2),
-        )
-        # request get API
-        resp_get_1 = client.get(
-            self.base_url.format(_token_address, 1),
-        )
-        # request get API
-        resp_get_2 = client.get(
-            self.base_url.format(_token_address, 2),
-        )
-
-        # assertion
-        assert resp.status_code == 200
-        assert resp.json() == assumed_resp
-        assert resp_get_1.status_code == 200
-        assert resp_get_2.status_code == 404
-        assert resp_get_2.json() == {
-            "meta": {
-                "code": 1, "title": "NotFound"
-            },
-            "detail": "scheduled event scheduled_event_id not found"
-        }
+        token_event = db.query(ScheduledEvents).filter(ScheduledEvents.event_id == event_id).first()
+        assert token_event is None
 
     #########################################################################
     # Error Case
     ###########################################################################
+
     # <Error_1>
     # RequestValidationError
-    # invalid scheduled_event_id
+    # invalid issuer_address, password not encrypted
     def test_error_1(self, client, db):
-        test_account = config_eth_account("user2")
+        test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
         # request target API
         resp = client.delete(
-            self.base_url.format(_token_address, "non-numeric-type"),
+            self.base_url.format(_token_address, "test_event_id"),
             headers={
-                "issuer-address": _issuer_address,
+                "issuer-address": _issuer_address[:-1],  # too short
+                "eoa-password": "password"  # not encrypted
             }
         )
 
@@ -218,32 +140,94 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
         assert resp.json()["meta"] == {"code": 1, "title": "RequestValidationError"}
         assert resp.json()["detail"] == [
             {
-                "loc": ["path", "scheduled_event_id"],
-                "msg": "value is not a valid integer",
-                "type": "type_error.integer"
+                "loc": ["header", "issuer-address"],
+                "msg": "issuer-address is not a valid address",
+                "type": "value_error"
+            }, {
+                "loc": ["header", "eoa-password"],
+                "msg": "eoa-password is not a Base64-encoded encrypted data",
+                "type": "value_error"
             }
         ]
 
     # <Error_2>
-    # scheduled event scheduled_event_id not found
+    # AuthorizationError
+    # issuer_address does not exists
     def test_error_2(self, client, db):
-        test_account = config_eth_account("user2")
+        test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
         # request target API
-        resp = client.get(
-            self.base_url.format(_token_address, 1),
+        resp = client.delete(
+            self.base_url.format(_token_address, "test_event_id"),
             headers={
                 "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 401
+        assert resp.json()["meta"] == {"code": 1, "title": "AuthorizationError"}
+        assert resp.json()["detail"] == "issuer does not exist"
+
+    # <Error_3>
+    # AuthorizationError
+    # password mismatch
+    def test_error_3(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "token_address_test"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        # request target API
+        resp = client.delete(
+            self.base_url.format(_token_address, "test_event_id"),
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("mismatch_password")
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 401
+        assert resp.json()["meta"] == {"code": 1, "title": "AuthorizationError"}
+        assert resp.json()["detail"] == "issuer does not exist, or password mismatch"
+
+    # <Error_4>
+    # NotFound
+    # event not found
+    def test_error_4(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "token_address_test"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        # request target API
+        resp = client.delete(
+            self.base_url.format(_token_address, "test_event_id"),
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
             }
         )
 
         # assertion
         assert resp.status_code == 404
-        assert resp.json() == {
-            "meta": {
-                "code": 1, "title": "NotFound"
-            },
-            "detail": "scheduled event scheduled_event_id not found"
-        }
+        assert resp.json()["meta"] == {"code": 1, "title": "NotFound"}
+        assert resp.json()["detail"] == "event not found"
