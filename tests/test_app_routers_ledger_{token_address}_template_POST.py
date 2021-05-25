@@ -668,11 +668,6 @@ class TestAppRoutersLedgerTokenAddressHistoryTemplatePOST:
                     "msg": "field required",
                     "type": "value_error.missing"
                 },
-                {
-                    "loc": ["body", "details", 2, "data", "source"],
-                    "msg": "field required",
-                    "type": "value_error.missing"
-                },
             ]
         }
 
