@@ -168,7 +168,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
         # assertion
         assert resp.status_code == 401
         assert resp.json()["meta"] == {"code": 1, "title": "AuthorizationError"}
-        assert resp.json()["detail"] == "issuer does not exist"
+        assert resp.json()["detail"] == "issuer does not exist, or password mismatch"
 
     # <Error_3>
     # AuthorizationError
