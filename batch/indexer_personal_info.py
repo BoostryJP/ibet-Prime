@@ -207,7 +207,7 @@ class Processor:
                     args = event["args"]
                     account_address = args.get("account_address", ZERO_ADDRESS)
                     link_address = args.get("link_address", ZERO_ADDRESS)
-                    if link_address == _personal_info_contract.issuer.eth_account:
+                    if link_address == _personal_info_contract.issuer.issuer_address:
                         block = web3.eth.get_block(event["blockNumber"])
                         timestamp = datetime.utcfromtimestamp(block["timestamp"])
                         decrypted_personal_info = _personal_info_contract.get_info(
