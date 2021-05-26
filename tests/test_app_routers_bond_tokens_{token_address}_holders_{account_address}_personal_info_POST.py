@@ -23,7 +23,7 @@ from app.model.db import (
     Token,
     TokenType
 )
-from app.model.utils import E2EEUtils
+from app.utils.e2ee_utils import E2EEUtils
 from app.model.blockchain import (
     IbetStraightBondContract,
     PersonalInfoContract

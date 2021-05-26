@@ -31,7 +31,7 @@ from app.model.db import (
     TokenType,
     TransferApprovalHistory,
 )
-from app.model.utils import E2EEUtils
+from app.utils.e2ee_utils import E2EEUtils
 from app.model.schema.token import (
     IbetShareApproveTransfer,
     IbetShareCancelTransfer
@@ -320,7 +320,7 @@ class TestProcessor:
             target="app.model.blockchain.token.IbetShareContract.approve_transfer",
         )
         E2EEUtils_decrypt = patch(
-            target="app.model.utils.E2EEUtils.decrypt",
+            target="app.utils.e2ee_utils.E2EEUtils.decrypt",
             side_effect=ValueError("test")
         )
 

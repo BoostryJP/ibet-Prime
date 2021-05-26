@@ -39,7 +39,7 @@ from config import (
 )
 from app.model.blockchain.utils import ContractUtils
 from app.model.db import Account
-from app.model.utils import E2EEUtils
+from app.utils.e2ee_utils import E2EEUtils
 from app.exceptions import SendTransactionError
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))

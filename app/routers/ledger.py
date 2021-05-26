@@ -35,7 +35,7 @@ from app.model.blockchain import (
     IbetStraightBondContract,
     PersonalInfoContract
 )
-from app.model.utils import (
+from app.utils.check_utils import (
     validate_headers,
     address_is_valid_address
 )

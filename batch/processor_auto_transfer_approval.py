@@ -36,7 +36,7 @@ from config import (
     DATABASE_URL,
     AUTO_TRANSFER_APPROVAL_INTERVAL
 )
-from app.model.utils import E2EEUtils
+from app.utils.e2ee_utils import E2EEUtils
 from app.model.db import (
     Account,
     Token,

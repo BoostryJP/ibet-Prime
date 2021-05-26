@@ -34,7 +34,7 @@ from app.model.blockchain import PersonalInfoContract
 from app.model.blockchain.utils import ContractUtils
 from app.exceptions import SendTransactionError
 from app.model.db import Account
-from app.model.utils import E2EEUtils
+from app.utils.e2ee_utils import E2EEUtils
 
 from tests.account_config import config_eth_account
 

@@ -48,7 +48,7 @@ from app.model.schema import (
     AccountChangeEOAPasswordRequest,
     AccountChangeRSAPassphraseRequest
 )
-from app.model.utils import E2EEUtils
+from app.utils.e2ee_utils import E2EEUtils
 from app.model.db import (
     Account,
     AccountRsaKeyTemporary,

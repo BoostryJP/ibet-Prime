@@ -20,7 +20,7 @@ import pytest
 from unittest.mock import patch
 
 from app.model.db import Account, BulkTransfer, BulkTransferUpload, TokenType
-from app.model.utils import E2EEUtils
+from app.utils.e2ee_utils import E2EEUtils
 from app.exceptions import SendTransactionError
 from batch.processor_bulk_transfer import Sinks, DBSink, Processor
 

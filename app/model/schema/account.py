@@ -23,7 +23,7 @@ from pydantic import (
 )
 
 from config import E2EE_REQUEST_ENABLED
-from app.model.utils import check_value_is_encrypted
+from app.utils.check_utils import check_value_is_encrypted
 
 
 ############################
