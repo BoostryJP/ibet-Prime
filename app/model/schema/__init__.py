@@ -32,7 +32,9 @@ from .ledger import (
     ListAllLedgerHistoryResponse,
     RetrieveLedgerHistoryResponse,
     LedgerTemplateResponse,
-    LedgerDetailsDataResponse
+    ListAllLedgerDetailsDataResponse,
+    LedgerDetailsDataResponse,
+    RetrieveLedgerDetailsDataResponse
 )
 from .token import (
     IbetStraightBondCreate,

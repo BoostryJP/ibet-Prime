@@ -100,3 +100,6 @@ class LedgerDetailsData(Base):
     balance = Column(Integer)
     # acquisition date(format: YYYY/MM/DD)
     acquisition_date = Column(String(10))
+    # created datetime(UTC)
+    # NOTE: Because Base's created column is subject to change in the data patch, define another column.
+    data_created = Column(DateTime, nullable=False, default=datetime.utcnow)
