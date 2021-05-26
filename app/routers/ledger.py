@@ -18,12 +18,14 @@ SPDX-License-Identifier: Apache-2.0
 """
 import uuid
 import pytz
+from typing import List
 from fastapi import (
     APIRouter,
     Header,
     Query,
     Depends
 )
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from config import TZ
@@ -53,7 +55,9 @@ from app.model.schema import (
     ListAllLedgerHistoryResponse,
     RetrieveLedgerHistoryResponse,
     LedgerTemplateResponse,
-    LedgerDetailsDataResponse
+    ListAllLedgerDetailsDataResponse,
+    LedgerDetailsDataResponse,
+    RetrieveLedgerDetailsDataResponse
 )
 from app.exceptions import InvalidParameterError
 
@@ -371,11 +375,70 @@ async def create_update_ledger_template(
     return
 
 
+# GET: /ledger/{token_address}/details_data
+@router.get("/{token_address}/details_data", response_model=ListAllLedgerDetailsDataResponse)
+async def list_all_ledger_details_data(
+        token_address: str,
+        issuer_address: str = Header(...),
+        offset: int = Query(None),
+        limit: int = Query(None),
+        db: Session = Depends(db_session)):
+    """List all Ledger Details Data"""
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
+
+    # Issuer Management Token Check
+    _token = db.query(Token). \
+        filter(Token.token_address == token_address). \
+        filter(Token.issuer_address == issuer_address). \
+        first()
+    if _token is None:
+        raise InvalidParameterError("token does not exist")
+
+    # Get Ledger Details Data(summary data_id)
+    query = db.query(LedgerDetailsData.data_id,
+                     func.count(LedgerDetailsData.data_id),
+                     func.max(LedgerDetailsData.data_created)). \
+        filter(LedgerDetailsData.token_address == token_address). \
+        group_by(LedgerDetailsData.data_id). \
+        order_by(LedgerDetailsData.data_id)
+    count = query.count()
+
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+
+    _details_data_list = query.all()
+
+    details_data = []
+    for _data_id, _count, _created in _details_data_list:
+        created_formatted = utc_tz.localize(_created).astimezone(local_tz).isoformat()
+        details_data.append({
+            "data_id": _data_id,
+            "count": _count,
+            "created": created_formatted,
+        })
+
+    resp = {
+        "result_set": {
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": count
+        },
+        "details_data": details_data
+    }
+
+    return resp
+
+
 # POST: /ledger/{token_address}/details_data
 @router.post("/{token_address}/details_data", response_model=LedgerDetailsDataResponse)
-async def create_rights_details(
+async def create_ledger_details_data(
         token_address: str,
-        data: CreateUpdateLedgerDetailsDataRequest,
+        data_list: List[CreateUpdateLedgerDetailsDataRequest],
         issuer_address: str = Header(...),
         db: Session = Depends(db_session)):
     """Create Ledger Details Data"""
@@ -392,7 +455,7 @@ async def create_rights_details(
         raise InvalidParameterError("token does not exist")
 
     data_id = str(uuid.uuid4())
-    for data in data.data:
+    for data in data_list:
         _details_data = LedgerDetailsData()
         _details_data.token_address = token_address
         _details_data.data_id = data_id
@@ -408,12 +471,52 @@ async def create_rights_details(
     return {"data_id": data_id}
 
 
-# POST: /ledger/{token_address}/details_data/{data_id}
-@router.post("/{token_address}/details_data/{data_id}")
-async def update_rights_details(
+# GET: /ledger/{token_address}/details_data/{data_id}
+@router.get("/{token_address}/details_data/{data_id}", response_model=List[RetrieveLedgerDetailsDataResponse])
+async def retrieve_ledger_details_data(
         token_address: str,
         data_id: str,
-        data: CreateUpdateLedgerDetailsDataRequest,
+        issuer_address: str = Header(...),
+        db: Session = Depends(db_session)):
+    """Retrieve Ledger Details Data"""
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
+
+    # Issuer Management Token Check
+    _token = db.query(Token). \
+        filter(Token.token_address == token_address). \
+        filter(Token.issuer_address == issuer_address). \
+        first()
+    if _token is None:
+        raise InvalidParameterError("token does not exist")
+
+    # Get Ledger Details Data
+    _details_data_list = db.query(LedgerDetailsData). \
+        filter(LedgerDetailsData.token_address == token_address). \
+        filter(LedgerDetailsData.data_id == data_id). \
+        all()
+
+    resp = []
+    for _details_data in _details_data_list:
+        resp.append({
+            "name": _details_data.name,
+            "address": _details_data.address,
+            "amount": _details_data.amount,
+            "price": _details_data.price,
+            "balance": _details_data.balance,
+            "acquisition_date": _details_data.acquisition_date,
+        })
+
+    return resp
+
+
+# POST: /ledger/{token_address}/details_data/{data_id}
+@router.post("/{token_address}/details_data/{data_id}")
+async def update_ledger_details_data(
+        token_address: str,
+        data_id: str,
+        data_list: List[CreateUpdateLedgerDetailsDataRequest],
         issuer_address: str = Header(...),
         db: Session = Depends(db_session)):
     """Update Ledger Details Data"""
@@ -436,17 +539,50 @@ async def update_rights_details(
         all()
     for _details_data in _details_data_list:
         db.delete(_details_data)
-    for data in data.data:
+    for data_list in data_list:
         _details_data = LedgerDetailsData()
         _details_data.token_address = token_address
         _details_data.data_id = data_id
-        _details_data.name = data.name
-        _details_data.address = data.address
-        _details_data.amount = data.amount
-        _details_data.price = data.price
-        _details_data.balance = data.balance
-        _details_data.acquisition_date = data.acquisition_date
+        _details_data.name = data_list.name
+        _details_data.address = data_list.address
+        _details_data.amount = data_list.amount
+        _details_data.price = data_list.price
+        _details_data.balance = data_list.balance
+        _details_data.acquisition_date = data_list.acquisition_date
         db.add(_details_data)
+
+    db.commit()
+    return
+
+
+# DELETE: /ledger/{token_address}/details_data/{data_id}
+@router.delete("/{token_address}/details_data/{data_id}")
+async def delete_ledger_details_data(
+        token_address: str,
+        data_id: str,
+        issuer_address: str = Header(...),
+        db: Session = Depends(db_session)):
+    """Update Ledger Details Data"""
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
+
+    # Issuer Management Token Check
+    _token = db.query(Token). \
+        filter(Token.token_address == token_address). \
+        filter(Token.issuer_address == issuer_address). \
+        first()
+    if _token is None:
+        raise InvalidParameterError("token does not exist")
+
+    # Delete Ledger Details Data
+    _details_data_list = db.query(LedgerDetailsData). \
+        filter(LedgerDetailsData.token_address == token_address). \
+        filter(LedgerDetailsData.data_id == data_id). \
+        all()
+
+    for _details_data in _details_data_list:
+        db.delete(_details_data)
 
     db.commit()
     return

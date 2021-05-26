@@ -1,8 +1,8 @@
-"""v0.1.0_feature/#101
+"""v0.1.0_feature/#101#119
 
-Revision ID: 0624d4ca35a0
-Revises: ff1cb5a4411c
-Create Date: 2021-05-25 11:59:30.381993
+Revision ID: b54c7dbe300d
+Revises: 498c64b0a5ad
+Create Date: 2021-05-26 15:29:07.829466
 
 """
 from alembic import op
@@ -12,8 +12,8 @@ from sqlalchemy.dialects import postgresql
 from app.database import get_db_schema
 
 # revision identifiers, used by Alembic.
-revision = '0624d4ca35a0'
-down_revision = 'ff1cb5a4411c'
+revision = 'b54c7dbe300d'
+down_revision = '498c64b0a5ad'
 branch_labels = None
 depends_on = None
 
@@ -27,7 +27,6 @@ def upgrade():
     sa.Column('token_address', sa.String(length=42), nullable=False),
     sa.Column('token_type', sa.String(length=40), nullable=False),
     sa.Column('ledger', sa.JSON(), nullable=False),
-    sa.Column('country_code', sa.String(length=3), nullable=False),
     sa.Column('ledger_created', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     , schema=get_db_schema())
@@ -37,13 +36,13 @@ def upgrade():
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('token_address', sa.String(length=42), nullable=False),
     sa.Column('data_id', sa.String(length=42), nullable=True),
-    sa.Column('account_address', sa.String(length=42), nullable=True),
     sa.Column('name', sa.String(length=200), nullable=True),
     sa.Column('address', sa.String(length=200), nullable=True),
     sa.Column('amount', sa.Integer(), nullable=True),
     sa.Column('price', sa.Integer(), nullable=True),
     sa.Column('balance', sa.Integer(), nullable=True),
     sa.Column('acquisition_date', sa.String(length=10), nullable=True),
+    sa.Column('data_created', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     , schema=get_db_schema())
     op.create_table('ledger_details_template',
@@ -54,7 +53,7 @@ def upgrade():
     sa.Column('token_detail_type', sa.String(length=100), nullable=False),
     sa.Column('headers', sa.JSON(), nullable=True),
     sa.Column('footers', sa.JSON(), nullable=True),
-    sa.Column('data_type', sa.String(length=20), nullable=True),
+    sa.Column('data_type', sa.String(length=20), nullable=False),
     sa.Column('data_source', sa.String(length=42), nullable=True),
     sa.PrimaryKeyConstraint('id')
     , schema=get_db_schema())
@@ -64,7 +63,6 @@ def upgrade():
     sa.Column('token_address', sa.String(length=42), nullable=False),
     sa.Column('issuer_address', sa.String(length=42), nullable=True),
     sa.Column('token_name', sa.String(length=200), nullable=False),
-    sa.Column('country_code', sa.String(length=3), nullable=False),
     sa.Column('headers', sa.JSON(), nullable=True),
     sa.Column('footers', sa.JSON(), nullable=True),
     sa.PrimaryKeyConstraint('token_address')

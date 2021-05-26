@@ -86,7 +86,7 @@ class CreateUpdateLedgerTemplateRequest(BaseModel):
         return v
 
 
-class CreateUpdateLedgerDetailsDataStructureRequest(BaseModel):
+class CreateUpdateLedgerDetailsDataRequest(BaseModel):
     """Create or Update Ledger Details Data Structure schema (Request)"""
     name: Optional[str]
     address: Optional[str]
@@ -119,11 +119,6 @@ class CreateUpdateLedgerDetailsDataStructureRequest(BaseModel):
             except ValueError:
                 raise ValueError("The date format must be YYYY/MM/DD")
         return v
-
-
-class CreateUpdateLedgerDetailsDataRequest(BaseModel):
-    """Create or Update Ledger Details Data schema (Request)"""
-    data: List[CreateUpdateLedgerDetailsDataStructureRequest]
 
 
 ############################
@@ -194,6 +189,29 @@ class LedgerTemplateResponse(BaseModel):
     footers: dict
 
 
+class LedgerDetailsDataListAllResponse(BaseModel):
+    """Ledger Details Data(List All) schema (Response)"""
+    data_id: str
+    count: int
+    created: datetime
+
+
+class ListAllLedgerDetailsDataResponse(BaseModel):
+    """List All Ledger Details Data schema (Response)"""
+    result_set: ResultSet
+    details_data: List[LedgerDetailsDataListAllResponse]
+
+
 class LedgerDetailsDataResponse(BaseModel):
     """Ledger Details Data schema (Response)"""
     data_id: str
+
+
+class RetrieveLedgerDetailsDataResponse(BaseModel):
+    """Retrieve Ledger Details Data schema (Response)"""
+    name: str
+    address: str
+    amount: int
+    price: int
+    balance: int
+    acquisition_date: str
