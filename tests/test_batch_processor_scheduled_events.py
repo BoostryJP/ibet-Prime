@@ -29,7 +29,7 @@ from app.model.db import (
     ScheduledEventType,
     TokenType
 )
-from app.model.utils import E2EEUtils
+from app.utils.e2ee_utils import E2EEUtils
 from app.exceptions import SendTransactionError
 from batch.processor_scheduled_events import (
     Sinks,

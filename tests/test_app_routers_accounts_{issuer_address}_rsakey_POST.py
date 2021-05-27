@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 from config import PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG, PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE, ZERO_ADDRESS
 from app.model.db import Account, AccountRsaKeyTemporary, AccountRsaStatus
-from app.model.utils import E2EEUtils
+from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
 

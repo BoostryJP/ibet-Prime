@@ -24,7 +24,7 @@ from app.model.db import (
     Account,
     AccountRsaStatus
 )
-from app.model.utils import E2EEUtils
+from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
 

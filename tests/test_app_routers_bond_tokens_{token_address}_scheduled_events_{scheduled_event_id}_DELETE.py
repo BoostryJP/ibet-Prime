@@ -28,7 +28,7 @@ from app.model.db import (
     ScheduledEvents,
     ScheduledEventType
 )
-from app.model.utils import E2EEUtils
+from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
 
@@ -170,7 +170,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
         # assertion
         assert resp.status_code == 401
         assert resp.json()["meta"] == {"code": 1, "title": "AuthorizationError"}
-        assert resp.json()["detail"] == "issuer does not exist"
+        assert resp.json()["detail"] == "issuer does not exist, or password mismatch"
 
     # <Error_3>
     # AuthorizationError

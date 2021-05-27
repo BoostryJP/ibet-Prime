@@ -18,7 +18,6 @@ SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
 
-from unittest import mock
 import pytz
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
@@ -31,7 +30,7 @@ from config import (
     ZERO_ADDRESS,
     TZ
 )
-from app.model.utils import E2EEUtils
+from app.utils.e2ee_utils import E2EEUtils
 from app.model.blockchain import (
     IbetShareContract,
     IbetStraightBondContract,

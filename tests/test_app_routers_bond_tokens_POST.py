@@ -30,7 +30,7 @@ from app.model.db import (
     IDXPosition
 )
 from app.model.schema import IbetStraightBondUpdate
-from app.model.utils import E2EEUtils
+from app.utils.e2ee_utils import E2EEUtils
 from app.model.blockchain.token import IbetStraightBondContract
 from app.model.blockchain.token_list import TokenListContract
 from tests.account_config import config_eth_account

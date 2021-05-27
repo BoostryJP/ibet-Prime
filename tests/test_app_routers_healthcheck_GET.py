@@ -60,13 +60,13 @@ class TestAppRoutersHealthcheckGET:
     # <Error_1>
     # Node not sync
     # E2EE key invalid
-    @mock.patch("app.model.utils.E2EEUtils.cache", {
+    @mock.patch("app.utils.e2ee_utils.E2EEUtils.cache", {
         "private_key": None,
         "public_key": None,
         "encrypted_length": None,
         "expiration_datetime": datetime.min
     })
-    @mock.patch("app.model.utils.E2EE_RSA_RESOURCE", "tests/data/account_config.yml")
+    @mock.patch("app.utils.e2ee_utils.E2EE_RSA_RESOURCE", "tests/data/account_config.yml")
     def test_error_1(self, client, db):
         _node = Node()
         _node.is_synced = False

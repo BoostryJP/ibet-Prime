@@ -25,7 +25,7 @@ from config import (
 )
 from app.database import db_session
 from app.model.db import Node
-from app.model.utils import E2EEUtils
+from app.utils.e2ee_utils import E2EEUtils
 from app.model.schema import E2EEResponse
 from app.exceptions import ServiceUnavailableError
 from app import log
