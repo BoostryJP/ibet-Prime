@@ -95,6 +95,28 @@ def check_value_is_encrypted(name, value):
             raise ValueError(f"{name} is not a Base64-encoded encrypted data")
 
 
+def check_auth(issuer_address, checked_eoa_password, db, request):
+    # Check Account
+    _account, decrypt_eoa_password = check_account_for_auth(issuer_address, db, request)
+
+    # Check Password
+    check_password_for_auth(checked_eoa_password, decrypt_eoa_password, issuer_address, request)
+
+    auth_info(request, issuer_address, "authentication succeed")
+    return _account, decrypt_eoa_password
+
+
+def check_account_for_auth(issuer_address, db, request):
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
+        first()
+    if _account is None:
+        auth_error(request, issuer_address, "issuer does not exist")
+        raise AuthorizationError("issuer does not exist, or password mismatch")
+    decrypt_eoa_password = E2EEUtils.decrypt(_account.eoa_password)
+    return _account, decrypt_eoa_password
+
+
 def check_password_for_auth(checked_pwd, correct_pwd, issuer_address, request):
     if EOA_PASSWORD_CHECK_ENABLED:
         if E2EE_REQUEST_ENABLED:
@@ -106,14 +128,3 @@ def check_password_for_auth(checked_pwd, correct_pwd, issuer_address, request):
             auth_error(request, issuer_address, "password mismatch")
             raise AuthorizationError("issuer does not exist, or password mismatch")
         auth_info(request, issuer_address, "authentication succeed")
-
-
-def check_auth(eoa_password, issuer_address, db, request):
-    _account = db.query(Account). \
-        filter(Account.issuer_address == issuer_address). \
-        first()
-    if _account is None:
-        auth_error(request, issuer_address, "issuer does not exist")
-        raise AuthorizationError("issuer does not exist, or password mismatch")
-    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
-    check_password_for_auth(eoa_password, decrypt_password, issuer_address, request)

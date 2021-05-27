@@ -55,13 +55,11 @@ from app.model.schema import (
     ScheduledEventResponse,
     ModifyPersonalInfoRequest
 )
-from app.utils.e2ee_utils import E2EEUtils
 from app.utils.check_utils import (
     validate_headers,
     address_is_valid_address,
     eoa_password_is_required,
     eoa_password_is_encrypted_value,
-    check_password_for_auth,
     check_auth
 )
 from app.model.db import (
@@ -83,10 +81,8 @@ from app.model.blockchain import (
 )
 from app.exceptions import (
     InvalidParameterError,
-    SendTransactionError,
-    AuthorizationError
+    SendTransactionError
 )
-from app.log import auth_error
 
 router = APIRouter(
     prefix="/share",
@@ -129,17 +125,8 @@ async def issue_token(
     }
     _update_data = IbetShareUpdate(**_data)
 
-    # Get Account
-    _account = db.query(Account). \
-        filter(Account.issuer_address == issuer_address). \
-        first()
-    if _account is None:
-        auth_error(request, issuer_address, "issuer does not exist")
-        raise AuthorizationError("issuer does not exist, or password mismatch")
-    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
-
-    # Check Password
-    check_password_for_auth(eoa_password, decrypt_password, issuer_address, request)
+    # Authentication
+    _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -295,17 +282,8 @@ async def update_token(
     validate_headers(issuer_address=(issuer_address, address_is_valid_address),
                      eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
 
-    # Get Account
-    _account = db.query(Account). \
-        filter(Account.issuer_address == issuer_address). \
-        first()
-    if _account is None:
-        auth_error(request, issuer_address, "issuer does not exist")
-        raise AuthorizationError("issuer does not exist, or password mismatch")
-    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
-
-    # Check Password
-    check_password_for_auth(eoa_password, decrypt_password, issuer_address, request)
+    # Authentication
+    _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -355,17 +333,8 @@ async def additional_issue(
     validate_headers(issuer_address=(issuer_address, address_is_valid_address),
                      eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
 
-    # Get Account
-    _account = db.query(Account). \
-        filter(Account.issuer_address == issuer_address). \
-        first()
-    if _account is None:
-        auth_error(request, issuer_address, "issuer does not exist")
-        raise AuthorizationError("issuer does not exist, or password mismatch")
-    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
-
-    # Check Password
-    check_password_for_auth(eoa_password, decrypt_password, issuer_address, request)
+    # Authentication
+    _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -462,7 +431,7 @@ async def schedule_new_update_event(
     )
 
     # Authentication
-    check_auth(eoa_password, issuer_address, db, request)
+    check_auth(issuer_address, eoa_password, db, request)
 
     # Verify that the token is issued by the issuer
     _token = db.query(Token). \
@@ -552,7 +521,7 @@ async def delete_scheduled_event(
     )
 
     # Authentication
-    check_auth(eoa_password, issuer_address, db, request)
+    check_auth(issuer_address, eoa_password, db, request)
 
     # Delete an event
     _token_event = db.query(ScheduledEvents). \
@@ -740,7 +709,7 @@ async def modify_holder_personal_info(
     )
 
     # Authentication
-    check_auth(eoa_password, issuer_address, db, request)
+    check_auth(issuer_address, eoa_password, db, request)
 
     # Verify that the token is issued by the issuer_address
     _token = db.query(Token). \
@@ -786,17 +755,8 @@ async def transfer_ownership(
     validate_headers(issuer_address=(issuer_address, address_is_valid_address),
                      eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
 
-    # Get Account
-    _account = db.query(Account). \
-        filter(Account.issuer_address == issuer_address). \
-        first()
-    if _account is None:
-        auth_error(request, issuer_address, "issuer does not exist")
-        raise AuthorizationError("issuer does not exist, or password mismatch")
-    decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
-
-    # Check Password
-    check_password_for_auth(eoa_password, decrypt_password, issuer_address, request)
+    # Authentication
+    _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -985,7 +945,7 @@ async def bulk_transfer_ownership(
         raise InvalidParameterError("list length is zero")
 
     # Authentication
-    check_auth(eoa_password, issuer_address, db, request)
+    check_auth(issuer_address, eoa_password, db, request)
 
     # Verify that the tokens are issued by the issuer_address
     for _token in tokens:
