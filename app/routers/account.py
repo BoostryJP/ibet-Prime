@@ -31,6 +31,7 @@ from coincurve import PublicKey
 from Crypto.PublicKey import RSA
 from eth_utils import to_checksum_address
 import eth_keyfile
+import boto3
 
 from config import (
     PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE,
@@ -38,7 +39,9 @@ from config import (
     EOA_PASSWORD_PATTERN_MSG,
     PERSONAL_INFO_RSA_PASSPHRASE_PATTERN,
     PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG,
-    E2EE_REQUEST_ENABLED
+    E2EE_REQUEST_ENABLED,
+    AWS_REGION_NAME,
+    AWS_KMS_GENERATE_RANDOM_ENABLED
 )
 from app.database import db_session
 from app.model.schema import (
@@ -78,7 +81,12 @@ async def create_key(
         raise InvalidParameterError(EOA_PASSWORD_PATTERN_MSG)
 
     # Generate Ethereum Key
-    private_key = keccak_256(secrets.token_bytes(32)).digest()
+    if AWS_KMS_GENERATE_RANDOM_ENABLED:
+        kms = boto3.client(service_name="kms", region_name=AWS_REGION_NAME)
+        result = kms.generate_random(NumberOfBytes=32)
+        private_key = keccak_256(result.get("Plaintext")).digest()
+    else:
+        private_key = keccak_256(secrets.token_bytes(32)).digest()
     public_key = PublicKey.from_valid_secret(private_key).format(compressed=False)[1:]
     addr = to_checksum_address(keccak_256(public_key).digest()[-20:])
     keyfile_json = eth_keyfile.create_keyfile_json(

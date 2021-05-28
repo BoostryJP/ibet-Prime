@@ -130,7 +130,7 @@ TZ = os.environ.get("TZ") or "Asia/Tokyo"
 SCHEDULED_EVENTS_INTERVAL = int(os.environ.get("SCHEDULED_EVENTS_INTERVAL")) \
     if os.environ.get("SCHEDULED_EVENTS_INTERVAL") else 60
 
-# block sync monitor
+# Block Sync Monitor
 # monitoring interval(second)
 BLOCK_SYNC_STATUS_SLEEP_INTERVAL = int(os.environ.get("BLOCK_SYNC_STATUS_SLEEP_INTERVAL")) \
     if os.environ.get("BLOCK_SYNC_STATUS_SLEEP_INTERVAL") else 3
@@ -147,3 +147,6 @@ else:
 # auto transfer approval interval(second)
 AUTO_TRANSFER_APPROVAL_INTERVAL = int(os.environ.get("AUTO_TRANSFER_APPROVAL_INTERVAL")) \
     if os.environ.get("AUTO_TRANSFER_APPROVAL_INTERVAL") else 10
+
+# Random Bytes Generator
+AWS_KMS_GENERATE_RANDOM_ENABLED = True if os.environ.get("AWS_KMS_GENERATE_RANDOM_ENABLED") == "1" else False
