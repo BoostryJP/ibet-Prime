@@ -19,7 +19,6 @@ SPDX-License-Identifier: Apache-2.0
 import base64
 
 from unittest import mock
-from unittest.mock import MagicMock
 
 from config import EOA_PASSWORD_PATTERN_MSG
 from app.model.db import Account, AccountRsaStatus
