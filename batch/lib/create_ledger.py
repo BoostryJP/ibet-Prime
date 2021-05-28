@@ -81,9 +81,9 @@ def create_ledger(token_address: str, db: Session):
         # NOTE: Merge with template with ledger GET API
         details = {
             "token_detail_type": _details.token_detail_type,
-            "headers": {},
+            "headers": [],
             "data": data_list,
-            "footers": {},
+            "footers": [],
         }
         ledger_details.append(details)
 
@@ -92,9 +92,9 @@ def create_ledger(token_address: str, db: Session):
     ledger = {
         "created": created_ymd,
         "token_name": "",
-        "headers": {},
+        "headers": [],
         "details": ledger_details,
-        "footers": {},
+        "footers": [],
     }
 
     # Register ledger data to the DB

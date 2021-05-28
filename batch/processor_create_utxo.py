@@ -34,8 +34,7 @@ sys.path.append(path)
 from config import (
     DATABASE_URL,
     WEB3_HTTP_PROVIDER,
-    ZERO_ADDRESS,
-    SYSTEM_LOCALE
+    ZERO_ADDRESS
 )
 from app.model.db import (
     UTXO,

@@ -65,6 +65,9 @@ TOKEN_CACHE_TTL = int(os.environ.get("TOKEN_CACHE_TTL")) if os.environ.get("TOKE
 # Indexer sync interval
 INDEXER_SYNC_INTERVAL = 10
 
+# AWS Region
+AWS_REGION_NAME = os.environ.get("AWS_REGION_NAME") or "ap-northeast-1"
+
 # Password Policy
 # NOTE:
 # Set PATTERN with a regular expression.
@@ -109,10 +112,6 @@ else:
     E2EE_RSA_RESOURCE_MODE = int(os.environ.get("E2EE_RSA_RESOURCE_MODE"))
     E2EE_RSA_RESOURCE = os.environ.get("E2EE_RSA_RESOURCE")
     E2EE_RSA_PASSPHRASE = os.environ.get("E2EE_RSA_PASSPHRASE")
-if E2EE_RSA_RESOURCE_MODE == 1:
-    AWS_REGION_NAME = os.environ.get("AWS_REGION_NAME")  # e.g. ap-northeast-1
-else:
-    AWS_REGION_NAME = ""
 E2EE_REQUEST_ENABLED = False if os.environ.get("E2EE_REQUEST_ENABLED") == "0" else True
 
 # Bulk Transfer

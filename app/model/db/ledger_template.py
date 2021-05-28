@@ -36,10 +36,10 @@ class LedgerTemplate(Base):
     issuer_address = Column(String(42), index=False)
     # token name
     token_name = Column(String(200), nullable=False)
-    # headers
-    headers = Column(JSON, default={})
-    # footers
-    footers = Column(JSON, default={})
+    # headers(any object array)
+    headers = Column(JSON, default=[])
+    # footers(any object array)
+    footers = Column(JSON, default=[])
 
 
 class LedgerDetailsTemplate(Base):
@@ -55,10 +55,10 @@ class LedgerDetailsTemplate(Base):
     token_address = Column(String(42), nullable=False)
     # token detail type
     token_detail_type = Column(String(100), nullable=False)
-    # headers
-    headers = Column(JSON, default={})
-    # footers
-    footers = Column(JSON, default={})
+    # headers(any object array)
+    headers = Column(JSON, default=[])
+    # footers(any object array)
+    footers = Column(JSON, default=[])
     # data type
     data_type = Column(String(20), nullable=False)
     # data source

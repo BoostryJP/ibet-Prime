@@ -53,27 +53,51 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
         _template.token_address = token_address
         _template.issuer_address = issuer_address
         _template.token_name = "テスト原簿"
-        _template.headers = {
-            "hoge": "aaaa",
-            "fuga": "bbbb",
-        }
-        _template.footers = {
-            "f-hoge": "f-aaaa",
-            "f-fuga": "f-bbbb",
-        }
+        _template.headers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "hoge": "aaaa",
+                "fuga": "bbbb",
+            }
+        ]
+        _template.footers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "f-hoge": "f-aaaa",
+                "f-fuga": "f-bbbb",
+            }
+        ]
         db.add(_template)
 
         _details_1 = LedgerDetailsTemplate()
         _details_1.token_address = token_address
         _details_1.token_detail_type = "権利_test_1"
-        _details_1.headers = {
-            "test1": "a",
-            "test2": "b"
-        }
-        _details_1.footers = {
-            "f-test1": "a",
-            "f-test2": "b"
-        }
+        _details_1.headers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "test1": "a",
+                "test2": "b"
+            }
+        ]
+        _details_1.footers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "f-test1": "a",
+                "f-test2": "b"
+            }
+        ]
         _details_1.data_type = LedgerDetailsDataType.IBET_FIN
         _details_1.data_source = token_address
         db.add(_details_1)
@@ -81,14 +105,26 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
         _details_2 = LedgerDetailsTemplate()
         _details_2.token_address = token_address
         _details_2.token_detail_type = "権利_test_2"
-        _details_2.headers = {
-            "test3": "a",
-            "test4": "b"
-        }
-        _details_2.footers = {
-            "f-test3": "a",
-            "f-test4": "b"
-        }
+        _details_2.headers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "test3": "a",
+                "test4": "b"
+            }
+        ]
+        _details_2.footers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "f-test3": "a",
+                "f-test4": "b"
+            }
+        ]
         _details_2.data_type = LedgerDetailsDataType.DB
         _details_2.data_source = "data_id_2"
         db.add(_details_2)
@@ -105,46 +141,82 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
         assert resp.status_code == 200
         assert resp.json() == {
             "token_name": "テスト原簿",
-            "headers": {
-                "hoge": "aaaa",
-                "fuga": "bbbb",
-            },
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "hoge": "aaaa",
+                    "fuga": "bbbb",
+                }
+            ],
             "details": [
                 {
                     "token_detail_type": "権利_test_1",
-                    "headers": {
-                        "test1": "a",
-                        "test2": "b"
-                    },
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "test1": "a",
+                            "test2": "b"
+                        }
+                    ],
                     "data": {
                         "type": "ibetfin",
                         "source": token_address,
                     },
-                    "footers": {
-                        "f-test1": "a",
-                        "f-test2": "b"
-                    },
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "f-test1": "a",
+                            "f-test2": "b"
+                        }
+                    ],
                 },
                 {
                     "token_detail_type": "権利_test_2",
-                    "headers": {
-                        "test3": "a",
-                        "test4": "b"
-                    },
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "test3": "a",
+                            "test4": "b"
+                        }
+                    ],
                     "data": {
                         "type": "db",
                         "source": "data_id_2",
                     },
-                    "footers": {
-                        "f-test3": "a",
-                        "f-test4": "b"
-                    },
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "f-test3": "a",
+                            "f-test4": "b"
+                        }
+                    ],
                 }
             ],
-            "footers": {
-                "f-hoge": "f-aaaa",
-                "f-fuga": "f-bbbb",
-            },
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "f-hoge": "f-aaaa",
+                    "f-fuga": "f-bbbb",
+                }
+            ],
         }
 
     ###########################################################################

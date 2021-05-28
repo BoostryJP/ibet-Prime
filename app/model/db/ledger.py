@@ -54,11 +54,11 @@ This is merged with LedgerTemplate, LedgerDetailsTemplate, and LedgerDetailsData
 {
   "created": "string(YYYY/MM/DD)",
   "token_name": "",
-  "headers": {},
+  "headers": [],
   "details": [
     {
       "token_detail_type": "string",
-      "headers": {},
+      "headers": [],
       "data": [
         {
           "account_address": "string",
@@ -70,10 +70,10 @@ This is merged with LedgerTemplate, LedgerDetailsTemplate, and LedgerDetailsData
           "acquisition_date": "string(YYYY/MM/DD)"
         }
       ],
-      "footers": {},
+      "footers": [],
     },
   ],
-  "footers": {},
+  "footers": [],
 }
 """
 

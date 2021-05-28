@@ -53,46 +53,82 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         # request target API
         req_param = {
             "token_name": "テスト原簿",
-            "headers": {
-                "hoge": "aaa",
-                "fuga": "bbb",
-            },
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "hoge": "aaa",
+                    "fuga": "bbb",
+                }
+            ],
             "details": [
                 {
                     "token_detail_type": "権利_test_1",
-                    "headers": {
-                        "hoge-1": "aaa-1",
-                        "fuga-1": "bbb-1",
-                    },
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "hoge-1": "aaa-1",
+                            "fuga-1": "bbb-1",
+                        }
+                    ],
                     "data": {
                         "type": LedgerDetailsDataType.IBET_FIN,
                         "source": token_address,
                     },
-                    "footers": {
-                        "f-hoge-1": "aaa-1",
-                        "f-fuga-1": "bbb-1",
-                    },
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "f-hoge-1": "aaa-1",
+                            "f-fuga-1": "bbb-1",
+                        }
+                    ],
                 },
                 {
                     "token_detail_type": "権利_test_2",
-                    "headers": {
-                        "hoge-2": "aaa-2",
-                        "fuga-2": "bbb-2",
-                    },
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "hoge-2": "aaa-2",
+                            "fuga-2": "bbb-2",
+                        }
+                    ],
                     "data": {
                         "type": LedgerDetailsDataType.DB,
                         "source": "data_id_2",
                     },
-                    "footers": {
-                        "f-hoge-2": "aaa-2",
-                        "f-fuga-2": "bbb-2",
-                    },
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "f-hoge-2": "aaa-2",
+                            "f-fuga-2": "bbb-2",
+                        }
+                    ],
                 }
             ],
-            "footers": {
-                "f-hoge": "aaa",
-                "f-fuga": "bbb",
-            },
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "f-hoge": "aaa",
+                    "f-fuga": "bbb",
+                }
+            ],
         }
         resp = client.post(
             self.base_url.format(token_address=token_address),
@@ -109,14 +145,26 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         assert _template.token_address == token_address
         assert _template.issuer_address == issuer_address
         assert _template.token_name == "テスト原簿"
-        assert _template.headers == {
-            "hoge": "aaa",
-            "fuga": "bbb",
-        }
-        assert _template.footers == {
-            "f-hoge": "aaa",
-            "f-fuga": "bbb",
-        }
+        assert _template.headers == [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "hoge": "aaa",
+                "fuga": "bbb",
+            }
+        ]
+        assert _template.footers == [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "f-hoge": "aaa",
+                "f-fuga": "bbb",
+            }
+        ]
         _details_list = db.query(LedgerDetailsTemplate). \
             order_by(LedgerDetailsTemplate.id). \
             all()
@@ -125,28 +173,52 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         assert _details.id == 1
         assert _details.token_address == token_address
         assert _details.token_detail_type == "権利_test_1"
-        assert _details.headers == {
-            "hoge-1": "aaa-1",
-            "fuga-1": "bbb-1",
-        }
-        assert _details.footers == {
-            "f-hoge-1": "aaa-1",
-            "f-fuga-1": "bbb-1",
-        }
+        assert _details.headers == [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "hoge-1": "aaa-1",
+                "fuga-1": "bbb-1",
+            }
+        ]
+        assert _details.footers == [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "f-hoge-1": "aaa-1",
+                "f-fuga-1": "bbb-1",
+            }
+        ]
         assert _details.data_type == LedgerDetailsDataType.IBET_FIN
         assert _details.data_source == token_address
         _details = _details_list[1]
         assert _details.id == 2
         assert _details.token_address == token_address
         assert _details.token_detail_type == "権利_test_2"
-        assert _details.headers == {
-            "hoge-2": "aaa-2",
-            "fuga-2": "bbb-2",
-        }
-        assert _details.footers == {
-            "f-hoge-2": "aaa-2",
-            "f-fuga-2": "bbb-2",
-        }
+        assert _details.headers == [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "hoge-2": "aaa-2",
+                "fuga-2": "bbb-2",
+            }
+        ]
+        assert _details.footers == [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "f-hoge-2": "aaa-2",
+                "f-fuga-2": "bbb-2",
+            }
+        ]
         assert _details.data_type == LedgerDetailsDataType.DB
         assert _details.data_source == "data_id_2"
 
@@ -170,27 +242,51 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         _template.token_address = token_address
         _template.issuer_address = issuer_address
         _template.token_name = "テスト原簿"
-        _template.headers = {
-            "hoge": "aaa",
-            "fuga": "bbb",
-        }
-        _template.footers = {
-            "f-hoge": "aaa",
-            "f-fuga": "bbb",
-        }
+        _template.headers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "hoge": "aaa",
+                "fuga": "bbb",
+            }
+        ]
+        _template.footers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "f-hoge": "aaa",
+                "f-fuga": "bbb",
+            }
+        ]
         db.add(_template)
 
         _details_1 = LedgerDetailsTemplate()
         _details_1.token_address = token_address
         _details_1.token_detail_type = "権利_test_2"
-        _details_1.headers = {
-            "hoge-2": "aaa-2",
-            "fuga-2": "bbb-2",
-        }
-        _details_1.footers = {
-            "f-hoge-2": "aaa-2",
-            "f-fuga-2": "bbb-2",
-        }
+        _details_1.headers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "hoge-2": "aaa-2",
+                "fuga-2": "bbb-2",
+            }
+        ]
+        _details_1.footers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "f-hoge-2": "aaa-2",
+                "f-fuga-2": "bbb-2",
+            }
+        ]
         _details_1.data_type = LedgerDetailsDataType.DB
         _details_1.data_source = "data_id_1"
         db.add(_details_1)
@@ -198,14 +294,26 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         _details_2 = LedgerDetailsTemplate()
         _details_2.token_address = token_address
         _details_2.token_detail_type = "権利_test_3"
-        _details_2.headers = {
-            "hoge-3": "aaa-3",
-            "fuga-3": "bbb-3",
-        }
-        _details_2.footers = {
-            "f-hoge-3": "aaa-3",
-            "f-fuga-3": "bbb-3",
-        }
+        _details_2.headers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "hoge-3": "aaa-3",
+                "fuga-3": "bbb-3",
+            }
+        ]
+        _details_2.footers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "f-hoge-3": "aaa-3",
+                "f-fuga-3": "bbb-3",
+            }
+        ]
         _details_2.data_type = LedgerDetailsDataType.DB
         _details_2.data_source = "data_id_2"
         db.add(_details_2)
@@ -213,46 +321,82 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         # request target API
         req_param = {
             "token_name": "テスト原簿_update",
-            "headers": {
-                "hoge_update": "aaa_update",
-                "fuga_update": "bbb_update",
-            },
+            "headers": [
+                {
+                    "key_update": "aaa_update",
+                    "value_update": "bbb_update",
+                },
+                {
+                    "hoge_update": "aaa_update",
+                    "fuga_update": "bbb_update",
+                }
+            ],
             "details": [
                 {
                     "token_detail_type": "権利_test_1",
-                    "headers": {
-                        "hoge-1": "aaa-1",
-                        "fuga-1": "bbb-1",
-                    },
+                    "headers": [
+                        {
+                            "key_update": "aaa_update",
+                            "value_update": "bbb_update",
+                        },
+                        {
+                            "hoge-1": "aaa-1",
+                            "fuga-1": "bbb-1",
+                        }
+                    ],
                     "data": {
                         "type": LedgerDetailsDataType.IBET_FIN,
                         "source": token_address,
                     },
-                    "footers": {
-                        "f-hoge-1": "aaa-1",
-                        "f-fuga-1": "bbb-1",
-                    },
+                    "footers": [
+                        {
+                            "key_update": "aaa_update",
+                            "value_update": "bbb_update",
+                        },
+                        {
+                            "f-hoge-1": "aaa-1",
+                            "f-fuga-1": "bbb-1",
+                        }
+                    ],
                 },
                 {
                     "token_detail_type": "権利_test_2",
-                    "headers": {
-                        "hoge-2_update": "aaa-2_update",
-                        "fuga-2_update": "bbb-2_update",
-                    },
+                    "headers": [
+                        {
+                            "key_update": "aaa_update",
+                            "value_update": "bbb_update",
+                        },
+                        {
+                            "hoge-2_update": "aaa-2_update",
+                            "fuga-2_update": "bbb-2_update",
+                        },
+                    ],
                     "data": {
                         "type": LedgerDetailsDataType.IBET_FIN,
                         "source": token_address,
                     },
-                    "footers": {
-                        "f-hoge-2_update": "aaa-2_update",
-                        "f-fuga-2_update": "bbb-2_update",
-                    },
+                    "footers": [
+                        {
+                            "key_update": "aaa_update",
+                            "value_update": "bbb_update",
+                        },
+                        {
+                            "f-hoge-2_update": "aaa-2_update",
+                            "f-fuga-2_update": "bbb-2_update",
+                        }
+                    ],
                 }
             ],
-            "footers": {
-                "f-hoge_update": "aaa_update",
-                "f-fuga_update": "bbb_update",
-            },
+            "footers": [
+                {
+                    "key_update": "aaa_update",
+                    "value_update": "bbb_update",
+                },
+                {
+                    "f-hoge_update": "aaa_update",
+                    "f-fuga_update": "bbb_update",
+                }
+            ],
         }
         resp = client.post(
             self.base_url.format(token_address=token_address),
@@ -269,14 +413,26 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         assert _template.token_address == token_address
         assert _template.issuer_address == issuer_address
         assert _template.token_name == "テスト原簿_update"
-        assert _template.headers == {
-            "hoge_update": "aaa_update",
-            "fuga_update": "bbb_update",
-        }
-        assert _template.footers == {
-            "f-hoge_update": "aaa_update",
-            "f-fuga_update": "bbb_update",
-        }
+        assert _template.headers == [
+            {
+                "key_update": "aaa_update",
+                "value_update": "bbb_update",
+            },
+            {
+                "hoge_update": "aaa_update",
+                "fuga_update": "bbb_update",
+            }
+        ]
+        assert _template.footers == [
+            {
+                "key_update": "aaa_update",
+                "value_update": "bbb_update",
+            },
+            {
+                "f-hoge_update": "aaa_update",
+                "f-fuga_update": "bbb_update",
+            }
+        ]
         _details_list = db.query(LedgerDetailsTemplate). \
             order_by(LedgerDetailsTemplate.id). \
             all()
@@ -285,28 +441,52 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         assert _details.id == 1
         assert _details.token_address == token_address
         assert _details.token_detail_type == "権利_test_2"
-        assert _details.headers == {
-            "hoge-2_update": "aaa-2_update",
-            "fuga-2_update": "bbb-2_update",
-        }
-        assert _details.footers == {
-            "f-hoge-2_update": "aaa-2_update",
-            "f-fuga-2_update": "bbb-2_update",
-        }
+        assert _details.headers == [
+            {
+                "key_update": "aaa_update",
+                "value_update": "bbb_update",
+            },
+            {
+                "hoge-2_update": "aaa-2_update",
+                "fuga-2_update": "bbb-2_update",
+            }
+        ]
+        assert _details.footers == [
+            {
+                "key_update": "aaa_update",
+                "value_update": "bbb_update",
+            },
+            {
+                "f-hoge-2_update": "aaa-2_update",
+                "f-fuga-2_update": "bbb-2_update",
+            }
+        ]
         assert _details.data_type == LedgerDetailsDataType.IBET_FIN
         assert _details.data_source == token_address
         _details = _details_list[1]
         assert _details.id == 3
         assert _details.token_address == token_address
         assert _details.token_detail_type == "権利_test_1"
-        assert _details.headers == {
-            "hoge-1": "aaa-1",
-            "fuga-1": "bbb-1",
-        }
-        assert _details.footers == {
-            "f-hoge-1": "aaa-1",
-            "f-fuga-1": "bbb-1",
-        }
+        assert _details.headers == [
+            {
+                "key_update": "aaa_update",
+                "value_update": "bbb_update",
+            },
+            {
+                "hoge-1": "aaa-1",
+                "fuga-1": "bbb-1",
+            }
+        ]
+        assert _details.footers == [
+            {
+                "key_update": "aaa_update",
+                "value_update": "bbb_update",
+            },
+            {
+                "f-hoge-1": "aaa-1",
+                "f-fuga-1": "bbb-1",
+            }
+        ]
         assert _details.data_type == LedgerDetailsDataType.IBET_FIN
         assert _details.data_source == token_address
 
@@ -353,46 +533,82 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         # request target API
         req_param = {
             "token_name": "テスト原簿",
-            "headers": {
-                "hoge": "aaa",
-                "fuga": "bbb",
-            },
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "hoge": "aaa",
+                    "fuga": "bbb",
+                }
+            ],
             "details": [
                 {
                     "token_detail_type": "権利_test_1",
-                    "headers": {
-                        "hoge-1": "aaa-1",
-                        "fuga-1": "bbb-1",
-                    },
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "hoge-1": "aaa-1",
+                            "fuga-1": "bbb-1",
+                        }
+                    ],
                     "data": {
                         "type": LedgerDetailsDataType.IBET_FIN,
                         "source": token_address,
                     },
-                    "footers": {
-                        "f-hoge-1": "aaa-1",
-                        "f-fuga-1": "bbb-1",
-                    },
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "f-hoge-1": "aaa-1",
+                            "f-fuga-1": "bbb-1",
+                        }
+                    ],
                 },
                 {
                     "token_detail_type": "権利_test_2",
-                    "headers": {
-                        "hoge-2": "aaa-2",
-                        "fuga-2": "bbb-2",
-                    },
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "hoge-2": "aaa-2",
+                            "fuga-2": "bbb-2",
+                        }
+                    ],
                     "data": {
                         "type": LedgerDetailsDataType.DB,
                         "source": "data_id_2",
                     },
-                    "footers": {
-                        "f-hoge-2": "aaa-2",
-                        "f-fuga-2": "bbb-2",
-                    },
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "f-hoge-2": "aaa-2",
+                            "f-fuga-2": "bbb-2",
+                        }
+                    ],
                 }
             ],
-            "footers": {
-                "f-hoge": "aaa",
-                "f-fuga": "bbb",
-            },
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "f-hoge": "aaa",
+                    "f-fuga": "bbb",
+                }
+            ],
         }
         resp = client.post(
             self.base_url.format(token_address=token_address),
@@ -470,15 +686,27 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             "token_name": "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
                           "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
                           "1",
-            "headers": {
-                "hoge": "aaa",
-                "fuga": "bbb",
-            },
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "hoge": "aaa",
+                    "fuga": "bbb",
+                }
+            ],
             "details": [],
-            "footers": {
-                "hoge": "aaa",
-                "fuga": "bbb",
-            },
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "hoge": "aaa",
+                    "fuga": "bbb",
+                }
+            ],
         }
         resp = client.post(
             self.base_url.format(token_address=token_address),
@@ -519,48 +747,84 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         # request target API
         req_param = {
             "token_name": "テスト原簿",
-            "item": {
-                "hoge": "aaa",
-                "fuga": "bbb",
-            },
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "hoge": "aaa",
+                    "fuga": "bbb",
+                }
+            ],
             "details": [
                 {
                     "token_detail_type": "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901",
-                    "headers": {
-                        "hoge-1": "aaa-1",
-                        "fuga-1": "bbb-1",
-                    },
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "hoge-1": "aaa-1",
+                            "fuga-1": "bbb-1",
+                        }
+                    ],
                     "data": {
                         "type": "123456789012345678901",
                         "source": "1234567890123456789012345678901234567890123",
                     },
-                    "footers": {
-                        "f-hoge-1": "d-aaa-1",
-                        "f-fuga-1": "d-bbb-1",
-                    },
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "f-hoge-1": "d-aaa-1",
+                            "f-fuga-1": "d-bbb-1",
+                        }
+                    ],
                 },
                 {
                     "dummy": "dummy",
                 },
                 {
                     "token_detail_type": "権利_test_1",
-                    "headers": {
-                        "hoge-1": "aaa-1",
-                        "fuga-1": "bbb-1",
-                    },
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "hoge-1": "aaa-1",
+                            "fuga-1": "bbb-1",
+                        }
+                    ],
                     "data": {
                         "dummy": "dummy",
                     },
-                    "footers": {
-                        "f-hoge-1": "aaa-1",
-                        "f-fuga-1": "bbb-1",
-                    },
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "f-hoge-1": "aaa-1",
+                            "f-fuga-1": "bbb-1",
+                        }
+                    ],
                 },
             ],
-            "footers": {
-                "hoge": "aaa",
-                "fuga": "bbb",
-            },
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "hoge": "aaa",
+                    "fuga": "bbb",
+                }
+            ],
         }
         resp = client.post(
             self.base_url.format(token_address=token_address),
@@ -612,11 +876,20 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         }
 
     # <Error_6>
-    # Token Not Found
+    # Parameter Error(body request:headers/footers json)
     def test_error_6(self, client, db):
-        user_1 = config_eth_account("user1")
-        issuer_address = user_1["address"]
+        user = config_eth_account("user1")
+        issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        db.add(_token)
 
         # request target API
         req_param = {
@@ -629,38 +902,149 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 {
                     "token_detail_type": "権利_test_1",
                     "headers": {
-                        "hoge-1": "aaa-1",
-                        "fuga-1": "bbb-1",
+                        "hoge": "aaa",
+                        "fuga": "bbb",
                     },
                     "data": {
                         "type": LedgerDetailsDataType.IBET_FIN,
                         "source": token_address,
                     },
                     "footers": {
-                        "f-hoge-1": "aaa-1",
-                        "f-fuga-1": "bbb-1",
+                        "hoge": "aaa",
+                        "fuga": "bbb",
                     },
+                },
+            ],
+            "footers": {
+                "hoge": "aaa",
+                "fuga": "bbb",
+            },
+        }
+        resp = client.post(
+            self.base_url.format(token_address=token_address),
+            json=req_param,
+            headers={
+                "issuer-address": issuer_address,
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "loc": ["body", "headers"],
+                    "msg": "value is not a valid list",
+                    "type": "type_error.list"
+                },
+                {
+                    "loc": ["body", "details", 0, "headers"],
+                    "msg": "value is not a valid list",
+                    "type": "type_error.list"
+                },
+                {
+                    "loc": ["body", "details", 0, "footers"],
+                    "msg": "value is not a valid list",
+                    "type": "type_error.list"
+                },
+                {
+                    "loc": ["body", "footers"],
+                    "msg": "value is not a valid list",
+                    "type": "type_error.list"
+                },
+            ]
+        }
+
+    # <Error_7>
+    # Token Not Found
+    def test_error_7(self, client, db):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # request target API
+        req_param = {
+            "token_name": "テスト原簿",
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "hoge": "aaa",
+                    "fuga": "bbb",
+                }
+            ],
+            "details": [
+                {
+                    "token_detail_type": "権利_test_1",
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "hoge-1": "aaa-1",
+                            "fuga-1": "bbb-1",
+                        }
+                    ],
+                    "data": {
+                        "type": LedgerDetailsDataType.IBET_FIN,
+                        "source": token_address,
+                    },
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "f-hoge-1": "aaa-1",
+                            "f-fuga-1": "bbb-1",
+                        }
+                    ],
                 },
                 {
                     "token_detail_type": "権利_test_2",
-                    "headers": {
-                        "hoge-2": "aaa-2",
-                        "fuga-2": "bbb-2",
-                    },
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "hoge-2": "aaa-2",
+                            "fuga-2": "bbb-2",
+                        }
+                    ],
                     "data": {
                         "type": LedgerDetailsDataType.DB,
                         "source": "data_id_2",
                     },
-                    "footers": {
-                        "f-hoge-2": "aaa-2",
-                        "f-fuga-2": "bbb-2",
-                    },
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "f-hoge-2": "aaa-2",
+                            "f-fuga-2": "bbb-2",
+                        }
+                    ],
                 }
             ],
-            "footers": {
-                "f-hoge": "aaa",
-                "f-fuga": "bbb",
-            },
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "f-hoge": "aaa",
+                    "f-fuga": "bbb",
+                }
+            ],
         }
         resp = client.post(
             self.base_url.format(token_address=token_address),
