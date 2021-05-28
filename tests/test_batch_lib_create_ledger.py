@@ -288,21 +288,32 @@ class TestBatchLibCreateLedger:
         _template = LedgerTemplate()
         _template.token_address = token_address_1
         _template.issuer_address = issuer_address
-        _template.token_name = "受益権テスト"
-        _template.headers = {
-            "テスト項目1": "テスト値1",
-            "テスト項目2": {
-                "テスト項目A": "テスト値2A",
-                "テスト項目B": "テスト値2B",
+        _template.headers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
             },
-            "テスト項目3": {
-                "テスト項目A": {
-                    "テスト項目a": "テスト値3Aa"
+            {
+                "テスト項目1": "テスト値1",
+                "テスト項目2": {
+                    "テスト項目A": "テスト値2A",
+                    "テスト項目B": "テスト値2B",
                 },
-                "テスト項目B": "テスト値3B",
+                "テスト項目3": {
+                    "テスト項目A": {
+                        "テスト項目a": "テスト値3Aa"
+                    },
+                    "テスト項目B": "テスト値3B",
+                },
+            }
+        ]
+        _template.token_name = "受益権テスト"
+        _template.footers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
             },
-        }
-        _template.footers = {
+            {
             "f-テスト項目1": "f-テスト値1",
             "f-テスト項目2": {
                 "f-テスト項目A": "f-テスト値2A",
@@ -314,27 +325,39 @@ class TestBatchLibCreateLedger:
                 },
                 "f-テスト項目B": "f-テスト値3B",
             },
-        }
+        }]
         db.add(_template)
 
         # Template Details 1
         _details_1 = LedgerDetailsTemplate()
         _details_1.token_address = token_address_1
         _details_1.token_detail_type = "優先受益権"
-        _details_1.headers = {
-            "test項目1": "test値1",
-            "test項目2": {
-                "test項目A": "test値2A",
+        _details_1.headers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
             },
-        }
-        _details_1.footers = {
-            "test-item1": "test-value1",
-            "test-item2": {
-                "test-itemA": {
-                    "test-itema": "test-value2Aa"
-                }
+            {
+                "test項目1": "test値1",
+                "test項目2": {
+                    "test項目A": "test値2A",
+                },
+            }
+        ]
+        _details_1.footers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
             },
-        }
+            {
+                "test-item1": "test-value1",
+                "test-item2": {
+                    "test-itemA": {
+                        "test-itema": "test-value2Aa"
+                    }
+                },
+            }
+        ]
         _details_1.data_type = LedgerDetailsDataType.IBET_FIN
         _details_1.data_source = token_address_1
         db.add(_details_1)
@@ -343,14 +366,26 @@ class TestBatchLibCreateLedger:
         _details_2 = LedgerDetailsTemplate()
         _details_2.token_address = token_address_1
         _details_2.token_detail_type = "劣後受益権"
-        _details_2.headers = {
-            "d-test項目1": "d-test値1",
-            "d-test項目2": "d-test値2",
-        }
-        _details_2.footers = {
-            "f-d-test項目1": "d-test値1",
-            "f-d-test項目2": "d-test値2",
-        }
+        _details_2.headers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "d-test項目1": "d-test値1",
+                "d-test項目2": "d-test値2",
+            }
+        ]
+        _details_2.footers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "f-d-test項目1": "d-test値1",
+                "f-d-test項目2": "d-test値2",
+            }
+        ]
         _details_2.data_type = LedgerDetailsDataType.DB
         _details_2.data_source = "data_id_2"
         db.add(_details_2)
@@ -392,11 +427,11 @@ class TestBatchLibCreateLedger:
         assert _ledger.ledger == {
             "created": now_ymd,
             "token_name": "",
-            "headers": {},
+            "headers": [],
             "details": [
                 {
                     "token_detail_type": "優先受益権",
-                    "headers": {},
+                    "headers": [],
                     "data": [
                         {
                             "account_address": user_address_2,
@@ -435,16 +470,16 @@ class TestBatchLibCreateLedger:
                             "acquisition_date": "2022/01/02",
                         },
                     ],
-                    "footers": {}
+                    "footers": []
                 },
                 {
                     "token_detail_type": "劣後受益権",
-                    "headers": {},
+                    "headers": [],
                     "data": [],
-                    "footers": {}
+                    "footers": []
                 },
             ],
-            "footers": {}
+            "footers": []
         }
 
     # <Normal_2>
@@ -604,52 +639,76 @@ class TestBatchLibCreateLedger:
         _template.token_address = token_address_1
         _template.issuer_address = issuer_address
         _template.token_name = "受益権テスト"
-        _template.headers = {
-            "テスト項目1": "テスト値1",
-            "テスト項目2": {
-                "テスト項目A": "テスト値2A",
-                "テスト項目B": "テスト値2B",
+        _template.headers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
             },
-            "テスト項目3": {
-                "テスト項目A": {
-                    "テスト項目a": "テスト値3Aa"
+            {
+                "テスト項目1": "テスト値1",
+                "テスト項目2": {
+                    "テスト項目A": "テスト値2A",
+                    "テスト項目B": "テスト値2B",
                 },
-                "テスト項目B": "テスト値3B",
-            },
-        }
-        _template.footers = {
-            "f-テスト項目1": "f-テスト値1",
-            "f-テスト項目2": {
-                "f-テスト項目A": "f-テスト値2A",
-                "f-テスト項目B": "f-テスト値2B",
-            },
-            "f-テスト項目3": {
-                "f-テスト項目A": {
-                    "f-テスト項目a": "f-テスト値3Aa"
+                "テスト項目3": {
+                    "テスト項目A": {
+                        "テスト項目a": "テスト値3Aa"
+                    },
+                    "テスト項目B": "テスト値3B",
                 },
-                "f-テスト項目B": "f-テスト値3B",
+            }
+        ]
+        _template.footers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
             },
-        }
+            {
+                "f-テスト項目1": "f-テスト値1",
+                "f-テスト項目2": {
+                    "f-テスト項目A": "f-テスト値2A",
+                    "f-テスト項目B": "f-テスト値2B",
+                },
+                "f-テスト項目3": {
+                    "f-テスト項目A": {
+                        "f-テスト項目a": "f-テスト値3Aa"
+                    },
+                    "f-テスト項目B": "f-テスト値3B",
+                },
+            }
+        ]
         db.add(_template)
 
         # Template Details 1
         _details_1 = LedgerDetailsTemplate()
         _details_1.token_address = token_address_1
         _details_1.token_detail_type = "優先受益権"
-        _details_1.headers = {
-            "test項目1": "test値1",
-            "test項目2": {
-                "test項目A": "test値2A",
+        _details_1.headers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
             },
-        }
-        _details_1.footers = {
-            "test-item1": "test-value1",
-            "test-item2": {
-                "test-itemA": {
-                    "test-itema": "test-value2Aa"
-                }
+            {
+                "test項目1": "test値1",
+                "test項目2": {
+                    "test項目A": "test値2A",
+                },
+            }
+        ]
+        _details_1.footers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
             },
-        }
+            {
+                "test-item1": "test-value1",
+                "test-item2": {
+                    "test-itemA": {
+                        "test-itema": "test-value2Aa"
+                    }
+                },
+            }
+        ]
         _details_1.data_type = LedgerDetailsDataType.IBET_FIN
         _details_1.data_source = token_address_1
         db.add(_details_1)
@@ -658,14 +717,26 @@ class TestBatchLibCreateLedger:
         _details_2 = LedgerDetailsTemplate()
         _details_2.token_address = token_address_1
         _details_2.token_detail_type = "劣後受益権"
-        _details_2.headers = {
-            "d-test項目1": "d-test値1",
-            "d-test項目2": "d-test値2",
-        }
-        _details_2.footers = {
-            "f-d-test項目1": "d-test値1",
-            "f-d-test項目2": "d-test値2",
-        }
+        _details_2.headers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "d-test項目1": "d-test値1",
+                "d-test項目2": "d-test値2",
+            }
+        ]
+        _details_2.footers = [
+            {
+                "key": "aaa",
+                "value": "bbb",
+            },
+            {
+                "f-d-test項目1": "d-test値1",
+                "f-d-test項目2": "d-test値2",
+            }
+        ]
         _details_2.data_type = LedgerDetailsDataType.DB
         _details_2.data_source = "data_id_2"
         db.add(_details_2)
@@ -707,11 +778,11 @@ class TestBatchLibCreateLedger:
         assert _ledger.ledger == {
             "created": now_ymd,
             "token_name": "",
-            "headers": {},
+            "headers": [],
             "details": [
                 {
                     "token_detail_type": "優先受益権",
-                    "headers": {},
+                    "headers": [],
                     "data": [
                         {
                             "account_address": user_address_2,
@@ -750,16 +821,16 @@ class TestBatchLibCreateLedger:
                             "acquisition_date": "2022/01/02",
                         },
                     ],
-                    "footers": {}
+                    "footers": []
                 },
                 {
                     "token_detail_type": "劣後受益権",
-                    "headers": {},
+                    "headers": [],
                     "data": [],
-                    "footers": {}
+                    "footers": []
                 },
             ],
-            "footers": {}
+            "footers": []
         }
 
     # <Normal_3>

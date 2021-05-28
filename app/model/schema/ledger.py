@@ -26,7 +26,6 @@ from pydantic import (
 )
 from datetime import datetime
 
-from config import SYSTEM_LOCALE
 from .result_set import ResultSet
 
 
@@ -55,9 +54,9 @@ class CreateUpdateLedgerDetailsDataTemplateRequest(BaseModel):
 class CreateUpdateLedgerDetailsTemplateRequest(BaseModel):
     """Create or Update Ledger Details Template schema (Request)"""
     token_detail_type: str
-    headers: Optional[dict]
+    headers: Optional[List[dict]]
     data: CreateUpdateLedgerDetailsDataTemplateRequest
-    footers: Optional[dict]
+    footers: Optional[List[dict]]
 
     @validator("token_detail_type")
     def token_detail_type_length_is_less_than_100(cls, v):
@@ -69,9 +68,9 @@ class CreateUpdateLedgerDetailsTemplateRequest(BaseModel):
 class CreateUpdateLedgerTemplateRequest(BaseModel):
     """Create or Update Ledger Template schema (Request)"""
     token_name: str
-    headers: Optional[dict]
+    headers: Optional[List[dict]]
     details: List[CreateUpdateLedgerDetailsTemplateRequest]
-    footers: Optional[dict]
+    footers: Optional[List[dict]]
 
     @validator("token_name")
     def token_name_length_is_less_than_200(cls, v):
@@ -153,18 +152,18 @@ class RetrieveLedgerDetailsDataHistoryResponse(BaseModel):
 class RetrieveLedgerDetailsHistoryResponse(BaseModel):
     """Retrieve Ledger Details History schema (Response)"""
     token_detail_type: str
-    headers: dict
+    headers: List[dict]
     data: List[RetrieveLedgerDetailsDataHistoryResponse]
-    footers: dict
+    footers: List[dict]
 
 
 class RetrieveLedgerHistoryResponse(BaseModel):
     """Retrieve Ledger History schema (Response)"""
     created: str
     token_name: str
-    headers: dict
+    headers: List[dict]
     details: List[RetrieveLedgerDetailsHistoryResponse]
-    footers: dict
+    footers: List[dict]
 
 
 class LedgerDetailsDataTemplateResponse(BaseModel):
@@ -176,17 +175,17 @@ class LedgerDetailsDataTemplateResponse(BaseModel):
 class LedgerDetailsTemplateResponse(BaseModel):
     """Ledger Details Template schema (Response)"""
     token_detail_type: str
-    headers: dict
+    headers: List[dict]
     data: LedgerDetailsDataTemplateResponse
-    footers: dict
+    footers: List[dict]
 
 
 class LedgerTemplateResponse(BaseModel):
     """Ledger Template schema (Response)"""
     token_name: str
-    headers: dict
+    headers: List[dict]
     details: List[LedgerDetailsTemplateResponse]
-    footers: dict
+    footers: List[dict]
 
 
 class LedgerDetailsDataListAllResponse(BaseModel):
