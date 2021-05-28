@@ -18,6 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 import base64
 
+from unittest import mock
+
 from config import EOA_PASSWORD_PATTERN_MSG
 from app.model.db import Account, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
@@ -39,6 +41,53 @@ class TestAppRoutersAccountsPOST:
         req_param = {
             "eoa_password": E2EEUtils.encrypt(password)
         }
+
+        resp = client.post(self.apiurl, json=req_param)
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json()["issuer_address"] is not None
+        assert resp.json()["rsa_public_key"] == ""
+        assert resp.json()["rsa_status"] == AccountRsaStatus.UNSET.value
+        assert resp.json()["is_deleted"] is False
+
+        accounts_after = db.query(Account).all()
+
+        assert 0 == len(accounts_before)
+        assert 1 == len(accounts_after)
+        account_1 = accounts_after[0]
+        assert account_1.issuer_address == resp.json()["issuer_address"]
+        assert account_1.keyfile is not None
+        assert E2EEUtils.decrypt(account_1.eoa_password) == password
+        assert account_1.rsa_private_key is None
+        assert account_1.rsa_public_key is None
+        assert account_1.rsa_passphrase is None
+        assert account_1.rsa_status == AccountRsaStatus.UNSET.value
+        assert account_1.is_deleted is False
+
+    # <Normal_2>
+    # AWS KMS
+    @mock.patch("app.routers.account.AWS_KMS_GENERATE_RANDOM_ENABLED", True)
+    @mock.patch("boto3.client")
+    def test_normal_2(self, boto3_mock, client, db):
+        accounts_before = db.query(Account).all()
+
+        password = "password"
+        req_param = {
+            "eoa_password": E2EEUtils.encrypt(password)
+        }
+
+        # mock
+        class KMSClientMock:
+            def generate_random(self, NumberOfBytes):
+                assert NumberOfBytes == 32
+                return {
+                    "Plaintext": b"12345678901234567890123456789012"
+                }
+
+        boto3_mock.side_effect = [
+            KMSClientMock()
+        ]
 
         resp = client.post(self.apiurl, json=req_param)
 
