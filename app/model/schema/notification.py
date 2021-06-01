@@ -54,7 +54,8 @@ class NotificationsListResponse(BaseModel):
             notice_code_schema["description"] = "notice_type: BulkTransferError\n" \
                                                 " - 0: Issuer does not exist\n" \
                                                 " - 1: Could not get the private key of the issuer\n" \
-                                                " - 2: Failed to send transaction\n\n" \
+                                                " - 2: Failed to send transaction\n" \
+                                                "\n" \
                                                 "notice_type: ScheduleEventError\n" \
                                                 " - 0: Issuer does not exist\n" \
                                                 " - 1: Could not get the private key of the issuer\n" \
