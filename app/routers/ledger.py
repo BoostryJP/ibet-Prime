@@ -73,7 +73,7 @@ utc_tz = pytz.timezone("UTC")
 
 # GET: /ledger/{token_address}/history
 @router.get("/{token_address}/history", response_model=ListAllLedgerHistoryResponse)
-async def list_all_ledger_history(
+def list_all_ledger_history(
         token_address: str,
         issuer_address: str = Header(...),
         offset: int = Query(None),
@@ -129,7 +129,7 @@ async def list_all_ledger_history(
 
 # GET: /ledger/{token_address}/history/{ledger_id}
 @router.get("/{token_address}/history/{ledger_id}", response_model=RetrieveLedgerHistoryResponse)
-async def retrieve_ledger_history(
+def retrieve_ledger_history(
         token_address: str,
         ledger_id: int,
         issuer_address: str = Header(...),
@@ -239,7 +239,7 @@ async def retrieve_ledger_history(
 
 # GET: /ledger/{token_address}/template
 @router.get("/{token_address}/template", response_model=LedgerTemplateResponse)
-async def retrieve_ledger_template(
+def retrieve_ledger_template(
         token_address: str,
         issuer_address: str = Header(...),
         db: Session = Depends(db_session)):
@@ -292,7 +292,7 @@ async def retrieve_ledger_template(
 
 # POST: /ledger/{token_address}/template
 @router.post("/{token_address}/template")
-async def create_update_ledger_template(
+def create_update_ledger_template(
         token_address: str,
         data: CreateUpdateLedgerTemplateRequest,
         issuer_address: str = Header(...),
@@ -377,7 +377,7 @@ async def create_update_ledger_template(
 
 # GET: /ledger/{token_address}/details_data
 @router.get("/{token_address}/details_data", response_model=ListAllLedgerDetailsDataResponse)
-async def list_all_ledger_details_data(
+def list_all_ledger_details_data(
         token_address: str,
         issuer_address: str = Header(...),
         offset: int = Query(None),
@@ -436,7 +436,7 @@ async def list_all_ledger_details_data(
 
 # POST: /ledger/{token_address}/details_data
 @router.post("/{token_address}/details_data", response_model=LedgerDetailsDataResponse)
-async def create_ledger_details_data(
+def create_ledger_details_data(
         token_address: str,
         data_list: List[CreateUpdateLedgerDetailsDataRequest],
         issuer_address: str = Header(...),
@@ -473,7 +473,7 @@ async def create_ledger_details_data(
 
 # GET: /ledger/{token_address}/details_data/{data_id}
 @router.get("/{token_address}/details_data/{data_id}", response_model=List[RetrieveLedgerDetailsDataResponse])
-async def retrieve_ledger_details_data(
+def retrieve_ledger_details_data(
         token_address: str,
         data_id: str,
         issuer_address: str = Header(...),
@@ -513,7 +513,7 @@ async def retrieve_ledger_details_data(
 
 # POST: /ledger/{token_address}/details_data/{data_id}
 @router.post("/{token_address}/details_data/{data_id}")
-async def update_ledger_details_data(
+def update_ledger_details_data(
         token_address: str,
         data_id: str,
         data_list: List[CreateUpdateLedgerDetailsDataRequest],
@@ -557,7 +557,7 @@ async def update_ledger_details_data(
 
 # DELETE: /ledger/{token_address}/details_data/{data_id}
 @router.delete("/{token_address}/details_data/{data_id}")
-async def delete_ledger_details_data(
+def delete_ledger_details_data(
         token_address: str,
         data_id: str,
         issuer_address: str = Header(...),
