@@ -71,7 +71,7 @@ router = APIRouter(tags=["account"])
     "/accounts",
     response_model=AccountResponse
 )
-async def create_key(
+def create_key(
         data: AccountCreateKeyRequest,
         db: Session = Depends(db_session)):
     """Create Keys"""
@@ -124,7 +124,7 @@ async def create_key(
     "/accounts",
     response_model=List[AccountResponse]
 )
-async def list_all_accounts(db: Session = Depends(db_session)):
+def list_all_accounts(db: Session = Depends(db_session)):
     """List all accounts"""
 
     # Register key data to the DB
@@ -147,7 +147,7 @@ async def list_all_accounts(db: Session = Depends(db_session)):
     "/accounts/{issuer_address}",
     response_model=AccountResponse
 )
-async def retrieve_account(issuer_address: str, db: Session = Depends(db_session)):
+def retrieve_account(issuer_address: str, db: Session = Depends(db_session)):
     """Retrieve an account"""
 
     _account = db.query(Account). \
@@ -169,7 +169,7 @@ async def retrieve_account(issuer_address: str, db: Session = Depends(db_session
     "/accounts/{issuer_address}",
     response_model=AccountResponse
 )
-async def delete_account(issuer_address: str, db: Session = Depends(db_session)):
+def delete_account(issuer_address: str, db: Session = Depends(db_session)):
     """Logically delete an account"""
 
     _account = db.query(Account). \
@@ -195,7 +195,7 @@ async def delete_account(issuer_address: str, db: Session = Depends(db_session))
     "/accounts/{issuer_address}/rsakey",
     response_model=AccountResponse
 )
-async def generate_rsa_key(
+def generate_rsa_key(
         issuer_address: str,
         data: AccountGenerateRsaKeyRequest,
         db: Session = Depends(db_session)):
@@ -253,7 +253,7 @@ async def generate_rsa_key(
 
 # POST: /accounts/{issuer_address}/eoa_password
 @router.post("/accounts/{issuer_address}/eoa_password")
-async def change_eoa_password(
+def change_eoa_password(
         issuer_address: str,
         data: AccountChangeEOAPasswordRequest,
         db: Session = Depends(db_session)):
@@ -303,7 +303,7 @@ async def change_eoa_password(
 
 # POST: /accounts/{issuer_address}/rsa_passphrase
 @router.post("/accounts/{issuer_address}/rsa_passphrase")
-async def change_rsa_passphrase(
+def change_rsa_passphrase(
         issuer_address: str,
         data: AccountChangeRSAPassphraseRequest,
         db: Session = Depends(db_session)):

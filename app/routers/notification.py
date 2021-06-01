@@ -48,7 +48,7 @@ utc_tz = pytz.timezone("UTC")
     "/notifications",
     response_model=ListAllNotificationsResponse
 )
-async def list_all_notifications(
+def list_all_notifications(
         issuer_address: Optional[str] = Header(None),
         notice_type: str = Query(None),
         offset: int = Query(None),
@@ -106,7 +106,7 @@ async def list_all_notifications(
 
 # DELETE: /notifications/{notice_id}
 @router.delete("/notifications/{notice_id}")
-async def delete_notification(
+def delete_notification(
         notice_id: str,
         issuer_address: str = Header(...),
         db: Session = Depends(db_session)):
