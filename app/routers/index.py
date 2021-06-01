@@ -43,7 +43,7 @@ web3.middleware_onion.inject(geth_poa_middleware, layer=0)
     "/e2ee",
     response_model=E2EEResponse
 )
-async def e2e_encryption_key():
+def e2e_encryption_key():
     """Get E2EE public key"""
 
     if not E2EE_REQUEST_ENABLED:
@@ -59,7 +59,7 @@ async def e2e_encryption_key():
     "/healthcheck",
     response_model=None
 )
-async def check_health(
+def check_health(
         db: Session = Depends(db_session)
 ):
     errors = []
