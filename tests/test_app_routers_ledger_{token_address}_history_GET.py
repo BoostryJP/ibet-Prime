@@ -82,16 +82,16 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
             },
             "ledgers": [
                 {
-                    "id": 1,
-                    "token_address": token_address,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND,
-                    "created": "2022-01-02T00:20:30+09:00",
-                },
-                {
                     "id": 2,
                     "token_address": token_address,
                     "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "created": "2022-01-02T09:20:30+09:00",
+                },
+                {
+                    "id": 1,
+                    "token_address": token_address,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
+                    "created": "2022-01-02T00:20:30+09:00",
                 }
             ]
         }
@@ -163,16 +163,16 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
             },
             "ledgers": [
                 {
-                    "id": 2,
-                    "token_address": token_address,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND,
-                    "created": "2022-01-02T09:20:30+09:00",
-                },
-                {
                     "id": 3,
                     "token_address": token_address,
                     "token_type": TokenType.IBET_STRAIGHT_BOND,
                     "created": "2022-01-03T00:20:30+09:00",
+                },
+                {
+                    "id": 2,
+                    "token_address": token_address,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND,
+                    "created": "2022-01-02T09:20:30+09:00",
                 }
             ]
         }
