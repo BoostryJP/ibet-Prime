@@ -25,7 +25,10 @@ from fastapi import (
     Query,
     Depends
 )
-from sqlalchemy import func
+from sqlalchemy import (
+    func,
+    desc
+)
 from sqlalchemy.orm import Session
 
 from config import TZ
@@ -94,7 +97,7 @@ def list_all_ledger_history(
 
     query = db.query(Ledger). \
         filter(Ledger.token_address == token_address). \
-        order_by(Ledger.id)
+        order_by(desc(Ledger.id))
     count = query.count()
 
     if limit is not None:
