@@ -20,6 +20,8 @@ from typing import List
 import os
 import sys
 import time
+import uuid
+
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import create_engine
 from sqlalchemy.orm import (
@@ -40,7 +42,9 @@ from app.model.db import (
     Account,
     ScheduledEvents,
     ScheduledEventType,
-    TokenType
+    TokenType,
+    Notification,
+    NotificationType
 )
 from app.model.blockchain import (
     IbetStraightBondContract,
@@ -72,6 +76,10 @@ class Sinks:
         for sink in self.sinks:
             sink.on_finish_event_process(*args, **kwargs)
 
+    def on_error_notification(self, *args, **kwargs):
+        for sink in self.sinks:
+            sink.on_error_notification(*args, **kwargs)
+
     def flush(self, *args, **kwargs):
         for sink in self.sinks:
             sink.flush(*args, **kwargs)
@@ -88,6 +96,18 @@ class DBSink:
         if scheduled_event_record is not None:
             scheduled_event_record.status = status
             self.db.merge(scheduled_event_record)
+
+    def on_error_notification(self, issuer_address, code, scheduled_event_id):
+        notification = Notification()
+        notification.notice_id = uuid.uuid4()
+        notification.issuer_address = issuer_address
+        notification.priority = 1  # Medium
+        notification.type = NotificationType.SCHEDULE_EVENT_ERROR
+        notification.code = code
+        notification.metainfo = {
+            "scheduled_event_id": scheduled_event_id
+        }
+        self.db.add(notification)
 
     def flush(self):
         self.db.commit()
@@ -126,6 +146,7 @@ class Processor:
                         record_id=_event.id,
                         status=2
                     )
+                    self.sink.on_error_notification(_event.issuer_address, 0, _event.event_id)
                     self.sink.flush()
                     continue
                 keyfile_json = _account.keyfile
@@ -140,6 +161,7 @@ class Processor:
                     record_id=_event.id,
                     status=2
                 )
+                self.sink.on_error_notification(_event.issuer_address, 1, _event.event_id)
                 self.sink.flush()
                 continue
 
@@ -175,6 +197,7 @@ class Processor:
                     record_id=_event.id,
                     status=2
                 )
+                self.sink.on_error_notification(_event.issuer_address, 2, _event.event_id)
             self.sink.flush()
 
 

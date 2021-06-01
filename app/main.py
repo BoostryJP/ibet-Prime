@@ -32,6 +32,7 @@ from app.routers import (
     account,
     bond,
     ledger,
+    notification,
     share
 )
 from app.exceptions import *
@@ -63,6 +64,7 @@ app.include_router(index.router)
 app.include_router(account.router)
 app.include_router(bond.router)
 app.include_router(ledger.router)
+app.include_router(notification.router)
 app.include_router(share.router)
 
 

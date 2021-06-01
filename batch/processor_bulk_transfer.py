@@ -20,9 +20,14 @@ from typing import List
 import os
 import sys
 import time
+import uuid
+
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import (
+    sessionmaker,
+    scoped_session
+)
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
@@ -39,7 +44,9 @@ from app.model.db import (
     Account,
     BulkTransferUpload,
     BulkTransfer,
-    TokenType
+    TokenType,
+    Notification,
+    NotificationType
 )
 from app.model.blockchain import (
     IbetStraightBondContract,
@@ -77,6 +84,10 @@ class Sinks:
         for sink in self.sinks:
             sink.on_finish_transfer_process(*args, **kwargs)
 
+    def on_error_notification(self, *args, **kwargs):
+        for sink in self.sinks:
+            sink.on_error_notification(*args, **kwargs)
+
     def flush(self, *args, **kwargs):
         for sink in self.sinks:
             sink.flush(*args, **kwargs)
@@ -101,6 +112,19 @@ class DBSink:
         if transfer_record is not None:
             transfer_record.status = status
             self.db.merge(transfer_record)
+
+    def on_error_notification(self, issuer_address, code, upload_id, error_transfer_id):
+        notification = Notification()
+        notification.notice_id = uuid.uuid4()
+        notification.issuer_address = issuer_address
+        notification.priority = 1  # Medium
+        notification.type = NotificationType.BULK_TRANSFER_ERROR
+        notification.code = code
+        notification.metainfo = {
+            "upload_id": upload_id,
+            "error_transfer_id": error_transfer_id
+        }
+        self.db.add(notification)
 
     def flush(self):
         self.db.commit()
@@ -144,6 +168,7 @@ class Processor:
                         upload_id=_upload.upload_id,
                         status=2
                     )
+                    self.sink.on_error_notification(_upload.issuer_address, 0, _upload.upload_id, [])
                     self.sink.flush()
                     continue
                 keyfile_json = _account.keyfile
@@ -160,11 +185,13 @@ class Processor:
                     upload_id=_upload.upload_id,
                     status=2
                 )
+                self.sink.on_error_notification(_upload.issuer_address, 1, _upload.upload_id, [])
                 self.sink.flush()
                 continue
 
             # Transfer
             transfer_list = self._get_transfer_data(upload_id=_upload.upload_id)
+            error_transfer_id = []
             for _transfer in transfer_list:
                 token = {
                     "token_address": _transfer.token_address,
@@ -198,9 +225,12 @@ class Processor:
                         status=2
                     )
                     _upload_status = 2  # Error
+                    error_transfer_id.append(_transfer.id)
                 self.sink.flush()
 
             self.sink.on_finish_upload_process(_upload.upload_id, _upload_status)
+            if len(error_transfer_id) > 0:
+                self.sink.on_error_notification(_upload.issuer_address, 2, _upload.upload_id, error_transfer_id)
             self.sink.flush()
 
 

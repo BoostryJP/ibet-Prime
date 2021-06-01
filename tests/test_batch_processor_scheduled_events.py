@@ -27,7 +27,9 @@ from app.model.db import (
     Account,
     ScheduledEvents,
     ScheduledEventType,
-    TokenType
+    TokenType,
+    Notification,
+    NotificationType
 )
 from app.utils.e2ee_utils import E2EEUtils
 from app.exceptions import SendTransactionError
@@ -273,6 +275,7 @@ class TestProcessor:
 
         # TokenType: STRAIGHT_BOND, status is 2, will not change
         token_event = ScheduledEvents()
+        token_event.event_id = "event_id_1"
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
@@ -290,6 +293,16 @@ class TestProcessor:
             filter(ScheduledEvents.token_address == _token_address). \
             first()
         assert _scheduled_event.status == 2
+        _notification = db.query(Notification).first()
+        assert _notification.id == 1
+        assert _notification.notice_id is not None
+        assert _notification.issuer_address == _issuer_address
+        assert _notification.priority == 1
+        assert _notification.type == NotificationType.SCHEDULE_EVENT_ERROR
+        assert _notification.code == 0
+        assert _notification.metainfo == {
+            "scheduled_event_id": "event_id_1",
+        }
 
     # <Error_2>
     # fail to get the private key
@@ -311,6 +324,7 @@ class TestProcessor:
 
         # TokenType: STRAIGHT_BOND, status is 0: Pending, will be 2: Failed
         token_event = ScheduledEvents()
+        token_event.event_id = "event_id_1"
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
         token_event.token_type = TokenType.IBET_SHARE
@@ -328,6 +342,16 @@ class TestProcessor:
             filter(ScheduledEvents.token_address == _token_address). \
             first()
         assert _scheduled_event.status == 2
+        _notification = db.query(Notification).first()
+        assert _notification.id == 1
+        assert _notification.notice_id is not None
+        assert _notification.issuer_address == _issuer_address
+        assert _notification.priority == 1
+        assert _notification.type == NotificationType.SCHEDULE_EVENT_ERROR
+        assert _notification.code == 1
+        assert _notification.metainfo == {
+            "scheduled_event_id": "event_id_1",
+        }
 
     # <Error_3>
     # IbetStraightBond : SendTransactionError
@@ -352,6 +376,7 @@ class TestProcessor:
 
         # TokenType: STRAIGHT_BOND, status will be "2: Failed"
         token_event = ScheduledEvents()
+        token_event.event_id = "event_id_1"
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
@@ -376,6 +401,16 @@ class TestProcessor:
             filter(ScheduledEvents.token_address == _token_address). \
             first()
         assert _scheduled_event.status == 2
+        _notification = db.query(Notification).first()
+        assert _notification.id == 1
+        assert _notification.notice_id is not None
+        assert _notification.issuer_address == _issuer_address
+        assert _notification.priority == 1
+        assert _notification.type == NotificationType.SCHEDULE_EVENT_ERROR
+        assert _notification.code == 2
+        assert _notification.metainfo == {
+            "scheduled_event_id": "event_id_1",
+        }
 
     # <Error_4>
     # IbetShare : SendTransactionError
@@ -401,6 +436,7 @@ class TestProcessor:
 
         # TokenType: STRAIGHT_BOND, status will be "2: Failed"
         token_event = ScheduledEvents()
+        token_event.event_id = "event_id_1"
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
         token_event.token_type = TokenType.IBET_SHARE
@@ -425,3 +461,13 @@ class TestProcessor:
             filter(ScheduledEvents.token_address == _token_address). \
             first()
         assert _scheduled_event.status == 2
+        _notification = db.query(Notification).first()
+        assert _notification.id == 1
+        assert _notification.notice_id is not None
+        assert _notification.issuer_address == _issuer_address
+        assert _notification.priority == 1
+        assert _notification.type == NotificationType.SCHEDULE_EVENT_ERROR
+        assert _notification.code == 2
+        assert _notification.metainfo == {
+            "scheduled_event_id": "event_id_1",
+        }

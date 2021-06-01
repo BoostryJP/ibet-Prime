@@ -45,6 +45,10 @@ from .ledger_template import (
     LedgerDetailsDataType
 )
 from .node import Node
+from .notification import (
+    Notification,
+    NotificationType
+)
 from .transfer_appoval_history import TransferApprovalHistory
 from .tx_management import TransactionLock
 from .utxo import UTXO, UTXOBlockNumber

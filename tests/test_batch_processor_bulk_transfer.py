@@ -19,10 +19,21 @@ SPDX-License-Identifier: Apache-2.0
 import pytest
 from unittest.mock import patch
 
-from app.model.db import Account, BulkTransfer, BulkTransferUpload, TokenType
+from app.model.db import (
+    Account,
+    BulkTransfer,
+    BulkTransferUpload,
+    TokenType,
+    Notification,
+    NotificationType
+)
 from app.utils.e2ee_utils import E2EEUtils
 from app.exceptions import SendTransactionError
-from batch.processor_bulk_transfer import Sinks, DBSink, Processor
+from batch.processor_bulk_transfer import (
+    Sinks,
+    DBSink,
+    Processor
+)
 
 from tests.account_config import config_eth_account
 
@@ -35,7 +46,6 @@ def processor(db):
 
 
 class TestProcessor:
-
     account_list = [
         {
             "address": config_eth_account("user1")["address"],
@@ -220,10 +230,63 @@ class TestProcessor:
             filter(BulkTransferUpload.upload_id == self.upload_id_list[0]). \
             first()
         assert _bulk_transfer_upload.status == 2
+        _notification = db.query(Notification).first()
+        assert _notification.id == 1
+        assert _notification.notice_id is not None
+        assert _notification.issuer_address == _account["address"]
+        assert _notification.priority == 1
+        assert _notification.type == NotificationType.BULK_TRANSFER_ERROR
+        assert _notification.code == 0
+        assert _notification.metainfo == {
+            "upload_id": self.upload_id_list[0],
+            "error_transfer_id": []
+        }
 
     # <Error_2>
-    # Send Transaction Error: IbetStraightBond
+    # fail to get the private key
     def test_error_2(self, processor, db):
+        _account = self.account_list[0]
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = _account["address"]
+        account.eoa_password = E2EEUtils.encrypt("password_ng")
+        account.keyfile = _account["keyfile"]
+        db.add(account)
+
+        # Prepare data : BulkTransferUpload
+        bulk_transfer_upload = BulkTransferUpload()
+        bulk_transfer_upload.issuer_address = _account["address"]
+        bulk_transfer_upload.upload_id = self.upload_id_list[0]
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.status = 0  # pending
+        db.add(bulk_transfer_upload)
+
+        db.commit()
+
+        # Execute batch
+        processor.process()
+
+        # Assertion
+        _bulk_transfer_upload = db.query(BulkTransferUpload). \
+            filter(BulkTransferUpload.upload_id == self.upload_id_list[0]). \
+            first()
+        assert _bulk_transfer_upload.status == 2
+        _notification = db.query(Notification).first()
+        assert _notification.id == 1
+        assert _notification.notice_id is not None
+        assert _notification.issuer_address == _account["address"]
+        assert _notification.priority == 1
+        assert _notification.type == NotificationType.BULK_TRANSFER_ERROR
+        assert _notification.code == 1
+        assert _notification.metainfo == {
+            "upload_id": self.upload_id_list[0],
+            "error_transfer_id": []
+        }
+
+    # <Error_3>
+    # Send Transaction Error: IbetStraightBond
+    def test_error_3(self, processor, db):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
@@ -279,9 +342,21 @@ class TestProcessor:
                 first()
             assert _bulk_transfer.status == 2
 
-    # <Error_3>
+            _notification = db.query(Notification).first()
+            assert _notification.id == 1
+            assert _notification.notice_id is not None
+            assert _notification.issuer_address == _account["address"]
+            assert _notification.priority == 1
+            assert _notification.type == NotificationType.BULK_TRANSFER_ERROR
+            assert _notification.code == 2
+            assert _notification.metainfo == {
+                "upload_id": self.upload_id_list[0],
+                "error_transfer_id": [1]
+            }
+
+    # <Error_4>
     # Send Transaction Error: IbetShare
-    def test_error_3(self, processor, db):
+    def test_error_4(self, processor, db):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
@@ -336,3 +411,15 @@ class TestProcessor:
                 filter(BulkTransfer.token_address == self.bulk_transfer_token[0]). \
                 first()
             assert _bulk_transfer.status == 2
+
+            _notification = db.query(Notification).first()
+            assert _notification.id == 1
+            assert _notification.notice_id is not None
+            assert _notification.issuer_address == _account["address"]
+            assert _notification.priority == 1
+            assert _notification.type == NotificationType.BULK_TRANSFER_ERROR
+            assert _notification.code == 2
+            assert _notification.metainfo == {
+                "upload_id": self.upload_id_list[0],
+                "error_transfer_id": [1]
+            }
