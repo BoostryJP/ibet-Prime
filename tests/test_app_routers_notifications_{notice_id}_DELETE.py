@@ -47,7 +47,7 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
         _notification_1.issuer_address = issuer_address_1
         _notification_1.priority = 0
         _notification_1.type = NotificationType.BULK_TRANSFER_ERROR
-        _notification_1.message = "message_1"
+        _notification_1.code = 0
         _notification_1.metainfo = {
             "test_1": "test_1"
         }
@@ -59,7 +59,7 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
         _notification_2.issuer_address = issuer_address_1
         _notification_2.priority = 1
         _notification_2.type = NotificationType.SCHEDULE_EVENT_ERROR
-        _notification_2.message = "message_2"
+        _notification_2.code = 1
         _notification_2.metainfo = {
             "test_2": "test_2"
         }
@@ -71,7 +71,7 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
         _notification_3.issuer_address = issuer_address_2
         _notification_3.priority = 2
         _notification_3.type = NotificationType.BULK_TRANSFER_ERROR
-        _notification_3.message = "message_3"
+        _notification_3.code = 2
         _notification_3.metainfo = {
             "test_3": "test_3"
         }
@@ -83,7 +83,7 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
         _notification_4.issuer_address = issuer_address_2
         _notification_4.priority = 0
         _notification_4.type = NotificationType.SCHEDULE_EVENT_ERROR
-        _notification_4.message = "message_4"
+        _notification_4.code = 3
         _notification_4.metainfo = {
             "test_4": "test_4"
         }
@@ -108,7 +108,7 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
         assert _notification.issuer_address == issuer_address_1
         assert _notification.priority == 0
         assert _notification.type == NotificationType.BULK_TRANSFER_ERROR
-        assert _notification.message == "message_1"
+        assert _notification.code == 0
         assert _notification.metainfo == {
             "test_1": "test_1"
         }
@@ -118,7 +118,7 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
         assert _notification.issuer_address == issuer_address_2
         assert _notification.priority == 2
         assert _notification.type == NotificationType.BULK_TRANSFER_ERROR
-        assert _notification.message == "message_3"
+        assert _notification.code == 2
         assert _notification.metainfo == {
             "test_3": "test_3"
         }
@@ -128,7 +128,7 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
         assert _notification.issuer_address == issuer_address_2
         assert _notification.priority == 0
         assert _notification.type == NotificationType.SCHEDULE_EVENT_ERROR
-        assert _notification.message == "message_4"
+        assert _notification.code == 3
         assert _notification.metainfo == {
             "test_4": "test_4"
         }

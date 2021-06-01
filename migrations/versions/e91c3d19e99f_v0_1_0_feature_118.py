@@ -1,8 +1,8 @@
 """v0.1.0_feature/#118
 
-Revision ID: 8bc12b649779
+Revision ID: e91c3d19e99f
 Revises: b54c7dbe300d
-Create Date: 2021-06-01 13:50:21.843610
+Create Date: 2021-06-01 16:50:27.879184
 
 """
 from alembic import op
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from app.database import get_db_schema
 
 # revision identifiers, used by Alembic.
-revision = '8bc12b649779'
+revision = 'e91c3d19e99f'
 down_revision = 'b54c7dbe300d'
 branch_labels = None
 depends_on = None
@@ -28,7 +28,7 @@ def upgrade():
     sa.Column('issuer_address', sa.String(length=42), nullable=True),
     sa.Column('priority', sa.Integer(), nullable=True),
     sa.Column('type', sa.String(length=50), nullable=True),
-    sa.Column('message', sa.String(length=200), nullable=True),
+    sa.Column('code', sa.Integer(), nullable=True),
     sa.Column('metainfo', sa.JSON(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     , schema=get_db_schema())

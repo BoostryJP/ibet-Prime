@@ -40,8 +40,8 @@ class Notification(Base):
     priority = Column(Integer)
     # notification type
     type = Column(String(50))
-    # message
-    message = Column(String(200))
+    # notification code
+    code = Column(Integer)
     # meta information
     metainfo = Column(JSON)
 

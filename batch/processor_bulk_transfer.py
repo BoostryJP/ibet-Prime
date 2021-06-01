@@ -113,13 +113,13 @@ class DBSink:
             transfer_record.status = status
             self.db.merge(transfer_record)
 
-    def on_error_notification(self, issuer_address, message, upload_id, error_transfer_id):
+    def on_error_notification(self, issuer_address, code, upload_id, error_transfer_id):
         notification = Notification()
         notification.notice_id = uuid.uuid4()
         notification.issuer_address = issuer_address
         notification.priority = 1  # Medium
         notification.type = NotificationType.BULK_TRANSFER_ERROR
-        notification.message = message
+        notification.code = code
         notification.metainfo = {
             "upload_id": upload_id,
             "error_transfer_id": error_transfer_id
@@ -168,11 +168,7 @@ class Processor:
                         upload_id=_upload.upload_id,
                         status=2
                     )
-                    self.sink.on_error_notification(
-                        _upload.issuer_address,
-                        "Issuer does not exist",
-                        _upload.upload_id,
-                        [])
+                    self.sink.on_error_notification(_upload.issuer_address, 0, _upload.upload_id, [])
                     self.sink.flush()
                     continue
                 keyfile_json = _account.keyfile
@@ -189,11 +185,7 @@ class Processor:
                     upload_id=_upload.upload_id,
                     status=2
                 )
-                self.sink.on_error_notification(
-                    _upload.issuer_address,
-                    "Could not get the private key of the issuer",
-                    _upload.upload_id,
-                    [])
+                self.sink.on_error_notification(_upload.issuer_address, 1, _upload.upload_id, [])
                 self.sink.flush()
                 continue
 
@@ -238,11 +230,7 @@ class Processor:
 
             self.sink.on_finish_upload_process(_upload.upload_id, _upload_status)
             if len(error_transfer_id) > 0:
-                self.sink.on_error_notification(
-                    _upload.issuer_address,
-                    "Failed to send transaction",
-                    _upload.upload_id,
-                    error_transfer_id)
+                self.sink.on_error_notification(_upload.issuer_address, 2, _upload.upload_id, error_transfer_id)
             self.sink.flush()
 
 

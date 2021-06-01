@@ -97,13 +97,13 @@ class DBSink:
             scheduled_event_record.status = status
             self.db.merge(scheduled_event_record)
 
-    def on_error_notification(self, issuer_address, message, scheduled_event_id):
+    def on_error_notification(self, issuer_address, code, scheduled_event_id):
         notification = Notification()
         notification.notice_id = uuid.uuid4()
         notification.issuer_address = issuer_address
         notification.priority = 1  # Medium
         notification.type = NotificationType.SCHEDULE_EVENT_ERROR
-        notification.message = message
+        notification.code = code
         notification.metainfo = {
             "scheduled_event_id": scheduled_event_id
         }
@@ -146,10 +146,7 @@ class Processor:
                         record_id=_event.id,
                         status=2
                     )
-                    self.sink.on_error_notification(
-                        _event.issuer_address,
-                        "Issuer does not exist",
-                        _event.event_id)
+                    self.sink.on_error_notification(_event.issuer_address, 0, _event.event_id)
                     self.sink.flush()
                     continue
                 keyfile_json = _account.keyfile
@@ -164,10 +161,7 @@ class Processor:
                     record_id=_event.id,
                     status=2
                 )
-                self.sink.on_error_notification(
-                    _event.issuer_address,
-                    "Could not get the private key of the issuer",
-                    _event.event_id)
+                self.sink.on_error_notification(_event.issuer_address, 1, _event.event_id)
                 self.sink.flush()
                 continue
 
@@ -203,10 +197,7 @@ class Processor:
                     record_id=_event.id,
                     status=2
                 )
-                self.sink.on_error_notification(
-                    _event.issuer_address,
-                    "Failed to send transaction",
-                    _event.event_id)
+                self.sink.on_error_notification(_event.issuer_address, 2, _event.event_id)
             self.sink.flush()
 
 

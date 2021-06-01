@@ -236,7 +236,7 @@ class TestProcessor:
         assert _notification.issuer_address == _account["address"]
         assert _notification.priority == 1
         assert _notification.type == NotificationType.BULK_TRANSFER_ERROR
-        assert _notification.message == "Issuer does not exist"
+        assert _notification.code == 0
         assert _notification.metainfo == {
             "upload_id": self.upload_id_list[0],
             "error_transfer_id": []
@@ -278,7 +278,7 @@ class TestProcessor:
         assert _notification.issuer_address == _account["address"]
         assert _notification.priority == 1
         assert _notification.type == NotificationType.BULK_TRANSFER_ERROR
-        assert _notification.message == "Could not get the private key of the issuer"
+        assert _notification.code == 1
         assert _notification.metainfo == {
             "upload_id": self.upload_id_list[0],
             "error_transfer_id": []
@@ -348,7 +348,7 @@ class TestProcessor:
             assert _notification.issuer_address == _account["address"]
             assert _notification.priority == 1
             assert _notification.type == NotificationType.BULK_TRANSFER_ERROR
-            assert _notification.message == "Failed to send transaction"
+            assert _notification.code == 2
             assert _notification.metainfo == {
                 "upload_id": self.upload_id_list[0],
                 "error_transfer_id": [1]
@@ -418,7 +418,7 @@ class TestProcessor:
             assert _notification.issuer_address == _account["address"]
             assert _notification.priority == 1
             assert _notification.type == NotificationType.BULK_TRANSFER_ERROR
-            assert _notification.message == "Failed to send transaction"
+            assert _notification.code == 2
             assert _notification.metainfo == {
                 "upload_id": self.upload_id_list[0],
                 "error_transfer_id": [1]

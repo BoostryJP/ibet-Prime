@@ -86,7 +86,7 @@ async def list_all_notifications(
             "issuer_address": _notification.issuer_address,
             "priority": _notification.priority,
             "notice_type": _notification.type,
-            "message": _notification.message,
+            "notice_code": _notification.code,
             "metainfo": _notification.metainfo,
             "created": created_formatted
         })

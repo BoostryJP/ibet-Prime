@@ -17,7 +17,11 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
-from typing import List
+from typing import (
+    List,
+    Dict,
+    Any
+)
 
 from pydantic import BaseModel
 
@@ -39,9 +43,22 @@ class NotificationsListResponse(BaseModel):
     issuer_address: str
     priority: int
     notice_type: str
-    message: str
+    notice_code: int
     metainfo: dict
     created: datetime
+
+    class Config:
+        @staticmethod
+        def schema_extra(schema: Dict[str, Any], _) -> None:
+            notice_code_schema = schema["properties"]["notice_code"]
+            notice_code_schema["description"] = "notice_type: BulkTransferError\n" \
+                                                " - 0: Issuer does not exist\n" \
+                                                " - 1: Could not get the private key of the issuer\n" \
+                                                " - 2: Failed to send transaction\n\n" \
+                                                "notice_type: ScheduleEventError\n" \
+                                                " - 0: Issuer does not exist\n" \
+                                                " - 1: Could not get the private key of the issuer\n" \
+                                                " - 2: Failed to send transaction"
 
 
 class ListAllNotificationsResponse(BaseModel):

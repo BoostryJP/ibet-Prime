@@ -299,7 +299,7 @@ class TestProcessor:
         assert _notification.issuer_address == _issuer_address
         assert _notification.priority == 1
         assert _notification.type == NotificationType.SCHEDULE_EVENT_ERROR
-        assert _notification.message == "Issuer does not exist"
+        assert _notification.code == 0
         assert _notification.metainfo == {
             "scheduled_event_id": "event_id_1",
         }
@@ -348,7 +348,7 @@ class TestProcessor:
         assert _notification.issuer_address == _issuer_address
         assert _notification.priority == 1
         assert _notification.type == NotificationType.SCHEDULE_EVENT_ERROR
-        assert _notification.message == "Could not get the private key of the issuer"
+        assert _notification.code == 1
         assert _notification.metainfo == {
             "scheduled_event_id": "event_id_1",
         }
@@ -407,7 +407,7 @@ class TestProcessor:
         assert _notification.issuer_address == _issuer_address
         assert _notification.priority == 1
         assert _notification.type == NotificationType.SCHEDULE_EVENT_ERROR
-        assert _notification.message == "Failed to send transaction"
+        assert _notification.code == 2
         assert _notification.metainfo == {
             "scheduled_event_id": "event_id_1",
         }
@@ -467,7 +467,7 @@ class TestProcessor:
         assert _notification.issuer_address == _issuer_address
         assert _notification.priority == 1
         assert _notification.type == NotificationType.SCHEDULE_EVENT_ERROR
-        assert _notification.message == "Failed to send transaction"
+        assert _notification.code == 2
         assert _notification.metainfo == {
             "scheduled_event_id": "event_id_1",
         }
