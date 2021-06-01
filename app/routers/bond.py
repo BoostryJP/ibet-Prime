@@ -97,7 +97,7 @@ local_tz = timezone(TZ)
     "/tokens",
     response_model=TokenAddressResponse
 )
-async def issue_token(
+def issue_token(
         request: Request,
         token: IbetStraightBondCreate,
         issuer_address: str = Header(...),
@@ -206,7 +206,7 @@ async def issue_token(
     "/tokens",
     response_model=List[IbetStraightBondResponse]
 )
-async def list_all_tokens(
+def list_all_tokens(
         issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """List all issued tokens"""
@@ -243,7 +243,7 @@ async def list_all_tokens(
     "/tokens/{token_address}",
     response_model=IbetStraightBondResponse
 )
-async def retrieve_token(
+def retrieve_token(
         token_address: str,
         db: Session = Depends(db_session)):
     """Retrieve token"""
@@ -268,7 +268,7 @@ async def retrieve_token(
     "/tokens/{token_address}",
     response_model=None
 )
-async def update_token(
+def update_token(
         request: Request,
         token_address: str,
         token: IbetStraightBondUpdate,
@@ -319,7 +319,7 @@ async def update_token(
     "/tokens/{token_address}/add",
     response_model=None
 )
-async def additional_issue(
+def additional_issue(
         request: Request,
         token_address: str,
         token: IbetStraightBondAdd,
@@ -370,7 +370,7 @@ async def additional_issue(
     "/tokens/{token_address}/scheduled_events",
     response_model=List[ScheduledEventResponse]
 )
-async def list_all_scheduled_events(
+def list_all_scheduled_events(
         token_address: str,
         issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
@@ -414,7 +414,7 @@ async def list_all_scheduled_events(
     "/tokens/{token_address}/scheduled_events",
     response_model=ScheduledEventIdResponse
 )
-async def schedule_new_update_event(
+def schedule_new_update_event(
         request: Request,
         token_address: str,
         event_data: IbetStraightBondScheduledUpdate,
@@ -462,7 +462,7 @@ async def schedule_new_update_event(
     "/tokens/{token_address}/scheduled_events/{scheduled_event_id}",
     response_model=ScheduledEventResponse
 )
-async def retrieve_token_event(
+def retrieve_token_event(
         scheduled_event_id: str,
         token_address: str,
         issuer_address: Optional[str] = Header(None),
@@ -504,7 +504,7 @@ async def retrieve_token_event(
     "/tokens/{token_address}/scheduled_events/{scheduled_event_id}",
     response_model=ScheduledEventResponse
 )
-async def delete_scheduled_event(
+def delete_scheduled_event(
         request: Request,
         token_address: str,
         scheduled_event_id: str,
@@ -555,7 +555,7 @@ async def delete_scheduled_event(
     "/tokens/{token_address}/holders",
     response_model=List[HolderResponse]
 )
-async def list_all_holders(
+def list_all_holders(
         token_address: str,
         issuer_address: str = Header(...),
         db: Session = Depends(db_session)):
@@ -625,7 +625,7 @@ async def list_all_holders(
     "/tokens/{token_address}/holders/{account_address}",
     response_model=HolderResponse
 )
-async def retrieve_holder(
+def retrieve_holder(
         token_address: str,
         account_address: str,
         issuer_address: str = Header(...),
@@ -692,7 +692,7 @@ async def retrieve_holder(
     "/tokens/{token_address}/holders/{account_address}/personal_info",
     response_model=None
 )
-async def modify_holder_personal_info(
+def modify_holder_personal_info(
         request: Request,
         token_address: str,
         account_address: str,
@@ -743,7 +743,7 @@ async def modify_holder_personal_info(
     "/transfers",
     response_model=None
 )
-async def transfer_ownership(
+def transfer_ownership(
         request: Request,
         token: IbetStraightBondTransfer,
         issuer_address: str = Header(...),
@@ -791,7 +791,7 @@ async def transfer_ownership(
     "/transfers/{token_address}",
     response_model=TransferHistoryResponse
 )
-async def list_transfer_history(
+def list_transfer_history(
         token_address: str,
         offset: Optional[int] = Query(None),
         limit: Optional[int] = Query(None),
@@ -847,7 +847,7 @@ async def list_transfer_history(
     "/bulk_transfer",
     response_model=BulkTransferUploadIdResponse
 )
-async def bulk_transfer_ownership(
+def bulk_transfer_ownership(
         request: Request,
         tokens: List[IbetStraightBondTransfer],
         issuer_address: str = Header(...),
@@ -909,7 +909,7 @@ async def bulk_transfer_ownership(
     "/bulk_transfer",
     response_model=List[BulkTransferUploadResponse]
 )
-async def list_bulk_transfer_upload(
+def list_bulk_transfer_upload(
         issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """List bulk transfer upload"""
@@ -948,7 +948,7 @@ async def list_bulk_transfer_upload(
     "/bulk_transfer/{upload_id}",
     response_model=List[BulkTransferResponse]
 )
-async def retrieve_bulk_transfer(
+def retrieve_bulk_transfer(
         upload_id: str,
         issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
