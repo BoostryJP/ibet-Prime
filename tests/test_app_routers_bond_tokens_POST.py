@@ -85,8 +85,6 @@ class TestAppRoutersBondTokensPOST:
                 "face_value": 200,
                 "redemption_date": "redemption_date_test1",
                 "redemption_value": 4000,
-                "return_date": "return_date_test1",
-                "return_amount": "return_amount_test1",
                 "purpose": "purpose_test1",
             }
             resp = client.post(
@@ -102,7 +100,7 @@ class TestAppRoutersBondTokensPOST:
             IbetStraightBondContract.create.assert_called_with(
                 args=[
                     "name_test1", "symbol_test1", 10000, 200, "redemption_date_test1", 4000,
-                    "return_date_test1", "return_amount_test1", "purpose_test1"
+                    "", "", "purpose_test1"
                 ],
                 tx_from=test_account["address"],
                 private_key=ANY
