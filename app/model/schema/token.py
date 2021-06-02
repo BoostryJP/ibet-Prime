@@ -41,9 +41,9 @@ class IbetStraightBondCreate(BaseModel):
     face_value: int
     redemption_date: str
     redemption_value: int
-    return_date: str
-    return_amount: str
     purpose: str
+    return_date: Optional[str]
+    return_amount: Optional[str]
     interest_rate: Optional[float]
     interest_payment_date: Optional[List[str]]
     transferable: Optional[bool]

@@ -136,6 +136,8 @@ def issue_token(
     )
 
     # Deploy
+    _return_date = token.return_date if token.return_date is not None else ""
+    _return_amount = token.return_amount if token.return_amount is not None else ""
     arguments = [
         token.name,
         token.symbol,
@@ -143,8 +145,8 @@ def issue_token(
         token.face_value,
         token.redemption_date,
         token.redemption_value,
-        token.return_date,
-        token.return_amount,
+        _return_date,
+        _return_amount,
         token.purpose
     ]
     try:
