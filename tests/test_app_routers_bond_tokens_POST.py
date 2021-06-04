@@ -80,7 +80,6 @@ class TestAppRoutersBondTokensPOST:
             # request target api
             req_param = {
                 "name": "name_test1",
-                "symbol": "symbol_test1",
                 "total_supply": 10000,
                 "face_value": 200,
                 "purpose": "purpose_test1",
@@ -97,7 +96,7 @@ class TestAppRoutersBondTokensPOST:
             # assertion
             IbetStraightBondContract.create.assert_called_with(
                 args=[
-                    "name_test1", "symbol_test1", 10000, 200, "", 0,
+                    "name_test1", "", 10000, 200, "", 0,
                     "", "", "purpose_test1"
                 ],
                 tx_from=test_account["address"],

@@ -36,10 +36,10 @@ from web3 import Web3
 class IbetStraightBondCreate(BaseModel):
     """ibet Straight Bond schema (Create)"""
     name: str
-    symbol: str
     total_supply: int
     face_value: int
     purpose: str
+    symbol: Optional[str]
     redemption_date: Optional[str]
     redemption_value: Optional[int]
     return_date: Optional[str]
@@ -180,10 +180,10 @@ class IbetStraightBondTransfer(BaseModel):
 class IbetShareCreate(BaseModel):
     """ibet Share schema (Create)"""
     name: str
-    symbol: str
     issue_price: int
     principal_value: int
     total_supply: int
+    symbol: Optional[str]
     dividends: Optional[float]
     dividend_record_date: Optional[str]
     dividend_payment_date: Optional[str]

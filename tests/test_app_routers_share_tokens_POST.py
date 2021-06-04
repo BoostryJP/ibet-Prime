@@ -145,7 +145,7 @@ class TestAppRoutersShareTokensPOST:
 
     # <Normal_1_2>
     # create only
-    # No input for dividends and cancellation_date.
+    # No input for symbol, dividends and cancellation_date.
     def test_normal_1_2(self, client, db):
         test_account = config_eth_account("user1")
 
@@ -178,7 +178,6 @@ class TestAppRoutersShareTokensPOST:
             # request target api
             req_param = {
                 "name": "name_test1",
-                "symbol": "symbol_test1",
                 "issue_price": 1000,
                 "total_supply": 10000,
                 "principal_value": 1000
@@ -195,7 +194,7 @@ class TestAppRoutersShareTokensPOST:
             # assertion
             IbetShareContract.create.assert_called_with(
                 args=[
-                    "name_test1", "symbol_test1", 1000, 10000, 0,
+                    "name_test1", "", 1000, 10000, 0,
                     "", "", "", 1000
                 ],
                 tx_from=test_account["address"],
