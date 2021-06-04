@@ -136,13 +136,14 @@ def issue_token(
     )
 
     # Deploy
+    _symbol = token.symbol if token.symbol is not None else ""
     _redemption_date = token.redemption_date if token.redemption_value is not None else ""
     _redemption_value = token.redemption_value if token.redemption_value is not None else 0
     _return_date = token.return_date if token.return_date is not None else ""
     _return_amount = token.return_amount if token.return_amount is not None else ""
     arguments = [
         token.name,
-        token.symbol,
+        _symbol,
         token.total_supply,
         token.face_value,
         _redemption_date,

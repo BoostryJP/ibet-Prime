@@ -136,13 +136,14 @@ def issue_token(
     )
 
     # Deploy
+    _symbol = token.symbol if token.symbol is not None else ""
     _dividends = token.dividends if token.dividends is not None else 0
     _dividend_record_date = token.dividend_record_date if token.dividend_record_date is not None else ""
     _dividend_payment_date = token.dividend_payment_date if token.dividend_payment_date is not None else ""
     _cancellation_date = token.cancellation_date if token.cancellation_date is not None else ""
     arguments = [
         token.name,
-        token.symbol,
+        _symbol,
         token.issue_price,
         token.total_supply,
         int(_dividends * 100),
