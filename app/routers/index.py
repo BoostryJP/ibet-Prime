@@ -26,6 +26,7 @@ from config import (
 from app.database import db_session
 from app.model.db import Node
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.docs_utils import get_routers_responses
 from app.model.schema import E2EEResponse
 from app.exceptions import ServiceUnavailableError
 from app import log
@@ -57,7 +58,8 @@ def e2e_encryption_key():
 # GET: /healthcheck
 @router.get(
     "/healthcheck",
-    response_model=None
+    response_model=None,
+    responses=get_routers_responses(ServiceUnavailableError)
 )
 def check_health(
         db: Session = Depends(db_session)

@@ -127,4 +127,3 @@ def check_password_for_auth(checked_pwd, correct_pwd, issuer_address, request):
         if not result:
             auth_error(request, issuer_address, "password mismatch")
             raise AuthorizationError("issuer does not exist, or password mismatch")
-        auth_info(request, issuer_address, "authentication succeed")
