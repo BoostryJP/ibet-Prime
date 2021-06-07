@@ -42,6 +42,7 @@ from app.utils.check_utils import (
     validate_headers,
     address_is_valid_address
 )
+from app.utils.docs_utils import get_routers_responses
 from app.model.db import (
     Token,
     TokenType,
@@ -67,7 +68,6 @@ from app.exceptions import InvalidParameterError
 router = APIRouter(
     prefix="/ledger",
     tags=["ledger"],
-    responses={404: {"description": "Not found"}},
 )
 
 local_tz = pytz.timezone(TZ)
@@ -75,7 +75,11 @@ utc_tz = pytz.timezone("UTC")
 
 
 # GET: /ledger/{token_address}/history
-@router.get("/{token_address}/history", response_model=ListAllLedgerHistoryResponse)
+@router.get(
+    "/{token_address}/history",
+    response_model=ListAllLedgerHistoryResponse,
+    responses=get_routers_responses(422, InvalidParameterError)
+)
 def list_all_ledger_history(
         token_address: str,
         issuer_address: str = Header(...),
@@ -134,7 +138,11 @@ def list_all_ledger_history(
 
 
 # GET: /ledger/{token_address}/history/{ledger_id}
-@router.get("/{token_address}/history/{ledger_id}", response_model=RetrieveLedgerHistoryResponse)
+@router.get(
+    "/{token_address}/history/{ledger_id}",
+    response_model=RetrieveLedgerHistoryResponse,
+    responses=get_routers_responses(422, InvalidParameterError)
+)
 def retrieve_ledger_history(
         token_address: str,
         ledger_id: int,
@@ -247,7 +255,11 @@ def retrieve_ledger_history(
 
 
 # GET: /ledger/{token_address}/template
-@router.get("/{token_address}/template", response_model=LedgerTemplateResponse)
+@router.get(
+    "/{token_address}/template",
+    response_model=LedgerTemplateResponse,
+    responses=get_routers_responses(422, InvalidParameterError)
+)
 def retrieve_ledger_template(
         token_address: str,
         issuer_address: str = Header(...),
@@ -303,7 +315,11 @@ def retrieve_ledger_template(
 
 
 # POST: /ledger/{token_address}/template
-@router.post("/{token_address}/template")
+@router.post(
+    "/{token_address}/template",
+    response_model=None,
+    responses=get_routers_responses(422, InvalidParameterError)
+)
 def create_update_ledger_template(
         token_address: str,
         data: CreateUpdateLedgerTemplateRequest,
@@ -391,7 +407,11 @@ def create_update_ledger_template(
 
 
 # GET: /ledger/{token_address}/details_data
-@router.get("/{token_address}/details_data", response_model=ListAllLedgerDetailsDataResponse)
+@router.get(
+    "/{token_address}/details_data",
+    response_model=ListAllLedgerDetailsDataResponse,
+    responses=get_routers_responses(422, InvalidParameterError)
+)
 def list_all_ledger_details_data(
         token_address: str,
         issuer_address: str = Header(...),
@@ -453,7 +473,11 @@ def list_all_ledger_details_data(
 
 
 # POST: /ledger/{token_address}/details_data
-@router.post("/{token_address}/details_data", response_model=LedgerDetailsDataResponse)
+@router.post(
+    "/{token_address}/details_data",
+    response_model=LedgerDetailsDataResponse,
+    responses=get_routers_responses(422, InvalidParameterError)
+)
 def create_ledger_details_data(
         token_address: str,
         data_list: List[CreateUpdateLedgerDetailsDataRequest],
@@ -493,7 +517,11 @@ def create_ledger_details_data(
 
 
 # GET: /ledger/{token_address}/details_data/{data_id}
-@router.get("/{token_address}/details_data/{data_id}", response_model=List[RetrieveLedgerDetailsDataResponse])
+@router.get(
+    "/{token_address}/details_data/{data_id}",
+    response_model=List[RetrieveLedgerDetailsDataResponse],
+    responses=get_routers_responses(422, InvalidParameterError)
+)
 def retrieve_ledger_details_data(
         token_address: str,
         data_id: str,
@@ -536,7 +564,11 @@ def retrieve_ledger_details_data(
 
 
 # POST: /ledger/{token_address}/details_data/{data_id}
-@router.post("/{token_address}/details_data/{data_id}")
+@router.post(
+    "/{token_address}/details_data/{data_id}",
+    response_model=None,
+    responses=get_routers_responses(422, InvalidParameterError)
+)
 def update_ledger_details_data(
         token_address: str,
         data_id: str,
@@ -583,7 +615,11 @@ def update_ledger_details_data(
 
 
 # DELETE: /ledger/{token_address}/details_data/{data_id}
-@router.delete("/{token_address}/details_data/{data_id}")
+@router.delete(
+    "/{token_address}/details_data/{data_id}",
+    response_model=None,
+    responses=get_routers_responses(422, InvalidParameterError)
+)
 def delete_ledger_details_data(
         token_address: str,
         data_id: str,

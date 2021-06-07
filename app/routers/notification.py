@@ -35,6 +35,7 @@ from app.utils.check_utils import (
     validate_headers,
     address_is_valid_address
 )
+from app.utils.docs_utils import get_routers_responses
 from app.exceptions import InvalidParameterError
 
 router = APIRouter(tags=["notification"])
@@ -46,7 +47,8 @@ utc_tz = pytz.timezone("UTC")
 # GET: /notifications
 @router.get(
     "/notifications",
-    response_model=ListAllNotificationsResponse
+    response_model=ListAllNotificationsResponse,
+    responses=get_routers_responses(422)
 )
 def list_all_notifications(
         issuer_address: Optional[str] = Header(None),
@@ -105,7 +107,11 @@ def list_all_notifications(
 
 
 # DELETE: /notifications/{notice_id}
-@router.delete("/notifications/{notice_id}")
+@router.delete(
+    "/notifications/{notice_id}",
+    response_model=None,
+    responses=get_routers_responses(422, InvalidParameterError)
+)
 def delete_notification(
         notice_id: str,
         issuer_address: str = Header(...),

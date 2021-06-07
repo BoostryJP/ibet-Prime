@@ -170,13 +170,15 @@ def get_routers_responses(*args):
     for arg in args:
         if isinstance(arg, int):
             responses[arg] = DEFAULT_RESPONSE.get(arg, {})
-        elif isinstance(arg, type(InvalidParameterError)) or isinstance(arg, type(SendTransactionError)):
+        elif arg == InvalidParameterError:
             responses[400] = DEFAULT_RESPONSE[400]
-        elif isinstance(arg, type(AuthorizationError)):
+        elif arg == SendTransactionError:
+            responses[400] = DEFAULT_RESPONSE[400]
+        elif arg == AuthorizationError:
             responses[401] = DEFAULT_RESPONSE[401]
-        elif isinstance(arg, type(RequestValidationError)):
+        elif arg == RequestValidationError:
             responses[422] = DEFAULT_RESPONSE[422]
-        elif isinstance(arg, type(ServiceUnavailableError)):
+        elif arg == ServiceUnavailableError:
             responses[503] = DEFAULT_RESPONSE[503]
 
     return responses

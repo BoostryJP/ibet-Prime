@@ -259,6 +259,7 @@ def generate_rsa_key(
 # POST: /accounts/{issuer_address}/eoa_password
 @router.post(
     "/accounts/{issuer_address}/eoa_password",
+    response_model=None,
     responses=get_routers_responses(422, 404, InvalidParameterError))
 def change_eoa_password(
         issuer_address: str,
@@ -311,6 +312,7 @@ def change_eoa_password(
 # POST: /accounts/{issuer_address}/rsa_passphrase
 @router.post(
     "/accounts/{issuer_address}/rsa_passphrase",
+    response_model=None,
     responses=get_routers_responses(422, 404, InvalidParameterError))
 def change_rsa_passphrase(
         issuer_address: str,

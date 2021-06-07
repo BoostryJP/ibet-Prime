@@ -62,6 +62,7 @@ from app.utils.check_utils import (
     eoa_password_is_encrypted_value,
     check_auth
 )
+from app.utils.docs_utils import get_routers_responses
 from app.model.db import (
     Account,
     Token,
@@ -88,7 +89,6 @@ from app.exceptions import (
 router = APIRouter(
     prefix="/share",
     tags=["share"],
-    responses={404: {"description": "Not found"}},
 )
 
 local_tz = timezone(config.TZ)
@@ -97,7 +97,8 @@ local_tz = timezone(config.TZ)
 # POST: /share/tokens
 @router.post(
     "/tokens",
-    response_model=TokenAddressResponse
+    response_model=TokenAddressResponse,
+    responses=get_routers_responses(422, 401, SendTransactionError)
 )
 def issue_token(
         request: Request,
@@ -214,7 +215,8 @@ def issue_token(
 # GET: /share/tokens
 @router.get(
     "/tokens",
-    response_model=List[IbetShareResponse]
+    response_model=List[IbetShareResponse],
+    responses=get_routers_responses(422)
 )
 def list_all_tokens(
         issuer_address: Optional[str] = Header(None),
@@ -249,7 +251,8 @@ def list_all_tokens(
 # GET: /share/tokens/{token_address}
 @router.get(
     "/tokens/{token_address}",
-    response_model=IbetShareResponse
+    response_model=IbetShareResponse,
+    responses=get_routers_responses(404, InvalidParameterError)
 )
 def retrieve_token(
         token_address: str,
@@ -278,7 +281,8 @@ def retrieve_token(
 # POST: /share/tokens/{token_address}
 @router.post(
     "/tokens/{token_address}",
-    response_model=None
+    response_model=None,
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
 )
 def update_token(
         request: Request,
@@ -332,7 +336,8 @@ def update_token(
 # POST: /share/tokens/{token_address}/add
 @router.post(
     "/tokens/{token_address}/add",
-    response_model=None
+    response_model=None,
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
 )
 def additional_issue(
         request: Request,
@@ -430,7 +435,8 @@ def list_all_scheduled_events(
 # POST: /share/tokens/{token_address}/scheduled_events
 @router.post(
     "/tokens/{token_address}/scheduled_events",
-    response_model=ScheduledEventIdResponse
+    response_model=ScheduledEventIdResponse,
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError)
 )
 def schedule_new_update_event(
         request: Request,
@@ -481,7 +487,8 @@ def schedule_new_update_event(
 # GET: /share/tokens/{token_address}/scheduled_events/{scheduled_event_id}
 @router.get(
     "/tokens/{token_address}/scheduled_events/{scheduled_event_id}",
-    response_model=ScheduledEventResponse
+    response_model=ScheduledEventResponse,
+    responses=get_routers_responses(404)
 )
 def retrieve_token_event(
         token_address: str,
@@ -523,7 +530,8 @@ def retrieve_token_event(
 # DELETE: /share/tokens/{token_address}/scheduled_events/{scheduled_event_id}
 @router.delete(
     "/tokens/{token_address}/scheduled_events/{scheduled_event_id}",
-    response_model=ScheduledEventResponse
+    response_model=ScheduledEventResponse,
+    responses=get_routers_responses(422, 401, 404)
 )
 def delete_scheduled_event(
         request: Request,
@@ -575,7 +583,8 @@ def delete_scheduled_event(
 # GET: /share/tokens/{token_address}/holders
 @router.get(
     "/tokens/{token_address}/holders",
-    response_model=List[HolderResponse]
+    response_model=List[HolderResponse],
+    responses=get_routers_responses(422, InvalidParameterError, 404)
 )
 def list_all_holders(
         token_address: str,
@@ -646,7 +655,8 @@ def list_all_holders(
 # GET: /share/tokens/{token_address}/holders/{account_address}
 @router.get(
     "/tokens/{token_address}/holders/{account_address}",
-    response_model=HolderResponse
+    response_model=HolderResponse,
+    responses=get_routers_responses(422, InvalidParameterError, 404)
 )
 def retrieve_holder(
         token_address: str,
@@ -716,7 +726,8 @@ def retrieve_holder(
 # POST: /share/tokens/{token_address}/holders/{account_address}/personal_info
 @router.post(
     "/tokens/{token_address}/holders/{account_address}/personal_info",
-    response_model=None
+    response_model=None,
+    responses=get_routers_responses(422, 401, InvalidParameterError, SendTransactionError)
 )
 def modify_holder_personal_info(
         request: Request,
@@ -770,7 +781,8 @@ def modify_holder_personal_info(
 # POST: /share/transfers
 @router.post(
     "/transfers",
-    response_model=None
+    response_model=None,
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
 )
 def transfer_ownership(
         request: Request,
@@ -821,7 +833,8 @@ def transfer_ownership(
 # GET: /share/transfers/{token_address}
 @router.get(
     "/transfers/{token_address}",
-    response_model=TransferHistoryResponse
+    response_model=TransferHistoryResponse,
+    responses=get_routers_responses(422, 404, InvalidParameterError)
 )
 def list_transfer_history(
         token_address: str,
@@ -880,7 +893,8 @@ def list_transfer_history(
 # GET: /share/transfer_approvals/{token_address}
 @router.get(
     "/transfer_approvals/{token_address}",
-    response_model=TransferApprovalHistoryResponse
+    response_model=TransferApprovalHistoryResponse,
+    responses=get_routers_responses(422, 404, InvalidParameterError)
 )
 def list_transfer_approval_history(
         token_address: str,
@@ -965,7 +979,8 @@ def list_transfer_approval_history(
 # POST: /share/bulk_transfer
 @router.post(
     "/bulk_transfer",
-    response_model=BulkTransferUploadIdResponse
+    response_model=BulkTransferUploadIdResponse,
+    responses=get_routers_responses(422, InvalidParameterError, 401)
 )
 def bulk_transfer_ownership(
         request: Request,
@@ -1030,7 +1045,8 @@ def bulk_transfer_ownership(
 # GET: /share/bulk_transfer
 @router.get(
     "/bulk_transfer",
-    response_model=List[BulkTransferUploadResponse]
+    response_model=List[BulkTransferUploadResponse],
+    responses=get_routers_responses(422)
 )
 def list_bulk_transfer_upload(
         issuer_address: Optional[str] = Header(None),
@@ -1069,7 +1085,8 @@ def list_bulk_transfer_upload(
 # GET: /share/bulk_transfer/{upload_id}
 @router.get(
     "/bulk_transfer/{upload_id}",
-    response_model=List[BulkTransferResponse]
+    response_model=List[BulkTransferResponse],
+    responses=get_routers_responses(422, 404)
 )
 def retrieve_bulk_transfer(
         upload_id: str,
