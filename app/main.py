@@ -35,6 +35,7 @@ from app.routers import (
     notification,
     share
 )
+from app.utils.docs_utils import custom_openapi
 from app.exceptions import *
 from app.log import output_access_log
 
@@ -49,6 +50,9 @@ async def api_call_handler(request: Request, call_next):
     response = await call_next(request)
     output_access_log(request, response)
     return response
+
+
+app.openapi = custom_openapi(app)
 
 
 ###############################################################

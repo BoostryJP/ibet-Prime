@@ -52,6 +52,7 @@ from app.model.schema import (
     AccountChangeRSAPassphraseRequest
 )
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.docs_utils import get_routers_responses
 from app.model.db import (
     Account,
     AccountRsaKeyTemporary,
@@ -69,7 +70,8 @@ router = APIRouter(tags=["account"])
 # POST: /accounts
 @router.post(
     "/accounts",
-    response_model=AccountResponse
+    response_model=AccountResponse,
+    responses=get_routers_responses(422, InvalidParameterError)
 )
 def create_key(
         data: AccountCreateKeyRequest,
@@ -145,7 +147,8 @@ def list_all_accounts(db: Session = Depends(db_session)):
 # GET: /accounts/{issuer_address}
 @router.get(
     "/accounts/{issuer_address}",
-    response_model=AccountResponse
+    response_model=AccountResponse,
+    responses=get_routers_responses(404)
 )
 def retrieve_account(issuer_address: str, db: Session = Depends(db_session)):
     """Retrieve an account"""
@@ -167,7 +170,8 @@ def retrieve_account(issuer_address: str, db: Session = Depends(db_session)):
 # DELETE: /accounts/{issuer_address}
 @router.delete(
     "/accounts/{issuer_address}",
-    response_model=AccountResponse
+    response_model=AccountResponse,
+    responses=get_routers_responses(404)
 )
 def delete_account(issuer_address: str, db: Session = Depends(db_session)):
     """Logically delete an account"""
@@ -193,7 +197,8 @@ def delete_account(issuer_address: str, db: Session = Depends(db_session)):
 # POST: /accounts/{issuer_address}/rsakey
 @router.post(
     "/accounts/{issuer_address}/rsakey",
-    response_model=AccountResponse
+    response_model=AccountResponse,
+    responses=get_routers_responses(422, 404, InvalidParameterError)
 )
 def generate_rsa_key(
         issuer_address: str,
@@ -252,7 +257,9 @@ def generate_rsa_key(
 
 
 # POST: /accounts/{issuer_address}/eoa_password
-@router.post("/accounts/{issuer_address}/eoa_password")
+@router.post(
+    "/accounts/{issuer_address}/eoa_password",
+    responses=get_routers_responses(422, 404, InvalidParameterError))
 def change_eoa_password(
         issuer_address: str,
         data: AccountChangeEOAPasswordRequest,
@@ -302,7 +309,9 @@ def change_eoa_password(
 
 
 # POST: /accounts/{issuer_address}/rsa_passphrase
-@router.post("/accounts/{issuer_address}/rsa_passphrase")
+@router.post(
+    "/accounts/{issuer_address}/rsa_passphrase",
+    responses=get_routers_responses(422, 404, InvalidParameterError))
 def change_rsa_passphrase(
         issuer_address: str,
         data: AccountChangeRSAPassphraseRequest,
