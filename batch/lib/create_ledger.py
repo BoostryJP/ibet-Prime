@@ -56,7 +56,7 @@ def create_ledger(token_address: str, db: Session):
 
     _token = db.query(Token). \
         filter(Token.token_address == token_address). \
-        filter(Token.issue_status == 0). \
+        filter(Token.token_status == 1). \
         first()
     if _token.type != TokenType.IBET_SHARE and _token.type != TokenType.IBET_STRAIGHT_BOND:
         return
