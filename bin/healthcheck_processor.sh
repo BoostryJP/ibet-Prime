@@ -24,6 +24,7 @@ PROC_LIST="${PROC_LIST} batch/processor_create_utxo.py"
 PROC_LIST="${PROC_LIST} batch/processor_scheduled_events.py"
 PROC_LIST="${PROC_LIST} batch/processor_monitor_block_sync.py"
 PROC_LIST="${PROC_LIST} batch/processor_auto_transfer_approval.py"
+PROC_LIST="${PROC_LIST} batch/processor_update_token.py"
 
 for i in ${PROC_LIST}; do
   # shellcheck disable=SC2009
