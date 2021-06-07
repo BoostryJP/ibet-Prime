@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
-from app.model.blockchain.utils import ContractUtils
+from app.utils.contract_utils import ContractUtils
 from config import (
     WEB3_HTTP_PROVIDER,
     TX_GAS_LIMIT,

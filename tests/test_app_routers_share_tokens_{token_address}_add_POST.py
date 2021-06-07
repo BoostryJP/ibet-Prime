@@ -362,10 +362,58 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
         }
 
     # <Error_8>
+    # Processing token
+    def test_error_8(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "token_address_test"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_SHARE
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        token.token_status = 0
+        db.add(token)
+
+        # request target API
+        req_param = {
+            "account_address": _issuer_address,
+            "amount": 10
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "InvalidParameterError"
+            },
+            "detail": "wait for a while as the token is being processed"
+        }
+
+    # <Error_9>
     # Send Transaction Error
     @mock.patch("app.model.blockchain.token.IbetShareContract.add_supply",
                 MagicMock(side_effect=SendTransactionError()))
-    def test_error_8(self, client, db):
+    def test_error_9(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]

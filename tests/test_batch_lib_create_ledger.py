@@ -36,7 +36,7 @@ from app.model.blockchain import (
     IbetStraightBondContract,
     PersonalInfoContract,
 )
-from app.model.blockchain.utils import ContractUtils
+from app.utils.contract_utils import ContractUtils
 from app.model.schema import (
     IbetShareUpdate,
     IbetStraightBondUpdate

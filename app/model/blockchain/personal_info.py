@@ -37,7 +37,7 @@ from config import (
     CHAIN_ID,
     TX_GAS_LIMIT
 )
-from app.model.blockchain.utils import ContractUtils
+from app.utils.contract_utils import ContractUtils
 from app.model.db import Account
 from app.utils.e2ee_utils import E2EEUtils
 from app.exceptions import SendTransactionError

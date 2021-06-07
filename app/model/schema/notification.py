@@ -51,7 +51,12 @@ class NotificationsListResponse(BaseModel):
         @staticmethod
         def schema_extra(schema: Dict[str, Any], _) -> None:
             notice_code_schema = schema["properties"]["notice_code"]
-            notice_code_schema["description"] = "notice_type: BulkTransferError\n" \
+            notice_code_schema["description"] = "notice_type: IssueError\n" \
+                                                " - 0: Issuer does not exist\n" \
+                                                " - 1: Could not get the private key of the issuer\n" \
+                                                " - 2: Failed to send transaction\n" \
+                                                "\n" \
+                                                "notice_type: BulkTransferError\n" \
                                                 " - 0: Issuer does not exist\n" \
                                                 " - 1: Could not get the private key of the issuer\n" \
                                                 " - 2: Failed to send transaction\n" \

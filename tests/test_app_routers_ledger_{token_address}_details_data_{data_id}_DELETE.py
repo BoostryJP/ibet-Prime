@@ -183,3 +183,39 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdDELETE:
             },
             "detail": "token does not exist"
         }
+
+    # <Error_4>
+    # Processing Token
+    def test_error_4(self, client, db):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+        data_id = "data_id_1"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        _token.token_status = 0
+        db.add(_token)
+
+        # request target API
+        resp = client.delete(
+            self.base_url.format(token_address=token_address, data_id=data_id),
+            headers={
+                "issuer-address": issuer_address,
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "InvalidParameterError"
+            },
+            "detail": "wait for a while as the token is being processed"
+        }

@@ -139,7 +139,8 @@ class TestAppRoutersBondTokensGET:
                     "interestPaymentDate9_test1", "interestPaymentDate10_test1",
                     "interestPaymentDate11_test1", "interestPaymentDate12_test1",
                 ],
-                "issue_datetime": _issue_datetime
+                "issue_datetime": _issue_datetime,
+                "token_status": 1
             },
         ]
 
@@ -208,6 +209,7 @@ class TestAppRoutersBondTokensGET:
         token_2.issuer_address = issuer_address_2
         token_2.token_address = "token_address_test2"
         token_2.abi = "abi_test2"
+        token_2.token_status = 0
         db.add(token_2)
         db.commit()
         _issue_datetime_2 = pytz.timezone("UTC").localize(token_2.created).astimezone(self.local_tz).isoformat()
@@ -292,7 +294,8 @@ class TestAppRoutersBondTokensGET:
                     "interestPaymentDate9_test1", "interestPaymentDate10_test1",
                     "interestPaymentDate11_test1", "interestPaymentDate12_test1",
                 ],
-                "issue_datetime": _issue_datetime_1
+                "issue_datetime": _issue_datetime_1,
+                "token_status": 1
             },
             {
                 "issuer_address": token_2.issuer_address,
@@ -328,7 +331,8 @@ class TestAppRoutersBondTokensGET:
                     "interestPaymentDate9_test2", "interestPaymentDate10_test2",
                     "interestPaymentDate11_test2", "interestPaymentDate12_test2",
                 ],
-                "issue_datetime": _issue_datetime_2
+                "issue_datetime": _issue_datetime_2,
+                "token_status": 0
             },
         ]
 
@@ -465,6 +469,7 @@ class TestAppRoutersBondTokensGET:
                     "interestPaymentDate11_test1", "interestPaymentDate12_test1",
                 ],
                 "issue_datetime": _issue_datetime,
+                "token_status": 1
             },
         ]
 
@@ -533,6 +538,7 @@ class TestAppRoutersBondTokensGET:
         token_2.issuer_address = issuer_address_1
         token_2.token_address = "token_address_test2"
         token_2.abi = "abi_test2"
+        token_2.token_status = 0
         db.add(token_2)
         db.commit()
         _issue_datetime_2 = pytz.timezone("UTC").localize(token_2.created).astimezone(self.local_tz).isoformat()
@@ -627,6 +633,7 @@ class TestAppRoutersBondTokensGET:
                     "interestPaymentDate11_test1", "interestPaymentDate12_test1",
                 ],
                 "issue_datetime": _issue_datetime_1,
+                "token_status": 1
             },
             {
                 "issuer_address": issuer_address_1,
@@ -663,6 +670,7 @@ class TestAppRoutersBondTokensGET:
                     "interestPaymentDate11_test2", "interestPaymentDate12_test2",
                 ],
                 "issue_datetime": _issue_datetime_2,
+                "token_status": 0
             },
         ]
 

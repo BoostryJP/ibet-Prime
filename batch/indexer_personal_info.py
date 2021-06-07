@@ -123,7 +123,7 @@ class Processor:
 
     def __refresh_personal_info_list(self):
         self.personal_info_contract_list.clear()
-        _tokens = self.db.query(Token).all()
+        _tokens = self.db.query(Token).filter(Token.token_status == 1).all()
         tmp_list = []
         for _token in _tokens:
             try:

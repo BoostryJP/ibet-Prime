@@ -141,10 +141,10 @@ class Processor:
             all()
         return upload_list
 
-    def _get_transfer_data(self, upload_id) -> List[BulkTransfer]:
+    def _get_transfer_data(self, upload_id, status) -> List[BulkTransfer]:
         transfer_list = self.db.query(BulkTransfer). \
             filter(BulkTransfer.upload_id == upload_id). \
-            filter(BulkTransfer.status == 0). \
+            filter(BulkTransfer.status == status). \
             all()
         return transfer_list
 
@@ -155,7 +155,6 @@ class Processor:
 
         for _upload in upload_list:
             LOG.info(f"START upload_id:{_upload.upload_id}")
-            _upload_status = 1
 
             # Get issuer's private key
             try:
@@ -168,7 +167,9 @@ class Processor:
                         upload_id=_upload.upload_id,
                         status=2
                     )
-                    self.sink.on_error_notification(_upload.issuer_address, 0, _upload.upload_id, [])
+                    self.sink.on_error_notification(
+                        issuer_address=_upload.issuer_address, code=0, upload_id=_upload.upload_id,
+                        error_transfer_id=[])
                     self.sink.flush()
                     continue
                 keyfile_json = _account.keyfile
@@ -185,13 +186,13 @@ class Processor:
                     upload_id=_upload.upload_id,
                     status=2
                 )
-                self.sink.on_error_notification(_upload.issuer_address, 1, _upload.upload_id, [])
+                self.sink.on_error_notification(
+                    issuer_address=_upload.issuer_address, code=1, upload_id=_upload.upload_id, error_transfer_id=[])
                 self.sink.flush()
                 continue
 
             # Transfer
-            transfer_list = self._get_transfer_data(upload_id=_upload.upload_id)
-            error_transfer_id = []
+            transfer_list = self._get_transfer_data(upload_id=_upload.upload_id, status=0)
             for _transfer in transfer_list:
                 token = {
                     "token_address": _transfer.token_address,
@@ -224,13 +225,18 @@ class Processor:
                         record_id=_transfer.id,
                         status=2
                     )
-                    _upload_status = 2  # Error
-                    error_transfer_id.append(_transfer.id)
                 self.sink.flush()
 
-            self.sink.on_finish_upload_process(_upload.upload_id, _upload_status)
-            if len(error_transfer_id) > 0:
-                self.sink.on_error_notification(_upload.issuer_address, 2, _upload.upload_id, error_transfer_id)
+            error_transfer_list = self._get_transfer_data(upload_id=_upload.upload_id, status=2)
+            if len(error_transfer_list) == 0:
+                self.sink.on_finish_upload_process(_upload.upload_id, 1)  # succeeded
+            else:
+                self.sink.on_finish_upload_process(_upload.upload_id, 2)  # error
+                error_transfer_id = [_error_transfer.id for _error_transfer in error_transfer_list]
+                self.sink.on_error_notification(
+                    issuer_address=_upload.issuer_address, code=2,
+                    upload_id=_upload.upload_id, error_transfer_id=error_transfer_id)
+
             self.sink.flush()
 
 

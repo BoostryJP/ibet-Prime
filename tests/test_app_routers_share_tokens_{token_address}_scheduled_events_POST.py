@@ -405,3 +405,58 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
                 "type": "type_error.float"
             }
         ]
+
+    # <Error_6>
+    # InvalidParameterError
+    # processing token
+    def test_error_6(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "token_address_test"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_SHARE
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        token.token_status = 0
+        db.add(token)
+
+        # test data
+        datetime_now_utc = datetime.now(timezone.utc)
+        datetime_now_str = datetime_now_utc.isoformat()
+        update_data = {}
+
+        # request target API
+        req_param = {
+            "scheduled_datetime": datetime_now_str,
+            "event_type": "Update",
+            "data": update_data
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "InvalidParameterError"
+            },
+            "detail": "wait for a while as the token is being processed"
+        }

@@ -31,7 +31,7 @@ from unittest import mock
 
 from config import WEB3_HTTP_PROVIDER, TX_GAS_LIMIT, CHAIN_ID
 from app.model.blockchain import PersonalInfoContract
-from app.model.blockchain.utils import ContractUtils
+from app.utils.contract_utils import ContractUtils
 from app.exceptions import SendTransactionError
 from app.model.db import Account
 from app.utils.e2ee_utils import E2EEUtils

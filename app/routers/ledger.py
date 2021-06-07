@@ -91,9 +91,12 @@ def list_all_ledger_history(
     _token = db.query(Token). \
         filter(Token.token_address == token_address). \
         filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_status != 2). \
         first()
     if _token is None:
         raise InvalidParameterError("token does not exist")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
 
     query = db.query(Ledger). \
         filter(Ledger.token_address == token_address). \
@@ -147,9 +150,12 @@ def retrieve_ledger_history(
     _token = db.query(Token). \
         filter(Token.token_address == token_address). \
         filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_status != 2). \
         first()
     if _token is None:
         raise InvalidParameterError("token does not exist")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
 
     # Ledger Exist Check
     _ledger = db.query(Ledger). \
@@ -255,9 +261,12 @@ def retrieve_ledger_template(
     _token = db.query(Token). \
         filter(Token.token_address == token_address). \
         filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_status != 2). \
         first()
     if _token is None:
         raise InvalidParameterError("token does not exist")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
 
     # Ledger Template Exist Check
     _template = db.query(LedgerTemplate). \
@@ -309,9 +318,12 @@ def create_update_ledger_template(
     _token = db.query(Token). \
         filter(Token.token_address == token_address). \
         filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_status != 2). \
         first()
     if _token is None:
         raise InvalidParameterError("token does not exist")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
 
     # Get Ledger Template
     _template = db.query(LedgerTemplate). \
@@ -395,9 +407,12 @@ def list_all_ledger_details_data(
     _token = db.query(Token). \
         filter(Token.token_address == token_address). \
         filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_status != 2). \
         first()
     if _token is None:
         raise InvalidParameterError("token does not exist")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
 
     # Get Ledger Details Data(summary data_id)
     query = db.query(LedgerDetailsData.data_id,
@@ -453,9 +468,12 @@ def create_ledger_details_data(
     _token = db.query(Token). \
         filter(Token.token_address == token_address). \
         filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_status != 2). \
         first()
     if _token is None:
         raise InvalidParameterError("token does not exist")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
 
     data_id = str(uuid.uuid4())
     for data in data_list:
@@ -490,9 +508,12 @@ def retrieve_ledger_details_data(
     _token = db.query(Token). \
         filter(Token.token_address == token_address). \
         filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_status != 2). \
         first()
     if _token is None:
         raise InvalidParameterError("token does not exist")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
 
     # Get Ledger Details Data
     _details_data_list = db.query(LedgerDetailsData). \
@@ -531,9 +552,12 @@ def update_ledger_details_data(
     _token = db.query(Token). \
         filter(Token.token_address == token_address). \
         filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_status != 2). \
         first()
     if _token is None:
         raise InvalidParameterError("token does not exist")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
 
     # Delete + Insert Ledger Details Data
     _details_data_list = db.query(LedgerDetailsData). \
@@ -574,9 +598,12 @@ def delete_ledger_details_data(
     _token = db.query(Token). \
         filter(Token.token_address == token_address). \
         filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_status != 2). \
         first()
     if _token is None:
         raise InvalidParameterError("token does not exist")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
 
     # Delete Ledger Details Data
     _details_data_list = db.query(LedgerDetailsData). \

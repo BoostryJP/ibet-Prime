@@ -26,25 +26,20 @@ from sqlalchemy import (
 from .base import Base
 
 
-class Token(Base):
-    """Issued Token"""
-    __tablename__ = "token"
+class UpdateToken(Base):
+    """Update Token"""
+    __tablename__ = "update_token"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    # token type
-    type = Column(String(40), nullable=False)
-    # transaction hash
-    tx_hash = Column(String(66), nullable=False)
+    # token address
+    token_address = Column(String(42), index=True)
     # issuer address
     issuer_address = Column(String(42), nullable=True)
-    # token address
-    token_address = Column(String(42), nullable=True)
-    # ABI
-    abi = Column(JSON, nullable=False)
-    # token processing status (pending:0, succeeded:1, failed:2)
-    token_status = Column(Integer, default=1)
-
-
-class TokenType:
-    IBET_STRAIGHT_BOND = "IbetStraightBond"
-    IBET_SHARE = "IbetShare"
+    # token type
+    type = Column(String(40), nullable=False)
+    # arguments
+    arguments = Column(JSON, nullable=False)
+    # processing status (pending:0, succeeded:1, failed:2)
+    status = Column(Integer, nullable=False)
+    # update trigger
+    trigger = Column(String(40), nullable=False)

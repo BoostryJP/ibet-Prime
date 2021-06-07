@@ -66,6 +66,7 @@ from app.model.db import (
     Account,
     Token,
     TokenType,
+    UpdateToken,
     IDXPosition,
     IDXPersonalInfo,
     BulkTransfer,
@@ -110,21 +111,6 @@ def issue_token(
     validate_headers(issuer_address=(issuer_address, address_is_valid_address),
                      eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
 
-    # Validate update items
-    # Note: Items set at the time of issue do not need to be updated.
-    _data = {
-        "tradable_exchange_contract_address": token.tradable_exchange_contract_address,
-        "personal_info_contract_address": token.personal_info_contract_address,
-        "image_url": token.image_url,
-        "transferable": token.transferable,
-        "status": token.status,
-        "offering_status": token.offering_status,
-        "contact_information": token.contact_information,
-        "privacy_policy": token.privacy_policy,
-        "transfer_approval_required": token.transfer_approval_required
-    }
-    _update_data = IbetShareUpdate(**_data)
-
     # Authentication
     _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
 
@@ -161,28 +147,51 @@ def issue_token(
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
 
-    # Register token_address token list
-    try:
-        TokenListContract.register(
-            token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
-            token_address=contract_address,
-            token_template=TokenType.IBET_SHARE,
-            account_address=issuer_address,
-            private_key=private_key
-        )
-    except SendTransactionError:
-        raise SendTransactionError("failed to register token address token list")
+    # Check need update
+    update_items = ["tradable_exchange_contract_address", "personal_info_contract_address", "image_url", "transferable",
+                    "status", "offering_status", "contact_information", "privacy_policy", "transfer_approval_required"]
+    token_dict = token.__dict__
+    is_update = False
+    for key in update_items:
+        item = token_dict.get(key)
+        if item is not None:
+            is_update = True
+            break
 
-    # Update
-    try:
-        IbetShareContract.update(
-            contract_address=contract_address,
-            data=_update_data,
-            tx_from=issuer_address,
-            private_key=private_key
-        )
-    except SendTransactionError:
-        raise SendTransactionError("failed to send transaction")
+    if is_update:
+        # Register token for the update batch
+        _update_token = UpdateToken()
+        _update_token.token_address = contract_address
+        _update_token.issuer_address = issuer_address
+        _update_token.type = TokenType.IBET_SHARE
+        _update_token.arguments = token_dict
+        _update_token.status = 0  # pending
+        _update_token.trigger = "Issue"
+        db.add(_update_token)
+
+        token_status = 0  # processing
+    else:
+        # Register token_address token list
+        try:
+            TokenListContract.register(
+                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
+                token_address=contract_address,
+                token_template=TokenType.IBET_SHARE,
+                account_address=issuer_address,
+                private_key=private_key
+            )
+        except SendTransactionError:
+            raise SendTransactionError("failed to register token address token list")
+
+        # Insert initial position data
+        _position = IDXPosition()
+        _position.token_address = contract_address
+        _position.account_address = issuer_address
+        _position.balance = token.total_supply
+        _position.pending_transfer = 0
+        db.add(_position)
+
+        token_status = 1  # succeeded
 
     # Register token data
     _token = Token()
@@ -191,19 +200,15 @@ def issue_token(
     _token.issuer_address = issuer_address
     _token.token_address = contract_address
     _token.abi = abi
+    _token.token_status = token_status
     db.add(_token)
-
-    # Insert initial position data
-    _position = IDXPosition()
-    _position.token_address = contract_address
-    _position.account_address = issuer_address
-    _position.balance = token.total_supply
-    _position.pending_transfer = 0
-    db.add(_position)
 
     db.commit()
 
-    return {"token_address": _token.token_address}
+    return {
+        "token_address": _token.token_address,
+        "token_status": token_status
+    }
 
 
 # GET: /share/tokens
@@ -235,6 +240,7 @@ def list_all_tokens(
         share_token = IbetShareContract.get(contract_address=token.token_address).__dict__
         issue_datetime_utc = timezone("UTC").localize(token.created)
         share_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
+        share_token["token_status"] = token.token_status
         share_tokens.append(share_token)
 
     return share_tokens
@@ -253,14 +259,18 @@ def retrieve_token(
     _token = db.query(Token). \
         filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
         first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
 
     # Get contract data
     share_token = IbetShareContract.get(contract_address=token_address).__dict__
     issue_datetime_utc = timezone("UTC").localize(_token.created)
     share_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
+    share_token["token_status"] = _token.token_status
 
     return share_token
 
@@ -298,9 +308,12 @@ def update_token(
         filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
         first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
 
     # Send transaction
     try:
@@ -349,9 +362,12 @@ def additional_issue(
         filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
         first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
 
     # Send transaction
     try:
@@ -439,9 +455,12 @@ def schedule_new_update_event(
         filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
         first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
 
     # Register an event
     _scheduled_event = ScheduledEvents()
@@ -579,9 +598,12 @@ def list_all_holders(
         filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
         first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
 
     # Get Holders
     _holders = db.query(IDXPosition). \
@@ -648,9 +670,12 @@ def retrieve_holder(
         filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
         first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
 
     # Get Holders
     _holder = db.query(IDXPosition). \
@@ -717,9 +742,12 @@ def modify_holder_personal_info(
         filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
         first()
     if _token is None:
         raise InvalidParameterError("token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
 
     # Modify Personal Info
     token_contract = IbetShareContract.get(token_address)
@@ -771,9 +799,12 @@ def transfer_ownership(
         filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token.token_address). \
+        filter(Token.token_status != 2). \
         first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
 
     try:
         IbetShareContract.transfer(
@@ -803,9 +834,12 @@ def list_transfer_history(
     _token = db.query(Token). \
         filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
         first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
 
     # Get transfer history
     query = db.query(IDXTransfer). \
@@ -859,9 +893,12 @@ def list_transfer_approval_history(
     _token = db.query(Token). \
         filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
         first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
 
     # Get transfer approval history
     query = db.query(IDXTransferApproval). \
@@ -954,9 +991,12 @@ def bulk_transfer_ownership(
             filter(Token.type == TokenType.IBET_SHARE). \
             filter(Token.issuer_address == issuer_address). \
             filter(Token.token_address == _token.token_address). \
+            filter(Token.token_status != 2). \
             first()
         if _issued_token is None:
             raise InvalidParameterError(f"token not found: {_token.token_address}")
+        if _issued_token.token_status == 0:
+            raise InvalidParameterError(f"wait for a while as the token is being processed: {_token.token_address}")
 
     # generate upload_id
     upload_id = uuid.uuid4()

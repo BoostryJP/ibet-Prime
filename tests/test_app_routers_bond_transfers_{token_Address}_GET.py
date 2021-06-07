@@ -31,7 +31,6 @@ local_tz = timezone(config.TZ)
 
 
 class TestAppRoutersBondTransfersGET:
-
     # target API endpoint
     base_url = "/bond/transfers/{}"
 
@@ -182,3 +181,31 @@ class TestAppRoutersBondTransfersGET:
             "detail": "token not found"
         }
         assert resp.json() == assumed_response
+
+    # <Error_2>
+    # processing token
+    def test_error_2(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        _token.token_status = 0
+        db.add(_token)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address)
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "InvalidParameterError"
+            },
+            "detail": "wait for a while as the token is being processed"
+        }
