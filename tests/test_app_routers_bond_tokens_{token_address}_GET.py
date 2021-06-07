@@ -124,6 +124,7 @@ class TestAppRoutersBondTokensTokenAddressGET:
                 "interestPaymentDate11_test1", "interestPaymentDate12_test1",
             ],
             "issue_datetime": _issue_datetime,
+            "token_status": 1,
         }
 
         assert resp.status_code == 200
@@ -145,4 +146,28 @@ class TestAppRoutersBondTokensTokenAddressGET:
                 "title": "NotFound"
             }, 
             "detail": "token not found"
+        }
+
+    # <Error_2>
+    # Processing Token
+    def test_error_2(self, client, db):
+        # prepare data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = "tx_hash_test1"
+        token.issuer_address = "issuer_address_test1"
+        token.token_address = "token_address_test1"
+        token.abi = "abi_test1"
+        token.token_status = 0
+        db.add(token)
+
+        resp = client.get(self.base_apiurl + "token_address_test1")
+
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "InvalidParameterError"
+            },
+            "detail": "wait for a while as the token is being processed"
         }

@@ -421,3 +421,51 @@ class TestAppRoutersShareBulkTransferPOST:
             },
             "detail": f"token not found: {self.req_tokens[0]}"
         }
+
+    # <Error_9>
+    # InvalidParameterError
+    # processing token
+    def test_error_9(self, client, db):
+        # prepare data : Account(Issuer)
+        account = Account()
+        account.issuer_address = self.admin_address
+        account.keyfile = self.admin_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        # prepare data : Tokens
+        _token = Token()
+        _token.type = TokenType.IBET_SHARE
+        _token.tx_hash = ""
+        _token.issuer_address = self.admin_address
+        _token.token_address = self.req_tokens[0]
+        _token.abi = ""
+        _token.token_status = 0
+        db.add(_token)
+
+        # request target API
+        req_param = [
+            {
+                "token_address": self.req_tokens[0],
+                "transfer_from": self.transfer_from,
+                "transfer_to": self.transfer_to,
+                "amount": 10
+            }
+        ]
+        resp = client.post(
+            self.test_url,
+            json=req_param,
+            headers={
+                "issuer-address": self.admin_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            }
+        )
+
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "InvalidParameterError"
+            },
+            "detail": f"wait for a while as the token is being processed: {self.req_tokens[0]}"
+        }

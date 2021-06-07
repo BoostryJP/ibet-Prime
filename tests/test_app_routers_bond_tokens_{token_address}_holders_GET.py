@@ -306,3 +306,42 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
             },
             "detail": "token not found"
         }
+
+    # <Error_4>
+    # InvalidParameterError: processing token
+    def test_error_4(self, client, db):
+        user = config_eth_account("user1")
+        _issuer_address = user["address"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        token.token_status = 0
+        db.add(token)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(_token_address),
+            headers={
+                "issuer-address": _issuer_address
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "InvalidParameterError"
+            },
+            "detail": "wait for a while as the token is being processed"
+        }

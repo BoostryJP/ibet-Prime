@@ -29,7 +29,7 @@ from sqlalchemy.orm import Session
 
 from app.exceptions import SendTransactionError
 from config import WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT
-from app.model.blockchain.utils import ContractUtils
+from app.utils.contract_utils import ContractUtils
 from app.model.db import TransactionLock
 from tests.account_config import config_eth_account
 
@@ -149,7 +149,7 @@ class TestDeployContract:
     def test_error_2(self):
         # mock
         ContractUtils_send_transaction = patch(
-            target="app.model.blockchain.utils.ContractUtils.send_transaction",
+            target="app.utils.contract_utils.ContractUtils.send_transaction",
             side_effect=SendTransactionError
         )
 

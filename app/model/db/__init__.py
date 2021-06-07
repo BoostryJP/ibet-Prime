@@ -35,6 +35,7 @@ from .idx_personal_info import (
     IDXPersonalInfo,
     IDXPersonalInfoBlockNumber
 )
+from .update_token import UpdateToken
 from .ledger import (
     Ledger,
     LedgerDetailsData

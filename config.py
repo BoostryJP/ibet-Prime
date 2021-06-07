@@ -129,6 +129,10 @@ TZ = os.environ.get("TZ") or "Asia/Tokyo"
 SCHEDULED_EVENTS_INTERVAL = int(os.environ.get("SCHEDULED_EVENTS_INTERVAL")) \
     if os.environ.get("SCHEDULED_EVENTS_INTERVAL") else 60
 
+# Update Token
+UPDATE_TOKEN_INTERVAL = int(os.environ.get("UPDATE_TOKEN_INTERVAL")) \
+    if os.environ.get("UPDATE_TOKEN_INTERVAL") else 10
+
 # Block Sync Monitor
 # monitoring interval(second)
 BLOCK_SYNC_STATUS_SLEEP_INTERVAL = int(os.environ.get("BLOCK_SYNC_STATUS_SLEEP_INTERVAL")) \

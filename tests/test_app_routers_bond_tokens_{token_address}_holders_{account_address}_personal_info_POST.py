@@ -498,8 +498,65 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressPersonalInfoPOST:
         }
 
     # <Error_9>
-    # SendTransactionError
+    # InvalidParameterError
+    # processing token
     def test_error_9(self, client, db):
+        _issuer_account = config_eth_account("user1")
+        _issuer_address = _issuer_account["address"]
+        _issuer_keyfile = _issuer_account["keyfile_json"]
+
+        _test_account = config_eth_account("user2")
+        _test_account_address = _test_account["address"]
+
+        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _issuer_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        token.token_status = 0
+        db.add(token)
+
+        # request target API
+        req_param = {
+            "key_manager": "test_key_manager",
+            "name": "test_name",
+            "postal_code": "test_postal_code",
+            "address": "test_address",
+            "email": "test_email",
+            "birth": "test_birth"
+        }
+        resp = client.post(
+            self.test_url.format(_token_address, _test_account_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "InvalidParameterError"
+            },
+            "detail": "wait for a while as the token is being processed"
+        }
+
+    # <Error_10>
+    # SendTransactionError
+    def test_error_10(self, client, db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]

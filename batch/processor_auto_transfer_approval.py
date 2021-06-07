@@ -102,6 +102,7 @@ class Processor:
     def _get_token(self, token_address: str) -> Token:
         token = self.db.query(Token). \
             filter(Token.token_address == token_address). \
+            filter(Token.token_status == 1). \
             first()
         return token
 
