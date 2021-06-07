@@ -119,7 +119,8 @@ class TestAppRoutersShareTokensGET:
                 "transfer_approval_required": False,
                 "offering_status": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
-                "issue_datetime": _issue_datetime
+                "issue_datetime": _issue_datetime,
+                "token_status": 1
             }
         ]
 
@@ -178,6 +179,7 @@ class TestAppRoutersShareTokensGET:
         token_2.issuer_address = issuer_address_2
         token_2.token_address = "token_address_test2"
         token_2.abi = "abi_test2"
+        token_2.token_status = 0
         db.add(token_2)
         db.commit()
         _issue_datetime_2 = timezone("UTC").localize(token_2.created).astimezone(self.local_tz).isoformat()
@@ -246,7 +248,8 @@ class TestAppRoutersShareTokensGET:
                 "transfer_approval_required": False,
                 "offering_status": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
-                "issue_datetime": _issue_datetime_1
+                "issue_datetime": _issue_datetime_1,
+                "token_status": 1
             },
             {
                 "issuer_address": issuer_address_2,
@@ -273,7 +276,8 @@ class TestAppRoutersShareTokensGET:
                 "transfer_approval_required": False,
                 "offering_status": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
-                "issue_datetime": _issue_datetime_2
+                "issue_datetime": _issue_datetime_2,
+                "token_status": 0
             }
         ]
 
@@ -385,7 +389,8 @@ class TestAppRoutersShareTokensGET:
                 "transfer_approval_required": False,
                 "offering_status": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
-                "issue_datetime": _issue_datetime
+                "issue_datetime": _issue_datetime,
+                "token_status": 1
             }
         ]
 
@@ -444,6 +449,7 @@ class TestAppRoutersShareTokensGET:
         token_2.issuer_address = issuer_address_1
         token_2.token_address = "token_address_test2"
         token_2.abi = "abi_test2"
+        token_2.token_status = 0
         db.add(token_2)
         db.commit()
         _issue_datetime_2 = timezone("UTC").localize(token_2.created).astimezone(self.local_tz).isoformat()
@@ -521,7 +527,8 @@ class TestAppRoutersShareTokensGET:
                 "transfer_approval_required": False,
                 "offering_status": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
-                "issue_datetime": _issue_datetime_1
+                "issue_datetime": _issue_datetime_1,
+                "token_status": 1
             },
             {
                 "issuer_address": issuer_address_1,
@@ -548,7 +555,8 @@ class TestAppRoutersShareTokensGET:
                 "transfer_approval_required": False,
                 "offering_status": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
-                "issue_datetime": _issue_datetime_2
+                "issue_datetime": _issue_datetime_2,
+                "token_status": 0
             }
         ]
 

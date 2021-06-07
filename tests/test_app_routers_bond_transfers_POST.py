@@ -399,10 +399,67 @@ class TestAppRoutersBondTransfersPOST:
         }
 
     # <Error_8>
+    # InvalidParameterError: processing token
+    def test_error_8(self, client, db):
+        _admin_account = config_eth_account("user1")
+        _admin_address = _admin_account["address"]
+        _admin_keyfile = _admin_account["keyfile_json"]
+
+        _transfer_from_account = config_eth_account("user2")
+        _transfer_from = _transfer_from_account["address"]
+
+        _transfer_to_account = config_eth_account("user3")
+        _transfer_to = _transfer_to_account["address"]
+
+        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _admin_address
+        account.keyfile = _admin_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = _admin_address
+        token.token_address = _token_address
+        token.abi = ""
+        token.token_status = 0
+        db.add(token)
+
+        # request target API
+        req_param = {
+            "token_address": _token_address,
+            "transfer_from": _transfer_from,
+            "transfer_to": _transfer_to,
+            "amount": 10
+        }
+        resp = client.post(
+            self.test_url,
+            json=req_param,
+            headers={
+                "issuer-address": _admin_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "InvalidParameterError"
+            },
+            "detail": "wait for a while as the token is being processed"
+        }
+
+    # <Error_9>
     # Send Transaction Error
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.transfer",
                 MagicMock(side_effect=SendTransactionError()))
-    def test_error_8(self, client, db):
+    def test_error_9(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]

@@ -41,7 +41,7 @@ from app.model.db import (
     UTXOBlockNumber,
     Token
 )
-from app.model.blockchain.utils import ContractUtils
+from app.utils.contract_utils import ContractUtils
 import batch_log
 from batch.lib import create_ledger
 
@@ -146,6 +146,7 @@ class Processor:
 
         # Update token_contract_list to recent
         _token_list = self.db.query(Token). \
+            filter(Token.token_status == 1). \
             order_by(Token.id). \
             all()
         for _token in _token_list:

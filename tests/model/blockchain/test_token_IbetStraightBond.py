@@ -32,7 +32,7 @@ from web3.exceptions import (
 )
 from config import ZERO_ADDRESS
 from app.model.blockchain import IbetStraightBondContract
-from app.model.blockchain.utils import ContractUtils
+from app.utils.contract_utils import ContractUtils
 from app.model.schema import (
     IbetStraightBondUpdate,
     IbetStraightBondAdd,

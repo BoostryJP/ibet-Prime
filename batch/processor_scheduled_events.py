@@ -146,7 +146,8 @@ class Processor:
                         record_id=_event.id,
                         status=2
                     )
-                    self.sink.on_error_notification(_event.issuer_address, 0, _event.event_id)
+                    self.sink.on_error_notification(
+                        issuer_address=_event.issuer_address, code=0, scheduled_event_id=_event.event_id)
                     self.sink.flush()
                     continue
                 keyfile_json = _account.keyfile
@@ -161,7 +162,8 @@ class Processor:
                     record_id=_event.id,
                     status=2
                 )
-                self.sink.on_error_notification(_event.issuer_address, 1, _event.event_id)
+                self.sink.on_error_notification(
+                    issuer_address=_event.issuer_address, code=1, scheduled_event_id=_event.event_id)
                 self.sink.flush()
                 continue
 
@@ -190,14 +192,15 @@ class Processor:
                 self.sink.on_finish_event_process(
                     record_id=_event.id,
                     status=1
-                    )
+                )
             except SendTransactionError:
                 LOG.warning(f"Failed to send transaction: id=<{_event.id}>")
                 self.sink.on_finish_event_process(
                     record_id=_event.id,
                     status=2
                 )
-                self.sink.on_error_notification(_event.issuer_address, 2, _event.event_id)
+                self.sink.on_error_notification(
+                    issuer_address=_event.issuer_address, code=2, scheduled_event_id=_event.event_id)
             self.sink.flush()
 
 

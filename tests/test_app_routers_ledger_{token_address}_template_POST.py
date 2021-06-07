@@ -1063,3 +1063,118 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             },
             "detail": "token does not exist"
         }
+
+    # <Error_8>
+    # Processing Token
+    def test_error_8(self, client, db):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        _token.token_status = 0
+        db.add(_token)
+
+        # request target API
+        req_param = {
+            "token_name": "テスト原簿",
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "hoge": "aaa",
+                    "fuga": "bbb",
+                }
+            ],
+            "details": [
+                {
+                    "token_detail_type": "権利_test_1",
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "hoge-1": "aaa-1",
+                            "fuga-1": "bbb-1",
+                        }
+                    ],
+                    "data": {
+                        "type": LedgerDetailsDataType.IBET_FIN,
+                        "source": token_address,
+                    },
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "f-hoge-1": "aaa-1",
+                            "f-fuga-1": "bbb-1",
+                        }
+                    ],
+                },
+                {
+                    "token_detail_type": "権利_test_2",
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "hoge-2": "aaa-2",
+                            "fuga-2": "bbb-2",
+                        }
+                    ],
+                    "data": {
+                        "type": LedgerDetailsDataType.DB,
+                        "source": "data_id_2",
+                    },
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "f-hoge-2": "aaa-2",
+                            "f-fuga-2": "bbb-2",
+                        }
+                    ],
+                }
+            ],
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "f-hoge": "aaa",
+                    "f-fuga": "bbb",
+                }
+            ],
+        }
+        resp = client.post(
+            self.base_url.format(token_address=token_address),
+            json=req_param,
+            headers={
+                "issuer-address": issuer_address,
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "InvalidParameterError"
+            },
+            "detail": "wait for a while as the token is being processed"
+        }

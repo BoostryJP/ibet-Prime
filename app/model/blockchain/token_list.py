@@ -16,7 +16,6 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import Tuple
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
@@ -28,7 +27,7 @@ from config import (
     TX_GAS_LIMIT
 )
 from app.exceptions import SendTransactionError
-from .utils import ContractUtils
+from app.utils.contract_utils import ContractUtils
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)

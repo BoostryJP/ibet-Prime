@@ -223,8 +223,48 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         }
 
     # <Error_3>
-    # RequestValidationError: tradable_exchange_contract_address
+    # RequestValidationError: image_url
     def test_error_3(self, client, db):
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # request target API
+        req_param = {
+            "image_url": [
+                "http://sampleurl.com/some_image1.png",
+                "http://sampleurl.com/some_image2.png",
+                "http://sampleurl.com/some_image3.png",
+                "http://sampleurl.com/some_image4.png",
+            ],
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": ""
+            }
+        )
+
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "loc": [
+                        "body",
+                        "image_url"
+                    ],
+                    "msg": "The length of the list must be less than or equal to 3",
+                    "type": "value_error"
+                }
+            ]
+        }
+
+    # <Error_4>
+    # RequestValidationError: tradable_exchange_contract_address
+    def test_error_4(self, client, db):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
@@ -257,9 +297,9 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             ]
         }
 
-    # <Error_4>
+    # <Error_5>
     # RequestValidationError: personal_info_contract_address
-    def test_error_4(self, client, db):
+    def test_error_5(self, client, db):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
@@ -292,9 +332,9 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             ]
         }
 
-    # <Error_5>
+    # <Error_6>
     # RequestValidationError: headers and body required
-    def test_error_5(self, client, db):
+    def test_error_6(self, client, db):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
@@ -323,9 +363,9 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             ]
         }
 
-    # <Error_6>
+    # <Error_7>
     # RequestValidationError: issuer-address,eoa-password(required)
-    def test_error_6(self, client, db):
+    def test_error_7(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -358,9 +398,9 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             }]
         }
 
-    # <Error_7>
+    # <Error_8>
     # RequestValidationError: eoa-password((not decrypt))
-    def test_error_7(self, client, db):
+    def test_error_8(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -409,10 +449,10 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             }]
         }
 
-    # <Error_8>
+    # <Error_9>
     # AuthorizationError: issuer does not exist
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.update")
-    def test_error_8(self, IbetStraightBondContract_mock, client, db):
+    def test_error_9(self, IbetStraightBondContract_mock, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -450,10 +490,10 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "detail": "issuer does not exist, or password mismatch"
         }
 
-    # <Error_9>
+    # <Error_10>
     # AuthorizationError: token not found
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.update")
-    def test_error_9(self, IbetStraightBondContract_mock, client, db):
+    def test_error_10(self, IbetStraightBondContract_mock, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -490,10 +530,10 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "detail": "issuer does not exist, or password mismatch"
         }
 
-    # <Error_9>
+    # <Error_11>
     # token not found
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.update")
-    def test_error_9(self, IbetStraightBondContract_mock, client, db):
+    def test_error_11(self, IbetStraightBondContract_mock, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -530,11 +570,56 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "detail": "token not found"
         }
 
-    # <Error_10>
+    # <Error_12>
+    # Processing Token
+    def test_error_12(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        token.token_status = 0
+        db.add(token)
+
+        # request target API
+        req_param = {}
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "InvalidParameterError"
+            },
+            "detail": "wait for a while as the token is being processed"
+        }
+
+    # <Error_13>
     # Send Transaction Error
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.update",
                 MagicMock(side_effect=SendTransactionError()))
-    def test_error_10(self, client, db):
+    def test_error_13(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]

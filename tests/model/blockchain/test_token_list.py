@@ -33,7 +33,7 @@ from app.model.blockchain import (
     IbetShareContract
 )
 from app.model.blockchain.token_list import TokenListContract
-from app.model.blockchain.utils import ContractUtils
+from app.utils.contract_utils import ContractUtils
 from app.model.db import TokenType
 from config import WEB3_HTTP_PROVIDER, ZERO_ADDRESS
 from tests.account_config import config_eth_account
@@ -232,7 +232,7 @@ class TestRegisterTokenList:
 
         # mock
         ContractUtils_send_transaction = patch(
-            target="app.model.blockchain.utils.ContractUtils.send_transaction",
+            target="app.utils.contract_utils.ContractUtils.send_transaction",
             side_effect=SendTransactionError()
         )
 

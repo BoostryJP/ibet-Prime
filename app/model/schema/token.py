@@ -65,6 +65,12 @@ class IbetStraightBondCreate(BaseModel):
                 raise ValueError("interest_rate must be less than or equal to four decimal places")
         return v
 
+    @validator("interest_payment_date")
+    def interest_payment_date_list_length_less_than_13(cls, v):
+        if v is not None and len(v) >= 13:
+            raise ValueError("list length of interest_payment_date must be less than 13")
+        return v
+
     @validator("tradable_exchange_contract_address")
     def tradable_exchange_contract_address_is_valid_address(cls, v):
         if v is not None and not Web3.isAddress(v):
@@ -81,6 +87,7 @@ class IbetStraightBondCreate(BaseModel):
     def image_list_length_is_less_than_3(cls, v):
         if v is not None and len(v) >= 4:
             raise ValueError("The length of the list must be less than or equal to 3")
+        return v
 
 
 class IbetStraightBondUpdate(BaseModel):
@@ -112,6 +119,12 @@ class IbetStraightBondUpdate(BaseModel):
     def interest_payment_date_list_length_less_than_13(cls, v):
         if v is not None and len(v) >= 13:
             raise ValueError("list length of interest_payment_date must be less than 13")
+        return v
+
+    @validator("image_url")
+    def image_list_length_is_less_than_3(cls, v):
+        if v is not None and len(v) >= 4:
+            raise ValueError("The length of the list must be less than or equal to 3")
         return v
 
     @validator("tradable_exchange_contract_address")
@@ -223,6 +236,7 @@ class IbetShareCreate(BaseModel):
     def image_list_length_is_less_than_3(cls, v):
         if v is not None and len(v) >= 4:
             raise ValueError("The length of the list must be less than or equal to 3")
+        return v
 
 
 class IbetShareUpdate(BaseModel):
@@ -268,6 +282,12 @@ class IbetShareUpdate(BaseModel):
     def personal_info_contract_address_is_valid_address(cls, v):
         if v is not None and not Web3.isAddress(v):
             raise ValueError("personal_info_contract_address is not a valid address")
+        return v
+
+    @validator("image_url")
+    def image_list_length_is_less_than_3(cls, v):
+        if v is not None and len(v) >= 4:
+            raise ValueError("The length of the list must be less than or equal to 3")
         return v
 
 
@@ -332,6 +352,7 @@ class IbetShareCancelTransfer(BaseModel):
     application_id: int
     data: str
 
+
 ############################
 # RESPONSE
 ############################
@@ -339,6 +360,7 @@ class IbetShareCancelTransfer(BaseModel):
 class TokenAddressResponse(BaseModel):
     """token address"""
     token_address: str
+    token_status: int
 
 
 class IbetStraightBondResponse(BaseModel):
@@ -366,6 +388,7 @@ class IbetStraightBondResponse(BaseModel):
     contact_information: str
     privacy_policy: str
     issue_datetime: str
+    token_status: int
 
 
 class IbetShareResponse(BaseModel):
@@ -391,3 +414,4 @@ class IbetShareResponse(BaseModel):
     contact_information: str
     privacy_policy: str
     issue_datetime: str
+    token_status: int

@@ -24,7 +24,7 @@ from eth_keyfile import decode_keyfile_json
 
 from config import WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT
 from app.model.blockchain import IbetStraightBondContract, IbetShareContract, PersonalInfoContract
-from app.model.blockchain.utils import ContractUtils
+from app.utils.contract_utils import ContractUtils
 from app.model.db import Account, AccountRsaKeyTemporary, AccountRsaStatus, Token, TokenType, IDXPersonalInfo
 from app.utils.e2ee_utils import E2EEUtils
 from app.model.schema import IbetStraightBondUpdate, IbetShareUpdate

@@ -111,8 +111,9 @@ class Processor:
 
     def get_token_list(self):
         self.token_list = []
-        issued_token_list = self.db.query(Token).\
-            filter(Token.type == TokenType.IBET_STRAIGHT_BOND).\
+        issued_token_list = self.db.query(Token). \
+            filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+            filter(Token.token_status == 1). \
             all()
         for issued_token in issued_token_list:
             token_contract = web3.eth.contract(

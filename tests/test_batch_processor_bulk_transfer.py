@@ -115,7 +115,7 @@ class TestProcessor:
             bulk_transfer.from_address = _from_address["address"]
             bulk_transfer.to_address = _to_address["address"]
             bulk_transfer.amount = 1
-            bulk_transfer.status = i  # pending:0, succeeded:1, failed:2
+            bulk_transfer.status = 0  # pending:0, succeeded:1, failed:2
             db.add(bulk_transfer)
 
         db.commit()
@@ -136,11 +136,11 @@ class TestProcessor:
                 first()
             assert _bulk_transfer_upload.status == 1
 
-            _bulk_transfer = db.query(BulkTransfer). \
+            _bulk_transfer_list = db.query(BulkTransfer). \
                 filter(BulkTransfer.upload_id == self.upload_id_list[0]). \
-                filter(BulkTransfer.token_address == self.bulk_transfer_token[0]). \
-                first()
-            assert _bulk_transfer.status == 1
+                all()
+            for _bulk_transfer in _bulk_transfer_list:
+                assert _bulk_transfer.status == 1
 
     # <Normal_2>
     # IbetShare
@@ -176,7 +176,7 @@ class TestProcessor:
             bulk_transfer.from_address = _from_address["address"]
             bulk_transfer.to_address = _to_address["address"]
             bulk_transfer.amount = 1
-            bulk_transfer.status = i  # pending:0, succeeded:1, failed:2
+            bulk_transfer.status = 0  # pending:0, succeeded:1, failed:2
             db.add(bulk_transfer)
 
         db.commit()
@@ -197,11 +197,11 @@ class TestProcessor:
                 first()
             assert _bulk_transfer_upload.status == 1
 
-            _bulk_transfer = db.query(BulkTransfer). \
+            _bulk_transfer_list = db.query(BulkTransfer). \
                 filter(BulkTransfer.upload_id == self.upload_id_list[0]). \
-                filter(BulkTransfer.token_address == self.bulk_transfer_token[0]). \
-                first()
-            assert _bulk_transfer.status == 1
+                all()
+            for _bulk_transfer in _bulk_transfer_list:
+                assert _bulk_transfer.status == 1
 
     ###########################################################################
     # Error Case
@@ -423,3 +423,77 @@ class TestProcessor:
                 "upload_id": self.upload_id_list[0],
                 "error_transfer_id": [1]
             }
+
+    # <Error_5>
+    # Process down after error occurred, Re-run process
+    def test_error_5(self, processor, db):
+        _account = self.account_list[0]
+        _from_address = self.account_list[1]
+        _to_address = self.account_list[2]
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = _account["address"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.keyfile = _account["keyfile"]
+        db.add(account)
+
+        # Prepare data : BulkTransferUpload
+        # Only record 0 should be processed
+        for i in range(0, 3):
+            bulk_transfer_upload = BulkTransferUpload()
+            bulk_transfer_upload.issuer_address = _account["address"]
+            bulk_transfer_upload.upload_id = self.upload_id_list[i]
+            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+            bulk_transfer_upload.status = i  # pending:0, succeeded:1, failed:2
+            db.add(bulk_transfer_upload)
+
+        # Prepare data : BulkTransfer
+        for i in range(0, 3):
+            bulk_transfer = BulkTransfer()
+            bulk_transfer.issuer_address = _account["address"]
+            bulk_transfer.upload_id = self.upload_id_list[0]
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
+            bulk_transfer.token_address = self.bulk_transfer_token[i]
+            bulk_transfer.from_address = _from_address["address"]
+            bulk_transfer.to_address = _to_address["address"]
+            bulk_transfer.amount = 1
+            bulk_transfer.status = i  # pending:0, succeeded:1, failed:2
+            db.add(bulk_transfer)
+
+        db.commit()
+
+        # mock
+        IbetStraightBondContract_transfer = patch(
+            target="app.model.blockchain.token.IbetStraightBondContract.transfer",
+            return_value=None
+        )
+
+        with IbetStraightBondContract_transfer:
+            # Execute batch
+            processor.process()
+
+            # Assertion
+            _bulk_transfer_upload = db.query(BulkTransferUpload). \
+                filter(BulkTransferUpload.upload_id == self.upload_id_list[0]). \
+                first()
+            assert _bulk_transfer_upload.status == 2
+
+            _bulk_transfer = db.query(BulkTransfer). \
+                filter(BulkTransfer.upload_id == self.upload_id_list[0]). \
+                filter(BulkTransfer.token_address == self.bulk_transfer_token[0]). \
+                first()
+            assert _bulk_transfer.status == 1
+
+            _notification = db.query(Notification).first()
+            assert _notification.id == 1
+            assert _notification.notice_id is not None
+            assert _notification.issuer_address == _account["address"]
+            assert _notification.priority == 1
+            assert _notification.type == NotificationType.BULK_TRANSFER_ERROR
+            assert _notification.code == 2
+            assert _notification.metainfo == {
+                "upload_id": self.upload_id_list[0],
+                "error_transfer_id": [3]
+            }
+

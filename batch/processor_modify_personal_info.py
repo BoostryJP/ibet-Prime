@@ -144,7 +144,10 @@ class Processor:
         return temporary_list
 
     def __get_personal_info_contract_accessor_list(self, issuer_address):
-        token_list = self.db.query(Token).filter(Token.issuer_address == issuer_address).all()
+        token_list = self.db.query(Token). \
+            filter(Token.issuer_address == issuer_address). \
+            filter(Token.token_status == 1). \
+            all()
         personal_info_contract_list = set()
         for token in token_list:
             if token.type == TokenType.IBET_SHARE:

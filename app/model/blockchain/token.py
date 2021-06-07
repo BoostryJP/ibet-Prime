@@ -51,7 +51,7 @@ from app.model.schema import (
 )
 from app.exceptions import SendTransactionError
 from app import log
-from .utils import ContractUtils
+from app.utils.contract_utils import ContractUtils
 
 LOG = log.get_logger()
 
