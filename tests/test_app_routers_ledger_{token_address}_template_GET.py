@@ -219,6 +219,66 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
             ],
         }
 
+    # <Normal_2>
+    # All optional items are None
+    def test_normal_2(self, client, db):
+        user = config_eth_account("user1")
+        issuer_address = user["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        db.add(_token)
+
+        _template = LedgerTemplate()
+        _template.token_address = token_address
+        _template.issuer_address = issuer_address
+        _template.token_name = "テスト原簿"
+        _template.headers = None  # optional
+        _template.footers = None  # optional
+        db.add(_template)
+
+        _details_1 = LedgerDetailsTemplate()
+        _details_1.token_address = token_address
+        _details_1.token_detail_type = "権利_test_1"
+        _details_1.headers = None  # optional
+        _details_1.footers = None  # optional
+        _details_1.data_type = LedgerDetailsDataType.IBET_FIN
+        _details_1.data_source = None  # optional
+        db.add(_details_1)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(token_address=token_address),
+            headers={
+                "issuer-address": issuer_address,
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "token_name": "テスト原簿",
+            "headers": None,
+            "details": [
+                {
+                    "token_detail_type": "権利_test_1",
+                    "headers": None,
+                    "data": {
+                        "type": "ibetfin",
+                        "source": None,
+                    },
+                    "footers": None,
+                }
+            ],
+            "footers": None,
+        }
+
     ###########################################################################
     # Error Case
     ###########################################################################
