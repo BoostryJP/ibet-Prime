@@ -67,3 +67,13 @@ class IDXTransferApproval(Base):
             "approval_blocktimestamp": self.approval_blocktimestamp,
             "cancelled": self.cancelled
         }
+
+
+class IDXTransferApprovalBlockNumber(Base):
+    """Synchronized blockNumber of IDXTransferApproval"""
+    __tablename__ = "idx_transfer_approval_block_number"
+
+    # sequence id
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    # latest blockNumber
+    latest_block_number = Column(BigInteger)

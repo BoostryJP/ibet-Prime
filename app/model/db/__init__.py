@@ -28,9 +28,19 @@ from .token import (
 )
 from .bulk_transfer_upload import BulkTransferUpload
 from .bulk_transfer import BulkTransfer
-from .idx_transfer import IDXTransfer
-from .idx_transfer_approval import IDXTransferApproval
-from .idx_position import IDXPosition
+from .idx_transfer import (
+    IDXTransfer,
+    IDXTransferBlockNumber
+)
+from .idx_transfer_approval import (
+    IDXTransferApproval,
+    IDXTransferApprovalBlockNumber
+)
+from .idx_position import (
+    IDXPosition,
+    IDXPositionBondBlockNumber,
+    IDXPositionShareBlockNumber
+)
 from .idx_personal_info import (
     IDXPersonalInfo,
     IDXPersonalInfoBlockNumber

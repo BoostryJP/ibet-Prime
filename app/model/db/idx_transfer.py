@@ -43,3 +43,13 @@ class IDXTransfer(Base):
     amount = Column(BigInteger)
     # block timestamp
     block_timestamp = Column(DateTime)
+
+
+class IDXTransferBlockNumber(Base):
+    """Synchronized blockNumber of IDXTransfer"""
+    __tablename__ = "idx_transfer_block_number"
+
+    # sequence id
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    # latest blockNumber
+    latest_block_number = Column(BigInteger)
