@@ -1681,7 +1681,8 @@ class TestApproveTransfer:
         # update token (from issuer)
         update_data = {
             "personal_info_contract_address": personal_info_contract_address,
-            "transfer_approval_required": True
+            "transfer_approval_required": True,
+            "transferable": True
         }
         IbetShareContract.update(
             contract_address=token_address,
@@ -1933,7 +1934,8 @@ class TestCancelTransfer:
         # update token (from issuer)
         update_data = {
             "personal_info_contract_address": personal_info_contract_address,
-            "transfer_approval_required": True
+            "transfer_approval_required": True,
+            "transferable": True
         }
         IbetShareContract.update(
             contract_address=token_address,
