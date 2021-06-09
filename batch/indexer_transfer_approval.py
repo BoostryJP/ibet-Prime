@@ -44,7 +44,8 @@ from config import (
 from app.model.db import (
     Token,
     TokenType,
-    IDXTransferApproval
+    IDXTransferApproval,
+    IDXTransferApprovalBlockNumber
 )
 import batch_log
 
@@ -162,7 +163,25 @@ class Processor:
         self.db = db
         self.token_list = []
 
-    def get_token_list(self):
+    def sync_new_logs(self):
+        self.__get_token_list()
+
+        # Get from_block_number and to_block_number for contract event filter
+        idx_transfer_approval_block_number = self.__get_idx_transfer_approval_block_number()
+        latest_block = web3.eth.blockNumber
+
+        if idx_transfer_approval_block_number >= latest_block:
+            LOG.debug("skip process")
+            pass
+        else:
+            self.__sync_all(idx_transfer_approval_block_number + 1, latest_block)
+
+    @staticmethod
+    def get_block_timestamp(event) -> datetime:
+        block_timestamp = web3.eth.getBlock(event["blockNumber"])["timestamp"]
+        return block_timestamp
+
+    def __get_token_list(self):
         self.token_list = []
         issued_token_list = self.db.query(Token). \
             filter(Token.type == TokenType.IBET_SHARE). \
@@ -175,39 +194,29 @@ class Processor:
             )
             self.token_list.append(token_contract)
 
-    def initial_sync(self):
-        self.get_token_list()
-        # synchronize 1,000,000 blocks at a time
-        _to_block = 999999
-        _from_block = 0
-        if self.latest_block > 999999:
-            while _to_block < self.latest_block:
-                self.__sync_all(_from_block, _to_block)
-                _to_block += 1000000
-                _from_block += 1000000
-            self.__sync_all(_from_block, self.latest_block)
+    def __get_idx_transfer_approval_block_number(self):
+        _idx_transfer_approval_block_number = self.db.query(IDXTransferApprovalBlockNumber). \
+            first()
+        if _idx_transfer_approval_block_number is None:
+            return 0
         else:
-            self.__sync_all(_from_block, self.latest_block)
-        LOG.info(f"<{process_name}> Initial sync has been completed")
+            return _idx_transfer_approval_block_number.latest_block_number
 
-    def sync_new_logs(self):
-        self.get_token_list()
-        block_to = web3.eth.blockNumber
-        if self.latest_block >= block_to:
-            return
-        self.__sync_all(self.latest_block + 1, block_to)
-        self.latest_block = block_to
+    def __set_idx_transfer_approval_block_number(self, block_number: int):
+        _idx_transfer_approval_block_number = self.db.query(IDXTransferApprovalBlockNumber). \
+            first()
+        if _idx_transfer_approval_block_number is None:
+            _idx_transfer_approval_block_number = IDXTransferApprovalBlockNumber()
 
-    @staticmethod
-    def get_block_timestamp(event) -> datetime:
-        block_timestamp = web3.eth.getBlock(event["blockNumber"])["timestamp"]
-        return block_timestamp
+        _idx_transfer_approval_block_number.latest_block_number = block_number
+        self.db.merge(_idx_transfer_approval_block_number)
 
     def __sync_all(self, block_from: int, block_to: int):
         LOG.info(f"syncing from={block_from}, to={block_to}")
         self.__sync_apply_for_transfer(block_from, block_to)
         self.__sync_cancel_transfer(block_from, block_to)
         self.__sync_approve_transfer(block_from, block_to)
+        self.__set_idx_transfer_approval_block_number(block_to)
         self.sink.flush()
 
     def __sync_apply_for_transfer(self, block_from, block_to):
@@ -305,7 +314,6 @@ processor = Processor(sink=_sink, db=db_session)
 def main():
     LOG.info("Service started successfully")
 
-    processor.initial_sync()
     while True:
         try:
             processor.sync_new_logs()

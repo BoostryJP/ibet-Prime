@@ -45,3 +45,23 @@ class IDXPosition(Base):
             "balance": self.balance,
             "pending_transfer": self.pending_transfer
         }
+
+
+class IDXPositionBondBlockNumber(Base):
+    """Synchronized blockNumber of IDXPosition(Bond token)"""
+    __tablename__ = "idx_position_bond_block_number"
+
+    # sequence id
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    # latest blockNumber
+    latest_block_number = Column(BigInteger)
+
+
+class IDXPositionShareBlockNumber(Base):
+    """Synchronized blockNumber of IDXPosition(Share token)"""
+    __tablename__ = "idx_position_share_block_number"
+
+    # sequence id
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    # latest blockNumber
+    latest_block_number = Column(BigInteger)
