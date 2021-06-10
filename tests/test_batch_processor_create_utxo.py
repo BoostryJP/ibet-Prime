@@ -27,10 +27,25 @@ from web3.middleware import geth_poa_middleware
 from eth_keyfile import decode_keyfile_json
 
 from config import WEB3_HTTP_PROVIDER
-from app.model.blockchain import IbetShareContract, IbetStraightBondContract
-from app.model.db import Token, TokenType, UTXO, UTXOBlockNumber
-from app.model.schema import IbetShareTransfer, IbetStraightBondTransfer
-from batch.processor_create_utxo import Sinks, DBSink, Processor
+from app.model.blockchain import (
+    IbetShareContract,
+    IbetStraightBondContract
+)
+from app.model.db import (
+    Token,
+    TokenType,
+    UTXO,
+    UTXOBlockNumber
+)
+from app.model.schema import (
+    IbetShareTransfer,
+    IbetStraightBondTransfer
+)
+from batch.processor_create_utxo import (
+    Sinks,
+    DBSink,
+    Processor
+)
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
@@ -89,7 +104,7 @@ class TestProcessor:
     # Execute Batch Run 1st: No Event
     # Execute Batch Run 2nd: Executed Transfer Event
     # Localized:JPN
-    @mock.patch("batch.lib.create_ledger.create_ledger")
+    @mock.patch("batch.processor_create_utxo.create_ledger")
     def test_normal_1(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]

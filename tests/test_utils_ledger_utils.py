@@ -54,7 +54,7 @@ from app.model.db import (
     LedgerDetailsTemplate,
     LedgerDetailsDataType,
 )
-from batch.lib import create_ledger
+from app.utils import ledger_utils
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
@@ -128,7 +128,7 @@ def set_personal_info_contract(db, contract_address, issuer_address, sender_list
         personal_info.modify_info(sender["address"], sender["data"])
 
 
-class TestBatchLibCreateLedger:
+class TestCreateLedger:
 
     ###########################################################################
     # Normal Case
@@ -314,18 +314,19 @@ class TestBatchLibCreateLedger:
                 "value": "bbb",
             },
             {
-            "f-テスト項目1": "f-テスト値1",
-            "f-テスト項目2": {
-                "f-テスト項目A": "f-テスト値2A",
-                "f-テスト項目B": "f-テスト値2B",
-            },
-            "f-テスト項目3": {
-                "f-テスト項目A": {
-                    "f-テスト項目a": "f-テスト値3Aa"
+                "f-テスト項目1": "f-テスト値1",
+                "f-テスト項目2": {
+                    "f-テスト項目A": "f-テスト値2A",
+                    "f-テスト項目B": "f-テスト値2B",
                 },
-                "f-テスト項目B": "f-テスト値3B",
-            },
-        }]
+                "f-テスト項目3": {
+                    "f-テスト項目A": {
+                        "f-テスト項目a": "f-テスト値3Aa"
+                    },
+                    "f-テスト項目B": "f-テスト値3B",
+                },
+            }
+        ]
         db.add(_template)
 
         # Template Details 1
@@ -394,7 +395,6 @@ class TestBatchLibCreateLedger:
         _details_2_data_1 = LedgerDetailsData()
         _details_2_data_1.token_address = token_address_1
         _details_2_data_1.data_id = "data_id_2"
-        _details_2_data_1.account_address = "0x0001"
         _details_2_data_1.name = "test_data_name_1"
         _details_2_data_1.address = "test_data_address_1"
         _details_2_data_1.amount = 100
@@ -406,7 +406,6 @@ class TestBatchLibCreateLedger:
         _details_2_data_2 = LedgerDetailsData()
         _details_2_data_2.token_address = token_address_1
         _details_2_data_2.data_id = "data_id_2"
-        _details_2_data_2.account_address = "0x0002"
         _details_2_data_2.name = "test_data_name_2"
         _details_2_data_2.address = "test_data_address_2"
         _details_2_data_2.amount = 30
@@ -416,7 +415,7 @@ class TestBatchLibCreateLedger:
         db.add(_details_2_data_2)
 
         # Execute
-        create_ledger.create_ledger(token_address_1, db)
+        ledger_utils.create_ledger(token_address_1, db)
 
         # assertion
         _ledger = db.query(Ledger).first()
@@ -426,12 +425,41 @@ class TestBatchLibCreateLedger:
         now_ymd = datetime.now(pytz.timezone(TZ)).strftime("%Y/%m/%d")
         assert _ledger.ledger == {
             "created": now_ymd,
-            "token_name": "",
-            "headers": [],
+            "token_name": "受益権テスト",
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "テスト項目1": "テスト値1",
+                    "テスト項目2": {
+                        "テスト項目A": "テスト値2A",
+                        "テスト項目B": "テスト値2B",
+                    },
+                    "テスト項目3": {
+                        "テスト項目A": {
+                            "テスト項目a": "テスト値3Aa"
+                        },
+                        "テスト項目B": "テスト値3B",
+                    },
+                }
+            ],
             "details": [
                 {
                     "token_detail_type": "優先受益権",
-                    "headers": [],
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "test項目1": "test値1",
+                            "test項目2": {
+                                "test項目A": "test値2A",
+                            },
+                        }
+                    ],
                     "data": [
                         {
                             "account_address": user_address_2,
@@ -470,16 +498,84 @@ class TestBatchLibCreateLedger:
                             "acquisition_date": "2022/01/02",
                         },
                     ],
-                    "footers": []
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "test-item1": "test-value1",
+                            "test-item2": {
+                                "test-itemA": {
+                                    "test-itema": "test-value2Aa"
+                                }
+                            },
+                        }
+                    ]
                 },
                 {
                     "token_detail_type": "劣後受益権",
-                    "headers": [],
-                    "data": [],
-                    "footers": []
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "d-test項目1": "d-test値1",
+                            "d-test項目2": "d-test値2",
+                        }
+                    ],
+                    "data": [
+                        {
+                            "account_address": None,
+                            "name": "test_data_name_1",
+                            "address": "test_data_address_1",
+                            "amount": 100,
+                            "price": 200,
+                            "balance": 20000,
+                            "acquisition_date": "2022/03/03",
+                        },
+                        {
+                            "account_address": None,
+                            "name": "test_data_name_2",
+                            "address": "test_data_address_2",
+                            "amount": 30,
+                            "price": 40,
+                            "balance": 1200,
+                            "acquisition_date": "2022/12/03",
+                        },
+                    ],
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "f-d-test項目1": "d-test値1",
+                            "f-d-test項目2": "d-test値2",
+                        }
+                    ]
                 },
             ],
-            "footers": []
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "f-テスト項目1": "f-テスト値1",
+                    "f-テスト項目2": {
+                        "f-テスト項目A": "f-テスト値2A",
+                        "f-テスト項目B": "f-テスト値2B",
+                    },
+                    "f-テスト項目3": {
+                        "f-テスト項目A": {
+                            "f-テスト項目a": "f-テスト値3Aa"
+                        },
+                        "f-テスト項目B": "f-テスト値3B",
+                    },
+                }
+            ]
         }
 
     # <Normal_2>
@@ -745,7 +841,6 @@ class TestBatchLibCreateLedger:
         _details_2_data_1 = LedgerDetailsData()
         _details_2_data_1.token_address = token_address_1
         _details_2_data_1.data_id = "data_id_2"
-        _details_2_data_1.account_address = "0x0001"
         _details_2_data_1.name = "test_data_name_1"
         _details_2_data_1.address = "test_data_address_1"
         _details_2_data_1.amount = 100
@@ -757,7 +852,6 @@ class TestBatchLibCreateLedger:
         _details_2_data_2 = LedgerDetailsData()
         _details_2_data_2.token_address = token_address_1
         _details_2_data_2.data_id = "data_id_2"
-        _details_2_data_2.account_address = "0x0002"
         _details_2_data_2.name = "test_data_name_2"
         _details_2_data_2.address = "test_data_address_2"
         _details_2_data_2.amount = 30
@@ -767,7 +861,7 @@ class TestBatchLibCreateLedger:
         db.add(_details_2_data_2)
 
         # Execute
-        create_ledger.create_ledger(token_address_1, db)
+        ledger_utils.create_ledger(token_address_1, db)
 
         # assertion
         _ledger = db.query(Ledger).first()
@@ -777,12 +871,41 @@ class TestBatchLibCreateLedger:
         now_ymd = datetime.now(pytz.timezone(TZ)).strftime("%Y/%m/%d")
         assert _ledger.ledger == {
             "created": now_ymd,
-            "token_name": "",
-            "headers": [],
+            "token_name": "受益権テスト",
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "テスト項目1": "テスト値1",
+                    "テスト項目2": {
+                        "テスト項目A": "テスト値2A",
+                        "テスト項目B": "テスト値2B",
+                    },
+                    "テスト項目3": {
+                        "テスト項目A": {
+                            "テスト項目a": "テスト値3Aa"
+                        },
+                        "テスト項目B": "テスト値3B",
+                    },
+                }
+            ],
             "details": [
                 {
                     "token_detail_type": "優先受益権",
-                    "headers": [],
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "test項目1": "test値1",
+                            "test項目2": {
+                                "test項目A": "test値2A",
+                            },
+                        }
+                    ],
                     "data": [
                         {
                             "account_address": user_address_2,
@@ -821,16 +944,84 @@ class TestBatchLibCreateLedger:
                             "acquisition_date": "2022/01/02",
                         },
                     ],
-                    "footers": []
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "test-item1": "test-value1",
+                            "test-item2": {
+                                "test-itemA": {
+                                    "test-itema": "test-value2Aa"
+                                }
+                            },
+                        }
+                    ]
                 },
                 {
                     "token_detail_type": "劣後受益権",
-                    "headers": [],
-                    "data": [],
-                    "footers": []
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "d-test項目1": "d-test値1",
+                            "d-test項目2": "d-test値2",
+                        }
+                    ],
+                    "data": [
+                        {
+                            "account_address": None,
+                            "name": "test_data_name_1",
+                            "address": "test_data_address_1",
+                            "amount": 100,
+                            "price": 200,
+                            "balance": 20000,
+                            "acquisition_date": "2022/03/03",
+                        },
+                        {
+                            "account_address": None,
+                            "name": "test_data_name_2",
+                            "address": "test_data_address_2",
+                            "amount": 30,
+                            "price": 40,
+                            "balance": 1200,
+                            "acquisition_date": "2022/12/03",
+                        },
+                    ],
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "bbb",
+                        },
+                        {
+                            "f-d-test項目1": "d-test値1",
+                            "f-d-test項目2": "d-test値2",
+                        }
+                    ]
                 },
             ],
-            "footers": []
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "bbb",
+                },
+                {
+                    "f-テスト項目1": "f-テスト値1",
+                    "f-テスト項目2": {
+                        "f-テスト項目A": "f-テスト値2A",
+                        "f-テスト項目B": "f-テスト値2B",
+                    },
+                    "f-テスト項目3": {
+                        "f-テスト項目A": {
+                            "f-テスト項目a": "f-テスト値3Aa"
+                        },
+                        "f-テスト項目B": "f-テスト値3B",
+                    },
+                }
+            ]
         }
 
     # <Normal_3>
@@ -855,7 +1046,7 @@ class TestBatchLibCreateLedger:
         db.add(_token_1)
 
         # Execute
-        create_ledger.create_ledger(token_address_1, db)
+        ledger_utils.create_ledger(token_address_1, db)
 
         # assertion
         _ledger = db.query(Ledger).first()
@@ -883,7 +1074,7 @@ class TestBatchLibCreateLedger:
         db.add(_token_1)
 
         # Execute
-        create_ledger.create_ledger(token_address_1, db)
+        ledger_utils.create_ledger(token_address_1, db)
 
         # assertion
         _ledger = db.query(Ledger).first()

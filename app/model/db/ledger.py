@@ -48,12 +48,10 @@ class Ledger(Base):
 
 """
 NOTE: Ledger.ledger's JSON structures
-If LedgerDetailsTemplate.data_type is 'db', 'details[].data' is empty.
-This is merged with LedgerTemplate, LedgerDetailsTemplate, and LedgerDetailsData.
 
 {
   "created": "string(YYYY/MM/DD)",
-  "token_name": "",
+  "token_name": "string",
   "headers": [],
   "details": [
     {

@@ -43,7 +43,7 @@ from app.model.db import (
 )
 from app.utils.contract_utils import ContractUtils
 import batch_log
-from batch.lib import create_ledger
+from app.utils.ledger_utils import create_ledger
 
 process_name = "PROCESSOR-Create-UTXO"
 LOG = batch_log.get_logger(process_name=process_name)
@@ -215,8 +215,8 @@ class Processor:
                         block_timestamp=block_timestamp
                     )
 
-                    # Other Processing
-                    create_ledger.create_ledger(token_contract.address, self.db)
+                    # Create Ledger
+                    create_ledger(token_contract.address, self.db)
         except Exception as e:
             LOG.exception(e)
 

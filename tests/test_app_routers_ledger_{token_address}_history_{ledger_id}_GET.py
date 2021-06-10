@@ -25,8 +25,6 @@ from app.model.db import (
     TokenType,
     IDXPersonalInfo,
     Ledger,
-    LedgerDetailsData,
-    LedgerTemplate,
     LedgerDetailsTemplate,
     LedgerDetailsDataType
 )
@@ -50,7 +48,6 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         account_address_1 = "0xABCdeF1234567890abCDeF123456789000000001"
         account_address_2 = "0xaBcdEF1234567890aBCDEF123456789000000002"
-        personal_info_contract_address = "0xabcDEF1234567890AbcDEf123456789000000003"
 
         # prepare data
         _token = Token()
@@ -66,29 +63,30 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_1.ledger = {
             "created": "2022/12/01",
-            "token_name": "",
-            "headers": [],
+            "token_name": "テスト原簿",
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "hoge": "aaaa",
+                    "fuga": "bbbb",
+                }
+            ],
             "details": [
                 {
                     "token_detail_type": "権利_test_1",
-                    # NOTE: Not Exists Ledger Details Template(be erased from response)
-                    "headers": [],
-                    "data": [
+                    "headers": [
                         {
-                            "account_address": "0x001",
-                            "name": "name_test_1",
-                            "address": "address_test_1",
-                            "amount": 10,
-                            "price": 20,
-                            "balance": 30,
-                            "acquisition_date": "2022/12/02"
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "test1": "a",
+                            "test2": "b"
                         }
                     ],
-                    "footers": [],
-                },
-                {
-                    "token_detail_type": "権利_test_2",  # NOTE: Recent from blockchain
-                    "headers": [],
                     "data": [
                         {
                             "account_address": account_address_1,
@@ -109,315 +107,6 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "acquisition_date": "2022/12/03"
                         }
                     ],
-                    "footers": [],
-                },
-                {
-                    "token_detail_type": "権利_test_3",  # NOTE: Recent from database
-                    "headers": [],
-                    "data": [],
-                    "footers": [],
-                },
-            ],
-            "footers": []
-        }
-        _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
-        db.add(_ledger_1)
-
-        _template = LedgerTemplate()
-        _template.token_address = token_address
-        _template.issuer_address = issuer_address
-        _template.token_name = "テスト原簿_update"
-        _template.headers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "hoge": "aaaa",
-                "fuga": "bbbb",
-            }
-        ]
-        _template.footers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "f-hoge": "aaaa",
-                "f-fuga": "bbbb",
-            }
-        ]
-        db.add(_template)
-
-        _details_1 = LedgerDetailsTemplate()
-        _details_1.token_address = token_address
-        _details_1.token_detail_type = "権利_test_2"
-        _details_1.headers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "test1": "a",
-                "test2": "b"
-            }
-        ]
-        _details_1.footers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "f-test1": "a",
-                "f-test2": "b"
-            }
-        ]
-        _details_1.data_type = LedgerDetailsDataType.IBET_FIN
-        _details_1.data_source = token_address
-        db.add(_details_1)
-
-        _details_2 = LedgerDetailsTemplate()
-        _details_2.token_address = token_address
-        _details_2.token_detail_type = "権利_test_3"
-        _details_2.headers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "test1-1": "a",
-                "test2-1": "b"
-            }
-        ]
-        _details_2.footers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "f-test1-1": "a",
-                "f-test2-1": "b"
-            }
-        ]
-        _details_2.data_type = LedgerDetailsDataType.DB
-        _details_2.data_source = "data_id_2"
-        db.add(_details_2)
-
-        _details_2_data_1 = LedgerDetailsData()
-        _details_2_data_1.token_address = token_address
-        _details_2_data_1.data_id = "data_id_2"
-        _details_2_data_1.name = "name_test_1"
-        _details_2_data_1.address = "address_test_1"
-        _details_2_data_1.amount = 10
-        _details_2_data_1.price = 20
-        _details_2_data_1.balance = 200
-        _details_2_data_1.acquisition_date = "2020/01/01"
-        db.add(_details_2_data_1)
-
-        _details_2_data_2 = LedgerDetailsData()
-        _details_2_data_2.token_address = token_address
-        _details_2_data_2.data_id = "data_id_2"
-        _details_2_data_2.name = "name_test_2"
-        _details_2_data_2.address = "address_test_2"
-        _details_2_data_2.amount = 20
-        _details_2_data_2.price = 30
-        _details_2_data_2.balance = 600
-        _details_2_data_2.acquisition_date = "2020/01/02"
-        db.add(_details_2_data_2)
-
-        # NOTE: Add response
-        _details_3 = LedgerDetailsTemplate()
-        _details_3.token_address = token_address
-        _details_3.token_detail_type = "権利_test_4"
-        _details_3.headers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "test1-2": "a",
-                "test2-2": "b"
-            }
-        ]
-        _details_3.footers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "f-test1-2": "a",
-                "f-test2-2": "b"
-            }
-        ]
-        _details_3.data_type = LedgerDetailsDataType.IBET_FIN
-        _details_3.data_source = token_address
-        db.add(_details_3)
-
-        # NOTE: Add response
-        _details_4 = LedgerDetailsTemplate()
-        _details_4.token_address = token_address
-        _details_4.token_detail_type = "権利_test_5"
-        _details_4.headers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "test1-3": "a",
-                "test2-3": "b"
-            }
-        ]
-        _details_4.footers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "f-test1-3": "a",
-                "f-test2-3": "b"
-            }
-        ]
-        _details_4.data_type = LedgerDetailsDataType.DB
-        _details_4.data_source = "data_id_4"
-        db.add(_details_4)
-
-        _details_4_data_1 = LedgerDetailsData()
-        _details_4_data_1.token_address = token_address
-        _details_4_data_1.data_id = "data_id_4"
-        _details_4_data_1.name = "name_test_3"
-        _details_4_data_1.address = "address_test_3"
-        _details_4_data_1.amount = 10
-        _details_4_data_1.price = 20
-        _details_4_data_1.balance = 200
-        _details_4_data_1.acquisition_date = "2020/01/01"
-        db.add(_details_4_data_1)
-
-        _details_4_data_2 = LedgerDetailsData()
-        _details_4_data_2.token_address = token_address
-        _details_4_data_2.data_id = "data_id_4"
-        _details_4_data_2.name = "name_test_4"
-        _details_4_data_2.address = "address_test_4"
-        _details_4_data_2.amount = 20
-        _details_4_data_2.price = 30
-        _details_4_data_2.balance = 600
-        _details_4_data_2.acquisition_date = "2020/01/02"
-        db.add(_details_4_data_2)
-
-        # NOTE: Add response
-        _details_5 = LedgerDetailsTemplate()
-        _details_5.token_address = token_address
-        _details_5.token_detail_type = "権利_test_6"
-        _details_5.headers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "test1-4": "a",
-                "test2-4": "b"
-            }
-        ]
-        _details_5.footers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "f-test1-4": "a",
-                "f-test2-4": "b"
-            }
-        ]
-        _details_5.data_type = LedgerDetailsDataType.DB
-        _details_5.data_source = None
-        db.add(_details_5)
-
-        # request target AsPI
-        resp = client.get(
-            self.base_url.format(token_address=token_address, ledger_id=1),
-            params={
-                "latest_flg": 0,
-            },
-            headers={
-                "issuer-address": issuer_address,
-            }
-        )
-
-        # assertion
-        print("========")
-        print(resp.json())
-        aaa = {'created': '2022/12/01', 'token_name': 'テスト原簿_update', 'headers': {'key': 'value', 'hoge': 'fuga'},
-               'details': [{'token_detail_type': '権利_test_2', 'headers': {'key': 'value', 'test1': 'test2'}, 'data': [
-                   {'account_address': '0xABCdeF1234567890abCDeF123456789000000001', 'name': 'name_test_1',
-                    'address': 'address_test_1', 'amount': 10, 'price': 20, 'balance': 30,
-                    'acquisition_date': '2022/12/02'},
-                   {'account_address': '0xaBcdEF1234567890aBCDEF123456789000000002', 'name': 'name_test_2',
-                    'address': 'address_test_2', 'amount': 100, 'price': 200, 'balance': 300,
-                    'acquisition_date': '2022/12/03'}], 'footers': {'key': 'value', 'f-test1': 'f-test2'}},
-                           {'token_detail_type': '権利_test_3', 'headers': {'key': 'value', 'test1-1': 'test2-1'},
-                            'data': [{'account_address': None, 'name': 'name_test_1', 'address': 'address_test_1',
-                                      'amount': 10, 'price': 20, 'balance': 200, 'acquisition_date': '2020/01/01'},
-                                     {'account_address': None, 'name': 'name_test_2', 'address': 'address_test_2',
-                                      'amount': 20, 'price': 30, 'balance': 600, 'acquisition_date': '2020/01/02'}],
-                            'footers': {'key': 'value', 'f-test1-1': 'f-test2-1'}},
-                           {'token_detail_type': '権利_test_4', 'headers': {'key': 'value', 'test1-2': 'test2-2'},
-                            'data': [], 'footers': {'key': 'value', 'f-test1-2': 'f-test2-2'}},
-                           {'token_detail_type': '権利_test_5', 'headers': {'key': 'value', 'test1-3': 'test2-3'},
-                            'data': [{'account_address': None, 'name': 'name_test_3', 'address': 'address_test_3',
-                                      'amount': 10, 'price': 20, 'balance': 200, 'acquisition_date': '2020/01/01'},
-                                     {'account_address': None, 'name': 'name_test_4', 'address': 'address_test_4',
-                                      'amount': 20, 'price': 30, 'balance': 600, 'acquisition_date': '2020/01/02'}],
-                            'footers': {'key': 'value', 'f-test1-3': 'f-test2-3'}},
-                           {'token_detail_type': '権利_test_6', 'headers': {'key': 'value', 'test1-4': 'test2-4'},
-                            'data': [], 'footers': {'key': 'value', 'f-test1-4': 'f-test2-4'}}],
-               'footers': {'key': 'value', 'f-hoge': 'f-fuga'}}
-
-        assert resp.status_code == 200
-        assert resp.json() == {
-            "created": "2022/12/01",
-            "token_name": "テスト原簿_update",
-            "headers": [
-                {
-                    "key": "aaa",
-                    "value": "aaa",
-                },
-                {
-                    "hoge": "aaaa",
-                    "fuga": "bbbb",
-                }
-            ],
-            "details": [
-                {
-                    "token_detail_type": "権利_test_2",
-                    "headers": [
-                        {
-                            "key": "aaa",
-                            "value": "aaa",
-                        },
-                        {
-                            "test1": "a",
-                            "test2": "b"
-                        }
-                    ],
-                    "data": [
-                        {
-                            "account_address": account_address_1,
-                            "name": "name_test_1",  # not update
-                            "address": "address_test_1",  # not update
-                            "amount": 10,
-                            "price": 20,
-                            "balance": 30,
-                            "acquisition_date": "2022/12/02"
-                        },
-                        {
-                            "account_address": account_address_2,
-                            "name": "name_test_2",  # not update
-                            "address": "address_test_2",  # not update
-                            "amount": 100,
-                            "price": 200,
-                            "balance": 300,
-                            "acquisition_date": "2022/12/03"
-                        }
-                    ],
                     "footers": [
                         {
                             "key": "aaa",
@@ -430,7 +119,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                     ],
                 },
                 {
-                    "token_detail_type": "権利_test_3",
+                    "token_detail_type": "権利_test_2",
                     "headers": [
                         {
                             "key": "aaa",
@@ -472,47 +161,108 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                         }
                     ],
                 },
+            ],
+            "footers": [
                 {
-                    "token_detail_type": "権利_test_4",
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "f-hoge": "aaaa",
+                    "f-fuga": "bbbb",
+                }
+            ],
+        }
+        _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        db.add(_ledger_1)
+
+        # request target AsPI
+        resp = client.get(
+            self.base_url.format(token_address=token_address, ledger_id=1),
+            params={
+                "latest_flg": 0,
+            },
+            headers={
+                "issuer-address": issuer_address,
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "created": "2022/12/01",
+            "token_name": "テスト原簿",
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "hoge": "aaaa",
+                    "fuga": "bbbb",
+                }
+            ],
+            "details": [
+                {
+                    "token_detail_type": "権利_test_1",
                     "headers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
                         {
-                            "test1-2": "a",
-                            "test2-2": "b"
+                            "test1": "a",
+                            "test2": "b"
                         }
                     ],
-                    "data": [],
+                    "data": [
+                        {
+                            "account_address": account_address_1,
+                            "name": "name_test_1",
+                            "address": "address_test_1",
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 30,
+                            "acquisition_date": "2022/12/02"
+                        },
+                        {
+                            "account_address": account_address_2,
+                            "name": "name_test_2",
+                            "address": "address_test_2",
+                            "amount": 100,
+                            "price": 200,
+                            "balance": 300,
+                            "acquisition_date": "2022/12/03"
+                        }
+                    ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
                         {
-                            "f-test1-2": "a",
-                            "f-test2-2": "b"
+                            "f-test1": "a",
+                            "f-test2": "b"
                         }
                     ],
                 },
                 {
-                    "token_detail_type": "権利_test_5",
+                    "token_detail_type": "権利_test_2",
                     "headers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
                         {
-                            "test1-3": "a",
-                            "test2-3": "b"
+                            "test1-1": "a",
+                            "test2-1": "b"
                         }
                     ],
                     "data": [
                         {
                             "account_address": None,
-                            "name": "name_test_3",
-                            "address": "address_test_3",
+                            "name": "name_test_1",
+                            "address": "address_test_1",
                             "amount": 10,
                             "price": 20,
                             "balance": 200,
@@ -520,13 +270,13 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                         },
                         {
                             "account_address": None,
-                            "name": "name_test_4",
-                            "address": "address_test_4",
+                            "name": "name_test_2",
+                            "address": "address_test_2",
                             "amount": 20,
                             "price": 30,
                             "balance": 600,
                             "acquisition_date": "2020/01/02",
-                        },
+                        }
                     ],
                     "footers": [
                         {
@@ -534,35 +284,11 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "value": "aaa",
                         },
                         {
-                            "f-test1-3": "a",
-                            "f-test2-3": "b"
+                            "f-test1-1": "a",
+                            "f-test2-1": "b"
                         }
                     ],
                 },
-                {
-                    "token_detail_type": "権利_test_6",
-                    "headers": [
-                        {
-                            "key": "aaa",
-                            "value": "aaa",
-                        },
-                        {
-                            "test1-4": "a",
-                            "test2-4": "b"
-                        }
-                    ],
-                    "data": [],
-                    "footers": [
-                        {
-                            "key": "aaa",
-                            "value": "aaa",
-                        },
-                        {
-                            "f-test1-4": "a",
-                            "f-test2-4": "b"
-                        }
-                    ],
-                }
             ],
             "footers": [
                 {
@@ -600,29 +326,30 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
         _ledger_1.ledger = {
             "created": "2022/12/01",
-            "token_name": "",
-            "headers": [],
+            "token_name": "テスト原簿",
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "hoge": "aaaa",
+                    "fuga": "bbbb",
+                }
+            ],
             "details": [
                 {
                     "token_detail_type": "権利_test_1",
-                    # NOTE: Not Exists Ledger Details Template(be erased from response)
-                    "headers": [],
-                    "data": [
+                    "headers": [
                         {
-                            "account_address": "0x001",
-                            "name": "name_test_1",
-                            "address": "address_test_1",
-                            "amount": 10,
-                            "price": 20,
-                            "balance": 30,
-                            "acquisition_date": "2022/12/02"
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "test1": "a",
+                            "test2": "b"
                         }
                     ],
-                    "footers": [],
-                },
-                {
-                    "token_detail_type": "権利_test_2",  # NOTE: Recent from blockchain
-                    "headers": [],
                     "data": [
                         {
                             "account_address": account_address_1,
@@ -643,16 +370,71 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "acquisition_date": "2022/12/03"
                         }
                     ],
-                    "footers": [],
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "f-test1": "a",
+                            "f-test2": "b"
+                        }
+                    ],
                 },
                 {
-                    "token_detail_type": "権利_test_3",  # NOTE: Recent from database
-                    "headers": [],
-                    "data": [],
-                    "footers": [],
+                    "token_detail_type": "権利_test_2",
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "test1-1": "a",
+                            "test2-1": "b"
+                        }
+                    ],
+                    "data": [
+                        {
+                            "account_address": None,
+                            "name": "name_test_1",
+                            "address": "address_test_1",
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 200,
+                            "acquisition_date": "2020/01/01",
+                        },
+                        {
+                            "account_address": None,
+                            "name": "name_test_2",
+                            "address": "address_test_2",
+                            "amount": 20,
+                            "price": 30,
+                            "balance": 600,
+                            "acquisition_date": "2020/01/02",
+                        }
+                    ],
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "f-test1-1": "a",
+                            "f-test2-1": "b"
+                        }
+                    ],
                 },
             ],
-            "footers": []
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "f-hoge": "aaaa",
+                    "f-fuga": "bbbb",
+                }
+            ],
         }
         _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
         db.add(_ledger_1)
@@ -667,35 +449,9 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         }
         db.add(_idx_personal_info_1)
 
-        _template = LedgerTemplate()
-        _template.token_address = token_address
-        _template.issuer_address = issuer_address
-        _template.token_name = "テスト原簿_update"
-        _template.headers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "hoge": "aaaa",
-                "fuga": "bbbb",
-            }
-        ]
-        _template.footers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "f-hoge": "aaaa",
-                "f-fuga": "bbbb",
-            }
-        ]
-        db.add(_template)
-
         _details_1 = LedgerDetailsTemplate()
         _details_1.token_address = token_address
-        _details_1.token_detail_type = "権利_test_2"
+        _details_1.token_detail_type = "権利_test_1"
         _details_1.headers = [
             {
                 "key": "aaa",
@@ -719,161 +475,6 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _details_1.data_type = LedgerDetailsDataType.IBET_FIN
         _details_1.data_source = token_address
         db.add(_details_1)
-
-        _details_2 = LedgerDetailsTemplate()
-        _details_2.token_address = token_address
-        _details_2.token_detail_type = "権利_test_3"
-        _details_2.headers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "test1-1": "a",
-                "test2-1": "b"
-            }
-        ]
-        _details_2.footers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "f-test1-1": "a",
-                "f-test2-1": "b"
-            }
-        ]
-        _details_2.data_type = LedgerDetailsDataType.DB
-        _details_2.data_source = "data_id_2"
-        db.add(_details_2)
-
-        _details_2_data_1 = LedgerDetailsData()
-        _details_2_data_1.token_address = token_address
-        _details_2_data_1.data_id = "data_id_2"
-        _details_2_data_1.name = "name_test_1"
-        _details_2_data_1.address = "address_test_1"
-        _details_2_data_1.amount = 10
-        _details_2_data_1.price = 20
-        _details_2_data_1.balance = 200
-        _details_2_data_1.acquisition_date = "2020/01/01"
-        db.add(_details_2_data_1)
-
-        _details_2_data_2 = LedgerDetailsData()
-        _details_2_data_2.token_address = token_address
-        _details_2_data_2.data_id = "data_id_2"
-        _details_2_data_2.name = "name_test_2"
-        _details_2_data_2.address = "address_test_2"
-        _details_2_data_2.amount = 20
-        _details_2_data_2.price = 30
-        _details_2_data_2.balance = 600
-        _details_2_data_2.acquisition_date = "2020/01/02"
-        db.add(_details_2_data_2)
-
-        # NOTE: Add response
-        _details_3 = LedgerDetailsTemplate()
-        _details_3.token_address = token_address
-        _details_3.token_detail_type = "権利_test_4"
-        _details_3.headers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "test1-2": "a",
-                "test2-2": "b"
-            }
-        ]
-        _details_3.footers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "f-test1-2": "a",
-                "f-test2-2": "b"
-            }
-        ]
-        _details_3.data_type = LedgerDetailsDataType.IBET_FIN
-        _details_3.data_source = token_address
-        db.add(_details_3)
-
-        # NOTE: Add response
-        _details_4 = LedgerDetailsTemplate()
-        _details_4.token_address = token_address
-        _details_4.token_detail_type = "権利_test_5"
-        _details_4.headers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "test1-3": "a",
-                "test2-3": "b"
-            }
-        ]
-        _details_4.footers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "f-test1-3": "a",
-                "f-test2-3": "b"
-            }
-        ]
-        _details_4.data_type = LedgerDetailsDataType.DB
-        _details_4.data_source = "data_id_4"
-        db.add(_details_4)
-
-        _details_4_data_1 = LedgerDetailsData()
-        _details_4_data_1.token_address = token_address
-        _details_4_data_1.data_id = "data_id_4"
-        _details_4_data_1.name = "name_test_3"
-        _details_4_data_1.address = "address_test_3"
-        _details_4_data_1.amount = 10
-        _details_4_data_1.price = 20
-        _details_4_data_1.balance = 200
-        _details_4_data_1.acquisition_date = "2020/01/01"
-        db.add(_details_4_data_1)
-
-        _details_4_data_2 = LedgerDetailsData()
-        _details_4_data_2.token_address = token_address
-        _details_4_data_2.data_id = "data_id_4"
-        _details_4_data_2.name = "name_test_4"
-        _details_4_data_2.address = "address_test_4"
-        _details_4_data_2.amount = 20
-        _details_4_data_2.price = 30
-        _details_4_data_2.balance = 600
-        _details_4_data_2.acquisition_date = "2020/01/02"
-        db.add(_details_4_data_2)
-
-        # NOTE: Add response
-        _details_5 = LedgerDetailsTemplate()
-        _details_5.token_address = token_address
-        _details_5.token_detail_type = "権利_test_6"
-        _details_5.headers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "test1-4": "a",
-                "test2-4": "b"
-            }
-        ]
-        _details_5.footers = [
-            {
-                "key": "aaa",
-                "value": "aaa",
-            },
-            {
-                "f-test1-4": "a",
-                "f-test2-4": "b"
-            }
-        ]
-        _details_5.data_type = LedgerDetailsDataType.DB
-        _details_5.data_source = None
-        db.add(_details_5)
 
         # Mock
         token = IbetStraightBondContract()
@@ -909,7 +510,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         assert resp.status_code == 200
         assert resp.json() == {
             "created": "2022/12/01",
-            "token_name": "テスト原簿_update",
+            "token_name": "テスト原簿",
             "headers": [
                 {
                     "key": "aaa",
@@ -922,7 +523,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             ],
             "details": [
                 {
-                    "token_detail_type": "権利_test_2",
+                    "token_detail_type": "権利_test_1",
                     "headers": [
                         {
                             "key": "aaa",
@@ -965,7 +566,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                     ],
                 },
                 {
-                    "token_detail_type": "権利_test_3",
+                    "token_detail_type": "権利_test_2",
                     "headers": [
                         {
                             "key": "aaa",
@@ -1007,97 +608,6 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                         }
                     ],
                 },
-                {
-                    "token_detail_type": "権利_test_4",
-                    "headers": [
-                        {
-                            "key": "aaa",
-                            "value": "aaa",
-                        },
-                        {
-                            "test1-2": "a",
-                            "test2-2": "b"
-                        }
-                    ],
-                    "data": [],
-                    "footers": [
-                        {
-                            "key": "aaa",
-                            "value": "aaa",
-                        },
-                        {
-                            "f-test1-2": "a",
-                            "f-test2-2": "b"
-                        }
-                    ],
-                },
-                {
-                    "token_detail_type": "権利_test_5",
-                    "headers": [
-                        {
-                            "key": "aaa",
-                            "value": "aaa",
-                        },
-                        {
-                            "test1-3": "a",
-                            "test2-3": "b"
-                        }
-                    ],
-                    "data": [
-                        {
-                            "account_address": None,
-                            "name": "name_test_3",
-                            "address": "address_test_3",
-                            "amount": 10,
-                            "price": 20,
-                            "balance": 200,
-                            "acquisition_date": "2020/01/01",
-                        },
-                        {
-                            "account_address": None,
-                            "name": "name_test_4",
-                            "address": "address_test_4",
-                            "amount": 20,
-                            "price": 30,
-                            "balance": 600,
-                            "acquisition_date": "2020/01/02",
-                        },
-                    ],
-                    "footers": [
-                        {
-                            "key": "aaa",
-                            "value": "aaa",
-                        },
-                        {
-                            "f-test1-3": "a",
-                            "f-test2-3": "b"
-                        }
-                    ],
-                },
-                {
-                    "token_detail_type": "権利_test_6",
-                    "headers": [
-                        {
-                            "key": "aaa",
-                            "value": "aaa",
-                        },
-                        {
-                            "test1-4": "a",
-                            "test2-4": "b"
-                        }
-                    ],
-                    "data": [],
-                    "footers": [
-                        {
-                            "key": "aaa",
-                            "value": "aaa",
-                        },
-                        {
-                            "f-test1-4": "a",
-                            "f-test2-4": "b"
-                        }
-                    ],
-                }
             ],
             "footers": [
                 {
@@ -1355,46 +865,3 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             "detail": "ledger does not exist"
         }
 
-    # <Error_8>
-    # Ledger Template Not Found
-    def test_error_8(self, client, db):
-        user_1 = config_eth_account("user1")
-        issuer_address = user_1["address"]
-        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
-
-        # prepare data
-        _token = Token()
-        _token.type = TokenType.IBET_SHARE
-        _token.tx_hash = ""
-        _token.issuer_address = issuer_address
-        _token.token_address = token_address
-        _token.abi = {}
-        db.add(_token)
-
-        _ledger_1 = Ledger()
-        _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
-        _ledger_1.ledger = {}
-        _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
-        db.add(_ledger_1)
-
-        # request target API
-        resp = client.get(
-            self.base_url.format(token_address=token_address, ledger_id=1),
-            params={
-                "latest_flg": 1,
-            },
-            headers={
-                "issuer-address": issuer_address,
-            }
-        )
-
-        # assertion
-        assert resp.status_code == 400
-        assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "ledger template does not exist"
-        }
