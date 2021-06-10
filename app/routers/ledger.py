@@ -42,6 +42,7 @@ from app.utils.check_utils import (
     validate_headers,
     address_is_valid_address
 )
+from app.utils.ledger_utils import create_ledger
 from app.utils.docs_utils import get_routers_responses
 from app.model.db import (
     Token,
@@ -173,84 +174,25 @@ def retrieve_ledger_history(
     if _ledger is None:
         raise InvalidParameterError("ledger does not exist")
 
-    # Ledger Template Exist Check
-    _template = db.query(LedgerTemplate). \
-        filter(LedgerTemplate.token_address == token_address). \
-        filter(LedgerTemplate.issuer_address == issuer_address). \
-        first()
-    if _template is None:
-        raise InvalidParameterError("ledger template does not exist")
+    resp = _ledger.ledger
+    if latest_flg == 1:  # most recent
 
-    ledger = _ledger.ledger
+        # Get ibetfin Details token_detail_type
+        _ibet_fin_details_list = db.query(LedgerDetailsTemplate). \
+            filter(LedgerDetailsTemplate.token_address == token_address). \
+            filter(LedgerDetailsTemplate.data_type == LedgerDetailsDataType.IBET_FIN). \
+            order_by(LedgerDetailsTemplate.id). \
+            all()
+        _ibet_fin_token_detail_type_list = [_details.token_detail_type for _details in _ibet_fin_details_list]
 
-    # Merge Ledger Template
-    ledger["token_name"] = _template.token_name
-    ledger["headers"] = _template.headers
-    ledger["footers"] = _template.footers
+        # Update PersonalInfo
+        for details in resp["details"]:
+            if details["token_detail_type"] in _ibet_fin_token_detail_type_list:
+                for data in details["data"]:
+                    personal_info = __get_personal_info(token_address, _token.type, data["account_address"], db)
+                    data["name"] = personal_info["name"]
+                    data["address"] = personal_info["address"]
 
-    # Merge Ledger Details Template
-    _details_list = db.query(LedgerDetailsTemplate). \
-        filter(LedgerDetailsTemplate.token_address == token_address). \
-        order_by(LedgerDetailsTemplate.id). \
-        all()
-    tmp_details = ledger["details"]
-    tmp_details_dict = {}
-    for idx, detail in enumerate(tmp_details):
-        tmp_details_dict[detail["token_detail_type"]] = idx
-
-    ledger_details = []
-    for _details in _details_list:
-        data_list = []
-        if _details.data_type == LedgerDetailsDataType.IBET_FIN:
-            # Update existing details data in ledger(data with the same value of token_detail_type)
-            # NOTE: token_detail_type not in ledger, details data is empty.
-            idx = tmp_details_dict.get(_details.token_detail_type, None)
-            if idx is not None:
-                for data in tmp_details[idx]["data"]:
-                    personal_info = {
-                        "name": data["name"],
-                        "address": data["address"],
-                    }
-                    if latest_flg == 1:  # most recent
-                        personal_info = __get_personal_info(
-                            token_address, _token.type, data["account_address"], db)
-                    data_list.append({
-                        "account_address": data["account_address"],
-                        "name": personal_info["name"],
-                        "address": personal_info["address"],
-                        "amount": data["amount"],
-                        "price": data["price"],
-                        "balance": data["balance"],
-                        "acquisition_date": data["acquisition_date"],
-                    })
-        elif _details.data_type == LedgerDetailsDataType.DB:
-            # Get Ledger Details Data
-            _details_data_list = db.query(LedgerDetailsData). \
-                filter(LedgerDetailsData.token_address == token_address). \
-                filter(LedgerDetailsData.data_id == _details.data_source). \
-                order_by(LedgerDetailsData.id). \
-                all()
-            for _details_data in _details_data_list:
-                data_list.append({
-                    "account_address": None,
-                    "name": _details_data.name,
-                    "address": _details_data.address,
-                    "amount": _details_data.amount,
-                    "price": _details_data.price,
-                    "balance": _details_data.balance,
-                    "acquisition_date": _details_data.acquisition_date,
-                })
-
-        ledger_details.append({
-            "token_detail_type": _details.token_detail_type,
-            "headers": _details.headers,
-            "data": data_list,
-            "footers": _details.footers,
-        })
-
-    ledger["details"] = ledger_details
-
-    resp = ledger
     return resp
 
 
@@ -609,6 +551,9 @@ def update_ledger_details_data(
         _details_data.balance = data_list.balance
         _details_data.acquisition_date = data_list.acquisition_date
         db.add(_details_data)
+
+    # Create Ledger
+    create_ledger(token_address, db)
 
     db.commit()
     return

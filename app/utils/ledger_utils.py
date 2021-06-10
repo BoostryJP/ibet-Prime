@@ -16,15 +16,10 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import os
-import sys
 from datetime import datetime
 
 import pytz
 from sqlalchemy.orm import Session
-
-path = os.path.join(os.path.dirname(__file__), '../../')
-sys.path.append(path)
 
 from config import TZ
 from app.model.blockchain import (
@@ -38,6 +33,7 @@ from app.model.db import (
     UTXO,
     IDXPersonalInfo,
     Ledger,
+    LedgerDetailsData,
     LedgerTemplate,
     LedgerDetailsTemplate,
     LedgerDetailsDataType
@@ -48,11 +44,6 @@ utc_tz = pytz.timezone("UTC")
 
 
 def create_ledger(token_address: str, db: Session):
-    """
-    This function is executed by PROCESSOR-Create-UTXO.
-    Because PROCESSOR-Create-UTXO registers a data to UTXO, When TokenContract Transfer Event.
-    The total amount for each account address is taken from UTXO in that time cross section and record to ledger.
-    """
 
     _token = db.query(Token). \
         filter(Token.token_address == token_address). \
@@ -74,17 +65,16 @@ def create_ledger(token_address: str, db: Session):
         all()
     ledger_details = []
     for _details in _details_list:
-        data_list  = []
-        if _details.data_type == LedgerDetailsDataType.IBET_FIN:
-            # Get ledger details dataibetfin)
-            data_list = __get_details_data_list_from_ibetfin(token_address, _token.type, db)
+        # Get ledger details data
+        data_list = __get_details_data_list(token_address, _token.type, _details.data_type,
+                                            _details.data_source, db)
 
         # NOTE: Merge with template with ledger GET API
         details = {
             "token_detail_type": _details.token_detail_type,
-            "headers": [],
+            "headers": _details.headers,
             "data": data_list,
-            "footers": [],
+            "footers": _details.footers,
         }
         ledger_details.append(details)
 
@@ -92,10 +82,10 @@ def create_ledger(token_address: str, db: Session):
     # NOTE: Merge with template with ledger GET API
     ledger = {
         "created": created_ymd,
-        "token_name": "",
-        "headers": [],
+        "token_name": _template.token_name,
+        "headers": _template.headers,
         "details": ledger_details,
-        "footers": [],
+        "footers": _template.footers,
     }
 
     # Register ledger data to the DB
@@ -105,6 +95,32 @@ def create_ledger(token_address: str, db: Session):
     _ledger.token_type = _token.type
     _ledger.ledger = ledger
     db.add(_ledger)
+
+
+def __get_details_data_list(token_address: str, token_type: str, data_type: str, data_source: str, db: Session):
+    data_list = []
+    if data_type == LedgerDetailsDataType.DB:
+        data_list = []
+        # Get Ledger Details Data from DB
+        _details_data_list = db.query(LedgerDetailsData). \
+            filter(LedgerDetailsData.token_address == token_address). \
+            filter(LedgerDetailsData.data_id == data_source). \
+            order_by(LedgerDetailsData.id). \
+            all()
+        for _details_data in _details_data_list:
+            data_list.append({
+                "account_address": None,
+                "name": _details_data.name,
+                "address": _details_data.address,
+                "amount": _details_data.amount,
+                "price": _details_data.price,
+                "balance": _details_data.balance,
+                "acquisition_date": _details_data.acquisition_date,
+            })
+    elif data_type == LedgerDetailsDataType.IBET_FIN:
+        data_list = __get_details_data_list_from_ibetfin(token_address, token_type, db)
+
+    return data_list
 
 
 def __get_details_data_list_from_ibetfin(token_address: str, token_type: str, db: Session):
