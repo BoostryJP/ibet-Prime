@@ -150,6 +150,64 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
             "pending_transfer": 5
         }
 
+    # <Normal_3>
+    # Holder not exist
+    def test_normal_3(self, client, db):
+        user = config_eth_account("user1")
+        _issuer_address = user["address"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+        _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_SHARE
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        db.add(token)
+
+        idx_personal_info_1 = IDXPersonalInfo()
+        idx_personal_info_1.account_address = _account_address_1
+        idx_personal_info_1.issuer_address = _issuer_address
+        idx_personal_info_1.personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1"
+        }
+        db.add(idx_personal_info_1)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(_token_address, _account_address_1),
+            headers={
+                "issuer-address": _issuer_address
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "account_address": _account_address_1,
+            "personal_information": {
+                "key_manager": "key_manager_test1",
+                "name": "name_test1",
+                "postal_code": "postal_code_test1",
+                "address": "address_test1",
+                "email": "email_test1",
+                "birth": "birth_test1"
+            },
+            "balance": 0,
+            "pending_transfer": 0
+        }
+
     ###########################################################################
     # Error Case
     ###########################################################################
@@ -277,43 +335,4 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
                 "title": "InvalidParameterError"
             },
             "detail": "wait for a while as the token is being processed"
-        }
-
-    # <Error_5>
-    # HTTPException 404: holder not found
-    def test_error_5(self, client, db):
-        user = config_eth_account("user1")
-        _issuer_address = user["address"]
-        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
-        _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
-
-        # prepare data
-        account = Account()
-        account.issuer_address = _issuer_address
-        db.add(account)
-
-        token = Token()
-        token.type = TokenType.IBET_SHARE
-        token.tx_hash = ""
-        token.issuer_address = _issuer_address
-        token.token_address = _token_address
-        token.abi = ""
-        db.add(token)
-
-        # request target API
-        resp = client.get(
-            self.base_url.format(_token_address, _account_address_1),
-            headers={
-                "issuer-address": _issuer_address
-            }
-        )
-
-        # assertion
-        assert resp.status_code == 404
-        assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "holder not found"
         }

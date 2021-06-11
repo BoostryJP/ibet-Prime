@@ -693,7 +693,11 @@ def retrieve_holder(
         filter(IDXPosition.account_address == account_address). \
         first()
     if _holder is None:
-        raise HTTPException(status_code=404, detail="holder not found")
+        balance = 0
+        pending_transfer = 0
+    else:
+        balance = _holder.balance
+        pending_transfer = _holder.pending_transfer
 
     # Get personal information
     personal_info_default = {
@@ -714,10 +718,10 @@ def retrieve_holder(
         _personal_info = _personal_info_record.personal_info
 
     holder = {
-        "account_address": _holder.account_address,
+        "account_address": account_address,
         "personal_information": _personal_info,
-        "balance": _holder.balance,
-        "pending_transfer": _holder.pending_transfer
+        "balance": balance,
+        "pending_transfer": pending_transfer
     }
 
     return holder
