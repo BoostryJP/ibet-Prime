@@ -344,6 +344,9 @@ def create_update_ledger_template(
             first()
         db.delete(_details)
 
+    # Create Ledger
+    create_ledger(token_address, db)
+
     db.commit()
     return
 

@@ -16,6 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from unittest import mock
+
 from app.model.db import (
     Token,
     TokenType,
@@ -36,7 +38,8 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
 
     # <Normal_1>
     # Create
-    def test_normal_1(self, client, db):
+    @mock.patch("app.routers.ledger.create_ledger")
+    def test_normal_1(self, mock_func, client, db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -222,9 +225,12 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         assert _details.data_type == LedgerDetailsDataType.DB
         assert _details.data_source == "data_id_2"
 
+        mock_func.assert_called_with(token_address, db)
+
     # <Normal_2>
     # Update
-    def test_normal_2(self, client, db):
+    @mock.patch("app.routers.ledger.create_ledger")
+    def test_normal_2(self, mock_func, client, db):
         user = config_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -489,6 +495,8 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         ]
         assert _details.data_type == LedgerDetailsDataType.IBET_FIN
         assert _details.data_source == token_address
+
+        mock_func.assert_called_with(token_address, db)
 
     ###########################################################################
     # Error Case
