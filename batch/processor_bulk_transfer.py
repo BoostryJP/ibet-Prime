@@ -139,10 +139,12 @@ class Processor:
 
     def _get_uploads(self) -> List[BulkTransferUpload]:
         # NOTE:
-        # - Process the same Issuer in one thread.
-        # - Issuer being processed by another thread is not priority.
-        # - If there is no Issuer other than Issuer being processed by another thread, process that Issuer.
-        lock.acquire()
+        # - There is only one Issuer that is processed in the same thread.
+        # - The maximum size to be processed at one time is the size defined in BULK_TRANSFER_WORKER_LOT_SIZE.
+        # - Issuer that is being processed by other threads is controlled to be selected with lower priority.
+        # - Exclusion control is performed to eliminate duplication of data to be acquired.
+
+        lock.acquire()  # Exclusion control
 
         locked_update_id = []
         exclude_issuer = []
@@ -152,30 +154,32 @@ class Processor:
                 exclude_issuer.append(issuer_address)
         exclude_issuer = list(set(exclude_issuer))
 
-        # Get Issuer's upload data(Issuer being processed by another thread is excluded)
-        upload = self.db.query(BulkTransferUpload). \
+        # Retrieve one target data
+        # NOTE: Priority is given to non-issuers that are being processed by other threads.
+        upload_1 = self.db.query(BulkTransferUpload). \
             filter(BulkTransferUpload.upload_id.notin_(locked_update_id)). \
             filter(BulkTransferUpload.status == 0). \
             filter(BulkTransferUpload.issuer_address.notin_(exclude_issuer)). \
             order_by(BulkTransferUpload.created). \
             first()
-        if upload is None:
-            # Get all Issuer's upload data
-            upload = self.db.query(BulkTransferUpload). \
+        if upload_1 is None:
+            # Retrieve again for all issuers
+            upload_1 = self.db.query(BulkTransferUpload). \
                 filter(BulkTransferUpload.upload_id.notin_(locked_update_id)). \
                 filter(BulkTransferUpload.status == 0). \
                 order_by(BulkTransferUpload.created). \
                 first()
 
+        # Issuer to be processed => upload_1.issuer_address
+        # Retrieve the data of the Issuer to be processed
         upload_list = []
-        if upload is not None:
-            upload_list = [upload]
+        if upload_1 is not None:
+            upload_list = [upload_1]
             if BULK_TRANSFER_WORKER_LOT_SIZE > 1:
-                # Get same the first Issuer
                 upload_list = upload_list + self.db.query(BulkTransferUpload). \
                     filter(BulkTransferUpload.upload_id.notin_(locked_update_id)). \
                     filter(BulkTransferUpload.status == 0). \
-                    filter(BulkTransferUpload.issuer_address == upload.issuer_address). \
+                    filter(BulkTransferUpload.issuer_address == upload_1.issuer_address). \
                     order_by(BulkTransferUpload.created). \
                     offset(1). \
                     limit(BULK_TRANSFER_WORKER_LOT_SIZE - 1). \
@@ -297,8 +301,11 @@ class Processor:
             self._release_processing_issuer(_upload.upload_id)
 
 
+# Exception Stack
 err_bucket = []
+# Lock object for exclusion control
 lock = threading.Lock()
+# Issuer being processed in threads
 processing_issuer = {}
 
 
