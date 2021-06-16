@@ -282,8 +282,8 @@ class TestProcessor:
             target="app.model.blockchain.token.IbetStraightBondContract.transfer",
             return_value=None
         )
-        non_priority_issuer = patch(
-            "batch.processor_bulk_transfer.non_priority_issuer",
+        processing_issuer = patch(
+            "batch.processor_bulk_transfer.processing_issuer",
             {
                 1: {
                     self.upload_id_list[0]: _other_issuer_address_1,
@@ -292,7 +292,7 @@ class TestProcessor:
             }
         )
 
-        with IbetStraightBondContract_transfer, non_priority_issuer:
+        with IbetStraightBondContract_transfer, processing_issuer:
             # Execute batch
             processor.process()
 
@@ -395,8 +395,8 @@ class TestProcessor:
             target="app.model.blockchain.token.IbetStraightBondContract.transfer",
             return_value=None
         )
-        non_priority_issuer = patch(
-            "batch.processor_bulk_transfer.non_priority_issuer",
+        processing_issuer = patch(
+            "batch.processor_bulk_transfer.processing_issuer",
             {
                 1: {
                     self.upload_id_list[0]: _account["address"],
@@ -405,7 +405,7 @@ class TestProcessor:
             }
         )
 
-        with IbetStraightBondContract_transfer, non_priority_issuer:
+        with IbetStraightBondContract_transfer, processing_issuer:
             # Execute batch
             processor.process()
 
