@@ -268,8 +268,9 @@ class Processor:
                     record_id=_update_token.id,
                     status=1
                 )
-            except SendTransactionError:
+            except SendTransactionError as tx_err:
                 LOG.warning(f"Failed to send transaction: id=<{_update_token.id}>")
+                LOG.exception(tx_err)
                 self.sink.on_finish_update_process(
                     record_id=_update_token.id,
                     status=2
