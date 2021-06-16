@@ -140,24 +140,23 @@ class Processor:
     def _get_uploads(self) -> List[BulkTransferUpload]:
         # NOTE:
         # - Process the same Issuer in one thread.
-        # - Processing Issuer by other threads is not priority.
-        # - If there is no other than a not priority Issuer, process not priority Issuer.
+        # - Issuer being processed by another thread is not priority.
+        # - If there is no Issuer other than Issuer being processed by another thread, process that Issuer.
         lock.acquire()
 
         locked_update_id = []
-        not_priority = []
-        for other_thread in non_priority_issuer.values():
-            for k, v in other_thread.items():
-                locked_update_id.append(k)
-                not_priority.append(v)
-        not_priority = list(set(not_priority))
+        exclude_issuer = []
+        for threads_processing in processing_issuer.values():
+            for upload_id, issuer_address in threads_processing.items():
+                locked_update_id.append(upload_id)
+                exclude_issuer.append(issuer_address)
+        exclude_issuer = list(set(exclude_issuer))
 
-        # Get priority Issuer's upload data
-        # NOTE: Priority Issuer is an issuer that is not processed by other threads.
+        # Get Issuer's upload data(Issuer being processed by another thread is excluded)
         upload = self.db.query(BulkTransferUpload). \
             filter(BulkTransferUpload.upload_id.notin_(locked_update_id)). \
             filter(BulkTransferUpload.status == 0). \
-            filter(BulkTransferUpload.issuer_address.notin_(not_priority)). \
+            filter(BulkTransferUpload.issuer_address.notin_(exclude_issuer)). \
             order_by(BulkTransferUpload.created). \
             first()
         if upload is None:
@@ -182,9 +181,9 @@ class Processor:
                     limit(BULK_TRANSFER_WORKER_LOT_SIZE - 1). \
                     all()
 
-        non_priority_issuer[self.thread_num] = {}
+        processing_issuer[self.thread_num] = {}
         for upload in upload_list:
-            non_priority_issuer[self.thread_num][upload.upload_id] = upload.issuer_address
+            processing_issuer[self.thread_num][upload.upload_id] = upload.issuer_address
 
         lock.release()
         return upload_list
@@ -196,9 +195,9 @@ class Processor:
             all()
         return transfer_list
 
-    def _release_non_priority_issuer(self, upload_id):
+    def _release_processing_issuer(self, upload_id):
         lock.acquire()
-        non_priority_issuer[self.thread_num].pop(upload_id, None)
+        processing_issuer[self.thread_num].pop(upload_id, None)
         lock.release()
 
     def process(self):
@@ -226,7 +225,7 @@ class Processor:
                         issuer_address=_upload.issuer_address, code=0, upload_id=_upload.upload_id,
                         error_transfer_id=[])
                     self.sink.flush()
-                    self._release_non_priority_issuer(_upload.upload_id)
+                    self._release_processing_issuer(_upload.upload_id)
                     continue
                 keyfile_json = _account.keyfile
                 decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
@@ -245,7 +244,7 @@ class Processor:
                 self.sink.on_error_notification(
                     issuer_address=_upload.issuer_address, code=1, upload_id=_upload.upload_id, error_transfer_id=[])
                 self.sink.flush()
-                self._release_non_priority_issuer(_upload.upload_id)
+                self._release_processing_issuer(_upload.upload_id)
                 continue
 
             # Transfer
@@ -295,12 +294,12 @@ class Processor:
                     upload_id=_upload.upload_id, error_transfer_id=error_transfer_id)
 
             self.sink.flush()
-            self._release_non_priority_issuer(_upload.upload_id)
+            self._release_processing_issuer(_upload.upload_id)
 
 
 err_bucket = []
 lock = threading.Lock()
-non_priority_issuer = {}
+processing_issuer = {}
 
 
 class Worker:
