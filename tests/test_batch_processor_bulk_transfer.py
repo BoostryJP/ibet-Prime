@@ -42,7 +42,7 @@ from tests.account_config import config_eth_account
 def processor(db):
     _sink = Sinks()
     _sink.register(DBSink(db))
-    return Processor(sink=_sink, db=db)
+    return Processor(sink=_sink, db=db, thread_num=0)
 
 
 class TestProcessor:
@@ -202,6 +202,237 @@ class TestProcessor:
                 all()
             for _bulk_transfer in _bulk_transfer_list:
                 assert _bulk_transfer.status == 1
+
+    # <Normal_3>
+    # Skip other thread processed issuer
+    @patch("batch.processor_bulk_transfer.BULK_TRANSFER_WORKER_LOT_SIZE", 2)
+    def test_normal_3(self, processor, db):
+        _account = self.account_list[0]
+        _from_address = self.account_list[1]
+        _to_address = self.account_list[2]
+        _other_issuer_address_1 = "0x1234567890123456789012345678901234567890"
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = _account["address"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.keyfile = _account["keyfile"]
+        db.add(account)
+
+        # Prepare data : BulkTransferUpload
+        bulk_transfer_upload = BulkTransferUpload()
+        bulk_transfer_upload.issuer_address = _other_issuer_address_1  # other thread processed issuer
+        bulk_transfer_upload.upload_id = self.upload_id_list[0]
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.status = 0
+        db.add(bulk_transfer_upload)
+        bulk_transfer_upload = BulkTransferUpload()
+        bulk_transfer_upload.issuer_address = _other_issuer_address_1  # other thread processed issuer
+        bulk_transfer_upload.upload_id = self.upload_id_list[1]
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.status = 0
+        db.add(bulk_transfer_upload)
+        bulk_transfer_upload = BulkTransferUpload()
+        bulk_transfer_upload.issuer_address = _other_issuer_address_1  # skip issuer
+        bulk_transfer_upload.upload_id = self.upload_id_list[2]
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.status = 0
+        db.add(bulk_transfer_upload)
+        bulk_transfer_upload = BulkTransferUpload()
+        bulk_transfer_upload.issuer_address = _account["address"]
+        bulk_transfer_upload.upload_id = self.upload_id_list[3]
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.status = 0
+        db.add(bulk_transfer_upload)
+        bulk_transfer_upload = BulkTransferUpload()
+        bulk_transfer_upload.issuer_address = _account["address"]
+        bulk_transfer_upload.upload_id = self.upload_id_list[4]
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.status = 0
+        db.add(bulk_transfer_upload)
+
+        # Prepare data : BulkTransfer
+        for i in range(0, 3):
+            bulk_transfer = BulkTransfer()
+            bulk_transfer.issuer_address = _account["address"]
+            bulk_transfer.upload_id = self.upload_id_list[3]
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
+            bulk_transfer.token_address = self.bulk_transfer_token[i]
+            bulk_transfer.from_address = _from_address["address"]
+            bulk_transfer.to_address = _to_address["address"]
+            bulk_transfer.amount = 1
+            bulk_transfer.status = 0  # pending:0, succeeded:1, failed:2
+            db.add(bulk_transfer)
+        for i in range(0, 3):
+            bulk_transfer = BulkTransfer()
+            bulk_transfer.issuer_address = _account["address"]
+            bulk_transfer.upload_id = self.upload_id_list[4]
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
+            bulk_transfer.token_address = self.bulk_transfer_token[i]
+            bulk_transfer.from_address = _from_address["address"]
+            bulk_transfer.to_address = _to_address["address"]
+            bulk_transfer.amount = 1
+            bulk_transfer.status = 0  # pending:0, succeeded:1, failed:2
+            db.add(bulk_transfer)
+
+        db.commit()
+
+        # mock
+        IbetStraightBondContract_transfer = patch(
+            target="app.model.blockchain.token.IbetStraightBondContract.transfer",
+            return_value=None
+        )
+        processing_issuer = patch(
+            "batch.processor_bulk_transfer.processing_issuer",
+            {
+                1: {
+                    self.upload_id_list[0]: _other_issuer_address_1,
+                    self.upload_id_list[1]: _other_issuer_address_1,
+                }
+            }
+        )
+
+        with IbetStraightBondContract_transfer, processing_issuer:
+            # Execute batch
+            processor.process()
+
+            # Assertion
+            _bulk_transfer_upload_list = db.query(BulkTransferUpload). \
+                order_by(BulkTransferUpload.created). \
+                all()
+            _bulk_transfer_upload = _bulk_transfer_upload_list[0]
+            assert _bulk_transfer_upload.status == 0
+            _bulk_transfer_upload = _bulk_transfer_upload_list[1]
+            assert _bulk_transfer_upload.status == 0
+            _bulk_transfer_upload = _bulk_transfer_upload_list[2]
+            assert _bulk_transfer_upload.status == 0
+            _bulk_transfer_upload = _bulk_transfer_upload_list[3]
+            assert _bulk_transfer_upload.status == 1
+            _bulk_transfer_upload = _bulk_transfer_upload_list[4]
+            assert _bulk_transfer_upload.status == 1
+            _bulk_transfer_list = db.query(BulkTransfer). \
+                filter(BulkTransfer.upload_id == self.upload_id_list[3]). \
+                order_by(BulkTransfer.id). \
+                all()
+            _bulk_transfer = _bulk_transfer_list[0]
+            assert _bulk_transfer.status == 1
+            _bulk_transfer_list = db.query(BulkTransfer). \
+                filter(BulkTransfer.upload_id == self.upload_id_list[4]). \
+                order_by(BulkTransfer.id). \
+                all()
+            _bulk_transfer = _bulk_transfer_list[0]
+            assert _bulk_transfer.status == 1
+
+    # <Normal_4>
+    # other thread processed issuer(all same issuer)
+    @patch("batch.processor_bulk_transfer.BULK_TRANSFER_WORKER_LOT_SIZE", 2)
+    def test_normal_4(self, processor, db):
+        _account = self.account_list[0]
+        _from_address = self.account_list[1]
+        _to_address = self.account_list[2]
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = _account["address"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.keyfile = _account["keyfile"]
+        db.add(account)
+
+        # Prepare data : BulkTransferUpload
+        bulk_transfer_upload = BulkTransferUpload()
+        bulk_transfer_upload.issuer_address = _account["address"]  # other thread processed issuer
+        bulk_transfer_upload.upload_id = self.upload_id_list[0]
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.status = 0
+        db.add(bulk_transfer_upload)
+        bulk_transfer_upload = BulkTransferUpload()
+        bulk_transfer_upload.issuer_address = _account["address"]  # other thread processed issuer
+        bulk_transfer_upload.upload_id = self.upload_id_list[1]
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.status = 0
+        db.add(bulk_transfer_upload)
+        bulk_transfer_upload = BulkTransferUpload()
+        bulk_transfer_upload.issuer_address = _account["address"]  # other thread same issuer
+        bulk_transfer_upload.upload_id = self.upload_id_list[2]
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.status = 0
+        db.add(bulk_transfer_upload)
+        bulk_transfer_upload = BulkTransferUpload()
+        bulk_transfer_upload.issuer_address = _account["address"]  # other thread same issuer
+        bulk_transfer_upload.upload_id = self.upload_id_list[3]
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.status = 0
+        db.add(bulk_transfer_upload)
+
+        # Prepare data : BulkTransfer
+        for i in range(0, 3):
+            bulk_transfer = BulkTransfer()
+            bulk_transfer.issuer_address = _account["address"]
+            bulk_transfer.upload_id = self.upload_id_list[2]
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
+            bulk_transfer.token_address = self.bulk_transfer_token[i]
+            bulk_transfer.from_address = _from_address["address"]
+            bulk_transfer.to_address = _to_address["address"]
+            bulk_transfer.amount = 1
+            bulk_transfer.status = 0  # pending:0, succeeded:1, failed:2
+            db.add(bulk_transfer)
+        for i in range(0, 3):
+            bulk_transfer = BulkTransfer()
+            bulk_transfer.issuer_address = _account["address"]
+            bulk_transfer.upload_id = self.upload_id_list[3]
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
+            bulk_transfer.token_address = self.bulk_transfer_token[i]
+            bulk_transfer.from_address = _from_address["address"]
+            bulk_transfer.to_address = _to_address["address"]
+            bulk_transfer.amount = 1
+            bulk_transfer.status = 0  # pending:0, succeeded:1, failed:2
+            db.add(bulk_transfer)
+
+        db.commit()
+
+        # mock
+        IbetStraightBondContract_transfer = patch(
+            target="app.model.blockchain.token.IbetStraightBondContract.transfer",
+            return_value=None
+        )
+        processing_issuer = patch(
+            "batch.processor_bulk_transfer.processing_issuer",
+            {
+                1: {
+                    self.upload_id_list[0]: _account["address"],
+                    self.upload_id_list[1]: _account["address"],
+                }
+            }
+        )
+
+        with IbetStraightBondContract_transfer, processing_issuer:
+            # Execute batch
+            processor.process()
+
+            # Assertion
+            _bulk_transfer_upload_list = db.query(BulkTransferUpload). \
+                order_by(BulkTransferUpload.created). \
+                all()
+            _bulk_transfer_upload = _bulk_transfer_upload_list[0]
+            assert _bulk_transfer_upload.status == 0
+            _bulk_transfer_upload = _bulk_transfer_upload_list[1]
+            assert _bulk_transfer_upload.status == 0
+            _bulk_transfer_upload = _bulk_transfer_upload_list[2]
+            assert _bulk_transfer_upload.status == 1
+            _bulk_transfer_upload = _bulk_transfer_upload_list[3]
+            assert _bulk_transfer_upload.status == 1
+            _bulk_transfer_list = db.query(BulkTransfer). \
+                filter(BulkTransfer.upload_id == self.upload_id_list[2]). \
+                order_by(BulkTransfer.id). \
+                all()
+            _bulk_transfer = _bulk_transfer_list[0]
+            assert _bulk_transfer.status == 1
+            _bulk_transfer_list = db.query(BulkTransfer). \
+                filter(BulkTransfer.upload_id == self.upload_id_list[3]). \
+                order_by(BulkTransfer.id). \
+                all()
+            _bulk_transfer = _bulk_transfer_list[0]
+            assert _bulk_transfer.status == 1
 
     ###########################################################################
     # Error Case
@@ -496,4 +727,3 @@ class TestProcessor:
                 "upload_id": self.upload_id_list[0],
                 "error_transfer_id": [3]
             }
-

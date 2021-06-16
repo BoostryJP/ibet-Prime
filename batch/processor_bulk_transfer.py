@@ -21,6 +21,7 @@ import os
 import sys
 import time
 import uuid
+import threading
 
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import create_engine
@@ -37,7 +38,9 @@ sys.path.append(path)
 from config import (
     WEB3_HTTP_PROVIDER,
     DATABASE_URL,
-    BULK_TRANSFER_INTERVAL
+    BULK_TRANSFER_INTERVAL,
+    BULK_TRANSFER_WORKER_COUNT,
+    BULK_TRANSFER_WORKER_LOT_SIZE
 )
 from app.utils.e2ee_utils import E2EEUtils
 from app.model.db import (
@@ -65,8 +68,6 @@ LOG = batch_log.get_logger(process_name=process_name)
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 engine = create_engine(DATABASE_URL, echo=False)
-db_session = scoped_session(sessionmaker())
-db_session.configure(bind=engine)
 
 
 class Sinks:
@@ -131,14 +132,64 @@ class DBSink:
 
 
 class Processor:
-    def __init__(self, sink, db):
+    def __init__(self, sink, db, thread_num):
         self.sink = sink
         self.db = db
+        self.thread_num = thread_num
 
     def _get_uploads(self) -> List[BulkTransferUpload]:
-        upload_list = self.db.query(BulkTransferUpload). \
+        # NOTE:
+        # - There is only one Issuer that is processed in the same thread.
+        # - The maximum size to be processed at one time is the size defined in BULK_TRANSFER_WORKER_LOT_SIZE.
+        # - Issuer that is being processed by other threads is controlled to be selected with lower priority.
+        # - Exclusion control is performed to eliminate duplication of data to be acquired.
+
+        lock.acquire()  # Exclusion control
+
+        locked_update_id = []
+        exclude_issuer = []
+        for threads_processing in processing_issuer.values():
+            for upload_id, issuer_address in threads_processing.items():
+                locked_update_id.append(upload_id)
+                exclude_issuer.append(issuer_address)
+        exclude_issuer = list(set(exclude_issuer))
+
+        # Retrieve one target data
+        # NOTE: Priority is given to non-issuers that are being processed by other threads.
+        upload_1 = self.db.query(BulkTransferUpload). \
+            filter(BulkTransferUpload.upload_id.notin_(locked_update_id)). \
             filter(BulkTransferUpload.status == 0). \
-            all()
+            filter(BulkTransferUpload.issuer_address.notin_(exclude_issuer)). \
+            order_by(BulkTransferUpload.created). \
+            first()
+        if upload_1 is None:
+            # Retrieve again for all issuers
+            upload_1 = self.db.query(BulkTransferUpload). \
+                filter(BulkTransferUpload.upload_id.notin_(locked_update_id)). \
+                filter(BulkTransferUpload.status == 0). \
+                order_by(BulkTransferUpload.created). \
+                first()
+
+        # Issuer to be processed => upload_1.issuer_address
+        # Retrieve the data of the Issuer to be processed
+        upload_list = []
+        if upload_1 is not None:
+            upload_list = [upload_1]
+            if BULK_TRANSFER_WORKER_LOT_SIZE > 1:
+                upload_list = upload_list + self.db.query(BulkTransferUpload). \
+                    filter(BulkTransferUpload.upload_id.notin_(locked_update_id)). \
+                    filter(BulkTransferUpload.status == 0). \
+                    filter(BulkTransferUpload.issuer_address == upload_1.issuer_address). \
+                    order_by(BulkTransferUpload.created). \
+                    offset(1). \
+                    limit(BULK_TRANSFER_WORKER_LOT_SIZE - 1). \
+                    all()
+
+        processing_issuer[self.thread_num] = {}
+        for upload in upload_list:
+            processing_issuer[self.thread_num][upload.upload_id] = upload.issuer_address
+
+        lock.release()
         return upload_list
 
     def _get_transfer_data(self, upload_id, status) -> List[BulkTransfer]:
@@ -148,13 +199,20 @@ class Processor:
             all()
         return transfer_list
 
+    def _release_processing_issuer(self, upload_id):
+        lock.acquire()
+        processing_issuer[self.thread_num].pop(upload_id, None)
+        lock.release()
+
     def process(self):
         upload_list = self._get_uploads()
         if len(upload_list) < 1:
             return
 
         for _upload in upload_list:
-            LOG.info(f"START upload_id:{_upload.upload_id}")
+            LOG.info(
+                f"thread {self.thread_num} START upload_id:{_upload.upload_id} issuer_address:{_upload.issuer_address}")
+            time.sleep(30)
 
             # Get issuer's private key
             try:
@@ -171,6 +229,7 @@ class Processor:
                         issuer_address=_upload.issuer_address, code=0, upload_id=_upload.upload_id,
                         error_transfer_id=[])
                     self.sink.flush()
+                    self._release_processing_issuer(_upload.upload_id)
                     continue
                 keyfile_json = _account.keyfile
                 decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
@@ -189,6 +248,7 @@ class Processor:
                 self.sink.on_error_notification(
                     issuer_address=_upload.issuer_address, code=1, upload_id=_upload.upload_id, error_transfer_id=[])
                 self.sink.flush()
+                self._release_processing_issuer(_upload.upload_id)
                 continue
 
             # Transfer
@@ -238,22 +298,56 @@ class Processor:
                     upload_id=_upload.upload_id, error_transfer_id=error_transfer_id)
 
             self.sink.flush()
+            self._release_processing_issuer(_upload.upload_id)
 
 
-_sink = Sinks()
-_sink.register(DBSink(db_session))
-processor = Processor(sink=_sink, db=db_session)
+# Exception Stack
+err_bucket = []
+# Lock object for exclusion control
+lock = threading.Lock()
+# Issuer being processed in threads
+processing_issuer = {}
+
+
+class Worker:
+
+    def __init__(self, thread_num: int):
+
+        db = scoped_session(sessionmaker())
+        db.configure(bind=engine)
+        _sink = Sinks()
+        _sink.register(DBSink(db))
+        processor = Processor(sink=_sink, db=db, thread_num=thread_num)
+        self.processor = processor
+
+    def run(self):
+
+        while True:
+            try:
+                self.processor.process()
+            except Exception as ex:
+                LOG.error(ex)
+                err_bucket.append(ex)
+                break
+            time.sleep(BULK_TRANSFER_INTERVAL)
 
 
 def main():
     LOG.info("Service started successfully")
 
+    for i in range(BULK_TRANSFER_WORKER_COUNT):
+        worker = Worker(i)
+        thread = threading.Thread(target=worker.run)
+        thread.setDaemon(True)
+        thread.start()
+        LOG.info(f"thread {i} started")
+
     while True:
-        try:
-            processor.process()
-        except Exception as ex:
-            LOG.error(ex)
-        time.sleep(BULK_TRANSFER_INTERVAL)
+        if len(err_bucket) > 0:
+            LOG.error("Processor went down")
+            break
+        time.sleep(5)
+    exit(1)
 
 
 if __name__ == "__main__":
