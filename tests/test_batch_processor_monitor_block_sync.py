@@ -19,10 +19,10 @@ SPDX-License-Identifier: Apache-2.0
 import pytest
 import time
 from unittest import mock
+from unittest.mock import MagicMock
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
-from eth_typing import URI
 
 from config import (
     BLOCK_SYNC_STATUS_SLEEP_INTERVAL,
@@ -64,12 +64,15 @@ class TestProcessor:
 
         # assertion
         _node = db.query(Node).first()
+        assert _node.id == 1
+        assert _node.endpoint_uri == WEB3_HTTP_PROVIDER
+        assert _node.priority == 0
         assert _node.is_synced == True
 
         time.sleep(BLOCK_SYNC_STATUS_SLEEP_INTERVAL)
 
         # Run 2st: block generation speed down(same the previous)
-        with mock.patch("batch.processor_monitor_block_sync.BLOCK_GENERATION_SPEED_THRESHOLD", 50):
+        with mock.patch("batch.processor_monitor_block_sync.BLOCK_GENERATION_SPEED_THRESHOLD", 100):
             processor.process()
 
         # assertion
@@ -119,20 +122,62 @@ class TestProcessor:
         _node = db.query(Node).first()
         assert _node.is_synced == True
 
+    # <Normal_2>
+    # standby node is down to sync
+    @mock.patch("batch.processor_monitor_block_sync.WEB3_HTTP_PROVIDER_STANDBY", ["http://test1:1000"])
+    def test_normal_2(self, db):
+        _sink = Sinks()
+        _sink.register(DBSink(db))
+        processor = Processor(sink=_sink, db=db)
+
+        # pre assertion
+        _node = db.query(Node).first()
+        assert _node.id == 1
+        assert _node.endpoint_uri == "http://test1:1000"
+        assert _node.priority == 1
+        assert _node.is_synced == False
+
+        # node sync(processing)
+        org_value = processor.node_info["http://test1:1000"]["web3"].manager.provider.endpoint_uri
+        processor.node_info["http://test1:1000"]["web3"].manager.provider.endpoint_uri = WEB3_HTTP_PROVIDER
+        processor.process()
+        processor.node_info["http://test1:1000"]["web3"].manager.provider.endpoint_uri = org_value
+
+        # assertion
+        _node = db.query(Node).filter(Node.endpoint_uri == "http://test1:1000").first()
+        assert _node.is_synced == True
+
     ###########################################################################
     # Error Case
     ###########################################################################
 
     # <Error_1>
     # node down(initialize)
-    @mock.patch("batch.processor_monitor_block_sync.web3.manager.provider.endpoint_uri", URI("http://hogehoge"))
+    @mock.patch("batch.processor_monitor_block_sync.WEB3_HTTP_PROVIDER_STANDBY",
+                ["http://test1:1000", "http://test2:2000"])
+    @mock.patch("web3.providers.rpc.HTTPProvider.make_request", MagicMock(side_effect=Exception()))
     def test_error_1(self, db):
         _sink = Sinks()
         _sink.register(DBSink(db))
         Processor(sink=_sink, db=db)
 
         # assertion
-        _node = db.query(Node).first()
+        _node_list = db.query(Node).order_by(Node.id).all()
+        assert len(_node_list) == 3
+        _node = _node_list[0]
+        assert _node.id == 1
+        assert _node.endpoint_uri == WEB3_HTTP_PROVIDER
+        assert _node.priority == 0
+        assert _node.is_synced == False
+        _node = _node_list[1]
+        assert _node.id == 2
+        assert _node.endpoint_uri == "http://test1:1000"
+        assert _node.priority == 1
+        assert _node.is_synced == False
+        _node = _node_list[2]
+        assert _node.id == 3
+        assert _node.endpoint_uri == "http://test2:2000"
+        assert _node.priority == 1
         assert _node.is_synced == False
 
     # <Error_2>
@@ -142,13 +187,20 @@ class TestProcessor:
 
         # assertion
         _node = db.query(Node).first()
+        assert _node.id == 1
+        assert _node.endpoint_uri == WEB3_HTTP_PROVIDER
+        assert _node.priority == 0
         assert _node.is_synced == True
 
         # node down(processing)
-        with mock.patch("batch.processor_monitor_block_sync.web3.manager.provider.endpoint_uri",
-                        URI("http://hogehoge")):
-            processor.process()
+        org_value = processor.node_info[WEB3_HTTP_PROVIDER]["web3"].manager.provider.endpoint_uri
+        processor.node_info[WEB3_HTTP_PROVIDER]["web3"].manager.provider.endpoint_uri = "http://hogehoge"
+        processor.process()
+        processor.node_info[WEB3_HTTP_PROVIDER]["web3"].manager.provider.endpoint_uri = org_value
 
         # assertion
         _node = db.query(Node).first()
+        assert _node.id == 1
+        assert _node.endpoint_uri == WEB3_HTTP_PROVIDER
+        assert _node.priority == 0
         assert _node.is_synced == False

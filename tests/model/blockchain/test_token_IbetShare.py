@@ -106,7 +106,7 @@ class TestCreate:
 
     # <Error_1>
     # Invalid argument (args length)
-    def test_error_1(self):
+    def test_error_1(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -129,7 +129,7 @@ class TestCreate:
 
     # <Error_2>
     # Invalid argument type (args)
-    def test_error_2(self):
+    def test_error_2(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -332,7 +332,7 @@ class TestGet:
 
     # <Error_1>
     # Invalid argument type (contract_address does not exists)
-    def test_error_1(self):
+    def test_error_1(self, db):
         # execute the function
         with pytest.raises(BadFunctionCallOutput) as exc_info:
             IbetShareContract.get(contract_address=ZERO_ADDRESS)
@@ -342,7 +342,7 @@ class TestGet:
 
     # <Error_2>
     # Invalid argument type (contract_address is not address)
-    def test_error_2(self):
+    def test_error_2(self, db):
         # execute the function
         with pytest.raises(ValueError) as exc_info:
             IbetShareContract.get(contract_address=ZERO_ADDRESS[:-1])
@@ -560,7 +560,7 @@ class TestUpdate:
     # <Error_2>
     # Validation (IbetShareUpdate)
     # invalid parameter
-    def test_error_2(self):
+    def test_error_2(self, db):
         # update
         _data = {
             "dividends": 0.001,
@@ -587,7 +587,7 @@ class TestUpdate:
 
     # <Error_3>
     # invalid parameter (dividends)
-    def test_error_3(self):
+    def test_error_3(self, db):
         # update
         _data = {
             "dividends": 0.01
@@ -858,7 +858,7 @@ class TestTransfer:
     # <Error_1>
     # validation (IbetShareTransfer)
     # required field
-    def test_error_1(self):
+    def test_error_1(self, db):
         _data = {}
         with pytest.raises(ValidationError) as exc_info:
             IbetShareTransfer(**_data)
@@ -885,7 +885,7 @@ class TestTransfer:
     # <Error_2>
     # validation (IbetShareTransfer)
     # invalid parameter
-    def test_error_2(self):
+    def test_error_2(self, db):
         _data = {
             "token_address": "invalid contract address",
             "transfer_from": "invalid transfer_from address",
@@ -1242,7 +1242,7 @@ class TestAddSupply:
 
     # <Error_2>
     # invalid parameter (IbetShareAdd)
-    def test_error_2(self):
+    def test_error_2(self, db):
         _data = {}
         with pytest.raises(ValidationError) as exc_info:
             IbetShareAdd(**_data)
@@ -1260,7 +1260,7 @@ class TestAddSupply:
 
     # <Error_3>
     # invalid parameter (IbetShareAdd)
-    def test_error_3(self):
+    def test_error_3(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
 
@@ -1555,7 +1555,7 @@ class TestGetAccountBalance:
 
     # <Error_2>
     # invalid contract_address : not deployed contract_address
-    def test_error_2(self):
+    def test_error_2(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
 
@@ -1607,7 +1607,7 @@ class TestGetAccountBalance:
 
     # <Error_4>
     # invalid contract_address : not deployed contract_address
-    def test_error_4(self):
+    def test_error_4(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
 

@@ -98,7 +98,7 @@ class TestCreate:
 
     # <Error_1>
     # Invalid argument (args length)
-    def test_error_1(self):
+    def test_error_1(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -121,7 +121,7 @@ class TestCreate:
 
     # <Error_2>
     # Invalid argument type (args)
-    def test_error_2(self):
+    def test_error_2(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -333,7 +333,7 @@ class TestGet:
     
     # <Error_1>
     # Invalid argument type (contract_address does not exists)
-    def test_error_1(self):
+    def test_error_1(self, db):
         # get token data
         with pytest.raises(BadFunctionCallOutput) as exc_info:
             IbetStraightBondContract.get(contract_address=ZERO_ADDRESS)
@@ -343,7 +343,7 @@ class TestGet:
 
     # <Error_2>
     # Invalid argument type (contract_address is not address)
-    def test_error_2(self):
+    def test_error_2(self, db):
         # get token data
         with pytest.raises(ValueError) as exc_info:
             IbetStraightBondContract.get(contract_address=ZERO_ADDRESS[:-1])
@@ -537,7 +537,7 @@ class TestUpdate:
     # <Error_2>
     # Validation (IbetStraightBondUpdate)
     # invalid parameter
-    def test_error_2(self):
+    def test_error_2(self, db):
         # update
         _data = {
             "interest_rate": 0.00001,
@@ -570,7 +570,7 @@ class TestUpdate:
     # <Error_3>
     # Validation (IbetStraightBondUpdate)
     # invalid parameter (interest_rate)
-    def test_error_3(self):
+    def test_error_3(self, db):
         # update
         _data = {
             "interest_rate": 0.00001,
@@ -814,7 +814,7 @@ class TestTransfer:
     # <Error_1>
     # validation (IbetStraightBondTransfer)
     # required field
-    def test_error_1(self):
+    def test_error_1(self, db):
         _data = {}
         with pytest.raises(ValidationError) as exc_info:
             IbetStraightBondTransfer(**_data)
@@ -841,7 +841,7 @@ class TestTransfer:
     # <Error_2>
     # validation (IbetStraightBondTransfer)
     # invalid parameter
-    def test_error_2(self):
+    def test_error_2(self, db):
         _data = {
             "token_address": "invalid contract address",
             "transfer_from": "invalid transfer_from address",
@@ -1171,7 +1171,7 @@ class TestAddSupply:
     # <Error_2>
     # validation (IbetStraightBondAdd)
     # required field
-    def test_error_2(self):
+    def test_error_2(self, db):
         _data = {}
         with pytest.raises(ValidationError) as exc_info:
             IbetStraightBondAdd(**_data)
@@ -1190,7 +1190,7 @@ class TestAddSupply:
     # <Error_3>
     # validation (IbetStraightBondAdd)
     # invalid parameter
-    def test_error_3(self):
+    def test_error_3(self, db):
         _data = {
             "account_address": "invalid account address",
             "amount": 0
@@ -1462,7 +1462,7 @@ class TestGetAccountBalance:
 
     # <Error_2>
     # invalid contract_address : not deployed contract_address
-    def test_error_2(self):
+    def test_error_2(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
 
@@ -1514,7 +1514,7 @@ class TestGetAccountBalance:
 
     # <Error_4>
     # invalid contract_address : not deployed contract_address
-    def test_error_4(self):
+    def test_error_4(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
 

@@ -16,13 +16,8 @@ from fastapi import (
     Depends
 )
 from sqlalchemy.orm import Session
-from web3 import Web3
-from web3.middleware import geth_poa_middleware
 
-from config import (
-    E2EE_REQUEST_ENABLED,
-    WEB3_HTTP_PROVIDER
-)
+from config import E2EE_REQUEST_ENABLED
 from app.database import db_session
 from app.model.db import Node
 from app.utils.e2ee_utils import E2EEUtils
@@ -34,9 +29,6 @@ from app import log
 LOG = log.get_logger()
 
 router = APIRouter(tags=["index"])
-
-web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
 # GET: /e2ee
@@ -70,15 +62,12 @@ def check_health(
     try:
         db.connection()
 
-        # Check Ethereum Connection and Block Synchronization
+        # Check Ethereum Block Synchronization
         __check_ethereum(errors, db)
 
     except Exception as err:
         LOG.exception(err)
         errors.append("Can't connect to database")
-
-        # Check Ethereum Connection
-        __check_ethereum(errors)
 
     # Check E2EE Setting
     try:
@@ -93,18 +82,9 @@ def check_health(
     return
 
 
-def __check_ethereum(errors: list, db: Session = None):
-    try:
-        # Check Ethereum Connection
-        _ = web3.eth.blockNumber
-
-        if db is not None:
-            # Check Ethereum Block Synchronization
-            _node = db.query(Node).first()
-            if _node is not None and not _node.is_synced:
-                msg = "Ethereum node's block synchronization is down"
-                LOG.error(msg)
-                errors.append(msg)
-    except Exception as err:
-        LOG.exception(err)
-        errors.append("Can't connect to ethereum node")
+def __check_ethereum(errors: list, db: Session):
+    _node = db.query(Node).filter(Node.is_synced == True).first()
+    if _node is None:
+        msg = "Ethereum node's block synchronization is down"
+        LOG.error(msg)
+        errors.append(msg)

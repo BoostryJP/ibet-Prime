@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 from sqlalchemy import (
     Column,
     Integer,
+    String,
     Boolean
 )
 
@@ -30,5 +31,9 @@ class Node(Base):
     __tablename__ = "node"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    # endpoint uri(http[s]://domain:port)
+    endpoint_uri = Column(String(267))
+    # connect priority(top priority is lower number)
+    priority = Column(Integer)
     # node synchronized status
     is_synced = Column(Boolean, nullable=False)

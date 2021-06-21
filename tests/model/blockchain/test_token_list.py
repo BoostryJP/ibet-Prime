@@ -43,7 +43,7 @@ web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
 @pytest.fixture
-def contract_list():
+def contract_list(db):
     test_account = config_eth_account("user1")
     deployer_address = test_account.get("address")
     private_key = decode_keyfile_json(

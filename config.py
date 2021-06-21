@@ -53,6 +53,8 @@ DB_AUTOCOMMIT = True
 
 # Blockchain
 WEB3_HTTP_PROVIDER = os.environ.get('WEB3_HTTP_PROVIDER') or 'http://localhost:8545'
+WEB3_HTTP_PROVIDER_STANDBY = [node.strip() for node in os.environ.get("WEB3_HTTP_PROVIDER_STANDBY").split(",")] \
+    if os.environ.get("WEB3_HTTP_PROVIDER_STANDBY") else []
 CHAIN_ID = int(os.environ.get("CHAIN_ID")) if os.environ.get("CHAIN_ID") else 2017
 TX_GAS_LIMIT = int(os.environ.get("TX_GAS_LIMIT")) if os.environ.get("TX_GAS_LIMIT") else 6000000
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
