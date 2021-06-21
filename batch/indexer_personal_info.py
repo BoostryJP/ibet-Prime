@@ -26,8 +26,6 @@ from sqlalchemy.orm import (
     sessionmaker,
     scoped_session
 )
-from web3 import Web3
-from web3.middleware import geth_poa_middleware
 from web3.exceptions import BadFunctionCallOutput
 from eth_utils import to_checksum_address
 
@@ -35,7 +33,6 @@ path = os.path.join(os.path.dirname(__file__), '../')
 sys.path.append(path)
 
 from config import (
-    WEB3_HTTP_PROVIDER,
     DATABASE_URL,
     ZERO_ADDRESS
 )
@@ -45,13 +42,13 @@ from app.model.db import (
     IDXPersonalInfoBlockNumber
 )
 from app.model.blockchain import PersonalInfoContract
+from app.utils.web3_utils import Web3Wrapper
 import batch_log
 
 process_name = "INDEXER-Personal-Info"
 LOG = batch_log.get_logger(process_name=process_name)
 
-web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+web3 = Web3Wrapper()
 
 engine = create_engine(DATABASE_URL, echo=False)
 db_session = scoped_session(sessionmaker())

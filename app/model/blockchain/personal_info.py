@@ -24,8 +24,6 @@ import sys
 import logging
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
-from web3 import Web3
-from web3.middleware import geth_poa_middleware
 from web3.exceptions import TimeExhausted
 from eth_keyfile import decode_keyfile_json
 
@@ -33,17 +31,16 @@ path = os.path.join(os.path.dirname(__file__), '../')
 sys.path.append(path)
 
 from config import (
-    WEB3_HTTP_PROVIDER,
     CHAIN_ID,
     TX_GAS_LIMIT
 )
 from app.utils.contract_utils import ContractUtils
+from app.utils.web3_utils import Web3Wrapper
 from app.model.db import Account
 from app.utils.e2ee_utils import E2EEUtils
 from app.exceptions import SendTransactionError
 
-web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+web3 = Web3Wrapper()
 
 
 class PersonalInfoContract:

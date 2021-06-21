@@ -35,18 +35,16 @@ class TestAppRoutersHealthcheckGET:
     # <Normal_1>
     def test_normal_1(self, client, db):
         _node = Node()
+        _node.endpoint_uri = "http://test1"
+        _node.priority = 0
+        _node.is_synced = False
+        db.add(_node)
+        _node = Node()
+        _node.endpoint_uri = "http://test2"
+        _node.priority = 1
         _node.is_synced = True
         db.add(_node)
 
-        # request target api
-        resp = client.get(self.apiurl)
-
-        # assertion
-        assert resp.status_code == 200
-
-    # <Normal_2>
-    # Not Exist Node
-    def test_normal_2(self, client, db):
         # request target api
         resp = client.get(self.apiurl)
 
@@ -69,6 +67,13 @@ class TestAppRoutersHealthcheckGET:
     @mock.patch("app.utils.e2ee_utils.E2EE_RSA_RESOURCE", "tests/data/account_config.yml")
     def test_error_1(self, client, db):
         _node = Node()
+        _node.endpoint_uri = "http://test1"
+        _node.priority = 0
+        _node.is_synced = False
+        db.add(_node)
+        _node = Node()
+        _node.endpoint_uri = "http://test2"
+        _node.priority = 1
         _node.is_synced = False
         db.add(_node)
 
@@ -91,8 +96,6 @@ class TestAppRoutersHealthcheckGET:
 
     # <Error_2>
     # DB connect error
-    # Node connect error
-    @mock.patch("web3.eth.Eth.block_number", MagicMock(side_effect=Exception()))
     def test_error_2(self, client, db):
         # request target api
         with mock.patch("sqlalchemy.orm.session.Session.connection",
@@ -109,6 +112,5 @@ class TestAppRoutersHealthcheckGET:
             },
             "detail": [
                 "Can't connect to database",
-                "Can't connect to ethereum node"
             ]
         }

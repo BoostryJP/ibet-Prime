@@ -19,8 +19,6 @@ SPDX-License-Identifier: Apache-2.0
 from typing import Tuple
 import json
 
-from web3 import Web3
-from web3.middleware import geth_poa_middleware
 from web3.exceptions import TimeExhausted
 from eth_utils import to_checksum_address
 from sqlalchemy import create_engine
@@ -28,16 +26,15 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from config import (
-    WEB3_HTTP_PROVIDER,
     CHAIN_ID,
     TX_GAS_LIMIT,
     DATABASE_URL
 )
+from app.utils.web3_utils import Web3Wrapper
 from app.exceptions import SendTransactionError
 from app.model.db import TransactionLock
 
-web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+web3 = Web3Wrapper()
 
 
 class ContractUtils:
