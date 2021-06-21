@@ -55,11 +55,11 @@ class TokenListContract:
             )
             tx = contract.functions.register(token_address, token_template). \
                 buildTransaction({
-                "chainId": CHAIN_ID,
-                "from": account_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0
-            })
+                    "chainId": CHAIN_ID,
+                    "from": account_address,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0
+                })
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
         except TimeExhausted as timeout_error:
