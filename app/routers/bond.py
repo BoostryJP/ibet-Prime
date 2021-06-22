@@ -846,6 +846,8 @@ def transfer_ownership(
 )
 def list_transfer_history(
         token_address: str,
+        sort_item: str = Query("block_timestamp", regex="^block_timestamp$|^from_address$|^to_address$|^amount$"),
+        sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
         offset: Optional[int] = Query(None),
         limit: Optional[int] = Query(None),
         db: Session = Depends(db_session)
@@ -864,10 +866,25 @@ def list_transfer_history(
 
     # Get transfer history
     query = db.query(IDXTransfer). \
-        filter(IDXTransfer.token_address == token_address). \
-        order_by(desc(IDXTransfer.id))
+        filter(IDXTransfer.token_address == token_address)
     total = query.count()
 
+    # Sort
+    # NOTE: Replace DB column name
+    if sort_item == "from_address":
+        sort_item = "transfer_from"
+    elif sort_item == "to_address":
+        sort_item = "transfer_to"
+    sort_attr = getattr(IDXTransfer, sort_item, None)
+    if sort_order == 0:  # ASC
+        query = query.order_by(sort_attr)
+    else:  # DESC
+        query = query.order_by(desc(sort_attr))
+    if sort_item != "block_timestamp":
+        # NOTE: Set secondary sort for consistent results
+        query = query.order_by(desc(IDXTransfer.block_timestamp))
+
+    # Pagination
     if limit is not None:
         query = query.limit(limit)
     if offset is not None:

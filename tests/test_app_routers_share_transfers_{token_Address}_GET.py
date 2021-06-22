@@ -31,7 +31,6 @@ local_tz = timezone(config.TZ)
 
 
 class TestAppRoutersShareTransfersGET:
-
     # target API endpoint
     base_url = "/share/transfers/{}"
 
@@ -40,14 +39,23 @@ class TestAppRoutersShareTransfersGET:
     test_token_address = "test_token_address"
     test_transfer_from = "test_transfer_from"
     test_transfer_to = "test_transfer_to"
-    test_block_timestamp = datetime(year=2019, month=9, day=2)
-    test_block_timestamp_str = timezone("UTC").localize(test_block_timestamp).astimezone(local_tz).isoformat()
+    test_block_timestamp = [
+        datetime.strptime("2022/01/02 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/03
+        datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
+        datetime.strptime("2022/01/02 00:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
+    ]
+    test_block_timestamp_str = [
+        "2022-01-03T00:20:30.000001+09:00",
+        "2022-01-02T00:20:30.000001+09:00",
+        "2022-01-02T09:20:30.000001+09:00",
+    ]
 
     ###########################################################################
     # Normal Case
     ###########################################################################
 
     # <Normal_1>
+    # default sort
     def test_normal_1(self, client, db):
         # prepare data: Token
         _token = Token()
@@ -66,7 +74,7 @@ class TestAppRoutersShareTransfersGET:
             _idx_transfer.transfer_from = self.test_transfer_from
             _idx_transfer.transfer_to = self.test_transfer_to
             _idx_transfer.amount = i
-            _idx_transfer.block_timestamp = self.test_block_timestamp
+            _idx_transfer.block_timestamp = self.test_block_timestamp[i]
             db.add(_idx_transfer)
 
         # request target API
@@ -89,29 +97,32 @@ class TestAppRoutersShareTransfersGET:
                     "token_address": self.test_token_address,
                     "from_address": self.test_transfer_from,
                     "to_address": self.test_transfer_to,
+                    "amount": 0,
+                    "block_timestamp": self.test_block_timestamp_str[0]
+                },
+                {
+                    "transaction_hash": self.test_transaction_hash,
+                    "token_address": self.test_token_address,
+                    "from_address": self.test_transfer_from,
+                    "to_address": self.test_transfer_to,
                     "amount": 2,
-                    "block_timestamp": self.test_block_timestamp_str
-                }, {
+                    "block_timestamp": self.test_block_timestamp_str[2]
+                },
+                {
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
                     "from_address": self.test_transfer_from,
                     "to_address": self.test_transfer_to,
                     "amount": 1,
-                    "block_timestamp": self.test_block_timestamp_str
-                }, {
-                    "transaction_hash": self.test_transaction_hash,
-                    "token_address": self.test_token_address,
-                    "from_address": self.test_transfer_from,
-                    "to_address": self.test_transfer_to,
-                    "amount": 0,
-                    "block_timestamp": self.test_block_timestamp_str
-                }
+                    "block_timestamp": self.test_block_timestamp_str[1]
+                },
             ]
         }
         assert resp.json() == assumed_response
 
     # <Normal_2>
     # offset, limit
+    # default sort
     def test_normal_2(self, client, db):
         # prepare data: Token
         _token = Token()
@@ -130,7 +141,7 @@ class TestAppRoutersShareTransfersGET:
             _idx_transfer.transfer_from = self.test_transfer_from
             _idx_transfer.transfer_to = self.test_transfer_to
             _idx_transfer.amount = i
-            _idx_transfer.block_timestamp = self.test_block_timestamp
+            _idx_transfer.block_timestamp = self.test_block_timestamp[i]
             db.add(_idx_transfer)
 
         # request target API
@@ -153,9 +164,340 @@ class TestAppRoutersShareTransfersGET:
                     "token_address": self.test_token_address,
                     "from_address": self.test_transfer_from,
                     "to_address": self.test_transfer_to,
+                    "amount": 2,
+                    "block_timestamp": self.test_block_timestamp_str[2]
+                },
+            ]
+        }
+        assert resp.json() == assumed_response
+
+    # <Normal_3>
+    # sort: block_timestamp ASC
+    def test_normal_3(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_SHARE
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        # prepare data: IDXTransfer
+        for i in range(0, 3):
+            _idx_transfer = IDXTransfer()
+            _idx_transfer.transaction_hash = self.test_transaction_hash
+            _idx_transfer.token_address = self.test_token_address
+            _idx_transfer.transfer_from = self.test_transfer_from
+            _idx_transfer.transfer_to = self.test_transfer_to
+            _idx_transfer.amount = i
+            _idx_transfer.block_timestamp = self.test_block_timestamp[i]
+            db.add(_idx_transfer)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={
+                "sort_item": "block_timestamp",
+                "sort_order": 0,
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = {
+            "result_set": {
+                "count": 3,
+                "offset": None,
+                "limit": None,
+                "total": 3
+            },
+            "transfer_history": [
+                {
+                    "transaction_hash": self.test_transaction_hash,
+                    "token_address": self.test_token_address,
+                    "from_address": self.test_transfer_from,
+                    "to_address": self.test_transfer_to,
                     "amount": 1,
-                    "block_timestamp": self.test_block_timestamp_str
+                    "block_timestamp": self.test_block_timestamp_str[1]
+                },
+                {
+                    "transaction_hash": self.test_transaction_hash,
+                    "token_address": self.test_token_address,
+                    "from_address": self.test_transfer_from,
+                    "to_address": self.test_transfer_to,
+                    "amount": 2,
+                    "block_timestamp": self.test_block_timestamp_str[2]
+                },
+                {
+                    "transaction_hash": self.test_transaction_hash,
+                    "token_address": self.test_token_address,
+                    "from_address": self.test_transfer_from,
+                    "to_address": self.test_transfer_to,
+                    "amount": 0,
+                    "block_timestamp": self.test_block_timestamp_str[0]
                 }
+            ]
+        }
+        assert resp.json() == assumed_response
+
+    # <Normal_4>
+    # sort: from_address ASC
+    def test_normal_4(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_SHARE
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        # prepare data: IDXTransfer
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.transfer_from = "test_transfer_from_2"
+        _idx_transfer.transfer_to = self.test_transfer_to
+        _idx_transfer.amount = 0
+        _idx_transfer.block_timestamp = self.test_block_timestamp[0]
+        db.add(_idx_transfer)
+
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.transfer_from = "test_transfer_from_2"
+        _idx_transfer.transfer_to = self.test_transfer_to
+        _idx_transfer.amount = 1
+        _idx_transfer.block_timestamp = self.test_block_timestamp[1]
+        db.add(_idx_transfer)
+
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.transfer_from = "test_transfer_from_1"
+        _idx_transfer.transfer_to = self.test_transfer_to
+        _idx_transfer.amount = 2
+        _idx_transfer.block_timestamp = self.test_block_timestamp[2]
+        db.add(_idx_transfer)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={
+                "sort_item": "from_address",
+                "sort_order": 0,
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = {
+            "result_set": {
+                "count": 3,
+                "offset": None,
+                "limit": None,
+                "total": 3
+            },
+            "transfer_history": [
+                {
+                    "transaction_hash": self.test_transaction_hash,
+                    "token_address": self.test_token_address,
+                    "from_address": "test_transfer_from_1",
+                    "to_address": self.test_transfer_to,
+                    "amount": 2,
+                    "block_timestamp": self.test_block_timestamp_str[2]
+                },
+                {
+                    "transaction_hash": self.test_transaction_hash,
+                    "token_address": self.test_token_address,
+                    "from_address": "test_transfer_from_2",
+                    "to_address": self.test_transfer_to,
+                    "amount": 0,
+                    "block_timestamp": self.test_block_timestamp_str[0]
+                },
+                {
+                    "transaction_hash": self.test_transaction_hash,
+                    "token_address": self.test_token_address,
+                    "from_address": "test_transfer_from_2",
+                    "to_address": self.test_transfer_to,
+                    "amount": 1,
+                    "block_timestamp": self.test_block_timestamp_str[1]
+                },
+            ]
+        }
+        assert resp.json() == assumed_response
+
+    # <Normal_5>
+    # sort: to_address DESC
+    def test_normal_5(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_SHARE
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        # prepare data: IDXTransfer
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.transfer_from = self.test_transfer_from
+        _idx_transfer.transfer_to = "test_transfer_to_2"
+        _idx_transfer.amount = 0
+        _idx_transfer.block_timestamp = self.test_block_timestamp[0]
+        db.add(_idx_transfer)
+
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.transfer_from = self.test_transfer_from
+        _idx_transfer.transfer_to = "test_transfer_to_1"
+        _idx_transfer.amount = 1
+        _idx_transfer.block_timestamp = self.test_block_timestamp[1]
+        db.add(_idx_transfer)
+
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.transfer_from = self.test_transfer_from
+        _idx_transfer.transfer_to = "test_transfer_to_1"
+        _idx_transfer.amount = 2
+        _idx_transfer.block_timestamp = self.test_block_timestamp[2]
+        db.add(_idx_transfer)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={
+                "sort_item": "from_address",
+                "sort_order": 0,
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = {
+            "result_set": {
+                "count": 3,
+                "offset": None,
+                "limit": None,
+                "total": 3
+            },
+            "transfer_history": [
+                {
+                    "transaction_hash": self.test_transaction_hash,
+                    "token_address": self.test_token_address,
+                    "from_address": self.test_transfer_from,
+                    "to_address": "test_transfer_to_2",
+                    "amount": 0,
+                    "block_timestamp": self.test_block_timestamp_str[0]
+                },
+                {
+                    "transaction_hash": self.test_transaction_hash,
+                    "token_address": self.test_token_address,
+                    "from_address": self.test_transfer_from,
+                    "to_address": "test_transfer_to_1",
+                    "amount": 2,
+                    "block_timestamp": self.test_block_timestamp_str[2]
+                },
+                {
+                    "transaction_hash": self.test_transaction_hash,
+                    "token_address": self.test_token_address,
+                    "from_address": self.test_transfer_from,
+                    "to_address": "test_transfer_to_1",
+                    "amount": 1,
+                    "block_timestamp": self.test_block_timestamp_str[1]
+                },
+            ]
+        }
+        assert resp.json() == assumed_response
+
+    # <Normal_6>
+    # sort: amount DESC
+    def test_normal_6(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_SHARE
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        # prepare data: IDXTransfer
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.transfer_from = self.test_transfer_from
+        _idx_transfer.transfer_to = self.test_transfer_to
+        _idx_transfer.amount = 1
+        _idx_transfer.block_timestamp = self.test_block_timestamp[0]
+        db.add(_idx_transfer)
+
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.transfer_from = self.test_transfer_from
+        _idx_transfer.transfer_to = self.test_transfer_to
+        _idx_transfer.amount = 2
+        _idx_transfer.block_timestamp = self.test_block_timestamp[1]
+        db.add(_idx_transfer)
+
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.transfer_from = self.test_transfer_from
+        _idx_transfer.transfer_to = self.test_transfer_to
+        _idx_transfer.amount = 2
+        _idx_transfer.block_timestamp = self.test_block_timestamp[2]
+        db.add(_idx_transfer)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={
+                "sort_item": "amount",
+                "sort_order": 0,
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = {
+            "result_set": {
+                "count": 3,
+                "offset": None,
+                "limit": None,
+                "total": 3
+            },
+            "transfer_history": [
+                {
+                    "transaction_hash": self.test_transaction_hash,
+                    "token_address": self.test_token_address,
+                    "from_address": self.test_transfer_from,
+                    "to_address": self.test_transfer_to,
+                    "amount": 1,
+                    "block_timestamp": self.test_block_timestamp_str[0]
+                },
+                {
+                    "transaction_hash": self.test_transaction_hash,
+                    "token_address": self.test_token_address,
+                    "from_address": self.test_transfer_from,
+                    "to_address": self.test_transfer_to,
+                    "amount": 2,
+                    "block_timestamp": self.test_block_timestamp_str[2]
+                },
+                {
+                    "transaction_hash": self.test_transaction_hash,
+                    "token_address": self.test_token_address,
+                    "from_address": self.test_transfer_from,
+                    "to_address": self.test_transfer_to,
+                    "amount": 2,
+                    "block_timestamp": self.test_block_timestamp_str[1]
+                },
             ]
         }
         assert resp.json() == assumed_response
@@ -210,3 +552,96 @@ class TestAppRoutersShareTransfersGET:
             },
             "detail": "wait for a while as the token is being processed"
         }
+
+    # <Error_3>
+    # param error: sort_item
+    def test_error_3(self, client, db):
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={
+                "sort_item": "block_timestamp12345"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assumed_response = {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "ctx": {
+                        "pattern": "^block_timestamp$|^from_address$|^to_address$|^amount$"
+                    },
+                    "loc": ["query", "sort_item"],
+                    "msg": 'string does not match regex "^block_timestamp$|^from_address$|^to_address$|^amount$"',
+                    "type": "value_error.str.regex"
+                }
+            ]
+        }
+        assert resp.json() == assumed_response
+
+    # <Error_4>
+    # param error: sort_order(min)
+    def test_error_4(self, client, db):
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={
+                "sort_order": -1
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assumed_response = {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "ctx": {
+                        "limit_value": 0
+                    },
+                    "loc": ["query", "sort_order"],
+                    "msg": "ensure this value is greater than or equal to 0",
+                    "type": "value_error.number.not_ge"
+                }
+            ]
+        }
+        assert resp.json() == assumed_response
+
+    # <Error_5>
+    # param error: sort_order(max)
+    def test_error_5(self, client, db):
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={
+                "sort_order": 2
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assumed_response = {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "ctx": {
+                        "limit_value": 1
+                    },
+                    "loc": ["query", "sort_order"],
+                    "msg": "ensure this value is less than or equal to 1",
+                    "type": "value_error.number.not_le"
+                }
+            ]
+        }
+        assert resp.json() == assumed_response
