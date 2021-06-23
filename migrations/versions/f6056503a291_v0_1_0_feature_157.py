@@ -41,7 +41,7 @@ def upgrade():
     elif engine.name == "mysql":
         op.execute("ALTER TABLE idx_transfer RENAME INDEX ix_idx_transfer_transfer_from TO ix_idx_transfer_from_address")
         op.execute("ALTER TABLE idx_transfer RENAME INDEX ix_idx_transfer_transfer_to TO ix_idx_transfer_to_address")
-        pass
+
 
 def downgrade():
     """
