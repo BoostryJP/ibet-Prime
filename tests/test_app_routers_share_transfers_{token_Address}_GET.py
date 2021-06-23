@@ -372,8 +372,8 @@ class TestAppRoutersShareTransfersGET:
         resp = client.get(
             self.base_url.format(self.test_token_address),
             params={
-                "sort_item": "from_address",
-                "sort_order": 0,
+                "sort_item": "to_address",
+                "sort_order": 1,
             }
         )
 
