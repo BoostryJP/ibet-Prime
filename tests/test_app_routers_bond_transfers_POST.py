@@ -40,11 +40,11 @@ class TestAppRoutersBondTransfersPOST:
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _transfer_from_account = config_eth_account("user2")
-        _transfer_from = _transfer_from_account["address"]
+        _from_address_account = config_eth_account("user2")
+        _from_address = _from_address_account["address"]
 
-        _transfer_to_account = config_eth_account("user3")
-        _transfer_to = _transfer_to_account["address"]
+        _to_address_account = config_eth_account("user3")
+        _to_address = _to_address_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -69,8 +69,8 @@ class TestAppRoutersBondTransfersPOST:
         # request target API
         req_param = {
             "token_address": _token_address,
-            "transfer_from": _transfer_from,
-            "transfer_to": _transfer_to,
+            "from_address": _from_address,
+            "to_address": _to_address,
             "amount": 10
         }
         resp = client.post(
@@ -96,17 +96,17 @@ class TestAppRoutersBondTransfersPOST:
     ###########################################################################
 
     # <Error_1>
-    # RequestValidationError: token_address, transfer_from, transfer_to, amount
+    # RequestValidationError: token_address, from_address, to_address, amount
     def test_error_1(self, client, db):
-        _transfer_from = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
-        _transfer_to = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
+        _from_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
+        _to_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
 
         # request target API
         req_param = {
             "token_address": _token_address,
-            "transfer_from": _transfer_from,
-            "transfer_to": _transfer_to,
+            "from_address": _from_address,
+            "to_address": _to_address,
             "amount": -1  # negative value
         }
         resp = client.post(
@@ -130,12 +130,12 @@ class TestAppRoutersBondTransfersPOST:
                     "msg": "token_address is not a valid address",
                     "type": "value_error"
                 }, {
-                    "loc": ["body", "transfer_from"],
-                    "msg": "transfer_from is not a valid address",
+                    "loc": ["body", "from_address"],
+                    "msg": "from_address is not a valid address",
                     "type": "value_error"
                 }, {
-                    "loc": ["body", "transfer_to"],
-                    "msg": "transfer_to is not a valid address",
+                    "loc": ["body", "to_address"],
+                    "msg": "to_address is not a valid address",
                     "type": "value_error"
                 }, {
                     "loc": ["body", "amount"],
@@ -177,19 +177,19 @@ class TestAppRoutersBondTransfersPOST:
     # <Error_3>
     # RequestValidationError: issuer-address, eoa-password(required)
     def test_normal_3(self, client, db):
-        _transfer_from_account = config_eth_account("user2")
-        _transfer_from = _transfer_from_account["address"]
+        _from_address_account = config_eth_account("user2")
+        _from_address = _from_address_account["address"]
 
-        _transfer_to_account = config_eth_account("user3")
-        _transfer_to = _transfer_to_account["address"]
+        _to_address_account = config_eth_account("user3")
+        _to_address = _to_address_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
         # request target API
         req_param = {
             "token_address": _token_address,
-            "transfer_from": _transfer_from,
-            "transfer_to": _transfer_to,
+            "from_address": _from_address,
+            "to_address": _to_address,
             "amount": 10
         }
         resp = client.post(
@@ -223,19 +223,19 @@ class TestAppRoutersBondTransfersPOST:
     def test_normal_4(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
-        _transfer_from_account = config_eth_account("user2")
-        _transfer_from = _transfer_from_account["address"]
+        _from_address_account = config_eth_account("user2")
+        _from_address = _from_address_account["address"]
 
-        _transfer_to_account = config_eth_account("user3")
-        _transfer_to = _transfer_to_account["address"]
+        _to_address_account = config_eth_account("user3")
+        _to_address = _to_address_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
         # request target API
         req_param = {
             "token_address": _token_address,
-            "transfer_from": _transfer_from,
-            "transfer_to": _transfer_to,
+            "from_address": _from_address,
+            "to_address": _to_address,
             "amount": 10
         }
         resp = client.post(
@@ -268,19 +268,19 @@ class TestAppRoutersBondTransfersPOST:
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _transfer_from_account = config_eth_account("user2")
-        _transfer_from = _transfer_from_account["address"]
+        _from_address_account = config_eth_account("user2")
+        _from_address = _from_address_account["address"]
 
-        _transfer_to_account = config_eth_account("user3")
-        _transfer_to = _transfer_to_account["address"]
+        _to_address_account = config_eth_account("user3")
+        _to_address = _to_address_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
         # request target API
         req_param = {
             "token_address": _token_address,
-            "transfer_from": _transfer_from,
-            "transfer_to": _transfer_to,
+            "from_address": _from_address,
+            "to_address": _to_address,
             "amount": 10
         }
         resp = client.post(
@@ -309,11 +309,11 @@ class TestAppRoutersBondTransfersPOST:
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _transfer_from_account = config_eth_account("user2")
-        _transfer_from = _transfer_from_account["address"]
+        _from_address_account = config_eth_account("user2")
+        _from_address = _from_address_account["address"]
 
-        _transfer_to_account = config_eth_account("user3")
-        _transfer_to = _transfer_to_account["address"]
+        _to_address_account = config_eth_account("user3")
+        _to_address = _to_address_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -327,8 +327,8 @@ class TestAppRoutersBondTransfersPOST:
         # request target API
         req_param = {
             "token_address": _token_address,
-            "transfer_from": _transfer_from,
-            "transfer_to": _transfer_to,
+            "from_address": _from_address,
+            "to_address": _to_address,
             "amount": 10
         }
         resp = client.post(
@@ -357,11 +357,11 @@ class TestAppRoutersBondTransfersPOST:
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _transfer_from_account = config_eth_account("user2")
-        _transfer_from = _transfer_from_account["address"]
+        _from_address_account = config_eth_account("user2")
+        _from_address = _from_address_account["address"]
 
-        _transfer_to_account = config_eth_account("user3")
-        _transfer_to = _transfer_to_account["address"]
+        _to_address_account = config_eth_account("user3")
+        _to_address = _to_address_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -375,8 +375,8 @@ class TestAppRoutersBondTransfersPOST:
         # request target API
         req_param = {
             "token_address": _token_address,
-            "transfer_from": _transfer_from,
-            "transfer_to": _transfer_to,
+            "from_address": _from_address,
+            "to_address": _to_address,
             "amount": 10
         }
         resp = client.post(
@@ -405,11 +405,11 @@ class TestAppRoutersBondTransfersPOST:
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _transfer_from_account = config_eth_account("user2")
-        _transfer_from = _transfer_from_account["address"]
+        _from_address_account = config_eth_account("user2")
+        _from_address = _from_address_account["address"]
 
-        _transfer_to_account = config_eth_account("user3")
-        _transfer_to = _transfer_to_account["address"]
+        _to_address_account = config_eth_account("user3")
+        _to_address = _to_address_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -432,8 +432,8 @@ class TestAppRoutersBondTransfersPOST:
         # request target API
         req_param = {
             "token_address": _token_address,
-            "transfer_from": _transfer_from,
-            "transfer_to": _transfer_to,
+            "from_address": _from_address,
+            "to_address": _to_address,
             "amount": 10
         }
         resp = client.post(
@@ -464,11 +464,11 @@ class TestAppRoutersBondTransfersPOST:
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
 
-        _transfer_from_account = config_eth_account("user2")
-        _transfer_from = _transfer_from_account["address"]
+        _from_address_account = config_eth_account("user2")
+        _from_address = _from_address_account["address"]
 
-        _transfer_to_account = config_eth_account("user3")
-        _transfer_to = _transfer_to_account["address"]
+        _to_address_account = config_eth_account("user3")
+        _to_address = _to_address_account["address"]
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
@@ -490,8 +490,8 @@ class TestAppRoutersBondTransfersPOST:
         # request target API
         req_param = {
             "token_address": _token_address,
-            "transfer_from": _transfer_from,
-            "transfer_to": _transfer_to,
+            "from_address": _from_address,
+            "to_address": _to_address,
             "amount": 10
         }
         resp = client.post(

@@ -842,6 +842,8 @@ def transfer_ownership(
 )
 def list_transfer_history(
         token_address: str,
+        sort_item: str = Query("block_timestamp", regex="^block_timestamp$|^from_address$|^to_address$|^amount$"),
+        sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
         offset: Optional[int] = Query(None),
         limit: Optional[int] = Query(None),
         db: Session = Depends(db_session)
@@ -860,10 +862,20 @@ def list_transfer_history(
 
     # Get transfer history
     query = db.query(IDXTransfer). \
-        filter(IDXTransfer.token_address == token_address). \
-        order_by(desc(IDXTransfer.id))
+        filter(IDXTransfer.token_address == token_address)
     total = query.count()
 
+    # Sort
+    sort_attr = getattr(IDXTransfer, sort_item, None)
+    if sort_order == 0:  # ASC
+        query = query.order_by(sort_attr)
+    else:  # DESC
+        query = query.order_by(desc(sort_attr))
+    if sort_item != "block_timestamp":
+        # NOTE: Set secondary sort for consistent results
+        query = query.order_by(desc(IDXTransfer.block_timestamp))
+
+    # Pagination
     if limit is not None:
         query = query.limit(limit)
     if offset is not None:
@@ -877,8 +889,8 @@ def list_transfer_history(
         transfer_history.append({
             "transaction_hash": _transfer.transaction_hash,
             "token_address": token_address,
-            "from_address": _transfer.transfer_from,
-            "to_address": _transfer.transfer_to,
+            "from_address": _transfer.from_address,
+            "to_address": _transfer.to_address,
             "amount": _transfer.amount,
             "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat()
         })
@@ -1035,8 +1047,8 @@ def bulk_transfer_ownership(
         _bulk_transfer.upload_id = upload_id
         _bulk_transfer.token_address = _token.token_address
         _bulk_transfer.token_type = TokenType.IBET_SHARE
-        _bulk_transfer.from_address = _token.transfer_from
-        _bulk_transfer.to_address = _token.transfer_to
+        _bulk_transfer.from_address = _token.from_address
+        _bulk_transfer.to_address = _token.to_address
         _bulk_transfer.amount = _token.amount
         _bulk_transfer.status = 0
         db.add(_bulk_transfer)

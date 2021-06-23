@@ -39,11 +39,11 @@ class TestAppRoutersShareBulkTransferPOST:
     admin_address = admin_account["address"]
     admin_keyfile = admin_account["keyfile_json"]
 
-    transfer_from_account = config_eth_account("user2")
-    transfer_from = transfer_from_account["address"]
+    from_address_account = config_eth_account("user2")
+    from_address = from_address_account["address"]
 
-    transfer_to_account = config_eth_account("user3")
-    transfer_to = transfer_to_account["address"]
+    to_address_account = config_eth_account("user3")
+    to_address = to_address_account["address"]
 
     req_tokens = [
         "0xbB4138520af85fAfdDAACc7F0AabfE188334D0ca",
@@ -82,13 +82,13 @@ class TestAppRoutersShareBulkTransferPOST:
         req_param = [
             {
                 "token_address": self.req_tokens[0],
-                "transfer_from": self.transfer_from,
-                "transfer_to": self.transfer_to,
+                "from_address": self.from_address,
+                "to_address": self.to_address,
                 "amount": 5
             }, {
                 "token_address": self.req_tokens[1],
-                "transfer_from": self.transfer_from,
-                "transfer_to": self.transfer_to,
+                "from_address": self.from_address,
+                "to_address": self.to_address,
                 "amount": 10
             }
         ]
@@ -119,15 +119,15 @@ class TestAppRoutersShareBulkTransferPOST:
         assert bulk_transfer[0].issuer_address == self.admin_address
         assert bulk_transfer[0].token_address == self.req_tokens[0]
         assert bulk_transfer[0].token_type == TokenType.IBET_SHARE
-        assert bulk_transfer[0].from_address == self.transfer_from
-        assert bulk_transfer[0].to_address == self.transfer_to
+        assert bulk_transfer[0].from_address == self.from_address
+        assert bulk_transfer[0].to_address == self.to_address
         assert bulk_transfer[0].amount == 5
         assert bulk_transfer[0].status == 0
         assert bulk_transfer[1].issuer_address == self.admin_address
         assert bulk_transfer[1].token_address == self.req_tokens[1]
         assert bulk_transfer[1].token_type == TokenType.IBET_SHARE
-        assert bulk_transfer[1].from_address == self.transfer_from
-        assert bulk_transfer[1].to_address == self.transfer_to
+        assert bulk_transfer[1].from_address == self.from_address
+        assert bulk_transfer[1].to_address == self.to_address
         assert bulk_transfer[1].amount == 10
         assert bulk_transfer[1].status == 0
 
@@ -140,13 +140,13 @@ class TestAppRoutersShareBulkTransferPOST:
     # invalid type
     def test_error_1(self, client, db):
         _token_address_int = 10  # integer
-        _transfer_from_long = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D7811"  # long address
-        _transfer_to_short = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
+        _from_address_long = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D7811"  # long address
+        _to_address_short = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
         req_param = [
             {
                 "token_address": _token_address_int,
-                "transfer_from": _transfer_from_long,
-                "transfer_to": _transfer_to_short,
+                "from_address": _from_address_long,
+                "to_address": _to_address_short,
                 "amount": -1
             },
         ]
@@ -171,12 +171,12 @@ class TestAppRoutersShareBulkTransferPOST:
                     "msg": "token_address is not a valid address",
                     "type": "value_error"
                 }, {
-                    "loc": ["body", 0, "transfer_from"],
-                    "msg": "transfer_from is not a valid address",
+                    "loc": ["body", 0, "from_address"],
+                    "msg": "from_address is not a valid address",
                     "type": "value_error"
                 }, {
-                    "loc": ["body", 0, "transfer_to"],
-                    "msg": "transfer_to is not a valid address",
+                    "loc": ["body", 0, "to_address"],
+                    "msg": "to_address is not a valid address",
                     "type": "value_error"
                 }, {
                     "loc": ["body", 0, "amount"],
@@ -317,13 +317,13 @@ class TestAppRoutersShareBulkTransferPOST:
         req_param = [
             {
                 "token_address": self.req_tokens[0],
-                "transfer_from": self.transfer_from,
-                "transfer_to": self.transfer_to,
+                "from_address": self.from_address,
+                "to_address": self.to_address,
                 "amount": 5
             }, {
                 "token_address": self.req_tokens[1],
-                "transfer_from": self.transfer_from,
-                "transfer_to": self.transfer_to,
+                "from_address": self.from_address,
+                "to_address": self.to_address,
                 "amount": 10
             }
         ]
@@ -361,8 +361,8 @@ class TestAppRoutersShareBulkTransferPOST:
         req_param = [
             {
                 "token_address": self.req_tokens[0],
-                "transfer_from": self.transfer_from,
-                "transfer_to": self.transfer_to,
+                "from_address": self.from_address,
+                "to_address": self.to_address,
                 "amount": 10
             }
         ]
@@ -399,8 +399,8 @@ class TestAppRoutersShareBulkTransferPOST:
         req_param = [
             {
                 "token_address": self.req_tokens[0],
-                "transfer_from": self.transfer_from,
-                "transfer_to": self.transfer_to,
+                "from_address": self.from_address,
+                "to_address": self.to_address,
                 "amount": 10
             }
         ]
@@ -447,8 +447,8 @@ class TestAppRoutersShareBulkTransferPOST:
         req_param = [
             {
                 "token_address": self.req_tokens[0],
-                "transfer_from": self.transfer_from,
-                "transfer_to": self.transfer_to,
+                "from_address": self.from_address,
+                "to_address": self.to_address,
                 "amount": 10
             }
         ]

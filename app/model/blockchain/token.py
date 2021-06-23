@@ -449,8 +449,8 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 contract_name="IbetStraightBond",
                 contract_address=data.token_address
             )
-            _from = data.transfer_from
-            _to = data.transfer_to
+            _from = data.from_address
+            _to = data.to_address
             _amount = data.amount
             tx = bond_contract.functions. \
                 transferFrom(_from, _to, _amount). \
@@ -843,8 +843,8 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 contract_name="IbetShare",
                 contract_address=data.token_address
             )
-            _from = data.transfer_from
-            _to = data.transfer_to
+            _from = data.from_address
+            _to = data.to_address
             _amount = data.amount
             tx = share_contract.functions. \
                 transferFrom(_from, _to, _amount). \

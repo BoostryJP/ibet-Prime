@@ -73,12 +73,12 @@ class DBSink:
         self.db = db
 
     def on_transfer(self, transaction_hash, token_address,
-                    transfer_from, transfer_to, amount, block_timestamp):
+                    from_address, to_address, amount, block_timestamp):
         transfer_record = IDXTransfer()
         transfer_record.transaction_hash = transaction_hash
         transfer_record.token_address = token_address
-        transfer_record.transfer_from = transfer_from
-        transfer_record.transfer_to = transfer_to
+        transfer_record.from_address = from_address
+        transfer_record.to_address = to_address
         transfer_record.amount = amount
         transfer_record.block_timestamp = block_timestamp
         self.db.add(transfer_record)
@@ -164,8 +164,8 @@ class Processor:
                         self.sink.on_transfer(
                             transaction_hash=transaction_hash,
                             token_address=to_checksum_address(token.address),
-                            transfer_from=args["from"],
-                            transfer_to=args["to"],
+                            from_address=args["from"],
+                            to_address=args["to"],
                             amount=args["value"],
                             block_timestamp=block_timestamp
                         )
