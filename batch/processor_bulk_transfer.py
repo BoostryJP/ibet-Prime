@@ -253,8 +253,8 @@ class Processor:
             for _transfer in transfer_list:
                 token = {
                     "token_address": _transfer.token_address,
-                    "transfer_from": _transfer.from_address,
-                    "transfer_to": _transfer.to_address,
+                    "from_address": _transfer.from_address,
+                    "to_address": _transfer.to_address,
                     "amount": _transfer.amount
                 }
                 try:

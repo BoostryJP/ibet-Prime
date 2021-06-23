@@ -69,8 +69,8 @@ class TestAppRoutersShareTransfersPOST:
         # request target API
         req_param = {
             "token_address": _token_address,
-            "transfer_from": _transfer_from,
-            "transfer_to": _transfer_to,
+            "from_address": _transfer_from,
+            "to_address": _transfer_to,
             "amount": 10
         }
         resp = client.post(
@@ -107,8 +107,8 @@ class TestAppRoutersShareTransfersPOST:
         # request target API
         req_param = {
             "token_address": _token_address,
-            "transfer_from": _transfer_from,
-            "transfer_to": _transfer_to,
+            "from_address": _transfer_from,
+            "to_address": _transfer_to,
             "amount": -1  # negative value
         }
         resp = client.post(
@@ -132,12 +132,12 @@ class TestAppRoutersShareTransfersPOST:
                     "msg": "token_address is not a valid address",
                     "type": "value_error"
                 }, {
-                    "loc": ["body", "transfer_from"],
-                    "msg": "transfer_from is not a valid address",
+                    "loc": ["body", "from_address"],
+                    "msg": "from_address is not a valid address",
                     "type": "value_error"
                 }, {
-                    "loc": ["body", "transfer_to"],
-                    "msg": "transfer_to is not a valid address",
+                    "loc": ["body", "to_address"],
+                    "msg": "to_address is not a valid address",
                     "type": "value_error"
                 }, {
                     "loc": ["body", "amount"],
@@ -194,8 +194,8 @@ class TestAppRoutersShareTransfersPOST:
         # request target API
         req_param = {
             "token_address": _token_address,
-            "transfer_from": _transfer_from,
-            "transfer_to": _transfer_to,
+            "from_address": _transfer_from,
+            "to_address": _transfer_to,
             "amount": 10
         }
         resp = client.post(
@@ -242,8 +242,8 @@ class TestAppRoutersShareTransfersPOST:
         # request target API
         req_param = {
             "token_address": _token_address,
-            "transfer_from": _transfer_from,
-            "transfer_to": _transfer_to,
+            "from_address": _transfer_from,
+            "to_address": _transfer_to,
             "amount": 10
         }
         resp = client.post(
@@ -287,8 +287,8 @@ class TestAppRoutersShareTransfersPOST:
         # request target API
         req_param = {
             "token_address": _token_address,
-            "transfer_from": _transfer_from,
-            "transfer_to": _transfer_to,
+            "from_address": _transfer_from,
+            "to_address": _transfer_to,
             "amount": 10
         }
         resp = client.post(
@@ -335,8 +335,8 @@ class TestAppRoutersShareTransfersPOST:
         # request target API
         req_param = {
             "token_address": _token_address,
-            "transfer_from": _transfer_from,
-            "transfer_to": _transfer_to,
+            "from_address": _transfer_from,
+            "to_address": _transfer_to,
             "amount": 10
         }
         resp = client.post(
@@ -383,8 +383,8 @@ class TestAppRoutersShareTransfersPOST:
         # request target API
         req_param = {
             "token_address": _token_address,
-            "transfer_from": _transfer_from,
-            "transfer_to": _transfer_to,
+            "from_address": _transfer_from,
+            "to_address": _transfer_to,
             "amount": 10
         }
         resp = client.post(
@@ -440,8 +440,8 @@ class TestAppRoutersShareTransfersPOST:
         # request target API
         req_param = {
             "token_address": _token_address,
-            "transfer_from": _transfer_from,
-            "transfer_to": _transfer_to,
+            "from_address": _transfer_from,
+            "to_address": _transfer_to,
             "amount": 10
         }
         resp = client.post(
@@ -498,8 +498,8 @@ class TestAppRoutersShareTransfersPOST:
         # request target API
         req_param = {
             "token_address": _token_address,
-            "transfer_from": _transfer_from,
-            "transfer_to": _transfer_to,
+            "from_address": _transfer_from,
+            "to_address": _transfer_to,
             "amount": 10
         }
         resp = client.post(

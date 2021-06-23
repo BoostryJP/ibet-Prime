@@ -82,13 +82,13 @@ class TestAppRoutersShareBulkTransferPOST:
         req_param = [
             {
                 "token_address": self.req_tokens[0],
-                "transfer_from": self.transfer_from,
-                "transfer_to": self.transfer_to,
+                "from_address": self.transfer_from,
+                "to_address": self.transfer_to,
                 "amount": 5
             }, {
                 "token_address": self.req_tokens[1],
-                "transfer_from": self.transfer_from,
-                "transfer_to": self.transfer_to,
+                "from_address": self.transfer_from,
+                "to_address": self.transfer_to,
                 "amount": 10
             }
         ]
@@ -145,8 +145,8 @@ class TestAppRoutersShareBulkTransferPOST:
         req_param = [
             {
                 "token_address": _token_address_int,
-                "transfer_from": _transfer_from_long,
-                "transfer_to": _transfer_to_short,
+                "from_address": _transfer_from_long,
+                "to_address": _transfer_to_short,
                 "amount": -1
             },
         ]
@@ -171,12 +171,12 @@ class TestAppRoutersShareBulkTransferPOST:
                     "msg": "token_address is not a valid address",
                     "type": "value_error"
                 }, {
-                    "loc": ["body", 0, "transfer_from"],
-                    "msg": "transfer_from is not a valid address",
+                    "loc": ["body", 0, "from_address"],
+                    "msg": "from_address is not a valid address",
                     "type": "value_error"
                 }, {
-                    "loc": ["body", 0, "transfer_to"],
-                    "msg": "transfer_to is not a valid address",
+                    "loc": ["body", 0, "to_address"],
+                    "msg": "to_address is not a valid address",
                     "type": "value_error"
                 }, {
                     "loc": ["body", 0, "amount"],
@@ -317,13 +317,13 @@ class TestAppRoutersShareBulkTransferPOST:
         req_param = [
             {
                 "token_address": self.req_tokens[0],
-                "transfer_from": self.transfer_from,
-                "transfer_to": self.transfer_to,
+                "from_address": self.transfer_from,
+                "to_address": self.transfer_to,
                 "amount": 5
             }, {
                 "token_address": self.req_tokens[1],
-                "transfer_from": self.transfer_from,
-                "transfer_to": self.transfer_to,
+                "from_address": self.transfer_from,
+                "to_address": self.transfer_to,
                 "amount": 10
             }
         ]
@@ -361,8 +361,8 @@ class TestAppRoutersShareBulkTransferPOST:
         req_param = [
             {
                 "token_address": self.req_tokens[0],
-                "transfer_from": self.transfer_from,
-                "transfer_to": self.transfer_to,
+                "from_address": self.transfer_from,
+                "to_address": self.transfer_to,
                 "amount": 10
             }
         ]
@@ -399,8 +399,8 @@ class TestAppRoutersShareBulkTransferPOST:
         req_param = [
             {
                 "token_address": self.req_tokens[0],
-                "transfer_from": self.transfer_from,
-                "transfer_to": self.transfer_to,
+                "from_address": self.transfer_from,
+                "to_address": self.transfer_to,
                 "amount": 10
             }
         ]
@@ -447,8 +447,8 @@ class TestAppRoutersShareBulkTransferPOST:
         req_param = [
             {
                 "token_address": self.req_tokens[0],
-                "transfer_from": self.transfer_from,
-                "transfer_to": self.transfer_to,
+                "from_address": self.transfer_from,
+                "to_address": self.transfer_to,
                 "amount": 10
             }
         ]

@@ -161,8 +161,8 @@ class IbetStraightBondAdd(BaseModel):
 class IbetStraightBondTransfer(BaseModel):
     """ibet Straight Bond schema (Transfer)"""
     token_address: str
-    transfer_from: str
-    transfer_to: str
+    from_address: str
+    to_address: str
     amount: int
 
     @validator("token_address")
@@ -171,16 +171,16 @@ class IbetStraightBondTransfer(BaseModel):
             raise ValueError("token_address is not a valid address")
         return v
 
-    @validator("transfer_from")
-    def transfer_from_is_valid_address(cls, v):
+    @validator("from_address")
+    def from_address_is_valid_address(cls, v):
         if not Web3.isAddress(v):
-            raise ValueError("transfer_from is not a valid address")
+            raise ValueError("from_address is not a valid address")
         return v
 
-    @validator("transfer_to")
-    def transfer_to_is_valid_address(cls, v):
+    @validator("to_address")
+    def to_address_is_valid_address(cls, v):
         if not Web3.isAddress(v):
-            raise ValueError("transfer_to is not a valid address")
+            raise ValueError("to_address is not a valid address")
         return v
 
     @validator("amount")
@@ -294,8 +294,8 @@ class IbetShareUpdate(BaseModel):
 class IbetShareTransfer(BaseModel):
     """ibet Share schema (Transfer)"""
     token_address: str
-    transfer_from: str
-    transfer_to: str
+    from_address: str
+    to_address: str
     amount: int
 
     @validator("token_address")
@@ -304,16 +304,16 @@ class IbetShareTransfer(BaseModel):
             raise ValueError("token_address is not a valid address")
         return v
 
-    @validator("transfer_from")
-    def transfer_from_is_valid_address(cls, v):
+    @validator("from_address")
+    def from_address_is_valid_address(cls, v):
         if not Web3.isAddress(v):
-            raise ValueError("transfer_from is not a valid address")
+            raise ValueError("from_address is not a valid address")
         return v
 
-    @validator("transfer_to")
-    def transfer_to_is_valid_address(cls, v):
+    @validator("to_address")
+    def to_address_is_valid_address(cls, v):
         if not Web3.isAddress(v):
-            raise ValueError("transfer_to is not a valid address")
+            raise ValueError("to_address is not a valid address")
         return v
 
     @validator("amount")

@@ -152,8 +152,8 @@ class TestProcessor:
         # Share:issuer -> user1
         _transfer_1 = IbetShareTransfer(
             token_address=token_address_2,
-            transfer_from=issuer_address,
-            transfer_to=user_address_1,
+            from_address=issuer_address,
+            to_address=user_address_1,
             amount=70
         )
         IbetShareContract.transfer(_transfer_1, issuer_address, issuer_private_key)
@@ -162,8 +162,8 @@ class TestProcessor:
         # Bond:issuer -> user1
         _transfer_2 = IbetStraightBondTransfer(
             token_address=token_address_1,
-            transfer_from=issuer_address,
-            transfer_to=user_address_1,
+            from_address=issuer_address,
+            to_address=user_address_1,
             amount=40
         )
         IbetStraightBondContract.transfer(_transfer_2, issuer_address, issuer_private_key)
@@ -172,8 +172,8 @@ class TestProcessor:
         # Bond:issuer -> user2
         _transfer_3 = IbetStraightBondTransfer(
             token_address=token_address_1,
-            transfer_from=issuer_address,
-            transfer_to=user_address_2,
+            from_address=issuer_address,
+            to_address=user_address_2,
             amount=20
         )
         IbetStraightBondContract.transfer(_transfer_3, issuer_address, issuer_private_key)
@@ -182,8 +182,8 @@ class TestProcessor:
         # Share:user1 -> user2
         _transfer_4 = IbetShareTransfer(
             token_address=token_address_2,
-            transfer_from=user_address_1,
-            transfer_to=user_address_2,
+            from_address=user_address_1,
+            to_address=user_address_2,
             amount=10
         )
         IbetShareContract.transfer(_transfer_4, issuer_address, issuer_private_key)

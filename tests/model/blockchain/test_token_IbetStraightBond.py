@@ -784,8 +784,8 @@ class TestTransfer:
         # transfer
         _data = {
             "token_address": token_address,
-            "transfer_from": from_address,
-            "transfer_to": to_address,
+            "from_address": from_address,
+            "to_address": to_address,
             "amount": 10
         }
         _transfer_data = IbetStraightBondTransfer(**_data)
@@ -824,11 +824,11 @@ class TestTransfer:
                 "msg": "field required",
                 "type": "value_error.missing"
             }, {
-                "loc": ("transfer_from",),
+                "loc": ("from_address",),
                 "msg": "field required",
                 "type": "value_error.missing"
             }, {
-                "loc": ("transfer_to",),
+                "loc": ("to_address",),
                 "msg": "field required",
                 "type": "value_error.missing"
             }, {
@@ -844,8 +844,8 @@ class TestTransfer:
     def test_error_2(self, db):
         _data = {
             "token_address": "invalid contract address",
-            "transfer_from": "invalid transfer_from address",
-            "transfer_to": "invalid transfer_to address",
+            "from_address": "invalid transfer_from address",
+            "to_address": "invalid transfer_to address",
             "amount": 0
         }
         with pytest.raises(ValidationError) as exc_info:
@@ -856,12 +856,12 @@ class TestTransfer:
                 "msg": "token_address is not a valid address",
                 "type": "value_error"
             }, {
-                "loc": ("transfer_from",),
-                "msg": "transfer_from is not a valid address",
+                "loc": ("from_address",),
+                "msg": "from_address is not a valid address",
                 "type": "value_error"
             }, {
-                "loc": ("transfer_to",),
-                "msg": "transfer_to is not a valid address",
+                "loc": ("to_address",),
+                "msg": "to_address is not a valid address",
                 "type": "value_error"
             }, {
                 "loc": ("amount",),
@@ -899,8 +899,8 @@ class TestTransfer:
         # transfer
         _data = {
             "token_address": token_address,
-            "transfer_from": from_address,
-            "transfer_to": to_address,
+            "from_address": from_address,
+            "to_address": to_address,
             "amount": 10
         }
         _transfer_data = IbetStraightBondTransfer(**_data)
@@ -942,8 +942,8 @@ class TestTransfer:
         # transfer
         _data = {
             "token_address": token_address,
-            "transfer_from": from_address,
-            "transfer_to": to_address,
+            "from_address": from_address,
+            "to_address": to_address,
             "amount": 10
         }
         _transfer_data = IbetStraightBondTransfer(**_data)
@@ -991,8 +991,8 @@ class TestTransfer:
         # transfer
         _data = {
             "token_address": contract_address,
-            "transfer_from": issuer_address,
-            "transfer_to": to_address,
+            "from_address": issuer_address,
+            "to_address": to_address,
             "amount": 10
         }
         _transfer_data = IbetStraightBondTransfer(**_data)
@@ -1040,8 +1040,8 @@ class TestTransfer:
         # transfer
         _data = {
             "token_address": contract_address,
-            "transfer_from": issuer_address,
-            "transfer_to": to_address,
+            "from_address": issuer_address,
+            "to_address": to_address,
             "amount": 10
         }
         _transfer_data = IbetStraightBondTransfer(**_data)

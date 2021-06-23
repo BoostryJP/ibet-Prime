@@ -1052,8 +1052,8 @@ def bulk_transfer_ownership(
         _bulk_transfer.upload_id = upload_id
         _bulk_transfer.token_address = _token.token_address
         _bulk_transfer.token_type = TokenType.IBET_SHARE
-        _bulk_transfer.from_address = _token.transfer_from
-        _bulk_transfer.to_address = _token.transfer_to
+        _bulk_transfer.from_address = _token.from_address
+        _bulk_transfer.to_address = _token.to_address
         _bulk_transfer.amount = _token.amount
         _bulk_transfer.status = 0
         db.add(_bulk_transfer)
