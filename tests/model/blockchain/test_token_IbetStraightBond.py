@@ -844,8 +844,8 @@ class TestTransfer:
     def test_error_2(self, db):
         _data = {
             "token_address": "invalid contract address",
-            "from_address": "invalid transfer_from address",
-            "to_address": "invalid transfer_to address",
+            "from_address": "invalid from_address",
+            "to_address": "invalid to_address",
             "amount": 0
         }
         with pytest.raises(ValidationError) as exc_info:

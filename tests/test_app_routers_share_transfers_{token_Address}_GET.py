@@ -37,8 +37,8 @@ class TestAppRoutersShareTransfersGET:
     test_transaction_hash = "test_transaction_hash"
     test_issuer_address = "test_issuer_address"
     test_token_address = "test_token_address"
-    test_transfer_from = "test_transfer_from"
-    test_transfer_to = "test_transfer_to"
+    test_from_address = "test_from_address"
+    test_to_address = "test_to_address"
     test_block_timestamp = [
         datetime.strptime("2022/01/02 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/03
         datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
@@ -71,8 +71,8 @@ class TestAppRoutersShareTransfersGET:
             _idx_transfer = IDXTransfer()
             _idx_transfer.transaction_hash = self.test_transaction_hash
             _idx_transfer.token_address = self.test_token_address
-            _idx_transfer.transfer_from = self.test_transfer_from
-            _idx_transfer.transfer_to = self.test_transfer_to
+            _idx_transfer.from_address = self.test_from_address
+            _idx_transfer.to_address = self.test_to_address
             _idx_transfer.amount = i
             _idx_transfer.block_timestamp = self.test_block_timestamp[i]
             db.add(_idx_transfer)
@@ -95,24 +95,24 @@ class TestAppRoutersShareTransfersGET:
                 {
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
-                    "from_address": self.test_transfer_from,
-                    "to_address": self.test_transfer_to,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
                     "amount": 0,
                     "block_timestamp": self.test_block_timestamp_str[0]
                 },
                 {
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
-                    "from_address": self.test_transfer_from,
-                    "to_address": self.test_transfer_to,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
                     "amount": 2,
                     "block_timestamp": self.test_block_timestamp_str[2]
                 },
                 {
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
-                    "from_address": self.test_transfer_from,
-                    "to_address": self.test_transfer_to,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
                     "amount": 1,
                     "block_timestamp": self.test_block_timestamp_str[1]
                 },
@@ -138,8 +138,8 @@ class TestAppRoutersShareTransfersGET:
             _idx_transfer = IDXTransfer()
             _idx_transfer.transaction_hash = self.test_transaction_hash
             _idx_transfer.token_address = self.test_token_address
-            _idx_transfer.transfer_from = self.test_transfer_from
-            _idx_transfer.transfer_to = self.test_transfer_to
+            _idx_transfer.from_address = self.test_from_address
+            _idx_transfer.to_address = self.test_to_address
             _idx_transfer.amount = i
             _idx_transfer.block_timestamp = self.test_block_timestamp[i]
             db.add(_idx_transfer)
@@ -162,8 +162,8 @@ class TestAppRoutersShareTransfersGET:
                 {
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
-                    "from_address": self.test_transfer_from,
-                    "to_address": self.test_transfer_to,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
                     "amount": 2,
                     "block_timestamp": self.test_block_timestamp_str[2]
                 },
@@ -188,8 +188,8 @@ class TestAppRoutersShareTransfersGET:
             _idx_transfer = IDXTransfer()
             _idx_transfer.transaction_hash = self.test_transaction_hash
             _idx_transfer.token_address = self.test_token_address
-            _idx_transfer.transfer_from = self.test_transfer_from
-            _idx_transfer.transfer_to = self.test_transfer_to
+            _idx_transfer.from_address = self.test_from_address
+            _idx_transfer.to_address = self.test_to_address
             _idx_transfer.amount = i
             _idx_transfer.block_timestamp = self.test_block_timestamp[i]
             db.add(_idx_transfer)
@@ -216,24 +216,24 @@ class TestAppRoutersShareTransfersGET:
                 {
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
-                    "from_address": self.test_transfer_from,
-                    "to_address": self.test_transfer_to,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
                     "amount": 1,
                     "block_timestamp": self.test_block_timestamp_str[1]
                 },
                 {
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
-                    "from_address": self.test_transfer_from,
-                    "to_address": self.test_transfer_to,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
                     "amount": 2,
                     "block_timestamp": self.test_block_timestamp_str[2]
                 },
                 {
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
-                    "from_address": self.test_transfer_from,
-                    "to_address": self.test_transfer_to,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
                     "amount": 0,
                     "block_timestamp": self.test_block_timestamp_str[0]
                 }
@@ -257,8 +257,8 @@ class TestAppRoutersShareTransfersGET:
         _idx_transfer = IDXTransfer()
         _idx_transfer.transaction_hash = self.test_transaction_hash
         _idx_transfer.token_address = self.test_token_address
-        _idx_transfer.transfer_from = "test_transfer_from_2"
-        _idx_transfer.transfer_to = self.test_transfer_to
+        _idx_transfer.from_address = "test_from_address_2"
+        _idx_transfer.to_address = self.test_to_address
         _idx_transfer.amount = 0
         _idx_transfer.block_timestamp = self.test_block_timestamp[0]
         db.add(_idx_transfer)
@@ -266,8 +266,8 @@ class TestAppRoutersShareTransfersGET:
         _idx_transfer = IDXTransfer()
         _idx_transfer.transaction_hash = self.test_transaction_hash
         _idx_transfer.token_address = self.test_token_address
-        _idx_transfer.transfer_from = "test_transfer_from_2"
-        _idx_transfer.transfer_to = self.test_transfer_to
+        _idx_transfer.from_address = "test_from_address_2"
+        _idx_transfer.to_address = self.test_to_address
         _idx_transfer.amount = 1
         _idx_transfer.block_timestamp = self.test_block_timestamp[1]
         db.add(_idx_transfer)
@@ -275,8 +275,8 @@ class TestAppRoutersShareTransfersGET:
         _idx_transfer = IDXTransfer()
         _idx_transfer.transaction_hash = self.test_transaction_hash
         _idx_transfer.token_address = self.test_token_address
-        _idx_transfer.transfer_from = "test_transfer_from_1"
-        _idx_transfer.transfer_to = self.test_transfer_to
+        _idx_transfer.from_address = "test_from_address_1"
+        _idx_transfer.to_address = self.test_to_address
         _idx_transfer.amount = 2
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
@@ -303,24 +303,24 @@ class TestAppRoutersShareTransfersGET:
                 {
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
-                    "from_address": "test_transfer_from_1",
-                    "to_address": self.test_transfer_to,
+                    "from_address": "test_from_address_1",
+                    "to_address": self.test_to_address,
                     "amount": 2,
                     "block_timestamp": self.test_block_timestamp_str[2]
                 },
                 {
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
-                    "from_address": "test_transfer_from_2",
-                    "to_address": self.test_transfer_to,
+                    "from_address": "test_from_address_2",
+                    "to_address": self.test_to_address,
                     "amount": 0,
                     "block_timestamp": self.test_block_timestamp_str[0]
                 },
                 {
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
-                    "from_address": "test_transfer_from_2",
-                    "to_address": self.test_transfer_to,
+                    "from_address": "test_from_address_2",
+                    "to_address": self.test_to_address,
                     "amount": 1,
                     "block_timestamp": self.test_block_timestamp_str[1]
                 },
@@ -344,8 +344,8 @@ class TestAppRoutersShareTransfersGET:
         _idx_transfer = IDXTransfer()
         _idx_transfer.transaction_hash = self.test_transaction_hash
         _idx_transfer.token_address = self.test_token_address
-        _idx_transfer.transfer_from = self.test_transfer_from
-        _idx_transfer.transfer_to = "test_transfer_to_2"
+        _idx_transfer.from_address = self.test_from_address
+        _idx_transfer.to_address = "test_to_address_2"
         _idx_transfer.amount = 0
         _idx_transfer.block_timestamp = self.test_block_timestamp[0]
         db.add(_idx_transfer)
@@ -353,8 +353,8 @@ class TestAppRoutersShareTransfersGET:
         _idx_transfer = IDXTransfer()
         _idx_transfer.transaction_hash = self.test_transaction_hash
         _idx_transfer.token_address = self.test_token_address
-        _idx_transfer.transfer_from = self.test_transfer_from
-        _idx_transfer.transfer_to = "test_transfer_to_1"
+        _idx_transfer.from_address = self.test_from_address
+        _idx_transfer.to_address = "test_to_address_1"
         _idx_transfer.amount = 1
         _idx_transfer.block_timestamp = self.test_block_timestamp[1]
         db.add(_idx_transfer)
@@ -362,8 +362,8 @@ class TestAppRoutersShareTransfersGET:
         _idx_transfer = IDXTransfer()
         _idx_transfer.transaction_hash = self.test_transaction_hash
         _idx_transfer.token_address = self.test_token_address
-        _idx_transfer.transfer_from = self.test_transfer_from
-        _idx_transfer.transfer_to = "test_transfer_to_1"
+        _idx_transfer.from_address = self.test_from_address
+        _idx_transfer.to_address = "test_to_address_1"
         _idx_transfer.amount = 2
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
@@ -390,24 +390,24 @@ class TestAppRoutersShareTransfersGET:
                 {
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
-                    "from_address": self.test_transfer_from,
-                    "to_address": "test_transfer_to_2",
+                    "from_address": self.test_from_address,
+                    "to_address": "test_to_address_2",
                     "amount": 0,
                     "block_timestamp": self.test_block_timestamp_str[0]
                 },
                 {
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
-                    "from_address": self.test_transfer_from,
-                    "to_address": "test_transfer_to_1",
+                    "from_address": self.test_from_address,
+                    "to_address": "test_to_address_1",
                     "amount": 2,
                     "block_timestamp": self.test_block_timestamp_str[2]
                 },
                 {
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
-                    "from_address": self.test_transfer_from,
-                    "to_address": "test_transfer_to_1",
+                    "from_address": self.test_from_address,
+                    "to_address": "test_to_address_1",
                     "amount": 1,
                     "block_timestamp": self.test_block_timestamp_str[1]
                 },
@@ -431,8 +431,8 @@ class TestAppRoutersShareTransfersGET:
         _idx_transfer = IDXTransfer()
         _idx_transfer.transaction_hash = self.test_transaction_hash
         _idx_transfer.token_address = self.test_token_address
-        _idx_transfer.transfer_from = self.test_transfer_from
-        _idx_transfer.transfer_to = self.test_transfer_to
+        _idx_transfer.from_address = self.test_from_address
+        _idx_transfer.to_address = self.test_to_address
         _idx_transfer.amount = 1
         _idx_transfer.block_timestamp = self.test_block_timestamp[0]
         db.add(_idx_transfer)
@@ -440,8 +440,8 @@ class TestAppRoutersShareTransfersGET:
         _idx_transfer = IDXTransfer()
         _idx_transfer.transaction_hash = self.test_transaction_hash
         _idx_transfer.token_address = self.test_token_address
-        _idx_transfer.transfer_from = self.test_transfer_from
-        _idx_transfer.transfer_to = self.test_transfer_to
+        _idx_transfer.from_address = self.test_from_address
+        _idx_transfer.to_address = self.test_to_address
         _idx_transfer.amount = 2
         _idx_transfer.block_timestamp = self.test_block_timestamp[1]
         db.add(_idx_transfer)
@@ -449,8 +449,8 @@ class TestAppRoutersShareTransfersGET:
         _idx_transfer = IDXTransfer()
         _idx_transfer.transaction_hash = self.test_transaction_hash
         _idx_transfer.token_address = self.test_token_address
-        _idx_transfer.transfer_from = self.test_transfer_from
-        _idx_transfer.transfer_to = self.test_transfer_to
+        _idx_transfer.from_address = self.test_from_address
+        _idx_transfer.to_address = self.test_to_address
         _idx_transfer.amount = 2
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
@@ -477,24 +477,24 @@ class TestAppRoutersShareTransfersGET:
                 {
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
-                    "from_address": self.test_transfer_from,
-                    "to_address": self.test_transfer_to,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
                     "amount": 1,
                     "block_timestamp": self.test_block_timestamp_str[0]
                 },
                 {
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
-                    "from_address": self.test_transfer_from,
-                    "to_address": self.test_transfer_to,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
                     "amount": 2,
                     "block_timestamp": self.test_block_timestamp_str[2]
                 },
                 {
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
-                    "from_address": self.test_transfer_from,
-                    "to_address": self.test_transfer_to,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
                     "amount": 2,
                     "block_timestamp": self.test_block_timestamp_str[1]
                 },

@@ -866,11 +866,6 @@ def list_transfer_history(
     total = query.count()
 
     # Sort
-    # NOTE: Replace DB column name
-    if sort_item == "from_address":
-        sort_item = "transfer_from"
-    elif sort_item == "to_address":
-        sort_item = "transfer_to"
     sort_attr = getattr(IDXTransfer, sort_item, None)
     if sort_order == 0:  # ASC
         query = query.order_by(sort_attr)
@@ -894,8 +889,8 @@ def list_transfer_history(
         transfer_history.append({
             "transaction_hash": _transfer.transaction_hash,
             "token_address": token_address,
-            "from_address": _transfer.transfer_from,
-            "to_address": _transfer.transfer_to,
+            "from_address": _transfer.from_address,
+            "to_address": _transfer.to_address,
             "amount": _transfer.amount,
             "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat()
         })

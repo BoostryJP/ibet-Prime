@@ -39,8 +39,8 @@ class TestAppRoutersShareTransferApprovalsGET:
 
     test_issuer_address = "test_issuer_address"
     test_token_address = "test_token_address"
-    test_transfer_from = "test_transfer_from"
-    test_transfer_to = "test_transfer_to"
+    test_from_address = "test_from_address"
+    test_to_address = "test_to_address"
     test_application_datetime = datetime(year=2019, month=9, day=1)
     test_application_datetime_str = timezone("UTC").localize(test_application_datetime).astimezone(local_tz).isoformat()
     test_application_blocktimestamp = datetime(year=2019, month=9, day=2)
@@ -70,8 +70,8 @@ class TestAppRoutersShareTransferApprovalsGET:
             _idx_transfer_approval = IDXTransferApproval()
             _idx_transfer_approval.token_address = self.test_token_address
             _idx_transfer_approval.application_id = i
-            _idx_transfer_approval.from_address = self.test_transfer_from
-            _idx_transfer_approval.to_address = self.test_transfer_to
+            _idx_transfer_approval.from_address = self.test_from_address
+            _idx_transfer_approval.to_address = self.test_to_address
             _idx_transfer_approval.amount = i
             _idx_transfer_approval.application_datetime = self.test_application_datetime
             _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
@@ -98,8 +98,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                 {
                     "token_address": self.test_token_address,
                     "application_id": 2,
-                    "from_address": self.test_transfer_from,
-                    "to_address": self.test_transfer_to,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
                     "amount": 2,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -110,8 +110,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                 {
                     "token_address": self.test_token_address,
                     "application_id": 1,
-                    "from_address": self.test_transfer_from,
-                    "to_address": self.test_transfer_to,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
                     "amount": 1,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -122,8 +122,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                 {
                     "token_address": self.test_token_address,
                     "application_id": 0,
-                    "from_address": self.test_transfer_from,
-                    "to_address": self.test_transfer_to,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
                     "amount": 0,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -152,8 +152,8 @@ class TestAppRoutersShareTransferApprovalsGET:
             _idx_transfer_approval = IDXTransferApproval()
             _idx_transfer_approval.token_address = self.test_token_address
             _idx_transfer_approval.application_id = i
-            _idx_transfer_approval.from_address = self.test_transfer_from
-            _idx_transfer_approval.to_address = self.test_transfer_to
+            _idx_transfer_approval.from_address = self.test_from_address
+            _idx_transfer_approval.to_address = self.test_to_address
             _idx_transfer_approval.amount = i
             _idx_transfer_approval.application_datetime = self.test_application_datetime
             _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
@@ -180,8 +180,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                 {
                     "token_address": self.test_token_address,
                     "application_id": 2,
-                    "from_address": self.test_transfer_from,
-                    "to_address": self.test_transfer_to,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
                     "amount": 2,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -192,8 +192,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                 {
                     "token_address": self.test_token_address,
                     "application_id": 1,
-                    "from_address": self.test_transfer_from,
-                    "to_address": self.test_transfer_to,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
                     "amount": 1,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -204,8 +204,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                 {
                     "token_address": self.test_token_address,
                     "application_id": 0,
-                    "from_address": self.test_transfer_from,
-                    "to_address": self.test_transfer_to,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
                     "amount": 0,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -234,8 +234,8 @@ class TestAppRoutersShareTransferApprovalsGET:
             _idx_transfer_approval = IDXTransferApproval()
             _idx_transfer_approval.token_address = self.test_token_address
             _idx_transfer_approval.application_id = i
-            _idx_transfer_approval.from_address = self.test_transfer_from
-            _idx_transfer_approval.to_address = self.test_transfer_to
+            _idx_transfer_approval.from_address = self.test_from_address
+            _idx_transfer_approval.to_address = self.test_to_address
             _idx_transfer_approval.amount = i
             _idx_transfer_approval.application_datetime = self.test_application_datetime
             _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
@@ -262,8 +262,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                 {
                     "token_address": self.test_token_address,
                     "application_id": 1,
-                    "from_address": self.test_transfer_from,
-                    "to_address": self.test_transfer_to,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
                     "amount": 1,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,

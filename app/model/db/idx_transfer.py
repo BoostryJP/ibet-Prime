@@ -36,9 +36,9 @@ class IDXTransfer(Base):
     # token address
     token_address = Column(String(42), index=True)
     # transfer from address
-    transfer_from = Column(String(42), index=True)
+    from_address = Column(String(42), index=True)
     # transfer to address
-    transfer_to = Column(String(42), index=True)
+    to_address = Column(String(42), index=True)
     # transfer amount
     amount = Column(BigInteger)
     # block timestamp
