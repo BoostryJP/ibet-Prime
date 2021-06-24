@@ -210,6 +210,7 @@ class IbetShareCreate(BaseModel):
     contact_information: Optional[str]
     privacy_policy: Optional[str]
     transfer_approval_required: Optional[bool]
+    is_canceled: Optional[bool]
 
     @validator("dividends")
     def dividends_2_decimal_places(cls, v):
@@ -255,6 +256,7 @@ class IbetShareUpdate(BaseModel):
     privacy_policy: Optional[str]
     transfer_approval_required: Optional[bool]
     principal_value: Optional[int]
+    is_canceled: Optional[bool]
 
     @validator("dividends")
     def dividends_2_decimal_places(cls, v):
@@ -415,3 +417,4 @@ class IbetShareResponse(BaseModel):
     privacy_policy: str
     issue_datetime: str
     token_status: int
+    is_canceled: bool

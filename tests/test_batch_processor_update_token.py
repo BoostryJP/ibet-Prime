@@ -105,7 +105,8 @@ class TestProcessor:
             "contact_information": "contact info test",  # update
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
-            "principal_value": 1000
+            "principal_value": 1000,
+            "is_canceled": True  # update
         }
         _update_token_1.status = 0
         _update_token_1.trigger = "Issue"
@@ -195,7 +196,8 @@ class TestProcessor:
                     offering_status=True,
                     contact_information="contact info test",
                     privacy_policy="privacy policy test",
-                    transfer_approval_required=True
+                    transfer_approval_required=True,
+                    is_canceled=True
                 ),
                 tx_from=_issuer_address,
                 private_key=ANY
@@ -321,7 +323,8 @@ class TestProcessor:
             "contact_information": "contact info test",  # update
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
-            "principal_value": 1000
+            "principal_value": 1000,
+            "is_canceled": True  # update
         }
         _update_token_1.status = 0
         _update_token_1.trigger = "Issue"
@@ -437,7 +440,8 @@ class TestProcessor:
                 "contact_information": "contact info test",  # update
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
-                "principal_value": 1000
+                "principal_value": 1000,
+                "is_canceled": True  # update
             }
         }
         _notification = _notification_list[1]
@@ -522,7 +526,8 @@ class TestProcessor:
             "contact_information": "contact info test",  # update
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
-            "principal_value": 1000
+            "principal_value": 1000,
+            "is_canceled": True  # update
         }
         _update_token_1.status = 0
         _update_token_1.trigger = "Issue"
@@ -638,7 +643,8 @@ class TestProcessor:
                 "contact_information": "contact info test",  # update
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
-                "principal_value": 1000
+                "principal_value": 1000,
+                "is_canceled": True  # update
             }
         }
         _notification = _notification_list[1]
@@ -723,7 +729,8 @@ class TestProcessor:
             "contact_information": "contact info test",  # update
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
-            "principal_value": 1000
+            "principal_value": 1000,
+            "is_canceled": True  # update
         }
         _update_token_1.status = 0
         _update_token_1.trigger = "Issue"
@@ -843,7 +850,8 @@ class TestProcessor:
                     "contact_information": "contact info test",  # update
                     "privacy_policy": "privacy policy test",  # update
                     "transfer_approval_required": True,  # update
-                    "principal_value": 1000
+                    "principal_value": 1000,
+                    "is_canceled": True  # update
                 }
             }
             _notification = _notification_list[1]
@@ -928,7 +936,8 @@ class TestProcessor:
             "contact_information": "contact info test",  # update
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
-            "principal_value": 1000
+            "principal_value": 1000,
+            "is_canceled": True  # update
         }
         _update_token_1.status = 0
         _update_token_1.trigger = "Issue"
@@ -1018,7 +1027,8 @@ class TestProcessor:
                     offering_status=True,
                     contact_information="contact info test",
                     privacy_policy="privacy policy test",
-                    transfer_approval_required=True
+                    transfer_approval_required=True,
+                    is_canceled=True
                 ),
                 tx_from=_issuer_address,
                 private_key=ANY
@@ -1091,7 +1101,8 @@ class TestProcessor:
                     "contact_information": "contact info test",  # update
                     "privacy_policy": "privacy policy test",  # update
                     "transfer_approval_required": True,  # update
-                    "principal_value": 1000
+                    "principal_value": 1000,
+                    "is_canceled": True  # update
                 }
             }
             _notification = _notification_list[1]

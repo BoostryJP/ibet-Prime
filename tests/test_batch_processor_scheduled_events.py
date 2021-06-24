@@ -96,7 +96,8 @@ class TestProcessor:
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
             "contact_information": "問い合わせ先test",
-            "privacy_policy": "プライバシーポリシーtest"
+            "privacy_policy": "プライバシーポリシーtest",
+            "is_canceled": False
         }
 
         # TokenType: STRAIGHT_BOND, status is 2, will not change
@@ -197,7 +198,8 @@ class TestProcessor:
             "status": False,
             "offering_status": False,
             "contact_information": "問い合わせ先test",
-            "privacy_policy": "プライバシーポリシーtest"
+            "privacy_policy": "プライバシーポリシーtest",
+            "is_canceled": False
         }
 
         # TokenType: STRAIGHT_BOND, status is 2, will not change

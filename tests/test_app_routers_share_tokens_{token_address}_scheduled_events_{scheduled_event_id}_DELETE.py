@@ -72,7 +72,8 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
             "status": False,
             "offering_status": False,
             "contact_information": "問い合わせ先test",
-            "privacy_policy": "プライバシーポリシーtest"
+            "privacy_policy": "プライバシーポリシーtest",
+            "is_canceled": False
         }
         event_id = str(uuid.uuid4())
 

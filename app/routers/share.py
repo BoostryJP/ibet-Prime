@@ -150,7 +150,8 @@ def issue_token(
 
     # Check need update
     update_items = ["tradable_exchange_contract_address", "personal_info_contract_address", "image_url", "transferable",
-                    "status", "offering_status", "contact_information", "privacy_policy", "transfer_approval_required"]
+                    "status", "offering_status", "contact_information", "privacy_policy", "transfer_approval_required",
+                    "is_canceled"]
     token_dict = token.__dict__
     is_update = False
     for key in update_items:

@@ -86,7 +86,8 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": False,
-            "principal_value": 900
+            "principal_value": 900,
+            "is_canceled": False
         }
 
         # request target API
@@ -161,7 +162,8 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": True,
-            "principal_value": 900
+            "principal_value": 900,
+            "is_canceled": False
         }
 
         # request target API

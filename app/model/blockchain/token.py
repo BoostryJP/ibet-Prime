@@ -361,7 +361,7 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.is_redeemed is not None:
+        if data.is_redeemed is not None and data.is_redeemed:
             tx = bond_contract.functions.redeem().buildTransaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
@@ -520,6 +520,7 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
     personal_info_contract_address: str
     transfer_approval_required: bool
     principal_value: int
+    is_canceled: bool
 
     # Cache
     cache = {}
@@ -582,6 +583,7 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                     share_token.privacy_policy = share_contract.functions.privacyPolicy().call()
                     share_token.transfer_approval_required = share_contract.functions.transferApprovalRequired().call()
                     share_token.principal_value = share_contract.functions.principalValue().call()
+                    share_token.is_canceled = share_contract.functions.isCanceled().call()
                     return share_token
 
         # When cache is not used
@@ -616,6 +618,7 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
         share_token.personal_info_contract_address = share_contract.functions.personalInfoAddress().call()
         share_token.transfer_approval_required = share_contract.functions.transferApprovalRequired().call()
         share_token.principal_value = share_contract.functions.principalValue().call()
+        share_token.is_canceled = share_contract.functions.isCanceled().call()
 
         if TOKEN_CACHE:
             IbetShareContract.cache[contract_address] = {
@@ -821,6 +824,20 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             tx = share_contract.functions.setPrincipalValue(
                 data.principal_value
             ).buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            try:
+                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
+
+        if data.is_canceled is not None and data.is_canceled:
+            tx = share_contract.functions.cancel().buildTransaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,

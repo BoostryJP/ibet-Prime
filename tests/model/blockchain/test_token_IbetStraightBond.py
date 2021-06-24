@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import os
 
 import pytest
+from unittest import mock
 from binascii import Error
 from unittest.mock import patch
 from pydantic.error_wrappers import ValidationError
@@ -223,8 +224,8 @@ class TestGet:
 
     # <Normal_1>
     # TOKEN_CACHE is False
+    @mock.patch("app.model.blockchain.token.TOKEN_CACHE", False)
     def test_normal_1(self, db):
-        os.putenv('TOKEN_CACHE', '0')
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -274,8 +275,9 @@ class TestGet:
 
     # <Normal_2>
     # TOKEN_CACHE is True
+    @mock.patch("app.model.blockchain.token.TOKEN_CACHE", True)
     def test_normal_2(self, db):
-        os.putenv('TOKEN_CACHE', '1')
+        IbetStraightBondContract.cache = {}
 
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
@@ -299,10 +301,27 @@ class TestGet:
 
         # cache put
         IbetStraightBondContract.get(contract_address=contract_address)
-        
+        token_cache = IbetStraightBondContract.cache[contract_address]["token"]
+        token_cache.total_supply = 9999999
+        token_cache.face_value = 9999999
+        token_cache.interest_rate = 99.999
+        token_cache.interest_payment_date = ["99991231", "99991231", "99991231", "99991231", "99991231",
+                                             "99991231", "99991231", "99991231", "99991231", "99991231",
+                                             "99991231", "99991231"]
+        token_cache.redemption_value = 9999999
+        token_cache.transferable = False
+        token_cache.image_url = ["http://test1", "http://test2", "http://test3"]
+        token_cache.status = False
+        token_cache.initial_offering_status = True
+        token_cache.is_redeemed = True
+        token_cache.tradable_exchange_contract_address = "0x1234567890123456789012345678901234567890"
+        token_cache.personal_info_contract_address = "0x1234567890123456789012345678901234567890"
+        token_cache.contact_information = "test"
+        token_cache.privacy_policy = "test"
+
         # get token data
         bond_contract = IbetStraightBondContract.get(contract_address=contract_address)
-        
+
         # assertion
         assert bond_contract.issuer_address == test_account["address"]
         assert bond_contract.token_address == contract_address
@@ -330,7 +349,7 @@ class TestGet:
     ###########################################################################
     # Error Case
     ###########################################################################
-    
+
     # <Error_1>
     # Invalid argument type (contract_address does not exists)
     def test_error_1(self, db):
