@@ -86,6 +86,7 @@ class TestAppRoutersShareTokensGET:
         mock_token.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
         mock_token.principal_value = 1000
         mock_token.transfer_approval_required = False
+        mock_token.is_canceled = False
         mock_get.side_effect = [mock_token]
 
         resp = client.get(self.apiurl)
@@ -119,6 +120,7 @@ class TestAppRoutersShareTokensGET:
                 "transfer_approval_required": False,
                 "offering_status": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
+                "is_canceled": False,
                 "issue_datetime": _issue_datetime,
                 "token_status": 1
             }
@@ -171,6 +173,7 @@ class TestAppRoutersShareTokensGET:
         mock_token_1.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
         mock_token_1.principal_value = 1000
         mock_token_1.transfer_approval_required = False
+        mock_token_1.is_canceled = False
 
         # 2nd Data
         token_2 = Token()
@@ -209,6 +212,7 @@ class TestAppRoutersShareTokensGET:
         mock_token_2.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
         mock_token_2.principal_value = 1000
         mock_token_2.transfer_approval_required = False
+        mock_token_2.is_canceled = False
 
         mock_get.side_effect = [
             mock_token_1, mock_token_2
@@ -248,6 +252,7 @@ class TestAppRoutersShareTokensGET:
                 "transfer_approval_required": False,
                 "offering_status": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
+                "is_canceled": False,
                 "issue_datetime": _issue_datetime_1,
                 "token_status": 1
             },
@@ -276,6 +281,7 @@ class TestAppRoutersShareTokensGET:
                 "transfer_approval_required": False,
                 "offering_status": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
+                "is_canceled": False,
                 "issue_datetime": _issue_datetime_2,
                 "token_status": 0
             }
@@ -347,6 +353,7 @@ class TestAppRoutersShareTokensGET:
         mock_token.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
         mock_token.principal_value = 1000
         mock_token.transfer_approval_required = False
+        mock_token.is_canceled = False
         mock_get.side_effect = [mock_token]
 
         # No Target Data
@@ -389,6 +396,7 @@ class TestAppRoutersShareTokensGET:
                 "transfer_approval_required": False,
                 "offering_status": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
+                "is_canceled": False,
                 "issue_datetime": _issue_datetime,
                 "token_status": 1
             }
@@ -441,6 +449,7 @@ class TestAppRoutersShareTokensGET:
         mock_token_1.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
         mock_token_1.principal_value = 1000
         mock_token_1.transfer_approval_required = False
+        mock_token_1.is_canceled = False
 
         # 2nd Data
         token_2 = Token()
@@ -479,6 +488,7 @@ class TestAppRoutersShareTokensGET:
         mock_token_2.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
         mock_token_2.principal_value = 1000
         mock_token_2.transfer_approval_required = False
+        mock_token_2.is_canceled = False
 
         mock_get.side_effect = [
             mock_token_1, mock_token_2
@@ -527,6 +537,7 @@ class TestAppRoutersShareTokensGET:
                 "transfer_approval_required": False,
                 "offering_status": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
+                "is_canceled": False,
                 "issue_datetime": _issue_datetime_1,
                 "token_status": 1
             },
@@ -555,6 +566,7 @@ class TestAppRoutersShareTokensGET:
                 "transfer_approval_required": False,
                 "offering_status": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
+                "is_canceled": False,
                 "issue_datetime": _issue_datetime_2,
                 "token_status": 0
             }

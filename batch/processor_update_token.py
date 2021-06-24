@@ -150,7 +150,8 @@ class Processor:
                     "offering_status": arguments.get("offering_status"),
                     "contact_information": arguments.get("contact_information"),
                     "privacy_policy": arguments.get("privacy_policy"),
-                    "transfer_approval_required": arguments.get("transfer_approval_required")
+                    "transfer_approval_required": arguments.get("transfer_approval_required"),
+                    "is_canceled": arguments.get("is_canceled")
                 }
                 return IbetShareUpdate(**update_data)
             elif token_type == TokenType.IBET_STRAIGHT_BOND:

@@ -267,7 +267,8 @@ class TestAppRoutersShareTokensPOST:
                 "contact_information": "contact info test",  # update
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
-                "principal_value": 1000
+                "principal_value": 1000,
+                "is_canceled": True
             }
             resp = client.post(
                 self.apiurl,

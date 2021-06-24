@@ -73,6 +73,7 @@ class TestAppRoutersShareTokensTokenAddressGET:
         mock_token.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
         mock_token.principal_value = 1000
         mock_token.transfer_approval_required = False
+        mock_token.is_canceled = False
         mock_get.side_effect = [mock_token]
 
         resp = client.get(self.base_apiurl + "token_address_test1")
@@ -105,6 +106,7 @@ class TestAppRoutersShareTokensTokenAddressGET:
             "transfer_approval_required": False,
             "offering_status": True,
             "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
+            "is_canceled": False,
             "issue_datetime": _issue_time,
             "token_status": 1,
         }

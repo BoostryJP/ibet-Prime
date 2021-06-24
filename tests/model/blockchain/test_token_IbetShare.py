@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 import os
 import pytest
+from unittest import mock
 from binascii import Error
 
 from pydantic.error_wrappers import ValidationError
@@ -231,9 +232,8 @@ class TestGet:
 
     # <Normal_1>
     # TOKEN_CACHE is False
+    @mock.patch("app.model.blockchain.token.TOKEN_CACHE", False)
     def test_normal_1(self, db):
-        os.putenv('TOKEN_CACHE', '0')
-
         # prepare account
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
@@ -249,10 +249,10 @@ class TestGet:
             10000,
             20000,
             1,
-            "20211231",
-            "20211231",
+            "20211229",
+            "20211230",
             "20221231",
-            10000
+            10001
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -270,16 +270,27 @@ class TestGet:
         assert share_contract.symbol == "TEST"
         assert share_contract.issue_price == 10000
         assert share_contract.total_supply == 20000
+        assert share_contract.image_url == ["", "", ""]
+        assert share_contract.contact_information == ""
+        assert share_contract.privacy_policy == ""
+        assert share_contract.tradable_exchange_contract_address == ZERO_ADDRESS
+        assert share_contract.status is True
         assert share_contract.dividends == 0.01  # dividends
-        assert share_contract.dividend_record_date == "20211231"  # dividendRecordDate
-        assert share_contract.dividend_payment_date == "20211231"  # dividendPaymentDate
+        assert share_contract.dividend_record_date == "20211229"  # dividendRecordDate
+        assert share_contract.dividend_payment_date == "20211230"  # dividendPaymentDate
         assert share_contract.cancellation_date == "20221231"
-        assert share_contract.principal_value == 10000
+        assert share_contract.transferable is False
+        assert share_contract.offering_status is False
+        assert share_contract.personal_info_contract_address == ZERO_ADDRESS
+        assert share_contract.transfer_approval_required is False
+        assert share_contract.principal_value == 10001
+        assert share_contract.is_canceled is False
 
     # <Normal_2>
     # TOKEN_CACHE is True
+    @mock.patch("app.model.blockchain.token.TOKEN_CACHE", True)
     def test_normal_2(self, db):
-        os.putenv('TOKEN_CACHE', '1')
+        IbetShareContract.cache = {}
 
         # prepare account
         test_account = config_eth_account("user1")
@@ -296,10 +307,10 @@ class TestGet:
             10000,
             20000,
             1,
-            "20211231",
-            "20211231",
+            "20211229",
+            "20211230",
             "20221231",
-            10000
+            10001
         ]
         contract_address, abi, tx_hash = IbetShareContract.create(
             args=arguments,
@@ -309,6 +320,23 @@ class TestGet:
 
         # cache put
         IbetShareContract.get(contract_address=contract_address)
+        token_cache = IbetShareContract.cache[contract_address]["token"]
+        token_cache.total_supply = 999999
+        token_cache.cancellation_date = "99991231"
+        token_cache.dividends = 9.99
+        token_cache.dividend_record_date = "99991231"
+        token_cache.dividend_payment_date = "99991231"
+        token_cache.tradable_exchange_contract_address = "0x1234567890123456789012345678901234567890"
+        token_cache.personal_info_contract_address = "0x1234567890123456789012345678901234567890"
+        token_cache.image_url = ["http://test1", "http://test2", "http://test3"]
+        token_cache.transferable = True
+        token_cache.status = False
+        token_cache.offering_status = True
+        token_cache.contact_information = "test"
+        token_cache.privacy_policy = "test"
+        token_cache.transfer_approval_required = True
+        token_cache.principal_value = 999999
+        token_cache.is_canceled = True
 
         # execute the function
         share_contract = IbetShareContract.get(contract_address=contract_address)
@@ -320,11 +348,21 @@ class TestGet:
         assert share_contract.symbol == "TEST"
         assert share_contract.issue_price == 10000
         assert share_contract.total_supply == 20000
+        assert share_contract.image_url == ["", "", ""]
+        assert share_contract.contact_information == ""
+        assert share_contract.privacy_policy == ""
+        assert share_contract.tradable_exchange_contract_address == ZERO_ADDRESS
+        assert share_contract.status is True
         assert share_contract.dividends == 0.01  # dividends
-        assert share_contract.dividend_record_date == "20211231"  # dividendRecordDate
-        assert share_contract.dividend_payment_date == "20211231"  # dividendPaymentDate
+        assert share_contract.dividend_record_date == "20211229"  # dividendRecordDate
+        assert share_contract.dividend_payment_date == "20211230"  # dividendPaymentDate
         assert share_contract.cancellation_date == "20221231"
-        assert share_contract.principal_value == 10000
+        assert share_contract.transferable is False
+        assert share_contract.offering_status is False
+        assert share_contract.personal_info_contract_address == ZERO_ADDRESS
+        assert share_contract.transfer_approval_required is False
+        assert share_contract.principal_value == 10001
+        assert share_contract.is_canceled is False
 
     ###########################################################################
     # Error Case
@@ -410,6 +448,7 @@ class TestUpdate:
         assert share_contract.privacy_policy == ""
         assert share_contract.transfer_approval_required is False
         assert share_contract.principal_value == 10000
+        assert share_contract.is_canceled is False
 
     # <Normal_2>
     # Update all items
@@ -454,7 +493,8 @@ class TestUpdate:
             "contact_information": "contact info test",
             "privacy_policy": "privacy policy test",
             "transfer_approval_required": True,
-            "principal_value": 9000
+            "principal_value": 9000,
+            "is_canceled": True,
         }
         _add_data = IbetShareUpdate(**_data)
         IbetShareContract.update(
@@ -480,6 +520,7 @@ class TestUpdate:
         assert share_contract.privacy_policy == "privacy policy test"
         assert share_contract.transfer_approval_required is True
         assert share_contract.principal_value == 9000
+        assert share_contract.is_canceled is True
 
     # <Normal_3>
     # contract_address does not exists
