@@ -26,7 +26,8 @@ from app.model.db import (
 from tests.account_config import config_eth_account
 
 
-class TestAppRoutersLedgerTokenAddressTemplateGET:
+class TestAppRoutersLedgerTokenAddressTemplateDELETE:
+
     # target API endpoint
     base_url = "/ledger/{token_address}/template"
 

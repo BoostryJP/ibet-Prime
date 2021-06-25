@@ -377,19 +377,12 @@ def delete_ledger_template(
     if _token.token_status == 0:
         raise InvalidParameterError("wait for a while as the token is being processed")
 
-    # Get Ledger Template
-    _template = db.query(LedgerTemplate). \
-        filter(LedgerTemplate.token_address == token_address). \
-        first()
-
-    # Get Ledger Template
+    # Delete Ledger Template
     _template = db.query(LedgerTemplate). \
         filter(LedgerTemplate.token_address == token_address). \
         first()
     if _template is None:
         raise InvalidParameterError("ledger template does not exist")
-
-    # Delete Ledger Template
     db.delete(_template)
 
     # Delete Ledger Details Template
@@ -399,6 +392,7 @@ def delete_ledger_template(
     for _details in _details_list:
         db.delete(_details)
 
+    db.commit()
     return
 
 
