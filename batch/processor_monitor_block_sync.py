@@ -150,9 +150,9 @@ class Processor:
         for endpoint_uri in self.node_info.keys():
             try:
                 self.__process(endpoint_uri=endpoint_uri)
-            except Web3WrapperException as ex:
+            except Web3WrapperException:
                 self.__web3_errors(endpoint_uri=endpoint_uri)
-                LOG.exception(ex)
+                LOG.error(f"Node connection failed: {endpoint_uri}")
 
     def __set_node_info(self, endpoint_uri: str, priority: int):
         self.node_info[endpoint_uri] = {
@@ -169,9 +169,9 @@ class Processor:
             # NOTE: Immediately after the processing, the monitoring data is not retained,
             #       so the past block number is acquired.
             block = web3.eth.get_block(max(web3.eth.blockNumber - BLOCK_SYNC_STATUS_CALC_PERIOD, 0))
-        except Web3WrapperException as ex:
+        except Web3WrapperException:
             self.__web3_errors(endpoint_uri=endpoint_uri)
-            LOG.exception(ex)
+            LOG.error(f"Node connection failed: {endpoint_uri}")
             block = {
                 "timestamp": time.time(),
                 "number": 0
