@@ -24,7 +24,8 @@ import math
 
 from pydantic import (
     BaseModel,
-    validator
+    validator,
+    Field
 )
 from web3 import Web3
 
@@ -36,15 +37,15 @@ from web3 import Web3
 class IbetStraightBondCreate(BaseModel):
     """ibet Straight Bond schema (Create)"""
     name: str
-    total_supply: int
-    face_value: int
+    total_supply: int = Field(..., ge=0, le=100_000_000)
+    face_value: int = Field(..., ge=0, le=5_000_000_000)
     purpose: str
     symbol: Optional[str]
     redemption_date: Optional[str]
-    redemption_value: Optional[int]
+    redemption_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
     return_date: Optional[str]
     return_amount: Optional[str]
-    interest_rate: Optional[float]
+    interest_rate: Optional[float] = Field(None, ge=0.0000, le=100.0000)
     interest_payment_date: Optional[List[str]]
     transferable: Optional[bool]
     is_redeemed: Optional[bool]
@@ -92,10 +93,10 @@ class IbetStraightBondCreate(BaseModel):
 
 class IbetStraightBondUpdate(BaseModel):
     """ibet Straight Bond schema (Update)"""
-    face_value: Optional[int]
-    interest_rate: Optional[float]
+    face_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
+    interest_rate: Optional[float] = Field(None, ge=0.0000, le=100.0000)
     interest_payment_date: Optional[List[str]]
-    redemption_value: Optional[int]
+    redemption_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
     transferable: Optional[bool]
     image_url: Optional[List[str]]
     status: Optional[bool]
@@ -143,18 +144,12 @@ class IbetStraightBondUpdate(BaseModel):
 class IbetStraightBondAdd(BaseModel):
     """ibet Straight Bond schema (Additional Issue)"""
     account_address: str
-    amount: int
+    amount: int = Field(..., ge=1, le=100_000_000)
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):
         if not Web3.isAddress(v):
             raise ValueError("account_address is not a valid address")
-        return v
-
-    @validator("amount")
-    def amount_must_be_greater_than_0(cls, v):
-        if v <= 0:
-            raise ValueError("amount must be greater than 0")
         return v
 
 
@@ -163,7 +158,7 @@ class IbetStraightBondTransfer(BaseModel):
     token_address: str
     from_address: str
     to_address: str
-    amount: int
+    amount: int = Field(..., ge=1, le=100_000_000)
 
     @validator("token_address")
     def token_address_is_valid_address(cls, v):
@@ -183,21 +178,15 @@ class IbetStraightBondTransfer(BaseModel):
             raise ValueError("to_address is not a valid address")
         return v
 
-    @validator("amount")
-    def amount_must_be_greater_than_0(cls, v):
-        if v <= 0:
-            raise ValueError("amount must be greater than 0")
-        return v
-
 
 class IbetShareCreate(BaseModel):
     """ibet Share schema (Create)"""
     name: str
-    issue_price: int
-    principal_value: int
-    total_supply: int
+    issue_price: int = Field(..., ge=0, le=5_000_000_000)
+    principal_value: int = Field(..., ge=0, le=5_000_000_000)
+    total_supply: int = Field(..., ge=0, le=100_000_000)
     symbol: Optional[str]
-    dividends: Optional[float]
+    dividends: Optional[float] = Field(None, ge=0.00, le=5_000_000_000.00)
     dividend_record_date: Optional[str]
     dividend_payment_date: Optional[str]
     cancellation_date: Optional[str]
@@ -245,7 +234,7 @@ class IbetShareUpdate(BaseModel):
     cancellation_date: Optional[str]
     dividend_record_date: Optional[str]
     dividend_payment_date: Optional[str]
-    dividends: Optional[float]
+    dividends: Optional[float] = Field(None, ge=0.00, le=5_000_000_000.00)
     tradable_exchange_contract_address: Optional[str]
     personal_info_contract_address: Optional[str]
     image_url: Optional[List[str]]
@@ -255,7 +244,7 @@ class IbetShareUpdate(BaseModel):
     contact_information: Optional[str]
     privacy_policy: Optional[str]
     transfer_approval_required: Optional[bool]
-    principal_value: Optional[int]
+    principal_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
     is_canceled: Optional[bool]
 
     @validator("dividends")
@@ -298,7 +287,7 @@ class IbetShareTransfer(BaseModel):
     token_address: str
     from_address: str
     to_address: str
-    amount: int
+    amount: int = Field(..., ge=1, le=100_000_000)
 
     @validator("token_address")
     def token_address_is_valid_address(cls, v):
@@ -318,28 +307,16 @@ class IbetShareTransfer(BaseModel):
             raise ValueError("to_address is not a valid address")
         return v
 
-    @validator("amount")
-    def amount_must_be_greater_than_0(cls, v):
-        if v <= 0:
-            raise ValueError("amount must be greater than 0")
-        return v
-
 
 class IbetShareAdd(BaseModel):
     """ibet Share schema (Additional Issue)"""
     account_address: str
-    amount: int
+    amount: int = Field(..., ge=1, le=100_000_000)
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):
         if not Web3.isAddress(v):
             raise ValueError("account_address is not a valid address")
-        return v
-
-    @validator("amount")
-    def amount_must_be_greater_than_0(cls, v):
-        if v <= 0:
-            raise ValueError("amount must be greater than 0")
         return v
 
 

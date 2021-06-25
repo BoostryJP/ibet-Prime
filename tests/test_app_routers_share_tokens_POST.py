@@ -365,7 +365,7 @@ class TestAppRoutersShareTokensPOST:
             "symbol": "symbol_test1",
             "issue_price": 1000,
             "total_supply": 10000,
-            "dividends": 123.45678,
+            "dividends": 123.456,
             "dividend_record_date": "20211231",
             "dividend_payment_date": "20211231",
             "cancellation_date": "20221231",
@@ -518,6 +518,188 @@ class TestAppRoutersShareTokensPOST:
                 "msg": "eoa-password is not a Base64-encoded encrypted data",
                 "type": "value_error"
             }]
+        }
+
+    # <Error_2_4>
+    # Validation Error
+    # min value: issue_price, total_supply, dividends, principal_value
+    def test_error_2_4(self, client, db):
+        test_account = config_eth_account("user1")
+
+        # request target api
+        req_param = {
+            "name": "name_test1",
+            "symbol": "symbol_test1",
+            "issue_price": -1,
+            "total_supply": -1,
+            "dividends": -0.01,
+            "dividend_record_date": "20211231",
+            "dividend_payment_date": "20211231",
+            "cancellation_date": "20221231",
+            "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
+            "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+            "image_url": ["image_1"],  # update
+            "transferable": False,  # update
+            "status": False,  # update
+            "offering_status": True,  # update
+            "contact_information": "contact info test",  # update
+            "privacy_policy": "privacy policy test",  # update
+            "transfer_approval_required": True,  # update
+            "principal_value": -1,
+            "is_canceled": True
+        }
+        resp = client.post(
+            self.apiurl,
+            json=req_param,
+            headers={
+                "issuer-address": test_account["address"]
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "ctx": {
+                        "limit_value": 0
+                    },
+                    "loc": [
+                        "body",
+                        "issue_price"
+                    ],
+                    "msg": "ensure this value is greater than or equal to 0",
+                    "type": "value_error.number.not_ge"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 0
+                    },
+                    "loc": [
+                        "body",
+                        "principal_value"
+                    ],
+                    "msg": "ensure this value is greater than or equal to 0",
+                    "type": "value_error.number.not_ge"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 0
+                    },
+                    "loc": [
+                        "body",
+                        "total_supply"
+                    ],
+                    "msg": "ensure this value is greater than or equal to 0",
+                    "type": "value_error.number.not_ge"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 0.0
+                    },
+                    "loc": [
+                        "body",
+                        "dividends"
+                    ],
+                    "msg": "ensure this value is greater than or equal to 0.0",
+                    "type": "value_error.number.not_ge"
+                },
+            ]
+        }
+
+    # <Error_2_5>
+    # Validation Error
+    # max value: issue_price, total_supply, dividends, principal_value
+    def test_error_2_5(self, client, db):
+        test_account = config_eth_account("user1")
+
+        # request target api
+        req_param = {
+            "name": "name_test1",
+            "symbol": "symbol_test1",
+            "issue_price": 5_000_000_001,
+            "total_supply": 100_000_001,
+            "dividends": 5_000_000_000.01,
+            "dividend_record_date": "20211231",
+            "dividend_payment_date": "20211231",
+            "cancellation_date": "20221231",
+            "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
+            "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+            "image_url": ["image_1"],  # update
+            "transferable": False,  # update
+            "status": False,  # update
+            "offering_status": True,  # update
+            "contact_information": "contact info test",  # update
+            "privacy_policy": "privacy policy test",  # update
+            "transfer_approval_required": True,  # update
+            "principal_value": 5_000_000_001,
+            "is_canceled": True
+        }
+        resp = client.post(
+            self.apiurl,
+            json=req_param,
+            headers={
+                "issuer-address": test_account["address"]
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "ctx": {
+                        "limit_value": 5_000_000_000
+                    },
+                    "loc": [
+                        "body",
+                        "issue_price"
+                    ],
+                    "msg": "ensure this value is less than or equal to 5000000000",
+                    "type": "value_error.number.not_le"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 5_000_000_000
+                    },
+                    "loc": [
+                        "body",
+                        "principal_value"
+                    ],
+                    "msg": "ensure this value is less than or equal to 5000000000",
+                    "type": "value_error.number.not_le"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 100_000_000
+                    },
+                    "loc": [
+                        "body",
+                        "total_supply"
+                    ],
+                    "msg": "ensure this value is less than or equal to 100000000",
+                    "type": "value_error.number.not_le"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 5_000_000_000.0
+                    },
+                    "loc": [
+                        "body",
+                        "dividends"
+                    ],
+                    "msg": "ensure this value is less than or equal to 5000000000.0",
+                    "type": "value_error.number.not_le"
+                },
+            ]
         }
 
     # <Error_3_1>

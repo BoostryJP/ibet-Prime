@@ -450,9 +450,171 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         }
 
     # <Error_9>
+    # RequestValidationError: min value
+    def test_error_9(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # request target API
+        req_param = {
+            "face_value": -1,
+            "interest_rate": -0.0001,
+            "interest_payment_date": ["0101", "0701"],
+            "redemption_value": -1,
+            "transferable": False,
+            "image_url": [
+                "http://sampleurl.com/some_image1.png",
+                "http://sampleurl.com/some_image2.png",
+                "http://sampleurl.com/some_image3.png"
+            ],
+            "status": False,
+            "initial_offering_status": False,
+            "is_redeemed": True,
+            "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
+            "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "contact_information": "問い合わせ先test",
+            "privacy_policy": "プライバシーポリシーtest"
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": "password"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "ctx": {
+                        "limit_value": 0
+                    },
+                    "loc": [
+                        "body",
+                        "face_value"
+                    ],
+                    "msg": "ensure this value is greater than or equal to 0",
+                    "type": "value_error.number.not_ge"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 0.0000
+                    },
+                    "loc": [
+                        "body",
+                        "interest_rate"
+                    ],
+                    "msg": "ensure this value is greater than or equal to 0.0",
+                    "type": "value_error.number.not_ge"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 0
+                    },
+                    "loc": [
+                        "body",
+                        "redemption_value"
+                    ],
+                    "msg": "ensure this value is greater than or equal to 0",
+                    "type": "value_error.number.not_ge"
+                },
+            ]
+        }
+
+    # <Error_10>
+    # RequestValidationError: max value
+    def test_error_10(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # request target API
+        req_param = {
+            "face_value": 5_000_000_001,
+            "interest_rate": 100.0001,
+            "interest_payment_date": ["0101", "0701"],
+            "redemption_value": 5_000_000_001,
+            "transferable": False,
+            "image_url": [
+                "http://sampleurl.com/some_image1.png",
+                "http://sampleurl.com/some_image2.png",
+                "http://sampleurl.com/some_image3.png"
+            ],
+            "status": False,
+            "initial_offering_status": False,
+            "is_redeemed": True,
+            "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
+            "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "contact_information": "問い合わせ先test",
+            "privacy_policy": "プライバシーポリシーtest"
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": "password"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "ctx": {
+                        "limit_value": 5_000_000_000
+                    },
+                    "loc": [
+                        "body",
+                        "face_value"
+                    ],
+                    "msg": "ensure this value is less than or equal to 5000000000",
+                    "type": "value_error.number.not_le"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 100.0000
+                    },
+                    "loc": [
+                        "body",
+                        "interest_rate"
+                    ],
+                    "msg": "ensure this value is less than or equal to 100.0",
+                    "type": "value_error.number.not_le"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 5_000_000_000
+                    },
+                    "loc": [
+                        "body",
+                        "redemption_value"
+                    ],
+                    "msg": "ensure this value is less than or equal to 5000000000",
+                    "type": "value_error.number.not_le"
+                },
+            ]
+        }
+
+    # <Error_11>
     # AuthorizationError: issuer does not exist
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.update")
-    def test_error_9(self, IbetStraightBondContract_mock, client, db):
+    def test_error_11(self, IbetStraightBondContract_mock, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -490,10 +652,10 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "detail": "issuer does not exist, or password mismatch"
         }
 
-    # <Error_10>
+    # <Error_12>
     # AuthorizationError: token not found
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.update")
-    def test_error_10(self, IbetStraightBondContract_mock, client, db):
+    def test_error_12(self, IbetStraightBondContract_mock, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -530,10 +692,10 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "detail": "issuer does not exist, or password mismatch"
         }
 
-    # <Error_11>
+    # <Error_13>
     # token not found
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.update")
-    def test_error_11(self, IbetStraightBondContract_mock, client, db):
+    def test_error_13(self, IbetStraightBondContract_mock, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -570,9 +732,9 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "detail": "token not found"
         }
 
-    # <Error_12>
+    # <Error_14>
     # Processing Token
-    def test_error_12(self, client, db):
+    def test_error_14(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -615,11 +777,11 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "detail": "wait for a while as the token is being processed"
         }
 
-    # <Error_13>
+    # <Error_15>
     # Send Transaction Error
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.update",
                 MagicMock(side_effect=SendTransactionError()))
-    def test_error_13(self, client, db):
+    def test_error_15(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]

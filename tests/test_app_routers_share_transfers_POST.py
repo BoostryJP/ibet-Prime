@@ -96,7 +96,7 @@ class TestAppRoutersShareTransfersPOST:
     ###########################################################################
 
     # <Error_1>
-    # RequestValidationError: token_address, from_address, to_address, amount
+    # RequestValidationError: token_address, from_address, to_address, amount(min)
     def test_error_1(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
@@ -109,7 +109,7 @@ class TestAppRoutersShareTransfersPOST:
             "token_address": _token_address,
             "from_address": _from_address,
             "to_address": _to_address,
-            "amount": -1  # negative value
+            "amount": 0
         }
         resp = client.post(
             self.test_url,
@@ -131,25 +131,86 @@ class TestAppRoutersShareTransfersPOST:
                     "loc": ["body", "token_address"],
                     "msg": "token_address is not a valid address",
                     "type": "value_error"
-                }, {
+                },
+                {
                     "loc": ["body", "from_address"],
                     "msg": "from_address is not a valid address",
                     "type": "value_error"
-                }, {
+                },
+                {
                     "loc": ["body", "to_address"],
                     "msg": "to_address is not a valid address",
                     "type": "value_error"
-                }, {
-                    "loc": ["body", "amount"],
-                    "msg": "amount must be greater than 0",
-                    "type": "value_error"
-                }
+                },
+                {
+                    "ctx": {
+                        "limit_value": 1
+                    },
+                    "loc": [
+                        "body",
+                        "amount"
+                    ],
+                    "msg": "ensure this value is greater than or equal to 1",
+                    "type": "value_error.number.not_ge"
+                },
             ]
         }
 
     # <Error_2>
-    # RequestValidationError: headers and body required
+    # RequestValidationError: amount(max)
     def test_error_2(self, client, db):
+        _admin_account = config_eth_account("user1")
+        _admin_address = _admin_account["address"]
+        _admin_keyfile = _admin_account["keyfile_json"]
+
+        _from_address_account = config_eth_account("user2")
+        _from_address = _from_address_account["address"]
+
+        _to_address_account = config_eth_account("user3")
+        _to_address = _to_address_account["address"]
+
+        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
+
+        # request target API
+        req_param = {
+            "token_address": _token_address,
+            "from_address": _from_address,
+            "to_address": _to_address,
+            "amount": 100_000_001
+        }
+        resp = client.post(
+            self.test_url,
+            json=req_param,
+            headers={
+                "issuer-address": _admin_address
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "ctx": {
+                        "limit_value": 100_000_000
+                    },
+                    "loc": [
+                        "body",
+                        "amount"
+                    ],
+                    "msg": "ensure this value is less than or equal to 100000000",
+                    "type": "value_error.number.not_le"
+                },
+            ]
+        }
+
+    # <Error_3>
+    # RequestValidationError: headers and body required
+    def test_error_3(self, client, db):
         # request target API
         resp = client.post(
             self.test_url
@@ -176,9 +237,9 @@ class TestAppRoutersShareTransfersPOST:
             ]
         }
 
-    # <Error_3>
+    # <Error_4>
     # RequestValidationError: issuer-address, eoa-password(required)
-    def test_error_3(self, client, db):
+    def test_error_4(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -224,9 +285,9 @@ class TestAppRoutersShareTransfersPOST:
             }]
         }
 
-    # <Error_4>
+    # <Error_5>
     # RequestValidationError: eoa-password(not decrypt)
-    def test_error_4(self, client, db):
+    def test_error_5(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -269,9 +330,9 @@ class TestAppRoutersShareTransfersPOST:
             }]
         }
 
-    # <Error_5>
+    # <Error_6>
     # AuthorizationError: issuer does not exist
-    def test_error_5(self, client, db):
+    def test_error_6(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -310,9 +371,9 @@ class TestAppRoutersShareTransfersPOST:
             "detail": "issuer does not exist, or password mismatch"
         }
 
-    # <Error_6>
+    # <Error_7>
     # AuthorizationError: password mismatch
-    def test_error_6(self, client, db):
+    def test_error_7(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -358,9 +419,9 @@ class TestAppRoutersShareTransfersPOST:
             "detail": "issuer does not exist, or password mismatch"
         }
 
-    # <Error_7>
+    # <Error_8>
     # InvalidParameterError: token not found
-    def test_error_7(self, client, db):
+    def test_error_8(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -406,9 +467,9 @@ class TestAppRoutersShareTransfersPOST:
             "detail": "token not found"
         }
 
-    # <Error_8>
+    # <Error_9>
     # InvalidParameterError: processing token
-    def test_error_8(self, client, db):
+    def test_error_9(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -463,11 +524,11 @@ class TestAppRoutersShareTransfersPOST:
             "detail": "wait for a while as the token is being processed"
         }
 
-    # <Error_9>
+    # <Error_10>
     # Send Transaction Error
     @mock.patch("app.model.blockchain.token.IbetShareContract.transfer",
                 MagicMock(side_effect=SendTransactionError()))
-    def test_error_9(self, client, db):
+    def test_error_10(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]

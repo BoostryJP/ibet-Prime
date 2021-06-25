@@ -283,7 +283,7 @@ class TestAppRoutersBondTokensPOST:
             "return_date": "redemption_value_test1",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
-            "interest_rate": 123.45678,
+            "interest_rate": 12.34567,
             "interest_payment_date": ["2101", "2102", "2103", "2104", "2105", "2106", "2107", "2108", "2109", "2110",
                                       "2111", "2112", "2113"],
             "tradable_exchange_contract_address": "0x0",
@@ -482,6 +482,190 @@ class TestAppRoutersBondTokensPOST:
                     "msg": "value could not be parsed to a boolean",
                     "type": "type_error.bool"
                 }
+            ]
+        }
+
+    # <Error_2_5>
+    # Validation Error
+    # min value: total_supply, face_value, redemption_value, interest_rate
+    def test_error_2_5(self, client, db):
+        test_account = config_eth_account("user1")
+
+        # request target api
+        req_param = {
+            "name": "name_test1",
+            "symbol": "symbol_test1",
+            "total_supply": -1,
+            "face_value": -1,
+            "redemption_date": "redemption_date_test1",
+            "redemption_value": -1,
+            "return_date": "return_date_test1",
+            "return_amount": "return_amount_test1",
+            "purpose": "purpose_test1",
+            "interest_rate": -0.0001,  # update
+            "interest_payment_date": ["0331", "0930"],  # update
+            "transferable": False,  # update
+            "image_url": ["image_1"],  # update
+            "status": False,  # update
+            "initial_offering_status": True,  # update
+            "is_redeemed": True,  # update
+            "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
+            "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+            "contact_information": "contact info test",  # update
+            "privacy_policy": "privacy policy test"  # update
+        }
+        resp = client.post(
+            self.apiurl,
+            json=req_param,
+            headers={
+                "issuer-address": test_account["address"]
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "ctx": {
+                        "limit_value": 0
+                    },
+                    "loc": [
+                        "body",
+                        "total_supply"
+                    ],
+                    "msg": "ensure this value is greater than or equal to 0",
+                    "type": "value_error.number.not_ge"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 0
+                    },
+                    "loc": [
+                        "body",
+                        "face_value"
+                    ],
+                    "msg": "ensure this value is greater than or equal to 0",
+                    "type": "value_error.number.not_ge"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 0
+                    },
+                    "loc": [
+                        "body",
+                        "redemption_value"
+                    ],
+                    "msg": "ensure this value is greater than or equal to 0",
+                    "type": "value_error.number.not_ge"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 0.0
+                    },
+                    "loc": [
+                        "body",
+                        "interest_rate"
+                    ],
+                    "msg": "ensure this value is greater than or equal to 0.0",
+                    "type": "value_error.number.not_ge"
+                },
+            ]
+        }
+
+    # <Error_2_6>
+    # Validation Error
+    # max value: total_supply, face_value, redemption_value, interest_rate
+    def test_error_2_6(self, client, db):
+        test_account = config_eth_account("user1")
+
+        # request target api
+        req_param = {
+            "name": "name_test1",
+            "symbol": "symbol_test1",
+            "total_supply": 100_000_001,
+            "face_value": 5_000_000_001,
+            "redemption_date": "redemption_date_test1",
+            "redemption_value": 5_000_000_001,
+            "return_date": "return_date_test1",
+            "return_amount": "return_amount_test1",
+            "purpose": "purpose_test1",
+            "interest_rate": 100.0001,  # update
+            "interest_payment_date": ["0331", "0930"],  # update
+            "transferable": False,  # update
+            "image_url": ["image_1"],  # update
+            "status": False,  # update
+            "initial_offering_status": True,  # update
+            "is_redeemed": True,  # update
+            "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
+            "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+            "contact_information": "contact info test",  # update
+            "privacy_policy": "privacy policy test"  # update
+        }
+        resp = client.post(
+            self.apiurl,
+            json=req_param,
+            headers={
+                "issuer-address": test_account["address"]
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "ctx": {
+                        "limit_value": 100_000_000
+                    },
+                    "loc": [
+                        "body",
+                        "total_supply"
+                    ],
+                    "msg": "ensure this value is less than or equal to 100000000",
+                    "type": "value_error.number.not_le"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 5_000_000_000
+                    },
+                    "loc": [
+                        "body",
+                        "face_value"
+                    ],
+                    "msg": "ensure this value is less than or equal to 5000000000",
+                    "type": "value_error.number.not_le"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 5_000_000_000
+                    },
+                    "loc": [
+                        "body",
+                        "redemption_value"
+                    ],
+                    "msg": "ensure this value is less than or equal to 5000000000",
+                    "type": "value_error.number.not_le"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 100.0000
+                    },
+                    "loc": [
+                        "body",
+                        "interest_rate"
+                    ],
+                    "msg": "ensure this value is less than or equal to 100.0",
+                    "type": "value_error.number.not_le"
+                },
             ]
         }
 

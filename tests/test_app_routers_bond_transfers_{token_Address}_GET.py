@@ -40,14 +40,14 @@ class TestAppRoutersBondTransfersGET:
     test_from_address = "test_from_address"
     test_to_address = "test_to_address"
     test_block_timestamp = [
-        datetime.strptime("2022/01/02 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/03
-        datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
-        datetime.strptime("2022/01/02 00:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
+        datetime.strptime("2022/01/02 15:20:30", '%Y/%m/%d %H:%M:%S'),  # JST 2022/01/03
+        datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S'),  # JST 2022/01/02
+        datetime.strptime("2022/01/02 00:20:30", '%Y/%m/%d %H:%M:%S'),  # JST 2022/01/02
     ]
     test_block_timestamp_str = [
-        "2022-01-03T00:20:30.000001+09:00",
-        "2022-01-02T00:20:30.000001+09:00",
-        "2022-01-02T09:20:30.000001+09:00",
+        "2022-01-03T00:20:30+09:00",
+        "2022-01-02T00:20:30+09:00",
+        "2022-01-02T09:20:30+09:00",
     ]
 
     ###########################################################################

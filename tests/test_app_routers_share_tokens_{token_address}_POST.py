@@ -441,9 +441,151 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         }
 
     # <Error_9>
+    # RequestValidationError: min value
+    def test_error_9(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # request target API
+        req_param = {
+            "cancellation_date": "20221231",
+            "dividends": -0.01,
+            "dividend_record_date": "20211231",
+            "dividend_payment_date": "20211231",
+            "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
+            "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "image_url": [
+                "http://sampleurl.com/some_image1.png",
+                "http://sampleurl.com/some_image2.png",
+                "http://sampleurl.com/some_image3.png"
+            ],
+            "transferable": False,
+            "status": False,
+            "offering_status": False,
+            "contact_information": "問い合わせ先test",
+            "privacy_policy": "プライバシーポリシーtest",
+            "transfer_approval_required": False,
+            "principal_value": -1,
+            "is_canceled": True
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": "password"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "ctx": {
+                        "limit_value": 0.0
+                    },
+                    "loc": [
+                        "body",
+                        "dividends"
+                    ],
+                    "msg": "ensure this value is greater than or equal to 0.0",
+                    "type": "value_error.number.not_ge"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 0
+                    },
+                    "loc": [
+                        "body",
+                        "principal_value"
+                    ],
+                    "msg": "ensure this value is greater than or equal to 0",
+                    "type": "value_error.number.not_ge"
+                },
+            ]
+        }
+
+    # <Error_10>
+    # RequestValidationError: max value
+    def test_error_10(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # request target API
+        req_param = {
+            "cancellation_date": "20221231",
+            "dividends": 5_000_000_000.01,
+            "dividend_record_date": "20211231",
+            "dividend_payment_date": "20211231",
+            "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
+            "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "image_url": [
+                "http://sampleurl.com/some_image1.png",
+                "http://sampleurl.com/some_image2.png",
+                "http://sampleurl.com/some_image3.png"
+            ],
+            "transferable": False,
+            "status": False,
+            "offering_status": False,
+            "contact_information": "問い合わせ先test",
+            "privacy_policy": "プライバシーポリシーtest",
+            "transfer_approval_required": False,
+            "principal_value": 5_000_000_001,
+            "is_canceled": True
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": "password"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "ctx": {
+                        "limit_value": 5_000_000_000.00
+                    },
+                    "loc": [
+                        "body",
+                        "dividends"
+                    ],
+                    "msg": "ensure this value is less than or equal to 5000000000.0",
+                    "type": "value_error.number.not_le"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 5_000_000_000
+                    },
+                    "loc": [
+                        "body",
+                        "principal_value"
+                    ],
+                    "msg": "ensure this value is less than or equal to 5000000000",
+                    "type": "value_error.number.not_le"
+                },
+            ]
+        }
+
+    # <Error_11>
     # AuthorizationError: issuer does not exist
     @mock.patch("app.model.blockchain.token.IbetShareContract.update")
-    def test_error_9(self, IbetShareContract_mock, client, db):
+    def test_error_11(self, IbetShareContract_mock, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -481,10 +623,10 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "detail": "issuer does not exist, or password mismatch"
         }
 
-    # <Error_10>
+    # <Error_12>
     # AuthorizationError: password mismatch
     @mock.patch("app.model.blockchain.token.IbetShareContract.update")
-    def test_error_10(self, IbetShareContract_mock, client, db):
+    def test_error_12(self, IbetShareContract_mock, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -521,10 +663,10 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "detail": "issuer does not exist, or password mismatch"
         }
 
-    # <Error_11>
+    # <Error_13>
     # token not found
     @mock.patch("app.model.blockchain.token.IbetShareContract.update")
-    def test_error_11(self, IbetShareContract_mock, client, db):
+    def test_error_13(self, IbetShareContract_mock, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -561,9 +703,9 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "detail": "token not found"
         }
 
-    # <Error_12>
+    # <Error_14>
     # Processing Token
-    def test_error_12(self, client, db):
+    def test_error_14(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -606,11 +748,11 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "detail": "wait for a while as the token is being processed"
         }
 
-    # <Error_13>
+    # <Error_15>
     # Send Transaction Error
     @mock.patch("app.model.blockchain.token.IbetShareContract.update",
                 MagicMock(side_effect=SendTransactionError()))
-    def test_error_13(self, client, db):
+    def test_error_15(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]

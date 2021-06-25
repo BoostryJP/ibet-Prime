@@ -119,7 +119,7 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
         }
 
     # <Error_2>
-    # RequestValidationError: account_address, amount
+    # RequestValidationError: account_address, amount(min)
     def test_error_2(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -128,7 +128,7 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
         # request target API
         req_param = {
             "account_address": "0x0",
-            "amount": -1
+            "amount": 0
         }
         resp = client.post(
             self.base_url.format(_token_address),
@@ -152,16 +152,64 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
                     "type": "value_error"
                 },
                 {
-                    "loc": ["body", "amount"],
-                    "msg": "amount must be greater than 0",
-                    "type": "value_error"
-                }
+                    "ctx": {
+                        "limit_value": 1
+                    },
+                    "loc": [
+                        "body",
+                        "amount"
+                    ],
+                    "msg": "ensure this value is greater than or equal to 1",
+                    "type": "value_error.number.not_ge"
+                },
             ]
         }
 
     # <Error_3>
-    # RequestValidationError: issuer-address, eoa-password(required)
+    # RequestValidationError: amount(max)
     def test_error_3(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _token_address = "token_address_test"
+
+        # request target API
+        req_param = {
+            "account_address": _issuer_address,
+            "amount": 100_000_001
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "ctx": {
+                        "limit_value": 100_000_000
+                    },
+                    "loc": [
+                        "body",
+                        "amount"
+                    ],
+                    "msg": "ensure this value is less than or equal to 100000000",
+                    "type": "value_error.number.not_le"
+                },
+            ]
+        }
+
+    # <Error_4>
+    # RequestValidationError: issuer-address, eoa-password(required)
+    def test_error_4(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -197,9 +245,9 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
             }]
         }
 
-    # <Error_4>
+    # <Error_5>
     # RequestValidationError: eoa-password(not decrypt)
-    def test_error_4(self, client, db):
+    def test_error_5(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -243,9 +291,9 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
             }]
         }
 
-    # <Error_5>
+    # <Error_6>
     # issuer does not exist
-    def test_error_5(self, client, db):
+    def test_error_6(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -285,9 +333,9 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
             "detail": "issuer does not exist, or password mismatch"
         }
 
-    # <Error_6>
+    # <Error_7>
     # password mismatch
-    def test_error_6(self, client, db):
+    def test_error_7(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -323,9 +371,9 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
             "detail": "issuer does not exist, or password mismatch"
         }
 
-    # <Error_7>
+    # <Error_8>
     # token not found
-    def test_error_7(self, client, db):
+    def test_error_8(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -361,9 +409,9 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
             "detail": "token not found"
         }
 
-    # <Error_8>
+    # <Error_9>
     # Processing token
-    def test_error_8(self, client, db):
+    def test_error_9(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -409,11 +457,11 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
             "detail": "wait for a while as the token is being processed"
         }
 
-    # <Error_9>
+    # <Error_10>
     # Send Transaction Error
     @mock.patch("app.model.blockchain.token.IbetShareContract.add_supply",
                 MagicMock(side_effect=SendTransactionError()))
-    def test_error_9(self, client, db):
+    def test_error_10(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]

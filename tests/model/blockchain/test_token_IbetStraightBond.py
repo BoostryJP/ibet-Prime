@@ -588,25 +588,85 @@ class TestUpdate:
 
     # <Error_3>
     # Validation (IbetStraightBondUpdate)
-    # invalid parameter (interest_rate)
+    # invalid parameter (min value)
     def test_error_3(self, db):
         # update
         _data = {
-            "interest_rate": 0.00001,
+            "face_value": -1,
+            "interest_rate": -0.0001,
+            "redemption_value": -1,
         }
         with pytest.raises(ValidationError) as exc_info:
             IbetStraightBondUpdate(**_data)
         assert exc_info.value.errors() == [
             {
+                "ctx": {
+                    "limit_value": 0
+                },
+                "loc": ("face_value",),
+                "msg": "ensure this value is greater than or equal to 0",
+                "type": "value_error.number.not_ge"
+            },
+            {
+                "ctx": {
+                    "limit_value": 0.0000
+                },
                 "loc": ("interest_rate",),
-                "msg": "interest_rate must be rounded to 4 decimal places",
-                "type": "value_error"
-            }
+                "msg": "ensure this value is greater than or equal to 0.0",
+                "type": "value_error.number.not_ge"
+            },
+            {
+                "ctx": {
+                    "limit_value": 0
+                },
+                "loc": ("redemption_value",),
+                "msg": "ensure this value is greater than or equal to 0",
+                "type": "value_error.number.not_ge"
+            },
         ]
 
     # <Error_4>
-    # invalid tx_from
+    # Validation (IbetStraightBondUpdate)
+    # invalid parameter (max value)
     def test_error_4(self, db):
+        # update
+        _data = {
+            "face_value": 5_000_000_001,
+            "interest_rate": 100.0001,
+            "redemption_value": 5_000_000_001,
+        }
+        with pytest.raises(ValidationError) as exc_info:
+            IbetStraightBondUpdate(**_data)
+        assert exc_info.value.errors() == [
+            {
+                "ctx": {
+                    "limit_value": 5_000_000_000
+                },
+                "loc": ("face_value",),
+                "msg": "ensure this value is less than or equal to 5000000000",
+                "type": "value_error.number.not_le"
+            },
+            {
+                "ctx": {
+                    "limit_value": 100.0000
+                },
+                "loc": ("interest_rate",),
+                "msg": "ensure this value is less than or equal to 100.0",
+                "type": "value_error.number.not_le"
+            },
+            {
+                "ctx": {
+                    "limit_value": 5_000_000_000
+                },
+                "loc": ("redemption_value",),
+                "msg": "ensure this value is less than or equal to 5000000000",
+                "type": "value_error.number.not_le"
+            },
+        ]
+
+    # <Error_5>
+    # invalid tx_from
+    def test_error_5(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -642,9 +702,9 @@ class TestUpdate:
         assert isinstance(exc_info.value.args[0], InvalidAddress)
         assert exc_info.match("ENS name: \'DUMMY\' is invalid.")
 
-    # <Error_5>
+    # <Error_6>
     # invalid private key
-    def test_error_5(self, db):
+    def test_error_6(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -680,9 +740,9 @@ class TestUpdate:
         assert isinstance(exc_info.value.args[0], Error)
         assert exc_info.match("Non-hexadecimal digit found")
 
-    # <Error_6>
+    # <Error_7>
     # TimeExhausted
-    def test_error_6(self, db):
+    def test_error_7(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -724,9 +784,9 @@ class TestUpdate:
                 )
         assert isinstance(exc_info.value.args[0], TimeExhausted)
 
-    # <Error_7>
+    # <Error_8>
     # Error
-    def test_error_7(self, db):
+    def test_error_8(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -883,15 +943,49 @@ class TestTransfer:
                 "msg": "to_address is not a valid address",
                 "type": "value_error"
             }, {
+                "ctx": {
+                    "limit_value": 1
+                },
                 "loc": ("amount",),
-                "msg": "amount must be greater than 0",
-                "type": "value_error"
+                "msg": "ensure this value is greater than or equal to 1",
+                "type": "value_error.number.not_ge"
             }
         ]
 
     # <Error_3>
-    # invalid tx_from
+    # validation (IbetStraightBondTransfer)
+    # invalid parameter: max value
     def test_error_3(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+
+        to_account = config_eth_account("user2")
+        to_address = to_account.get("address")
+
+        token_address = "0x1234567890123456789012345678901234567890"
+
+        _data = {
+            "token_address": token_address,
+            "from_address": issuer_address,
+            "to_address": to_address,
+            "amount": 100_000_001
+        }
+        with pytest.raises(ValidationError) as exc_info:
+            IbetStraightBondTransfer(**_data)
+        assert exc_info.value.errors() == [
+            {
+                "ctx": {
+                    "limit_value": 100_000_000
+                },
+                "loc": ("amount",),
+                "msg": "ensure this value is less than or equal to 100000000",
+                "type": "value_error.number.not_le"
+            }
+        ]
+
+    # <Error_4>
+    # invalid tx_from
+    def test_error_4(self, db):
         from_account = config_eth_account("user1")
         from_address = from_account.get("address")
         from_private_key = decode_keyfile_json(
@@ -932,9 +1026,9 @@ class TestTransfer:
         assert isinstance(exc_info.value.args[0], InvalidAddress)
         assert exc_info.match("ENS name: \'invalid_tx_from\' is invalid.")
 
-    # <Error_4>
+    # <Error_5>
     # invalid private key
-    def test_error_4(self, db):
+    def test_error_5(self, db):
         from_account = config_eth_account("user1")
         from_address = from_account.get("address")
         from_private_key = decode_keyfile_json(
@@ -975,9 +1069,9 @@ class TestTransfer:
         assert isinstance(exc_info.value.args[0], Error)
         assert exc_info.match("Non-hexadecimal digit found")
 
-    # <Error_5>
+    # <Error_6>
     # TimeExhausted
-    def test_error_5(self, db):
+    def test_error_6(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1024,9 +1118,9 @@ class TestTransfer:
                 )
         assert isinstance(exc_info.value.args[0], TimeExhausted)
 
-    # <Error_6>
+    # <Error_7>
     # Error
-    def test_error_6(self, db):
+    def test_error_7(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1222,15 +1316,41 @@ class TestAddSupply:
                 "msg": "account_address is not a valid address",
                 "type": "value_error"
             }, {
+                "ctx": {
+                    "limit_value": 1
+                },
                 "loc": ("amount",),
-                "msg": "amount must be greater than 0",
-                "type": "value_error"
+                "msg": "ensure this value is greater than or equal to 1",
+                "type": "value_error.number.not_ge"
             }
         ]
 
     # <Error_4>
-    # invalid tx_from
+    # validation (IbetStraightBondAdd)
+    # invalid parameter: max value
     def test_error_4(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        _data = {
+            "account_address": issuer_address,
+            "amount": 100_000_001
+        }
+        with pytest.raises(ValidationError) as exc_info:
+            IbetStraightBondAdd(**_data)
+        assert exc_info.value.errors() == [
+            {
+                "ctx": {
+                    "limit_value": 100_000_000
+                },
+                "loc": ("amount",),
+                "msg": "ensure this value is less than or equal to 100000000",
+                "type": "value_error.number.not_le"
+            }
+        ]
+
+    # <Error_5>
+    # invalid tx_from
+    def test_error_5(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1267,9 +1387,9 @@ class TestAddSupply:
         assert isinstance(exc_info.value.args[0], InvalidAddress)
         assert exc_info.match("ENS name: \'invalid_tx_from\' is invalid.")
 
-    # <Error_5>
+    # <Error_6>
     # invalid private key
-    def test_error_5(self, db):
+    def test_error_6(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1306,9 +1426,9 @@ class TestAddSupply:
         assert isinstance(exc_info.value.args[0], Error)
         assert exc_info.match("Non-hexadecimal digit found")
 
-    # <Error_6>
+    # <Error_7>
     # TimeExhausted
-    def test_error_6(self, db):
+    def test_error_7(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1351,9 +1471,9 @@ class TestAddSupply:
                 )
         assert exc_info.type(SendTransactionError(TimeExhausted))
 
-    # <Error_7>
+    # <Error_8>
     # Error
-    def test_error_7(self, db):
+    def test_error_8(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
