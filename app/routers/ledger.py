@@ -351,6 +351,57 @@ def create_update_ledger_template(
     return
 
 
+# DELETE: /ledger/{token_address}/template
+@router.delete(
+    "/{token_address}/template",
+    response_model=None,
+    responses=get_routers_responses(422, InvalidParameterError)
+)
+def delete_ledger_template(
+        token_address: str,
+        issuer_address: str = Header(...),
+        db: Session = Depends(db_session)):
+    """Delete Ledger Template"""
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
+
+    # Issuer Management Token Check
+    _token = db.query(Token). \
+        filter(Token.token_address == token_address). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise InvalidParameterError("token does not exist")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
+
+    # Get Ledger Template
+    _template = db.query(LedgerTemplate). \
+        filter(LedgerTemplate.token_address == token_address). \
+        first()
+
+    # Get Ledger Template
+    _template = db.query(LedgerTemplate). \
+        filter(LedgerTemplate.token_address == token_address). \
+        first()
+    if _template is None:
+        raise InvalidParameterError("ledger template does not exist")
+
+    # Delete Ledger Template
+    db.delete(_template)
+
+    # Delete Ledger Details Template
+    _details_list = db.query(LedgerDetailsTemplate). \
+        filter(LedgerDetailsTemplate.token_address == token_address). \
+        all()
+    for _details in _details_list:
+        db.delete(_details)
+
+    return
+
+
 # GET: /ledger/{token_address}/details_data
 @router.get(
     "/{token_address}/details_data",
@@ -573,7 +624,7 @@ def delete_ledger_details_data(
         data_id: str,
         issuer_address: str = Header(...),
         db: Session = Depends(db_session)):
-    """Update Ledger Details Data"""
+    """Delete Ledger Details Data"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
