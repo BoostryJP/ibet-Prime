@@ -139,7 +139,7 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
         }
 
     # <Error_2>
-    # RequestValidationError: amount
+    # RequestValidationError: amount(min)
     def test_error_2(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -158,7 +158,7 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
         # request target API
         req_param = {
             "account_address": _issuer_address,
-            "amount": -1
+            "amount": 0
         }
 
         resp = client.post(
@@ -179,19 +179,76 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
             },
             "detail": [
                 {
+                    "ctx": {
+                        "limit_value": 1
+                    },
                     "loc": [
                         "body",
                         "amount"
                     ],
-                    "msg": "amount must be greater than 0",
-                    "type": "value_error"
-                }
+                    "msg": "ensure this value is greater than or equal to 1",
+                    "type": "value_error.number.not_ge"
+                },
             ]
         }
 
     # <Error_3>
-    # RequestValidationError: headers and body required
+    # RequestValidationError: amount(max)
     def test_error_3(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "token_address_test"
+
+        # prepare data
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        db.add(token)
+
+        # request target API
+        req_param = {
+            "account_address": _issuer_address,
+            "amount": 100_000_001
+        }
+
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "ctx": {
+                        "limit_value": 100_000_000
+                    },
+                    "loc": [
+                        "body",
+                        "amount"
+                    ],
+                    "msg": "ensure this value is less than or equal to 100000000",
+                    "type": "value_error.number.not_le"
+                },
+            ]
+        }
+
+    # <Error_4>
+    # RequestValidationError: headers and body required
+    def test_error_4(self, client, db):
         _token_address = "token_address_test"
 
         # request target API
@@ -220,9 +277,9 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
             ]
         }
 
-    # <Error_4>
+    # <Error_5>
     # RequestValidationError: issuer-address, eoa-password(required)
-    def test_error_4(self, client, db):
+    def test_error_5(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -259,9 +316,9 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
             }]
         }
 
-    # <Error_5>
+    # <Error_6>
     # RequestValidationError: eoa-password(not decrypt)
-    def test_error_5(self, client, db):
+    def test_error_6(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -301,9 +358,9 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
             }]
         }
 
-    # <Error_6>
+    # <Error_7>
     # issuer does not exist
-    def test_error_6(self, client, db):
+    def test_error_7(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -343,9 +400,9 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
             "detail": "issuer does not exist, or password mismatch"
         }
 
-    # <Error_7>
+    # <Error_8>
     # password mismatch
-    def test_error_7(self, client, db):
+    def test_error_8(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -381,9 +438,9 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
             "detail": "issuer does not exist, or password mismatch"
         }
 
-    # <Error_8>
+    # <Error_9>
     # token not found
-    def test_error_8(self, client, db):
+    def test_error_9(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -419,9 +476,9 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
             "detail": "token not found"
         }
 
-    # <Error_9>
+    # <Error_10>
     # Processing Token
-    def test_error_9(self, client, db):
+    def test_error_10(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -467,11 +524,11 @@ class TestAppRoutersBondTokensTokenAddressAddPOST:
             "detail": "wait for a while as the token is being processed"
         }
 
-    # <Error_10>
+    # <Error_11>
     # Send Transaction Error
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.add_supply",
                 MagicMock(side_effect=SendTransactionError()))
-    def test_error_10(self, client, db):
+    def test_error_11(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
