@@ -147,7 +147,7 @@ class TestAppRoutersBondBulkTransferPOST:
                 "token_address": _token_address_int,
                 "from_address": _from_address_long,
                 "to_address": _to_address_short,
-                "amount": -1
+                "amount": 0
             },
         ]
 
@@ -179,17 +179,69 @@ class TestAppRoutersBondBulkTransferPOST:
                     "msg": "to_address is not a valid address",
                     "type": "value_error"
                 }, {
-                    "loc": ["body", 0, "amount"],
-                    "msg": "amount must be greater than 0",
-                    "type": "value_error"
-                }
+                    "ctx": {
+                        "limit_value": 1
+                    },
+                    "loc": [
+                        "body",
+                        0,
+                        "amount"
+                    ],
+                    "msg": "ensure this value is greater than or equal to 1",
+                    "type": "value_error.number.not_ge"
+                },
             ]
         }
 
     # <Error_2>
     # RequestValidationError
+    # invalid type(max values)
+    def test_error_7(self, client, db):
+
+        # request target API
+        req_param = [
+            {
+                "token_address": self.req_tokens[0],
+                "from_address": self.from_address,
+                "to_address": self.to_address,
+                "amount": 100_000_001
+            }
+        ]
+        resp = client.post(
+            self.test_url,
+            json=req_param,
+            headers={
+                "issuer-address": self.admin_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            }
+        )
+
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "ctx": {
+                        "limit_value": 100_000_000
+                    },
+                    "loc": [
+                        "body",
+                        0,
+                        "amount"
+                    ],
+                    "msg": "ensure this value is less than or equal to 100000000",
+                    "type": "value_error.number.not_le"
+                },
+            ]
+        }
+
+    # <Error_3>
+    # RequestValidationError
     # headers and body required
-    def test_error_2(self, client, db):
+    def test_error_3(self, client, db):
         # request target API
         resp = client.post(
             self.test_url
@@ -216,10 +268,10 @@ class TestAppRoutersBondBulkTransferPOST:
             ]
         }
 
-    # <Error_3>
+    # <Error_4>
     # RequestValidationError
     # issuer-address, eoa-password(required)
-    def test_error_3(self, client, db):
+    def test_error_4(self, client, db):
         # request target API
         req_param = []
         resp = client.post(
@@ -248,10 +300,10 @@ class TestAppRoutersBondBulkTransferPOST:
             }]
         }
 
-    # <Error_4>
+    # <Error_5>
     # RequestValidationError
     # eoa-password(not decrypt)
-    def test_error_4(self, client, db):
+    def test_error_5(self, client, db):
         # request target API
         req_param = []
         resp = client.post(
@@ -277,10 +329,10 @@ class TestAppRoutersBondBulkTransferPOST:
             }]
         }
 
-    # <Error_5>
+    # <Error_6>
     # InvalidParameterError
     # list length is 0
-    def test_error_5(self, client, db):
+    def test_error_6(self, client, db):
         # prepare data : Account(Issuer)
         account = Account()
         account.issuer_address = self.admin_address
@@ -309,10 +361,10 @@ class TestAppRoutersBondBulkTransferPOST:
             "detail": "list length is zero"
         }
 
-    # <Error_6>
+    # <Error_7>
     # AuthorizationError
     # issuer does not exist
-    def test_error_6(self, client, db):
+    def test_error_7(self, client, db):
         # request target API
         req_param = [
             {
@@ -346,10 +398,10 @@ class TestAppRoutersBondBulkTransferPOST:
             "detail": "issuer does not exist, or password mismatch"
         }
 
-    # <Error_7>
+    # <Error_8>
     # AuthorizationError
     # password mismatch
-    def test_error_7(self, client, db):
+    def test_error_8(self, client, db):
         # prepare data : Account(Issuer)
         account = Account()
         account.issuer_address = self.admin_address
@@ -384,10 +436,10 @@ class TestAppRoutersBondBulkTransferPOST:
             "detail": "issuer does not exist, or password mismatch"
         }
 
-    # <Error_8>
+    # <Error_9>
     # InvalidParameterError
     # token not found
-    def test_error_8(self, client, db):
+    def test_error_9(self, client, db):
         # prepare data : Account(Issuer)
         account = Account()
         account.issuer_address = self.admin_address
@@ -422,10 +474,10 @@ class TestAppRoutersBondBulkTransferPOST:
             "detail": f"token not found: {self.req_tokens[0]}"
         }
 
-    # <Error_9>
+    # <Error_10>
     # InvalidParameterError
     # processing token
-    def test_error_9(self, client, db):
+    def test_error_10(self, client, db):
         # prepare data : Account(Issuer)
         account = Account()
         account.issuer_address = self.admin_address
