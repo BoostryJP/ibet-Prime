@@ -22,7 +22,8 @@ from typing import (
 )
 from pydantic import (
     BaseModel,
-    validator
+    validator,
+    Field
 )
 from datetime import datetime
 
@@ -35,48 +36,24 @@ from .result_set import ResultSet
 
 class CreateUpdateLedgerDetailsDataTemplateRequest(BaseModel):
     """Create or Update Ledger Details Data Template schema (Request)"""
-    type: str
-    source: Optional[str]
-
-    @validator("type")
-    def type_length_is_less_than_20(cls, v):
-        if len(v) > 20:
-            raise ValueError("The length must be less than or equal to 20")
-        return v
-
-    @validator("source")
-    def source_length_is_less_than_42(cls, v):
-        if len(v) > 42:
-            raise ValueError("The length must be less than or equal to 42")
-        return v
+    type: str = Field(..., regex="^ibetfin$|^db$")
+    source: Optional[str] = Field(None, max_length=42)
 
 
 class CreateUpdateLedgerDetailsTemplateRequest(BaseModel):
     """Create or Update Ledger Details Template schema (Request)"""
-    token_detail_type: str
+    token_detail_type: str = Field(..., max_length=100)
     headers: Optional[List[dict]]
     data: CreateUpdateLedgerDetailsDataTemplateRequest
     footers: Optional[List[dict]]
 
-    @validator("token_detail_type")
-    def token_detail_type_length_is_less_than_100(cls, v):
-        if len(v) > 100:
-            raise ValueError("The length must be less than or equal to 100")
-        return v
-
 
 class CreateUpdateLedgerTemplateRequest(BaseModel):
     """Create or Update Ledger Template schema (Request)"""
-    token_name: str
+    token_name: str = Field(..., max_length=200)
     headers: Optional[List[dict]]
     details: List[CreateUpdateLedgerDetailsTemplateRequest]
     footers: Optional[List[dict]]
-
-    @validator("token_name")
-    def token_name_length_is_less_than_200(cls, v):
-        if len(v) > 200:
-            raise ValueError("The length must be less than or equal to 200")
-        return v
 
     @validator("details")
     def details_length_is_greater_than_1(cls, v):
@@ -87,33 +64,17 @@ class CreateUpdateLedgerTemplateRequest(BaseModel):
 
 class CreateUpdateLedgerDetailsDataRequest(BaseModel):
     """Create or Update Ledger Details Data Structure schema (Request)"""
-    name: Optional[str]
-    address: Optional[str]
-    amount: Optional[int]
-    price: Optional[int]
-    balance: Optional[int]
-    acquisition_date: Optional[str]
-
-    @validator("name")
-    def name_length_is_less_than_200(cls, v):
-        if v is not None:
-            if len(v) > 200:
-                raise ValueError("The length must be less than or equal to 200")
-        return v
-
-    @validator("address")
-    def address_length_is_less_than_200(cls, v):
-        if v is not None:
-            if len(v) > 200:
-                raise ValueError("The length must be less than or equal to 200")
-        return v
+    name: Optional[str] = Field(None, max_length=200)
+    address: Optional[str] = Field(None, max_length=200)
+    amount: Optional[int] = Field(None, ge=0, le=2 ** 31 - 1)
+    price: Optional[int] = Field(None, ge=0, le=2 ** 31 - 1)
+    balance: Optional[int] = Field(None, ge=0, le=2 ** 31 - 1)
+    acquisition_date: Optional[str] = Field(None, min_length=10, max_length=10, description="YYYY/MM/DD")
 
     @validator("acquisition_date")
     def acquisition_date_format_is_YYYYMMDD_slash(cls, v):
-        if v is not None:
+        if v is not None and len(v) == 10:
             try:
-                if len(v) != 10:
-                    raise ValueError
                 datetime.strptime(v, "%Y/%m/%d")
             except ValueError:
                 raise ValueError("The date format must be YYYY/MM/DD")

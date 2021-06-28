@@ -733,9 +733,10 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             },
             "detail": [
                 {
+                    "ctx": {"limit_value": 200},
                     "loc": ["body", "token_name"],
-                    "msg": "The length must be less than or equal to 200",
-                    "type": "value_error"
+                    "msg": "ensure this value has at most 200 characters",
+                    "type": "value_error.any_str.max_length"
                 },
                 {
                     "loc": ["body", "details"],
@@ -779,7 +780,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         }
                     ],
                     "data": {
-                        "type": "123456789012345678901",
+                        "type": "ibetfina",
                         "source": "1234567890123456789012345678901234567890123",
                     },
                     "footers": [
@@ -851,19 +852,24 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             },
             "detail": [
                 {
+                    "ctx": {"limit_value": 100},
                     "loc": ["body", "details", 0, "token_detail_type"],
-                    "msg": "The length must be less than or equal to 100",
-                    "type": "value_error"
+                    "msg": "ensure this value has at most 100 characters",
+                    "type": "value_error.any_str.max_length"
+
                 },
                 {
+                    "ctx": {"pattern": "^ibetfin$|^db$"},
                     "loc": ["body", "details", 0, "data", "type"],
-                    "msg": "The length must be less than or equal to 20",
-                    "type": "value_error"
+                    "msg": 'string does not match regex "^ibetfin$|^db$"',
+                    "type": "value_error.str.regex"
                 },
                 {
+
+                    "ctx": {"limit_value": 42},
                     "loc": ["body", "details", 0, "data", "source"],
-                    "msg": "The length must be less than or equal to 42",
-                    "type": "value_error"
+                    "msg": "ensure this value has at most 42 characters",
+                    "type": "value_error.any_str.max_length"
                 },
                 {
                     "loc": ["body", "details", 1, "token_detail_type"],

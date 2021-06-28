@@ -197,19 +197,19 @@ class TestAppRoutersLedgerTokenAddressDetailsDataPOST:
                         "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
                         "1",
                 "address": "address_test_1",
-                "amount": 100,
-                "price": 200,
-                "balance": 20000,
-                "acquisition_date": "2020/01/01",
+                "amount": 2 ** 31,
+                "price": -1,
+                "balance": 2 ** 31,
+                "acquisition_date": "2020/01/01a",
             },
             {
                 "name": "name_test_2",
                 "address": "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
                            "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
                            "1",
-                "amount": 10,
-                "price": 20,
-                "balance": 200,
+                "amount": -1,
+                "price": 2 ** 31,
+                "balance": -1,
                 "acquisition_date": "2020/02/31",
             },
         ]
@@ -230,14 +230,58 @@ class TestAppRoutersLedgerTokenAddressDetailsDataPOST:
             },
             "detail": [
                 {
+                    "ctx": {"limit_value": 200},
                     "loc": ["body", 0, "name"],
-                    "msg": "The length must be less than or equal to 200",
-                    "type": "value_error"
+                    "msg": "ensure this value has at most 200 characters",
+                    "type": "value_error.any_str.max_length"
                 },
                 {
+                    "ctx": {"limit_value": 2 ** 31 - 1},
+                    "loc": ["body", 0, "amount"],
+                    "msg": "ensure this value is less than or equal to 2147483647",
+                    "type": "value_error.number.not_le"
+                },
+                {
+                    "ctx": {"limit_value": 0},
+                    "loc": ["body", 0, "price"],
+                    "msg": "ensure this value is greater than or equal to 0",
+                    "type": "value_error.number.not_ge"
+                },
+                {
+                    "ctx": {"limit_value": 2 ** 31 - 1},
+                    "loc": ["body", 0, "balance"],
+                    "msg": "ensure this value is less than or equal to 2147483647",
+                    "type": "value_error.number.not_le"
+                },
+                {
+                    "ctx": {"limit_value": 10},
+                    "loc": ["body", 0, "acquisition_date"],
+                    "msg": "ensure this value has at most 10 characters",
+                    "type": "value_error.any_str.max_length"
+                },
+                {
+                    "ctx": {"limit_value": 200},
                     "loc": ["body", 1, "address"],
-                    "msg": "The length must be less than or equal to 200",
-                    "type": "value_error"
+                    "msg": "ensure this value has at most 200 characters",
+                    "type": "value_error.any_str.max_length"
+                },
+                {
+                    "ctx": {"limit_value": 0},
+                    "loc": ["body", 1, "amount"],
+                    "msg": "ensure this value is greater than or equal to 0",
+                    "type": "value_error.number.not_ge"
+                },
+                {
+                    "ctx": {"limit_value": 2 ** 31 - 1},
+                    "loc": ["body", 1, "price"],
+                    "msg": "ensure this value is less than or equal to 2147483647",
+                    "type": "value_error.number.not_le"
+                },
+                {
+                    "ctx": {"limit_value": 0},
+                    "loc": ["body", 1, "balance"],
+                    "msg": "ensure this value is greater than or equal to 0",
+                    "type": "value_error.number.not_ge"
                 },
                 {
                     "loc": ["body", 1, "acquisition_date"],

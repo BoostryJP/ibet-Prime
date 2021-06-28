@@ -84,8 +84,8 @@ class LedgerDetailsData(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     # token address
     token_address = Column(String(42), nullable=False)
-    # data id
-    data_id = Column(String(42), default=False)
+    # data id (UUID)
+    data_id = Column(String(36), default=False)
     # name
     name = Column(String(200))
     # address

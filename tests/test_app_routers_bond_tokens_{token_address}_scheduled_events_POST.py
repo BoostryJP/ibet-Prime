@@ -374,7 +374,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         # request target API
         req_param = {
             "scheduled_datetime": "this is not datetime format",
-            "event_type": "NOT-EXIST-EVENT",
+            "event_type": "aUpdateb",
             "data": {
                 "face_value": "must be integer, but string",
             }
@@ -397,9 +397,10 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
                 "msg": "invalid datetime format",
                 "type": "value_error.datetime"
             }, {
+                "ctx": {"pattern": "^Update$"},
                 "loc": ["body", "event_type"],
-                "msg": "event_type is not supported",
-                "type": "value_error"
+                "msg": 'string does not match regex "^Update$"',
+                "type": "value_error.str.regex"
             }, {
                 "loc": ["body", "data", "face_value"],
                 "msg": "value is not a valid integer",
