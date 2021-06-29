@@ -38,3 +38,7 @@ def downgrade():
                type_=sa.String(length=42),
                existing_nullable=True, schema=get_db_schema())
     # ### end Alembic commands ###
+    if engine.name == "postgresql":
+        schema = get_db_schema()
+        schema = f"{schema}." if schema is not None else ""
+        op.execute(f"ALTER INDEX {schema}ix_idx_transfer_to_address RENAME TO ix_idx_transfer_from_to")
