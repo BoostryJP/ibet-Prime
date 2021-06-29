@@ -37,7 +37,7 @@ def upgrade():
         schema = get_db_schema()
         schema = f"{schema}." if schema is not None else ""
         op.execute(f"ALTER INDEX {schema}ix_idx_transfer_transfer_from RENAME TO ix_idx_transfer_from_address")
-        op.execute(f"ALTER INDEX {schema}ix_idx_transfer_transfer_to RENAME TO ix_idx_transfer_to_address")
+        op.execute(f"ALTER INDEX {schema}ix_idx_transfer_transfer_to RENAME TO ix_idx_transfer_from_to")
     elif engine.name == "mysql":
         op.execute("ALTER TABLE idx_transfer RENAME INDEX ix_idx_transfer_transfer_from TO ix_idx_transfer_from_address")
         op.execute("ALTER TABLE idx_transfer RENAME INDEX ix_idx_transfer_transfer_to TO ix_idx_transfer_to_address")

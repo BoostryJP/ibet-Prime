@@ -9,7 +9,7 @@ from alembic import op
 import sqlalchemy as sa
 
 
-from app.database import get_db_schema
+from app.database import get_db_schema, engine
 
 # revision identifiers, used by Alembic.
 revision = 'eb8557523406'
@@ -25,6 +25,10 @@ def upgrade():
                type_=sa.String(length=36),
                existing_nullable=True, schema=get_db_schema())
     # ### end Alembic commands ###
+    if engine.name == "postgresql":
+        schema = get_db_schema()
+        schema = f"{schema}." if schema is not None else ""
+        op.execute(f"ALTER INDEX {schema}ix_idx_transfer_from_to RENAME TO ix_idx_transfer_to_address")
 
 
 def downgrade():
