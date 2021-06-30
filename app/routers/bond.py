@@ -123,7 +123,7 @@ def issue_token(
 
     # Deploy
     _symbol = token.symbol if token.symbol is not None else ""
-    _redemption_date = token.redemption_date if token.redemption_value is not None else ""
+    _redemption_date = token.redemption_date if token.redemption_date is not None else ""
     _redemption_value = token.redemption_value if token.redemption_value is not None else 0
     _return_date = token.return_date if token.return_date is not None else ""
     _return_amount = token.return_amount if token.return_amount is not None else ""
@@ -148,9 +148,19 @@ def issue_token(
         raise SendTransactionError("failed to send transaction")
 
     # Check need update
-    update_items = ["interest_rate", "interest_payment_date", "transferable", "image_url", "status",
-                    "initial_offering_status", "is_redeemed""tradable_exchange_contract_address",
-                    "personal_info_contract_address", "contact_information", "privacy_policy"]
+    update_items = [
+        "interest_rate",
+        "interest_payment_date",
+        "transferable",
+        "image_url",
+        "status",
+        "initial_offering_status",
+        "is_redeemed",
+        "tradable_exchange_contract_address",
+        "personal_info_contract_address",
+        "contact_information",
+        "privacy_policy"
+    ]
     token_dict = token.__dict__
     is_update = False
     for key in update_items:
