@@ -148,9 +148,19 @@ def issue_token(
         raise SendTransactionError("failed to send transaction")
 
     # Check need update
-    update_items = ["interest_rate", "interest_payment_date", "transferable", "image_url", "status",
-                    "initial_offering_status", "is_redeemed""tradable_exchange_contract_address",
-                    "personal_info_contract_address", "contact_information", "privacy_policy"]
+    update_items = [
+        "interest_rate",
+        "interest_payment_date",
+        "transferable",
+        "image_url",
+        "status",
+        "initial_offering_status",
+        "is_redeemed",
+        "tradable_exchange_contract_address",
+        "personal_info_contract_address",
+        "contact_information",
+        "privacy_policy"
+    ]
     token_dict = token.__dict__
     is_update = False
     for key in update_items:
