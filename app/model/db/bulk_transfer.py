@@ -33,7 +33,7 @@ class BulkTransfer(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     # issuer address
     issuer_address = Column(String(42), nullable=False, index=True)
-    # upload id
+    # upload id (UUID)
     upload_id = Column(String(36), index=True)
     # token address
     token_address = Column(String(42), nullable=False)

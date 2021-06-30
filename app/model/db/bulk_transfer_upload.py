@@ -29,7 +29,7 @@ class BulkTransferUpload(Base):
     """Bulk Transfer Upload"""
     __tablename__ = 'bulk_transfer_upload'
 
-    # upload id
+    # upload id (UUID)
     upload_id = Column(String(36), primary_key=True)
     # issuer address
     issuer_address = Column(String(42), nullable=False, index=True)

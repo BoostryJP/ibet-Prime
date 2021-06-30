@@ -375,7 +375,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         # request target API
         req_param = {
             "scheduled_datetime": "this is not time format",
-            "event_type": "NOT-EXIST-EVENT",
+            "event_type": "aUpdateb",
             "data": {
                 "dividends": "must be integer, but string",
             }
@@ -398,9 +398,10 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
                 "msg": "invalid datetime format",
                 "type": "value_error.datetime"
             }, {
+                "ctx": {"pattern": "^Update$"},
                 "loc": ["body", "event_type"],
-                "msg": "event_type is not supported",
-                "type": "value_error"
+                "msg": 'string does not match regex "^Update$"',
+                "type": "value_error.str.regex"
             }, {
                 "loc": ["body", "data", "dividends"],
                 "msg": "value is not a valid float",

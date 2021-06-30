@@ -23,11 +23,10 @@ from typing import (
 
 from pydantic import (
     BaseModel,
-    validator
+    Field
 )
 
 from datetime import datetime
-from app.model.db.scheduled_events import ScheduledEventType
 from app.model.schema.token import (
     IbetStraightBondUpdate,
     IbetShareUpdate
@@ -40,27 +39,15 @@ from app.model.schema.token import (
 class IbetStraightBondScheduledUpdate(BaseModel):
     """scheduled event (Request)"""
     scheduled_datetime: datetime
-    event_type: str
+    event_type: str = Field(..., regex="^Update$")
     data: IbetStraightBondUpdate
-
-    @validator("event_type")
-    def event_type_is_supported(cls, v):
-        if v is not None and v != ScheduledEventType.UPDATE:
-            raise ValueError("event_type is not supported")
-        return v
 
 
 class IbetShareScheduledUpdate(BaseModel):
     """scheduled event (Request)"""
     scheduled_datetime: datetime
-    event_type: str
+    event_type: str = Field(..., regex="^Update$")
     data: IbetShareUpdate
-
-    @validator("event_type")
-    def event_type_is_supported(cls, v):
-        if v is not None and v != ScheduledEventType.UPDATE:
-            raise ValueError("event_type is not supported")
-        return v
 
 
 ############################

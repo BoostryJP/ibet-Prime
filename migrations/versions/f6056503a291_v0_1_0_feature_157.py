@@ -64,5 +64,5 @@ def downgrade():
         op.execute(f"ALTER INDEX {schema}ix_idx_transfer_from_address RENAME TO ix_idx_transfer_transfer_from")
         op.execute(f"ALTER INDEX {schema}ix_idx_transfer_from_to RENAME TO ix_idx_transfer_transfer_to")
     elif engine.name == "mysql":
-        op.execute("ALTER TABLE idx_transfer RENAME INDEX ix_idx_transfer_transfer_from TO ix_idx_transfer_from_address")
-        op.execute("ALTER TABLE idx_transfer RENAME INDEX ix_idx_transfer_transfer_to TO ix_idx_transfer_to_address")
+        op.execute("ALTER TABLE idx_transfer RENAME INDEX ix_idx_transfer_from_address TO ix_idx_transfer_transfer_from")
+        op.execute("ALTER TABLE idx_transfer RENAME INDEX ix_idx_transfer_to_address TO ix_idx_transfer_transfer_to")

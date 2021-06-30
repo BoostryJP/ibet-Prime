@@ -61,7 +61,7 @@ class LedgerDetailsTemplate(Base):
     footers = Column(JSON, default=[])
     # data type
     data_type = Column(String(20), nullable=False)
-    # data source
+    # data source (address or UUID)
     data_source = Column(String(42))
 
 
