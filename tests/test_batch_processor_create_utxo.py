@@ -191,7 +191,6 @@ class TestProcessor:
 
         # Execute batch(Run 2nd)
         # Assume: Create UTXO
-        pre_datetime = datetime.utcnow()
         processor.process()
 
         # assertion
@@ -234,8 +233,6 @@ class TestProcessor:
 
         mock_func.assert_has_calls([
             call(token_address_1, db),
-            call(token_address_1, db),
-            call(token_address_2, db),
             call(token_address_2, db)
         ])
 
