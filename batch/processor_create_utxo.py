@@ -177,7 +177,9 @@ class Processor:
                 fromBlock=block_from,
                 toBlock=block_to
             )
+            event_triggered = False
             for event in events:
+                event_triggered = True
 
                 # Get contract event args
                 args = event["args"]
@@ -212,8 +214,9 @@ class Processor:
                         block_timestamp=block_timestamp
                     )
 
-                    # Create Ledger
-                    create_ledger(token_contract.address, self.db)
+            if event_triggered is True:
+                # Create Ledger
+                create_ledger(token_contract.address, self.db)
         except Exception as e:
             LOG.exception(e)
 
