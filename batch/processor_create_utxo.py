@@ -31,7 +31,9 @@ sys.path.append(path)
 
 from config import (
     DATABASE_URL,
-    ZERO_ADDRESS
+    ZERO_ADDRESS,
+    CREATE_UTXO_INTERVAL,
+    CREATE_UTXO_BLOCK_LOT_MAX_SIZE
 )
 from app.model.db import (
     UTXO,
@@ -79,6 +81,7 @@ class DBSink:
         if not spent:
             _utxo = self.db.query(UTXO). \
                 filter(UTXO.transaction_hash == transaction_hash). \
+                filter(UTXO.account_address == account_address). \
                 first()
             if _utxo is None:
                 _utxo = UTXO()
@@ -89,6 +92,10 @@ class DBSink:
                 _utxo.block_number = block_number
                 _utxo.block_timestamp = block_timestamp
                 self.db.add(_utxo)
+            else:
+                utxo_amount = _utxo.amount
+                _utxo.amount = utxo_amount + amount
+                self.db.merge(_utxo)
         else:
             _utxo_list = self.db.query(UTXO). \
                 filter(UTXO.account_address == account_address). \
@@ -100,7 +107,7 @@ class DBSink:
             for _utxo in _utxo_list:
                 utxo_amount = _utxo.amount
                 if spend_amount <= 0:
-                    pass
+                    break
                 elif _utxo.amount <= spend_amount:
                     _utxo.amount = 0
                     spend_amount = spend_amount - utxo_amount
@@ -132,10 +139,13 @@ class Processor:
             pass
         else:
             block_from = utxo_block_number + 1
-            LOG.info(f"syncing from={block_from}, to={latest_block}")
+            block_to = latest_block
+            if block_to - block_from > CREATE_UTXO_BLOCK_LOT_MAX_SIZE - 1:
+                block_to = block_from + CREATE_UTXO_BLOCK_LOT_MAX_SIZE - 1
+            LOG.info(f"syncing from={block_from}, to={block_to}")
             for token_contract in self.token_contract_list:
-                self.__process_transfer(token_contract, block_from, latest_block)
-            self.__set_utxo_block_number(latest_block)
+                self.__process_transfer(token_contract, block_from, block_to)
+            self.__set_utxo_block_number(block_to)
             self.sink.flush()
 
     def __refresh_token_contract_list(self):
@@ -236,7 +246,7 @@ def main():
         except Exception as ex:
             LOG.exception(ex)
 
-        time.sleep(10)
+        time.sleep(CREATE_UTXO_INTERVAL)
 
 
 if __name__ == "__main__":
