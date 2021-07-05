@@ -48,9 +48,6 @@ utc_tz = pytz.timezone("UTC")
 
 
 def create_ledger(token_address: str, db: Session):
-
-    LOG.info("CHK1_create_ledger")
-
     _token = db.query(Token). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status == 1). \
@@ -58,15 +55,11 @@ def create_ledger(token_address: str, db: Session):
     if _token.type != TokenType.IBET_SHARE and _token.type != TokenType.IBET_STRAIGHT_BOND:
         return
 
-    LOG.info("CHK2_create_ledger")
-
     _template = db.query(LedgerTemplate). \
         filter(LedgerTemplate.token_address == token_address). \
         first()
     if _template is None:
         return
-
-    LOG.info("CHK3_create_ledger")
 
     # Get ledger details
     _details_list = db.query(LedgerDetailsTemplate). \
@@ -75,7 +68,7 @@ def create_ledger(token_address: str, db: Session):
         all()
     ledger_details = []
 
-    LOG.info("CHK4_create_ledger")
+    LOG.info("START_get_details_data_list")
 
     for _details in _details_list:
         # Get ledger details data
@@ -91,7 +84,7 @@ def create_ledger(token_address: str, db: Session):
         }
         ledger_details.append(details)
 
-    LOG.info("CHK5_create_ledger")
+    LOG.info("END_get_details_data_list")
 
     created_ymd = utc_tz.localize(datetime.utcnow()).astimezone(local_tz).strftime("%Y/%m/%d")
     # NOTE: Merge with template with ledger GET API
@@ -103,8 +96,6 @@ def create_ledger(token_address: str, db: Session):
         "footers": _template.footers,
     }
 
-    LOG.info("CHK6_create_ledger")
-
     # Register ledger data to the DB
     # NOTE: DB commit is executed by the caller
     _ledger = Ledger()
@@ -112,8 +103,6 @@ def create_ledger(token_address: str, db: Session):
     _ledger.token_type = _token.type
     _ledger.ledger = ledger
     db.add(_ledger)
-
-    LOG.info("CHK7_create_ledger")
 
 
 def __get_details_data_list(token_address: str, token_type: str, data_type: str, data_source: str, db: Session):
@@ -150,9 +139,14 @@ def __get_details_data_list_from_ibetfin(token_address: str, token_type: str, db
         token_contract = IbetStraightBondContract.get(token_address)
         price = token_contract.face_value
 
+    LOG.info("START_get_details_data_list_from_ibetfin")
+
     issuer_address = token_contract.issuer_address
     personal_info_contract = PersonalInfoContract(
-        db, issuer_address, contract_address=token_contract.personal_info_contract_address)
+        db,
+        issuer_address,
+        contract_address=token_contract.personal_info_contract_address
+    )
 
     # Get token holders from UTXO
     _utxo_list = db.query(UTXO). \
@@ -160,6 +154,8 @@ def __get_details_data_list_from_ibetfin(token_address: str, token_type: str, db
         filter(UTXO.amount > 0). \
         order_by(UTXO.account_address, UTXO.block_timestamp). \
         all()
+
+    LOG.info(f"utxo_list_size : {len(_utxo_list)}")
 
     # NOTE: UTXO grouping
     #       account_address
@@ -177,6 +173,8 @@ def __get_details_data_list_from_ibetfin(token_address: str, token_type: str, db
                 utxo_grouped[_utxo.account_address][date_ymd] = _utxo.amount
             else:
                 utxo_grouped[_utxo.account_address][date_ymd] += _utxo.amount
+
+    LOG.info(f"utxo_grouped_size : {len(utxo_grouped)}")
 
     data_list = []
     for account_address, date_ymd_amount in utxo_grouped.items():
@@ -197,6 +195,8 @@ def __get_details_data_list_from_ibetfin(token_address: str, token_type: str, db
             details_data["address"] = personal_info.get("address", "")
 
             data_list.append(details_data)
+
+    LOG.info("END_get_details_data_list_from_ibetfin")
 
     return data_list
 
