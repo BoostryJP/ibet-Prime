@@ -38,6 +38,10 @@ from app.model.db import (
     LedgerDetailsTemplate,
     LedgerDetailsDataType
 )
+import batch.batch_log as batch_log
+
+process_name = "Create_Ledger"
+LOG = batch_log.get_logger(process_name=process_name)
 
 local_tz = pytz.timezone(TZ)
 utc_tz = pytz.timezone("UTC")
@@ -45,7 +49,7 @@ utc_tz = pytz.timezone("UTC")
 
 def create_ledger(token_address: str, db: Session):
 
-    print("CHK1_create_ledger")
+    LOG.info("CHK1_create_ledger")
 
     _token = db.query(Token). \
         filter(Token.token_address == token_address). \
@@ -54,7 +58,7 @@ def create_ledger(token_address: str, db: Session):
     if _token.type != TokenType.IBET_SHARE and _token.type != TokenType.IBET_STRAIGHT_BOND:
         return
 
-    print("CHK2_create_ledger")
+    LOG.info("CHK2_create_ledger")
 
     _template = db.query(LedgerTemplate). \
         filter(LedgerTemplate.token_address == token_address). \
@@ -62,7 +66,7 @@ def create_ledger(token_address: str, db: Session):
     if _template is None:
         return
 
-    print("CHK3_create_ledger")
+    LOG.info("CHK3_create_ledger")
 
     # Get ledger details
     _details_list = db.query(LedgerDetailsTemplate). \
@@ -71,7 +75,7 @@ def create_ledger(token_address: str, db: Session):
         all()
     ledger_details = []
 
-    print("CHK4_create_ledger")
+    LOG.info("CHK4_create_ledger")
 
     for _details in _details_list:
         # Get ledger details data
@@ -87,7 +91,7 @@ def create_ledger(token_address: str, db: Session):
         }
         ledger_details.append(details)
 
-    print("CHK5_create_ledger")
+    LOG.info("CHK5_create_ledger")
 
     created_ymd = utc_tz.localize(datetime.utcnow()).astimezone(local_tz).strftime("%Y/%m/%d")
     # NOTE: Merge with template with ledger GET API
@@ -99,7 +103,7 @@ def create_ledger(token_address: str, db: Session):
         "footers": _template.footers,
     }
 
-    print("CHK6_create_ledger")
+    LOG.info("CHK6_create_ledger")
 
     # Register ledger data to the DB
     # NOTE: DB commit is executed by the caller
@@ -109,7 +113,7 @@ def create_ledger(token_address: str, db: Session):
     _ledger.ledger = ledger
     db.add(_ledger)
 
-    print("CHK7_create_ledger")
+    LOG.info("CHK7_create_ledger")
 
 
 def __get_details_data_list(token_address: str, token_type: str, data_type: str, data_source: str, db: Session):
