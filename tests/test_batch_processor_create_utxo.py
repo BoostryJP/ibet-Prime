@@ -276,7 +276,7 @@ class TestProcessor:
             token_address=token_address_1,
             from_address=issuer_address,
             to_address=user_address_1,
-            amount=50
+            amount=60
         )
         IbetStraightBondContract.transfer(_transfer, issuer_address, issuer_private_key)
         time.sleep(1)
@@ -303,20 +303,38 @@ class TestProcessor:
         # Assertion
         _utxo_block_number = db.query(UTXOBlockNumber).first()
         assert _utxo_block_number.latest_block_number == latest_block_number + 5
-        _utox_list = db.query(UTXO).order_by(UTXO.created).all()
-        assert len(_utox_list) == 2
+        _utox_list = db.query(UTXO).order_by(UTXO.block_timestamp).all()
+        assert len(_utox_list) == 5
         _utox = _utox_list[0]
         assert _utox.transaction_hash is not None
         assert _utox.account_address == user_address_1
         assert _utox.token_address == token_address_1
-        assert _utox.amount == 10
+        assert _utox.amount == 20
         assert _utox.block_number == latest_block_number + 1
         _utox = _utox_list[1]
         assert _utox.transaction_hash is not None
         assert _utox.account_address == user_address_2
         assert _utox.token_address == token_address_1
-        assert _utox.amount == 40
+        assert _utox.amount == 10
         assert _utox.block_number == latest_block_number + 2
+        _utox = _utox_list[2]
+        assert _utox.transaction_hash is not None
+        assert _utox.account_address == user_address_2
+        assert _utox.token_address == token_address_1
+        assert _utox.amount == 10
+        assert _utox.block_number == latest_block_number + 3
+        _utox = _utox_list[3]
+        assert _utox.transaction_hash is not None
+        assert _utox.account_address == user_address_2
+        assert _utox.token_address == token_address_1
+        assert _utox.amount == 10
+        assert _utox.block_number == latest_block_number + 4
+        _utox = _utox_list[4]
+        assert _utox.transaction_hash is not None
+        assert _utox.account_address == user_address_2
+        assert _utox.token_address == token_address_1
+        assert _utox.amount == 10
+        assert _utox.block_number == latest_block_number + 5
 
     # <Normal_3>
     # bulk transfer(same transaction-hash)
