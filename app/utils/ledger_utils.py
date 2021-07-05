@@ -38,10 +38,6 @@ from app.model.db import (
     LedgerDetailsTemplate,
     LedgerDetailsDataType
 )
-import batch.batch_log as batch_log
-
-process_name = "Create_Ledger"
-LOG = batch_log.get_logger(process_name=process_name)
 
 local_tz = pytz.timezone(TZ)
 utc_tz = pytz.timezone("UTC")
@@ -68,8 +64,6 @@ def create_ledger(token_address: str, db: Session):
         all()
     ledger_details = []
 
-    LOG.info("START_get_details_data_list")
-
     for _details in _details_list:
         # Get ledger details data
         data_list = __get_details_data_list(token_address, _token.type, _details.data_type,
@@ -83,8 +77,6 @@ def create_ledger(token_address: str, db: Session):
             "footers": _details.footers,
         }
         ledger_details.append(details)
-
-    LOG.info("END_get_details_data_list")
 
     created_ymd = utc_tz.localize(datetime.utcnow()).astimezone(local_tz).strftime("%Y/%m/%d")
     # NOTE: Merge with template with ledger GET API
@@ -139,8 +131,6 @@ def __get_details_data_list_from_ibetfin(token_address: str, token_type: str, db
         token_contract = IbetStraightBondContract.get(token_address)
         price = token_contract.face_value
 
-    LOG.info("START_get_details_data_list_from_ibetfin")
-
     issuer_address = token_contract.issuer_address
     personal_info_contract = PersonalInfoContract(
         db,
@@ -154,8 +144,6 @@ def __get_details_data_list_from_ibetfin(token_address: str, token_type: str, db
         filter(UTXO.amount > 0). \
         order_by(UTXO.account_address, UTXO.block_timestamp). \
         all()
-
-    LOG.info(f"utxo_list_size : {len(_utxo_list)}")
 
     # NOTE: UTXO grouping
     #       account_address
@@ -173,8 +161,6 @@ def __get_details_data_list_from_ibetfin(token_address: str, token_type: str, db
                 utxo_grouped[_utxo.account_address][date_ymd] = _utxo.amount
             else:
                 utxo_grouped[_utxo.account_address][date_ymd] += _utxo.amount
-
-    LOG.info(f"utxo_grouped_size : {len(utxo_grouped)}")
 
     data_list = []
     for account_address, date_ymd_amount in utxo_grouped.items():
@@ -195,8 +181,6 @@ def __get_details_data_list_from_ibetfin(token_address: str, token_type: str, db
             details_data["address"] = personal_info.get("address", "")
 
             data_list.append(details_data)
-
-    LOG.info("END_get_details_data_list_from_ibetfin")
 
     return data_list
 
