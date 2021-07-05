@@ -159,3 +159,9 @@ AUTO_TRANSFER_APPROVAL_INTERVAL = int(os.environ.get("AUTO_TRANSFER_APPROVAL_INT
 
 # Random Bytes Generator
 AWS_KMS_GENERATE_RANDOM_ENABLED = True if os.environ.get("AWS_KMS_GENERATE_RANDOM_ENABLED") == "1" else False
+
+# Create UTXO
+CREATE_UTXO_INTERVAL = int(os.environ.get("CREATE_UTXO_INTERVAL")) \
+    if os.environ.get("CREATE_UTXO_INTERVAL") else 10
+CREATE_UTXO_BLOCK_LOT_MAX_SIZE = int(os.environ.get("CREATE_UTXO_BLOCK_LOT_MAX_SIZE")) \
+    if os.environ.get("CREATE_UTXO_BLOCK_LOT_MAX_SIZE") else 10000

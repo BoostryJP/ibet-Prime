@@ -36,7 +36,7 @@ class UTXO(Base):
     # transaction hash
     transaction_hash = Column(String(66), primary_key=True)
     # account address
-    account_address = Column(String(42), index=True)
+    account_address = Column(String(42), primary_key=True)
     # token address
     token_address = Column(String(42), index=True)
     # transfer amount
