@@ -164,4 +164,4 @@ AWS_KMS_GENERATE_RANDOM_ENABLED = True if os.environ.get("AWS_KMS_GENERATE_RANDO
 CREATE_UTXO_INTERVAL = int(os.environ.get("CREATE_UTXO_INTERVAL")) \
     if os.environ.get("CREATE_UTXO_INTERVAL") else 10
 CREATE_UTXO_BLOCK_LOT_MAX_SIZE = int(os.environ.get("CREATE_UTXO_BLOCK_LOT_MAX_SIZE")) \
-    if os.environ.get("CREATE_UTXO_BLOCK_LOT_MAX_SIZE") else 100
+    if os.environ.get("CREATE_UTXO_BLOCK_LOT_MAX_SIZE") else 10000
