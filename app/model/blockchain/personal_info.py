@@ -63,15 +63,6 @@ class PersonalInfoContract:
         :return: Personal info
         """
 
-        # Get issuer's RSA private key
-        cipher = None
-        try:
-            passphrase = E2EEUtils.decrypt(self.issuer.rsa_passphrase)
-            key = RSA.importKey(self.issuer.rsa_private_key, passphrase)
-            cipher = PKCS1_OAEP.new(key)
-        except Exception as err:
-            logging.error(f"Cannot open the private key: {err}")
-
         # Set default value
         personal_info = {
             "key_manager": default_value,
@@ -88,31 +79,41 @@ class PersonalInfoContract:
             call()
         encrypted_info = personal_info_state[2]
 
-        if encrypted_info == "" or cipher is None:
+        if encrypted_info == "":
             return personal_info  # default
         else:
+            # Get issuer's RSA private key
             try:
-                ciphertext = base64.decodebytes(encrypted_info.encode("utf-8"))
-                # NOTE:
-                # When using JavaScript to encrypt RSA, if the first character is 0x00,
-                # the data is requested with the 00 character removed.
-                # Since decrypting this data will result in a ValueError (Ciphertext with incorrect length),
-                # decrypt the data with 00 added to the beginning.
-                if len(ciphertext) == 1279:
-                    hex_fixed = "00" + ciphertext.hex()
-                    ciphertext = base64.b16decode(hex_fixed.upper())
-                decrypted_info = json.loads(cipher.decrypt(ciphertext))
-
-                personal_info["key_manager"] = decrypted_info.get("key_manager", default_value)
-                personal_info["name"] = decrypted_info.get("name", default_value)
-                personal_info["address"] = decrypted_info.get("address", default_value)
-                personal_info["postal_code"] = decrypted_info.get("postal_code", default_value)
-                personal_info["email"] = decrypted_info.get("email", default_value)
-                personal_info["birth"] = decrypted_info.get("birth", default_value)
-                return personal_info
+                passphrase = E2EEUtils.decrypt(self.issuer.rsa_passphrase)
+                key = RSA.importKey(self.issuer.rsa_private_key, passphrase)
+                cipher = PKCS1_OAEP.new(key)
             except Exception as err:
-                logging.error(f"Failed to decrypt: {err}")
+                logging.error(f"Cannot open the private key: {err}")
                 return personal_info  # default
+
+            if cipher is not None:
+                try:
+                    ciphertext = base64.decodebytes(encrypted_info.encode("utf-8"))
+                    # NOTE:
+                    # When using JavaScript to encrypt RSA, if the first character is 0x00,
+                    # the data is requested with the 00 character removed.
+                    # Since decrypting this data will result in a ValueError (Ciphertext with incorrect length),
+                    # decrypt the data with 00 added to the beginning.
+                    if len(ciphertext) == 1279:
+                        hex_fixed = "00" + ciphertext.hex()
+                        ciphertext = base64.b16decode(hex_fixed.upper())
+                    decrypted_info = json.loads(cipher.decrypt(ciphertext))
+
+                    personal_info["key_manager"] = decrypted_info.get("key_manager", default_value)
+                    personal_info["name"] = decrypted_info.get("name", default_value)
+                    personal_info["address"] = decrypted_info.get("address", default_value)
+                    personal_info["postal_code"] = decrypted_info.get("postal_code", default_value)
+                    personal_info["email"] = decrypted_info.get("email", default_value)
+                    personal_info["birth"] = decrypted_info.get("birth", default_value)
+                    return personal_info
+                except Exception as err:
+                    logging.error(f"Failed to decrypt: {err}")
+                    return personal_info  # default
 
     def modify_info(self, account_address: str, data: dict, default_value=None):
         """Modify personal information
