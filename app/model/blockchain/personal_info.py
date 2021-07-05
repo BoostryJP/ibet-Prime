@@ -83,7 +83,6 @@ class PersonalInfoContract:
             return personal_info  # default
         else:
             # Get issuer's RSA private key
-            cipher = None
             try:
                 passphrase = E2EEUtils.decrypt(self.issuer.rsa_passphrase)
                 key = RSA.importKey(self.issuer.rsa_private_key, passphrase)
