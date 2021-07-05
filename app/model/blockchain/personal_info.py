@@ -90,6 +90,7 @@ class PersonalInfoContract:
                 cipher = PKCS1_OAEP.new(key)
             except Exception as err:
                 logging.error(f"Cannot open the private key: {err}")
+                return personal_info  # default
 
             if cipher is not None:
                 try:
