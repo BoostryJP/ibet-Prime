@@ -182,13 +182,17 @@ class Processor:
 
     def __process_transfer(self, token_contract, block_from: int, block_to: int):
         try:
+            LOG.info("START_getLogs")
             # When a Transfer event occurs
             events = token_contract.events.Transfer.getLogs(
                 fromBlock=block_from,
                 toBlock=block_to
             )
+            LOG.info("END_getLogs")
             event_triggered = False
             for event in events:
+                LOG.info(event)
+
                 event_triggered = True
 
                 # Get contract event args
