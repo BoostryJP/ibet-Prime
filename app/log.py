@@ -97,7 +97,7 @@ def auth_info(req: Request, address: str, msg: str):
 
 
 def auth_error(req: Request, address: str, msg: str):
-    AUTH_LOG.error(__auth_format(req, address, msg))
+    AUTH_LOG.warning(__auth_format(req, address, msg))
 
 
 def output_access_log(req: Request, res: Response):
