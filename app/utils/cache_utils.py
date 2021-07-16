@@ -230,9 +230,9 @@ class DictCache:
             return
 
         # Get Extend Size
-        mod_size = now_size + DictCache.USE_CACHE[self.name]["is_extend_size"]
+        mod_size = now_size + DictCache.USE_CACHE[self.name]["extend_incremental"]
         while mod_size < update_size:
-            mod_size += DictCache.USE_CACHE[self.name]["is_extend_size"]
+            mod_size += DictCache.USE_CACHE[self.name]["extend_incremental"]
 
         # Extend Shared Memory Object Size
         memory_block = self.cache["data"]._memory_block
