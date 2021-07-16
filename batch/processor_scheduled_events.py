@@ -16,17 +16,18 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import List
 import os
 import sys
+import threading
 import time
 import uuid
+from typing import List, Set, Optional, cast
 
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import create_engine
 from sqlalchemy.orm import (
     sessionmaker,
-    scoped_session
+    scoped_session, Session
 )
 
 path = os.path.join(os.path.dirname(__file__), "../")
@@ -35,7 +36,7 @@ sys.path.append(path)
 from datetime import datetime
 from config import (
     DATABASE_URL,
-    SCHEDULED_EVENTS_INTERVAL
+    SCHEDULED_EVENTS_INTERVAL, SCHEDULED_EVENTS_WORKER_COUNT
 )
 from app.utils.e2ee_utils import E2EEUtils
 from app.model.db import (
@@ -64,12 +65,16 @@ engine = create_engine(DATABASE_URL, echo=False)
 db_session = scoped_session(sessionmaker())
 db_session.configure(bind=engine)
 
+lock = threading.Lock()
+# Issuer being processed in threads
+processing_issuers: Set[str] = set()
+
 
 class Sinks:
     def __init__(self):
-        self.sinks = []
+        self.sinks: List["DBSink"] = []
 
-    def register(self, sink):
+    def register(self, sink: "DBSink"):
         self.sinks.append(sink)
 
     def on_finish_event_process(self, *args, **kwargs):
@@ -86,7 +91,7 @@ class Sinks:
 
 
 class DBSink:
-    def __init__(self, db):
+    def __init__(self, db: Session):
         self.db = db
 
     def on_finish_event_process(self, record_id, status):
@@ -114,23 +119,51 @@ class DBSink:
 
 
 class Processor:
-    def __init__(self, sink, db):
+    def __init__(self, sink: Sinks, db: Session, thread_num: int):
         self.sink = sink
         self.db = db
+        self.thread_num = thread_num
 
-    def _get_events(self, filter_time) -> List[ScheduledEvents]:
-        events_list = self.db.query(ScheduledEvents). \
+    def _get_events_of_one_issuer(self, filter_time: datetime) -> List[ScheduledEvents]:
+        with lock:
+            event: Optional[ScheduledEvents] = self.db.query(ScheduledEvents). \
+                filter(ScheduledEvents.status == 0). \
+                filter(ScheduledEvents.scheduled_datetime <= filter_time). \
+                filter(ScheduledEvents.issuer_address.notin_(processing_issuers)). \
+                order_by(ScheduledEvents.scheduled_datetime, ScheduledEvents.id). \
+                first()
+            if event is None:
+                return []
+            issuer_address = event.issuer_address
+            processing_issuers.add(issuer_address)
+
+        events_list: List[ScheduledEvents] = self.db.query(ScheduledEvents). \
             filter(ScheduledEvents.status == 0). \
             filter(ScheduledEvents.scheduled_datetime <= filter_time). \
+            filter(ScheduledEvents.issuer_address == issuer_address). \
+            order_by(ScheduledEvents.scheduled_datetime, ScheduledEvents.id). \
             all()
         return events_list
 
+    def _release_processing_issuer(self, issuer_address: str):
+        with lock:
+            processing_issuers.remove(issuer_address)
+
     def process(self):
         process_start_time = datetime.utcnow()
-        events_list = self._get_events(process_start_time)
-        if len(events_list) < 1:
-            return
+        while True:
+            events_list = self._get_events_of_one_issuer(process_start_time)
+            if len(events_list) < 1:
+                return
 
+            try:
+                self._process(events_list)
+            except Exception as ex:
+                LOG.error(ex)
+            finally:
+                self._release_processing_issuer(events_list[0].issuer_address)
+
+    def _process(self, events_list: List[ScheduledEvents]):
         for _event in events_list:
             LOG.info(f"START event_id:{_event.id}")
             _upload_status = 1
@@ -204,20 +237,39 @@ class Processor:
             self.sink.flush()
 
 
-_sink = Sinks()
-_sink.register(DBSink(db_session))
-processor = Processor(sink=_sink, db=db_session)
+class Worker:
+
+    def __init__(self, db: scoped_session, thread_num: int):
+        session = cast(Session, db)
+        _sink = Sinks()
+        _sink.register(DBSink(session))
+        processor = Processor(sink=_sink, db=session, thread_num=thread_num)
+        self.processor = processor
+
+    def run(self):
+
+        while True:
+            started_at = time.time()
+            try:
+                self.processor.process()
+            except Exception as ex:
+                LOG.error(ex)
+            sleeping_time = max(0, SCHEDULED_EVENTS_INTERVAL - (time.time() - started_at))
+            time.sleep(sleeping_time)
 
 
 def main():
     LOG.info("Service started successfully")
 
+    for i in range(SCHEDULED_EVENTS_WORKER_COUNT):
+        worker = Worker(db_session, i)
+        thread = threading.Thread(target=worker.run)
+        thread.setDaemon(True)
+        thread.start()
+        LOG.info(f"thread {i} started")
+
     while True:
-        try:
-            processor.process()
-        except Exception as ex:
-            LOG.error(ex)
-        time.sleep(SCHEDULED_EVENTS_INTERVAL)
+        time.sleep(99999)
 
 
 if __name__ == "__main__":

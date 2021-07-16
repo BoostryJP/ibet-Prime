@@ -134,6 +134,7 @@ TZ = os.environ.get("TZ") or "Asia/Tokyo"
 # Scheduled Events
 SCHEDULED_EVENTS_INTERVAL = int(os.environ.get("SCHEDULED_EVENTS_INTERVAL")) \
     if os.environ.get("SCHEDULED_EVENTS_INTERVAL") else 60
+SCHEDULED_EVENTS_WORKER_COUNT = int(os.environ.get("SCHEDULED_EVENTS_WORKER_COUNT", 5))
 
 # Update Token
 UPDATE_TOKEN_INTERVAL = int(os.environ.get("UPDATE_TOKEN_INTERVAL")) \
