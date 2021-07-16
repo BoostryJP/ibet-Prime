@@ -27,6 +27,9 @@ function start () {
     exit 1
   fi
 
+  # Use Shared Memory
+  export SHARED_MEMORY_USE_LOCK=1
+
   # gunicorn parameters
   WORKER_COUNT=${WORKER_COUNT:-2}
   WORKER_TIMEOUT=${WORKER_TIMEOUT:-30}

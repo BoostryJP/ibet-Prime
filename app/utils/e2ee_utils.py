@@ -34,6 +34,7 @@ from config import (
     E2EE_RSA_PASSPHRASE,
     AWS_REGION_NAME
 )
+from app.utils.cache_utils import DictCache
 
 
 class E2EEUtils:
@@ -44,12 +45,7 @@ class E2EEUtils:
     in an encrypted state, and decrypted for use.
     """
 
-    cache = {
-        "private_key": None,
-        "public_key": None,
-        "encrypted_length": None,
-        "expiration_datetime": datetime.min
-    }
+    cache = DictCache("e2ee")
 
     @staticmethod
     def encrypt(data: str):
@@ -109,7 +105,15 @@ class E2EEUtils:
         return crypto_data.get("private_key"), crypto_data.get("public_key")
 
     @staticmethod
-    def __get_crypto_data() -> Dict:
+    def __get_crypto_data() -> DictCache:
+
+        if E2EEUtils.cache.get("expiration_datetime") is None:
+            E2EEUtils.cache.update(**{
+                "private_key": None,
+                "public_key": None,
+                "encrypted_length": None,
+                "expiration_datetime": datetime.min
+            })
 
         # Use Cache
         if E2EEUtils.cache.get("expiration_datetime") > datetime.utcnow():
@@ -138,11 +142,11 @@ class E2EEUtils:
         encrypted_length = len(cipher.encrypt(b''))
 
         # Update Cache(expiration for 1 hour)
-        E2EEUtils.cache = {
+        E2EEUtils.cache.update(**{
             "private_key": private_key,
             "public_key": public_key,
             "encrypted_length": encrypted_length,
             "expiration_datetime": datetime.utcnow() + timedelta(hours=1)
-        }
+        })
 
         return E2EEUtils.cache

@@ -80,10 +80,10 @@ AWS_REGION_NAME = os.environ.get("AWS_REGION_NAME") or "ap-northeast-1"
 #            lowercase alphabetic, uppercase alphabetic, numeric, and symbolic(space exclude)
 EOA_PASSWORD_PATTERN = \
     os.environ.get("EOA_PASSWORD_PATTERN") or \
-    "^[a-zA-Z0-9]{8,}$"
+    "^[a-zA-Z0-9]{8,20}$"
 EOA_PASSWORD_PATTERN_MSG = \
     os.environ.get("EOA_PASSWORD_PATTERN_MSG") or \
-    "password is need 8 or higher length of alphanumeric characters"
+    "password must be 8 to 20 alphanumeric character"
 PERSONAL_INFO_RSA_PASSPHRASE_PATTERN = \
     os.environ.get("PERSONAL_INFO_RSA_PASSPHRASE_PATTERN") or \
     "^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,}$"

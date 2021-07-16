@@ -12,3 +12,4 @@ boto3==1.17.12
 alembic==1.5.6
 PyMySQL==1.0.2
 pytz==2021.1
+shared-memory-dict==0.5.0
