@@ -46,7 +46,7 @@ from tests.account_config import config_eth_account
 def processor(db):
     _sink = Sinks()
     _sink.register(DBSink(db))
-    return Processor(sink=_sink, db=db)
+    return Processor(sink=_sink, db=db, thread_num=0)
 
 
 class TestProcessor:
