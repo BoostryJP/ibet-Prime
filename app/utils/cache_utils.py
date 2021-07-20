@@ -39,10 +39,10 @@ from shared_memory_dict.templates import MEMORY_NAME
 class DictCache:
     """Cache Utilities
 
-    This class is used to cache data for processing.
-    API uses a shared memory object to share the cache between worker processes, and other is cached on-memory.
-    Shared memory objects are saved as physical files, so expand the disk space of your Docker container as needed.
-    As reference, Docker daemon's default disk size is 10GB, AWS ECS Fargate's is 20GB.
+    This class is used to cache data.
+    API uses a shared memory object to share the cache data between worker processes, and other is cached on-memory.
+    Shared memory objects are saved as physical files, so expand the disk space of Docker container as needed.
+    As reference, Docker daemon's default disk space is 10GB, AWS Fargate's is 20GB.
     """
 
     # NOTE: default_size and extend_incremental is a multiple of 4096.
@@ -55,7 +55,7 @@ class DictCache:
         },
         "bond_tokens": {
             # NOTE:
-            # Default Size is about 100 record.(Assuming that the average size of tokens is about 1500)
+            # Default size is about 100 record.(Assuming that the average size of tokens is about 1500)
             # Incremental is about 10 record.
             "default_size": 151552,
             "is_extend_size": True,
@@ -63,7 +63,7 @@ class DictCache:
         },
         "share_tokens": {
             # NOTE:
-            # Default Size is about 100 record.(Assuming that the average size of tokens is about 1500)
+            # Default size is about 100 record.(Assuming that the average size of tokens is about 1500)
             # Incremental is about 10 record.
             "default_size": 151552,
             "is_extend_size": True,
