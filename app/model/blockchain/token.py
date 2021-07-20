@@ -116,25 +116,17 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             contract_address=contract_address
         )
 
-        from app.log import get_logger
-        get_logger().info("=====================")
-        get_logger().info(f"contract_address:{contract_address}")
-        start = datetime.utcnow()
         # When using the cache
         if TOKEN_CACHE:
             if contract_address in IbetStraightBondContract.cache:
-                get_logger().info("Cache")
                 token_cache = IbetStraightBondContract.cache[contract_address]
                 if token_cache.get("expiration_datetime") > datetime.utcnow():
                     # Get data from cache
                     bond_token = IbetStraightBondContract()
                     for k, v in token_cache["token"].items():
                         setattr(bond_token, k, v)
-                    end = datetime.utcnow()
-                    get_logger().info(f"time:{end - start}")
                     return bond_token
 
-        get_logger().info("No Cache")
         # When cache is not used
         # Or, if there is no data in the cache
         # Or, if the cache has expired
@@ -189,9 +181,6 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 "expiration_datetime": datetime.utcnow() + timedelta(seconds=TOKEN_CACHE_TTL),
                 "token": bond_token.__dict__
             }
-
-        end = datetime.utcnow()
-        get_logger().info(f"time:{end - start}")
 
         return bond_token
 
