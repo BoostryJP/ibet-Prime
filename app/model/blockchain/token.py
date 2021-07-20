@@ -459,6 +459,9 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                     "gasPrice": 0
                 })
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+            # Delete Cache
+            IbetStraightBondContract.cache.pop(contract_address)
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
@@ -852,6 +855,9 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                     "gasPrice": 0
                 })
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+            # Delete Cache
+            IbetShareContract.cache.pop(contract_address)
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
