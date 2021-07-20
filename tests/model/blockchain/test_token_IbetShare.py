@@ -16,7 +16,6 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import os
 import pytest
 from unittest import mock
 from binascii import Error
@@ -268,13 +267,13 @@ class TestGet:
         assert share_contract.token_address == contract_address
         assert share_contract.name == "テスト株式"
         assert share_contract.symbol == "TEST"
-        assert share_contract.issue_price == 10000
         assert share_contract.total_supply == 20000
         assert share_contract.image_url == ["", "", ""]
         assert share_contract.contact_information == ""
         assert share_contract.privacy_policy == ""
         assert share_contract.tradable_exchange_contract_address == ZERO_ADDRESS
         assert share_contract.status is True
+        assert share_contract.issue_price == 10000
         assert share_contract.dividends == 0.01  # dividends
         assert share_contract.dividend_record_date == "20211229"  # dividendRecordDate
         assert share_contract.dividend_payment_date == "20211230"  # dividendPaymentDate
@@ -290,7 +289,6 @@ class TestGet:
     # TOKEN_CACHE is True
     @mock.patch("app.model.blockchain.token.TOKEN_CACHE", True)
     def test_normal_2(self, db):
-        IbetShareContract.cache = {}
 
         # prepare account
         test_account = config_eth_account("user1")
@@ -321,22 +319,27 @@ class TestGet:
         # cache put
         IbetShareContract.get(contract_address=contract_address)
         token_cache = IbetShareContract.cache[contract_address]["token"]
-        token_cache.total_supply = 999999
-        token_cache.cancellation_date = "99991231"
-        token_cache.dividends = 9.99
-        token_cache.dividend_record_date = "99991231"
-        token_cache.dividend_payment_date = "99991231"
-        token_cache.tradable_exchange_contract_address = "0x1234567890123456789012345678901234567890"
-        token_cache.personal_info_contract_address = "0x1234567890123456789012345678901234567890"
-        token_cache.image_url = ["http://test1", "http://test2", "http://test3"]
-        token_cache.transferable = True
-        token_cache.status = False
-        token_cache.offering_status = True
-        token_cache.contact_information = "test"
-        token_cache.privacy_policy = "test"
-        token_cache.transfer_approval_required = True
-        token_cache.principal_value = 999999
-        token_cache.is_canceled = True
+        token_cache["issuer_address"] = issuer_address
+        token_cache["token_address"] = contract_address
+        token_cache["name"] = "テスト株式-test"
+        token_cache["symbol"] = "TEST-test"
+        token_cache["total_supply"] = 999999
+        token_cache["image_url"] = ["http://test1", "http://test2", "http://test3"]
+        token_cache["contact_information"] = "test1"
+        token_cache["privacy_policy"] = "test2"
+        token_cache["tradable_exchange_contract_address"] = "0x1234567890123456789012345678901234567890"
+        token_cache["status"] = False
+        token_cache["issue_price"] = 999997
+        token_cache["dividends"] = 9.99
+        token_cache["dividend_record_date"] = "99991230"
+        token_cache["dividend_payment_date"] = "99991229"
+        token_cache["cancellation_date"] = "99991231"
+        token_cache["transferable"] = True
+        token_cache["offering_status"] = True
+        token_cache["personal_info_contract_address"] = "0x1234567890123456789012345678901234567891"
+        token_cache["transfer_approval_required"] = True
+        token_cache["principal_value"] = 999998
+        token_cache["is_canceled"] = True
 
         # execute the function
         share_contract = IbetShareContract.get(contract_address=contract_address)
@@ -344,25 +347,25 @@ class TestGet:
         # assertion
         assert share_contract.issuer_address == issuer_address
         assert share_contract.token_address == contract_address
-        assert share_contract.name == "テスト株式"
-        assert share_contract.symbol == "TEST"
-        assert share_contract.issue_price == 10000
-        assert share_contract.total_supply == 20000
-        assert share_contract.image_url == ["", "", ""]
-        assert share_contract.contact_information == ""
-        assert share_contract.privacy_policy == ""
-        assert share_contract.tradable_exchange_contract_address == ZERO_ADDRESS
-        assert share_contract.status is True
-        assert share_contract.dividends == 0.01  # dividends
-        assert share_contract.dividend_record_date == "20211229"  # dividendRecordDate
-        assert share_contract.dividend_payment_date == "20211230"  # dividendPaymentDate
-        assert share_contract.cancellation_date == "20221231"
-        assert share_contract.transferable is False
-        assert share_contract.offering_status is False
-        assert share_contract.personal_info_contract_address == ZERO_ADDRESS
-        assert share_contract.transfer_approval_required is False
-        assert share_contract.principal_value == 10001
-        assert share_contract.is_canceled is False
+        assert share_contract.name == "テスト株式-test"
+        assert share_contract.symbol == "TEST-test"
+        assert share_contract.total_supply == 999999
+        assert share_contract.image_url == ["http://test1", "http://test2", "http://test3"]
+        assert share_contract.contact_information == "test1"
+        assert share_contract.privacy_policy == "test2"
+        assert share_contract.tradable_exchange_contract_address == "0x1234567890123456789012345678901234567890"
+        assert share_contract.status is False
+        assert share_contract.issue_price == 999997
+        assert share_contract.dividends == 9.99  # dividends
+        assert share_contract.dividend_record_date == "99991230"  # dividendRecordDate
+        assert share_contract.dividend_payment_date == "99991229"  # dividendPaymentDate
+        assert share_contract.cancellation_date == "99991231"
+        assert share_contract.transferable is True
+        assert share_contract.offering_status is True
+        assert share_contract.personal_info_contract_address == "0x1234567890123456789012345678901234567891"
+        assert share_contract.transfer_approval_required is True
+        assert share_contract.principal_value == 999998
+        assert share_contract.is_canceled is True
 
     ###########################################################################
     # Error Case

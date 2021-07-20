@@ -16,8 +16,6 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import os
-
 import pytest
 from unittest import mock
 from binascii import Error
@@ -277,7 +275,6 @@ class TestGet:
     # TOKEN_CACHE is True
     @mock.patch("app.model.blockchain.token.TOKEN_CACHE", True)
     def test_normal_2(self, db):
-        IbetStraightBondContract.cache = {}
 
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
@@ -302,22 +299,30 @@ class TestGet:
         # cache put
         IbetStraightBondContract.get(contract_address=contract_address)
         token_cache = IbetStraightBondContract.cache[contract_address]["token"]
-        token_cache.total_supply = 9999999
-        token_cache.face_value = 9999999
-        token_cache.interest_rate = 99.999
-        token_cache.interest_payment_date = ["99991231", "99991231", "99991231", "99991231", "99991231",
-                                             "99991231", "99991231", "99991231", "99991231", "99991231",
-                                             "99991231", "99991231"]
-        token_cache.redemption_value = 9999999
-        token_cache.transferable = False
-        token_cache.image_url = ["http://test1", "http://test2", "http://test3"]
-        token_cache.status = False
-        token_cache.initial_offering_status = True
-        token_cache.is_redeemed = True
-        token_cache.tradable_exchange_contract_address = "0x1234567890123456789012345678901234567890"
-        token_cache.personal_info_contract_address = "0x1234567890123456789012345678901234567890"
-        token_cache.contact_information = "test"
-        token_cache.privacy_policy = "test"
+        token_cache["issuer_address"] = issuer_address
+        token_cache["token_address"] = contract_address
+        token_cache["name"] = "テスト債券-test"
+        token_cache["symbol"] = "TEST-test"
+        token_cache["total_supply"] = 9999999
+        token_cache["image_url"] = ["http://test1", "http://test2", "http://test3"]
+        token_cache["contact_information"] = "test1"
+        token_cache["privacy_policy"] = "test2"
+        token_cache["tradable_exchange_contract_address"] = "0x1234567890123456789012345678901234567890"
+        token_cache["status"] = False
+        token_cache["face_value"] = 9999998
+        token_cache["redemption_date"] = "99991231"
+        token_cache["redemption_value"] = 9999997
+        token_cache["return_date"] = "99991230"
+        token_cache["return_amount"] = "return_amount-test"
+        token_cache["purpose"] = "purpose-test"
+        token_cache["interest_rate"] = 99.999
+        token_cache["interest_payment_date"] = ["99991231", "99991231", "99991231", "99991231", "99991231",
+                                                "99991231", "99991231", "99991231", "99991231", "99991231",
+                                                "99991231", "99991231"]
+        token_cache["transferable"] = False
+        token_cache["initial_offering_status"] = True
+        token_cache["is_redeemed"] = True
+        token_cache["personal_info_contract_address"] = "0x1234567890123456789012345678901234567891"
 
         # get token data
         bond_contract = IbetStraightBondContract.get(contract_address=contract_address)
@@ -325,26 +330,28 @@ class TestGet:
         # assertion
         assert bond_contract.issuer_address == test_account["address"]
         assert bond_contract.token_address == contract_address
-        assert bond_contract.name == arguments[0]
-        assert bond_contract.symbol == arguments[1]
-        assert bond_contract.total_supply == arguments[2]
-        assert bond_contract.image_url == ["", "", ""]
-        assert bond_contract.contact_information == ""
-        assert bond_contract.privacy_policy == ""
-        assert bond_contract.tradable_exchange_contract_address == ZERO_ADDRESS
-        assert bond_contract.status is True
-        assert bond_contract.face_value == arguments[3]
-        assert bond_contract.redemption_date == arguments[4]
-        assert bond_contract.redemption_value == arguments[5]
-        assert bond_contract.return_date == arguments[6]
-        assert bond_contract.return_amount == arguments[7]
-        assert bond_contract.purpose == arguments[8]
-        assert bond_contract.interest_rate == 0
-        assert bond_contract.interest_payment_date == ["", "", "", "", "", "", "", "", "", "", "", ""]
-        assert bond_contract.transferable is True
-        assert bond_contract.initial_offering_status is False
-        assert bond_contract.is_redeemed is False
-        assert bond_contract.personal_info_contract_address == ZERO_ADDRESS
+        assert bond_contract.name == "テスト債券-test"
+        assert bond_contract.symbol == "TEST-test"
+        assert bond_contract.total_supply == 9999999
+        assert bond_contract.image_url == ["http://test1", "http://test2", "http://test3"]
+        assert bond_contract.contact_information == "test1"
+        assert bond_contract.privacy_policy == "test2"
+        assert bond_contract.tradable_exchange_contract_address == "0x1234567890123456789012345678901234567890"
+        assert bond_contract.status is False
+        assert bond_contract.face_value == 9999998
+        assert bond_contract.redemption_date == "99991231"
+        assert bond_contract.redemption_value == 9999997
+        assert bond_contract.return_date == "99991230"
+        assert bond_contract.return_amount == "return_amount-test"
+        assert bond_contract.purpose == "purpose-test"
+        assert bond_contract.interest_rate == 99.999
+        assert bond_contract.interest_payment_date == ["99991231", "99991231", "99991231", "99991231", "99991231",
+                                                       "99991231", "99991231", "99991231", "99991231", "99991231",
+                                                       "99991231", "99991231"]
+        assert bond_contract.transferable is False
+        assert bond_contract.initial_offering_status is True
+        assert bond_contract.is_redeemed is True
+        assert bond_contract.personal_info_contract_address == "0x1234567890123456789012345678901234567891"
 
     ###########################################################################
     # Error Case
