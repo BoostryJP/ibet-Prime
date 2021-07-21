@@ -36,7 +36,6 @@ from config import (
     TX_GAS_LIMIT,
     ZERO_ADDRESS
 )
-from app.utils.web3_utils import Web3Wrapper
 from app.model.schema import (
     IbetStraightBondUpdate,
     IbetStraightBondTransfer,
@@ -50,6 +49,8 @@ from app.model.schema import (
 from app.exceptions import SendTransactionError
 from app import log
 from app.utils.contract_utils import ContractUtils
+from app.utils.web3_utils import Web3Wrapper
+from app.utils.cache_utils import DictCache
 
 LOG = log.get_logger()
 
@@ -84,7 +85,7 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
     personal_info_contract_address: str
 
     # Cache
-    cache = {}
+    cache = DictCache("bond_tokens")
 
     @staticmethod
     def create(args: list, tx_from: str, private_key: str):
@@ -121,42 +122,9 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 token_cache = IbetStraightBondContract.cache[contract_address]
                 if token_cache.get("expiration_datetime") > datetime.utcnow():
                     # Get data from cache
-                    bond_token = token_cache["token"]
-                    # Get data from contract
-                    # NOTE: For updatable items, the data should be retrieved directly from the blockchain.
-                    bond_token.total_supply = bond_contract.functions.totalSupply().call()
-                    bond_token.face_value = bond_contract.functions.faceValue().call()
-                    bond_token.interest_rate = float(
-                        Decimal(str(bond_contract.functions.interestRate().call())) * Decimal("0.0001")
-                    )
-                    interest_payment_date_list = []
-                    interest_payment_date_string = \
-                        bond_contract.functions.interestPaymentDate().call().replace("'", '"')
-                    interest_payment_date = {}
-                    try:
-                        if interest_payment_date_string != "":
-                            interest_payment_date = json.loads(interest_payment_date_string)
-                    except Exception as err:
-                        LOG.warning("Failed to load interestPaymentDate: ", err)
-                    for i in range(1, 13):
-                        interest_payment_date_list.append(
-                            interest_payment_date.get(f"interestPaymentDate{str(i)}", "")
-                        )
-                    bond_token.interest_payment_date = interest_payment_date_list
-                    bond_token.redemption_value = bond_contract.functions.redemptionValue().call()
-                    bond_token.transferable = bond_contract.functions.transferable().call()
-                    bond_token.image_url = [
-                        bond_contract.functions.getImageURL(0).call(),
-                        bond_contract.functions.getImageURL(1).call(),
-                        bond_contract.functions.getImageURL(2).call()
-                    ]
-                    bond_token.status = bond_contract.functions.status().call()
-                    bond_token.initial_offering_status = bond_contract.functions.initialOfferingStatus().call()
-                    bond_token.is_redeemed = bond_contract.functions.isRedeemed().call()
-                    bond_token.tradable_exchange_contract_address = bond_contract.functions.tradableExchange().call()
-                    bond_token.personal_info_contract_address = bond_contract.functions.personalInfoAddress().call()
-                    bond_token.contact_information = bond_contract.functions.contactInformation().call()
-                    bond_token.privacy_policy = bond_contract.functions.privacyPolicy().call()
+                    bond_token = IbetStraightBondContract()
+                    for k, v in token_cache["token"].items():
+                        setattr(bond_token, k, v)
                     return bond_token
 
         # When cache is not used
@@ -211,7 +179,7 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
         if TOKEN_CACHE:
             IbetStraightBondContract.cache[contract_address] = {
                 "expiration_datetime": datetime.utcnow() + timedelta(seconds=TOKEN_CACHE_TTL),
-                "token": bond_token
+                "token": bond_token.__dict__
             }
 
         return bond_token
@@ -439,6 +407,9 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             except Exception as err:
                 raise SendTransactionError(err)
 
+        # Delete Cache
+        IbetStraightBondContract.cache.pop(contract_address)
+
     @staticmethod
     def transfer(data: IbetStraightBondTransfer,
                  tx_from: str,
@@ -488,6 +459,9 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                     "gasPrice": 0
                 })
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+            # Delete Cache
+            IbetStraightBondContract.cache.pop(contract_address)
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
@@ -523,7 +497,7 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
     is_canceled: bool
 
     # Cache
-    cache = {}
+    cache = DictCache("share_tokens")
 
     @staticmethod
     def create(args: list, tx_from: str, private_key: str):
@@ -560,30 +534,9 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 token_cache = IbetShareContract.cache[contract_address]
                 if token_cache.get("expiration_datetime") > datetime.utcnow():
                     # Get data from cache
-                    share_token = token_cache["token"]
-                    # Get data from contract
-                    # NOTE: For updatable items, the data should be retrieved directly from the blockchain.
-                    share_token.total_supply = share_contract.functions.totalSupply().call()
-                    share_token.cancellation_date = share_contract.functions.cancellationDate().call()
-                    _dividend_info = share_contract.functions.dividendInformation().call()
-                    share_token.dividends = float(Decimal(str(_dividend_info[0])) * Decimal("0.01"))
-                    share_token.dividend_record_date = _dividend_info[1]
-                    share_token.dividend_payment_date = _dividend_info[2]
-                    share_token.tradable_exchange_contract_address = share_contract.functions.tradableExchange().call()
-                    share_token.personal_info_contract_address = share_contract.functions.personalInfoAddress().call()
-                    share_token.image_url = [
-                        share_contract.functions.referenceUrls(0).call(),
-                        share_contract.functions.referenceUrls(1).call(),
-                        share_contract.functions.referenceUrls(2).call()
-                    ]
-                    share_token.transferable = share_contract.functions.transferable().call()
-                    share_token.status = share_contract.functions.status().call()
-                    share_token.offering_status = share_contract.functions.offeringStatus().call()
-                    share_token.contact_information = share_contract.functions.contactInformation().call()
-                    share_token.privacy_policy = share_contract.functions.privacyPolicy().call()
-                    share_token.transfer_approval_required = share_contract.functions.transferApprovalRequired().call()
-                    share_token.principal_value = share_contract.functions.principalValue().call()
-                    share_token.is_canceled = share_contract.functions.isCanceled().call()
+                    share_token = IbetShareContract()
+                    for k, v in token_cache["token"].items():
+                        setattr(share_token, k, v)
                     return share_token
 
         # When cache is not used
@@ -623,7 +576,7 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
         if TOKEN_CACHE:
             IbetShareContract.cache[contract_address] = {
                 "expiration_datetime": datetime.utcnow() + timedelta(seconds=TOKEN_CACHE_TTL),
-                "token": share_token
+                "token": share_token.__dict__
             }
 
         return share_token
@@ -850,6 +803,9 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             except Exception as err:
                 raise SendTransactionError(err)
 
+        # Delete Cache
+        IbetShareContract.cache.pop(contract_address)
+
     @staticmethod
     def transfer(data: IbetShareTransfer,
                  tx_from: str,
@@ -899,6 +855,9 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                     "gasPrice": 0
                 })
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+            # Delete Cache
+            IbetShareContract.cache.pop(contract_address)
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
@@ -950,7 +909,7 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                          data: IbetShareCancelTransfer,
                          tx_from: str,
                          private_key: str):
-        """Approve Transfer"""
+        """Cancel Transfer"""
         try:
             share_contract = ContractUtils.get_contract(
                 contract_name="IbetShare",
