@@ -304,6 +304,7 @@ class TestProcessor:
         assert _notification.code == 0
         assert _notification.metainfo == {
             "scheduled_event_id": "event_id_1",
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
         }
 
     # <Error_2>
@@ -353,6 +354,7 @@ class TestProcessor:
         assert _notification.code == 1
         assert _notification.metainfo == {
             "scheduled_event_id": "event_id_1",
+            "token_type": TokenType.IBET_SHARE,
         }
 
     # <Error_3>
@@ -412,6 +414,7 @@ class TestProcessor:
         assert _notification.code == 2
         assert _notification.metainfo == {
             "scheduled_event_id": "event_id_1",
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
         }
 
     # <Error_4>
@@ -472,4 +475,5 @@ class TestProcessor:
         assert _notification.code == 2
         assert _notification.metainfo == {
             "scheduled_event_id": "event_id_1",
+            "token_type": TokenType.IBET_SHARE,
         }

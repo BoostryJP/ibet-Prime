@@ -422,6 +422,7 @@ class TestProcessor:
         assert _notification.code == 0
         assert _notification.metainfo == {
             "token_address": _token_address_1,
+            "token_type": TokenType.IBET_SHARE,
             "arguments": {
                 "name": "name_test1",
                 "symbol": "symbol_test1",
@@ -453,6 +454,7 @@ class TestProcessor:
         assert _notification.code == 0
         assert _notification.metainfo == {
             "token_address": _token_address_2,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "arguments": {
                 "name": "name_test1",
                 "symbol": "symbol_test1",
@@ -625,6 +627,7 @@ class TestProcessor:
         assert _notification.code == 1
         assert _notification.metainfo == {
             "token_address": _token_address_1,
+            "token_type": TokenType.IBET_SHARE,
             "arguments": {
                 "name": "name_test1",
                 "symbol": "symbol_test1",
@@ -656,6 +659,7 @@ class TestProcessor:
         assert _notification.code == 1
         assert _notification.metainfo == {
             "token_address": _token_address_2,
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
             "arguments": {
                 "name": "name_test1",
                 "symbol": "symbol_test1",
@@ -832,6 +836,7 @@ class TestProcessor:
             assert _notification.code == 2
             assert _notification.metainfo == {
                 "token_address": _token_address_1,
+                "token_type": TokenType.IBET_SHARE,
                 "arguments": {
                     "name": "name_test1",
                     "symbol": "symbol_test1",
@@ -863,6 +868,7 @@ class TestProcessor:
             assert _notification.code == 2
             assert _notification.metainfo == {
                 "token_address": _token_address_2,
+                "token_type": TokenType.IBET_STRAIGHT_BOND,
                 "arguments": {
                     "name": "name_test1",
                     "symbol": "symbol_test1",
@@ -1083,6 +1089,7 @@ class TestProcessor:
             assert _notification.code == 2
             assert _notification.metainfo == {
                 "token_address": _token_address_1,
+                "token_type": TokenType.IBET_SHARE,
                 "arguments": {
                     "name": "name_test1",
                     "symbol": "symbol_test1",
@@ -1114,6 +1121,7 @@ class TestProcessor:
             assert _notification.code == 2
             assert _notification.metainfo == {
                 "token_address": _token_address_2,
+                "token_type": TokenType.IBET_STRAIGHT_BOND,
                 "arguments": {
                     "name": "name_test1",
                     "symbol": "symbol_test1",
