@@ -108,7 +108,7 @@ class DBSink:
                     _token.token_status = status
                     self.db.merge(_token)
 
-    def on_error_notification(self, issuer_address, notice_type, code, token_address, arguments):
+    def on_error_notification(self, issuer_address, notice_type, code, token_address, token_type, arguments):
         notification = Notification()
         notification.notice_id = uuid.uuid4()
         notification.issuer_address = issuer_address
@@ -117,6 +117,7 @@ class DBSink:
         notification.code = code
         notification.metainfo = {
             "token_address": token_address,
+            "token_type": token_type,
             "arguments": arguments
         }
         self.db.add(notification)
@@ -195,6 +196,7 @@ class Processor:
                         notice_type=notice_type,
                         code=0,
                         token_address=_update_token.token_address,
+                        token_type=_update_token.type,
                         arguments=_update_token.arguments)
                     self.sink.flush()
                     continue
@@ -215,6 +217,7 @@ class Processor:
                     notice_type=notice_type,
                     code=1,
                     token_address=_update_token.token_address,
+                    token_type=_update_token.type,
                     arguments=_update_token.arguments)
                 self.sink.flush()
                 continue
@@ -281,6 +284,7 @@ class Processor:
                     notice_type=notice_type,
                     code=2,
                     token_address=_update_token.token_address,
+                    token_type=_update_token.type,
                     arguments=_update_token.arguments)
 
             self.sink.flush()

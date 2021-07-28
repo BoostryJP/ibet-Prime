@@ -102,7 +102,7 @@ class DBSink:
             scheduled_event_record.status = status
             self.db.merge(scheduled_event_record)
 
-    def on_error_notification(self, issuer_address, code, scheduled_event_id):
+    def on_error_notification(self, issuer_address, code, scheduled_event_id, token_type):
         notification = Notification()
         notification.notice_id = uuid.uuid4()
         notification.issuer_address = issuer_address
@@ -110,7 +110,8 @@ class DBSink:
         notification.type = NotificationType.SCHEDULE_EVENT_ERROR
         notification.code = code
         notification.metainfo = {
-            "scheduled_event_id": scheduled_event_id
+            "scheduled_event_id": scheduled_event_id,
+            "token_type": token_type
         }
         self.db.add(notification)
 
@@ -180,7 +181,8 @@ class Processor:
                         status=2
                     )
                     self.sink.on_error_notification(
-                        issuer_address=_event.issuer_address, code=0, scheduled_event_id=_event.event_id)
+                        issuer_address=_event.issuer_address, code=0,
+                        scheduled_event_id=_event.event_id, token_type=_event.token_type)
                     self.sink.flush()
                     continue
                 keyfile_json = _account.keyfile
@@ -196,7 +198,8 @@ class Processor:
                     status=2
                 )
                 self.sink.on_error_notification(
-                    issuer_address=_event.issuer_address, code=1, scheduled_event_id=_event.event_id)
+                    issuer_address=_event.issuer_address, code=1,
+                    scheduled_event_id=_event.event_id, token_type=_event.token_type)
                 self.sink.flush()
                 continue
 
@@ -233,7 +236,8 @@ class Processor:
                     status=2
                 )
                 self.sink.on_error_notification(
-                    issuer_address=_event.issuer_address, code=2, scheduled_event_id=_event.event_id)
+                    issuer_address=_event.issuer_address, code=2,
+                    scheduled_event_id=_event.event_id, token_type=_event.token_type)
             self.sink.flush()
 
 
