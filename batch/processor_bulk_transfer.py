@@ -111,7 +111,7 @@ class DBSink:
             transfer_record.status = status
             self.db.merge(transfer_record)
 
-    def on_error_notification(self, issuer_address, code, upload_id, error_transfer_id):
+    def on_error_notification(self, issuer_address, code, upload_id, token_type, error_transfer_id):
         notification = Notification()
         notification.notice_id = uuid.uuid4()
         notification.issuer_address = issuer_address
@@ -120,6 +120,7 @@ class DBSink:
         notification.code = code
         notification.metainfo = {
             "upload_id": upload_id,
+            "token_type": token_type,
             "error_transfer_id": error_transfer_id
         }
         self.db.add(notification)
@@ -209,7 +210,6 @@ class Processor:
         for _upload in upload_list:
             LOG.info(
                 f"thread {self.thread_num} START upload_id:{_upload.upload_id} issuer_address:{_upload.issuer_address}")
-            time.sleep(30)
 
             # Get issuer's private key
             try:
@@ -224,7 +224,7 @@ class Processor:
                     )
                     self.sink.on_error_notification(
                         issuer_address=_upload.issuer_address, code=0, upload_id=_upload.upload_id,
-                        error_transfer_id=[])
+                        token_type=_upload.token_type, error_transfer_id=[])
                     self.sink.flush()
                     self._release_processing_issuer(_upload.upload_id)
                     continue
@@ -243,7 +243,8 @@ class Processor:
                     status=2
                 )
                 self.sink.on_error_notification(
-                    issuer_address=_upload.issuer_address, code=1, upload_id=_upload.upload_id, error_transfer_id=[])
+                    issuer_address=_upload.issuer_address, code=1, upload_id=_upload.upload_id,
+                    token_type=_upload.token_type, error_transfer_id=[])
                 self.sink.flush()
                 self._release_processing_issuer(_upload.upload_id)
                 continue
@@ -292,7 +293,7 @@ class Processor:
                 error_transfer_id = [_error_transfer.id for _error_transfer in error_transfer_list]
                 self.sink.on_error_notification(
                     issuer_address=_upload.issuer_address, code=2,
-                    upload_id=_upload.upload_id, error_transfer_id=error_transfer_id)
+                    upload_id=_upload.upload_id, token_type=_upload.token_type, error_transfer_id=error_transfer_id)
 
             self.sink.flush()
             self._release_processing_issuer(_upload.upload_id)
