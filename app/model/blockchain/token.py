@@ -115,16 +115,21 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             contract_name="IbetStraightBond",
             contract_address=contract_address
         )
+        from app.log import get_logger
+        LOG = get_logger()
 
         # When using the cache
         if TOKEN_CACHE:
             if contract_address in IbetStraightBondContract.cache:
                 token_cache = IbetStraightBondContract.cache[contract_address]
-                if token_cache.get("expiration_datetime") > datetime.utcnow():
+                is_updated = ContractUtils.is_token_attr_update(contract_address, token_cache.get("cached_datetime"))
+                if is_updated is False and token_cache.get("expiration_datetime") > datetime.utcnow():
                     # Get data from cache
                     bond_token = IbetStraightBondContract()
                     for k, v in token_cache["token"].items():
                         setattr(bond_token, k, v)
+                    LOG.info("======================================================")
+                    LOG.info(f"Cache {contract_address}")
                     return bond_token
 
         # When cache is not used
@@ -178,10 +183,13 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
 
         if TOKEN_CACHE:
             IbetStraightBondContract.cache[contract_address] = {
+                "cached_datetime": datetime.utcnow(),
                 "expiration_datetime": datetime.utcnow() + timedelta(seconds=TOKEN_CACHE_TTL),
                 "token": bond_token.__dict__
             }
 
+        LOG.info("======================================================")
+        LOG.info(f"No Cache {contract_address}")
         return bond_token
 
     @staticmethod
@@ -408,6 +416,7 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(err)
 
         # Delete Cache
+        ContractUtils.set_token_attr_update(contract_address)
         IbetStraightBondContract.cache.pop(contract_address)
 
     @staticmethod
@@ -461,6 +470,7 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
             # Delete Cache
+            ContractUtils.set_token_attr_update(contract_address)
             IbetStraightBondContract.cache.pop(contract_address)
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
@@ -532,7 +542,8 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
         if TOKEN_CACHE:
             if contract_address in IbetShareContract.cache:
                 token_cache = IbetShareContract.cache[contract_address]
-                if token_cache.get("expiration_datetime") > datetime.utcnow():
+                is_updated = ContractUtils.is_token_attr_update(contract_address, token_cache.get("cached_datetime"))
+                if is_updated is False and token_cache.get("expiration_datetime") > datetime.utcnow():
                     # Get data from cache
                     share_token = IbetShareContract()
                     for k, v in token_cache["token"].items():
@@ -575,6 +586,7 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
 
         if TOKEN_CACHE:
             IbetShareContract.cache[contract_address] = {
+                "cached_datetime": datetime.utcnow(),
                 "expiration_datetime": datetime.utcnow() + timedelta(seconds=TOKEN_CACHE_TTL),
                 "token": share_token.__dict__
             }
@@ -804,6 +816,7 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
                 raise SendTransactionError(err)
 
         # Delete Cache
+        ContractUtils.set_token_attr_update(contract_address)
         IbetShareContract.cache.pop(contract_address)
 
     @staticmethod
@@ -857,6 +870,7 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
             # Delete Cache
+            ContractUtils.set_token_attr_update(contract_address)
             IbetShareContract.cache.pop(contract_address)
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
@@ -928,4 +942,3 @@ class IbetShareContract(IbetStandardTokenInterfaceContract):
             raise SendTransactionError(timeout_error)
         except Exception as err:
             raise SendTransactionError(err)
-

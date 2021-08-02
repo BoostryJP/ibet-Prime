@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import pytest
 from unittest import mock
 from binascii import Error
+from datetime import datetime
 
 from pydantic.error_wrappers import ValidationError
 from eth_keyfile import decode_keyfile_json
@@ -32,6 +33,7 @@ from web3.exceptions import (
 )
 
 from config import ZERO_ADDRESS
+from app.model.db import TokenAttrUpdate
 from app.model.blockchain import IbetShareContract
 from app.utils.contract_utils import ContractUtils
 from app.model.schema import (
@@ -367,6 +369,95 @@ class TestGet:
         assert share_contract.principal_value == 999998
         assert share_contract.is_canceled is True
 
+    # <Normal_3>
+    # TOKEN_CACHE is True, updated token attribute
+    @mock.patch("app.model.blockchain.token.TOKEN_CACHE", True)
+    def test_normal_3(self, db):
+
+        # prepare account
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211229",
+            "20211230",
+            "20221231",
+            10001
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # cache put
+        IbetShareContract.get(contract_address=contract_address)
+        token_cache = IbetShareContract.cache[contract_address]["token"]
+        token_cache["issuer_address"] = issuer_address
+        token_cache["token_address"] = contract_address
+        token_cache["name"] = "テスト株式-test"
+        token_cache["symbol"] = "TEST-test"
+        token_cache["total_supply"] = 999999
+        token_cache["image_url"] = ["http://test1", "http://test2", "http://test3"]
+        token_cache["contact_information"] = "test1"
+        token_cache["privacy_policy"] = "test2"
+        token_cache["tradable_exchange_contract_address"] = "0x1234567890123456789012345678901234567890"
+        token_cache["status"] = False
+        token_cache["issue_price"] = 999997
+        token_cache["dividends"] = 9.99
+        token_cache["dividend_record_date"] = "99991230"
+        token_cache["dividend_payment_date"] = "99991229"
+        token_cache["cancellation_date"] = "99991231"
+        token_cache["transferable"] = True
+        token_cache["offering_status"] = True
+        token_cache["personal_info_contract_address"] = "0x1234567890123456789012345678901234567891"
+        token_cache["transfer_approval_required"] = True
+        token_cache["principal_value"] = 999998
+        token_cache["is_canceled"] = True
+
+        # updated token attribute
+        _token_attr_update = TokenAttrUpdate()
+        _token_attr_update.token_address = contract_address
+        _token_attr_update.updated_datetime = datetime.utcnow()
+        db.add(_token_attr_update)
+        db.commit()
+
+        # execute the function
+        share_contract = IbetShareContract.get(contract_address=contract_address)
+
+        # assertion
+        assert share_contract.issuer_address == issuer_address
+        assert share_contract.token_address == contract_address
+        assert share_contract.name == "テスト株式"
+        assert share_contract.symbol == "TEST"
+        assert share_contract.total_supply == 20000
+        assert share_contract.image_url == ["", "", ""]
+        assert share_contract.contact_information == ""
+        assert share_contract.privacy_policy == ""
+        assert share_contract.tradable_exchange_contract_address == ZERO_ADDRESS
+        assert share_contract.status is True
+        assert share_contract.issue_price == 10000
+        assert share_contract.dividends == 0.01  # dividends
+        assert share_contract.dividend_record_date == "20211229"  # dividendRecordDate
+        assert share_contract.dividend_payment_date == "20211230"  # dividendPaymentDate
+        assert share_contract.cancellation_date == "20221231"
+        assert share_contract.transferable is False
+        assert share_contract.offering_status is False
+        assert share_contract.personal_info_contract_address == ZERO_ADDRESS
+        assert share_contract.transfer_approval_required is False
+        assert share_contract.principal_value == 10001
+        assert share_contract.is_canceled is False
+
     ###########################################################################
     # Error Case
     ###########################################################################
@@ -428,6 +519,7 @@ class TestUpdate:
         # update
         _data = {}
         _add_data = IbetShareUpdate(**_data)
+        pre_datetime = datetime.utcnow()
         IbetShareContract.update(
             contract_address=contract_address,
             data=_add_data,
@@ -452,6 +544,10 @@ class TestUpdate:
         assert share_contract.transfer_approval_required is False
         assert share_contract.principal_value == 10000
         assert share_contract.is_canceled is False
+        _token_attr_update = db.query(TokenAttrUpdate).first()
+        assert _token_attr_update.id == 1
+        assert _token_attr_update.token_address == contract_address
+        assert _token_attr_update.updated_datetime > pre_datetime
 
     # <Normal_2>
     # Update all items
@@ -500,6 +596,7 @@ class TestUpdate:
             "is_canceled": True,
         }
         _add_data = IbetShareUpdate(**_data)
+        pre_datetime = datetime.utcnow()
         IbetShareContract.update(
             contract_address=contract_address,
             data=_add_data,
@@ -524,6 +621,10 @@ class TestUpdate:
         assert share_contract.transfer_approval_required is True
         assert share_contract.principal_value == 9000
         assert share_contract.is_canceled is True
+        _token_attr_update = db.query(TokenAttrUpdate).first()
+        assert _token_attr_update.id == 1
+        assert _token_attr_update.token_address == contract_address
+        assert _token_attr_update.updated_datetime > pre_datetime
 
     # <Normal_3>
     # contract_address does not exists
@@ -1284,6 +1385,7 @@ class TestAddSupply:
             "amount": 10
         }
         _add_data = IbetShareAdd(**_data)
+        pre_datetime = datetime.utcnow()
         IbetShareContract.add_supply(
             contract_address=contract_address,
             data=_add_data,
@@ -1294,6 +1396,10 @@ class TestAddSupply:
         # assertion
         share_contract = IbetShareContract.get(contract_address=contract_address)
         assert share_contract.total_supply == arguments[3] + 10
+        _token_attr_update = db.query(TokenAttrUpdate).first()
+        assert _token_attr_update.id == 1
+        assert _token_attr_update.token_address == contract_address
+        assert _token_attr_update.updated_datetime > pre_datetime
 
     # <Normal_2>
     # contract_address does not exists

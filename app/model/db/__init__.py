@@ -24,6 +24,7 @@ from .account import (
 )
 from .token import (
     Token,
+    TokenAttrUpdate,
     TokenType
 )
 from .bulk_transfer_upload import BulkTransferUpload

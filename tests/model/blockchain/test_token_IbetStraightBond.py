@@ -20,6 +20,8 @@ import pytest
 from unittest import mock
 from binascii import Error
 from unittest.mock import patch
+from datetime import datetime
+
 from pydantic.error_wrappers import ValidationError
 from eth_keyfile import decode_keyfile_json
 from web3.exceptions import (
@@ -30,6 +32,7 @@ from web3.exceptions import (
     ValidationError as Web3ValidationError
 )
 from config import ZERO_ADDRESS
+from app.model.db import TokenAttrUpdate
 from app.model.blockchain import IbetStraightBondContract
 from app.utils.contract_utils import ContractUtils
 from app.model.schema import (
@@ -245,6 +248,7 @@ class TestGet:
         )
 
         # get token data
+        pre_datetime = datetime.utcnow()
         bond_contract = IbetStraightBondContract.get(contract_address=contract_address)
 
         # assertion
@@ -353,6 +357,93 @@ class TestGet:
         assert bond_contract.is_redeemed is True
         assert bond_contract.personal_info_contract_address == "0x1234567890123456789012345678901234567891"
 
+    # <Normal_3>
+    # TOKEN_CACHE is True, updated token attribute
+    @mock.patch("app.model.blockchain.token.TOKEN_CACHE", True)
+    def test_normal_3(self, db):
+
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト債券", "TEST", 10000, 20000,
+            "20211231", 30000,
+            "20211231", "リターン内容",
+            "発行目的"
+        ]
+        contract_address, abi, tx_hash = IbetStraightBondContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # cache put
+        IbetStraightBondContract.get(contract_address=contract_address)
+        token_cache = IbetStraightBondContract.cache[contract_address]["token"]
+        token_cache["issuer_address"] = issuer_address
+        token_cache["token_address"] = contract_address
+        token_cache["name"] = "テスト債券-test"
+        token_cache["symbol"] = "TEST-test"
+        token_cache["total_supply"] = 9999999
+        token_cache["image_url"] = ["http://test1", "http://test2", "http://test3"]
+        token_cache["contact_information"] = "test1"
+        token_cache["privacy_policy"] = "test2"
+        token_cache["tradable_exchange_contract_address"] = "0x1234567890123456789012345678901234567890"
+        token_cache["status"] = False
+        token_cache["face_value"] = 9999998
+        token_cache["redemption_date"] = "99991231"
+        token_cache["redemption_value"] = 9999997
+        token_cache["return_date"] = "99991230"
+        token_cache["return_amount"] = "return_amount-test"
+        token_cache["purpose"] = "purpose-test"
+        token_cache["interest_rate"] = 99.999
+        token_cache["interest_payment_date"] = ["99991231", "99991231", "99991231", "99991231", "99991231",
+                                                "99991231", "99991231", "99991231", "99991231", "99991231",
+                                                "99991231", "99991231"]
+        token_cache["transferable"] = False
+        token_cache["initial_offering_status"] = True
+        token_cache["is_redeemed"] = True
+        token_cache["personal_info_contract_address"] = "0x1234567890123456789012345678901234567891"
+
+        # updated token attribute
+        _token_attr_update = TokenAttrUpdate()
+        _token_attr_update.token_address = contract_address
+        _token_attr_update.updated_datetime = datetime.utcnow()
+        db.add(_token_attr_update)
+        db.commit()
+
+        # get token data
+        bond_contract = IbetStraightBondContract.get(contract_address=contract_address)
+
+        # assertion
+        assert bond_contract.issuer_address == test_account["address"]
+        assert bond_contract.token_address == contract_address
+        assert bond_contract.name == arguments[0]
+        assert bond_contract.symbol == arguments[1]
+        assert bond_contract.total_supply == arguments[2]
+        assert bond_contract.image_url == ["", "", ""]
+        assert bond_contract.contact_information == ""
+        assert bond_contract.privacy_policy == ""
+        assert bond_contract.tradable_exchange_contract_address == ZERO_ADDRESS
+        assert bond_contract.status is True
+        assert bond_contract.face_value == arguments[3]
+        assert bond_contract.redemption_date == arguments[4]
+        assert bond_contract.redemption_value == arguments[5]
+        assert bond_contract.return_date == arguments[6]
+        assert bond_contract.return_amount == arguments[7]
+        assert bond_contract.purpose == arguments[8]
+        assert bond_contract.interest_rate == 0
+        assert bond_contract.interest_payment_date == ["", "", "", "", "", "", "", "", "", "", "", ""]
+        assert bond_contract.transferable is True
+        assert bond_contract.initial_offering_status is False
+        assert bond_contract.is_redeemed is False
+        assert bond_contract.personal_info_contract_address == ZERO_ADDRESS
+
     ###########################################################################
     # Error Case
     ###########################################################################
@@ -409,6 +500,7 @@ class TestUpdate:
         # update
         _data = {}
         _add_data = IbetStraightBondUpdate(**_data)
+        pre_datetime = datetime.utcnow()
         IbetStraightBondContract.update(
             contract_address=contract_address,
             data=_add_data,
@@ -431,6 +523,10 @@ class TestUpdate:
         assert bond_contract.personal_info_contract_address == ZERO_ADDRESS
         assert bond_contract.contact_information == ""
         assert bond_contract.privacy_policy == ""
+        _token_attr_update = db.query(TokenAttrUpdate).first()
+        assert _token_attr_update.id == 1
+        assert _token_attr_update.token_address == contract_address
+        assert _token_attr_update.updated_datetime > pre_datetime
 
     # <Normal_2>
     # Update all items
@@ -472,6 +568,7 @@ class TestUpdate:
             "privacy_policy": "privacy policy test"
         }
         _add_data = IbetStraightBondUpdate(**_data)
+        pre_datetime = datetime.utcnow()
         IbetStraightBondContract.update(
             contract_address=contract_address,
             data=_add_data,
@@ -494,6 +591,10 @@ class TestUpdate:
         assert bond_contract.personal_info_contract_address == "0x0000000000000000000000000000000000000002"
         assert bond_contract.contact_information == "contact info test"
         assert bond_contract.privacy_policy == "privacy policy test"
+        _token_attr_update = db.query(TokenAttrUpdate).first()
+        assert _token_attr_update.id == 1
+        assert _token_attr_update.token_address == contract_address
+        assert _token_attr_update.updated_datetime > pre_datetime
 
     # <Normal_3>
     # contract_address does not exists
@@ -1209,6 +1310,7 @@ class TestAddSupply:
             "amount": 10
         }
         _add_data = IbetStraightBondAdd(**_data)
+        pre_datetime = datetime.utcnow()
         IbetStraightBondContract.add_supply(
             contract_address=contract_address,
             data=_add_data,
@@ -1219,6 +1321,10 @@ class TestAddSupply:
         # assertion
         bond_contract = IbetStraightBondContract.get(contract_address=contract_address)
         assert bond_contract.total_supply == arguments[2] + 10
+        _token_attr_update = db.query(TokenAttrUpdate).first()
+        assert _token_attr_update.id == 1
+        assert _token_attr_update.token_address == contract_address
+        assert _token_attr_update.updated_datetime > pre_datetime
 
     # <Normal_2>
     # contract_address does not exists
