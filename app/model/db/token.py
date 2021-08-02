@@ -20,7 +20,8 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
-    JSON
+    JSON,
+    DateTime
 )
 
 from .base import Base
@@ -43,6 +44,18 @@ class Token(Base):
     abi = Column(JSON, nullable=False)
     # token processing status (pending:0, succeeded:1, failed:2)
     token_status = Column(Integer, default=1)
+
+
+class TokenAttrUpdate(Base):
+    """Managed Token Attribute Update"""
+    __tablename__ = "token_attr_update"
+
+    # sequence id
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    # token address
+    token_address = Column(String(42), index=True)
+    # datetime when token attribute updated (UTC)
+    updated_datetime = Column(DateTime, nullable=False)
 
 
 class TokenType:
