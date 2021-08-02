@@ -115,8 +115,6 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             contract_name="IbetStraightBond",
             contract_address=contract_address
         )
-        from app.log import get_logger
-        LOG = get_logger()
 
         # When using the cache
         if TOKEN_CACHE:
@@ -128,8 +126,6 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                     bond_token = IbetStraightBondContract()
                     for k, v in token_cache["token"].items():
                         setattr(bond_token, k, v)
-                    LOG.info("======================================================")
-                    LOG.info(f"Cache {contract_address}")
                     return bond_token
 
         # When cache is not used
@@ -188,8 +184,6 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
                 "token": bond_token.__dict__
             }
 
-        LOG.info("======================================================")
-        LOG.info(f"No Cache {contract_address}")
         return bond_token
 
     @staticmethod

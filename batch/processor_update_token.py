@@ -288,8 +288,6 @@ class Processor:
                     arguments=_update_token.arguments)
 
             self.sink.flush()
-            LOG.info("===================")
-            LOG.info(f"flush {_update_token.token_address}")
 
 
 _sink = Sinks()
