@@ -22,7 +22,10 @@ from datetime import datetime
 
 from web3.exceptions import TimeExhausted
 from eth_utils import to_checksum_address
-from sqlalchemy import create_engine
+from sqlalchemy import (
+    create_engine,
+    desc
+)
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
@@ -190,7 +193,7 @@ class ContractUtils:
         try:
             _token_attr_update = db_session.query(TokenAttrUpdate). \
                 filter(TokenAttrUpdate.token_address == contract_address). \
-                order_by(TokenAttrUpdate.id). \
+                order_by(desc(TokenAttrUpdate.id)). \
                 first()
             if _token_attr_update is not None \
                     and _token_attr_update.updated_datetime > base_datetime:
