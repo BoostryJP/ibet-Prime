@@ -17,15 +17,13 @@ ibet-Prime is an API service for issuers to issue various tokens on the [ibet ne
 
 It supports the tokens developed by [ibet-SmartContract](https://github.com/BoostryJP/ibet-SmartContract).
 
+## Dependencies
 
-## Supported contract version
+- [python3](https://www.python.org/downloads/release/python-3811/) version 3.8 or greater
+
+## Supported ibet contract version
 
 * ibet-SmartContract: version 21.6.0
-
-
-## Prerequisites
-
-Set up an execution environment of Python 3.8 or higher.
 
 
 ## Starting and Stopping the Server
@@ -43,6 +41,13 @@ You can start (or stop) the API server with:
 ```bash
 $ ./bin/run_server.sh start(stop)
 ```
+
+## Branching model
+
+<p align='center'>
+  <img alt="ibet" src="https://user-images.githubusercontent.com/963333/128751565-3268b1e3-185b-4f09-870f-b6d96519eb54.png"/>
+</p>
+
 
 ## License
 
