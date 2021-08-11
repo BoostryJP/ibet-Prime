@@ -111,14 +111,9 @@ class FailOverHTTPProvider(Web3.HTTPProvider):
 
                     # Call RPC method
                     try:
-                        print("*************************")
-                        print(self.endpoint_uri )
                         return super().make_request(method, params)
-                    except (ConnectionError, JSONDecodeError) as e:
-                        print("=========================")
-                        print(type(e))
-                        print(e)
-                        print(counter)
+                    except (ConnectionError, JSONDecodeError):
+                        # NOTE: JSONDecodeError occurs when a request is sent during the termination process of Quorum.
                         counter += 1
                         if counter <= WEB3_REQUEST_RETRY_COUNT:
                             time.sleep(WEB3_REQUEST_WAIT_TIME)
