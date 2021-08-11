@@ -20,6 +20,7 @@ import sys
 import threading
 from typing import Any
 import time
+from json.decoder import JSONDecodeError
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -111,7 +112,8 @@ class FailOverHTTPProvider(Web3.HTTPProvider):
                     # Call RPC method
                     try:
                         return super().make_request(method, params)
-                    except ConnectionError:
+                    except (ConnectionError, JSONDecodeError):
+                        # NOTE: JSONDecodeError occurs when a request is sent during the termination process of Quorum.
                         counter += 1
                         if counter <= WEB3_REQUEST_RETRY_COUNT:
                             time.sleep(WEB3_REQUEST_WAIT_TIME)
