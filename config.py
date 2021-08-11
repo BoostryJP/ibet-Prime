@@ -105,7 +105,7 @@ if "pytest" in sys.modules:  # for unit test
         if os.environ.get("E2EE_RSA_RESOURCE_MODE") else 0
     E2EE_RSA_RESOURCE = os.environ.get("E2EE_RSA_RESOURCE") or "tests/data/rsa_private.pem"
     E2EE_RSA_PASSPHRASE = os.environ.get("E2EE_RSA_PASSPHRASE") or "password"
-elif "alembic" in sys.modules or "manage.py" in sys.argv[0]:  # for migration
+elif "alembic" in sys.modules or "manage.py" in sys.argv[0] or APP_ENV == "local":  # for migration or local
     E2EE_RSA_RESOURCE_MODE = int(os.environ.get("E2EE_RSA_RESOURCE_MODE")) \
         if os.environ.get("E2EE_RSA_RESOURCE_MODE") else 0
     E2EE_RSA_RESOURCE = os.environ.get("E2EE_RSA_RESOURCE") or "tests/data/rsa_private.pem"
@@ -155,7 +155,13 @@ if APP_ENV == "local":
 else:
     BLOCK_GENERATION_SPEED_THRESHOLD = int(os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD")) \
         if os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD") else 20
-# auto transfer approval interval(second)
+WEB3_REQUEST_RETRY_COUNT = int(os.environ.get("WEB3_REQUEST_RETRY_COUNT")) if os.environ.get(
+    "WEB3_REQUEST_RETRY_COUNT") else 3
+WEB3_REQUEST_WAIT_TIME = int(os.environ.get("WEB3_REQUEST_WAIT_TIME")) \
+    if os.environ.get("WEB3_REQUEST_WAIT_TIME") else BLOCK_SYNC_STATUS_SLEEP_INTERVAL  # Same batch interval
+
+# Auto transfer approval
+# interval(second)
 AUTO_TRANSFER_APPROVAL_INTERVAL = int(os.environ.get("AUTO_TRANSFER_APPROVAL_INTERVAL")) \
     if os.environ.get("AUTO_TRANSFER_APPROVAL_INTERVAL") else 10
 
