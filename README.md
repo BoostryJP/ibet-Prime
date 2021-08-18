@@ -10,18 +10,26 @@
   </a>
 </p>
 
+<img width="33%" align="right" src="https://user-images.githubusercontent.com/963333/71672471-6383c080-2db9-11ea-85b6-8815519652ec.png"/>
 
-## About this repository
+**The ibet-Prime security token management system for ibet network.**
 
-ibet-Prime is an API service for issuers to issue various tokens on the [ibet network](https://github.com/BoostryJP/ibet-Network).
+## Features
 
-It supports the tokens developed by [ibet-SmartContract](https://github.com/BoostryJP/ibet-SmartContract).
+- ibet-Prime is an API service that allows issuers to issue and manage security tokens on the [ibet network](https://github.com/BoostryJP/ibet-Network). 
+- It supports tokens developed by the [ibet-SmartContract](https://github.com/BoostryJP/ibet-SmartContract) project and various smart contracts.
+- It provides the functions required by Japanese laws and regulations as a security token ledger management function.
+- By calling the ibet-Prime API from your own front-end application, you can easily build a security token management service.
 
 ## Dependencies
 
 - [python3](https://www.python.org/downloads/release/python-3811/) version 3.8 or greater
+- [GoQuorum](https://github.com/ConsenSys/quorum)
+  - We support the official GoQuorum node of [ibet-Network](https://github.com/BoostryJP/ibet-Network).
+  - We use [ganache-cli](https://github.com/trufflesuite/ganache-cli) for local development and unit testing, and we use the latest version.
 
-## Supported ibet contract version
+
+## Supported ibet smart contract version
 
 * ibet-SmartContract: version 21.6.0
 
