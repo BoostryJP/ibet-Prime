@@ -16,9 +16,9 @@
 
 ## Features
 
-- ibet-Prime is an API service that allows issuers to issue and manage security tokens on the [ibet network](https://github.com/BoostryJP/ibet-Network). 
+- ibet-Prime is an API service that enables the issuance and management of security tokens on the [ibet network](https://github.com/BoostryJP/ibet-Network).
 - It supports tokens developed by the [ibet-SmartContract](https://github.com/BoostryJP/ibet-SmartContract) project and various smart contracts.
-- It provides the functions required by Japanese laws and regulations as a security token ledger management function.
+- As a security token ledger management system, ibet-Prime provides a variety of functions required under Japanese regulations.
 - By calling the ibet-Prime API from your own front-end application, you can easily build a security token management service.
 
 ## Dependencies
