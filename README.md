@@ -2,12 +2,7 @@
 
 <p>
   <img alt="Version" src="https://img.shields.io/badge/version-21.8-blue.svg?cacheSeconds=2592000" />
-  <a href="https:/doc.com" target="_blank">
-    <img alt="Documentation" src="https://img.shields.io/badge/documentation-yes-brightgreen.svg" />
-  </a>
-  <a href="#" target="_blank">
-    <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
-  </a>
+  <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
 <img width="33%" align="right" src="https://user-images.githubusercontent.com/963333/71672471-6383c080-2db9-11ea-85b6-8815519652ec.png"/>
