@@ -19,8 +19,7 @@
 ## Dependencies
 
 - [python3](https://www.python.org/downloads/release/python-3811/) version 3.8 or greater
-- RDB
-  - [PostgreSQL](https://www.postgresql.org/) - Version 10
+- [PostgreSQL](https://www.postgresql.org/) - Version 10
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - We support the official GoQuorum node of [ibet-Network](https://github.com/BoostryJP/ibet-Network).
   - We use [ganache-cli](https://github.com/trufflesuite/ganache-cli) for local development and unit testing, and we use the latest version.
