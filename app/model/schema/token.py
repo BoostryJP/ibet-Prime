@@ -29,7 +29,6 @@ from pydantic import (
 )
 from web3 import Web3
 
-
 ############################
 # REQUEST
 ############################
@@ -181,7 +180,8 @@ class IbetStraightBondTransfer(BaseModel):
 
 class IbetShareCreate(BaseModel):
     """ibet Share schema (Create)"""
-    name: str
+    # name: str = Field(max_length=100)
+    name: str = Field(max_length=100)
     issue_price: int = Field(..., ge=0, le=5_000_000_000)
     principal_value: int = Field(..., ge=0, le=5_000_000_000)
     total_supply: int = Field(..., ge=0, le=100_000_000)
