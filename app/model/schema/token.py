@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import re
 from typing import (
     List,
     Optional
@@ -180,25 +181,26 @@ class IbetStraightBondTransfer(BaseModel):
 
 class IbetShareCreate(BaseModel):
     """ibet Share schema (Create)"""
-    # name: str = Field(max_length=100)
-    name: str = Field(max_length=100)
+    name: str = Field(..., min_length=1, max_length=100)
     issue_price: int = Field(..., ge=0, le=5_000_000_000)
     principal_value: int = Field(..., ge=0, le=5_000_000_000)
     total_supply: int = Field(..., ge=0, le=100_000_000)
-    symbol: Optional[str]
+    symbol: Optional[str] = Field(..., max_length=10, min_length=1, regex='^[a-zA-Z0-9]+$')
+    # symbol: Optional[str] = Field(None, min_length=1, max_length=10, regex='^[a-zA-Z0-9]+$')
+    # symbol: Optional[str] = Field(None, min_length=1, regex='^[a-zA-Z0-9]+$')
     dividends: Optional[float] = Field(None, ge=0.00, le=5_000_000_000.00)
-    dividend_record_date: Optional[str]
-    dividend_payment_date: Optional[str]
-    cancellation_date: Optional[str]
-    image_url: Optional[List[str]]
-    transferable: Optional[bool]
+    dividend_record_date: Optional[str] = Field(None, regex='^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$')
+    dividend_payment_date: Optional[str] = Field(None, regex='^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$')
+    cancellation_date: Optional[str] = Field(None, regex='^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$')
+    image_url: Optional[List[str]] = Field(None)
+    transferable: Optional[bool] = Field(True)
     status: Optional[bool]
     offering_status: Optional[bool]
-    tradable_exchange_contract_address: Optional[str]
-    personal_info_contract_address: Optional[str]
-    contact_information: Optional[str]
-    privacy_policy: Optional[str]
-    transfer_approval_required: Optional[bool]
+    tradable_exchange_contract_address: Optional[str] = Field(...)
+    personal_info_contract_address: Optional[str] = Field(...)
+    contact_information: Optional[str] = Field(None, max_length=20_000)
+    privacy_policy: Optional[str] = Field(None, max_length=50_000)
+    transfer_approval_required: Optional[bool] = Field(False)
     is_canceled: Optional[bool]
 
     @validator("dividends")
@@ -258,9 +260,13 @@ class IbetShareUpdate(BaseModel):
 
     @validator("dividends")
     def dividend_information_all_required(cls, v, values, **kwargs):
+        # yyyymmdd_regex = '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'
         if v is not None:
             if values["dividend_record_date"] is None or values["dividend_payment_date"] is None:
                 raise ValueError("all items are required to update the dividend information")
+            # if re.match(yyyymmdd_regex, values['dividend_record_date']) is None or \
+            #         re.match(yyyymmdd_regex, values['dividend_payment_date']):
+            #     raise ValueError('Enter the vesting date in YYYYMMDD.')
         return v
 
     @validator("tradable_exchange_contract_address")
