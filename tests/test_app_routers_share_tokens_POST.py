@@ -23,6 +23,8 @@ from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
 import config
+import random
+import string
 from app.exceptions import SendTransactionError
 from app.model.db import (
     Account,
@@ -77,7 +79,8 @@ class TestAppRoutersShareTokensPOST:
             # request target api
             req_param = {
                 "name": "name_test1",
-                "symbol": "symbol_test1",
+                # "symbol": "symbol_test1",
+                "symbol": "symbol1234",
                 "issue_price": 1000,
                 "total_supply": 10000,
                 "dividends": 123.45,
@@ -97,8 +100,12 @@ class TestAppRoutersShareTokensPOST:
 
             # assertion
             IbetShareContract.create.assert_called_with(
+                # args=[
+                #     "name_test1", "symbol_test1", 1000, 10000, 12345,
+                #     "20211231", "20211231", "20221231", 1000
+                # ],
                 args=[
-                    "name_test1", "symbol_test1", 1000, 10000, 12345,
+                    "name_test1", "symbol1234", 1000, 10000, 12345,
                     "20211231", "20211231", "20221231", 1000
                 ],
                 tx_from=test_account["address"],
@@ -251,7 +258,7 @@ class TestAppRoutersShareTokensPOST:
             # request target api
             req_param = {
                 "name": "name_test1",
-                "symbol": "symbol_test1",
+                "symbol": "symbol1234",
                 "issue_price": 1000,
                 "total_supply": 10000,
                 "dividends": 123.45,
@@ -282,7 +289,7 @@ class TestAppRoutersShareTokensPOST:
             # assertion
             IbetShareContract.create.assert_called_with(
                 args=[
-                    "name_test1", "symbol_test1", 1000, 10000, 12345,
+                    "name_test1", "symbol1234", 1000, 10000, 12345,
                     "20211231", "20211231", "20221231", 1000
                 ],
                 tx_from=test_account["address"],
@@ -355,14 +362,14 @@ class TestAppRoutersShareTokensPOST:
     # <Error_2_1>
     # Validation Error
     # dividends, tradable_exchange_contract_address,
-    # personal_info_contract_address, image_url
+    # personal_info_contract_address, image_url,
     def test_error_2_1(self, client, db):
         test_account = config_eth_account("user1")
 
         # request target api
         req_param = {
             "name": "name_test1",
-            "symbol": "symbol_test1",
+            "symbol": "symbol1234",
             "issue_price": 1000,
             "total_supply": 10000,
             "dividends": 123.456,
@@ -438,7 +445,7 @@ class TestAppRoutersShareTokensPOST:
         # request target api
         req_param = {
             "name": "name_test1",
-            "symbol": "symbol_test1",
+            "symbol": "symbol1234",
             "issue_price": 1000,
             "total_supply": 10000,
             "dividends": 123.45,
@@ -488,7 +495,7 @@ class TestAppRoutersShareTokensPOST:
         # request target api
         req_param = {
             "name": "name_test1",
-            "symbol": "symbol_test1",
+            "symbol": "symbol1234",
             "issue_price": 1000,
             "total_supply": 10000,
             "dividends": 123.45,
@@ -529,7 +536,7 @@ class TestAppRoutersShareTokensPOST:
         # request target api
         req_param = {
             "name": "name_test1",
-            "symbol": "symbol_test1",
+            "symbol": "symbol1234",
             "issue_price": -1,
             "total_supply": -1,
             "dividends": -0.01,
@@ -613,14 +620,15 @@ class TestAppRoutersShareTokensPOST:
 
     # <Error_2_5>
     # Validation Error
-    # max value: issue_price, total_supply, dividends, principal_value
+    # max value: issue_price, total_supply, dividends,
+    # principal_value, contact_information, privacy_policy
     def test_error_2_5(self, client, db):
         test_account = config_eth_account("user1")
 
         # request target api
         req_param = {
             "name": "name_test1",
-            "symbol": "symbol_test1",
+            "symbol": "symbol1234",
             "issue_price": 5_000_000_001,
             "total_supply": 100_000_001,
             "dividends": 5_000_000_000.01,
@@ -633,8 +641,10 @@ class TestAppRoutersShareTokensPOST:
             "transferable": False,  # update
             "status": False,  # update
             "offering_status": True,  # update
-            "contact_information": "contact info test",  # update
-            "privacy_policy": "privacy policy test",  # update
+            # "contact_information": "contact info test",  # update
+            "contact_information": GetRandomStr(2001),  # update
+            # "privacy_policy": "privacy policy test",  # update
+            "privacy_policy": GetRandomStr(5001),  # update
             "transfer_approval_required": True,  # update
             "principal_value": 5_000_000_001,
             "is_canceled": True
@@ -699,7 +709,76 @@ class TestAppRoutersShareTokensPOST:
                     "msg": "ensure this value is less than or equal to 5000000000.0",
                     "type": "value_error.number.not_le"
                 },
+                {
+                    "ctx": {
+                        "limit_value": 2_000
+                    },
+                    "loc": [
+                        "body",
+                        "contact_information"
+                    ],
+                    "msg": "ensure this value has at most 2000 characters",
+                    "type": "value_error.any_str.max_length"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 5_000
+                    },
+                    "loc": [
+                        "body",
+                        "privacy_policy"
+                    ],
+                    "msg": "ensure this value has at most 5000 characters",
+                    "type": "value_error.any_str.max_length"
+                }
             ]
+        }
+
+    # <Error_2_6>
+    # Validation Error: symbol
+    def test_error_2_6(self, client, db):
+        test_account = config_eth_account("user1")
+
+        # request target api
+        req_param = {
+            "name": "name_test1",
+            "symbol": "symbol12345",
+            "issue_price": 1000,
+            "total_supply": 10000,
+            "dividends": 123.45,
+            "dividend_record_date": "20211231",
+            "dividend_payment_date": "20211231",
+            "cancellation_date": "20221231",
+            "principal_value": 1000
+        }
+        resp = client.post(
+            self.apiurl,
+            json=req_param,
+            headers={
+                "issuer-address": test_account["address"]
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                    {
+                        "ctx": {
+                            "limit_value": 10
+                        },
+                        "loc": [
+                            "body",
+                            "symbol"
+                        ],
+                        "msg": "ensure this value has at most 10 characters",
+                        "type": "value_error.any_str.max_length"
+                    }
+                ]
         }
 
     # <Error_3_1>
@@ -718,7 +797,7 @@ class TestAppRoutersShareTokensPOST:
         # request target api
         req_param = {
             "name": "name_test1",
-            "symbol": "symbol_test1",
+            "symbol": "symbol1234",
             "issue_price": 1000,
             "total_supply": 10000,
             "dividends": 123.45,
@@ -762,7 +841,7 @@ class TestAppRoutersShareTokensPOST:
         # request target api
         req_param = {
             "name": "name_test1",
-            "symbol": "symbol_test1",
+            "symbol": "symbol1234",
             "issue_price": 1000,
             "total_supply": 10000,
             "dividends": 123.45,
@@ -814,7 +893,7 @@ class TestAppRoutersShareTokensPOST:
             # request target api
             req_param = {
                 "name": "name_test1",
-                "symbol": "symbol_test1",
+                "symbol": "symbol1234",
                 "issue_price": 1000,
                 "total_supply": 10000,
                 "dividends": 123.45,
@@ -871,7 +950,7 @@ class TestAppRoutersShareTokensPOST:
             # request target api
             req_param = {
                 "name": "name_test1",
-                "symbol": "symbol_test1",
+                "symbol": "symbol1234",
                 "issue_price": 1000,
                 "total_supply": 10000,
                 "dividends": 123.45,
@@ -898,3 +977,8 @@ class TestAppRoutersShareTokensPOST:
                 },
                 "detail": "failed to register token address token list"
             }
+
+
+def GetRandomStr(num):
+    dat = string.digits + string.ascii_lowercase + string.ascii_uppercase
+    return ''.join([random.choice(dat) for i in range(num)])
