@@ -34,11 +34,11 @@ from web3 import Web3
 
 class IbetStraightBondCreate(BaseModel):
     """ibet Straight Bond schema (Create)"""
-    name: str
+    name: str = Field(max_length=100)
     total_supply: int = Field(..., ge=0, le=100_000_000)
     face_value: int = Field(..., ge=0, le=5_000_000_000)
     purpose: str
-    symbol: Optional[str]
+    symbol: Optional[str] = Field(max_length=100)
     redemption_date: Optional[str]
     redemption_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
     return_date: Optional[str]
@@ -52,8 +52,8 @@ class IbetStraightBondCreate(BaseModel):
     tradable_exchange_contract_address: Optional[str]
     personal_info_contract_address: Optional[str]
     image_url: Optional[List[str]]
-    contact_information: Optional[str]
-    privacy_policy: Optional[str]
+    contact_information: Optional[str] = Field(max_length=2000)
+    privacy_policy: Optional[str] = Field(max_length=5000)
 
     @validator("interest_rate")
     def interest_rate_4_decimal_places(cls, v):
@@ -179,11 +179,11 @@ class IbetStraightBondTransfer(BaseModel):
 
 class IbetShareCreate(BaseModel):
     """ibet Share schema (Create)"""
-    name: str = Field(min_length=1, max_length=100)
+    name: str = Field(max_length=100)
     issue_price: int = Field(..., ge=0, le=5_000_000_000)
     principal_value: int = Field(..., ge=0, le=5_000_000_000)
     total_supply: int = Field(..., ge=0, le=100_000_000)
-    symbol: Optional[str] = Field(min_length=0, max_length=10)
+    symbol: Optional[str] = Field(max_length=100)
     dividends: Optional[float] = Field(None, ge=0.00, le=5_000_000_000.00)
     dividend_record_date: Optional[str]
     dividend_payment_date: Optional[str]
