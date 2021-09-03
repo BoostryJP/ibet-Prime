@@ -22,6 +22,8 @@ from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
 import config
+import string
+import random
 from app.exceptions import SendTransactionError
 from app.model.db import (
     Account,
@@ -579,7 +581,7 @@ class TestAppRoutersBondTokensPOST:
 
     # <Error_2_6>
     # Validation Error
-    # max value: total_supply, face_value, redemption_value, interest_rate
+    # max value: total_supply, face_value, redemption_value, interest_rate, contact_information, privacy_policy
     def test_error_2_6(self, client, db):
         test_account = config_eth_account("user1")
 
@@ -603,8 +605,8 @@ class TestAppRoutersBondTokensPOST:
             "is_redeemed": True,  # update
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-            "contact_information": "contact info test",  # update
-            "privacy_policy": "privacy policy test"  # update
+            "contact_information": GetRandomStr(2001),  # update
+            "privacy_policy": GetRandomStr(5001)  # update
         }
         resp = client.post(
             self.apiurl,
@@ -665,6 +667,86 @@ class TestAppRoutersBondTokensPOST:
                     ],
                     "msg": "ensure this value is less than or equal to 100.0",
                     "type": "value_error.number.not_le"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 2_000
+                    },
+                    "loc": [
+                        "body",
+                        "contact_information"
+                    ],
+                    "msg": "ensure this value has at most 2000 characters",
+                    "type": "value_error.any_str.max_length"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 5_000
+                    },
+                    "loc": [
+                        "body",
+                        "privacy_policy"
+                    ],
+                    "msg": "ensure this value has at most 5000 characters",
+                    "type": "value_error.any_str.max_length"
+                }
+            ]
+        }
+
+    # <Error_2_7>
+    # Validation Error: symbol
+    def test_error_2_7(self, client, db):
+        test_account = config_eth_account("user1")
+
+        # request target api
+        req_param = {
+            "name": "name_test1",
+            "symbol": GetRandomStr(101),
+            "total_supply": 100_000_000,
+            "face_value": 5_000_000_000,
+            "redemption_date": "redemption_date_test1",
+            "redemption_value": 5_000_000_000,
+            "return_date": "return_date_test1",
+            "return_amount": "return_amount_test1",
+            "purpose": "purpose_test1",
+            "interest_rate": 100.0000,  # update
+            "interest_payment_date": ["0331", "0930"],  # update
+            "transferable": False,  # update
+            "image_url": ["image_1"],  # update
+            "status": False,  # update
+            "initial_offering_status": True,  # update
+            "is_redeemed": True,  # update
+            "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
+            "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
+            "contact_information": "contact info test",  # update
+            "privacy_policy": "privacy policy test"  # update
+        }
+        resp = client.post(
+            self.apiurl,
+            json=req_param,
+            headers={
+                "issuer-address": test_account["address"]
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "ctx": {
+                        "limit_value": 100
+                    },
+                    "loc": [
+                        "body",
+                        "symbol"
+                    ],
+                    "msg": "ensure this value has at most 100 characters",
+                    "type": "value_error.any_str.max_length"
                 },
             ]
         }
@@ -863,3 +945,9 @@ class TestAppRoutersBondTokensPOST:
                 },
                 "detail": "failed to register token address token list"
             }
+
+
+def GetRandomStr(num):
+    dat = string.digits + string.ascii_lowercase + string.ascii_uppercase
+    return ''.join([random.choice(dat) for i in range(num)])
+

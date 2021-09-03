@@ -79,8 +79,7 @@ class TestAppRoutersShareTokensPOST:
             # request target api
             req_param = {
                 "name": "name_test1",
-                # "symbol": "symbol_test1",
-                "symbol": "symbol1234",
+                "symbol": "symbol_test1",
                 "issue_price": 1000,
                 "total_supply": 10000,
                 "dividends": 123.45,
@@ -100,12 +99,8 @@ class TestAppRoutersShareTokensPOST:
 
             # assertion
             IbetShareContract.create.assert_called_with(
-                # args=[
-                #     "name_test1", "symbol_test1", 1000, 10000, 12345,
-                #     "20211231", "20211231", "20221231", 1000
-                # ],
                 args=[
-                    "name_test1", "symbol1234", 1000, 10000, 12345,
+                    "name_test1", "symbol_test1", 1000, 10000, 12345,
                     "20211231", "20211231", "20221231", 1000
                 ],
                 tx_from=test_account["address"],
@@ -258,7 +253,7 @@ class TestAppRoutersShareTokensPOST:
             # request target api
             req_param = {
                 "name": "name_test1",
-                "symbol": "symbol1234",
+                "symbol": "symbol_test1",
                 "issue_price": 1000,
                 "total_supply": 10000,
                 "dividends": 123.45,
@@ -289,7 +284,7 @@ class TestAppRoutersShareTokensPOST:
             # assertion
             IbetShareContract.create.assert_called_with(
                 args=[
-                    "name_test1", "symbol1234", 1000, 10000, 12345,
+                    "name_test1", "symbol_test1", 1000, 10000, 12345,
                     "20211231", "20211231", "20221231", 1000
                 ],
                 tx_from=test_account["address"],
@@ -369,7 +364,7 @@ class TestAppRoutersShareTokensPOST:
         # request target api
         req_param = {
             "name": "name_test1",
-            "symbol": "symbol1234",
+            "symbol": "symbol_test1",
             "issue_price": 1000,
             "total_supply": 10000,
             "dividends": 123.456,
@@ -445,7 +440,7 @@ class TestAppRoutersShareTokensPOST:
         # request target api
         req_param = {
             "name": "name_test1",
-            "symbol": "symbol1234",
+            "symbol": "symbol_test1",
             "issue_price": 1000,
             "total_supply": 10000,
             "dividends": 123.45,
@@ -495,7 +490,7 @@ class TestAppRoutersShareTokensPOST:
         # request target api
         req_param = {
             "name": "name_test1",
-            "symbol": "symbol1234",
+            "symbol": "symbol_test1",
             "issue_price": 1000,
             "total_supply": 10000,
             "dividends": 123.45,
@@ -536,7 +531,7 @@ class TestAppRoutersShareTokensPOST:
         # request target api
         req_param = {
             "name": "name_test1",
-            "symbol": "symbol1234",
+            "symbol": "symbol_test1",
             "issue_price": -1,
             "total_supply": -1,
             "dividends": -0.01,
@@ -628,7 +623,7 @@ class TestAppRoutersShareTokensPOST:
         # request target api
         req_param = {
             "name": "name_test1",
-            "symbol": "symbol1234",
+            "symbol": "symbol_test1",
             "issue_price": 5_000_000_001,
             "total_supply": 100_000_001,
             "dividends": 5_000_000_000.01,
@@ -641,9 +636,7 @@ class TestAppRoutersShareTokensPOST:
             "transferable": False,  # update
             "status": False,  # update
             "offering_status": True,  # update
-            # "contact_information": "contact info test",  # update
             "contact_information": GetRandomStr(2001),  # update
-            # "privacy_policy": "privacy policy test",  # update
             "privacy_policy": GetRandomStr(5001),  # update
             "transfer_approval_required": True,  # update
             "principal_value": 5_000_000_001,
@@ -742,7 +735,7 @@ class TestAppRoutersShareTokensPOST:
         # request target api
         req_param = {
             "name": "name_test1",
-            "symbol": "symbol12345",
+            'symbol': GetRandomStr(101),
             "issue_price": 1000,
             "total_supply": 10000,
             "dividends": 123.45,
@@ -769,13 +762,13 @@ class TestAppRoutersShareTokensPOST:
             "detail": [
                     {
                         "ctx": {
-                            "limit_value": 10
+                            "limit_value": 100
                         },
                         "loc": [
                             "body",
                             "symbol"
                         ],
-                        "msg": "ensure this value has at most 10 characters",
+                        "msg": "ensure this value has at most 100 characters",
                         "type": "value_error.any_str.max_length"
                     }
                 ]
@@ -797,7 +790,7 @@ class TestAppRoutersShareTokensPOST:
         # request target api
         req_param = {
             "name": "name_test1",
-            "symbol": "symbol1234",
+            "symbol": "symbol_test1",
             "issue_price": 1000,
             "total_supply": 10000,
             "dividends": 123.45,
@@ -841,7 +834,7 @@ class TestAppRoutersShareTokensPOST:
         # request target api
         req_param = {
             "name": "name_test1",
-            "symbol": "symbol1234",
+            "symbol": "symbol_test1",
             "issue_price": 1000,
             "total_supply": 10000,
             "dividends": 123.45,
@@ -893,7 +886,7 @@ class TestAppRoutersShareTokensPOST:
             # request target api
             req_param = {
                 "name": "name_test1",
-                "symbol": "symbol1234",
+                "symbol": "symbol_test1",
                 "issue_price": 1000,
                 "total_supply": 10000,
                 "dividends": 123.45,
@@ -950,7 +943,7 @@ class TestAppRoutersShareTokensPOST:
             # request target api
             req_param = {
                 "name": "name_test1",
-                "symbol": "symbol1234",
+                "symbol": "symbol_test1",
                 "issue_price": 1000,
                 "total_supply": 10000,
                 "dividends": 123.45,
