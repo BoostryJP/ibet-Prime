@@ -326,7 +326,7 @@ class TestAppRoutersShareTokensPOST:
 
     # <Error_1>
     # Validation Error
-    # required fields
+    # missing fields
     def test_error_1(self, client, db):
         # request target api
         resp = client.post(
@@ -356,8 +356,7 @@ class TestAppRoutersShareTokensPOST:
 
     # <Error_2_1>
     # Validation Error
-    # dividends, tradable_exchange_contract_address,
-    # personal_info_contract_address, image_url,
+    # format error
     def test_error_2_1(self, client, db):
         test_account = config_eth_account("user1")
 
@@ -433,7 +432,8 @@ class TestAppRoutersShareTokensPOST:
         }
 
     # <Error_2_2>
-    # Validation Error: issuer-address, eoa-password(required)
+    # Validation Error
+    # required headers
     def test_error_2_2(self, client, db):
         test_account = config_eth_account("user1")
 
@@ -476,7 +476,8 @@ class TestAppRoutersShareTokensPOST:
         }
 
     # <Error_2_3>
-    # Validation Error: eoa-password(not decrypt)
+    # Validation Error
+    # eoa-password is not a Base64-encoded encrypted data
     def test_error_2_3(self, client, db):
         test_account_1 = config_eth_account("user1")
 
@@ -524,7 +525,7 @@ class TestAppRoutersShareTokensPOST:
 
     # <Error_2_4>
     # Validation Error
-    # min value: issue_price, total_supply, dividends, principal_value
+    # min value
     def test_error_2_4(self, client, db):
         test_account = config_eth_account("user1")
 
@@ -615,15 +616,14 @@ class TestAppRoutersShareTokensPOST:
 
     # <Error_2_5>
     # Validation Error
-    # max value: issue_price, total_supply, dividends,
-    # principal_value, contact_information, privacy_policy
+    # max value or max length
     def test_error_2_5(self, client, db):
         test_account = config_eth_account("user1")
 
         # request target api
         req_param = {
-            "name": "name_test1",
-            "symbol": "symbol_test1",
+            "name": GetRandomStr(101),
+            "symbol": GetRandomStr(101),
             "issue_price": 5_000_000_001,
             "total_supply": 100_000_001,
             "dividends": 5_000_000_000.01,
@@ -659,119 +659,54 @@ class TestAppRoutersShareTokensPOST:
             },
             "detail": [
                 {
-                    "ctx": {
-                        "limit_value": 5_000_000_000
-                    },
-                    "loc": [
-                        "body",
-                        "issue_price"
-                    ],
-                    "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le"
+                    "loc": ["body", "name"],
+                    "msg": "ensure this value has at most 100 characters",
+                    "type": "value_error.any_str.max_length",
+                    "ctx": {"limit_value": 100}
                 },
                 {
-                    "ctx": {
-                        "limit_value": 5_000_000_000
-                    },
-                    "loc": [
-                        "body",
-                        "principal_value"
-                    ],
+                    "loc": ["body", "issue_price"], 
                     "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le", 
+                    "ctx": {"limit_value": 5000000000}
                 },
                 {
-                    "ctx": {
-                        "limit_value": 100_000_000
-                    },
-                    "loc": [
-                        "body",
-                        "total_supply"
-                    ],
+                    "loc": ["body", "principal_value"], 
+                    "msg": "ensure this value is less than or equal to 5000000000",
+                    "type": "value_error.number.not_le", 
+                    "ctx": {"limit_value": 5000000000}
+                },
+                {
+                    "loc": ["body", "total_supply"], 
                     "msg": "ensure this value is less than or equal to 100000000",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le", 
+                    "ctx": {"limit_value": 100000000}
                 },
                 {
-                    "ctx": {
-                        "limit_value": 5_000_000_000.0
-                    },
-                    "loc": [
-                        "body",
-                        "dividends"
-                    ],
+                    "loc": ["body", "symbol"], 
+                    "msg": "ensure this value has at most 100 characters",
+                    "type": "value_error.any_str.max_length", 
+                    "ctx": {"limit_value": 100}
+                },
+                {
+                    "loc": ["body", "dividends"], 
                     "msg": "ensure this value is less than or equal to 5000000000.0",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le", 
+                    "ctx": {"limit_value": 5000000000.0}
                 },
                 {
-                    "ctx": {
-                        "limit_value": 2_000
-                    },
-                    "loc": [
-                        "body",
-                        "contact_information"
-                    ],
+                    "loc": ["body", "contact_information"], 
                     "msg": "ensure this value has at most 2000 characters",
-                    "type": "value_error.any_str.max_length"
+                    "type": "value_error.any_str.max_length", 
+                    "ctx": {"limit_value": 2000}
                 },
                 {
-                    "ctx": {
-                        "limit_value": 5_000
-                    },
-                    "loc": [
-                        "body",
-                        "privacy_policy"
-                    ],
+                    "loc": ["body", "privacy_policy"], 
                     "msg": "ensure this value has at most 5000 characters",
-                    "type": "value_error.any_str.max_length"
+                    "type": "value_error.any_str.max_length", 
+                    "ctx": {"limit_value": 5000}
                 }
             ]
-        }
-
-    # <Error_2_6>
-    # Validation Error: symbol
-    def test_error_2_6(self, client, db):
-        test_account = config_eth_account("user1")
-
-        # request target api
-        req_param = {
-            "name": "name_test1",
-            'symbol': GetRandomStr(101),
-            "issue_price": 1000,
-            "total_supply": 10000,
-            "dividends": 123.45,
-            "dividend_record_date": "20211231",
-            "dividend_payment_date": "20211231",
-            "cancellation_date": "20221231",
-            "principal_value": 1000
-        }
-        resp = client.post(
-            self.apiurl,
-            json=req_param,
-            headers={
-                "issuer-address": test_account["address"]
-            }
-        )
-
-        # assertion
-        assert resp.status_code == 422
-        assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
-            "detail": [
-                    {
-                        "ctx": {
-                            "limit_value": 100
-                        },
-                        "loc": [
-                            "body",
-                            "symbol"
-                        ],
-                        "msg": "ensure this value has at most 100 characters",
-                        "type": "value_error.any_str.max_length"
-                    }
-                ]
         }
 
     # <Error_3_1>
