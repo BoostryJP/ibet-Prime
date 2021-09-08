@@ -102,8 +102,8 @@ class IbetStraightBondUpdate(BaseModel):
     is_redeemed: Optional[bool]
     tradable_exchange_contract_address: Optional[str]
     personal_info_contract_address: Optional[str]
-    contact_information: Optional[str]
-    privacy_policy: Optional[str]
+    contact_information: Optional[str] = Field(max_length=2000)
+    privacy_policy: Optional[str] = Field(max_length=5000)
 
     @validator("interest_rate")
     def interest_rate_4_decimal_places(cls, v):
@@ -239,8 +239,8 @@ class IbetShareUpdate(BaseModel):
     transferable: Optional[bool]
     status: Optional[bool]
     offering_status: Optional[bool]
-    contact_information: Optional[str]
-    privacy_policy: Optional[str]
+    contact_information: Optional[str] = Field(max_length=2000)
+    privacy_policy: Optional[str] = Field(max_length=5000)
     transfer_approval_required: Optional[bool]
     principal_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
     is_canceled: Optional[bool]
@@ -344,8 +344,8 @@ class IbetStraightBondResponse(BaseModel):
     """ibet Straight Bond schema (Response)"""
     issuer_address: str
     token_address: str
-    name: str
-    symbol: str
+    name: str = Field(max_length=100)
+    symbol: str = Field(max_length=100)
     total_supply: int
     face_value: int
     redemption_date: str
@@ -362,8 +362,8 @@ class IbetStraightBondResponse(BaseModel):
     tradable_exchange_contract_address: str
     personal_info_contract_address: str
     image_url: List[str]
-    contact_information: str
-    privacy_policy: str
+    contact_information: str = Field(max_length=2000)
+    privacy_policy: str = Field(max_length=5000)
     issue_datetime: str
     token_status: int
 
@@ -372,8 +372,8 @@ class IbetShareResponse(BaseModel):
     """ibet Share schema (Response)"""
     issuer_address: str
     token_address: str
-    name: str
-    symbol: str
+    name: str = Field(max_length=100)
+    symbol: str = Field(max_length=100)
     issue_price: int
     principal_value: int
     total_supply: int
@@ -388,8 +388,8 @@ class IbetShareResponse(BaseModel):
     offering_status: bool
     tradable_exchange_contract_address: str
     personal_info_contract_address: str
-    contact_information: str
-    privacy_policy: str
+    contact_information: str = Field(max_length=2000)
+    privacy_policy: str = Field(max_length=5000)
     issue_datetime: str
     token_status: int
     is_canceled: bool
