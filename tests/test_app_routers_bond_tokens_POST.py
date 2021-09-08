@@ -269,15 +269,15 @@ class TestAppRoutersBondTokensPOST:
 
     # <Error_2_1>
     # Validation Error
-    # interest_rate, interest_payment_date, tradable_exchange_contract_address,
-    # personal_info_contract_address, image_url
+    # name, symbol, interest_rate, interest_payment_date, tradable_exchange_contract_address,
+    # personal_info_contract_address, image_url, contact_information, privacy_policy
     def test_error_2_1(self, client, db):
         test_account = config_eth_account("user1")
 
         # request target api
         req_param = {
-            "name": "name_test1",
-            "symbol": "symbol_test1",
+            "name": GetRandomStr(101),
+            "symbol": GetRandomStr(101),
             "total_supply": 10000,
             "face_value": 200,
             "redemption_date": "redemption_date_test1",
@@ -296,6 +296,8 @@ class TestAppRoutersBondTokensPOST:
                 "http://test/test",
                 "http://test/test",
             ],
+            "contact_information": GetRandomStr(2001),
+            "privacy_policy": GetRandomStr(5001),
         }
         resp = client.post(
             self.apiurl,
@@ -313,6 +315,28 @@ class TestAppRoutersBondTokensPOST:
                 "title": "RequestValidationError"
             },
             "detail": [
+                {
+                    "ctx": {
+                        "limit_value": 100
+                    },
+                    "loc": [
+                        "body",
+                        "name"
+                    ],
+                    "msg": "ensure this value has at most 100 characters",
+                    "type": "value_error.any_str.max_length"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 100
+                    },
+                    "loc": [
+                        "body",
+                        "symbol"
+                    ],
+                    "msg": "ensure this value has at most 100 characters",
+                    "type": "value_error.any_str.max_length"
+                },
                 {
                     "loc": [
                         "body",
@@ -352,6 +376,28 @@ class TestAppRoutersBondTokensPOST:
                     ],
                     "msg": "The length of the list must be less than or equal to 3",
                     "type": "value_error"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 2_000
+                    },
+                    "loc": [
+                        "body",
+                        "contact_information"
+                    ],
+                    "msg": "ensure this value has at most 2000 characters",
+                    "type": "value_error.any_str.max_length"
+                },
+                {
+                    "ctx": {
+                        "limit_value": 5_000
+                    },
+                    "loc": [
+                        "body",
+                        "privacy_policy"
+                    ],
+                    "msg": "ensure this value has at most 5000 characters",
+                    "type": "value_error.any_str.max_length"
                 }
             ]
         }
@@ -945,6 +991,62 @@ class TestAppRoutersBondTokensPOST:
                 },
                 "detail": "failed to register token address token list"
             }
+
+    # # <Error_6>
+    # # Send name Error
+    # # TokenListContract.register
+    # def test_error_6(self, client, db):
+    #     test_account = config_eth_account("user1")
+    #
+    #     # prepare data
+    #     account = Account()
+    #     account.issuer_address = test_account["address"]
+    #     account.keyfile = test_account["keyfile_json"]
+    #     account.eoa_password = E2EEUtils.encrypt("password")
+    #     db.add(account)
+    #
+    #     # mock
+    #     IbetStraightBondContract_create = patch(
+    #         target="app.model.blockchain.token.IbetStraightBondContract.create",
+    #         return_value=("contract_address_test1", "abi_test1", "tx_hash_test1")
+    #     )
+    #     TokenListContract_register = patch(
+    #         target="app.model.blockchain.token_list.TokenListContract.register",
+    #         side_effect=SendTransactionError()
+    #     )
+    #
+    #     with IbetStraightBondContract_create, \
+    #          TokenListContract_register:
+    #         # request target api
+    #         req_param = {
+    #             "name": GetRandomStr(101),
+    #             "symbol": "symbol_test1",
+    #             "total_supply": 10000,
+    #             "face_value": 200,
+    #             "redemption_date": "redemption_date_test1",
+    #             "redemption_value": 4000,
+    #             "return_date": "return_date_test1",
+    #             "return_amount": "return_amount_test1",
+    #             "purpose": "purpose_test1",
+    #         }
+    #         resp = client.post(
+    #             self.apiurl,
+    #             json=req_param,
+    #             headers={
+    #                 "issuer-address": test_account["address"],
+    #                 "eoa-password": E2EEUtils.encrypt("password")
+    #             }
+    #         )
+    #
+    #         # assertion
+    #         assert resp.status_code == 422
+    #         assert resp.json() == {
+    #             "meta": {
+    #                 "code": 1,
+    #                 "title": "SendNameError"
+    #             },
+    #             "detail": "ensure this value has at most 100 characters"
+    #         }
 
 
 def GetRandomStr(num):
