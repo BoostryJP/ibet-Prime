@@ -607,7 +607,7 @@ class TestAppRoutersBondTokensPOST:
             "redemption_value": 5_000_000_001,
             "return_date": "return_date_test1",
             "return_amount": GetRandomStr(2001),
-            "purpose": "purpose_test1",
+            "purpose": GetRandomStr(2001),
             "interest_rate": 100.0001,  # update
             "interest_payment_date": ["0331", "0930"],  # update
             "transferable": False,  # update
@@ -653,6 +653,12 @@ class TestAppRoutersBondTokensPOST:
                     "msg": "ensure this value is less than or equal to 5000000000",
                     "type": "value_error.number.not_le", 
                     "ctx": {"limit_value": 5000000000}
+                },
+                {
+                    "loc": ["body", "purpose"],
+                    "msg": "ensure this value has at most 2000 characters",
+                    "type": "value_error.any_str.max_length",
+                    "ctx": {"limit_value": 2000}
                 },
                 {
                     "loc": ["body", "symbol"], 
