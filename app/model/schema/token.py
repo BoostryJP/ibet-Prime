@@ -21,12 +21,14 @@ from typing import (
     Optional
 )
 import math
+
 from pydantic import (
     BaseModel,
     validator,
     Field
 )
 from web3 import Web3
+
 
 ############################
 # REQUEST
