@@ -668,7 +668,21 @@ class TestUpdate:
         # update
         _data = {
             "interest_rate": 0.00001,
-            "interest_payment_date": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"],
+            "interest_payment_date": [
+                "0101",
+                "0201",
+                "0301",
+                "0401",
+                "0501",
+                "0601",
+                "0701",
+                "0801",
+                "0901",
+                "1001",
+                "1101",
+                "1201",
+                "1231"
+            ],
             "tradable_exchange_contract_address": "invalid contract address",
             "personal_info_contract_address": "invalid contract address",
         }
