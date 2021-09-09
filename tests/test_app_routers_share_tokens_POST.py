@@ -75,7 +75,7 @@ class TestAppRoutersShareTokensPOST:
         )
 
         with IbetShareContract_create, \
-             TokenListContract_register:
+                TokenListContract_register:
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -165,7 +165,7 @@ class TestAppRoutersShareTokensPOST:
         )
 
         with IbetShareContract_create, \
-             TokenListContract_register:
+                TokenListContract_register:
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -249,7 +249,7 @@ class TestAppRoutersShareTokensPOST:
         )
 
         with IbetShareContract_create, \
-             TokenListContract_register:
+                TokenListContract_register:
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -665,46 +665,101 @@ class TestAppRoutersShareTokensPOST:
                     "ctx": {"limit_value": 100}
                 },
                 {
-                    "loc": ["body", "issue_price"], 
+                    "loc": ["body", "issue_price"],
                     "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le", 
+                    "type": "value_error.number.not_le",
                     "ctx": {"limit_value": 5000000000}
                 },
                 {
-                    "loc": ["body", "principal_value"], 
+                    "loc": ["body", "principal_value"],
                     "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le", 
+                    "type": "value_error.number.not_le",
                     "ctx": {"limit_value": 5000000000}
                 },
                 {
-                    "loc": ["body", "total_supply"], 
+                    "loc": ["body", "total_supply"],
                     "msg": "ensure this value is less than or equal to 100000000",
-                    "type": "value_error.number.not_le", 
+                    "type": "value_error.number.not_le",
                     "ctx": {"limit_value": 100000000}
                 },
                 {
-                    "loc": ["body", "symbol"], 
+                    "loc": ["body", "symbol"],
                     "msg": "ensure this value has at most 100 characters",
-                    "type": "value_error.any_str.max_length", 
+                    "type": "value_error.any_str.max_length",
                     "ctx": {"limit_value": 100}
                 },
                 {
-                    "loc": ["body", "dividends"], 
+                    "loc": ["body", "dividends"],
                     "msg": "ensure this value is less than or equal to 5000000000.0",
-                    "type": "value_error.number.not_le", 
+                    "type": "value_error.number.not_le",
                     "ctx": {"limit_value": 5000000000.0}
                 },
                 {
-                    "loc": ["body", "contact_information"], 
+                    "loc": ["body", "contact_information"],
                     "msg": "ensure this value has at most 2000 characters",
-                    "type": "value_error.any_str.max_length", 
+                    "type": "value_error.any_str.max_length",
                     "ctx": {"limit_value": 2000}
                 },
                 {
-                    "loc": ["body", "privacy_policy"], 
+                    "loc": ["body", "privacy_policy"],
                     "msg": "ensure this value has at most 5000 characters",
-                    "type": "value_error.any_str.max_length", 
+                    "type": "value_error.any_str.max_length",
                     "ctx": {"limit_value": 5000}
+                }
+            ]
+        }
+
+    # <Error_2_6>
+    # Validation Error
+    # YYYYMMDD regex
+    def test_error_2_6(self, client, db):
+        test_account = config_eth_account("user1")
+
+        # request target api
+        req_param = {
+            "name": "name_test1",
+            "symbol": "symbol_test1",
+            "issue_price": 1000,
+            "total_supply": 10000,
+            "dividends": 123.45,
+            "dividend_record_date": "202101010",
+            "dividend_payment_date": "202101010",
+            "cancellation_date": "202201010",
+            "principal_value": 1000
+        }
+        resp = client.post(
+            self.apiurl,
+            json=req_param,
+            headers={
+                "issuer-address": test_account["address"]
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    'loc': ['body', 'dividend_record_date'],
+                    'msg': 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    'type': 'value_error.str.regex',
+                    'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                },
+                {
+                    'loc': ['body', 'dividend_payment_date'],
+                    'msg': 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    'type': 'value_error.str.regex',
+                    'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                },
+                {
+                    'loc': ['body', 'cancellation_date'],
+                    'msg': 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    'type': 'value_error.str.regex',
+                    'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
                 }
             ]
         }
@@ -874,7 +929,7 @@ class TestAppRoutersShareTokensPOST:
         )
 
         with IbetShareContract_create, \
-             TokenListContract_register:
+                TokenListContract_register:
             # request target api
             req_param = {
                 "name": "name_test1",

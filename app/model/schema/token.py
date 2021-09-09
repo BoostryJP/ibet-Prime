@@ -24,10 +24,14 @@ import math
 
 from pydantic import (
     BaseModel,
-    validator,
-    Field
+    Field,
+    constr,
+    validator
 )
 from web3 import Web3
+
+MMDD_regexp = "^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"
+YYYYMMDD_regexp = "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"
 
 
 ############################
@@ -41,12 +45,12 @@ class IbetStraightBondCreate(BaseModel):
     face_value: int = Field(..., ge=0, le=5_000_000_000)
     purpose: str = Field(max_length=2000)
     symbol: Optional[str] = Field(max_length=100)
-    redemption_date: Optional[str]
+    redemption_date: Optional[constr(regex=YYYYMMDD_regexp)]
     redemption_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
-    return_date: Optional[str]
+    return_date: Optional[constr(regex=YYYYMMDD_regexp)]
     return_amount: Optional[str] = Field(max_length=2000)
     interest_rate: Optional[float] = Field(None, ge=0.0000, le=100.0000)
-    interest_payment_date: Optional[List[str]]
+    interest_payment_date: Optional[List[constr(regex=MMDD_regexp)]]
     transferable: Optional[bool]
     is_redeemed: Optional[bool]
     status: Optional[bool]
@@ -95,7 +99,7 @@ class IbetStraightBondUpdate(BaseModel):
     """ibet Straight Bond schema (Update)"""
     face_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
     interest_rate: Optional[float] = Field(None, ge=0.0000, le=100.0000)
-    interest_payment_date: Optional[List[str]]
+    interest_payment_date: Optional[List[constr(regex=MMDD_regexp)]]
     redemption_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
     transferable: Optional[bool]
     image_url: Optional[List[str]]
@@ -187,9 +191,9 @@ class IbetShareCreate(BaseModel):
     total_supply: int = Field(..., ge=0, le=100_000_000)
     symbol: Optional[str] = Field(max_length=100)
     dividends: Optional[float] = Field(None, ge=0.00, le=5_000_000_000.00)
-    dividend_record_date: Optional[str]
-    dividend_payment_date: Optional[str]
-    cancellation_date: Optional[str]
+    dividend_record_date: Optional[constr(regex=YYYYMMDD_regexp)]
+    dividend_payment_date: Optional[constr(regex=YYYYMMDD_regexp)]
+    cancellation_date: Optional[constr(regex=YYYYMMDD_regexp)]
     image_url: Optional[List[str]]
     transferable: Optional[bool]
     status: Optional[bool]
@@ -231,9 +235,9 @@ class IbetShareCreate(BaseModel):
 
 class IbetShareUpdate(BaseModel):
     """ibet Share schema (Update)"""
-    cancellation_date: Optional[str]
-    dividend_record_date: Optional[str]
-    dividend_payment_date: Optional[str]
+    cancellation_date: Optional[constr(regex=YYYYMMDD_regexp)]
+    dividend_record_date: Optional[constr(regex=YYYYMMDD_regexp)]
+    dividend_payment_date: Optional[constr(regex=YYYYMMDD_regexp)]
     dividends: Optional[float] = Field(None, ge=0.00, le=5_000_000_000.00)
     tradable_exchange_contract_address: Optional[str]
     personal_info_contract_address: Optional[str]
@@ -259,7 +263,7 @@ class IbetShareUpdate(BaseModel):
     @validator("dividends")
     def dividend_information_all_required(cls, v, values, **kwargs):
         if v is not None:
-            if values["dividend_record_date"] is None or values["dividend_payment_date"] is None:
+            if values.get("dividend_record_date") is None or values.get("dividend_payment_date") is None:
                 raise ValueError("all items are required to update the dividend information")
         return v
 
