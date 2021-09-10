@@ -17,12 +17,16 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from typing import Optional
-from pydantic import BaseModel
+
+from pydantic import (
+    BaseModel,
+    constr
+)
 
 
-############################
-# RESPONSE
-############################
+MMDD_constr = constr(regex="^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$")
+YYYYMMDD_constr = constr(regex="^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$")
+
 
 class ResultSet(BaseModel):
     """result set for pagination"""

@@ -22,7 +22,7 @@ from typing import (
 )
 from pydantic import BaseModel
 
-from .result_set import ResultSet
+from .types import ResultSet
 
 
 ############################
