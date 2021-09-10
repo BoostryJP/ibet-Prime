@@ -27,7 +27,7 @@ from pydantic import (
 )
 from datetime import datetime
 
-from .result_set import ResultSet
+from .types import ResultSet
 
 
 ############################

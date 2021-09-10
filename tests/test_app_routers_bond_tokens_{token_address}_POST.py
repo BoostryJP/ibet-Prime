@@ -186,9 +186,10 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             ]
         }
 
-    # <Error_2>
+    # <Error_2_1>
     # RequestValidationError: interest_payment_date
-    def test_error_2(self, client, db):
+    # list length of interest_payment_date must be less than 13
+    def test_error_2_1(self, client, db):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
@@ -218,6 +219,42 @@ class TestAppRoutersBondTokensTokenAddressPOST:
                     ],
                     "msg": "list length of interest_payment_date must be less than 13",
                     "type": "value_error"
+                }
+            ]
+        }
+
+    # <Error_2_2>
+    # RequestValidationError: interest_payment_date
+    # string does not match regex
+    def test_error_2_2(self, client, db):
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # request target API
+        req_param = {
+            "interest_payment_date": [
+                "01010"
+            ],
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": ""
+            }
+        )
+
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    'loc': ['body', 'interest_payment_date', 0],
+                    'msg': 'string does not match regex "^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    'type': 'value_error.str.regex',
+                    'ctx': {'pattern': '^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
                 }
             ]
         }

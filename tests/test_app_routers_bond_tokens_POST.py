@@ -164,9 +164,9 @@ class TestAppRoutersBondTokensPOST:
                 "symbol": "symbol_test1",
                 "total_supply": 10000,
                 "face_value": 200,
-                "redemption_date": "redemption_date_test1",
+                "redemption_date": "20211231",
                 "redemption_value": 4000,
-                "return_date": "return_date_test1",
+                "return_date": "20211231",
                 "return_amount": "return_amount_test1",
                 "purpose": "purpose_test1",
                 "interest_rate": 0.0001,  # update
@@ -193,10 +193,14 @@ class TestAppRoutersBondTokensPOST:
             # assertion
             IbetStraightBondContract.create.assert_called_with(
                 args=[
-                    "name_test1", "symbol_test1",
-                    10000, 200,
-                    "redemption_date_test1", 4000,
-                    "return_date_test1", "return_amount_test1",
+                    "name_test1",
+                    "symbol_test1",
+                    10000,
+                    200,
+                    "20211231",
+                    4000,
+                    "20211231",
+                    "return_amount_test1",
                     "purpose_test1"
                 ],
                 tx_from=test_account["address"],
@@ -279,26 +283,26 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": 10000,
             "face_value": 200,
-            "redemption_date": "redemption_date_test1",
+            "redemption_date": "20211231",
             "redemption_value": 4000,
-            "return_date": "redemption_value_test1",
+            "return_date": "20211231",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
             "interest_rate": 12.34567,
             "interest_payment_date": [
-                "2101",
-                "2102",
-                "2103",
-                "2104",
-                "2105",
-                "2106",
-                "2107",
-                "2108",
-                "2109",
-                "2110",
-                "2111",
-                "2112",
-                "2113"
+                "0101",
+                "0201",
+                "0301",
+                "0401",
+                "0501",
+                "0601",
+                "0701",
+                "0801",
+                "0901",
+                "1001",
+                "1101",
+                "1201",
+                "1231"
             ],
             "tradable_exchange_contract_address": "0x0",
             "personal_info_contract_address": "0x0",
@@ -378,9 +382,9 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": 10000,
             "face_value": 200,
-            "redemption_date": "redemption_date_test1",
+            "redemption_date": "20211231",
             "redemption_value": 4000,
-            "return_date": "redemption_value_test1",
+            "return_date": "20211231",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
         }
@@ -429,9 +433,9 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": 10000,
             "face_value": 200,
-            "redemption_date": "redemption_date_test1",
+            "redemption_date": "20211231",
             "redemption_value": 4000,
-            "return_date": "redemption_value_test1",
+            "return_date": "20211231",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
         }
@@ -468,9 +472,9 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": 10000,
             "face_value": 200,
-            "redemption_date": "redemption_date_test1",
+            "redemption_date": "20211231",
             "redemption_value": 4000,
-            "return_date": "redemption_value_test1",
+            "return_date": "20211231",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
             "is_redeemed": "invalid value"
@@ -511,9 +515,9 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": -1,
             "face_value": -1,
-            "redemption_date": "redemption_date_test1",
+            "redemption_date": "20211231",
             "redemption_value": -1,
-            "return_date": "return_date_test1",
+            "return_date": "20211231",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
             "interest_rate": -0.0001,  # update
@@ -603,9 +607,9 @@ class TestAppRoutersBondTokensPOST:
             "symbol": GetRandomStr(101),
             "total_supply": 100_000_001,
             "face_value": 5_000_000_001,
-            "redemption_date": "redemption_date_test1",
+            "redemption_date": "20211231",
             "redemption_value": 5_000_000_001,
-            "return_date": "return_date_test1",
+            "return_date": "20211231",
             "return_amount": GetRandomStr(2001),
             "purpose": GetRandomStr(2001),
             "interest_rate": 100.0001,  # update
@@ -699,6 +703,60 @@ class TestAppRoutersBondTokensPOST:
             ]
         }
 
+    # <Error_2_7>
+    # Validation Error
+    # YYYYMMDD/MMDD regex
+    def test_error_2_7(self, client, db):
+        # request target api
+        req_param = {
+            "name": "name_test1",
+            "symbol": "symbol_test1",
+            "total_supply": 10000,
+            "face_value": 200,
+            "redemption_date": "invalid_date",
+            "redemption_value": 4000,
+            "return_date": "invalid_date",
+            "return_amount": "return_amount_test1",
+            "purpose": "purpose_test1",
+            "interest_payment_date": ["invalid_date"],  # update
+        }
+        resp = client.post(
+            self.apiurl,
+            json=req_param,
+            headers={
+                "issuer-address": "issuer-address"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    'loc': ['body', 'redemption_date'],
+                    'msg': 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    'type': 'value_error.str.regex',
+                    'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                },
+                {
+                    'loc': ['body', 'return_date'],
+                    'msg': 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    'type': 'value_error.str.regex',
+                    'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                },
+                {
+                    'loc': ['body', 'interest_payment_date', 0],
+                    'msg': 'string does not match regex "^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    'type': 'value_error.str.regex',
+                    'ctx': {'pattern': '^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                }
+            ]
+        }
+
     # <Error_3_1>
     # Not Exists Address
     def test_error_3_1(self, client, db):
@@ -718,9 +776,9 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": 10000,
             "face_value": 200,
-            "redemption_date": "redemption_date_test1",
+            "redemption_date": "20211231",
             "redemption_value": 4000,
-            "return_date": "redemption_value_test1",
+            "return_date": "20211231",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
         }
@@ -761,9 +819,9 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": 10000,
             "face_value": 200,
-            "redemption_date": "redemption_date_test1",
+            "redemption_date": "20211231",
             "redemption_value": 4000,
-            "return_date": "redemption_value_test1",
+            "return_date": "20211231",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
         }
@@ -813,9 +871,9 @@ class TestAppRoutersBondTokensPOST:
                 "symbol": "symbol_test1",
                 "total_supply": 10000,
                 "face_value": 200,
-                "redemption_date": "redemption_date_test1",
+                "redemption_date": "20211231",
                 "redemption_value": 4000,
-                "return_date": "redemption_value_test1",
+                "return_date": "20211231",
                 "return_amount": "return_amount_test1",
                 "purpose": "purpose_test1",
             }
@@ -869,9 +927,9 @@ class TestAppRoutersBondTokensPOST:
                 "symbol": "symbol_test1",
                 "total_supply": 10000,
                 "face_value": 200,
-                "redemption_date": "redemption_date_test1",
+                "redemption_date": "20211231",
                 "redemption_value": 4000,
-                "return_date": "return_date_test1",
+                "return_date": "20211231",
                 "return_amount": "return_amount_test1",
                 "purpose": "purpose_test1",
             }
