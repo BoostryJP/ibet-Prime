@@ -113,18 +113,18 @@ class RetrieveLedgerDetailsDataHistoryResponse(BaseModel):
 class RetrieveLedgerDetailsHistoryResponse(BaseModel):
     """Retrieve Ledger Details History schema (Response)"""
     token_detail_type: str
-    headers: List[dict]
+    headers: Optional[List[dict]]
     data: List[RetrieveLedgerDetailsDataHistoryResponse]
-    footers: List[dict]
+    footers: Optional[List[dict]]
 
 
 class RetrieveLedgerHistoryResponse(BaseModel):
     """Retrieve Ledger History schema (Response)"""
     created: str
     token_name: str
-    headers: List[dict]
+    headers: Optional[List[dict]]
     details: List[RetrieveLedgerDetailsHistoryResponse]
-    footers: List[dict]
+    footers: Optional[List[dict]]
 
 
 class LedgerDetailsDataTemplateResponse(BaseModel):
