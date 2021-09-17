@@ -27,7 +27,7 @@
 
 ## Supported ibet smart contract version
 
-* ibet-SmartContract: version 21.6.0
+* ibet-SmartContract: version 21.9.0
 
 
 ## Starting and Stopping the Server
