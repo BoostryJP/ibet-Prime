@@ -29,6 +29,9 @@ class TestAppRoutersAccountsPOST:
     # target API endpoint
     apiurl = "/accounts"
 
+    valid_password = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~"
+    invalid_password = "password🚀"
+
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -37,7 +40,7 @@ class TestAppRoutersAccountsPOST:
     def test_normal_1(self, client, db):
         accounts_before = db.query(Account).all()
 
-        password = "password"
+        password = self.valid_password
         req_param = {
             "eoa_password": E2EEUtils.encrypt(password)
         }
@@ -72,7 +75,7 @@ class TestAppRoutersAccountsPOST:
     def test_normal_2(self, boto3_mock, client, db):
         accounts_before = db.query(Account).all()
 
-        password = "password"
+        password = self.valid_password
         req_param = {
             "eoa_password": E2EEUtils.encrypt(password)
         }
@@ -143,7 +146,7 @@ class TestAppRoutersAccountsPOST:
     # Invalid Password
     def test_error_2(self, client, db):
         req_param = {
-            "eoa_password": E2EEUtils.encrypt("test")
+            "eoa_password": E2EEUtils.encrypt(self.invalid_password)
         }
 
         resp = client.post(self.apiurl, json=req_param)

@@ -32,6 +32,9 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
     # target API endpoint
     base_url = "/accounts/{}/rsa_passphrase"
 
+    valid_password = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~"
+    invalid_password = "password🚀"
+
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -43,7 +46,7 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
         _old_rsa_private_key = _account["rsa_private_key"]
         _rsa_public_key = _account["rsa_public_key"]
         _old_password = "password"
-        _new_password = "passwordnew"
+        _new_password = self.valid_password
 
         # prepare data
         account = Account()
@@ -155,7 +158,7 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
         _account = config_eth_account("user1")
         _issuer_address = _account["address"]
         _old_password = "password"
-        _new_password = "passwordnew"
+        _new_password = self.valid_password
 
         # request target API
         req_param = {
@@ -192,7 +195,7 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
     # No data
     def test_error_4(self, client, db):
         _old_password = "password"
-        _new_password = "passwordnew"
+        _new_password = self.valid_password
 
         # request target API
         req_param = {
@@ -221,7 +224,7 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
         _old_rsa_private_key = _account["rsa_private_key"]
         _rsa_public_key = _account["rsa_public_key"]
         _old_password = "password"
-        _new_password = "passwordnew"
+        _new_password = self.valid_password
 
         # prepare data
         account = Account()
@@ -259,7 +262,7 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
         _old_rsa_private_key = _account["rsa_private_key"]
         _rsa_public_key = _account["rsa_public_key"]
         _old_password = "password"
-        _new_password = "pass"
+        _new_password = self.invalid_password
 
         # prepare data
         account = Account()
