@@ -42,7 +42,7 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
         _issuer_address = _account["address"]
         _old_keyfile = _account["keyfile_json"]
         _old_password = "password"
-        _new_password = "passwordnew"
+        _new_password = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~"
 
         # prepare data
         account = Account()
@@ -266,7 +266,7 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
         _issuer_address = _account["address"]
         _old_keyfile = _account["keyfile_json"]
         _old_password = "password"
-        _new_password = "password-new"
+        _new_password = "password🚀"
 
         # prepare data
         account = Account()

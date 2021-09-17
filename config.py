@@ -80,16 +80,16 @@ AWS_REGION_NAME = os.environ.get("AWS_REGION_NAME") or "ap-northeast-1"
 #            lowercase alphabetic, uppercase alphabetic, numeric, and symbolic(space exclude)
 EOA_PASSWORD_PATTERN = \
     os.environ.get("EOA_PASSWORD_PATTERN") or \
-    "^[a-zA-Z0-9]{8,20}$"
+    "^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,200}$"
 EOA_PASSWORD_PATTERN_MSG = \
     os.environ.get("EOA_PASSWORD_PATTERN_MSG") or \
-    "password must be 8 to 20 alphanumeric character"
+    "password must be 8 to 200 alphanumeric or symbolic character"
 PERSONAL_INFO_RSA_PASSPHRASE_PATTERN = \
     os.environ.get("PERSONAL_INFO_RSA_PASSPHRASE_PATTERN") or \
-    "^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,}$"
+    "^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,200}$"
 PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG = \
     os.environ.get("PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG") or \
-    "passphrase is need 8 or higher length of alphanumeric or symbolic characters"
+    "passphrase must be 8 to 200 alphanumeric or symbolic characters"
 PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE = \
     os.environ.get("PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE") or \
     "password"

@@ -26,6 +26,9 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
     # target API endpoint
     base_url = "/accounts/{}/rsakey"
 
+    valid_password = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~"
+    invalid_password = "password🚀"
+
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -44,7 +47,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         db.add(_account_before)
         db.commit()
 
-        password = "password_create"
+        password = self.valid_password
         req_param = {
             "rsa_passphrase": E2EEUtils.encrypt(password)
         }
@@ -89,7 +92,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
 
         _temporary_before = db.query(AccountRsaKeyTemporary).all()
 
-        password = "password_change"
+        password = self.valid_password
         req_param = {
             "rsa_passphrase": E2EEUtils.encrypt(password)
         }
@@ -226,7 +229,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         db.add(_account)
 
         req_param = {
-            "rsa_passphrase": E2EEUtils.encrypt("password")
+            "rsa_passphrase": E2EEUtils.encrypt(self.valid_password)
         }
 
         _user_2 = config_eth_account("user2")
@@ -255,7 +258,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         db.add(_account)
 
         req_param = {
-            "rsa_passphrase": E2EEUtils.encrypt("password")
+            "rsa_passphrase": E2EEUtils.encrypt(self.valid_password)
         }
 
         resp = client.post(self.base_url.format(_user_1["address"]), json=req_param)
@@ -286,7 +289,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         db.add(_account)
 
         req_param = {
-            "rsa_passphrase": E2EEUtils.encrypt("password")
+            "rsa_passphrase": E2EEUtils.encrypt(self.valid_password)
         }
 
         resp = client.post(self.base_url.format(_user_1["address"]), json=req_param)
@@ -317,7 +320,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         db.add(_account)
 
         req_param = {
-            "rsa_passphrase": E2EEUtils.encrypt("test")
+            "rsa_passphrase": E2EEUtils.encrypt(self.invalid_password)
         }
 
         resp = client.post(self.base_url.format(_user_1["address"]), json=req_param)
