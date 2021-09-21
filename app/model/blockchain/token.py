@@ -27,7 +27,10 @@ from datetime import (
     timedelta
 )
 
-from web3.exceptions import TimeExhausted
+from web3.exceptions import (
+    TimeExhausted,
+    BadFunctionCallOutput
+)
 
 from config import (
     TOKEN_CACHE,
@@ -46,6 +49,7 @@ from app.model.schema import (
     IbetShareApproveTransfer,
     IbetShareCancelTransfer
 )
+from app.model.blockchain import IbetExchangeInterface
 from app.exceptions import SendTransactionError
 from app import log
 from app.utils.contract_utils import ContractUtils
@@ -57,7 +61,7 @@ LOG = log.get_logger()
 web3 = Web3Wrapper()
 
 
-class IbetStandardTokenInterfaceContract:
+class IbetStandardTokenInterface:
     issuer_address: str
     token_address: str
     name: str
@@ -70,7 +74,7 @@ class IbetStandardTokenInterfaceContract:
     status: bool
 
 
-class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
+class IbetStraightBondContract(IbetStandardTokenInterface):
     face_value: int
     redemption_date: str
     redemption_value: int
@@ -484,10 +488,23 @@ class IbetStraightBondContract(IbetStandardTokenInterfaceContract):
             contract_address=contract_address
         )
         balance = bond_contract.functions.balanceOf(account_address).call()
+
+        tradable_exchange_address = bond_contract.functions.tradableExchange().call()
+        if tradable_exchange_address != ZERO_ADDRESS:
+            try:
+                exchange_contract = IbetExchangeInterface(tradable_exchange_address)
+                exchange_balance = exchange_contract.get_account_balance(
+                    account_address=account_address,
+                    token_address=contract_address
+                )
+                balance = balance + exchange_balance["balance"] + exchange_balance["commitment"]
+            except BadFunctionCallOutput:
+                pass
+
         return balance
 
 
-class IbetShareContract(IbetStandardTokenInterfaceContract):
+class IbetShareContract(IbetStandardTokenInterface):
     issue_price: int
     dividends: float
     dividend_record_date: str
