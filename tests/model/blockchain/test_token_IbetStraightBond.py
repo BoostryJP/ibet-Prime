@@ -1777,20 +1777,3 @@ class TestGetAccountBalance:
                 contract_address,
                 issuer_address[:-1]  # short
             )
-
-    # <Error_4>
-    # invalid contract_address : not deployed contract_address
-    def test_error_4(self, db):
-        test_account = config_eth_account("user1")
-        issuer_address = test_account.get("address")
-
-        # execute the function
-        with pytest.raises(BadFunctionCallOutput) as exc_info:
-            IbetStraightBondContract.get_account_balance(
-                ZERO_ADDRESS,
-                issuer_address
-            )
-
-        # assertion
-        assert exc_info.match("Could not transact with/call contract function,")
-        assert exc_info.match(", is contract deployed correctly and chain synced?")

@@ -19,21 +19,19 @@ SPDX-License-Identifier: Apache-2.0
 import os
 import sys
 import time
+
+from eth_utils import to_checksum_address
 from sqlalchemy import create_engine
 from sqlalchemy.orm import (
     sessionmaker,
     scoped_session
 )
-from eth_utils import to_checksum_address
+from web3.exceptions import BadFunctionCallOutput
 
 path = os.path.join(os.path.dirname(__file__), '../')
 sys.path.append(path)
 
-from config import (
-    DATABASE_URL,
-    ZERO_ADDRESS,
-    INDEXER_SYNC_INTERVAL
-)
+from app.model.blockchain import IbetExchangeInterface
 from app.model.db import (
     Token,
     TokenType,
@@ -42,6 +40,11 @@ from app.model.db import (
 )
 from app.utils.web3_utils import Web3Wrapper
 import batch_log
+from config import (
+    DATABASE_URL,
+    ZERO_ADDRESS,
+    INDEXER_SYNC_INTERVAL
+)
 
 process_name = "INDEXER-Position-Bond"
 LOG = batch_log.get_logger(process_name=process_name)
@@ -165,7 +168,7 @@ class Processor:
         for token in self.token_list:
             try:
                 issuer_address = token.functions.owner().call()
-                balance = token.functions.balanceOf(issuer_address).call()
+                balance = self.__get_account_balance(token, issuer_address)
                 self.sink.on_position(
                     token_address=to_checksum_address(token.address),
                     account_address=issuer_address,
@@ -190,7 +193,7 @@ class Processor:
                 for event in events:
                     args = event['args']
                     account = args.get("target_address", ZERO_ADDRESS)
-                    balance = token.functions.balanceOf(account).call()
+                    balance = self.__get_account_balance(token, account)
                     self.sink.on_position(
                         token_address=to_checksum_address(token.address),
                         account_address=account,
@@ -216,7 +219,7 @@ class Processor:
                     args = event['args']
                     # from address
                     from_account = args.get("from", ZERO_ADDRESS)
-                    from_account_balance = token.functions.balanceOf(from_account).call()
+                    from_account_balance = self.__get_account_balance(token, from_account)
                     self.sink.on_position(
                         token_address=to_checksum_address(token.address),
                         account_address=from_account,
@@ -224,7 +227,7 @@ class Processor:
                     )
                     # to address
                     to_account = args.get("to", ZERO_ADDRESS)
-                    to_account_balance = token.functions.balanceOf(to_account).call()
+                    to_account_balance = self.__get_account_balance(token, to_account)
                     self.sink.on_position(
                         token_address=to_checksum_address(token.address),
                         account_address=to_account,
@@ -249,7 +252,7 @@ class Processor:
                 for event in events:
                     args = event['args']
                     account = args.get("from", ZERO_ADDRESS)
-                    balance = token.functions.balanceOf(account).call()
+                    balance = self.__get_account_balance(token, account)
                     self.sink.on_position(
                         token_address=to_checksum_address(token.address),
                         account_address=account,
@@ -274,7 +277,7 @@ class Processor:
                 for event in events:
                     args = event['args']
                     account = args.get("to", ZERO_ADDRESS)
-                    balance = token.functions.balanceOf(account).call()
+                    balance = self.__get_account_balance(token, account)
                     self.sink.on_position(
                         token_address=to_checksum_address(token.address),
                         account_address=account,
@@ -282,6 +285,24 @@ class Processor:
                     )
             except Exception as e:
                 LOG.exception(e)
+
+    @staticmethod
+    def __get_account_balance(token_contract, account_address: str):
+        """Get balance of account"""
+
+        balance = token_contract.functions.balanceOf(account_address).call()
+        tradable_exchange_address = token_contract.functions.tradableExchange().call()
+        if tradable_exchange_address != ZERO_ADDRESS:
+            try:
+                exchange_contract = IbetExchangeInterface(tradable_exchange_address)
+                exchange_balance = exchange_contract.get_account_balance(
+                    account_address=account_address,
+                    token_address=token_contract.address
+                )
+                balance = balance + exchange_balance["balance"] + exchange_balance["commitment"]
+            except BadFunctionCallOutput:
+                pass
+        return balance
 
 
 _sink = Sinks()
