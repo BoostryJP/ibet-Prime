@@ -73,6 +73,34 @@ class IbetStandardTokenInterface:
     tradable_exchange_contract_address: str
     status: bool
 
+    @staticmethod
+    def get_account_balance(contract_address: str, account_address: str):
+        """Get account balance
+
+        :param contract_address: contract address
+        :param account_address: account address
+        :return: account balance
+        """
+        token_contract = ContractUtils.get_contract(
+            contract_name="IbetStandardTokenInterface",
+            contract_address=contract_address
+        )
+        balance = token_contract.functions.balanceOf(account_address).call()
+
+        tradable_exchange_address = token_contract.functions.tradableExchange().call()
+        if tradable_exchange_address != ZERO_ADDRESS:
+            try:
+                exchange_contract = IbetExchangeInterface(tradable_exchange_address)
+                exchange_balance = exchange_contract.get_account_balance(
+                    account_address=account_address,
+                    token_address=contract_address
+                )
+                balance = balance + exchange_balance["balance"] + exchange_balance["commitment"]
+            except BadFunctionCallOutput:
+                pass
+
+        return balance
+
 
 class IbetStraightBondContract(IbetStandardTokenInterface):
     face_value: int
@@ -475,34 +503,6 @@ class IbetStraightBondContract(IbetStandardTokenInterface):
         except Exception as err:
             raise SendTransactionError(err)
 
-    @staticmethod
-    def get_account_balance(contract_address: str, account_address: str):
-        """Get account balance
-
-        :param contract_address: contract address
-        :param account_address: account address
-        :return: account balance
-        """
-        bond_contract = ContractUtils.get_contract(
-            contract_name="IbetStraightBond",
-            contract_address=contract_address
-        )
-        balance = bond_contract.functions.balanceOf(account_address).call()
-
-        tradable_exchange_address = bond_contract.functions.tradableExchange().call()
-        if tradable_exchange_address != ZERO_ADDRESS:
-            try:
-                exchange_contract = IbetExchangeInterface(tradable_exchange_address)
-                exchange_balance = exchange_contract.get_account_balance(
-                    account_address=account_address,
-                    token_address=contract_address
-                )
-                balance = balance + exchange_balance["balance"] + exchange_balance["commitment"]
-            except BadFunctionCallOutput:
-                pass
-
-        return balance
-
 
 class IbetShareContract(IbetStandardTokenInterface):
     issue_price: int
@@ -887,21 +887,6 @@ class IbetShareContract(IbetStandardTokenInterface):
             raise SendTransactionError(timeout_error)
         except Exception as err:
             raise SendTransactionError(err)
-
-    @staticmethod
-    def get_account_balance(contract_address: str, account_address: str):
-        """Get account balance
-
-        :param contract_address: contract address
-        :param account_address: account address
-        :return: account balance
-        """
-        share_contract = ContractUtils.get_contract(
-            contract_name="IbetShare",
-            contract_address=contract_address
-        )
-        balance = share_contract.functions.balanceOf(account_address).call()
-        return balance
 
     @staticmethod
     def approve_transfer(contract_address: str,
