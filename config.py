@@ -173,3 +173,8 @@ CREATE_UTXO_INTERVAL = int(os.environ.get("CREATE_UTXO_INTERVAL")) \
     if os.environ.get("CREATE_UTXO_INTERVAL") else 10
 CREATE_UTXO_BLOCK_LOT_MAX_SIZE = int(os.environ.get("CREATE_UTXO_BLOCK_LOT_MAX_SIZE")) \
     if os.environ.get("CREATE_UTXO_BLOCK_LOT_MAX_SIZE") else 10000
+
+# File Upload
+# NOTE: (Reference information) WSGI server and app used by ibet-Prime has no request body size limit.
+MAX_UPLOAD_FILE_SIZE = int(os.environ.get("MAX_UPLOAD_FILE_SIZE")) \
+    if os.environ.get("MAX_UPLOAD_FILE_SIZE") else 100_000_000

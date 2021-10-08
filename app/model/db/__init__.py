@@ -68,3 +68,4 @@ from .scheduled_events import (
     ScheduledEvents,
     ScheduledEventType
 )
+from .upload_file import UploadFile

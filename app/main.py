@@ -31,6 +31,7 @@ from app.routers import (
     index,
     account,
     bond,
+    file,
     ledger,
     notification,
     share
@@ -67,6 +68,7 @@ async def root():
 app.include_router(index.router)
 app.include_router(account.router)
 app.include_router(bond.router)
+app.include_router(file.router)
 app.include_router(ledger.router)
 app.include_router(notification.router)
 app.include_router(share.router)
