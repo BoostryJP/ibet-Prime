@@ -71,3 +71,9 @@ from .scheduled_events import (
     ScheduledEventResponse
 )
 from .personal_info import ModifyPersonalInfoRequest
+from .file import (
+    UploadFileRequest,
+    FileResponse,
+    ListAllFilesResponse,
+    DownloadFileResponse
+)
