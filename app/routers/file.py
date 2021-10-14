@@ -18,10 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 import base64
 import uuid
-from typing import (
-    List,
-    Optional
-)
+from typing import Optional
 import pytz
 
 from fastapi import (
@@ -164,13 +161,23 @@ def upload_file(
 )
 def download_file(
         file_id: str,
+        issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Download file"""
 
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
+
     # Get Upload File
-    _upload_file = db.query(UploadFile). \
-        filter(UploadFile.file_id == file_id). \
-        first()
+    if issuer_address is None:
+        _upload_file = db.query(UploadFile). \
+            filter(UploadFile.file_id == file_id). \
+            first()
+    else:
+        _upload_file = db.query(UploadFile). \
+            filter(UploadFile.file_id == file_id). \
+            filter(UploadFile.issuer_address == issuer_address). \
+            first()
     if _upload_file is None:
         raise HTTPException(status_code=404, detail="file not found")
 
