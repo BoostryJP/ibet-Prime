@@ -91,6 +91,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
 
         # assertion
         assert resp.status_code == 200
+        assert resp.json() is None
         _details_data_list = db.query(LedgerDetailsData). \
             order_by(LedgerDetailsData.id). \
             all()

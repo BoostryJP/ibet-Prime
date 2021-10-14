@@ -140,6 +140,7 @@ class TestAppRoutersLedgerTokenAddressTemplateDELETE:
 
         # assertion
         assert resp.status_code == 200
+        assert resp.json() is None
         _template_list = db.query(LedgerTemplate).all()
         assert len(_template_list) == 0
         _details_list = db.query(LedgerDetailsTemplate).all()

@@ -206,20 +206,29 @@ def custom_openapi(app):
                     return None
             return tmp_src
 
-        # Remove Default Validation Error Response Structure
-        # NOTE:
-        # HTTPValidationError is automatically added to APIs docs that have path, header, query, and body parameters.
-        # But HTTPValidationError does not have 'meta',
-        # and some APIs do not generate a Validation Error(API with no-required string parameter only, etc).
         paths = _get(openapi_schema, "paths")
         if paths is not None:
             for path_info in paths.values():
                 for router in path_info.values():
+
+                    # Remove Default Validation Error Response Structure
+                    # NOTE:
+                    # HTTPValidationError is automatically added to APIs docs that have path, header, query,
+                    # and body parameters.
+                    # But HTTPValidationError does not have 'meta',
+                    # and some APIs do not generate a Validation Error(API with no-required string parameter only, etc).
                     resp_422 = _get(router, "responses", "422")
                     if resp_422 is not None:
                         ref = _get(resp_422, "content", "application/json", "schema", "$ref")
                         if ref == "#/components/schemas/HTTPValidationError":
                             router["responses"].pop("422")
+
+                    # Remove empty response's contents
+                    responses = _get(router, "responses")
+                    for resp in responses.values():
+                        schema = _get(resp, "content", "application/json", "schema")
+                        if schema == {}:
+                            resp.pop("content")
 
         return openapi_schema
 

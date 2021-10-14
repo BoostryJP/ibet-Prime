@@ -90,6 +90,7 @@ class TestAppRoutersBondTransfersPOST:
         )
 
         assert resp.status_code == 200
+        assert resp.json() is None
 
     ###########################################################################
     # Error Case

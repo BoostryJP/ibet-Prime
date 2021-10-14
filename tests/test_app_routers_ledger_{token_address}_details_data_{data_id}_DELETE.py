@@ -92,6 +92,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdDELETE:
 
         # assertion
         assert resp.status_code == 200
+        assert resp.json() is None
         _details_data_list = db.query(LedgerDetailsData).all()
         assert len(_details_data_list) == 1
         assert _details_data_list[0].id == 3

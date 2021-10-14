@@ -193,7 +193,7 @@ def download_file(
 # DELETE: /files/{file_id}
 @router.delete(
     "/files/{file_id}",
-    response_model=List[FileResponse],
+    response_model=None,
     responses=get_routers_responses(422, 404)
 )
 def delete_file(
