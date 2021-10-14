@@ -100,6 +100,7 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
 
         # assertion
         assert resp.status_code == 200
+        assert resp.json() is None
         _notification_list = db.query(Notification).order_by(Notification.created).all()
         assert len(_notification_list) == 3
         _notification = _notification_list[0]

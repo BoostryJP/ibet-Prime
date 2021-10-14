@@ -69,6 +69,7 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
 
         # assertion
         assert resp.status_code == 200
+        assert resp.json() is None
         _account = db.query(Account).first()
         _account_rsa_private_key = _account.rsa_private_key
         _account_rsa_passphrase = E2EEUtils.decrypt(_account.rsa_passphrase)

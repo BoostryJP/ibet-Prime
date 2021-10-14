@@ -143,6 +143,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
 
         # assertion
         assert resp.status_code == 200
+        assert resp.json() is None
         _template = db.query(LedgerTemplate). \
             first()
         assert _template.token_address == token_address

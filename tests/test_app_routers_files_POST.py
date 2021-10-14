@@ -60,6 +60,7 @@ abc def"""
 
         # assertion
         assert resp.status_code == 200
+        assert resp.json() is None
 
         _upload_file = db.query(UploadFile).first()
         assert _upload_file.file_id is not None
@@ -92,6 +93,7 @@ abc def"""
 
         # assertion
         assert resp.status_code == 200
+        assert resp.json() is None
 
         _upload_file = db.query(UploadFile).first()
         assert _upload_file.file_id is not None

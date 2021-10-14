@@ -62,6 +62,7 @@ abc def"""
 
         # assertion
         assert resp.status_code == 200
+        assert resp.json() is None
 
         _upload_file_list = db.query(UploadFile).all()
         assert len(_upload_file_list) == 0

@@ -64,6 +64,7 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
 
         # assertion
         assert resp.status_code == 200
+        assert resp.json() is None
         _account = db.query(Account).first()
         _account_keyfile = _account.keyfile
         _account_eoa_password = E2EEUtils.decrypt(_account.eoa_password)
