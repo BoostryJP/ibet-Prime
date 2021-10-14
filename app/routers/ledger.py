@@ -117,7 +117,6 @@ def list_all_ledger_history(
         order_by(desc(Ledger.id))
     count = query.count()
 
-    query = query.order_by(desc(Ledger.id))
     if limit is not None:
         query = query.limit(limit)
     if offset is not None:
