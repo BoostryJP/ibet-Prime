@@ -31,9 +31,10 @@ class TestAppRoutersFilesFileIdGET:
     # Normal Case
     ###########################################################################
 
-    # <Normal_1>
+    # <Normal_1_1>
     # text file
-    def test_normal_1(self, client, db):
+    # unset header
+    def test_normal_1_1(self, client, db):
         file_content = """test data
 12345 67890
   あいうえお　かきくけこ
@@ -56,6 +57,49 @@ abc def"""
         # request target api
         resp = client.get(
             self.base_url.format(file_id="file_id_1"),
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "file_id": "file_id_1",
+            "issuer_address": self.issuer_address,
+            "relation": self.token_address,
+            "file_name": "file_name_1",
+            "content": base64.b64encode(file_content_bin).decode(),
+            "content_size": len(file_content_bin),
+            "description": "description_1",
+        }
+
+    # <Normal_1_2>
+    # text file
+    # set header
+    def test_normal_1_2(self, client, db):
+        file_content = """test data
+12345 67890
+  あいうえお　かきくけこ
+    😃😃😃😃
+abc def"""
+
+        file_content_bin = file_content.encode()
+
+        # prepare data
+        _upload_file = UploadFile()
+        _upload_file.file_id = "file_id_1"
+        _upload_file.issuer_address = self.issuer_address
+        _upload_file.relation = self.token_address
+        _upload_file.file_name = "file_name_1"
+        _upload_file.content = file_content_bin
+        _upload_file.content_size = len(file_content_bin)
+        _upload_file.description = "description_1"
+        db.add(_upload_file)
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(file_id="file_id_1"),
+            headers={
+                "issuer-address": self.issuer_address,
+            },
         )
 
         # assertion
@@ -109,12 +153,78 @@ abc def"""
     ###########################################################################
 
     # <Error_1>
-    # Not Found
+    # Parameter Error
+    # Invalid
     def test_error_1(self, client, db):
 
         # request target API
         resp = client.get(
             self.base_url.format(file_id="file_id_1"),
+            headers={
+                "issuer-address": "test",
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "loc": ["header", "issuer-address"],
+                    "msg": "issuer-address is not a valid address",
+                    "type": "value_error"
+                }
+            ]
+        }
+
+    # <Error_2_1>
+    # Not Found
+    # unset header
+    def test_error_2_1(self, client, db):
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(file_id="file_id_1"),
+        )
+
+        # assertion
+        assert resp.status_code == 404
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "NotFound"
+            },
+            "detail": "file not found"
+        }
+
+    # <Error_2_2>
+    # Not Found
+    # set header
+    def test_error_2_2(self, client, db):
+
+        file_content_bin = b'x00x01x02x03x04x05x06x07'
+
+        # prepare data
+        _upload_file = UploadFile()
+        _upload_file.file_id = "file_id_1"
+        _upload_file.issuer_address = "0x1234567890123456789012345678900000000002"  # not target
+        _upload_file.relation = self.token_address
+        _upload_file.file_name = "file_name_1"
+        _upload_file.content = file_content_bin
+        _upload_file.content_size = len(file_content_bin)
+        _upload_file.description = "description_1"
+        db.add(_upload_file)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(file_id="file_id_1"),
+            headers={
+                "issuer-address": self.issuer_address,
+            },
         )
 
         # assertion

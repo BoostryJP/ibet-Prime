@@ -18,7 +18,10 @@ SPDX-License-Identifier: Apache-2.0
 """
 import uuid
 import pytz
-from typing import List
+from typing import (
+    List,
+    Optional
+)
 from fastapi import (
     APIRouter,
     Header,
@@ -83,7 +86,7 @@ utc_tz = pytz.timezone("UTC")
 )
 def list_all_ledger_history(
         token_address: str,
-        issuer_address: str = Header(...),
+        issuer_address: Optional[str] = Header(None),
         offset: int = Query(None),
         limit: int = Query(None),
         db: Session = Depends(db_session)):
@@ -92,12 +95,18 @@ def list_all_ledger_history(
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    # Issuer Management Token Check
-    _token = db.query(Token). \
-        filter(Token.token_address == token_address). \
-        filter(Token.issuer_address == issuer_address). \
-        filter(Token.token_status != 2). \
-        first()
+    # Token Exist Check
+    if issuer_address is None:
+        _token = db.query(Token). \
+            filter(Token.token_address == token_address). \
+            filter(Token.token_status != 2). \
+            first()
+    else:
+        _token = db.query(Token). \
+            filter(Token.token_address == token_address). \
+            filter(Token.issuer_address == issuer_address). \
+            filter(Token.token_status != 2). \
+            first()
     if _token is None:
         raise InvalidParameterError("token does not exist")
     if _token.token_status == 0:
@@ -108,6 +117,7 @@ def list_all_ledger_history(
         order_by(desc(Ledger.id))
     count = query.count()
 
+    query = query.order_by(desc(Ledger.id))
     if limit is not None:
         query = query.limit(limit)
     if offset is not None:
@@ -147,7 +157,7 @@ def list_all_ledger_history(
 def retrieve_ledger_history(
         token_address: str,
         ledger_id: int,
-        issuer_address: str = Header(...),
+        issuer_address: Optional[str] = Header(None),
         latest_flg: int = Query(..., ge=0, le=1),
         db: Session = Depends(db_session)):
     """Retrieve Ledger"""
@@ -155,12 +165,18 @@ def retrieve_ledger_history(
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    # Issuer Management Token Check
-    _token = db.query(Token). \
-        filter(Token.token_address == token_address). \
-        filter(Token.issuer_address == issuer_address). \
-        filter(Token.token_status != 2). \
-        first()
+    # Token Exist Check
+    if issuer_address is None:
+        _token = db.query(Token). \
+            filter(Token.token_address == token_address). \
+            filter(Token.token_status != 2). \
+            first()
+    else:
+        _token = db.query(Token). \
+            filter(Token.token_address == token_address). \
+            filter(Token.issuer_address == issuer_address). \
+            filter(Token.token_status != 2). \
+            first()
     if _token is None:
         raise InvalidParameterError("token does not exist")
     if _token.token_status == 0:
@@ -204,19 +220,25 @@ def retrieve_ledger_history(
 )
 def retrieve_ledger_template(
         token_address: str,
-        issuer_address: str = Header(...),
+        issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Retrieve Ledger Template"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    # Issuer Management Token Check
-    _token = db.query(Token). \
-        filter(Token.token_address == token_address). \
-        filter(Token.issuer_address == issuer_address). \
-        filter(Token.token_status != 2). \
-        first()
+    # Token Exist Check
+    if issuer_address is None:
+        _token = db.query(Token). \
+            filter(Token.token_address == token_address). \
+            filter(Token.token_status != 2). \
+            first()
+    else:
+        _token = db.query(Token). \
+            filter(Token.token_address == token_address). \
+            filter(Token.issuer_address == issuer_address). \
+            filter(Token.token_status != 2). \
+            first()
     if _token is None:
         raise InvalidParameterError("token does not exist")
     if _token.token_status == 0:
@@ -404,7 +426,7 @@ def delete_ledger_template(
 )
 def list_all_ledger_details_data(
         token_address: str,
-        issuer_address: str = Header(...),
+        issuer_address: Optional[str] = Header(None),
         offset: int = Query(None),
         limit: int = Query(None),
         db: Session = Depends(db_session)):
@@ -413,12 +435,18 @@ def list_all_ledger_details_data(
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    # Issuer Management Token Check
-    _token = db.query(Token). \
-        filter(Token.token_address == token_address). \
-        filter(Token.issuer_address == issuer_address). \
-        filter(Token.token_status != 2). \
-        first()
+    # Token Exist Check
+    if issuer_address is None:
+        _token = db.query(Token). \
+            filter(Token.token_address == token_address). \
+            filter(Token.token_status != 2). \
+            first()
+    else:
+        _token = db.query(Token). \
+            filter(Token.token_address == token_address). \
+            filter(Token.issuer_address == issuer_address). \
+            filter(Token.token_status != 2). \
+            first()
     if _token is None:
         raise InvalidParameterError("token does not exist")
     if _token.token_status == 0:
@@ -515,19 +543,25 @@ def create_ledger_details_data(
 def retrieve_ledger_details_data(
         token_address: str,
         data_id: str,
-        issuer_address: str = Header(...),
+        issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Retrieve Ledger Details Data"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    # Issuer Management Token Check
-    _token = db.query(Token). \
-        filter(Token.token_address == token_address). \
-        filter(Token.issuer_address == issuer_address). \
-        filter(Token.token_status != 2). \
-        first()
+    # Token Exist Check
+    if issuer_address is None:
+        _token = db.query(Token). \
+            filter(Token.token_address == token_address). \
+            filter(Token.token_status != 2). \
+            first()
+    else:
+        _token = db.query(Token). \
+            filter(Token.token_address == token_address). \
+            filter(Token.issuer_address == issuer_address). \
+            filter(Token.token_status != 2). \
+            first()
     if _token is None:
         raise InvalidParameterError("token does not exist")
     if _token.token_status == 0:

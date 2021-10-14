@@ -40,9 +40,10 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
     # Normal Case
     ###########################################################################
 
-    # <Normal_1>
+    # <Normal_1_1>
     # Not Most Recent
-    def test_normal_1(self, client, db):
+    # set issuer-address
+    def test_normal_1_1(self, client, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -185,6 +186,266 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             headers={
                 "issuer-address": issuer_address,
             }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "created": "2022/12/01",
+            "token_name": "テスト原簿",
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "hoge": "aaaa",
+                    "fuga": "bbbb",
+                }
+            ],
+            "details": [
+                {
+                    "token_detail_type": "権利_test_1",
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "test1": "a",
+                            "test2": "b"
+                        }
+                    ],
+                    "data": [
+                        {
+                            "account_address": account_address_1,
+                            "name": "name_test_1",
+                            "address": "address_test_1",
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 30,
+                            "acquisition_date": "2022/12/02"
+                        },
+                        {
+                            "account_address": account_address_2,
+                            "name": "name_test_2",
+                            "address": "address_test_2",
+                            "amount": 100,
+                            "price": 200,
+                            "balance": 300,
+                            "acquisition_date": "2022/12/03"
+                        }
+                    ],
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "f-test1": "a",
+                            "f-test2": "b"
+                        }
+                    ],
+                },
+                {
+                    "token_detail_type": "権利_test_2",
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "test1-1": "a",
+                            "test2-1": "b"
+                        }
+                    ],
+                    "data": [
+                        {
+                            "account_address": None,
+                            "name": "name_test_1",
+                            "address": "address_test_1",
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 200,
+                            "acquisition_date": "2020/01/01",
+                        },
+                        {
+                            "account_address": None,
+                            "name": "name_test_2",
+                            "address": "address_test_2",
+                            "amount": 20,
+                            "price": 30,
+                            "balance": 600,
+                            "acquisition_date": "2020/01/02",
+                        }
+                    ],
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "f-test1-1": "a",
+                            "f-test2-1": "b"
+                        }
+                    ],
+                },
+            ],
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "f-hoge": "aaaa",
+                    "f-fuga": "bbbb",
+                }
+            ],
+        }
+
+    # <Normal_1_2>
+    # Not Most Recent
+    # unset issuer-address
+    def test_normal_1_2(self, client, db):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+        account_address_1 = "0xABCdeF1234567890abCDeF123456789000000001"
+        account_address_2 = "0xaBcdEF1234567890aBCDEF123456789000000002"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        db.add(_token)
+
+        _ledger_1 = Ledger()
+        _ledger_1.token_address = token_address
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
+        _ledger_1.ledger = {
+            "created": "2022/12/01",
+            "token_name": "テスト原簿",
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "hoge": "aaaa",
+                    "fuga": "bbbb",
+                }
+            ],
+            "details": [
+                {
+                    "token_detail_type": "権利_test_1",
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "test1": "a",
+                            "test2": "b"
+                        }
+                    ],
+                    "data": [
+                        {
+                            "account_address": account_address_1,
+                            "name": "name_test_1",
+                            "address": "address_test_1",
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 30,
+                            "acquisition_date": "2022/12/02"
+                        },
+                        {
+                            "account_address": account_address_2,
+                            "name": "name_test_2",
+                            "address": "address_test_2",
+                            "amount": 100,
+                            "price": 200,
+                            "balance": 300,
+                            "acquisition_date": "2022/12/03"
+                        }
+                    ],
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "f-test1": "a",
+                            "f-test2": "b"
+                        }
+                    ],
+                },
+                {
+                    "token_detail_type": "権利_test_2",
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "test1-1": "a",
+                            "test2-1": "b"
+                        }
+                    ],
+                    "data": [
+                        {
+                            "account_address": None,
+                            "name": "name_test_1",
+                            "address": "address_test_1",
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 200,
+                            "acquisition_date": "2020/01/01",
+                        },
+                        {
+                            "account_address": None,
+                            "name": "name_test_2",
+                            "address": "address_test_2",
+                            "amount": 20,
+                            "price": 30,
+                            "balance": 600,
+                            "acquisition_date": "2020/01/02",
+                        }
+                    ],
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "f-test1-1": "a",
+                            "f-test2-1": "b"
+                        }
+                    ],
+                },
+            ],
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "f-hoge": "aaaa",
+                    "f-fuga": "bbbb",
+                }
+            ],
+        }
+        _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        db.add(_ledger_1)
+
+        # request target AsPI
+        resp = client.get(
+            self.base_url.format(token_address=token_address, ledger_id=1),
+            params={
+                "latest_flg": 0,
+            },
         )
 
         # assertion
@@ -819,39 +1080,8 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
     ###########################################################################
 
     # <Error_1>
-    # Parameter Error
-    def test_error_1(self, client, db):
-        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
-
-        # request target API
-        resp = client.get(
-            self.base_url.format(token_address=token_address, ledger_id=1),
-        )
-
-        # assertion
-        assert resp.status_code == 422
-        assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
-            "detail": [
-                {
-                    "loc": ["query", "latest_flg"],
-                    "msg": "field required",
-                    "type": "value_error.missing"
-                },
-                {
-                    "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing"
-                },
-            ]
-        }
-
-    # <Error_2>
     # Parameter Error(issuer-address)
-    def test_error_2(self, client, db):
+    def test_error_1(self, client, db):
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
 
         # request target API
@@ -881,9 +1111,9 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             ]
         }
 
-    # <Error_3>
+    # <Error_2>
     # Parameter Error(latest_flg less)
-    def test_error_3(self, client, db):
+    def test_error_2(self, client, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -918,9 +1148,9 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             ]
         }
 
-    # <Error_4>
+    # <Error_3>
     # Parameter Error(latest_flg greater)
-    def test_error_4(self, client, db):
+    def test_error_3(self, client, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -955,12 +1185,23 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             ]
         }
 
-    # <Error_5>
+    # <Error_4_1>
     # Token Not Found
-    def test_error_5(self, client, db):
+    # set issuer-address
+    def test_error_4_1(self, client, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = ""
+        _token.issuer_address = "0x1234567890123456789012345678901234567899"  # not target
+        _token.token_address = token_address
+        _token.abi = {}
+        _token.token_status = 2
+        db.add(_token)
 
         # request target API
         resp = client.get(
@@ -983,9 +1224,33 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             "detail": "token does not exist"
         }
 
-    # <Error_6>
+    # <Error_4_2>
+    # Token Not Found
+    # unset issuer-address
+    def test_error_4_2(self, client, db):
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(token_address=token_address, ledger_id=1),
+            params={
+                "latest_flg": 1,
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "InvalidParameterError"
+            },
+            "detail": "token does not exist"
+        }
+
+    # <Error_5>
     # Processing Token
-    def test_error_6(self, client, db):
+    def test_error_5(self, client, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -1021,9 +1286,9 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             "detail": "wait for a while as the token is being processed"
         }
 
-    # <Error_7>
+    # <Error_6>
     # Ledger Not Found
-    def test_error_7(self, client, db):
+    def test_error_6(self, client, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
