@@ -265,6 +265,8 @@ class Processor:
                     _position.token_address = _update_token.token_address
                     _position.account_address = _update_token.issuer_address
                     _position.balance = _update_token.arguments.get("total_supply")
+                    _position.exchange_balance = 0
+                    _position.exchange_commitment = 0
                     _position.pending_transfer = 0
                     self.db.add(_position)
 

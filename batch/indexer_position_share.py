@@ -37,6 +37,7 @@ from app.model.db import (
     IDXPosition,
     IDXPositionShareBlockNumber
 )
+from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
 import batch_log
 from config import (
@@ -76,12 +77,14 @@ class DBSink:
         self.db = db
 
     def on_position(self, token_address: str, account_address: str,
-                    balance: int, pending_transfer: int):
+                    balance: int, exchange_balance: int, exchange_commitment: int, pending_transfer: int):
         """Update balance and pending_transfer data
 
         :param token_address: token address
         :param account_address: account address
         :param balance: balance
+        :param exchange_balance: exchange balance
+        :param exchange_commitment: exchange commitment
         :param pending_transfer: pending transfer
         :return: None
         """
@@ -95,9 +98,13 @@ class DBSink:
             position.token_address = token_address
             position.account_address = account_address
             position.balance = balance
+            position.exchange_balance = exchange_balance
+            position.exchange_commitment = exchange_commitment
             position.pending_transfer = pending_transfer
         else:
             position.balance = balance
+            position.exchange_balance = exchange_balance
+            position.exchange_commitment = exchange_commitment
             position.pending_transfer = pending_transfer
         self.db.merge(position)
 
@@ -162,6 +169,12 @@ class Processor:
         self.__sync_transfer(block_from, block_to)
         self.__sync_lock(block_from, block_to)
         self.__sync_unlock(block_from, block_to)
+        self.__sync_redeem(block_from, block_to)
+        self.__sync_apply_for_transfer(block_from, block_to)
+        self.__sync_cancel_transfer(block_from, block_to)
+        # NOTE:
+        #   "ApproveTransfer" events is executed at the same time as "Transfer" events,
+        #   so it synchronizes with the "Transfer" events.
         self.__set_idx_position_block_number(block_to)
         self.sink.flush()
 
@@ -170,12 +183,14 @@ class Processor:
         for token in self.token_list:
             try:
                 issuer_address = token.functions.owner().call()
-                balance = self.__get_account_balance(token, issuer_address)
+                balance, exchange_balance, exchange_commitment = self.__get_account_balance(token, issuer_address)
                 pending_transfer = token.functions.pendingTransfer(issuer_address).call()
                 self.sink.on_position(
                     token_address=to_checksum_address(token.address),
                     account_address=issuer_address,
                     balance=balance,
+                    exchange_balance=exchange_balance,
+                    exchange_commitment=exchange_commitment,
                     pending_transfer=pending_transfer
                 )
             except Exception as e:
@@ -197,12 +212,14 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     account = args.get("target_address", ZERO_ADDRESS)
-                    balance = self.__get_account_balance(token, account)
+                    balance, exchange_balance, exchange_commitment = self.__get_account_balance(token, account)
                     pending_transfer = token.functions.pendingTransfer(account).call()
                     self.sink.on_position(
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
+                        exchange_balance=exchange_balance,
+                        exchange_commitment=exchange_commitment,
                         pending_transfer=pending_transfer
                     )
             except Exception as e:
@@ -217,32 +234,79 @@ class Processor:
         """
         for token in self.token_list:
             try:
-                events = token.events.Transfer.getLogs(
+
+                # Get exchange contract address
+                exchange_contract_address = token.functions.tradableExchange().call()
+
+                # Get "HolderChanged" events from exchange contract
+                exchange_contract = ContractUtils.get_contract(
+                    contract_name="IbetExchangeInterface",
+                    contract_address=exchange_contract_address
+                )
+                exchange_contract_events = exchange_contract.events.HolderChanged.getLogs(
                     fromBlock=block_from,
                     toBlock=block_to
+                )
+                tmp_events = []
+                for _event in exchange_contract_events:
+                    if token.address == _event["args"]["token"]:
+                        tmp_events.append({
+                            "event": _event["event"],
+                            "args": dict(_event["args"]),
+                            "transaction_hash": _event["transactionHash"].hex(),
+                            "block_number": _event["blockNumber"],
+                            "log_index": _event["logIndex"]
+                        })
+
+                # Get "Transfer" events from token contract
+                token_transfer_events = token.events.Transfer.getLogs(
+                    fromBlock=block_from,
+                    toBlock=block_to
+                )
+                for _event in token_transfer_events:
+                    tmp_events.append({
+                        "event": _event["event"],
+                        "args": dict(_event["args"]),
+                        "transaction_hash": _event["transactionHash"].hex(),
+                        "block_number": _event["blockNumber"],
+                        "log_index": _event["logIndex"]
+                    })
+
+                # Marge & Sort: block_number > log_index
+                events = sorted(
+                    tmp_events,
+                    key=lambda x: (x["block_number"], x["log_index"])
                 )
                 for event in events:
                     args = event["args"]
                     # from address
                     from_account = args.get("from", ZERO_ADDRESS)
-                    from_account_balance = self.__get_account_balance(token, from_account)
-                    pending_transfer = token.functions.pendingTransfer(from_account).call()
-                    self.sink.on_position(
-                        token_address=to_checksum_address(token.address),
-                        account_address=from_account,
-                        balance=from_account_balance,
-                        pending_transfer=pending_transfer
-                    )
+                    if from_account != exchange_contract_address:
+                        from_account_balance, from_account_exchange_balance, from_account_exchange_commitment = \
+                            self.__get_account_balance(token, from_account)
+                        pending_transfer = token.functions.pendingTransfer(from_account).call()
+                        self.sink.on_position(
+                            token_address=to_checksum_address(token.address),
+                            account_address=from_account,
+                            balance=from_account_balance,
+                            exchange_balance=from_account_exchange_balance,
+                            exchange_commitment=from_account_exchange_commitment,
+                            pending_transfer=pending_transfer
+                        )
                     # to address
                     to_account = args.get("to", ZERO_ADDRESS)
-                    to_account_balance = self.__get_account_balance(token, to_account)
-                    pending_transfer = token.functions.pendingTransfer(from_account).call()
-                    self.sink.on_position(
-                        token_address=to_checksum_address(token.address),
-                        account_address=to_account,
-                        balance=to_account_balance,
-                        pending_transfer=pending_transfer
-                    )
+                    if to_account != exchange_contract_address:
+                        to_account_balance, to_account_exchange_balance, to_account_exchange_commitment = \
+                            self.__get_account_balance(token, to_account)
+                        pending_transfer = token.functions.pendingTransfer(from_account).call()
+                        self.sink.on_position(
+                            token_address=to_checksum_address(token.address),
+                            account_address=to_account,
+                            balance=to_account_balance,
+                            exchange_balance=to_account_exchange_balance,
+                            exchange_commitment=to_account_exchange_commitment,
+                            pending_transfer=pending_transfer
+                        )
             except Exception as e:
                 LOG.exception(e)
 
@@ -262,12 +326,14 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     account = args.get("from", ZERO_ADDRESS)
-                    balance = self.__get_account_balance(token, account)
+                    balance, exchange_balance, exchange_commitment = self.__get_account_balance(token, account)
                     pending_transfer = token.functions.pendingTransfer(account).call()
                     self.sink.on_position(
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
+                        exchange_balance=exchange_balance,
+                        exchange_commitment=exchange_commitment,
                         pending_transfer=pending_transfer
                     )
             except Exception as e:
@@ -289,12 +355,14 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     account = args.get("to", ZERO_ADDRESS)
-                    balance = self.__get_account_balance(token, account)
+                    balance, exchange_balance, exchange_commitment = self.__get_account_balance(token, account)
                     pending_transfer = token.functions.pendingTransfer(account).call()
                     self.sink.on_position(
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
+                        exchange_balance=exchange_balance,
+                        exchange_commitment=exchange_commitment,
                         pending_transfer=pending_transfer
                     )
             except Exception as e:
@@ -316,12 +384,14 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     account = args.get("target_address", ZERO_ADDRESS)
-                    balance = self.__get_account_balance(token, account)
+                    balance, exchange_balance, exchange_commitment = self.__get_account_balance(token, account)
                     pending_transfer = token.functions.pendingTransfer(account).call()
                     self.sink.on_position(
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
+                        exchange_balance=exchange_balance,
+                        exchange_commitment=exchange_commitment,
                         pending_transfer=pending_transfer
                     )
             except Exception as e:
@@ -343,12 +413,14 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     account = args.get("from", ZERO_ADDRESS)
-                    balance = self.__get_account_balance(token, account)
+                    balance, exchange_balance, exchange_commitment = self.__get_account_balance(token, account)
                     pending_transfer = token.functions.pendingTransfer(account).call()
                     self.sink.on_position(
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
+                        exchange_balance=exchange_balance,
+                        exchange_commitment=exchange_commitment,
                         pending_transfer=pending_transfer
                     )
             except Exception as e:
@@ -370,51 +442,15 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     account = args.get("from", ZERO_ADDRESS)
-                    balance = self.__get_account_balance(token, account)
+                    balance, exchange_balance, exchange_commitment = self.__get_account_balance(token, account)
                     pending_transfer = token.functions.pendingTransfer(account).call()
                     self.sink.on_position(
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
+                        exchange_balance=exchange_balance,
+                        exchange_commitment=exchange_commitment,
                         pending_transfer=pending_transfer
-                    )
-            except Exception as e:
-                LOG.exception(e)
-
-    def __sync_approve_transfer(self, block_from: int, block_to: int):
-        """Sync ApproveTransfer Events
-
-        :param block_from: From block
-        :param block_to: To block
-        :return: None
-        """
-        for token in self.token_list:
-            try:
-                events = token.events.ApproveTransfer.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
-                )
-                for event in events:
-                    args = event["args"]
-                    # from address
-                    from_account = args.get("from", ZERO_ADDRESS)
-                    from_balance = self.__get_account_balance(token, from_account)
-                    from_pending_transfer = token.functions.pendingTransfer(from_account).call()
-                    self.sink.on_position(
-                        token_address=to_checksum_address(token.address),
-                        account_address=from_account,
-                        balance=from_balance,
-                        pending_transfer=from_pending_transfer
-                    )
-                    # to address
-                    to_account = args.get("to", ZERO_ADDRESS)
-                    to_balance = self.__get_account_balance(token, to_account)
-                    to_pending_transfer = token.functions.pendingTransfer(to_account).call()
-                    self.sink.on_position(
-                        token_address=to_checksum_address(token.address),
-                        account_address=to_account,
-                        balance=to_balance,
-                        pending_transfer=to_pending_transfer
                     )
             except Exception as e:
                 LOG.exception(e)
@@ -424,18 +460,21 @@ class Processor:
         """Get balance of account"""
 
         balance = token_contract.functions.balanceOf(account_address).call()
+        exchange_balance = 0
+        exchange_commitment = 0
         tradable_exchange_address = token_contract.functions.tradableExchange().call()
         if tradable_exchange_address != ZERO_ADDRESS:
             try:
                 exchange_contract = IbetExchangeInterface(tradable_exchange_address)
-                exchange_balance = exchange_contract.get_account_balance(
+                exchange_contract_balance = exchange_contract.get_account_balance(
                     account_address=account_address,
                     token_address=token_contract.address
                 )
-                balance = balance + exchange_balance["balance"] + exchange_balance["commitment"]
+                exchange_balance = exchange_contract_balance["balance"]
+                exchange_commitment = exchange_contract_balance["commitment"]
             except BadFunctionCallOutput:
                 pass
-        return balance
+        return balance, exchange_balance, exchange_commitment
 
 
 _sink = Sinks()

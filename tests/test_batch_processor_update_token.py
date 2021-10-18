@@ -249,6 +249,8 @@ class TestProcessor:
             assert _idx_position.token_address == _token_address_2
             assert _idx_position.account_address == _issuer_address
             assert _idx_position.balance == 2000
+            assert _idx_position.exchange_balance == 0
+            assert _idx_position.exchange_commitment == 0
             assert _idx_position.pending_transfer == 0
 
             _token_list = db.query(Token).order_by(Token.id).all()

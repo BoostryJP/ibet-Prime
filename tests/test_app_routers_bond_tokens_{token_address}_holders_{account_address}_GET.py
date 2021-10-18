@@ -58,6 +58,8 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         idx_position_1.token_address = _token_address
         idx_position_1.account_address = _account_address_1
         idx_position_1.balance = 10
+        idx_position_1.exchange_balance = 11
+        idx_position_1.exchange_commitment = 12
         idx_position_1.pending_transfer = 5
         db.add(idx_position_1)
 
@@ -95,6 +97,8 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
                 "birth": "birth_test1"
             },
             "balance": 10,
+            "exchange_balance": 11,
+            "exchange_commitment": 12,
             "pending_transfer": 5
         }
 
@@ -123,6 +127,8 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         idx_position_1.token_address = _token_address
         idx_position_1.account_address = _account_address_1
         idx_position_1.balance = 10
+        idx_position_1.exchange_balance = 11
+        idx_position_1.exchange_commitment = 12
         idx_position_1.pending_transfer = 5
         db.add(idx_position_1)
 
@@ -147,6 +153,8 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
                 "birth": None
             },
             "balance": 10,
+            "exchange_balance": 11,
+            "exchange_commitment": 12,
             "pending_transfer": 5
         }
 
@@ -205,6 +213,8 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
                 "birth": "birth_test1"
             },
             "balance": 0,
+            "exchange_balance": 0,
+            "exchange_commitment": 0,
             "pending_transfer": 0
         }
 
