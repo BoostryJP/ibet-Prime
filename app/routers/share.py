@@ -620,6 +620,7 @@ def list_all_holders(
     # Get Holders
     _holders = db.query(IDXPosition). \
         filter(IDXPosition.token_address == token_address). \
+        order_by(IDXPosition.id). \
         all()
 
     # Get personal information
