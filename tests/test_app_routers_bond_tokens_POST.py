@@ -127,6 +127,8 @@ class TestAppRoutersBondTokensPOST:
             assert position.token_address == "contract_address_test1"
             assert position.account_address == test_account["address"]
             assert position.balance == req_param["total_supply"]
+            assert position.exchange_balance == 0
+            assert position.exchange_commitment == 0
             assert position.pending_transfer == 0
 
             update_token = db.query(UpdateToken).first()

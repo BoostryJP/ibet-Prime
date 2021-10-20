@@ -190,6 +190,8 @@ def issue_token(
         _position.token_address = contract_address
         _position.account_address = issuer_address
         _position.balance = token.total_supply
+        _position.exchange_balance = 0
+        _position.exchange_commitment = 0
         _position.pending_transfer = 0
         db.add(_position)
 
@@ -618,6 +620,7 @@ def list_all_holders(
     # Get Holders
     _holders = db.query(IDXPosition). \
         filter(IDXPosition.token_address == token_address). \
+        order_by(IDXPosition.id). \
         all()
 
     # Get personal information
@@ -647,6 +650,8 @@ def list_all_holders(
             "account_address": _holder.account_address,
             "personal_information": _personal_info,
             "balance": _holder.balance,
+            "exchange_balance": _holder.exchange_balance,
+            "exchange_commitment": _holder.exchange_commitment,
             "pending_transfer": _holder.pending_transfer
         })
 
@@ -695,9 +700,13 @@ def retrieve_holder(
         first()
     if _holder is None:
         balance = 0
+        exchange_balance = 0
+        exchange_commitment = 0
         pending_transfer = 0
     else:
         balance = _holder.balance
+        exchange_balance = _holder.exchange_balance
+        exchange_commitment = _holder.exchange_commitment
         pending_transfer = _holder.pending_transfer
 
     # Get personal information
@@ -722,6 +731,8 @@ def retrieve_holder(
         "account_address": account_address,
         "personal_information": _personal_info,
         "balance": balance,
+        "exchange_balance": exchange_balance,
+        "exchange_commitment": exchange_commitment,
         "pending_transfer": pending_transfer
     }
 
