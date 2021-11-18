@@ -228,8 +228,6 @@ class Processor:
             # Sink
             event_triggered = False
             for event in events:
-                event_triggered = True
-
                 args = event["args"]
                 from_account = args.get("from", ZERO_ADDRESS)
                 to_account = args.get("to", ZERO_ADDRESS)
@@ -244,6 +242,8 @@ class Processor:
                 block_timestamp = datetime.utcfromtimestamp(web3.eth.get_block(block_number)["timestamp"])  # UTC
 
                 if amount is not None and amount <= sys.maxsize:
+                    event_triggered = True
+
                     # Update UTXO（from account）
                     self.sink.on_utxo(
                         spent=True,
