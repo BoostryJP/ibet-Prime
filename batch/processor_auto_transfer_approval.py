@@ -41,11 +41,11 @@ from app.model.db import (
     TransferApprovalHistory
 )
 from app.model.blockchain import (
-    IbetShareContract
+    IbetSecurityTokenInterface
 )
 from app.model.schema import (
-    IbetShareApproveTransfer,
-    IbetShareCancelTransfer
+    IbetSecurityTokenApproveTransfer,
+    IbetSecurityTokenCancelTransfer
 )
 from app.utils.web3_utils import Web3Wrapper
 from app.exceptions import SendTransactionError
@@ -157,18 +157,18 @@ class Processor:
                     "application_id": application.application_id,
                     "data": now
                 }
-                tx_hash, tx_receipt = IbetShareContract.approve_transfer(
+                tx_hash, tx_receipt = IbetSecurityTokenInterface.approve_transfer(
                     contract_address=application.token_address,
-                    data=IbetShareApproveTransfer(**_data),
+                    data=IbetSecurityTokenApproveTransfer(**_data),
                     tx_from=token.issuer_address,
                     private_key=private_key
                 )
                 if tx_receipt["status"] == 1:  # Success
                     result = 1
                 else:
-                    IbetShareContract.cancel_transfer(
+                    IbetSecurityTokenInterface.cancel_transfer(
                         contract_address=application.token_address,
-                        data=IbetShareCancelTransfer(**_data),
+                        data=IbetSecurityTokenCancelTransfer(**_data),
                         tx_from=token.issuer_address,
                         private_key=private_key
                     )

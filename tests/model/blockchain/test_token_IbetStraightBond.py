@@ -38,11 +38,17 @@ from app.utils.contract_utils import ContractUtils
 from app.model.schema import (
     IbetStraightBondUpdate,
     IbetStraightBondAdd,
-    IbetStraightBondTransfer
+    IbetStraightBondTransfer,
+    IbetSecurityTokenApproveTransfer,
+    IbetSecurityTokenCancelTransfer
 )
 from app.exceptions import SendTransactionError
 
 from tests.account_config import config_eth_account
+from tests.utils.contract_utils import (
+    PersonalInfoContractTestUtils,
+    IbetSecurityTokenContractTestUtils
+)
 
 
 class TestCreate:
@@ -257,23 +263,24 @@ class TestGet:
         assert bond_contract.name == arguments[0]
         assert bond_contract.symbol == arguments[1]
         assert bond_contract.total_supply == arguments[2]
-        assert bond_contract.image_url == ["", "", ""]
         assert bond_contract.contact_information == ""
         assert bond_contract.privacy_policy == ""
         assert bond_contract.tradable_exchange_contract_address == ZERO_ADDRESS
         assert bond_contract.status is True
+        assert bond_contract.personal_info_contract_address == ZERO_ADDRESS
+        assert bond_contract.transferable is False
+        assert bond_contract.is_offering is False
+        assert bond_contract.transfer_approval_required is False
         assert bond_contract.face_value == arguments[3]
+        assert bond_contract.interest_rate == 0
+        assert bond_contract.interest_payment_date == ["", "", "", "", "", "", "", "", "", "", "", ""]
         assert bond_contract.redemption_date == arguments[4]
         assert bond_contract.redemption_value == arguments[5]
         assert bond_contract.return_date == arguments[6]
         assert bond_contract.return_amount == arguments[7]
         assert bond_contract.purpose == arguments[8]
-        assert bond_contract.interest_rate == 0
-        assert bond_contract.interest_payment_date == ["", "", "", "", "", "", "", "", "", "", "", ""]
-        assert bond_contract.transferable is True
-        assert bond_contract.initial_offering_status is False
+        assert bond_contract.memo == ""
         assert bond_contract.is_redeemed is False
-        assert bond_contract.personal_info_contract_address == ZERO_ADDRESS
 
     # <Normal_2>
     # TOKEN_CACHE is True
@@ -308,25 +315,26 @@ class TestGet:
         token_cache["name"] = "テスト債券-test"
         token_cache["symbol"] = "TEST-test"
         token_cache["total_supply"] = 9999999
-        token_cache["image_url"] = ["http://test1", "http://test2", "http://test3"]
         token_cache["contact_information"] = "test1"
         token_cache["privacy_policy"] = "test2"
         token_cache["tradable_exchange_contract_address"] = "0x1234567890123456789012345678901234567890"
         token_cache["status"] = False
+        token_cache["personal_info_contract_address"] = "0x1234567890123456789012345678901234567891"
+        token_cache["transferable"] = True
+        token_cache["is_offering"] = True
+        token_cache["transfer_approval_required"] = True
         token_cache["face_value"] = 9999998
+        token_cache["interest_rate"] = 99.999
+        token_cache["interest_payment_date"] = ["99991231", "99991231", "99991231", "99991231", "99991231",
+                                                "99991231", "99991231", "99991231", "99991231", "99991231",
+                                                "99991231", "99991231"]
         token_cache["redemption_date"] = "99991231"
         token_cache["redemption_value"] = 9999997
         token_cache["return_date"] = "99991230"
         token_cache["return_amount"] = "return_amount-test"
         token_cache["purpose"] = "purpose-test"
-        token_cache["interest_rate"] = 99.999
-        token_cache["interest_payment_date"] = ["99991231", "99991231", "99991231", "99991231", "99991231",
-                                                "99991231", "99991231", "99991231", "99991231", "99991231",
-                                                "99991231", "99991231"]
-        token_cache["transferable"] = False
-        token_cache["initial_offering_status"] = True
+        token_cache["memo"] = "memo-test"
         token_cache["is_redeemed"] = True
-        token_cache["personal_info_contract_address"] = "0x1234567890123456789012345678901234567891"
 
         # get token data
         bond_contract = IbetStraightBondContract.get(contract_address=contract_address)
@@ -337,25 +345,26 @@ class TestGet:
         assert bond_contract.name == "テスト債券-test"
         assert bond_contract.symbol == "TEST-test"
         assert bond_contract.total_supply == 9999999
-        assert bond_contract.image_url == ["http://test1", "http://test2", "http://test3"]
         assert bond_contract.contact_information == "test1"
         assert bond_contract.privacy_policy == "test2"
         assert bond_contract.tradable_exchange_contract_address == "0x1234567890123456789012345678901234567890"
         assert bond_contract.status is False
+        assert bond_contract.personal_info_contract_address == "0x1234567890123456789012345678901234567891"
+        assert bond_contract.transferable is True
+        assert bond_contract.is_offering is True
+        assert bond_contract.transfer_approval_required is True
         assert bond_contract.face_value == 9999998
+        assert bond_contract.interest_rate == 99.999
+        assert bond_contract.interest_payment_date == ["99991231", "99991231", "99991231", "99991231", "99991231",
+                                                       "99991231", "99991231", "99991231", "99991231", "99991231",
+                                                       "99991231", "99991231"]
         assert bond_contract.redemption_date == "99991231"
         assert bond_contract.redemption_value == 9999997
         assert bond_contract.return_date == "99991230"
         assert bond_contract.return_amount == "return_amount-test"
         assert bond_contract.purpose == "purpose-test"
-        assert bond_contract.interest_rate == 99.999
-        assert bond_contract.interest_payment_date == ["99991231", "99991231", "99991231", "99991231", "99991231",
-                                                       "99991231", "99991231", "99991231", "99991231", "99991231",
-                                                       "99991231", "99991231"]
-        assert bond_contract.transferable is False
-        assert bond_contract.initial_offering_status is True
+        assert bond_contract.memo == "memo-test"
         assert bond_contract.is_redeemed is True
-        assert bond_contract.personal_info_contract_address == "0x1234567890123456789012345678901234567891"
 
     # <Normal_3>
     # TOKEN_CACHE is True, updated token attribute
@@ -390,25 +399,26 @@ class TestGet:
         token_cache["name"] = "テスト債券-test"
         token_cache["symbol"] = "TEST-test"
         token_cache["total_supply"] = 9999999
-        token_cache["image_url"] = ["http://test1", "http://test2", "http://test3"]
         token_cache["contact_information"] = "test1"
         token_cache["privacy_policy"] = "test2"
         token_cache["tradable_exchange_contract_address"] = "0x1234567890123456789012345678901234567890"
         token_cache["status"] = False
+        token_cache["personal_info_contract_address"] = "0x1234567890123456789012345678901234567891"
+        token_cache["transferable"] = True
+        token_cache["is_offering"] = True
+        token_cache["transfer_approval_required"] = True
         token_cache["face_value"] = 9999998
+        token_cache["interest_rate"] = 99.999
+        token_cache["interest_payment_date"] = ["99991231", "99991231", "99991231", "99991231", "99991231",
+                                                "99991231", "99991231", "99991231", "99991231", "99991231",
+                                                "99991231", "99991231"]
         token_cache["redemption_date"] = "99991231"
         token_cache["redemption_value"] = 9999997
         token_cache["return_date"] = "99991230"
         token_cache["return_amount"] = "return_amount-test"
         token_cache["purpose"] = "purpose-test"
-        token_cache["interest_rate"] = 99.999
-        token_cache["interest_payment_date"] = ["99991231", "99991231", "99991231", "99991231", "99991231",
-                                                "99991231", "99991231", "99991231", "99991231", "99991231",
-                                                "99991231", "99991231"]
-        token_cache["transferable"] = False
-        token_cache["initial_offering_status"] = True
+        token_cache["memo"] = "memo-test"
         token_cache["is_redeemed"] = True
-        token_cache["personal_info_contract_address"] = "0x1234567890123456789012345678901234567891"
 
         # updated token attribute
         _token_attr_update = TokenAttrUpdate()
@@ -426,23 +436,24 @@ class TestGet:
         assert bond_contract.name == arguments[0]
         assert bond_contract.symbol == arguments[1]
         assert bond_contract.total_supply == arguments[2]
-        assert bond_contract.image_url == ["", "", ""]
         assert bond_contract.contact_information == ""
         assert bond_contract.privacy_policy == ""
         assert bond_contract.tradable_exchange_contract_address == ZERO_ADDRESS
         assert bond_contract.status is True
+        assert bond_contract.personal_info_contract_address == ZERO_ADDRESS
+        assert bond_contract.transferable is False
+        assert bond_contract.is_offering is False
+        assert bond_contract.transfer_approval_required is False
         assert bond_contract.face_value == arguments[3]
+        assert bond_contract.interest_rate == 0
+        assert bond_contract.interest_payment_date == ["", "", "", "", "", "", "", "", "", "", "", ""]
         assert bond_contract.redemption_date == arguments[4]
         assert bond_contract.redemption_value == arguments[5]
         assert bond_contract.return_date == arguments[6]
         assert bond_contract.return_amount == arguments[7]
         assert bond_contract.purpose == arguments[8]
-        assert bond_contract.interest_rate == 0
-        assert bond_contract.interest_payment_date == ["", "", "", "", "", "", "", "", "", "", "", ""]
-        assert bond_contract.transferable is True
-        assert bond_contract.initial_offering_status is False
+        assert bond_contract.memo == ""
         assert bond_contract.is_redeemed is False
-        assert bond_contract.personal_info_contract_address == ZERO_ADDRESS
 
     ###########################################################################
     # Error Case
@@ -514,15 +525,16 @@ class TestUpdate:
         assert bond_contract.interest_rate == 0
         assert bond_contract.interest_payment_date == ["", "", "", "", "", "", "", "", "", "", "", ""]
         assert bond_contract.redemption_value == 30000
-        assert bond_contract.transferable is True
-        assert bond_contract.image_url == ["", "", ""]
+        assert bond_contract.transferable is False
         assert bond_contract.status is True
-        assert bond_contract.initial_offering_status is False
+        assert bond_contract.is_offering is False
         assert bond_contract.is_redeemed is False
         assert bond_contract.tradable_exchange_contract_address == ZERO_ADDRESS
         assert bond_contract.personal_info_contract_address == ZERO_ADDRESS
         assert bond_contract.contact_information == ""
         assert bond_contract.privacy_policy == ""
+        assert bond_contract.transfer_approval_required is False
+        assert bond_contract.memo == ""
         _token_attr_update = db.query(TokenAttrUpdate).first()
         assert _token_attr_update.id == 1
         assert _token_attr_update.token_address == contract_address
@@ -557,15 +569,16 @@ class TestUpdate:
             "interest_rate": 0.0001,
             "interest_payment_date": ["0331", "0930"],
             "redemption_value": 30001,
-            "transferable": False,
-            "image_url": ["image_1"],
+            "transferable": True,
             "status": False,
-            "initial_offering_status": True,
+            "is_offering": True,
             "is_redeemed": True,
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",
             "contact_information": "contact info test",
-            "privacy_policy": "privacy policy test"
+            "privacy_policy": "privacy policy test",
+            "transfer_approval_required": True,
+            "memo": "memo test",
         }
         _add_data = IbetStraightBondUpdate(**_data)
         pre_datetime = datetime.utcnow()
@@ -582,15 +595,16 @@ class TestUpdate:
         assert bond_contract.interest_rate == 0.0001
         assert bond_contract.interest_payment_date == ["0331", "0930", "", "", "", "", "", "", "", "", "", ""]
         assert bond_contract.redemption_value == 30001
-        assert bond_contract.transferable is False
-        assert bond_contract.image_url == ["image_1", "", ""]
+        assert bond_contract.transferable is True
         assert bond_contract.status is False
-        assert bond_contract.initial_offering_status is True
+        assert bond_contract.is_offering is True
         assert bond_contract.is_redeemed is True
         assert bond_contract.tradable_exchange_contract_address == "0x0000000000000000000000000000000000000001"
         assert bond_contract.personal_info_contract_address == "0x0000000000000000000000000000000000000002"
         assert bond_contract.contact_information == "contact info test"
         assert bond_contract.privacy_policy == "privacy policy test"
+        assert bond_contract.transfer_approval_required is True
+        assert bond_contract.memo == "memo test"
         _token_attr_update = db.query(TokenAttrUpdate).first()
         assert _token_attr_update.id == 1
         assert _token_attr_update.token_address == contract_address
@@ -1777,3 +1791,511 @@ class TestGetAccountBalance:
                 contract_address,
                 issuer_address[:-1]  # short
             )
+
+
+class TestApproveTransfer:
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    def test_normal_1(self, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8")
+        )
+
+        to_account = config_eth_account("user2")
+        to_address = to_account.get("address")
+        to_pk = decode_keyfile_json(
+            raw_keyfile_json=to_account.get("keyfile_json"),
+            password=to_account.get("password").encode("utf-8")
+        )
+
+        deployer = config_eth_account("user3")
+        deployer_address = deployer.get("address")
+        deployer_pk = decode_keyfile_json(
+            raw_keyfile_json=deployer.get("keyfile_json"),
+            password=deployer.get("password").encode("utf-8")
+        )
+
+        # deploy new personal info contract (from deployer)
+        personal_info_contract_address, _, _ = ContractUtils.deploy_contract(
+            contract_name="PersonalInfo",
+            args=[],
+            deployer=deployer_address,
+            private_key=deployer_pk
+        )
+
+        # deploy ibet bond token (from issuer)
+        arguments = [
+            "テスト債券",
+            "TEST",
+            10000,
+            20000,
+            "20211231",
+            30000,
+            "20211231",
+            "リターン内容",
+            "発行目的"
+        ]
+        token_address, _, _ = IbetStraightBondContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # update token (from issuer)
+        update_data = {
+            "personal_info_contract_address": personal_info_contract_address,
+            "transfer_approval_required": True,
+            "transferable": True
+        }
+        IbetStraightBondContract.update(
+            contract_address=token_address,
+            data=IbetStraightBondUpdate(**update_data),
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # register personal info (to_account)
+        PersonalInfoContractTestUtils.register(
+            contract_address=personal_info_contract_address,
+            tx_from=to_address,
+            private_key=to_pk,
+            args=[issuer_address, "test_personal_info"]
+        )
+
+        # apply transfer (from issuer)
+        IbetSecurityTokenContractTestUtils.apply_for_transfer(
+            contract_address=token_address,
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+            args=[to_address, 10, "test_data"]
+        )
+
+        # approve transfer (from issuer)
+        approve_data = {
+            "application_id": 0,
+            "data": "approve transfer test"
+        }
+        IbetStraightBondContract.approve_transfer(
+            contract_address=token_address,
+            data=IbetSecurityTokenApproveTransfer(**approve_data),
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # assertion
+        bond_token = ContractUtils.get_contract(
+            contract_name="IbetShare",
+            contract_address=token_address
+        )
+        applications = bond_token.functions.applicationsForTransfer(0).call()
+        assert applications[0] == issuer_address
+        assert applications[1] == to_address
+        assert applications[2] == 10
+        assert applications[3] is False
+        pendingTransfer = bond_token.functions.pendingTransfer(issuer_address).call()
+        issuer_value = bond_token.functions.balanceOf(issuer_address).call()
+        to_value = bond_token.functions.balanceOf(to_address).call()
+        assert pendingTransfer == 0
+        assert issuer_value == (10000 - 10)
+        assert to_value == 10
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
+    # invalid application index : not integer, data : missing
+    def test_error_1(self, db):
+        # Transfer approve
+        approve_data = {
+            "application_id": "not-integer",
+        }
+        with pytest.raises(ValidationError) as ex_info:
+            _approve_transfer_data = IbetSecurityTokenApproveTransfer(**approve_data)
+
+        assert ex_info.value.errors() == [
+            {
+                'loc': ('application_id',),
+                'msg': 'value is not a valid integer',
+                'type': 'type_error.integer'
+            }, {
+                'loc': ('data',),
+                'msg': 'field required',
+                'type': 'value_error.missing'
+            }
+        ]
+
+    # <Error_2>
+    # invalid contract_address : does not exists
+    def test_error_2(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # Transfer approve
+        approve_data = {
+            "application_id": 0,
+            "data": "test_data"
+        }
+        _approve_transfer_data = IbetSecurityTokenApproveTransfer(**approve_data)
+        with pytest.raises(SendTransactionError) as ex_info:
+            IbetStraightBondContract.approve_transfer(
+                contract_address="not address",
+                data=_approve_transfer_data,
+                tx_from=issuer_address,
+                private_key=private_key
+            )
+        assert ex_info.match("when sending a str, it must be a hex string. Got: 'not address'")
+
+    # <Error_3>
+    # invalid issuer_address : does not exists
+    def test_error_3(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト債券",
+            "TEST",
+            10000,
+            20000,
+            "20211231",
+            30000,
+            "20211231",
+            "リターン内容",
+            "発行目的"
+        ]
+
+        contract_address, abi, tx_hash = IbetStraightBondContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # Transfer approve
+        approve_data = {
+            "application_id": 0,
+            "data": "test_data"
+        }
+        _approve_transfer_data = IbetSecurityTokenApproveTransfer(**approve_data)
+        with pytest.raises(SendTransactionError) as ex_info:
+            IbetStraightBondContract.approve_transfer(
+                contract_address=contract_address,
+                data=_approve_transfer_data,
+                tx_from=issuer_address[:-1],
+                private_key=private_key
+            )
+        assert ex_info.match(f"ENS name: '{issuer_address[:-1]}' is invalid.")
+
+    # <Error_4>
+    # invalid private_key : not properly
+    def test_error_4(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト債券",
+            "TEST",
+            10000,
+            20000,
+            "20211231",
+            30000,
+            "20211231",
+            "リターン内容",
+            "発行目的"
+        ]
+
+        contract_address, abi, tx_hash = IbetStraightBondContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # Transfer approve
+        approve_data = {
+            "application_id": 0,
+            "data": "test_data"
+        }
+        _approve_transfer_data = IbetSecurityTokenApproveTransfer(**approve_data)
+        with pytest.raises(SendTransactionError) as ex_info:
+            IbetStraightBondContract.approve_transfer(
+                contract_address=contract_address,
+                data=_approve_transfer_data,
+                tx_from=issuer_address,
+                private_key="dummy-private"
+            )
+        assert ex_info.match("Non-hexadecimal digit found")
+
+
+class TestCancelTransfer:
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    def test_normal_1(self, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8")
+        )
+
+        to_account = config_eth_account("user2")
+        to_address = to_account.get("address")
+        to_pk = decode_keyfile_json(
+            raw_keyfile_json=to_account.get("keyfile_json"),
+            password=to_account.get("password").encode("utf-8")
+        )
+
+        deployer = config_eth_account("user3")
+        deployer_address = deployer.get("address")
+        deployer_pk = decode_keyfile_json(
+            raw_keyfile_json=deployer.get("keyfile_json"),
+            password=deployer.get("password").encode("utf-8")
+        )
+
+        # deploy new personal info contract (from deployer)
+        personal_info_contract_address, _, _ = ContractUtils.deploy_contract(
+            contract_name="PersonalInfo",
+            args=[],
+            deployer=deployer_address,
+            private_key=deployer_pk
+        )
+
+        # deploy ibet bond token (from issuer)
+        arguments = [
+            "テスト債券",
+            "TEST",
+            10000,
+            20000,
+            "20211231",
+            30000,
+            "20211231",
+            "リターン内容",
+            "発行目的"
+        ]
+        token_address, _, _ = IbetStraightBondContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # update token (from issuer)
+        update_data = {
+            "personal_info_contract_address": personal_info_contract_address,
+            "transfer_approval_required": True,
+            "transferable": True
+        }
+        IbetStraightBondContract.update(
+            contract_address=token_address,
+            data=IbetStraightBondUpdate(**update_data),
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # register personal info (to_account)
+        PersonalInfoContractTestUtils.register(
+            contract_address=personal_info_contract_address,
+            tx_from=to_address,
+            private_key=to_pk,
+            args=[issuer_address, "test_personal_info"]
+        )
+
+        # apply transfer (from issuer)
+        IbetSecurityTokenContractTestUtils.apply_for_transfer(
+            contract_address=token_address,
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+            args=[to_address, 10, "test_data"]
+        )
+
+        # cancel transfer (from issuer)
+        cancel_data = {
+            "application_id": 0,
+            "data": "approve transfer test"
+        }
+        _approve_transfer_data = IbetSecurityTokenCancelTransfer(**cancel_data)
+
+        IbetStraightBondContract.cancel_transfer(
+            contract_address=token_address,
+            data=_approve_transfer_data,
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # assertion
+        bond_token = ContractUtils.get_contract(
+            contract_name="IbetShare",
+            contract_address=token_address
+        )
+        applications = bond_token.functions.applicationsForTransfer(0).call()
+        assert applications[0] == issuer_address
+        assert applications[1] == to_address
+        assert applications[2] == 10
+        assert applications[3] is False
+        pendingTransfer = bond_token.functions.pendingTransfer(issuer_address).call()
+        issuer_value = bond_token.functions.balanceOf(issuer_address).call()
+        to_value = bond_token.functions.balanceOf(to_address).call()
+        assert pendingTransfer == 0
+        assert issuer_value == 10000
+        assert to_value == 0
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
+    # invalid application index : not integer, data : missing
+    def test_error_1(self, db):
+        # Transfer approve
+        cancel_data = {
+            "application_id": "not-integer",
+        }
+        with pytest.raises(ValidationError) as ex_info:
+            _approve_transfer_data = IbetSecurityTokenCancelTransfer(**cancel_data)
+
+        assert ex_info.value.errors() == [
+            {
+                'loc': ('application_id',),
+                'msg': 'value is not a valid integer',
+                'type': 'type_error.integer'
+            }, {
+                'loc': ('data',),
+                'msg': 'field required',
+                'type': 'value_error.missing'
+            }
+        ]
+
+    # <Error_2>
+    # invalid contract_address : does not exists
+    def test_error_2(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # Transfer cancel
+        cancel_data = {
+            "application_id": 0,
+            "data": "test_data"
+        }
+        _cancel_transfer_data = IbetSecurityTokenCancelTransfer(**cancel_data)
+        with pytest.raises(SendTransactionError) as ex_info:
+            IbetStraightBondContract.cancel_transfer(
+                contract_address="not address",
+                data=_cancel_transfer_data,
+                tx_from=issuer_address,
+                private_key=private_key
+            )
+        assert ex_info.match("when sending a str, it must be a hex string. Got: 'not address'")
+
+    # <Error_3>
+    # invalid issuer_address : does not exists
+    def test_error_3(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト債券",
+            "TEST",
+            10000,
+            20000,
+            "20211231",
+            30000,
+            "20211231",
+            "リターン内容",
+            "発行目的"
+        ]
+
+        contract_address, abi, tx_hash = IbetStraightBondContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # Transfer cancel
+        cancel_data = {
+            "application_id": 0,
+            "data": "test_data"
+        }
+        _cancel_transfer_data = IbetSecurityTokenCancelTransfer(**cancel_data)
+        with pytest.raises(SendTransactionError) as ex_info:
+            IbetStraightBondContract.cancel_transfer(
+                contract_address=contract_address,
+                data=_cancel_transfer_data,
+                tx_from=issuer_address[:-1],
+                private_key=private_key
+            )
+        assert ex_info.match(f"ENS name: '{issuer_address[:-1]}' is invalid.")
+
+    # <Error_4>
+    # invalid private_key : not properly
+    def test_error_4(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト債券",
+            "TEST",
+            10000,
+            20000,
+            "20211231",
+            30000,
+            "20211231",
+            "リターン内容",
+            "発行目的"
+        ]
+
+        contract_address, abi, tx_hash = IbetStraightBondContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # Transfer cancel
+        cancel_data = {
+            "application_id": 0,
+            "data": "test_data"
+        }
+        _cancel_transfer_data = IbetSecurityTokenCancelTransfer(**cancel_data)
+        with pytest.raises(SendTransactionError) as ex_info:
+            IbetStraightBondContract.cancel_transfer(
+                contract_address=contract_address,
+                data=_cancel_transfer_data,
+                tx_from=issuer_address,
+                private_key="dummy-private"
+            )
+        assert ex_info.match("Non-hexadecimal digit found")

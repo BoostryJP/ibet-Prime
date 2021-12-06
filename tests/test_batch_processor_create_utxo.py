@@ -43,7 +43,8 @@ from app.model.db import (
 from app.model.schema import (
     IbetShareTransfer,
     IbetStraightBondTransfer,
-    IbetStraightBondUpdate
+    IbetStraightBondUpdate,
+    IbetShareUpdate
 )
 from app.utils.contract_utils import ContractUtils
 from batch.processor_create_utxo import (
@@ -78,6 +79,12 @@ def deploy_bond_token_contract(address, private_key):
     ]
 
     contract_address, _, _ = IbetStraightBondContract.create(arguments, address, private_key)
+    IbetStraightBondContract.update(
+        contract_address,
+        IbetStraightBondUpdate(transferable=True),
+        address,
+        private_key
+    )
 
     return contract_address
 
@@ -86,15 +93,22 @@ def deploy_share_token_contract(address, private_key):
     arguments = [
         "token.name",
         "token.symbol",
-        100,
         20,
+        100,
         int(0.03 * 100),
         "token.dividend_record_date",
         "token.dividend_payment_date",
-        "token.cancellation_date"
+        "token.cancellation_date",
+        30
     ]
 
     contract_address, _, _ = IbetShareContract.create(arguments, address, private_key)
+    IbetShareContract.update(
+        contract_address,
+        IbetShareUpdate(transferable=True),
+        address,
+        private_key
+    )
 
     return contract_address
 
@@ -132,7 +146,7 @@ class TestProcessor:
         _token_1.abi = {}
         db.add(_token_1)
 
-        token_address_2 = deploy_bond_token_contract(issuer_address, issuer_private_key)
+        token_address_2 = deploy_share_token_contract(issuer_address, issuer_private_key)
         _token_2 = Token()
         _token_2.type = TokenType.IBET_SHARE
         _token_2.tx_hash = ""

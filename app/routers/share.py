@@ -149,8 +149,8 @@ def issue_token(
         raise SendTransactionError("failed to send transaction")
 
     # Check need update
-    update_items = ["tradable_exchange_contract_address", "personal_info_contract_address", "image_url", "transferable",
-                    "status", "offering_status", "contact_information", "privacy_policy", "transfer_approval_required",
+    update_items = ["tradable_exchange_contract_address", "personal_info_contract_address", "transferable",
+                    "status", "is_offering", "contact_information", "privacy_policy", "transfer_approval_required",
                     "is_canceled"]
     token_dict = token.__dict__
     is_update = False

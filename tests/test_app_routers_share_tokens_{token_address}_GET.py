@@ -54,11 +54,6 @@ class TestAppRoutersShareTokensTokenAddressGET:
         mock_token.name = "testtoken1"
         mock_token.symbol = "test1"
         mock_token.total_supply = 10000
-        mock_token.image_url = [
-            "http://hoge1.test/test1.png",
-            "http://hoge2.test/test1.png",
-            "http://hoge3.test/test1.png",
-        ]
         mock_token.contact_information = "contactInformation_test1"
         mock_token.privacy_policy = "privacyPolicy_test1"
         mock_token.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
@@ -69,11 +64,12 @@ class TestAppRoutersShareTokensTokenAddressGET:
         mock_token.dividend_payment_date = "20211231"
         mock_token.cancellation_date = "20221231"
         mock_token.transferable = True
-        mock_token.offering_status = True
+        mock_token.is_offering = True
         mock_token.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
         mock_token.principal_value = 1000
         mock_token.transfer_approval_required = False
         mock_token.is_canceled = False
+        mock_token.memo = "memo_test1"
         mock_get.side_effect = [mock_token]
 
         resp = client.get(self.base_apiurl + "token_address_test1")
@@ -87,11 +83,6 @@ class TestAppRoutersShareTokensTokenAddressGET:
             "name": "testtoken1",
             "symbol": "test1",
             "total_supply": 10000,
-            "image_url": [
-                "http://hoge1.test/test1.png",
-                "http://hoge2.test/test1.png",
-                "http://hoge3.test/test1.png",
-            ],
             "contact_information": "contactInformation_test1",
             "privacy_policy": "privacyPolicy_test1",
             "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
@@ -104,11 +95,12 @@ class TestAppRoutersShareTokensTokenAddressGET:
             "cancellation_date": "20221231",
             "transferable": True,
             "transfer_approval_required": False,
-            "offering_status": True,
+            "is_offering": True,
             "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
             "is_canceled": False,
             "issue_datetime": _issue_time,
             "token_status": 1,
+            "memo": "memo_test1",
         }
 
         assert resp.status_code == 200

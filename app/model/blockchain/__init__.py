@@ -18,6 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 from .exchange import IbetExchangeInterface
 from .token import (
+    IbetStandardTokenInterface,
+    IbetSecurityTokenInterface,
     IbetStraightBondContract,
     IbetShareContract
 )

@@ -73,18 +73,15 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "interest_payment_date": ["0101", "0701"],
             "redemption_value": 11000,
             "transferable": False,
-            "image_url": [
-                "http://sampleurl.com/some_image1.png",
-                "http://sampleurl.com/some_image2.png",
-                "http://sampleurl.com/some_image3.png"
-            ],
             "status": False,
-            "initial_offering_status": False,
+            "is_offering": False,
             "is_redeemed": True,
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
             "contact_information": "問い合わせ先test",
-            "privacy_policy": "プライバシーポリシーtest"
+            "privacy_policy": "プライバシーポリシーtest",
+            "transfer_approval_required": True,
+            "memo": "memo_test1"
         }
         resp = client.post(
             self.base_url.format(_token_address),
@@ -259,46 +256,6 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             ]
         }
 
-    # <Error_3>
-    # RequestValidationError: image_url
-    def test_error_3(self, client, db):
-        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
-
-        # request target API
-        req_param = {
-            "image_url": [
-                "http://sampleurl.com/some_image1.png",
-                "http://sampleurl.com/some_image2.png",
-                "http://sampleurl.com/some_image3.png",
-                "http://sampleurl.com/some_image4.png",
-            ],
-        }
-        resp = client.post(
-            self.base_url.format(_token_address),
-            json=req_param,
-            headers={
-                "issuer-address": ""
-            }
-        )
-
-        assert resp.status_code == 422
-        assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
-            "detail": [
-                {
-                    "loc": [
-                        "body",
-                        "image_url"
-                    ],
-                    "msg": "The length of the list must be less than or equal to 3",
-                    "type": "value_error"
-                }
-            ]
-        }
-
     # <Error_4>
     # RequestValidationError: tradable_exchange_contract_address
     def test_error_4(self, client, db):
@@ -450,18 +407,15 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "interest_payment_date": ["0101", "0701"],
             "redemption_value": 11000,
             "transferable": False,
-            "image_url": [
-                "http://sampleurl.com/some_image1.png",
-                "http://sampleurl.com/some_image2.png",
-                "http://sampleurl.com/some_image3.png"
-            ],
             "status": False,
-            "initial_offering_status": False,
+            "is_offering": False,
             "is_redeemed": True,
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
             "contact_information": "問い合わせ先test",
-            "privacy_policy": "プライバシーポリシーtest"
+            "privacy_policy": "プライバシーポリシーtest",
+            "transfer_approval_required": True,
+            "memo": "memo_test1"
         }
         resp = client.post(
             self.base_url.format(_token_address),
@@ -501,18 +455,15 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "interest_payment_date": ["0101", "0701"],
             "redemption_value": -1,
             "transferable": False,
-            "image_url": [
-                "http://sampleurl.com/some_image1.png",
-                "http://sampleurl.com/some_image2.png",
-                "http://sampleurl.com/some_image3.png"
-            ],
             "status": False,
-            "initial_offering_status": False,
+            "is_offering": False,
             "is_redeemed": True,
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
             "contact_information": "問い合わせ先test",
-            "privacy_policy": "プライバシーポリシーtest"
+            "privacy_policy": "プライバシーポリシーtest",
+            "transfer_approval_required": True,
+            "memo": "memo_test1",
         }
         resp = client.post(
             self.base_url.format(_token_address),
@@ -582,18 +533,15 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "interest_payment_date": ["0101", "0701"],
             "redemption_value": 5_000_000_001,
             "transferable": False,
-            "image_url": [
-                "http://sampleurl.com/some_image1.png",
-                "http://sampleurl.com/some_image2.png",
-                "http://sampleurl.com/some_image3.png"
-            ],
             "status": False,
-            "initial_offering_status": False,
+            "is_offering": False,
             "is_redeemed": True,
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
             "contact_information": "問い合わせ先test",
-            "privacy_policy": "プライバシーポリシーtest"
+            "privacy_policy": "プライバシーポリシーtest",
+            "transfer_approval_required": True,
+            "memo": "memo_test1",
         }
         resp = client.post(
             self.base_url.format(_token_address),

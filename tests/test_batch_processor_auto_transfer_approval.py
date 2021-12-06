@@ -33,8 +33,8 @@ from app.model.db import (
 )
 from app.utils.e2ee_utils import E2EEUtils
 from app.model.schema.token import (
-    IbetShareApproveTransfer,
-    IbetShareCancelTransfer
+    IbetSecurityTokenApproveTransfer,
+    IbetSecurityTokenCancelTransfer
 )
 from app.exceptions import SendTransactionError
 from batch.processor_auto_transfer_approval import (
@@ -126,12 +126,12 @@ class TestProcessor:
         db.commit()
 
         # mock
-        IbetStraightBondContract_approve_transfer = patch(
-            target="app.model.blockchain.token.IbetShareContract.approve_transfer",
+        IbetSecurityTokenContract_approve_transfer = patch(
+            target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
             return_value=("test_tx_hash", {"status": 1})
         )
 
-        with IbetStraightBondContract_approve_transfer as mock_transfer:
+        with IbetSecurityTokenContract_approve_transfer as mock_transfer:
             # Execute batch
             processor.process()
 
@@ -177,7 +177,7 @@ class TestProcessor:
 
         mock_transfer.assert_called_once_with(
             contract_address="token_address",
-            data=IbetShareApproveTransfer(**_expected),
+            data=IbetSecurityTokenApproveTransfer(**_expected),
             tx_from=_account,
             private_key=ANY
         )
@@ -221,17 +221,17 @@ class TestProcessor:
         db.commit()
 
         # mock
-        IbetStraightBondContract_approve_transfer = patch(
-            target="app.model.blockchain.token.IbetShareContract.approve_transfer",
+        IbetSecurityTokenContract_approve_transfer = patch(
+            target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
             return_value=("test_tx_hash", {"status": 0})
         )
 
-        IbetStraightBondContract_cancel_transfer = patch(
-            target="app.model.blockchain.token.IbetShareContract.cancel_transfer",
+        IbetSecurityTokenContract_cancel_transfer = patch(
+            target="app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
         )
 
-        with IbetStraightBondContract_approve_transfer as mock_transfer:
-            with IbetStraightBondContract_cancel_transfer as mock_cancel:
+        with IbetSecurityTokenContract_approve_transfer as mock_transfer:
+            with IbetSecurityTokenContract_cancel_transfer as mock_cancel:
                 # Execute batch
                 processor.process()
 
@@ -256,13 +256,13 @@ class TestProcessor:
 
         mock_transfer.assert_called_once_with(
             contract_address="token_address",
-            data=IbetShareApproveTransfer(**_expected),
+            data=IbetSecurityTokenApproveTransfer(**_expected),
             tx_from=_account,
             private_key=ANY
         )
         mock_cancel.assert_called_once_with(
             contract_address="token_address",
-            data=IbetShareCancelTransfer(**_expected),
+            data=IbetSecurityTokenCancelTransfer(**_expected),
             tx_from=_account,
             private_key=ANY
         )
@@ -316,8 +316,8 @@ class TestProcessor:
         db.add(idx_transfer_approval)
 
         # mock
-        IbetStraightBondContract_approve_transfer = patch(
-            target="app.model.blockchain.token.IbetShareContract.approve_transfer",
+        IbetSecurityTokenContract_approve_transfer = patch(
+            target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
         )
         E2EEUtils_decrypt = patch(
             target="app.utils.e2ee_utils.E2EEUtils.decrypt",
@@ -325,7 +325,7 @@ class TestProcessor:
         )
 
         with E2EEUtils_decrypt as mock_decrypt:
-            with IbetStraightBondContract_approve_transfer as mock_transfer:
+            with IbetSecurityTokenContract_approve_transfer as mock_transfer:
                 # Execute batch
                 processor.process()
 
@@ -370,12 +370,12 @@ class TestProcessor:
         db.commit()
 
         # mock
-        IbetStraightBondContract_approve_transfer = patch(
-            target="app.model.blockchain.token.IbetShareContract.approve_transfer",
+        IbetSecurityTokenContract_approve_transfer = patch(
+            target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
             side_effect=SendTransactionError()
         )
 
-        with IbetStraightBondContract_approve_transfer as mock_transfer:
+        with IbetSecurityTokenContract_approve_transfer as mock_transfer:
             # Execute batch
             processor.process()
 
@@ -387,7 +387,7 @@ class TestProcessor:
 
         mock_transfer.assert_called_once_with(
             contract_address="token_address",
-            data=IbetShareApproveTransfer(**_expected),
+            data=IbetSecurityTokenApproveTransfer(**_expected),
             tx_from=_account,
             private_key=ANY
         )
