@@ -743,7 +743,7 @@ def retrieve_holder(
 @router.post(
     "/tokens/{token_address}/holders/{account_address}/personal_info",
     response_model=None,
-    responses=get_routers_responses(422, 401, InvalidParameterError, SendTransactionError)
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
 )
 def modify_holder_personal_info(
         request: Request,
@@ -772,7 +772,7 @@ def modify_holder_personal_info(
         filter(Token.token_status != 2). \
         first()
     if _token is None:
-        raise InvalidParameterError("token not found")
+        raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
         raise InvalidParameterError("wait for a while as the token is being processed")
 
