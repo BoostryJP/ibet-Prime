@@ -451,7 +451,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressPersonalInfoPOST:
         }
 
     # <Error_8>
-    # InvalidParameterError
+    # HTTPException 404
     # token not found
     def test_error_8(self, client, db):
         _issuer_account = config_eth_account("user1")
@@ -489,11 +489,11 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressPersonalInfoPOST:
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 404
         assert resp.json() == {
             "meta": {
                 "code": 1,
-                "title": "InvalidParameterError"
+                "title": "NotFound"
             },
             "detail": "token not found"
         }
