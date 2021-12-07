@@ -152,14 +152,14 @@ def issue_token(
         "interest_rate",
         "interest_payment_date",
         "transferable",
-        "image_url",
         "status",
-        "initial_offering_status",
+        "is_offering",
         "is_redeemed",
         "tradable_exchange_contract_address",
         "personal_info_contract_address",
         "contact_information",
-        "privacy_policy"
+        "privacy_policy",
+        "transfer_approval_required"
     ]
     token_dict = token.__dict__
     is_update = False

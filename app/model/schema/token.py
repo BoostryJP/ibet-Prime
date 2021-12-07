@@ -55,12 +55,13 @@ class IbetStraightBondCreate(BaseModel):
     transferable: Optional[bool]
     is_redeemed: Optional[bool]
     status: Optional[bool]
-    initial_offering_status: Optional[bool]
+    is_offering: Optional[bool]
     tradable_exchange_contract_address: Optional[str]
     personal_info_contract_address: Optional[str]
     image_url: Optional[List[str]]
     contact_information: Optional[str] = Field(max_length=2000)
     privacy_policy: Optional[str] = Field(max_length=5000)
+    transfer_approval_required: Optional[bool]
 
     @validator("interest_rate")
     def interest_rate_4_decimal_places(cls, v):
@@ -89,12 +90,6 @@ class IbetStraightBondCreate(BaseModel):
             raise ValueError("personal_info_contract_address is not a valid address")
         return v
 
-    @validator("image_url")
-    def image_list_length_is_less_than_3(cls, v):
-        if v is not None and len(v) >= 4:
-            raise ValueError("The length of the list must be less than or equal to 3")
-        return v
-
 
 class IbetStraightBondUpdate(BaseModel):
     """ibet Straight Bond schema (Update)"""
@@ -103,14 +98,15 @@ class IbetStraightBondUpdate(BaseModel):
     interest_payment_date: Optional[List[MMDD_constr]]
     redemption_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
     transferable: Optional[bool]
-    image_url: Optional[List[str]]
     status: Optional[bool]
-    initial_offering_status: Optional[bool]
+    is_offering: Optional[bool]
     is_redeemed: Optional[bool]
     tradable_exchange_contract_address: Optional[str]
     personal_info_contract_address: Optional[str]
     contact_information: Optional[str] = Field(max_length=2000)
     privacy_policy: Optional[str] = Field(max_length=5000)
+    transfer_approval_required: Optional[bool]
+    memo: Optional[str] = Field(max_length=2000)
 
     @validator("interest_rate")
     def interest_rate_4_decimal_places(cls, v):
@@ -125,12 +121,6 @@ class IbetStraightBondUpdate(BaseModel):
     def interest_payment_date_list_length_less_than_13(cls, v):
         if v is not None and len(v) >= 13:
             raise ValueError("list length of interest_payment_date must be less than 13")
-        return v
-
-    @validator("image_url")
-    def image_list_length_is_less_than_3(cls, v):
-        if v is not None and len(v) >= 4:
-            raise ValueError("The length of the list must be less than or equal to 3")
         return v
 
     @validator("tradable_exchange_contract_address")
@@ -195,10 +185,9 @@ class IbetShareCreate(BaseModel):
     dividend_record_date: Optional[YYYYMMDD_constr]
     dividend_payment_date: Optional[YYYYMMDD_constr]
     cancellation_date: Optional[YYYYMMDD_constr]
-    image_url: Optional[List[str]]
     transferable: Optional[bool]
     status: Optional[bool]
-    offering_status: Optional[bool]
+    is_offering: Optional[bool]
     tradable_exchange_contract_address: Optional[str]
     personal_info_contract_address: Optional[str]
     contact_information: Optional[str] = Field(max_length=2000)
@@ -227,12 +216,6 @@ class IbetShareCreate(BaseModel):
             raise ValueError("personal_info_contract_address is not a valid address")
         return v
 
-    @validator("image_url")
-    def image_list_length_is_less_than_3(cls, v):
-        if v is not None and len(v) >= 4:
-            raise ValueError("The length of the list must be less than or equal to 3")
-        return v
-
 
 class IbetShareUpdate(BaseModel):
     """ibet Share schema (Update)"""
@@ -242,15 +225,15 @@ class IbetShareUpdate(BaseModel):
     dividends: Optional[float] = Field(None, ge=0.00, le=5_000_000_000.00)
     tradable_exchange_contract_address: Optional[str]
     personal_info_contract_address: Optional[str]
-    image_url: Optional[List[str]]
     transferable: Optional[bool]
     status: Optional[bool]
-    offering_status: Optional[bool]
+    is_offering: Optional[bool]
     contact_information: Optional[str] = Field(max_length=2000)
     privacy_policy: Optional[str] = Field(max_length=5000)
     transfer_approval_required: Optional[bool]
     principal_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
     is_canceled: Optional[bool]
+    memo: Optional[str] = Field(max_length=2000)
 
     @validator("dividends")
     def dividends_2_decimal_places(cls, v):
@@ -278,12 +261,6 @@ class IbetShareUpdate(BaseModel):
     def personal_info_contract_address_is_valid_address(cls, v):
         if v is not None and not Web3.isAddress(v):
             raise ValueError("personal_info_contract_address is not a valid address")
-        return v
-
-    @validator("image_url")
-    def image_list_length_is_less_than_3(cls, v):
-        if v is not None and len(v) >= 4:
-            raise ValueError("The length of the list must be less than or equal to 3")
         return v
 
 
@@ -325,14 +302,14 @@ class IbetShareAdd(BaseModel):
         return v
 
 
-class IbetShareApproveTransfer(BaseModel):
-    """ibet Share schema (ApproveTransfer)"""
+class IbetSecurityTokenApproveTransfer(BaseModel):
+    """ibet SecurityToken schema (ApproveTransfer)"""
     application_id: int
     data: str
 
 
-class IbetShareCancelTransfer(BaseModel):
-    """ibet Share schema (CancelTransfer)"""
+class IbetSecurityTokenCancelTransfer(BaseModel):
+    """ibet SecurityToken schema (CancelTransfer)"""
     application_id: int
     data: str
 
@@ -365,14 +342,15 @@ class IbetStraightBondResponse(BaseModel):
     transferable: bool
     is_redeemed: bool
     status: bool
-    initial_offering_status: bool
+    is_offering: bool
     tradable_exchange_contract_address: str
     personal_info_contract_address: str
-    image_url: List[str]
     contact_information: str
     privacy_policy: str
     issue_datetime: str
     token_status: int
+    transfer_approval_required: bool
+    memo: str
 
 
 class IbetShareResponse(BaseModel):
@@ -388,11 +366,10 @@ class IbetShareResponse(BaseModel):
     dividend_record_date: str
     dividend_payment_date: str
     cancellation_date: str
-    image_url: List[str]
     transferable: bool
     transfer_approval_required: bool
     status: bool
-    offering_status: bool
+    is_offering: bool
     tradable_exchange_contract_address: str
     personal_info_contract_address: str
     contact_information: str
@@ -400,3 +377,4 @@ class IbetShareResponse(BaseModel):
     issue_datetime: str
     token_status: int
     is_canceled: bool
+    memo: str

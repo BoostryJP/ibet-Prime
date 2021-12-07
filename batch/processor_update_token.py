@@ -145,10 +145,9 @@ class Processor:
                 update_data = {
                     "tradable_exchange_contract_address": arguments.get("tradable_exchange_contract_address"),
                     "personal_info_contract_address": arguments.get("personal_info_contract_address"),
-                    "image_url": arguments.get("image_url"),
                     "transferable": arguments.get("transferable"),
                     "status": arguments.get("status"),
-                    "offering_status": arguments.get("offering_status"),
+                    "is_offering": arguments.get("is_offering"),
                     "contact_information": arguments.get("contact_information"),
                     "privacy_policy": arguments.get("privacy_policy"),
                     "transfer_approval_required": arguments.get("transfer_approval_required"),
@@ -160,14 +159,14 @@ class Processor:
                     "interest_rate": arguments.get("interest_rate"),
                     "interest_payment_date": arguments.get("interest_payment_date"),
                     "transferable": arguments.get("transferable"),
-                    "image_url": arguments.get("image_url"),
                     "status": arguments.get("status"),
-                    "initial_offering_status": arguments.get("initial_offering_status"),
+                    "is_offering": arguments.get("is_offering"),
                     "is_redeemed": arguments.get("is_redeemed"),
                     "tradable_exchange_contract_address": arguments.get("tradable_exchange_contract_address"),
                     "personal_info_contract_address": arguments.get("personal_info_contract_address"),
                     "contact_information": arguments.get("contact_information"),
-                    "privacy_policy": arguments.get("privacy_policy")
+                    "privacy_policy": arguments.get("privacy_policy"),
+                    "transfer_approval_required": arguments.get("transfer_approval_required"),
                 }
                 return IbetStraightBondUpdate(**update_data)
         return

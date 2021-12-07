@@ -60,17 +60,13 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
             "dividend_payment_date": "20211231",
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
-            "image_url": [
-                "http://sampleurl.com/some_image1.png",
-                "http://sampleurl.com/some_image2.png",
-                "http://sampleurl.com/some_image3.png"
-            ],
             "transferable": False,
             "status": False,
-            "offering_status": False,
+            "is_offering": False,
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
-            "is_canceled": False
+            "is_canceled": False,
+            "memo": "memo_test1"
         }
         event_id = str(uuid.uuid4())
 
@@ -134,17 +130,13 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
             "dividend_payment_date": "20211231",
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
-            "image_url": [
-                "http://sampleurl.com/some_image1.png",
-                "http://sampleurl.com/some_image2.png",
-                "http://sampleurl.com/some_image3.png"
-            ],
             "transferable": False,
             "status": False,
-            "offering_status": False,
+            "is_offering": False,
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
-            "is_canceled": False
+            "is_canceled": False,
+            "memo": "memo_test1"
         }
 
         for i, _datetime in enumerate(datetime_list):

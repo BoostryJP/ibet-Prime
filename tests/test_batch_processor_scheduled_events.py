@@ -91,7 +91,7 @@ class TestProcessor:
                 "http://sampleurl.com/some_image3.png"
             ],
             "status": False,
-            "initial_offering_status": False,
+            "is_offering": False,
             "is_redeemed": True,
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
@@ -196,7 +196,7 @@ class TestProcessor:
             ],
             "transferable": False,
             "status": False,
-            "offering_status": False,
+            "is_offering": False,
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "is_canceled": False

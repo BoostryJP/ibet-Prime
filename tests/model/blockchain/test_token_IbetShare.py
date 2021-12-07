@@ -40,15 +40,15 @@ from app.model.schema import (
     IbetShareAdd,
     IbetShareTransfer,
     IbetShareUpdate,
-    IbetShareApproveTransfer,
-    IbetShareCancelTransfer
+    IbetSecurityTokenApproveTransfer,
+    IbetSecurityTokenCancelTransfer
 )
 from app.exceptions import SendTransactionError
 
 from tests.account_config import config_eth_account
 from tests.utils.contract_utils import (
     PersonalInfoContractTestUtils,
-    IbetShareContractTestUtils
+    IbetSecurityTokenContractTestUtils
 )
 
 
@@ -270,22 +270,22 @@ class TestGet:
         assert share_contract.name == "テスト株式"
         assert share_contract.symbol == "TEST"
         assert share_contract.total_supply == 20000
-        assert share_contract.image_url == ["", "", ""]
         assert share_contract.contact_information == ""
         assert share_contract.privacy_policy == ""
         assert share_contract.tradable_exchange_contract_address == ZERO_ADDRESS
         assert share_contract.status is True
+        assert share_contract.personal_info_contract_address == ZERO_ADDRESS
+        assert share_contract.transferable is False
+        assert share_contract.is_offering is False
+        assert share_contract.transfer_approval_required is False
         assert share_contract.issue_price == 10000
+        assert share_contract.memo == ""
+        assert share_contract.cancellation_date == "20221231"
+        assert share_contract.principal_value == 10001
+        assert share_contract.is_canceled is False
         assert share_contract.dividends == 0.01  # dividends
         assert share_contract.dividend_record_date == "20211229"  # dividendRecordDate
         assert share_contract.dividend_payment_date == "20211230"  # dividendPaymentDate
-        assert share_contract.cancellation_date == "20221231"
-        assert share_contract.transferable is False
-        assert share_contract.offering_status is False
-        assert share_contract.personal_info_contract_address == ZERO_ADDRESS
-        assert share_contract.transfer_approval_required is False
-        assert share_contract.principal_value == 10001
-        assert share_contract.is_canceled is False
 
     # <Normal_2>
     # TOKEN_CACHE is True
@@ -326,22 +326,22 @@ class TestGet:
         token_cache["name"] = "テスト株式-test"
         token_cache["symbol"] = "TEST-test"
         token_cache["total_supply"] = 999999
-        token_cache["image_url"] = ["http://test1", "http://test2", "http://test3"]
         token_cache["contact_information"] = "test1"
         token_cache["privacy_policy"] = "test2"
         token_cache["tradable_exchange_contract_address"] = "0x1234567890123456789012345678901234567890"
         token_cache["status"] = False
+        token_cache["personal_info_contract_address"] = "0x1234567890123456789012345678901234567891"
+        token_cache["transferable"] = True
+        token_cache["is_offering"] = True
+        token_cache["transfer_approval_required"] = True
         token_cache["issue_price"] = 999997
+        token_cache["cancellation_date"] = "99991231"
+        token_cache["memo"] = "memo_test"
+        token_cache["principal_value"] = 999998
+        token_cache["is_canceled"] = True
         token_cache["dividends"] = 9.99
         token_cache["dividend_record_date"] = "99991230"
         token_cache["dividend_payment_date"] = "99991229"
-        token_cache["cancellation_date"] = "99991231"
-        token_cache["transferable"] = True
-        token_cache["offering_status"] = True
-        token_cache["personal_info_contract_address"] = "0x1234567890123456789012345678901234567891"
-        token_cache["transfer_approval_required"] = True
-        token_cache["principal_value"] = 999998
-        token_cache["is_canceled"] = True
 
         # execute the function
         share_contract = IbetShareContract.get(contract_address=contract_address)
@@ -352,22 +352,22 @@ class TestGet:
         assert share_contract.name == "テスト株式-test"
         assert share_contract.symbol == "TEST-test"
         assert share_contract.total_supply == 999999
-        assert share_contract.image_url == ["http://test1", "http://test2", "http://test3"]
         assert share_contract.contact_information == "test1"
         assert share_contract.privacy_policy == "test2"
         assert share_contract.tradable_exchange_contract_address == "0x1234567890123456789012345678901234567890"
         assert share_contract.status is False
+        assert share_contract.personal_info_contract_address == "0x1234567890123456789012345678901234567891"
+        assert share_contract.transferable is True
+        assert share_contract.is_offering is True
+        assert share_contract.transfer_approval_required is True
         assert share_contract.issue_price == 999997
+        assert share_contract.cancellation_date == "99991231"
+        assert share_contract.memo == "memo_test"
+        assert share_contract.principal_value == 999998
+        assert share_contract.is_canceled is True
         assert share_contract.dividends == 9.99  # dividends
         assert share_contract.dividend_record_date == "99991230"  # dividendRecordDate
         assert share_contract.dividend_payment_date == "99991229"  # dividendPaymentDate
-        assert share_contract.cancellation_date == "99991231"
-        assert share_contract.transferable is True
-        assert share_contract.offering_status is True
-        assert share_contract.personal_info_contract_address == "0x1234567890123456789012345678901234567891"
-        assert share_contract.transfer_approval_required is True
-        assert share_contract.principal_value == 999998
-        assert share_contract.is_canceled is True
 
     # <Normal_3>
     # TOKEN_CACHE is True, updated token attribute
@@ -408,22 +408,22 @@ class TestGet:
         token_cache["name"] = "テスト株式-test"
         token_cache["symbol"] = "TEST-test"
         token_cache["total_supply"] = 999999
-        token_cache["image_url"] = ["http://test1", "http://test2", "http://test3"]
         token_cache["contact_information"] = "test1"
         token_cache["privacy_policy"] = "test2"
         token_cache["tradable_exchange_contract_address"] = "0x1234567890123456789012345678901234567890"
         token_cache["status"] = False
+        token_cache["personal_info_contract_address"] = "0x1234567890123456789012345678901234567891"
+        token_cache["transferable"] = True
+        token_cache["is_offering"] = True
+        token_cache["transfer_approval_required"] = True
         token_cache["issue_price"] = 999997
+        token_cache["cancellation_date"] = "99991231"
+        token_cache["memo"] = "memo_test"
+        token_cache["principal_value"] = 999998
+        token_cache["is_canceled"] = True
         token_cache["dividends"] = 9.99
         token_cache["dividend_record_date"] = "99991230"
         token_cache["dividend_payment_date"] = "99991229"
-        token_cache["cancellation_date"] = "99991231"
-        token_cache["transferable"] = True
-        token_cache["offering_status"] = True
-        token_cache["personal_info_contract_address"] = "0x1234567890123456789012345678901234567891"
-        token_cache["transfer_approval_required"] = True
-        token_cache["principal_value"] = 999998
-        token_cache["is_canceled"] = True
 
         # updated token attribute
         _token_attr_update = TokenAttrUpdate()
@@ -441,22 +441,22 @@ class TestGet:
         assert share_contract.name == "テスト株式"
         assert share_contract.symbol == "TEST"
         assert share_contract.total_supply == 20000
-        assert share_contract.image_url == ["", "", ""]
         assert share_contract.contact_information == ""
         assert share_contract.privacy_policy == ""
         assert share_contract.tradable_exchange_contract_address == ZERO_ADDRESS
         assert share_contract.status is True
+        assert share_contract.personal_info_contract_address == ZERO_ADDRESS
+        assert share_contract.transferable is False
+        assert share_contract.is_offering is False
+        assert share_contract.transfer_approval_required is False
         assert share_contract.issue_price == 10000
+        assert share_contract.cancellation_date == "20221231"
+        assert share_contract.memo == ""
+        assert share_contract.principal_value == 10001
+        assert share_contract.is_canceled is False
         assert share_contract.dividends == 0.01  # dividends
         assert share_contract.dividend_record_date == "20211229"  # dividendRecordDate
         assert share_contract.dividend_payment_date == "20211230"  # dividendPaymentDate
-        assert share_contract.cancellation_date == "20221231"
-        assert share_contract.transferable is False
-        assert share_contract.offering_status is False
-        assert share_contract.personal_info_contract_address == ZERO_ADDRESS
-        assert share_contract.transfer_approval_required is False
-        assert share_contract.principal_value == 10001
-        assert share_contract.is_canceled is False
 
     ###########################################################################
     # Error Case
@@ -535,15 +535,15 @@ class TestUpdate:
         assert share_contract.dividends == 0.01
         assert share_contract.tradable_exchange_contract_address == ZERO_ADDRESS
         assert share_contract.personal_info_contract_address == ZERO_ADDRESS
-        assert share_contract.image_url == ["", "", ""]
         assert share_contract.transferable is False
         assert share_contract.status is True
-        assert share_contract.offering_status is False
+        assert share_contract.is_offering is False
         assert share_contract.contact_information == ""
         assert share_contract.privacy_policy == ""
         assert share_contract.transfer_approval_required is False
         assert share_contract.principal_value == 10000
         assert share_contract.is_canceled is False
+        assert share_contract.memo == ""
         _token_attr_update = db.query(TokenAttrUpdate).first()
         assert _token_attr_update.id == 1
         assert _token_attr_update.token_address == contract_address
@@ -585,15 +585,15 @@ class TestUpdate:
             "dividends": 0.01,
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",
-            "image_url": ["image_1"],
             "transferable": False,
             "status": False,
-            "offering_status": True,
+            "is_offering": True,
             "contact_information": "contact info test",
             "privacy_policy": "privacy policy test",
             "transfer_approval_required": True,
             "principal_value": 9000,
             "is_canceled": True,
+            "memo": "memo_test",
         }
         _add_data = IbetShareUpdate(**_data)
         pre_datetime = datetime.utcnow()
@@ -612,15 +612,15 @@ class TestUpdate:
         assert share_contract.dividends == 0.01
         assert share_contract.tradable_exchange_contract_address == "0x0000000000000000000000000000000000000001"
         assert share_contract.personal_info_contract_address == "0x0000000000000000000000000000000000000002"
-        assert share_contract.image_url == ["image_1", "", ""]
         assert share_contract.transferable is False
         assert share_contract.status is False
-        assert share_contract.offering_status is True
+        assert share_contract.is_offering is True
         assert share_contract.contact_information == "contact info test"
         assert share_contract.privacy_policy == "privacy policy test"
         assert share_contract.transfer_approval_required is True
         assert share_contract.principal_value == 9000
         assert share_contract.is_canceled is True
+        assert share_contract.memo == "memo_test"
         _token_attr_update = db.query(TokenAttrUpdate).first()
         assert _token_attr_update.id == 1
         assert _token_attr_update.token_address == contract_address
@@ -1961,7 +1961,7 @@ class TestApproveTransfer:
         )
 
         # apply transfer (from issuer)
-        IbetShareContractTestUtils.apply_for_transfer(
+        IbetSecurityTokenContractTestUtils.apply_for_transfer(
             contract_address=token_address,
             tx_from=issuer_address,
             private_key=issuer_pk,
@@ -1975,7 +1975,7 @@ class TestApproveTransfer:
         }
         IbetShareContract.approve_transfer(
             contract_address=token_address,
-            data=IbetShareApproveTransfer(**approve_data),
+            data=IbetSecurityTokenApproveTransfer(**approve_data),
             tx_from=issuer_address,
             private_key=issuer_pk
         )
@@ -2009,7 +2009,7 @@ class TestApproveTransfer:
             "application_id": "not-integer",
         }
         with pytest.raises(ValidationError) as ex_info:
-            _approve_transfer_data = IbetShareApproveTransfer(**approve_data)
+            _approve_transfer_data = IbetSecurityTokenApproveTransfer(**approve_data)
 
         assert ex_info.value.errors() == [
             {
@@ -2038,7 +2038,7 @@ class TestApproveTransfer:
             "application_id": 0,
             "data": "test_data"
         }
-        _approve_transfer_data = IbetShareApproveTransfer(**approve_data)
+        _approve_transfer_data = IbetSecurityTokenApproveTransfer(**approve_data)
         with pytest.raises(SendTransactionError) as ex_info:
             IbetShareContract.approve_transfer(
                 contract_address="not address",
@@ -2082,7 +2082,7 @@ class TestApproveTransfer:
             "application_id": 0,
             "data": "test_data"
         }
-        _approve_transfer_data = IbetShareApproveTransfer(**approve_data)
+        _approve_transfer_data = IbetSecurityTokenApproveTransfer(**approve_data)
         with pytest.raises(SendTransactionError) as ex_info:
             IbetShareContract.approve_transfer(
                 contract_address=contract_address,
@@ -2126,7 +2126,7 @@ class TestApproveTransfer:
             "application_id": 0,
             "data": "test_data"
         }
-        _approve_transfer_data = IbetShareApproveTransfer(**approve_data)
+        _approve_transfer_data = IbetSecurityTokenApproveTransfer(**approve_data)
         with pytest.raises(SendTransactionError) as ex_info:
             IbetShareContract.approve_transfer(
                 contract_address=contract_address,
@@ -2214,7 +2214,7 @@ class TestCancelTransfer:
         )
 
         # apply transfer (from issuer)
-        IbetShareContractTestUtils.apply_for_transfer(
+        IbetSecurityTokenContractTestUtils.apply_for_transfer(
             contract_address=token_address,
             tx_from=issuer_address,
             private_key=issuer_pk,
@@ -2226,7 +2226,7 @@ class TestCancelTransfer:
             "application_id": 0,
             "data": "approve transfer test"
         }
-        _approve_transfer_data = IbetShareCancelTransfer(**cancel_data)
+        _approve_transfer_data = IbetSecurityTokenCancelTransfer(**cancel_data)
 
         IbetShareContract.cancel_transfer(
             contract_address=token_address,
@@ -2264,7 +2264,7 @@ class TestCancelTransfer:
             "application_id": "not-integer",
         }
         with pytest.raises(ValidationError) as ex_info:
-            _approve_transfer_data = IbetShareCancelTransfer(**cancel_data)
+            _approve_transfer_data = IbetSecurityTokenCancelTransfer(**cancel_data)
 
         assert ex_info.value.errors() == [
             {
@@ -2293,7 +2293,7 @@ class TestCancelTransfer:
             "application_id": 0,
             "data": "test_data"
         }
-        _cancel_transfer_data = IbetShareCancelTransfer(**cancel_data)
+        _cancel_transfer_data = IbetSecurityTokenCancelTransfer(**cancel_data)
         with pytest.raises(SendTransactionError) as ex_info:
             IbetShareContract.cancel_transfer(
                 contract_address="not address",
@@ -2337,7 +2337,7 @@ class TestCancelTransfer:
             "application_id": 0,
             "data": "test_data"
         }
-        _cancel_transfer_data = IbetShareCancelTransfer(**cancel_data)
+        _cancel_transfer_data = IbetSecurityTokenCancelTransfer(**cancel_data)
         with pytest.raises(SendTransactionError) as ex_info:
             IbetShareContract.cancel_transfer(
                 contract_address=contract_address,
@@ -2381,7 +2381,7 @@ class TestCancelTransfer:
             "application_id": 0,
             "data": "test_data"
         }
-        _cancel_transfer_data = IbetShareCancelTransfer(**cancel_data)
+        _cancel_transfer_data = IbetSecurityTokenCancelTransfer(**cancel_data)
         with pytest.raises(SendTransactionError) as ex_info:
             IbetShareContract.cancel_transfer(
                 contract_address=contract_address,

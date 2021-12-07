@@ -16,10 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import (
-    Dict,
-    List
-)
+from typing import List
 import json
 from decimal import Decimal
 from datetime import (
@@ -46,8 +43,8 @@ from app.model.schema import (
     IbetShareUpdate,
     IbetShareTransfer,
     IbetShareAdd,
-    IbetShareApproveTransfer,
-    IbetShareCancelTransfer
+    IbetSecurityTokenApproveTransfer,
+    IbetSecurityTokenCancelTransfer
 )
 from app.model.blockchain import IbetExchangeInterface
 from app.exceptions import SendTransactionError
@@ -67,7 +64,6 @@ class IbetStandardTokenInterface:
     name: str
     symbol: str
     total_supply: int
-    image_url: List[Dict[str, str]]
     contact_information: str
     privacy_policy: str
     tradable_exchange_contract_address: str
@@ -102,19 +98,75 @@ class IbetStandardTokenInterface:
         return balance
 
 
-class IbetStraightBondContract(IbetStandardTokenInterface):
+class IbetSecurityTokenInterface(IbetStandardTokenInterface):
+    personal_info_contract_address: str
+    transferable: bool
+    is_offering: bool
+    transfer_approval_required: bool
+
+    @staticmethod
+    def approve_transfer(contract_address: str,
+                         data: IbetSecurityTokenApproveTransfer,
+                         tx_from: str,
+                         private_key: str):
+        """Approve Transfer"""
+        try:
+            security_contract = ContractUtils.get_contract(
+                contract_name="IbetSecurityTokenInterface",
+                contract_address=contract_address
+            )
+            tx = security_contract.functions. \
+                approveTransfer(data.application_id, data.data). \
+                buildTransaction({
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0
+                })
+            tx_hash, txn_receipt = ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            return tx_hash, txn_receipt
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+    @staticmethod
+    def cancel_transfer(contract_address: str,
+                        data: IbetSecurityTokenCancelTransfer,
+                        tx_from: str,
+                        private_key: str):
+        """Cancel Transfer"""
+        try:
+            security_contract = ContractUtils.get_contract(
+                contract_name="IbetSecurityTokenInterface",
+                contract_address=contract_address
+            )
+            tx = security_contract.functions. \
+                cancelTransfer(data.application_id, data.data). \
+                buildTransaction({
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0
+                })
+            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+
+class IbetStraightBondContract(IbetSecurityTokenInterface):
     face_value: int
+    interest_rate: float
+    interest_payment_date: List[str]
     redemption_date: str
     redemption_value: int
     return_date: str
     return_amount: str
     purpose: str
-    interest_rate: float
-    interest_payment_date: List[str]
-    transferable: bool
-    initial_offering_status: bool
+    memo: str
     is_redeemed: bool
-    personal_info_contract_address: str
 
     # Cache
     cache = DictCache("bond_tokens")
@@ -169,31 +221,34 @@ class IbetStraightBondContract(IbetStandardTokenInterface):
 
         bond_token.issuer_address = bond_contract.functions.owner().call()
         bond_token.token_address = contract_address
+
+        # Set IbetStandardTokenInterface attribute
         bond_token.name = bond_contract.functions.name().call()
         bond_token.symbol = bond_contract.functions.symbol().call()
         bond_token.total_supply = bond_contract.functions.totalSupply().call()
-        bond_token.image_url = [
-            bond_contract.functions.getImageURL(0).call(),
-            bond_contract.functions.getImageURL(1).call(),
-            bond_contract.functions.getImageURL(2).call()
-        ]
+        bond_token.tradable_exchange_contract_address = bond_contract.functions.tradableExchange().call()
         bond_token.contact_information = bond_contract.functions.contactInformation().call()
         bond_token.privacy_policy = bond_contract.functions.privacyPolicy().call()
-        bond_token.tradable_exchange_contract_address = bond_contract.functions.tradableExchange().call()
         bond_token.status = bond_contract.functions.status().call()
+
+        # Set IbetSecurityTokenInterface attribute
+        bond_token.personal_info_contract_address = bond_contract.functions.personalInfoAddress().call()
+        bond_token.transferable = bond_contract.functions.transferable().call()
+        bond_token.is_offering = bond_contract.functions.isOffering().call()
+        bond_token.transfer_approval_required = bond_contract.functions.transferApprovalRequired().call()
+
+        # Set IbetStraightBondToken attribute
         bond_token.face_value = bond_contract.functions.faceValue().call()
+        bond_token.interest_rate = float(
+            Decimal(str(bond_contract.functions.interestRate().call())) * Decimal("0.0001")
+        )
         bond_token.redemption_date = bond_contract.functions.redemptionDate().call()
         bond_token.redemption_value = bond_contract.functions.redemptionValue().call()
         bond_token.return_date = bond_contract.functions.returnDate().call()
         bond_token.return_amount = bond_contract.functions.returnAmount().call()
         bond_token.purpose = bond_contract.functions.purpose().call()
-        bond_token.interest_rate = float(
-            Decimal(str(bond_contract.functions.interestRate().call())) * Decimal("0.0001")
-        )
-        bond_token.transferable = bond_contract.functions.transferable().call()
-        bond_token.initial_offering_status = bond_contract.functions.initialOfferingStatus().call()
+        bond_token.memo = bond_contract.functions.memo().call()
         bond_token.is_redeemed = bond_contract.functions.isRedeemed().call()
-        bond_token.personal_info_contract_address = bond_contract.functions.personalInfoAddress().call()
 
         interest_payment_date_list = []
         interest_payment_date_string = bond_contract.functions.interestPaymentDate().call().replace("'", '"')
@@ -314,23 +369,6 @@ class IbetStraightBondContract(IbetStandardTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.image_url is not None:
-            for i, _image_url in enumerate(data.image_url):
-                tx = bond_contract.functions. \
-                    setImageURL(i, _image_url). \
-                    buildTransaction({
-                        "chainId": CHAIN_ID,
-                        "from": tx_from,
-                        "gas": TX_GAS_LIMIT,
-                        "gasPrice": 0
-                    })
-                try:
-                    ContractUtils.send_transaction(transaction=tx, private_key=private_key)
-                except TimeExhausted as timeout_error:
-                    raise SendTransactionError(timeout_error)
-                except Exception as err:
-                    raise SendTransactionError(err)
-
         if data.status is not None:
             tx = bond_contract.functions. \
                 setStatus(data.status). \
@@ -347,9 +385,9 @@ class IbetStraightBondContract(IbetStandardTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.initial_offering_status is not None:
+        if data.is_offering is not None:
             tx = bond_contract.functions. \
-                setInitialOfferingStatus(data.initial_offering_status). \
+                changeOfferingStatus(data.is_offering). \
                 buildTransaction({
                     "chainId": CHAIN_ID,
                     "from": tx_from,
@@ -364,7 +402,7 @@ class IbetStraightBondContract(IbetStandardTokenInterface):
                 raise SendTransactionError(err)
 
         if data.is_redeemed is not None and data.is_redeemed:
-            tx = bond_contract.functions.redeem().buildTransaction({
+            tx = bond_contract.functions.changeToRedeemed().buildTransaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -441,6 +479,38 @@ class IbetStraightBondContract(IbetStandardTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
+        if data.transfer_approval_required is not None:
+            tx = bond_contract.functions.\
+                setTransferApprovalRequired(data.transfer_approval_required). \
+                buildTransaction({
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0
+            })
+            try:
+                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
+
+        if data.memo is not None:
+            tx = bond_contract.functions. \
+                setMemo(data.memo). \
+                buildTransaction({
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0
+                })
+            try:
+                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
+
         # Delete Cache
         ContractUtils.set_token_attr_update(contract_address)
         IbetStraightBondContract.cache.pop(contract_address)
@@ -504,18 +574,15 @@ class IbetStraightBondContract(IbetStandardTokenInterface):
             raise SendTransactionError(err)
 
 
-class IbetShareContract(IbetStandardTokenInterface):
+class IbetShareContract(IbetSecurityTokenInterface):
     issue_price: int
+    cancellation_date: str
+    memo: str
+    principal_value: int
+    is_canceled: bool
     dividends: float
     dividend_record_date: str
     dividend_payment_date: str
-    cancellation_date: str
-    transferable: bool
-    offering_status: bool
-    personal_info_contract_address: str
-    transfer_approval_required: bool
-    principal_value: int
-    is_canceled: bool
 
     # Cache
     cache = DictCache("share_tokens")
@@ -570,30 +637,32 @@ class IbetShareContract(IbetStandardTokenInterface):
 
         share_token.issuer_address = share_contract.functions.owner().call()
         share_token.token_address = contract_address
+
+        # Set IbetStandardTokenInterface attribute
         share_token.name = share_contract.functions.name().call()
         share_token.symbol = share_contract.functions.symbol().call()
         share_token.total_supply = share_contract.functions.totalSupply().call()
-        share_token.image_url = [
-            share_contract.functions.referenceUrls(0).call(),
-            share_contract.functions.referenceUrls(1).call(),
-            share_contract.functions.referenceUrls(2).call()
-        ]
+        share_token.tradable_exchange_contract_address = share_contract.functions.tradableExchange().call()
         share_token.contact_information = share_contract.functions.contactInformation().call()
         share_token.privacy_policy = share_contract.functions.privacyPolicy().call()
-        share_token.tradable_exchange_contract_address = share_contract.functions.tradableExchange().call()
         share_token.status = share_contract.functions.status().call()
+
+        # Set IbetSecurityTokenInterface attribute
+        share_token.personal_info_contract_address = share_contract.functions.personalInfoAddress().call()
+        share_token.transferable = share_contract.functions.transferable().call()
+        share_token.is_offering = share_contract.functions.isOffering().call()
+        share_token.transfer_approval_required = share_contract.functions.transferApprovalRequired().call()
+
+        # Set IbetShareToken attribute
         share_token.issue_price = share_contract.functions.issuePrice().call()
+        share_token.cancellation_date = share_contract.functions.cancellationDate().call()
+        share_token.memo = share_contract.functions.memo().call()
+        share_token.principal_value = share_contract.functions.principalValue().call()
+        share_token.is_canceled = share_contract.functions.isCanceled().call()
         _dividend_info = share_contract.functions.dividendInformation().call()
         share_token.dividends = float(Decimal(str(_dividend_info[0])) * Decimal("0.01"))
         share_token.dividend_record_date = _dividend_info[1]
         share_token.dividend_payment_date = _dividend_info[2]
-        share_token.cancellation_date = share_contract.functions.cancellationDate().call()
-        share_token.transferable = share_contract.functions.transferable().call()
-        share_token.offering_status = share_contract.functions.offeringStatus().call()
-        share_token.personal_info_contract_address = share_contract.functions.personalInfoAddress().call()
-        share_token.transfer_approval_required = share_contract.functions.transferApprovalRequired().call()
-        share_token.principal_value = share_contract.functions.principalValue().call()
-        share_token.is_canceled = share_contract.functions.isCanceled().call()
 
         if TOKEN_CACHE:
             IbetShareContract.cache[contract_address] = {
@@ -682,24 +751,6 @@ class IbetShareContract(IbetStandardTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.image_url is not None:
-            for _class, _image_url in enumerate(data.image_url):
-                tx = share_contract.functions.setReferenceUrls(
-                    _class,
-                    _image_url
-                ).buildTransaction({
-                    "chainId": CHAIN_ID,
-                    "from": tx_from,
-                    "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0
-                })
-                try:
-                    ContractUtils.send_transaction(transaction=tx, private_key=private_key)
-                except TimeExhausted as timeout_error:
-                    raise SendTransactionError(timeout_error)
-                except Exception as err:
-                    raise SendTransactionError(err)
-
         if data.contact_information is not None:
             tx = share_contract.functions.setContactInformation(
                 data.contact_information
@@ -764,9 +815,9 @@ class IbetShareContract(IbetStandardTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
-        if data.offering_status is not None:
-            tx = share_contract.functions.setOfferingStatus(
-                data.offering_status
+        if data.is_offering is not None:
+            tx = share_contract.functions.changeOfferingStatus(
+                data.is_offering
             ).buildTransaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
@@ -813,7 +864,23 @@ class IbetShareContract(IbetStandardTokenInterface):
                 raise SendTransactionError(err)
 
         if data.is_canceled is not None and data.is_canceled:
-            tx = share_contract.functions.cancel().buildTransaction({
+            tx = share_contract.functions.changeToCanceled().buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            try:
+                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
+
+        if data.memo is not None:
+            tx = share_contract.functions.setMemo(
+                data.memo
+            ).buildTransaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -888,53 +955,3 @@ class IbetShareContract(IbetStandardTokenInterface):
         except Exception as err:
             raise SendTransactionError(err)
 
-    @staticmethod
-    def approve_transfer(contract_address: str,
-                         data: IbetShareApproveTransfer,
-                         tx_from: str,
-                         private_key: str):
-        """Approve Transfer"""
-        try:
-            share_contract = ContractUtils.get_contract(
-                contract_name="IbetShare",
-                contract_address=contract_address
-            )
-            tx = share_contract.functions. \
-                approveTransfer(data.application_id, data.data). \
-                buildTransaction({
-                    "chainId": CHAIN_ID,
-                    "from": tx_from,
-                    "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0
-                })
-            tx_hash, txn_receipt = ContractUtils.send_transaction(transaction=tx, private_key=private_key)
-            return tx_hash, txn_receipt
-        except TimeExhausted as timeout_error:
-            raise SendTransactionError(timeout_error)
-        except Exception as err:
-            raise SendTransactionError(err)
-
-    @staticmethod
-    def cancel_transfer(contract_address: str,
-                         data: IbetShareCancelTransfer,
-                         tx_from: str,
-                         private_key: str):
-        """Cancel Transfer"""
-        try:
-            share_contract = ContractUtils.get_contract(
-                contract_name="IbetShare",
-                contract_address=contract_address
-            )
-            tx = share_contract.functions. \
-                cancelTransfer(data.application_id, data.data). \
-                buildTransaction({
-                    "chainId": CHAIN_ID,
-                    "from": tx_from,
-                    "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0
-                })
-            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
-        except TimeExhausted as timeout_error:
-            raise SendTransactionError(timeout_error)
-        except Exception as err:
-            raise SendTransactionError(err)

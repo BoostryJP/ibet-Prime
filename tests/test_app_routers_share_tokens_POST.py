@@ -266,10 +266,9 @@ class TestAppRoutersShareTokensPOST:
                 "cancellation_date": "20221231",
                 "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
                 "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-                "image_url": ["image_1"],  # update
                 "transferable": False,  # update
                 "status": False,  # update
-                "offering_status": True,  # update
+                "is_offering": True,  # update
                 "contact_information": "contact info test",  # update
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
@@ -376,12 +375,6 @@ class TestAppRoutersShareTokensPOST:
             "cancellation_date": "20221231",
             "tradable_exchange_contract_address": "0x0",
             "personal_info_contract_address": "0x0",
-            "image_url": [
-                "http://test.test/test",
-                "http://test.test/test",
-                "http://test.test/test",
-                "http://test.test/test"
-            ],
             "principal_value": 1000
         }
         resp = client.post(
@@ -406,14 +399,6 @@ class TestAppRoutersShareTokensPOST:
                         "dividends"
                     ],
                     "msg": "dividends must be rounded to 2 decimal places",
-                    "type": "value_error"
-                },
-                {
-                    "loc": [
-                        "body",
-                        "image_url"
-                    ],
-                    "msg": "The length of the list must be less than or equal to 3",
                     "type": "value_error"
                 },
                 {
@@ -545,10 +530,9 @@ class TestAppRoutersShareTokensPOST:
             "cancellation_date": "20221231",
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-            "image_url": ["image_1"],  # update
             "transferable": False,  # update
             "status": False,  # update
-            "offering_status": True,  # update
+            "is_offering": True,  # update
             "contact_information": "contact info test",  # update
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
@@ -636,10 +620,9 @@ class TestAppRoutersShareTokensPOST:
             "cancellation_date": "20221231",
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-            "image_url": ["image_1"],  # update
             "transferable": False,  # update
             "status": False,  # update
-            "offering_status": True,  # update
+            "is_offering": True,  # update
             "contact_information": GetRandomStr(2001),  # update
             "privacy_policy": GetRandomStr(5001),  # update
             "transfer_approval_required": True,  # update

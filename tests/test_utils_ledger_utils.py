@@ -99,7 +99,6 @@ def deploy_share_token_contract(address, private_key, personal_info_contract_add
     contract_address, _, _ = IbetShareContract.create(arguments, address, private_key)
 
     data = IbetShareUpdate()
-    data.image_url = ["aaa", "aaa", "aaa"]
     data.personal_info_contract_address = personal_info_contract_address
     IbetShareContract.update(contract_address, data, address, private_key)
 

@@ -81,19 +81,15 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "dividend_payment_date": "20211231",
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
-            "image_url": [
-                "http://sampleurl.com/some_image1.png",
-                "http://sampleurl.com/some_image2.png",
-                "http://sampleurl.com/some_image3.png"
-            ],
             "transferable": False,
             "status": False,
-            "offering_status": False,
+            "is_offering": False,
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": False,
             "principal_value": 1000,
-            "is_canceled": True
+            "is_canceled": True,
+            "memo": "memo_test1"
         }
         resp = client.post(
             self.base_url.format(_token_address),
@@ -308,48 +304,6 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             ]
         }
 
-    # <Error_5>
-    # RequestValidationError: image_url
-    def test_error_5(self, client, db):
-        test_account = config_eth_account("user1")
-        _issuer_address = test_account["address"]
-        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
-
-        # request target API
-        req_param = {
-            "image_url": [
-                "http://sampleurl.com/some_image1.png",
-                "http://sampleurl.com/some_image2.png",
-                "http://sampleurl.com/some_image3.png",
-                "http://sampleurl.com/some_image4.png",
-            ],
-        }
-        resp = client.post(
-            self.base_url.format(_token_address),
-            json=req_param,
-            headers={
-                "issuer-address": _issuer_address
-            }
-        )
-
-        assert resp.status_code == 422
-        assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
-            "detail": [
-                {
-                    "loc": [
-                        "body",
-                        "image_url"
-                    ],
-                    "msg": "The length of the list must be less than or equal to 3",
-                    "type": "value_error"
-                }
-            ]
-        }
-
     # <Error_6>
     # RequestValidationError: headers and body required
     def test_error_6(self, client, db):
@@ -462,19 +416,15 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "dividend_payment_date": "20211231",
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
-            "image_url": [
-                "http://sampleurl.com/some_image1.png",
-                "http://sampleurl.com/some_image2.png",
-                "http://sampleurl.com/some_image3.png"
-            ],
             "transferable": False,
             "status": False,
-            "offering_status": False,
+            "is_offering": False,
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": False,
             "principal_value": -1,
-            "is_canceled": True
+            "is_canceled": True,
+            "memo": "memo_test1"
         }
         resp = client.post(
             self.base_url.format(_token_address),
@@ -533,19 +483,15 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "dividend_payment_date": "20211231",
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
-            "image_url": [
-                "http://sampleurl.com/some_image1.png",
-                "http://sampleurl.com/some_image2.png",
-                "http://sampleurl.com/some_image3.png"
-            ],
             "transferable": False,
             "status": False,
-            "offering_status": False,
+            "is_offering": False,
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": False,
             "principal_value": 5_000_000_001,
-            "is_canceled": True
+            "is_canceled": True,
+            "memo": "memo_test1"
         }
         resp = client.post(
             self.base_url.format(_token_address),
