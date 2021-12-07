@@ -115,6 +115,18 @@ def issue_bond_token(issuer: dict, exchange_address: str):
         contract_name="IbetStraightBond",
         contract_address=token_contract_address
     )
+    tx = token_contract.functions.setTransferable(
+        True
+    ).buildTransaction({
+        "chainId": CHAIN_ID,
+        "from": issuer_address,
+        "gas": TX_GAS_LIMIT,
+        "gasPrice": 0
+    })
+    ContractUtils.send_transaction(
+        transaction=tx,
+        private_key=issuer_pk
+    )
 
     # set tradable exchange address
     tx = token_contract.functions.setTradableExchange(

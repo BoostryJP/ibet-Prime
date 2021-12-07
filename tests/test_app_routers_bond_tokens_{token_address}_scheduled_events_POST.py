@@ -81,6 +81,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
+            "transfer_approval_required": True,
             "memo": "memo_test1",
         }
 
@@ -151,6 +152,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
+            "transfer_approval_required": True,
             "memo": "memo_test1",
         }
 
