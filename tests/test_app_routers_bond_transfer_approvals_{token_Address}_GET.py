@@ -33,7 +33,7 @@ local_tz = timezone(config.TZ)
 class TestAppRoutersShareTransferApprovalsGET:
 
     # target API endpoint
-    base_url = "/share/transfer_approvals/{}"
+    base_url = "/bond/transfer_approvals/{}"
 
     test_transaction_hash = "test_transaction_hash"
 
@@ -59,7 +59,7 @@ class TestAppRoutersShareTransferApprovalsGET:
     def test_normal_1_1(self, client, db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
@@ -148,7 +148,7 @@ class TestAppRoutersShareTransferApprovalsGET:
     def test_normal_1_2(self, client, db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
@@ -237,7 +237,7 @@ class TestAppRoutersShareTransferApprovalsGET:
     def test_normal_2(self, client, db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
@@ -298,7 +298,7 @@ class TestAppRoutersShareTransferApprovalsGET:
     def test_normal_3(self, client, db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
@@ -413,7 +413,7 @@ class TestAppRoutersShareTransferApprovalsGET:
     def test_error_2(self, client, db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE
+        _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address

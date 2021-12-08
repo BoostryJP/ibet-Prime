@@ -35,6 +35,8 @@ class IDXTransferApproval(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     # Token Address
     token_address = Column(String(42), index=True)
+    # Exchange Address (value is set if the event is from exchange)
+    exchange_address = Column(String(42), index=True)
     # Application Id
     application_id = Column(BigInteger, index=True)
     # Transfer From
@@ -57,6 +59,7 @@ class IDXTransferApproval(Base):
     def json(self):
         return {
             "token_address": self.token_address,
+            "exchange_address": self.exchange_address,
             "application_id": self.application_id,
             "from_address": self.from_address,
             "to_address": self.to_address,

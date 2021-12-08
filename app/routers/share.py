@@ -945,7 +945,9 @@ def list_transfer_approval_history(
     # Get transfer approval history
     query = db.query(IDXTransferApproval). \
         filter(IDXTransferApproval.token_address == token_address). \
-        order_by(desc(IDXTransferApproval.id))
+        order_by(
+            IDXTransferApproval.exchange_address,
+            desc(IDXTransferApproval.id))
     total = query.count()
 
     if limit is not None:
@@ -981,7 +983,9 @@ def list_transfer_approval_history(
             approval_blocktimestamp = None
 
         transfer_approval_history.append({
+            "id": _transfer_approval.id,
             "token_address": token_address,
+            "exchange_address": _transfer_approval.exchange_address,
             "application_id": _transfer_approval.application_id,
             "from_address": _transfer_approval.from_address,
             "to_address": _transfer_approval.to_address,
