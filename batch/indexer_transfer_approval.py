@@ -206,7 +206,7 @@ class Processor:
         self.exchange_list = []
         _exchange_list_tmp = []
         issued_token_list = self.db.query(Token). \
-            filter(Token.type.in_(TokenType.IBET_STRAIGHT_BOND, TokenType.IBET_SHARE)). \
+            filter(Token.type.in_([TokenType.IBET_STRAIGHT_BOND.value, TokenType.IBET_SHARE.value])). \
             filter(Token.token_status == 1). \
             all()
         for issued_token in issued_token_list:
