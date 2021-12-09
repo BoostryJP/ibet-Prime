@@ -266,6 +266,7 @@ class TestProcessor:
             filter(TransferApprovalHistory.token_address == "token_address"). \
             filter(TransferApprovalHistory.application_id == 0). \
             first()
+        assert transfer_approval_history.exchange_address is None
         assert transfer_approval_history.result == 1
 
         # Assertion : Skipped (approved)
@@ -273,6 +274,7 @@ class TestProcessor:
             filter(TransferApprovalHistory.token_address == "token_address"). \
             filter(TransferApprovalHistory.application_id == 1). \
             first()
+        assert transfer_approval_history.exchange_address is None
         assert transfer_approval_history.result == 2
 
         # Assertion : Skipped (cancelled)
@@ -358,7 +360,8 @@ class TestProcessor:
         db.add(idx_transfer_approval_1)
 
         transfer_approval_history = TransferApprovalHistory()
-        transfer_approval_history.token_address = "0x1234567890123456789012345678901234567890"
+        transfer_approval_history.token_address = "token_address"
+        transfer_approval_history.exchange_address = "0x1234567890123456789012345678901234567890"
         transfer_approval_history.application_id = 1
         transfer_approval_history.result = 2
         db.add(transfer_approval_history)
@@ -391,21 +394,24 @@ class TestProcessor:
 
         # Assertion : Success
         transfer_approval_history = db.query(TransferApprovalHistory). \
-            filter(TransferApprovalHistory.token_address == "0x1234567890123456789012345678901234567890"). \
+            filter(TransferApprovalHistory.token_address == "token_address"). \
+            filter(TransferApprovalHistory.exchange_address == "0x1234567890123456789012345678901234567890"). \
             filter(TransferApprovalHistory.application_id == 0). \
             first()
         assert transfer_approval_history.result == 1
 
         # Assertion : Skipped (approved)
         transfer_approval_history = db.query(TransferApprovalHistory). \
-            filter(TransferApprovalHistory.token_address == "0x1234567890123456789012345678901234567890"). \
+            filter(TransferApprovalHistory.token_address == "token_address"). \
+            filter(TransferApprovalHistory.exchange_address == "0x1234567890123456789012345678901234567890"). \
             filter(TransferApprovalHistory.application_id == 1). \
             first()
         assert transfer_approval_history.result == 2
 
         # Assertion : Skipped (cancelled)
         transfer_approval_history = db.query(TransferApprovalHistory). \
-            filter(TransferApprovalHistory.token_address == "0x1234567890123456789012345678901234567890"). \
+            filter(TransferApprovalHistory.token_address == "token_address"). \
+            filter(TransferApprovalHistory.exchange_address == "0x1234567890123456789012345678901234567890"). \
             filter(TransferApprovalHistory.application_id == 2). \
             first()
         assert transfer_approval_history is None
@@ -413,6 +419,7 @@ class TestProcessor:
         # Assertion: Skipped (Token does not exists)
         transfer_approval_history = db.query(TransferApprovalHistory). \
             filter(TransferApprovalHistory.token_address == "dummy_token_address"). \
+            filter(TransferApprovalHistory.exchange_address == "0x1234567890123456789012345678901234567890"). \
             filter(TransferApprovalHistory.application_id == 0). \
             first()
         assert transfer_approval_history is None
@@ -420,6 +427,7 @@ class TestProcessor:
         # Assertion: Skipped (Token issuer does not exists)
         transfer_approval_history = db.query(TransferApprovalHistory). \
             filter(TransferApprovalHistory.token_address == "dummy_issuer_token_address"). \
+            filter(TransferApprovalHistory.exchange_address == "0x1234567890123456789012345678901234567890"). \
             filter(TransferApprovalHistory.application_id == 0). \
             first()
         assert transfer_approval_history is None
@@ -494,6 +502,7 @@ class TestProcessor:
             filter(TransferApprovalHistory.token_address == "token_address"). \
             filter(TransferApprovalHistory.application_id == 0). \
             first()
+        assert transfer_approval_history.exchange_address is None
         assert transfer_approval_history.result == 2
 
         # Assertion: Skipped (already cancelled)
@@ -572,16 +581,18 @@ class TestProcessor:
             # Execute batch
             processor.process()
 
-        # Assertion : Fail approve, and Cancelled
+        # Assertion : Fail approve
         transfer_approval_history = db.query(TransferApprovalHistory). \
-            filter(TransferApprovalHistory.token_address == "0x1234567890123456789012345678901234567890"). \
+            filter(TransferApprovalHistory.token_address == "token_address"). \
+            filter(TransferApprovalHistory.exchange_address == "0x1234567890123456789012345678901234567890"). \
             filter(TransferApprovalHistory.application_id == 0). \
             first()
         assert transfer_approval_history.result == 2
 
         # Assertion: Skipped (already cancelled)
         transfer_approval_history = db.query(TransferApprovalHistory). \
-            filter(TransferApprovalHistory.token_address == "0x1234567890123456789012345678901234567890"). \
+            filter(TransferApprovalHistory.token_address == "token_address"). \
+            filter(TransferApprovalHistory.exchange_address == "0x1234567890123456789012345678901234567890"). \
             filter(TransferApprovalHistory.application_id == 1). \
             first()
         assert transfer_approval_history is None

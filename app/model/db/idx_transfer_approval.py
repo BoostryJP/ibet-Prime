@@ -37,7 +37,7 @@ class IDXTransferApproval(Base):
     token_address = Column(String(42), index=True)
     # Exchange Address (value is set if the event is from exchange)
     exchange_address = Column(String(42), index=True)
-    # Application Id
+    # Application Id (escrow id is set if the event is from exchange)
     application_id = Column(BigInteger, index=True)
     # Transfer From
     from_address = Column(String(42))

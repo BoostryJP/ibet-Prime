@@ -34,7 +34,9 @@ class TransferApprovalHistory(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     # Token Address
     token_address = Column(String(42), index=True)
-    # Application Id
+    # Exchange Address (value is set if the event is from exchange)
+    exchange_address = Column(String(42), index=True)
+    # Application Id (escrow id is set if the event is from exchange)
     application_id = Column(BigInteger, index=True)
     # Result (Success:1, Fail:2)
     result = Column(Integer)
@@ -42,6 +44,7 @@ class TransferApprovalHistory(Base):
     def json(self):
         return {
             "token_address": self.token_address,
+            "exchange_address": self.exchange_address,
             "application_id": self.application_id,
             "result": self.result,
         }
