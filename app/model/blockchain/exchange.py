@@ -71,16 +71,16 @@ class IbetSecurityTokenEscrow(IbetExchangeInterface):
                          private_key: str):
         """Approve Transfer"""
         try:
-            tx = self.exchange_contract.functions. \
-                approveTransfer(data.escrow_id, data.data). \
-                buildTransaction({
-                    "chainId": CHAIN_ID,
-                    "from": tx_from,
-                    "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0
+            tx = self.exchange_contract.functions.approveTransfer(
+                data.escrow_id, data.data
+            ).buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
             })
-            tx_hash, txn_receipt = ContractUtils.send_transaction(transaction=tx, private_key=private_key)
-            return tx_hash, txn_receipt
+            tx_hash, tx_receipt = ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            return tx_hash, tx_receipt
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:

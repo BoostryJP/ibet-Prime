@@ -16,7 +16,11 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from unittest.mock import ANY, patch
+from unittest.mock import (
+    ANY,
+    patch
+)
+from datetime import datetime
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
@@ -29,6 +33,7 @@ from app.model.db import (
     Account,
     Token,
     TokenType,
+    AdditionalTokenInfo,
     UpdateToken,
     IDXPosition
 )
@@ -134,6 +139,9 @@ class TestAppRoutersBondTokensPOST:
             update_token = db.query(UpdateToken).first()
             assert update_token is None
 
+            additional_info = db.query(AdditionalTokenInfo).first()
+            assert additional_info is None
+
     # <Normal_2>
     # include updates
     def test_normal_2(self, client, db):
@@ -182,7 +190,8 @@ class TestAppRoutersBondTokensPOST:
                 "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
                 "contact_information": "contact info test",  # update
                 "privacy_policy": "privacy policy test",  # update
-                "transfer_approval_required": True  # update
+                "transfer_approval_required": True,  # update
+                "is_manual_transfer_approval": True  # update
             }
             resp = client.post(
                 self.apiurl,
@@ -239,6 +248,13 @@ class TestAppRoutersBondTokensPOST:
             assert update_token.arguments == req_param
             assert update_token.status == 0
             assert update_token.trigger == "Issue"
+
+            additional_info = db.query(AdditionalTokenInfo).first()
+            assert additional_info.id == 1
+            assert additional_info.token_address == "contract_address_test1"
+            assert additional_info.is_manual_transfer_approval is True
+            assert isinstance(additional_info.block_number, int)
+            assert isinstance(additional_info.block_timestamp, datetime)
 
     ###########################################################################
     # Error Case
@@ -521,6 +537,7 @@ class TestAppRoutersBondTokensPOST:
             "contact_information": "contact info test",  # update
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
+            "is_manual_transfer_approval": True,  # update
         }
         resp = client.post(
             self.apiurl,
@@ -614,6 +631,7 @@ class TestAppRoutersBondTokensPOST:
             "contact_information": GetRandomStr(2001),  # update
             "privacy_policy": GetRandomStr(5001),  # update
             "transfer_approval_required": True,  # update
+            "is_manual_transfer_approval": True,  # update
         }
         resp = client.post(
             self.apiurl,

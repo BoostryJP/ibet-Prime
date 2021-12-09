@@ -21,7 +21,9 @@ from sqlalchemy import (
     Integer,
     String,
     JSON,
-    DateTime
+    DateTime,
+    Boolean,
+    BigInteger
 )
 
 from .base import Base
@@ -44,6 +46,21 @@ class Token(Base):
     abi = Column(JSON, nullable=False)
     # token processing status (pending:0, succeeded:1, failed:2)
     token_status = Column(Integer, default=1)
+
+
+class AdditionalTokenInfo(Base):
+    """Additional Token Information"""
+    __tablename__ = "additional_token_info"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    # token address
+    token_address = Column(String(42), index=True)
+    # manually or not if transfer approval is required
+    is_manual_transfer_approval = Column(Boolean)
+    # block number when registered
+    block_number = Column(BigInteger, nullable=False)
+    # block timestamp when registered
+    block_timestamp = Column(DateTime, nullable=False)
 
 
 class TokenAttrUpdate(Base):

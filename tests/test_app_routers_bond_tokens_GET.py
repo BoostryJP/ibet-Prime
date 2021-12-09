@@ -17,11 +17,16 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import pytz
+from datetime import datetime
 from unittest import mock
 from unittest.mock import call
 
 from app.model.blockchain import IbetStraightBondContract
-from app.model.db import Token, TokenType
+from app.model.db import (
+    Token,
+    TokenType,
+    AdditionalTokenInfo
+)
 from config import TZ
 from tests.account_config import config_eth_account
 
@@ -134,6 +139,7 @@ class TestAppRoutersBondTokensGET:
                 "issue_datetime": _issue_datetime,
                 "token_status": 1,
                 "transfer_approval_required": True,
+                "is_manual_transfer_approval": False,
                 "memo": "memo_test1",
             },
         ]
@@ -160,6 +166,14 @@ class TestAppRoutersBondTokensGET:
         db.add(token_1)
         db.commit()
         _issue_datetime_1 = pytz.timezone("UTC").localize(token_1.created).astimezone(self.local_tz).isoformat()
+
+        additional_info_1 = AdditionalTokenInfo()
+        additional_info_1.token_address = "token_address_test1"
+        additional_info_1.is_manual_transfer_approval = True
+        additional_info_1.block_number = 1
+        additional_info_1.block_timestamp = datetime.utcnow()
+        db.add(additional_info_1)
+        db.commit()
 
         mock_token_1 = IbetStraightBondContract()
         mock_token_1.issuer_address = token_1.issuer_address
@@ -204,6 +218,14 @@ class TestAppRoutersBondTokensGET:
         db.add(token_2)
         db.commit()
         _issue_datetime_2 = pytz.timezone("UTC").localize(token_2.created).astimezone(self.local_tz).isoformat()
+
+        additional_info_2 = AdditionalTokenInfo()
+        additional_info_2.token_address = "token_address_test2"
+        additional_info_2.is_manual_transfer_approval = None  # not target
+        additional_info_2.block_number = 1
+        additional_info_2.block_timestamp = datetime.utcnow()
+        db.add(additional_info_2)
+        db.commit()
 
         mock_token_2 = IbetStraightBondContract()
         mock_token_2.issuer_address = token_2.issuer_address
@@ -280,6 +302,7 @@ class TestAppRoutersBondTokensGET:
                 "issue_datetime": _issue_datetime_1,
                 "token_status": 1,
                 "transfer_approval_required": True,
+                "is_manual_transfer_approval": True,
                 "memo": "memo_test1",
             },
             {
@@ -314,6 +337,7 @@ class TestAppRoutersBondTokensGET:
                 "issue_datetime": _issue_datetime_2,
                 "token_status": 0,
                 "transfer_approval_required": False,
+                "is_manual_transfer_approval": False,
                 "memo": "memo_test2",
             },
         ]
@@ -445,6 +469,7 @@ class TestAppRoutersBondTokensGET:
                 "issue_datetime": _issue_datetime,
                 "token_status": 1,
                 "transfer_approval_required": True,
+                "is_manual_transfer_approval": False,
                 "memo": "memo_test1",
             },
         ]
@@ -600,6 +625,7 @@ class TestAppRoutersBondTokensGET:
                 "issue_datetime": _issue_datetime_1,
                 "token_status": 1,
                 "transfer_approval_required": True,
+                "is_manual_transfer_approval": False,
                 "memo": "memo_test1",
             },
             {
@@ -634,6 +660,7 @@ class TestAppRoutersBondTokensGET:
                 "issue_datetime": _issue_datetime_2,
                 "token_status": 0,
                 "transfer_approval_required": False,
+                "is_manual_transfer_approval": False,
                 "memo": "memo_test2",
             },
         ]

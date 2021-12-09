@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import uuid
+from datetime import datetime
 from typing import (
     List,
     Optional
@@ -47,13 +48,17 @@ from app.model.schema import (
     HolderResponse,
     TransferHistoryResponse,
     TransferApprovalHistoryResponse,
+    TransferApprovalResponse,
     BulkTransferUploadIdResponse,
     BulkTransferUploadResponse,
     BulkTransferResponse,
     IbetShareScheduledUpdate,
     ScheduledEventIdResponse,
     ScheduledEventResponse,
-    ModifyPersonalInfoRequest
+    ModifyPersonalInfoRequest,
+    IbetSecurityTokenApproveTransfer,
+    IbetSecurityTokenCancelTransfer,
+    IbetSecurityTokenEscrowApproveTransfer
 )
 from app.utils.check_utils import (
     validate_headers,
@@ -62,11 +67,13 @@ from app.utils.check_utils import (
     eoa_password_is_encrypted_value,
     check_auth
 )
+from app.utils.web3_utils import Web3Wrapper
 from app.utils.docs_utils import get_routers_responses
 from app.model.db import (
     Account,
     Token,
     TokenType,
+    AdditionalTokenInfo,
     UpdateToken,
     IDXPosition,
     IDXPersonalInfo,
@@ -79,7 +86,8 @@ from app.model.db import (
 from app.model.blockchain import (
     IbetShareContract,
     TokenListContract,
-    PersonalInfoContract
+    PersonalInfoContract,
+    IbetSecurityTokenEscrow
 )
 from app.exceptions import (
     InvalidParameterError,
@@ -91,6 +99,7 @@ router = APIRouter(
     tags=["share"],
 )
 
+web3 = Web3Wrapper()
 local_tz = timezone(config.TZ)
 
 
@@ -207,6 +216,16 @@ def issue_token(
     _token.token_status = token_status
     db.add(_token)
 
+    # Register additional token info data
+    if token.is_manual_transfer_approval is not None:
+        _additional_info = AdditionalTokenInfo()
+        _additional_info.token_address = contract_address
+        block = web3.eth.get_block("latest")
+        _additional_info.block_number = block["number"]
+        _additional_info.block_timestamp = datetime.fromtimestamp(block["timestamp"], tz=timezone("UTC"))
+        _additional_info.is_manual_transfer_approval = token.is_manual_transfer_approval
+        db.add(_additional_info)
+
     db.commit()
 
     return {
@@ -239,13 +258,25 @@ def list_all_tokens(
             filter(Token.issuer_address == issuer_address). \
             all()
 
-    # Get contract data
     share_tokens = []
     for token in tokens:
+        # Get contract data
         share_token = IbetShareContract.get(contract_address=token.token_address).__dict__
         issue_datetime_utc = timezone("UTC").localize(token.created)
         share_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
         share_token["token_status"] = token.token_status
+
+        # Set additional info
+        _additional_info = db.query(AdditionalTokenInfo). \
+            filter(AdditionalTokenInfo.token_address == token.token_address). \
+            filter(AdditionalTokenInfo.is_manual_transfer_approval != None). \
+            order_by(desc(AdditionalTokenInfo.block_number)). \
+            first()
+        is_manual_transfer_approval = False
+        if _additional_info is not None:
+            is_manual_transfer_approval = _additional_info.is_manual_transfer_approval
+        share_token["is_manual_transfer_approval"] = is_manual_transfer_approval
+
         share_tokens.append(share_token)
 
     return share_tokens
@@ -277,6 +308,17 @@ def retrieve_token(
     issue_datetime_utc = timezone("UTC").localize(_token.created)
     share_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
     share_token["token_status"] = _token.token_status
+
+    # Set additional info
+    _additional_info = db.query(AdditionalTokenInfo). \
+        filter(AdditionalTokenInfo.token_address == token_address). \
+        filter(AdditionalTokenInfo.is_manual_transfer_approval != None). \
+        order_by(desc(AdditionalTokenInfo.block_number)). \
+        first()
+    is_manual_transfer_approval = False
+    if _additional_info is not None:
+        is_manual_transfer_approval = _additional_info.is_manual_transfer_approval
+    share_token["is_manual_transfer_approval"] = is_manual_transfer_approval
 
     return share_token
 
@@ -333,6 +375,17 @@ def update_token(
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
 
+    # Register additional token info data
+    if token.is_manual_transfer_approval is not None:
+        _additional_info = AdditionalTokenInfo()
+        _additional_info.token_address = token_address
+        block = web3.eth.get_block("latest")
+        _additional_info.block_number = block["number"]
+        _additional_info.block_timestamp = datetime.fromtimestamp(block["timestamp"], tz=timezone("UTC"))
+        _additional_info.is_manual_transfer_approval = token.is_manual_transfer_approval
+        db.add(_additional_info)
+
+    db.commit()
     return
 
 
@@ -1006,6 +1059,178 @@ def list_transfer_approval_history(
         },
         "transfer_approval_history": transfer_approval_history
     }
+
+
+# POST: /share/transfer_approvals/{token_address}/{id}
+@router.post(
+    "/transfer_approvals/{token_address}/{id}",
+    responses=get_routers_responses(422, 410, 404, InvalidParameterError)
+)
+def approve_transfer(
+        request: Request,
+        token_address: str,
+        id: int,
+        issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
+        db: Session = Depends(db_session)
+):
+    """Approve share token transfer"""
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
+                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
+
+    # Authentication
+    _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
+
+    # Get private key
+    keyfile_json = _account.keyfile
+    private_key = decode_keyfile_json(
+        raw_keyfile_json=keyfile_json,
+        password=decrypt_password.encode("utf-8")
+    )
+
+    # Get token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
+
+    # Get transfer approval history
+    _transfer_approval = db.query(IDXTransferApproval). \
+        filter(IDXTransferApproval.id == id). \
+        filter(IDXTransferApproval.token_address == token_address). \
+        first()
+    if _transfer_approval is None:
+        raise HTTPException(status_code=404, detail="transfer approval not found")
+    if _transfer_approval.approval_blocktimestamp is not None:
+        raise InvalidParameterError("already approved")
+    if _transfer_approval.cancelled is True:
+        raise InvalidParameterError("canceled application")
+
+    # Check manually approval
+    _additional_info = db.query(AdditionalTokenInfo). \
+        filter(AdditionalTokenInfo.token_address == token_address). \
+        filter(AdditionalTokenInfo.is_manual_transfer_approval != None). \
+        order_by(desc(AdditionalTokenInfo.block_number)). \
+        first()
+    if _additional_info is None or _additional_info.is_manual_transfer_approval is not True:
+        raise InvalidParameterError("token is automatic approval")
+
+    # Send transaction
+    try:
+        now = str(datetime.utcnow().timestamp())
+        if _transfer_approval.exchange_address is None:
+            _data = {
+                "application_id": _transfer_approval.application_id,
+                "data": now
+            }
+            _, tx_receipt = IbetShareContract.approve_transfer(
+                contract_address=token_address,
+                data=IbetSecurityTokenApproveTransfer(**_data),
+                tx_from=issuer_address,
+                private_key=private_key,
+            )
+            if tx_receipt["status"] != 1:  # Success
+                IbetShareContract.cancel_transfer(
+                    contract_address=token_address,
+                    data=IbetSecurityTokenCancelTransfer(**_data),
+                    tx_from=issuer_address,
+                    private_key=private_key,
+                )
+                raise SendTransactionError
+        else:
+            _data = {
+                "escrow_id": _transfer_approval.application_id,
+                "data": now
+            }
+            escrow = IbetSecurityTokenEscrow(_transfer_approval.exchange_address)
+            _, tx_receipt = escrow.approve_transfer(
+                data=IbetSecurityTokenEscrowApproveTransfer(**_data),
+                tx_from=issuer_address,
+                private_key=private_key,
+            )
+            if tx_receipt["status"] != 1:  # Success
+                raise SendTransactionError
+    except SendTransactionError:
+        raise SendTransactionError("failed to send transaction")
+
+
+# GET: /share/transfer_approvals/{token_address}/{id}
+@router.get(
+    "/transfer_approvals/{token_address}/{id}",
+    response_model=TransferApprovalResponse,
+    responses=get_routers_responses(422, 404, InvalidParameterError)
+)
+def retrieve_transfer_approval_history(
+        token_address: str,
+        id: int,
+        db: Session = Depends(db_session)
+):
+    """Retrieve share token transfer approval history"""
+    # Get token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
+
+    # Get transfer approval history
+    _transfer_approval = db.query(IDXTransferApproval). \
+        filter(IDXTransferApproval.id == id). \
+        filter(IDXTransferApproval.token_address == token_address). \
+        first()
+    if _transfer_approval is None:
+        raise HTTPException(status_code=404, detail="transfer approval not found")
+
+    if _transfer_approval.cancelled is None:
+        cancelled = False
+    else:
+        cancelled = _transfer_approval.cancelled
+
+    application_datetime_utc = timezone("UTC").localize(_transfer_approval.application_datetime)
+    application_datetime = application_datetime_utc.astimezone(local_tz).isoformat()
+
+    application_blocktimestamp_utc = timezone("UTC").localize(_transfer_approval.application_blocktimestamp)
+    application_blocktimestamp = application_blocktimestamp_utc.astimezone(local_tz).isoformat()
+
+    if _transfer_approval.approval_datetime is not None:
+        approval_datetime_utc = timezone("UTC").localize(_transfer_approval.approval_datetime)
+        approval_datetime = approval_datetime_utc.astimezone(local_tz).isoformat()
+    else:
+        approval_datetime = None
+
+    if _transfer_approval.approval_blocktimestamp is not None:
+        approval_blocktimestamp_utc = timezone("UTC").localize(_transfer_approval.approval_blocktimestamp)
+        approval_blocktimestamp = approval_blocktimestamp_utc.astimezone(local_tz).isoformat()
+    else:
+        approval_blocktimestamp = None
+
+    history = {
+        "id": _transfer_approval.id,
+        "token_address": token_address,
+        "exchange_address": _transfer_approval.exchange_address,
+        "application_id": _transfer_approval.application_id,
+        "from_address": _transfer_approval.from_address,
+        "to_address": _transfer_approval.to_address,
+        "amount": _transfer_approval.amount,
+        "application_datetime": application_datetime,
+        "application_blocktimestamp": application_blocktimestamp,
+        "approval_datetime": approval_datetime,
+        "approval_blocktimestamp": approval_blocktimestamp,
+        "cancelled": cancelled
+    }
+
+    return history
 
 
 # POST: /share/bulk_transfer

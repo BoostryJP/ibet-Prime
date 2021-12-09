@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import os
 import sys
 import time
+import uuid
 from datetime import (
     datetime,
     timezone
@@ -42,7 +43,9 @@ from app.model.db import (
     Token,
     TokenType,
     IDXTransferApproval,
-    IDXTransferApprovalBlockNumber
+    IDXTransferApprovalBlockNumber,
+    Notification,
+    NotificationType
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
@@ -81,6 +84,10 @@ class Sinks:
         self.sinks.append(sink)
 
     def on_transfer_approval(self, *args, **kwargs):
+        for sink in self.sinks:
+            sink.on_transfer_approval(*args, **kwargs)
+
+    def on_info_notification(self, *args, **kwargs):
         for sink in self.sinks:
             sink.on_transfer_approval(*args, **kwargs)
 
@@ -171,6 +178,19 @@ class DBSink:
                 tz=timezone.utc
             )
         self.db.merge(transfer_approval)
+
+    def on_info_notification(self, issuer_address, code, token_address, id):
+        notification = Notification()
+        notification.notice_id = uuid.uuid4()
+        notification.issuer_address = issuer_address
+        notification.priority = 0  # Low
+        notification.type = NotificationType.TRANSFER_APPROVAL_INFO
+        notification.code = code
+        notification.metainfo = {
+            "token_address": token_address,
+            "id": id
+        }
+        self.db.add(notification)
 
     def flush(self):
         self.db.commit()
@@ -286,6 +306,13 @@ class Processor:
                             optional_data_applicant=args.get("data"),
                             block_timestamp=block_timestamp
                         )
+                        self.__register_notification(
+                            transaction_hash=event["transactionHash"],
+                            token_address=token.address,
+                            exchange_address=None,
+                            application_id=args.get("index"),
+                            notice_code=0
+                        )
             except Exception as e:
                 LOG.exception(e)
 
@@ -311,6 +338,13 @@ class Processor:
                         application_id=args.get("index"),
                         from_address=args.get("from", ZERO_ADDRESS),
                         to_address=args.get("to", ZERO_ADDRESS),
+                    )
+                    self.__register_notification(
+                        transaction_hash=event["transactionHash"],
+                        token_address=token.address,
+                        exchange_address=None,
+                        application_id=args.get("index"),
+                        notice_code=1
                     )
             except Exception as e:
                 LOG.exception(e)
@@ -375,6 +409,13 @@ class Processor:
                             optional_data_applicant=args.get("data"),
                             block_timestamp=block_timestamp
                         )
+                        self.__register_notification(
+                            transaction_hash=event["transactionHash"],
+                            token_address=args.get("token", ZERO_ADDRESS),
+                            exchange_address=exchange.address,
+                            application_id=args.get("escrowId"),
+                            notice_code=0
+                        )
             except Exception as e:
                 LOG.exception(e)
 
@@ -400,6 +441,13 @@ class Processor:
                         application_id=args.get("escrowId"),
                         from_address=args.get("from", ZERO_ADDRESS),
                         to_address=args.get("to", ZERO_ADDRESS),
+                    )
+                    self.__register_notification(
+                        transaction_hash=event["transactionHash"],
+                        token_address=args.get("token", ZERO_ADDRESS),
+                        exchange_address=exchange.address,
+                        application_id=args.get("escrowId"),
+                        notice_code=1
                     )
             except Exception as e:
                 LOG.exception(e)
@@ -433,6 +481,27 @@ class Processor:
             except Exception as e:
                 LOG.exception(e)
 
+    def __register_notification(self, transaction_hash, token_address, exchange_address, application_id, notice_code):
+
+        # Get IDXTransferApproval's Sequence Id
+        transfer_approval = self.db.query(IDXTransferApproval). \
+            filter(IDXTransferApproval.token_address == token_address). \
+            filter(IDXTransferApproval.exchange_address == exchange_address). \
+            filter(IDXTransferApproval.application_id == application_id). \
+            first()
+        if transfer_approval is not None:
+            # Get issuer address
+            token = self.db.query(Token). \
+                filter(Token.token_address == token_address). \
+                first()
+            sender = web3.eth.getTransaction(transaction_hash)["from"]
+            if token is not None and token.issuer_address != sender:
+                self.sink.on_info_notification(
+                    issuer_address=token.issuer_address,
+                    code=notice_code,
+                    token_address=token_address,
+                    id=transfer_approval.id
+                )
 
 _sink = Sinks()
 _sink.register(DBSink(db_session))

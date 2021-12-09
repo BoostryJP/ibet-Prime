@@ -19,10 +19,15 @@ SPDX-License-Identifier: Apache-2.0
 from unittest import mock
 from unittest.mock import call
 from pytz import timezone
+from datetime import datetime
 
 from config import TZ
 from app.model.blockchain import IbetShareContract
-from app.model.db import Token, TokenType
+from app.model.db import (
+    Token,
+    TokenType,
+    AdditionalTokenInfo
+)
 from tests.account_config import config_eth_account
 
 
@@ -109,6 +114,7 @@ class TestAppRoutersShareTokensGET:
                 "cancellation_date": "20221231",
                 "transferable": True,
                 "transfer_approval_required": False,
+                "is_manual_transfer_approval": False,
                 "is_offering": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
                 "is_canceled": False,
@@ -139,6 +145,14 @@ class TestAppRoutersShareTokensGET:
         db.add(token_1)
         db.commit()
         _issue_datetime_1 = timezone("UTC").localize(token_1.created).astimezone(self.local_tz).isoformat()
+
+        additional_info_1 = AdditionalTokenInfo()
+        additional_info_1.token_address = "token_address_test1"
+        additional_info_1.is_manual_transfer_approval = True
+        additional_info_1.block_number = 1
+        additional_info_1.block_timestamp = datetime.utcnow()
+        db.add(additional_info_1)
+        db.commit()
 
         mock_token_1 = IbetShareContract()
         mock_token_1.issuer_address = issuer_address_1
@@ -174,6 +188,14 @@ class TestAppRoutersShareTokensGET:
         db.add(token_2)
         db.commit()
         _issue_datetime_2 = timezone("UTC").localize(token_2.created).astimezone(self.local_tz).isoformat()
+
+        additional_info_2 = AdditionalTokenInfo()
+        additional_info_2.token_address = "token_address_test2"
+        additional_info_2.is_manual_transfer_approval = None  # not target
+        additional_info_2.block_number = 1
+        additional_info_2.block_timestamp = datetime.utcnow()
+        db.add(additional_info_2)
+        db.commit()
 
         mock_token_2 = IbetShareContract()
         mock_token_2.issuer_address = issuer_address_2
@@ -229,6 +251,7 @@ class TestAppRoutersShareTokensGET:
                 "cancellation_date": "20221231",
                 "transferable": True,
                 "transfer_approval_required": False,
+                "is_manual_transfer_approval": True,
                 "is_offering": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
                 "is_canceled": False,
@@ -254,6 +277,7 @@ class TestAppRoutersShareTokensGET:
                 "cancellation_date": "20221231",
                 "transferable": True,
                 "transfer_approval_required": False,
+                "is_manual_transfer_approval": False,
                 "is_offering": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
                 "is_canceled": False,
@@ -361,6 +385,7 @@ class TestAppRoutersShareTokensGET:
                 "cancellation_date": "20221231",
                 "transferable": True,
                 "transfer_approval_required": False,
+                "is_manual_transfer_approval": False,
                 "is_offering": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
                 "is_canceled": False,
@@ -490,6 +515,7 @@ class TestAppRoutersShareTokensGET:
                 "cancellation_date": "20221231",
                 "transferable": True,
                 "transfer_approval_required": False,
+                "is_manual_transfer_approval": False,
                 "is_offering": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
                 "is_canceled": False,
@@ -515,6 +541,7 @@ class TestAppRoutersShareTokensGET:
                 "cancellation_date": "20221231",
                 "transferable": True,
                 "transfer_approval_required": False,
+                "is_manual_transfer_approval": False,
                 "is_offering": True,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
                 "is_canceled": False,

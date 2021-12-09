@@ -16,15 +16,21 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import datetime
+from datetime import datetime
 from typing import List
 import os
 import sys
 import time
 
 from eth_keyfile import decode_keyfile_json
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy import (
+    create_engine,
+    desc
+)
+from sqlalchemy.orm import (
+    sessionmaker,
+    scoped_session
+)
 
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
@@ -37,6 +43,7 @@ from app.utils.e2ee_utils import E2EEUtils
 from app.model.db import (
     Account,
     Token,
+    AdditionalTokenInfo,
     IDXTransferApproval,
     TransferApprovalHistory
 )
@@ -49,14 +56,12 @@ from app.model.schema import (
     IbetSecurityTokenCancelTransfer,
     IbetSecurityTokenEscrowApproveTransfer
 )
-from app.utils.web3_utils import Web3Wrapper
 from app.exceptions import SendTransactionError
 import batch_log
 
 process_name = "PROCESSOR-Auto-Transfer-Approval"
 LOG = batch_log.get_logger(process_name=process_name)
 
-web3 = Web3Wrapper()
 engine = create_engine(DATABASE_URL, echo=False)
 db_session = scoped_session(sessionmaker())
 db_session.configure(bind=engine)
@@ -127,6 +132,17 @@ class Processor:
             first()
         return transfer_approval_history
 
+    def _get_additional_token_info(self,
+                                   token_address: str,
+                                   application_blocktimestamp: datetime) -> AdditionalTokenInfo:
+        _additional_info = self.db.query(AdditionalTokenInfo). \
+            filter(AdditionalTokenInfo.token_address == token_address). \
+            filter(AdditionalTokenInfo.is_manual_transfer_approval != None). \
+            filter(AdditionalTokenInfo.block_timestamp <= application_blocktimestamp). \
+            order_by(desc(AdditionalTokenInfo.block_number)). \
+            first()
+        return _additional_info
+
     def process(self):
         applications_tmp = self._get_application_list()
 
@@ -144,6 +160,14 @@ class Processor:
             token = self._get_token(application.token_address)
             if token is None:
                 LOG.warning(f"token not found: {application.token_address}")
+                continue
+
+            # Skip manually approval
+            additional_info = self._get_additional_token_info(
+                application.token_address,
+                application.application_blocktimestamp
+            )
+            if additional_info is not None and additional_info.is_manual_transfer_approval is True:
                 continue
 
             try:
@@ -180,7 +204,7 @@ class Processor:
 
     def _approve_transfer_token(self, application: IDXTransferApproval, issuer_address: str, private_key: str):
         try:
-            now = str(datetime.datetime.utcnow().timestamp())
+            now = str(datetime.utcnow().timestamp())
             _data = {
                 "application_id": application.application_id,
                 "data": now
@@ -220,7 +244,7 @@ class Processor:
 
     def _approve_transfer_exchange(self, application: IDXTransferApproval, issuer_address: str, private_key: str):
         try:
-            now = str(datetime.datetime.utcnow().timestamp())
+            now = str(datetime.utcnow().timestamp())
             _data = {
                 "escrow_id": application.application_id,
                 "data": now

@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import uuid
+from datetime import datetime
 from typing import (
     List,
     Optional
@@ -53,7 +54,11 @@ from app.model.schema import (
     ScheduledEventIdResponse,
     ScheduledEventResponse,
     ModifyPersonalInfoRequest,
-    TransferApprovalHistoryResponse
+    TransferApprovalHistoryResponse,
+    TransferApprovalResponse,
+    IbetSecurityTokenApproveTransfer,
+    IbetSecurityTokenCancelTransfer,
+    IbetSecurityTokenEscrowApproveTransfer
 )
 from app.utils.check_utils import (
     validate_headers,
@@ -62,11 +67,13 @@ from app.utils.check_utils import (
     eoa_password_is_encrypted_value,
     check_auth
 )
+from app.utils.web3_utils import Web3Wrapper
 from app.utils.docs_utils import get_routers_responses
 from app.model.db import (
     Account,
     Token,
     TokenType,
+    AdditionalTokenInfo,
     UpdateToken,
     IDXPosition,
     IDXPersonalInfo,
@@ -79,7 +86,8 @@ from app.model.db import (
 from app.model.blockchain import (
     IbetStraightBondContract,
     TokenListContract,
-    PersonalInfoContract
+    PersonalInfoContract,
+    IbetSecurityTokenEscrow
 )
 from app.exceptions import (
     InvalidParameterError,
@@ -92,6 +100,7 @@ router = APIRouter(
     tags=["bond"],
 )
 
+web3 = Web3Wrapper()
 local_tz = timezone(TZ)
 
 
@@ -218,6 +227,16 @@ def issue_token(
     _token.token_status = token_status
     db.add(_token)
 
+    # Register additional token info data
+    if token.is_manual_transfer_approval is not None:
+        _additional_info = AdditionalTokenInfo()
+        _additional_info.token_address = contract_address
+        block = web3.eth.get_block("latest")
+        _additional_info.block_number = block["number"]
+        _additional_info.block_timestamp = datetime.fromtimestamp(block["timestamp"], tz=timezone("UTC"))
+        _additional_info.is_manual_transfer_approval = token.is_manual_transfer_approval
+        db.add(_additional_info)
+
     db.commit()
 
     return {
@@ -253,13 +272,25 @@ def list_all_tokens(
             order_by(Token.id). \
             all()
 
-    # Get contract data
     bond_tokens = []
     for token in tokens:
+        # Get contract data
         bond_token = IbetStraightBondContract.get(contract_address=token.token_address).__dict__
         issue_datetime_utc = timezone("UTC").localize(token.created)
         bond_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
         bond_token["token_status"] = token.token_status
+
+        # Set additional info
+        _additional_info = db.query(AdditionalTokenInfo). \
+            filter(AdditionalTokenInfo.token_address == token.token_address). \
+            filter(AdditionalTokenInfo.is_manual_transfer_approval != None). \
+            order_by(desc(AdditionalTokenInfo.block_number)). \
+            first()
+        is_manual_transfer_approval = False
+        if _additional_info is not None:
+            is_manual_transfer_approval = _additional_info.is_manual_transfer_approval
+        bond_token["is_manual_transfer_approval"] = is_manual_transfer_approval
+
         bond_tokens.append(bond_token)
 
     return bond_tokens
@@ -291,6 +322,17 @@ def retrieve_token(
     issue_datetime_utc = timezone("UTC").localize(_token.created)
     bond_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
     bond_token["token_status"] = _token.token_status
+
+    # Set additional info
+    _additional_info = db.query(AdditionalTokenInfo). \
+        filter(AdditionalTokenInfo.token_address == token_address). \
+        filter(AdditionalTokenInfo.is_manual_transfer_approval != None). \
+        order_by(desc(AdditionalTokenInfo.block_number)). \
+        first()
+    is_manual_transfer_approval = False
+    if _additional_info is not None:
+        is_manual_transfer_approval = _additional_info.is_manual_transfer_approval
+    bond_token["is_manual_transfer_approval"] = is_manual_transfer_approval
 
     return bond_token
 
@@ -347,6 +389,17 @@ def update_token(
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
 
+    # Register additional token info data
+    if token.is_manual_transfer_approval is not None:
+        _additional_info = AdditionalTokenInfo()
+        _additional_info.token_address = token_address
+        block = web3.eth.get_block("latest")
+        _additional_info.block_number = block["number"]
+        _additional_info.block_timestamp = datetime.fromtimestamp(block["timestamp"], tz=timezone("UTC"))
+        _additional_info.is_manual_transfer_approval = token.is_manual_transfer_approval
+        db.add(_additional_info)
+
+    db.commit()
     return
 
 
@@ -932,72 +985,6 @@ def list_transfer_history(
     }
 
 
-# POST: /bond/bulk_transfer
-@router.post(
-    "/bulk_transfer",
-    response_model=BulkTransferUploadIdResponse,
-    responses=get_routers_responses(422, InvalidParameterError, 401)
-)
-def bulk_transfer_ownership(
-        request: Request,
-        tokens: List[IbetStraightBondTransfer],
-        issuer_address: str = Header(...),
-        eoa_password: Optional[str] = Header(None),
-        db: Session = Depends(db_session)):
-    """Bulk transfer token ownership"""
-
-    # Validate Headers
-    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
-                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
-
-    if len(tokens) < 1:
-        raise InvalidParameterError("list length is zero")
-
-    # Authentication
-    check_auth(issuer_address, eoa_password, db, request)
-
-    # Verify that the tokens are issued by the issuer_address
-    for _token in tokens:
-        _issued_token = db.query(Token). \
-            filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
-            filter(Token.issuer_address == issuer_address). \
-            filter(Token.token_address == _token.token_address). \
-            filter(Token.token_status != 2). \
-            first()
-        if _issued_token is None:
-            raise InvalidParameterError(f"token not found: {_token.token_address}")
-        if _issued_token.token_status == 0:
-            raise InvalidParameterError(f"wait for a while as the token is being processed: {_token.token_address}")
-
-    # generate upload_id
-    upload_id = uuid.uuid4()
-
-    # add bulk transfer upload record
-    _bulk_transfer_upload = BulkTransferUpload()
-    _bulk_transfer_upload.upload_id = upload_id
-    _bulk_transfer_upload.issuer_address = issuer_address
-    _bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
-    _bulk_transfer_upload.status = 0
-    db.add(_bulk_transfer_upload)
-
-    # add bulk transfer records
-    for _token in tokens:
-        _bulk_transfer = BulkTransfer()
-        _bulk_transfer.issuer_address = issuer_address
-        _bulk_transfer.upload_id = upload_id
-        _bulk_transfer.token_address = _token.token_address
-        _bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
-        _bulk_transfer.from_address = _token.from_address
-        _bulk_transfer.to_address = _token.to_address
-        _bulk_transfer.amount = _token.amount
-        _bulk_transfer.status = 0
-        db.add(_bulk_transfer)
-
-    db.commit()
-
-    return {"upload_id": str(upload_id)}
-
-
 # GET: /bond/transfer_approvals/{token_address}
 @router.get(
     "/transfer_approvals/{token_address}",
@@ -1086,6 +1073,244 @@ def list_transfer_approval_history(
         },
         "transfer_approval_history": transfer_approval_history
     }
+
+
+# POST: /bond/transfer_approvals/{token_address}/{id}
+@router.post(
+    "/transfer_approvals/{token_address}/{id}",
+    responses=get_routers_responses(422, 410, 404, InvalidParameterError)
+)
+def approve_transfer(
+        request: Request,
+        token_address: str,
+        id: int,
+        issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
+        db: Session = Depends(db_session)
+):
+    """Approve bond token transfer"""
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
+                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
+
+    # Authentication
+    _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
+
+    # Get private key
+    keyfile_json = _account.keyfile
+    private_key = decode_keyfile_json(
+        raw_keyfile_json=keyfile_json,
+        password=decrypt_password.encode("utf-8")
+    )
+
+    # Get token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
+
+    # Get transfer approval history
+    _transfer_approval = db.query(IDXTransferApproval). \
+        filter(IDXTransferApproval.id == id). \
+        filter(IDXTransferApproval.token_address == token_address). \
+        first()
+    if _transfer_approval is None:
+        raise HTTPException(status_code=404, detail="transfer approval not found")
+    if _transfer_approval.approval_blocktimestamp is not None:
+        raise InvalidParameterError("already approved")
+    if _transfer_approval.cancelled is True:
+        raise InvalidParameterError("canceled application")
+
+    # Check manually approval
+    _additional_info = db.query(AdditionalTokenInfo). \
+        filter(AdditionalTokenInfo.token_address == token_address). \
+        filter(AdditionalTokenInfo.is_manual_transfer_approval != None). \
+        order_by(desc(AdditionalTokenInfo.block_number)). \
+        first()
+    if _additional_info is None or _additional_info.is_manual_transfer_approval is not True:
+        raise InvalidParameterError("token is automatic approval")
+
+    # Send transaction
+    try:
+        now = str(datetime.utcnow().timestamp())
+        if _transfer_approval.exchange_address is None:
+            _data = {
+                "application_id": _transfer_approval.application_id,
+                "data": now
+            }
+            _, tx_receipt = IbetStraightBondContract.approve_transfer(
+                contract_address=token_address,
+                data=IbetSecurityTokenApproveTransfer(**_data),
+                tx_from=issuer_address,
+                private_key=private_key,
+            )
+            if tx_receipt["status"] != 1:  # Success
+                IbetStraightBondContract.cancel_transfer(
+                    contract_address=token_address,
+                    data=IbetSecurityTokenCancelTransfer(**_data),
+                    tx_from=issuer_address,
+                    private_key=private_key,
+                )
+                raise SendTransactionError
+        else:
+            _data = {
+                "escrow_id": _transfer_approval.application_id,
+                "data": now
+            }
+            escrow = IbetSecurityTokenEscrow(_transfer_approval.exchange_address)
+            _, tx_receipt = escrow.approve_transfer(
+                data=IbetSecurityTokenEscrowApproveTransfer(**_data),
+                tx_from=issuer_address,
+                private_key=private_key,
+            )
+            if tx_receipt["status"] != 1:  # Success
+                raise SendTransactionError
+    except SendTransactionError:
+        raise SendTransactionError("failed to send transaction")
+
+
+# GET: /bond/transfer_approvals/{token_address}/{id}
+@router.get(
+    "/transfer_approvals/{token_address}/{id}",
+    response_model=TransferApprovalResponse,
+    responses=get_routers_responses(422, 404, InvalidParameterError)
+)
+def retrieve_transfer_approval_history(
+        token_address: str,
+        id: int,
+        db: Session = Depends(db_session)
+):
+    """Retrieve bond token transfer approval history"""
+    # Get token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
+
+    # Get transfer approval history
+    _transfer_approval = db.query(IDXTransferApproval). \
+        filter(IDXTransferApproval.id == id). \
+        filter(IDXTransferApproval.token_address == token_address). \
+        first()
+    if _transfer_approval is None:
+        raise HTTPException(status_code=404, detail="transfer approval not found")
+
+    if _transfer_approval.cancelled is None:
+        cancelled = False
+    else:
+        cancelled = _transfer_approval.cancelled
+
+    application_datetime_utc = timezone("UTC").localize(_transfer_approval.application_datetime)
+    application_datetime = application_datetime_utc.astimezone(local_tz).isoformat()
+
+    application_blocktimestamp_utc = timezone("UTC").localize(_transfer_approval.application_blocktimestamp)
+    application_blocktimestamp = application_blocktimestamp_utc.astimezone(local_tz).isoformat()
+
+    if _transfer_approval.approval_datetime is not None:
+        approval_datetime_utc = timezone("UTC").localize(_transfer_approval.approval_datetime)
+        approval_datetime = approval_datetime_utc.astimezone(local_tz).isoformat()
+    else:
+        approval_datetime = None
+
+    if _transfer_approval.approval_blocktimestamp is not None:
+        approval_blocktimestamp_utc = timezone("UTC").localize(_transfer_approval.approval_blocktimestamp)
+        approval_blocktimestamp = approval_blocktimestamp_utc.astimezone(local_tz).isoformat()
+    else:
+        approval_blocktimestamp = None
+
+    history = {
+        "id": _transfer_approval.id,
+        "token_address": token_address,
+        "exchange_address": _transfer_approval.exchange_address,
+        "application_id": _transfer_approval.application_id,
+        "from_address": _transfer_approval.from_address,
+        "to_address": _transfer_approval.to_address,
+        "amount": _transfer_approval.amount,
+        "application_datetime": application_datetime,
+        "application_blocktimestamp": application_blocktimestamp,
+        "approval_datetime": approval_datetime,
+        "approval_blocktimestamp": approval_blocktimestamp,
+        "cancelled": cancelled
+    }
+
+    return history
+
+
+# POST: /bond/bulk_transfer
+@router.post(
+    "/bulk_transfer",
+    response_model=BulkTransferUploadIdResponse,
+    responses=get_routers_responses(422, InvalidParameterError, 401)
+)
+def bulk_transfer_ownership(
+        request: Request,
+        tokens: List[IbetStraightBondTransfer],
+        issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Bulk transfer token ownership"""
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
+                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
+
+    if len(tokens) < 1:
+        raise InvalidParameterError("list length is zero")
+
+    # Authentication
+    check_auth(issuer_address, eoa_password, db, request)
+
+    # Verify that the tokens are issued by the issuer_address
+    for _token in tokens:
+        _issued_token = db.query(Token). \
+            filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+            filter(Token.issuer_address == issuer_address). \
+            filter(Token.token_address == _token.token_address). \
+            filter(Token.token_status != 2). \
+            first()
+        if _issued_token is None:
+            raise InvalidParameterError(f"token not found: {_token.token_address}")
+        if _issued_token.token_status == 0:
+            raise InvalidParameterError(f"wait for a while as the token is being processed: {_token.token_address}")
+
+    # generate upload_id
+    upload_id = uuid.uuid4()
+
+    # add bulk transfer upload record
+    _bulk_transfer_upload = BulkTransferUpload()
+    _bulk_transfer_upload.upload_id = upload_id
+    _bulk_transfer_upload.issuer_address = issuer_address
+    _bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+    _bulk_transfer_upload.status = 0
+    db.add(_bulk_transfer_upload)
+
+    # add bulk transfer records
+    for _token in tokens:
+        _bulk_transfer = BulkTransfer()
+        _bulk_transfer.issuer_address = issuer_address
+        _bulk_transfer.upload_id = upload_id
+        _bulk_transfer.token_address = _token.token_address
+        _bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
+        _bulk_transfer.from_address = _token.from_address
+        _bulk_transfer.to_address = _token.to_address
+        _bulk_transfer.amount = _token.amount
+        _bulk_transfer.status = 0
+        db.add(_bulk_transfer)
+
+    db.commit()
+
+    return {"upload_id": str(upload_id)}
 
 
 # GET: /bond/bulk_transfer

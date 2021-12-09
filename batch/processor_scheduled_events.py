@@ -33,17 +33,22 @@ from sqlalchemy.orm import (
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
-from datetime import datetime
+from datetime import (
+    datetime,
+    timezone
+)
 from config import (
     DATABASE_URL,
     SCHEDULED_EVENTS_INTERVAL, SCHEDULED_EVENTS_WORKER_COUNT
 )
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.web3_utils import Web3Wrapper
 from app.model.db import (
     Account,
     ScheduledEvents,
     ScheduledEventType,
     TokenType,
+    AdditionalTokenInfo,
     Notification,
     NotificationType
 )
@@ -61,6 +66,7 @@ import batch_log
 process_name = "PROCESSOR-Scheduled-Events"
 LOG = batch_log.get_logger(process_name=process_name)
 
+web3 = Web3Wrapper()
 engine = create_engine(DATABASE_URL, echo=False)
 db_session = scoped_session(sessionmaker())
 db_session.configure(bind=engine)
@@ -84,6 +90,10 @@ class Sinks:
     def on_error_notification(self, *args, **kwargs):
         for sink in self.sinks:
             sink.on_error_notification(*args, **kwargs)
+
+    def on_additional_token_info(self, *args, **kwargs):
+        for sink in self.sinks:
+            sink.on_additional_token_info(*args, **kwargs)
 
     def flush(self, *args, **kwargs):
         for sink in self.sinks:
@@ -114,6 +124,16 @@ class DBSink:
             "token_type": token_type
         }
         self.db.add(notification)
+
+    def on_additional_token_info(self, token_address, **kwargs):
+        _additional_info = AdditionalTokenInfo()
+        _additional_info.token_address = token_address
+        block = web3.eth.get_block("latest")
+        _additional_info.block_number = block["number"]
+        _additional_info.block_timestamp = datetime.fromtimestamp(block["timestamp"], tz=timezone.utc)
+        if "is_manual_transfer_approval" in kwargs:
+            setattr(_additional_info, "is_manual_transfer_approval", kwargs["is_manual_transfer_approval"])
+        self.db.add(_additional_info)
 
     def flush(self):
         self.db.commit()
@@ -215,6 +235,13 @@ class Processor:
                             tx_from=_event.issuer_address,
                             private_key=private_key
                         )
+
+                        # Register additional token info data
+                        if "is_manual_transfer_approval" in _event.data:
+                            self.sink.on_additional_token_info(
+                                _event.token_address,
+                                is_manual_transfer_approval=_event.data["is_manual_transfer_approval"]
+                            )
                 elif _event.token_type == TokenType.IBET_STRAIGHT_BOND:
                     # Update
                     if _event.event_type == ScheduledEventType.UPDATE:
@@ -225,6 +252,14 @@ class Processor:
                             tx_from=_event.issuer_address,
                             private_key=private_key
                         )
+
+                        # Register additional token info data
+                        if "is_manual_transfer_approval" in _event.data:
+                            self.sink.on_additional_token_info(
+                                _event.token_address,
+                                is_manual_transfer_approval=_event.data["is_manual_transfer_approval"]
+                            )
+
                 self.sink.on_finish_event_process(
                     record_id=_event.id,
                     status=1

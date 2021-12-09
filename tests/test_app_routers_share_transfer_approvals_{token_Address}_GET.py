@@ -30,7 +30,7 @@ from app.model.db import (
 local_tz = timezone(config.TZ)
 
 
-class TestAppRoutersShareTransferApprovalsGET:
+class TestAppRoutersShareTransferApprovalsTokenAddressGET:
 
     # target API endpoint
     base_url = "/share/transfer_approvals/{}"

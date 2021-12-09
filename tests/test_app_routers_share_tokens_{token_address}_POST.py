@@ -21,6 +21,7 @@ from unittest.mock import (
     MagicMock,
     ANY
 )
+from datetime import datetime
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
@@ -30,7 +31,8 @@ from app.exceptions import SendTransactionError
 from app.model.db import (
     Account,
     Token,
-    TokenType
+    TokenType,
+    AdditionalTokenInfo
 )
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
@@ -87,6 +89,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": False,
+            "is_manual_transfer_approval": True,
             "principal_value": 1000,
             "is_canceled": True,
             "memo": "memo_test1"
@@ -109,6 +112,12 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         )
         assert resp.status_code == 200
         assert resp.json() is None
+        _additional_info = db.query(AdditionalTokenInfo).first()
+        assert _additional_info.id == 1
+        assert _additional_info.token_address == _token_address
+        assert _additional_info.is_manual_transfer_approval is True
+        assert isinstance(_additional_info.block_number, int)
+        assert isinstance(_additional_info.block_timestamp, datetime)
 
     # <Normal_2>
     # No request parameters
@@ -151,6 +160,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
+        _additional_info = db.query(AdditionalTokenInfo).first()
+        assert _additional_info is None
 
     ###########################################################################
     # Error Case
@@ -422,6 +433,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": False,
+            "is_manual_transfer_approval": True,
             "principal_value": -1,
             "is_canceled": True,
             "memo": "memo_test1"
@@ -489,6 +501,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": False,
+            "is_manual_transfer_approval": True,
             "principal_value": 5_000_000_001,
             "is_canceled": True,
             "memo": "memo_test1"
