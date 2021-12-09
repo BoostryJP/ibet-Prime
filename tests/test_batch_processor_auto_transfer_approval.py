@@ -34,7 +34,8 @@ from app.model.db import (
 from app.utils.e2ee_utils import E2EEUtils
 from app.model.schema.token import (
     IbetSecurityTokenApproveTransfer,
-    IbetSecurityTokenCancelTransfer
+    IbetSecurityTokenCancelTransfer,
+    IbetSecurityTokenEscrowApproveTransfer
 )
 from app.exceptions import SendTransactionError
 from batch.processor_auto_transfer_approval import (
@@ -59,10 +60,11 @@ class TestProcessor:
     # Normal Case
     ###########################################################################
 
-    # <Normal_1>
+    # <Normal_1_1>
     # tx_receipt status is 1 (Success)
+    # Apply from IbetStraightBond
     @pytest.mark.freeze_time('2021-04-27 12:34:56')
-    def test_normal_1(self, processor, db):
+    def test_normal_1_1(self, processor, db):
         _account = config_eth_account("user1")["address"]
         _keyfile = config_eth_account("user1")["keyfile_json"]
 
@@ -75,7 +77,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_STRAIGHT_BOND
         token.token_address = "token_address"
         token.issuer_address = _account
         token.abi = "abi"
@@ -85,7 +87,7 @@ class TestProcessor:
 
         # Prepare data : Token (issuer does not exist)
         dummy_issuer_token = Token()
-        dummy_issuer_token.type = TokenType.IBET_SHARE
+        dummy_issuer_token.type = TokenType.IBET_STRAIGHT_BOND
         dummy_issuer_token.token_address = "dummy_issuer_token_address"
         dummy_issuer_token.issuer_address = "ISSUER_DUMMY_ADDRESS"
         dummy_issuer_token.abi = "abi"
@@ -182,10 +184,270 @@ class TestProcessor:
             private_key=ANY
         )
 
-    # <Normal_2>
-    # tx_receipt status is 0 (Fail)
+    # <Normal_1_2>
+    # tx_receipt status is 1 (Success)
+    # Apply from IbetShare
     @pytest.mark.freeze_time('2021-04-27 12:34:56')
-    def test_normal_2(self, processor, db):
+    def test_normal_1_2(self, processor, db):
+        _account = config_eth_account("user1")["address"]
+        _keyfile = config_eth_account("user1")["keyfile_json"]
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = _account
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.keyfile = _keyfile
+        db.add(account)
+
+        # Prepare data : Token
+        token = Token()
+        token.type = TokenType.IBET_SHARE
+        token.token_address = "token_address"
+        token.issuer_address = _account
+        token.abi = "abi"
+        token.tx_hash = "tx_hash"
+        token.transfer_approval_required = True
+        db.add(token)
+
+        # Prepare data : Token (issuer does not exist)
+        dummy_issuer_token = Token()
+        dummy_issuer_token.type = TokenType.IBET_SHARE
+        dummy_issuer_token.token_address = "dummy_issuer_token_address"
+        dummy_issuer_token.issuer_address = "ISSUER_DUMMY_ADDRESS"
+        dummy_issuer_token.abi = "abi"
+        dummy_issuer_token.tx_hash = "tx_hash"
+        dummy_issuer_token.transfer_approval_required = True
+        db.add(dummy_issuer_token)
+
+        # Prepare data : IDXTransferApproval
+        idx_transfer_approval_0 = IDXTransferApproval()
+        idx_transfer_approval_0.token_address = "token_address"
+        idx_transfer_approval_0.application_id = 0
+        db.add(idx_transfer_approval_0)
+
+        # Prepare data : IDXTransferApproval, TransferApprovalHistory(approved)
+        idx_transfer_approval_1 = IDXTransferApproval()
+        idx_transfer_approval_1.token_address = "token_address"
+        idx_transfer_approval_1.application_id = 1
+        db.add(idx_transfer_approval_1)
+
+        transfer_approval_history = TransferApprovalHistory()
+        transfer_approval_history.token_address = "token_address"
+        transfer_approval_history.application_id = 1
+        transfer_approval_history.result = 2
+        db.add(transfer_approval_history)
+
+        # Prepare data : IDXTransferApproval(cancelled)
+        idx_transfer_approval_2 = IDXTransferApproval()
+        idx_transfer_approval_2.token_address = "token_address"
+        idx_transfer_approval_2.application_id = 2
+        idx_transfer_approval_2.cancelled = True
+        db.add(idx_transfer_approval_2)
+
+        # Prepare data : IDXTransferApproval(Token does not exists)
+        idx_transfer_approval_4 = IDXTransferApproval()
+        idx_transfer_approval_4.token_address = "dummy_token_address"
+        idx_transfer_approval_4.application_id = 0
+        db.add(idx_transfer_approval_4)
+        db.commit()
+
+        # mock
+        IbetSecurityTokenContract_approve_transfer = patch(
+            target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
+            return_value=("test_tx_hash", {"status": 1})
+        )
+
+        with IbetSecurityTokenContract_approve_transfer as mock_transfer:
+            # Execute batch
+            processor.process()
+
+        # Assertion : Success
+        transfer_approval_history = db.query(TransferApprovalHistory). \
+            filter(TransferApprovalHistory.token_address == "token_address"). \
+            filter(TransferApprovalHistory.application_id == 0). \
+            first()
+        assert transfer_approval_history.exchange_address is None
+        assert transfer_approval_history.result == 1
+
+        # Assertion : Skipped (approved)
+        transfer_approval_history = db.query(TransferApprovalHistory). \
+            filter(TransferApprovalHistory.token_address == "token_address"). \
+            filter(TransferApprovalHistory.application_id == 1). \
+            first()
+        assert transfer_approval_history.exchange_address is None
+        assert transfer_approval_history.result == 2
+
+        # Assertion : Skipped (cancelled)
+        transfer_approval_history = db.query(TransferApprovalHistory). \
+            filter(TransferApprovalHistory.token_address == "token_address"). \
+            filter(TransferApprovalHistory.application_id == 2). \
+            first()
+        assert transfer_approval_history is None
+
+        # Assertion: Skipped (Token does not exists)
+        transfer_approval_history = db.query(TransferApprovalHistory). \
+            filter(TransferApprovalHistory.token_address == "dummy_token_address"). \
+            filter(TransferApprovalHistory.application_id == 0). \
+            first()
+        assert transfer_approval_history is None
+
+        # Assertion: Skipped (Token issuer does not exists)
+        transfer_approval_history = db.query(TransferApprovalHistory). \
+            filter(TransferApprovalHistory.token_address == "dummy_issuer_token_address"). \
+            filter(TransferApprovalHistory.application_id == 0). \
+            first()
+        assert transfer_approval_history is None
+
+        _expected = {
+            "application_id": 0,
+            "data": str(datetime.datetime.utcnow().timestamp())
+        }
+
+        mock_transfer.assert_called_once_with(
+            contract_address="token_address",
+            data=IbetSecurityTokenApproveTransfer(**_expected),
+            tx_from=_account,
+            private_key=ANY
+        )
+
+    # <Normal_1_3>
+    # tx_receipt status is 1 (Success)
+    # Apply from IbetSecurityTokenEscrow
+    @pytest.mark.freeze_time('2021-04-27 12:34:56')
+    def test_normal_1_3(self, processor, db):
+        _account = config_eth_account("user1")["address"]
+        _keyfile = config_eth_account("user1")["keyfile_json"]
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = _account
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.keyfile = _keyfile
+        db.add(account)
+
+        # Prepare data : Token
+        token = Token()
+        token.type = TokenType.IBET_SHARE
+        token.token_address = "token_address"
+        token.issuer_address = _account
+        token.abi = "abi"
+        token.tx_hash = "tx_hash"
+        token.transfer_approval_required = True
+        db.add(token)
+
+        # Prepare data : Token (issuer does not exist)
+        dummy_issuer_token = Token()
+        dummy_issuer_token.type = TokenType.IBET_SHARE
+        dummy_issuer_token.token_address = "dummy_issuer_token_address"
+        dummy_issuer_token.issuer_address = "ISSUER_DUMMY_ADDRESS"
+        dummy_issuer_token.abi = "abi"
+        dummy_issuer_token.tx_hash = "tx_hash"
+        dummy_issuer_token.transfer_approval_required = True
+        db.add(dummy_issuer_token)
+
+        # Prepare data : IDXTransferApproval
+        idx_transfer_approval_0 = IDXTransferApproval()
+        idx_transfer_approval_0.token_address = "token_address"
+        idx_transfer_approval_0.exchange_address = "0x1234567890123456789012345678901234567890"
+        idx_transfer_approval_0.application_id = 0
+        db.add(idx_transfer_approval_0)
+
+        # Prepare data : IDXTransferApproval, TransferApprovalHistory(approved)
+        idx_transfer_approval_1 = IDXTransferApproval()
+        idx_transfer_approval_1.token_address = "token_address"
+        idx_transfer_approval_1.exchange_address = "0x1234567890123456789012345678901234567890"
+        idx_transfer_approval_1.application_id = 1
+        db.add(idx_transfer_approval_1)
+
+        transfer_approval_history = TransferApprovalHistory()
+        transfer_approval_history.token_address = "token_address"
+        transfer_approval_history.exchange_address = "0x1234567890123456789012345678901234567890"
+        transfer_approval_history.application_id = 1
+        transfer_approval_history.result = 2
+        db.add(transfer_approval_history)
+
+        # Prepare data : IDXTransferApproval(cancelled)
+        idx_transfer_approval_2 = IDXTransferApproval()
+        idx_transfer_approval_2.token_address = "token_address"
+        idx_transfer_approval_2.exchange_address = "0x1234567890123456789012345678901234567890"
+        idx_transfer_approval_2.application_id = 2
+        idx_transfer_approval_2.cancelled = True
+        db.add(idx_transfer_approval_2)
+
+        # Prepare data : IDXTransferApproval(Token does not exists)
+        idx_transfer_approval_4 = IDXTransferApproval()
+        idx_transfer_approval_4.token_address = "dummy_token_address"
+        idx_transfer_approval_4.exchange_address = "0x1234567890123456789012345678901234567890"
+        idx_transfer_approval_4.application_id = 0
+        db.add(idx_transfer_approval_4)
+        db.commit()
+
+        # mock
+        IbetSecurityTokenEscrow_approve_transfer = patch(
+            target="app.model.blockchain.exchange.IbetSecurityTokenEscrow.approve_transfer",
+            return_value=("test_tx_hash", {"status": 1})
+        )
+
+        with IbetSecurityTokenEscrow_approve_transfer as mock_transfer:
+            # Execute batch
+            processor.process()
+
+        # Assertion : Success
+        transfer_approval_history = db.query(TransferApprovalHistory). \
+            filter(TransferApprovalHistory.token_address == "token_address"). \
+            filter(TransferApprovalHistory.exchange_address == "0x1234567890123456789012345678901234567890"). \
+            filter(TransferApprovalHistory.application_id == 0). \
+            first()
+        assert transfer_approval_history.result == 1
+
+        # Assertion : Skipped (approved)
+        transfer_approval_history = db.query(TransferApprovalHistory). \
+            filter(TransferApprovalHistory.token_address == "token_address"). \
+            filter(TransferApprovalHistory.exchange_address == "0x1234567890123456789012345678901234567890"). \
+            filter(TransferApprovalHistory.application_id == 1). \
+            first()
+        assert transfer_approval_history.result == 2
+
+        # Assertion : Skipped (cancelled)
+        transfer_approval_history = db.query(TransferApprovalHistory). \
+            filter(TransferApprovalHistory.token_address == "token_address"). \
+            filter(TransferApprovalHistory.exchange_address == "0x1234567890123456789012345678901234567890"). \
+            filter(TransferApprovalHistory.application_id == 2). \
+            first()
+        assert transfer_approval_history is None
+
+        # Assertion: Skipped (Token does not exists)
+        transfer_approval_history = db.query(TransferApprovalHistory). \
+            filter(TransferApprovalHistory.token_address == "dummy_token_address"). \
+            filter(TransferApprovalHistory.exchange_address == "0x1234567890123456789012345678901234567890"). \
+            filter(TransferApprovalHistory.application_id == 0). \
+            first()
+        assert transfer_approval_history is None
+
+        # Assertion: Skipped (Token issuer does not exists)
+        transfer_approval_history = db.query(TransferApprovalHistory). \
+            filter(TransferApprovalHistory.token_address == "dummy_issuer_token_address"). \
+            filter(TransferApprovalHistory.exchange_address == "0x1234567890123456789012345678901234567890"). \
+            filter(TransferApprovalHistory.application_id == 0). \
+            first()
+        assert transfer_approval_history is None
+
+        _expected = {
+            "escrow_id": 0,
+            "data": str(datetime.datetime.utcnow().timestamp())
+        }
+
+        mock_transfer.assert_called_once_with(
+            data=IbetSecurityTokenEscrowApproveTransfer(**_expected),
+            tx_from=_account,
+            private_key=ANY
+        )
+
+    # <Normal_2_1>
+    # tx_receipt status is 0 (Fail)
+    # Token
+    @pytest.mark.freeze_time('2021-04-27 12:34:56')
+    def test_normal_2_1(self, processor, db):
         _account = config_eth_account("user1")["address"]
         _keyfile = config_eth_account("user1")["keyfile_json"]
 
@@ -240,6 +502,7 @@ class TestProcessor:
             filter(TransferApprovalHistory.token_address == "token_address"). \
             filter(TransferApprovalHistory.application_id == 0). \
             first()
+        assert transfer_approval_history.exchange_address is None
         assert transfer_approval_history.result == 2
 
         # Assertion: Skipped (already cancelled)
@@ -263,6 +526,84 @@ class TestProcessor:
         mock_cancel.assert_called_once_with(
             contract_address="token_address",
             data=IbetSecurityTokenCancelTransfer(**_expected),
+            tx_from=_account,
+            private_key=ANY
+        )
+
+    # <Normal_2_2>
+    # tx_receipt status is 0 (Fail)
+    # Exchange
+    @pytest.mark.freeze_time('2021-04-27 12:34:56')
+    def test_normal_2_2(self, processor, db):
+        _account = config_eth_account("user1")["address"]
+        _keyfile = config_eth_account("user1")["keyfile_json"]
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = _account
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.keyfile = _keyfile
+        db.add(account)
+
+        # Prepare data : Token
+        token = Token()
+        token.type = TokenType.IBET_SHARE
+        token.token_address = "token_address"
+        token.issuer_address = _account
+        token.abi = "abi"
+        token.tx_hash = "tx_hash"
+        token.transfer_approval_required = True
+        db.add(token)
+
+        # Prepare data : IDXTransferApproval
+        idx_transfer_approval_0 = IDXTransferApproval()
+        idx_transfer_approval_0.token_address = "token_address"
+        idx_transfer_approval_0.exchange_address = "0x1234567890123456789012345678901234567890"
+        idx_transfer_approval_0.application_id = 0
+        db.add(idx_transfer_approval_0)
+
+        # Prepare data : IDXTransferApproval(cancelled)
+        idx_transfer_approval_1 = IDXTransferApproval()
+        idx_transfer_approval_1.token_address = "token_address"
+        idx_transfer_approval_1.exchange_address = "0x1234567890123456789012345678901234567890"
+        idx_transfer_approval_1.application_id = 1
+        idx_transfer_approval_1.cancelled = True
+        db.add(idx_transfer_approval_1)
+        db.commit()
+
+        # mock
+        IbetSecurityTokenEscrow_approve_transfer = patch(
+            target="app.model.blockchain.exchange.IbetSecurityTokenEscrow.approve_transfer",
+            return_value=("test_tx_hash", {"status": 0})
+        )
+
+        with IbetSecurityTokenEscrow_approve_transfer as mock_transfer:
+            # Execute batch
+            processor.process()
+
+        # Assertion : Fail approve
+        transfer_approval_history = db.query(TransferApprovalHistory). \
+            filter(TransferApprovalHistory.token_address == "token_address"). \
+            filter(TransferApprovalHistory.exchange_address == "0x1234567890123456789012345678901234567890"). \
+            filter(TransferApprovalHistory.application_id == 0). \
+            first()
+        assert transfer_approval_history.result == 2
+
+        # Assertion: Skipped (already cancelled)
+        transfer_approval_history = db.query(TransferApprovalHistory). \
+            filter(TransferApprovalHistory.token_address == "token_address"). \
+            filter(TransferApprovalHistory.exchange_address == "0x1234567890123456789012345678901234567890"). \
+            filter(TransferApprovalHistory.application_id == 1). \
+            first()
+        assert transfer_approval_history is None
+
+        _expected = {
+            "escrow_id": 0,
+            "data": str(datetime.datetime.utcnow().timestamp())
+        }
+
+        mock_transfer.assert_called_once_with(
+            data=IbetSecurityTokenEscrowApproveTransfer(**_expected),
             tx_from=_account,
             private_key=ANY
         )

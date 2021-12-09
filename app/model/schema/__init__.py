@@ -48,6 +48,7 @@ from .token import (
     IbetShareAdd,
     IbetSecurityTokenApproveTransfer,
     IbetSecurityTokenCancelTransfer,
+    IbetSecurityTokenEscrowApproveTransfer,
     TokenAddressResponse,
     IbetStraightBondResponse,
     IbetShareResponse

@@ -52,7 +52,8 @@ from app.model.schema import (
     IbetStraightBondScheduledUpdate,
     ScheduledEventIdResponse,
     ScheduledEventResponse,
-    ModifyPersonalInfoRequest
+    ModifyPersonalInfoRequest,
+    TransferApprovalHistoryResponse
 )
 from app.utils.check_utils import (
     validate_headers,
@@ -72,7 +73,8 @@ from app.model.db import (
     BulkTransfer,
     BulkTransferUpload,
     IDXTransfer,
-    ScheduledEvents
+    ScheduledEvents,
+    IDXTransferApproval
 )
 from app.model.blockchain import (
     IbetStraightBondContract,
@@ -994,6 +996,96 @@ def bulk_transfer_ownership(
     db.commit()
 
     return {"upload_id": str(upload_id)}
+
+
+# GET: /bond/transfer_approvals/{token_address}
+@router.get(
+    "/transfer_approvals/{token_address}",
+    response_model=TransferApprovalHistoryResponse,
+    responses=get_routers_responses(422, 404, InvalidParameterError)
+)
+def list_transfer_approval_history(
+        token_address: str,
+        offset: Optional[int] = Query(None),
+        limit: Optional[int] = Query(None),
+        db: Session = Depends(db_session)
+):
+    """List token transfer approval history"""
+    # Get token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
+
+    # Get transfer approval history
+    query = db.query(IDXTransferApproval). \
+        filter(IDXTransferApproval.token_address == token_address). \
+        order_by(
+            IDXTransferApproval.exchange_address,
+            desc(IDXTransferApproval.id))
+    total = query.count()
+
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+    _transfer_approvals = query.all()
+    count = query.count()
+
+    transfer_approval_history = []
+    for _transfer_approval in _transfer_approvals:
+        if _transfer_approval.cancelled is None:
+            cancelled = False
+        else:
+            cancelled = _transfer_approval.cancelled
+
+        application_datetime_utc = timezone("UTC").localize(_transfer_approval.application_datetime)
+        application_datetime = application_datetime_utc.astimezone(local_tz).isoformat()
+
+        application_blocktimestamp_utc = timezone("UTC").localize(_transfer_approval.application_blocktimestamp)
+        application_blocktimestamp = application_blocktimestamp_utc.astimezone(local_tz).isoformat()
+
+        if _transfer_approval.approval_datetime is not None:
+            approval_datetime_utc = timezone("UTC").localize(_transfer_approval.approval_datetime)
+            approval_datetime = approval_datetime_utc.astimezone(local_tz).isoformat()
+        else:
+            approval_datetime = None
+
+        if _transfer_approval.approval_blocktimestamp is not None:
+            approval_blocktimestamp_utc = timezone("UTC").localize(_transfer_approval.approval_blocktimestamp)
+            approval_blocktimestamp = approval_blocktimestamp_utc.astimezone(local_tz).isoformat()
+        else:
+            approval_blocktimestamp = None
+
+        transfer_approval_history.append({
+            "id": _transfer_approval.id,
+            "token_address": token_address,
+            "exchange_address": _transfer_approval.exchange_address,
+            "application_id": _transfer_approval.application_id,
+            "from_address": _transfer_approval.from_address,
+            "to_address": _transfer_approval.to_address,
+            "amount": _transfer_approval.amount,
+            "application_datetime": application_datetime,
+            "application_blocktimestamp": application_blocktimestamp,
+            "approval_datetime": approval_datetime,
+            "approval_blocktimestamp": approval_blocktimestamp,
+            "cancelled": cancelled
+        })
+
+    return {
+        "result_set": {
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": total
+        },
+        "transfer_approval_history": transfer_approval_history
+    }
 
 
 # GET: /bond/bulk_transfer

@@ -41,11 +41,13 @@ from app.model.db import (
     TransferApprovalHistory
 )
 from app.model.blockchain import (
-    IbetSecurityTokenInterface
+    IbetSecurityTokenInterface,
+    IbetSecurityTokenEscrow
 )
 from app.model.schema import (
     IbetSecurityTokenApproveTransfer,
-    IbetSecurityTokenCancelTransfer
+    IbetSecurityTokenCancelTransfer,
+    IbetSecurityTokenEscrowApproveTransfer
 )
 from app.utils.web3_utils import Web3Wrapper
 from app.exceptions import SendTransactionError
@@ -80,9 +82,14 @@ class DBSink:
     def __init__(self, db):
         self.db = db
 
-    def on_set_status_transfer_approval_history(self, token_address: str, application_id: int, result: int):
+    def on_set_status_transfer_approval_history(self,
+                                                token_address: str,
+                                                exchange_address: str,
+                                                application_id: int,
+                                                result: int):
         transfer_approval_history = TransferApprovalHistory()
         transfer_approval_history.token_address = token_address
+        transfer_approval_history.exchange_address = exchange_address
         transfer_approval_history.application_id = application_id
         transfer_approval_history.result = result
         self.db.add(transfer_approval_history)
@@ -109,9 +116,13 @@ class Processor:
             all()
         return transfer_approval_list
 
-    def _get_transfer_approval_history(self, token_address: str, application_id: int) -> TransferApprovalHistory:
+    def _get_transfer_approval_history(self,
+                                       token_address: str,
+                                       exchange_address: str,
+                                       application_id: int) -> TransferApprovalHistory:
         transfer_approval_history = self.db.query(TransferApprovalHistory). \
             filter(TransferApprovalHistory.token_address == token_address). \
+            filter(TransferApprovalHistory.exchange_address == exchange_address). \
             filter(TransferApprovalHistory.application_id == application_id). \
             first()
         return transfer_approval_history
@@ -123,6 +134,7 @@ class Processor:
         for application in applications_tmp:
             transfer_approval_history = self._get_transfer_approval_history(
                 token_address=application.token_address,
+                exchange_address=application.exchange_address,
                 application_id=application.application_id
             )
             if transfer_approval_history is None:
@@ -151,43 +163,94 @@ class Processor:
                 LOG.exception(f"Could not get the private key: token_address = {application.token_address}", err)
                 continue
 
-            try:
-                now = str(datetime.datetime.utcnow().timestamp())
-                _data = {
-                    "application_id": application.application_id,
-                    "data": now
-                }
-                tx_hash, tx_receipt = IbetSecurityTokenInterface.approve_transfer(
-                    contract_address=application.token_address,
-                    data=IbetSecurityTokenApproveTransfer(**_data),
-                    tx_from=token.issuer_address,
+            if application.exchange_address is None:
+                self._approve_transfer_token(
+                    application=application,
+                    issuer_address=token.issuer_address,
                     private_key=private_key
                 )
-                if tx_receipt["status"] == 1:  # Success
-                    result = 1
-                else:
-                    IbetSecurityTokenInterface.cancel_transfer(
-                        contract_address=application.token_address,
-                        data=IbetSecurityTokenCancelTransfer(**_data),
-                        tx_from=token.issuer_address,
-                        private_key=private_key
-                    )
-                    result = 2
-                    LOG.error(
-                        f"Transfer was canceled: "
-                        f"token_address={application.token_address}"
-                        f"application_id={application.application_id}")
-
-                self.sink.on_set_status_transfer_approval_history(
-                    token_address=application.token_address,
-                    application_id=application.application_id,
-                    result=result
+            else:
+                self._approve_transfer_exchange(
+                    application=application,
+                    issuer_address=token.issuer_address,
+                    private_key=private_key
                 )
-            except SendTransactionError:
-                LOG.warning(f"Failed to send transaction: token_address=<{application.token_address}> "
-                            f"application_id=<{application.application_id}>")
 
             self.sink.flush()
+
+    def _approve_transfer_token(self, application: IDXTransferApproval, issuer_address: str, private_key: str):
+        try:
+            now = str(datetime.datetime.utcnow().timestamp())
+            _data = {
+                "application_id": application.application_id,
+                "data": now
+            }
+            tx_hash, tx_receipt = IbetSecurityTokenInterface.approve_transfer(
+                contract_address=application.token_address,
+                data=IbetSecurityTokenApproveTransfer(**_data),
+                tx_from=issuer_address,
+                private_key=private_key
+            )
+            if tx_receipt["status"] == 1:  # Success
+                result = 1
+            else:
+                IbetSecurityTokenInterface.cancel_transfer(
+                    contract_address=application.token_address,
+                    data=IbetSecurityTokenCancelTransfer(**_data),
+                    tx_from=issuer_address,
+                    private_key=private_key
+                )
+                result = 2
+                LOG.error(f"Transfer was canceled: "
+                          f"token_address={application.token_address} "
+                          f"exchange_address={application.exchange_address} "
+                          f"application_id={application.application_id}")
+
+            self.sink.on_set_status_transfer_approval_history(
+                token_address=application.token_address,
+                exchange_address=None,
+                application_id=application.application_id,
+                result=result
+            )
+        except SendTransactionError:
+            LOG.warning(f"Failed to send transaction: "
+                        f"token_address={application.token_address} "
+                        f"exchange_address={application.exchange_address} "
+                        f"application_id={application.application_id}")
+
+    def _approve_transfer_exchange(self, application: IDXTransferApproval, issuer_address: str, private_key: str):
+        try:
+            now = str(datetime.datetime.utcnow().timestamp())
+            _data = {
+                "escrow_id": application.application_id,
+                "data": now
+            }
+            _escrow = IbetSecurityTokenEscrow(application.exchange_address)
+            tx_hash, tx_receipt = _escrow.approve_transfer(
+                data=IbetSecurityTokenEscrowApproveTransfer(**_data),
+                tx_from=issuer_address,
+                private_key=private_key
+            )
+            if tx_receipt["status"] == 1:  # Success
+                result = 1
+            else:
+                result = 2
+                LOG.error(f"Failed to send transaction: "
+                          f"token_address={application.token_address} "
+                          f"exchange_address={application.exchange_address} "
+                          f"application_id={application.application_id}")
+
+            self.sink.on_set_status_transfer_approval_history(
+                token_address=application.token_address,
+                exchange_address=application.exchange_address,
+                application_id=application.application_id,
+                result=result
+            )
+        except SendTransactionError:
+            LOG.warning(f"Failed to send transaction: "
+                        f"token_address={application.token_address} "
+                        f"exchange_address={application.exchange_address} "
+                        f"application_id={application.application_id}")
 
 
 _sink = Sinks()

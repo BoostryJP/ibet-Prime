@@ -314,6 +314,12 @@ class IbetSecurityTokenCancelTransfer(BaseModel):
     data: str
 
 
+class IbetSecurityTokenEscrowApproveTransfer(BaseModel):
+    """ibet SecurityTokenEscrow schema (ApproveTransfer)"""
+    escrow_id: int
+    data: str
+
+
 ############################
 # RESPONSE
 ############################

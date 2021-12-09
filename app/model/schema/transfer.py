@@ -47,7 +47,9 @@ class TransferHistoryResponse(BaseModel):
 
 class TransferApprovalResponse(BaseModel):
     """transfer approval data"""
+    id: int
     token_address: str
+    exchange_address: Optional[str]
     application_id: int
     from_address: str
     to_address: str
