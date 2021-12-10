@@ -160,7 +160,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         assert resp.status_code == 200
         assert resp.json() is None
         _additional_info = db.query(AdditionalTokenInfo).first()
-        assert _additional_info is not None
+        assert _additional_info is None
 
     ###########################################################################
     # Error Case
@@ -759,7 +759,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
-        token.token_status = 1
+        token.token_status = 0
         db.add(token)
 
         # request target API
