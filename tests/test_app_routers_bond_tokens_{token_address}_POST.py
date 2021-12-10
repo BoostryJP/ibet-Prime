@@ -17,14 +17,22 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from unittest import mock
-from unittest.mock import MagicMock, ANY
+from unittest.mock import (
+    MagicMock,
+    ANY
+)
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
 import config
 from app.exceptions import SendTransactionError
-from app.model.db import Account, Token, TokenType
+from app.model.db import (
+    Account,
+    Token,
+    TokenType,
+    AdditionalTokenInfo
+)
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
@@ -81,6 +89,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": True,
+            "is_manual_transfer_approval": True,
             "memo": "memo_test1"
         }
         resp = client.post(
@@ -101,6 +110,9 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         )
         assert resp.status_code == 200
         assert resp.json() is None
+        _additional_info = db.query(AdditionalTokenInfo).first()
+        assert _additional_info.token_address == _token_address
+        assert _additional_info.is_manual_transfer_approval is True
 
     # <Normal_2>
     # No request parameters
@@ -143,6 +155,8 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
+        _additional_info = db.query(AdditionalTokenInfo).first()
+        assert _additional_info is None
 
     ###########################################################################
     # Error Case
@@ -415,6 +429,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": True,
+            "is_manual_transfer_approval": True,
             "memo": "memo_test1"
         }
         resp = client.post(
@@ -463,6 +478,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": True,
+            "is_manual_transfer_approval": True,
             "memo": "memo_test1",
         }
         resp = client.post(
@@ -541,6 +557,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": True,
+            "is_manual_transfer_approval": True,
             "memo": "memo_test1",
         }
         resp = client.post(

@@ -100,7 +100,7 @@ class ContractUtils:
                 }
             )
             # Send transaction
-            tx_hash, txn_receipt = ContractUtils.send_transaction(
+            tx_hash, tx_receipt = ContractUtils.send_transaction(
                 transaction=tx,
                 private_key=private_key
             )
@@ -111,10 +111,10 @@ class ContractUtils:
             raise SendTransactionError(error)
 
         contract_address = None
-        if txn_receipt is not None:
+        if tx_receipt is not None:
             # Check if contract address is registered from transaction receipt result.
-            if 'contractAddress' in txn_receipt.keys():
-                contract_address = txn_receipt['contractAddress']
+            if 'contractAddress' in tx_receipt.keys():
+                contract_address = tx_receipt['contractAddress']
 
         return contract_address, contract_json['abi'], tx_hash
 
@@ -172,11 +172,11 @@ class ContractUtils:
             )
             # Send Transaction
             tx_hash = web3.eth.sendRawTransaction(signed_tx.rawTransaction.hex())
-            txn_receipt = web3.eth.waitForTransactionReceipt(
+            tx_receipt = web3.eth.waitForTransactionReceipt(
                 transaction_hash=tx_hash,
                 timeout=10
             )
-            if txn_receipt["status"] == 0:
+            if tx_receipt["status"] == 0:
                 raise SendTransactionError
         except:
             raise
@@ -184,7 +184,7 @@ class ContractUtils:
             local_session.rollback()  # unlock record
             local_session.close()
 
-        return tx_hash.hex(), txn_receipt
+        return tx_hash.hex(), tx_receipt
 
     @staticmethod
     def is_token_attr_update(contract_address: str, base_datetime: datetime):

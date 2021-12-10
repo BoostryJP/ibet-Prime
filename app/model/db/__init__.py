@@ -24,6 +24,7 @@ from .account import (
 )
 from .token import (
     Token,
+    AdditionalTokenInfo,
     TokenAttrUpdate,
     TokenType
 )

@@ -34,8 +34,7 @@ from app.utils.contract_utils import ContractUtils
 from config import (
     CHAIN_ID,
     TX_GAS_LIMIT,
-    WEB3_HTTP_PROVIDER,
-    ZERO_ADDRESS
+    WEB3_HTTP_PROVIDER
 )
 from app.exceptions import SendTransactionError
 
@@ -272,14 +271,14 @@ class TestApproveTransfer:
 
         # test IbetExchangeInterface.get_account_balance
         security_token_escrow = IbetSecurityTokenEscrow(escrow_contract.address)
-        tx_hash, txn_receipt = security_token_escrow.approve_transfer(
+        tx_hash, tx_receipt = security_token_escrow.approve_transfer(
             data=IbetSecurityTokenEscrowApproveTransfer(escrow_id=1, data="test"),
             tx_from=user1_account["address"],
             private_key=user1_account_pk
         )
 
         # assertion
-        assert txn_receipt["status"] == 1
+        assert tx_receipt["status"] == 1
         account_balance = security_token_escrow.get_account_balance(
             user2_account["address"],
             token_contract.address

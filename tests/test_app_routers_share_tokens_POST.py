@@ -30,6 +30,7 @@ from app.model.db import (
     Account,
     Token,
     TokenType,
+    AdditionalTokenInfo,
     UpdateToken,
     IDXPosition
 )
@@ -141,6 +142,9 @@ class TestAppRoutersShareTokensPOST:
             update_token = db.query(UpdateToken).first()
             assert update_token is None
 
+            additional_info = db.query(AdditionalTokenInfo).first()
+            assert additional_info is None
+
     # <Normal_1_2>
     # create only
     # No input for symbol, dividends and cancellation_date.
@@ -228,6 +232,9 @@ class TestAppRoutersShareTokensPOST:
             update_token = db.query(UpdateToken).first()
             assert update_token is None
 
+            additional_info = db.query(AdditionalTokenInfo).first()
+            assert additional_info is None
+
     # <Normal_2>
     # include updates
     def test_normal_2(self, client, db):
@@ -272,6 +279,7 @@ class TestAppRoutersShareTokensPOST:
                 "contact_information": "contact info test",  # update
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
+                "is_manual_transfer_approval": True,  # update
                 "principal_value": 1000,
                 "is_canceled": True
             }
@@ -322,6 +330,10 @@ class TestAppRoutersShareTokensPOST:
             assert update_token.arguments == req_param
             assert update_token.status == 0
             assert update_token.trigger == "Issue"
+
+            additional_info = db.query(AdditionalTokenInfo).first()
+            assert additional_info.token_address == "contract_address_test1"
+            assert additional_info.is_manual_transfer_approval is True
 
     ###########################################################################
     # Error Case

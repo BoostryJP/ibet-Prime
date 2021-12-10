@@ -62,6 +62,7 @@ class IbetStraightBondCreate(BaseModel):
     contact_information: Optional[str] = Field(max_length=2000)
     privacy_policy: Optional[str] = Field(max_length=5000)
     transfer_approval_required: Optional[bool]
+    is_manual_transfer_approval: Optional[bool]
 
     @validator("interest_rate")
     def interest_rate_4_decimal_places(cls, v):
@@ -106,6 +107,7 @@ class IbetStraightBondUpdate(BaseModel):
     contact_information: Optional[str] = Field(max_length=2000)
     privacy_policy: Optional[str] = Field(max_length=5000)
     transfer_approval_required: Optional[bool]
+    is_manual_transfer_approval: Optional[bool]
     memo: Optional[str] = Field(max_length=2000)
 
     @validator("interest_rate")
@@ -193,6 +195,7 @@ class IbetShareCreate(BaseModel):
     contact_information: Optional[str] = Field(max_length=2000)
     privacy_policy: Optional[str] = Field(max_length=5000)
     transfer_approval_required: Optional[bool]
+    is_manual_transfer_approval: Optional[bool]
     is_canceled: Optional[bool]
 
     @validator("dividends")
@@ -231,6 +234,7 @@ class IbetShareUpdate(BaseModel):
     contact_information: Optional[str] = Field(max_length=2000)
     privacy_policy: Optional[str] = Field(max_length=5000)
     transfer_approval_required: Optional[bool]
+    is_manual_transfer_approval: Optional[bool]
     principal_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
     is_canceled: Optional[bool]
     memo: Optional[str] = Field(max_length=2000)
@@ -356,6 +360,7 @@ class IbetStraightBondResponse(BaseModel):
     issue_datetime: str
     token_status: int
     transfer_approval_required: bool
+    is_manual_transfer_approval: bool
     memo: str
 
 
@@ -374,6 +379,7 @@ class IbetShareResponse(BaseModel):
     cancellation_date: str
     transferable: bool
     transfer_approval_required: bool
+    is_manual_transfer_approval: bool
     status: bool
     is_offering: bool
     tradable_exchange_contract_address: str

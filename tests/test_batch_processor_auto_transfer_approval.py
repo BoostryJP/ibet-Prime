@@ -29,6 +29,7 @@ from app.model.db import (
     IDXTransferApproval,
     Token,
     TokenType,
+    AdditionalTokenInfo,
     TransferApprovalHistory,
 )
 from app.utils.e2ee_utils import E2EEUtils
@@ -82,7 +83,6 @@ class TestProcessor:
         token.issuer_address = _account
         token.abi = "abi"
         token.tx_hash = "tx_hash"
-        token.transfer_approval_required = True
         db.add(token)
 
         # Prepare data : Token (issuer does not exist)
@@ -92,19 +92,29 @@ class TestProcessor:
         dummy_issuer_token.issuer_address = "ISSUER_DUMMY_ADDRESS"
         dummy_issuer_token.abi = "abi"
         dummy_issuer_token.tx_hash = "tx_hash"
-        dummy_issuer_token.transfer_approval_required = True
         db.add(dummy_issuer_token)
+
+        # Prepare data : Token (manually approval)
+        manual_token = Token()
+        manual_token.type = TokenType.IBET_STRAIGHT_BOND
+        manual_token.token_address = "manual_token_address"
+        manual_token.issuer_address = _account
+        manual_token.abi = "abi"
+        manual_token.tx_hash = "tx_hash"
+        db.add(manual_token)
 
         # Prepare data : IDXTransferApproval
         idx_transfer_approval_0 = IDXTransferApproval()
         idx_transfer_approval_0.token_address = "token_address"
         idx_transfer_approval_0.application_id = 0
+        idx_transfer_approval_0.application_blocktimestamp = datetime.datetime.utcnow()
         db.add(idx_transfer_approval_0)
 
         # Prepare data : IDXTransferApproval, TransferApprovalHistory(approved)
         idx_transfer_approval_1 = IDXTransferApproval()
         idx_transfer_approval_1.token_address = "token_address"
         idx_transfer_approval_1.application_id = 1
+        idx_transfer_approval_1.application_blocktimestamp = datetime.datetime.utcnow()
         db.add(idx_transfer_approval_1)
 
         transfer_approval_history = TransferApprovalHistory()
@@ -117,6 +127,7 @@ class TestProcessor:
         idx_transfer_approval_2 = IDXTransferApproval()
         idx_transfer_approval_2.token_address = "token_address"
         idx_transfer_approval_2.application_id = 2
+        idx_transfer_approval_2.application_blocktimestamp = datetime.datetime.utcnow()
         idx_transfer_approval_2.cancelled = True
         db.add(idx_transfer_approval_2)
 
@@ -124,7 +135,30 @@ class TestProcessor:
         idx_transfer_approval_4 = IDXTransferApproval()
         idx_transfer_approval_4.token_address = "dummy_token_address"
         idx_transfer_approval_4.application_id = 0
+        idx_transfer_approval_4.application_blocktimestamp = datetime.datetime.utcnow()
         db.add(idx_transfer_approval_4)
+        db.commit()
+
+        # Prepare data : IDXTransferApproval(manually approval)
+        idx_transfer_approval_5 = IDXTransferApproval()
+        idx_transfer_approval_5.token_address = "manual_token_address"
+        idx_transfer_approval_5.application_id = 0
+        idx_transfer_approval_5.application_blocktimestamp = datetime.datetime(2020, 1, 1, 12, 59, 59)
+        db.add(idx_transfer_approval_5)
+        db.commit()
+
+        # Prepare data : AdditionalTokenInfo
+        additional_token_info = AdditionalTokenInfo()
+        additional_token_info.token_address = "token_address"
+        additional_token_info.is_manual_transfer_approval = None
+        db.add(additional_token_info)
+        db.commit()
+
+        # Prepare data : AdditionalTokenInfo(manually approval)
+        manual_additional_token_info = AdditionalTokenInfo()
+        manual_additional_token_info.token_address = "manual_token_address"
+        manual_additional_token_info.is_manual_transfer_approval = True
+        db.add(manual_additional_token_info)
         db.commit()
 
         # mock
@@ -168,6 +202,13 @@ class TestProcessor:
         # Assertion: Skipped (Token issuer does not exists)
         transfer_approval_history = db.query(TransferApprovalHistory). \
             filter(TransferApprovalHistory.token_address == "dummy_issuer_token_address"). \
+            filter(TransferApprovalHistory.application_id == 0). \
+            first()
+        assert transfer_approval_history is None
+
+        # Assertion: Skipped (manually approval)
+        transfer_approval_history = db.query(TransferApprovalHistory). \
+            filter(TransferApprovalHistory.token_address == "manual_token_address"). \
             filter(TransferApprovalHistory.application_id == 0). \
             first()
         assert transfer_approval_history is None
@@ -206,7 +247,6 @@ class TestProcessor:
         token.issuer_address = _account
         token.abi = "abi"
         token.tx_hash = "tx_hash"
-        token.transfer_approval_required = True
         db.add(token)
 
         # Prepare data : Token (issuer does not exist)
@@ -216,19 +256,29 @@ class TestProcessor:
         dummy_issuer_token.issuer_address = "ISSUER_DUMMY_ADDRESS"
         dummy_issuer_token.abi = "abi"
         dummy_issuer_token.tx_hash = "tx_hash"
-        dummy_issuer_token.transfer_approval_required = True
         db.add(dummy_issuer_token)
+
+        # Prepare data : Token (manually approval)
+        manual_token = Token()
+        manual_token.type = TokenType.IBET_STRAIGHT_BOND
+        manual_token.token_address = "manual_token_address"
+        manual_token.issuer_address = _account
+        manual_token.abi = "abi"
+        manual_token.tx_hash = "tx_hash"
+        db.add(manual_token)
 
         # Prepare data : IDXTransferApproval
         idx_transfer_approval_0 = IDXTransferApproval()
         idx_transfer_approval_0.token_address = "token_address"
         idx_transfer_approval_0.application_id = 0
+        idx_transfer_approval_0.application_blocktimestamp = datetime.datetime.utcnow()
         db.add(idx_transfer_approval_0)
 
         # Prepare data : IDXTransferApproval, TransferApprovalHistory(approved)
         idx_transfer_approval_1 = IDXTransferApproval()
         idx_transfer_approval_1.token_address = "token_address"
         idx_transfer_approval_1.application_id = 1
+        idx_transfer_approval_1.application_blocktimestamp = datetime.datetime.utcnow()
         db.add(idx_transfer_approval_1)
 
         transfer_approval_history = TransferApprovalHistory()
@@ -241,6 +291,7 @@ class TestProcessor:
         idx_transfer_approval_2 = IDXTransferApproval()
         idx_transfer_approval_2.token_address = "token_address"
         idx_transfer_approval_2.application_id = 2
+        idx_transfer_approval_2.application_blocktimestamp = datetime.datetime.utcnow()
         idx_transfer_approval_2.cancelled = True
         db.add(idx_transfer_approval_2)
 
@@ -248,7 +299,30 @@ class TestProcessor:
         idx_transfer_approval_4 = IDXTransferApproval()
         idx_transfer_approval_4.token_address = "dummy_token_address"
         idx_transfer_approval_4.application_id = 0
+        idx_transfer_approval_4.application_blocktimestamp = datetime.datetime.utcnow()
         db.add(idx_transfer_approval_4)
+        db.commit()
+
+        # Prepare data : IDXTransferApproval(manually approval)
+        idx_transfer_approval_5 = IDXTransferApproval()
+        idx_transfer_approval_5.token_address = "manual_token_address"
+        idx_transfer_approval_5.application_id = 0
+        idx_transfer_approval_5.application_blocktimestamp = datetime.datetime(2020, 1, 1, 12, 59, 59)
+        db.add(idx_transfer_approval_5)
+        db.commit()
+
+        # Prepare data : AdditionalTokenInf
+        additional_token_info = AdditionalTokenInfo()
+        additional_token_info.token_address = "token_address"
+        additional_token_info.is_manual_transfer_approval = False
+        db.add(additional_token_info)
+        db.commit()
+
+        # Prepare data : AdditionalTokenInfo(manually approval)
+        manual_additional_token_info = AdditionalTokenInfo()
+        manual_additional_token_info.token_address = "manual_token_address"
+        manual_additional_token_info.is_manual_transfer_approval = True
+        db.add(manual_additional_token_info)
         db.commit()
 
         # mock
@@ -298,6 +372,13 @@ class TestProcessor:
             first()
         assert transfer_approval_history is None
 
+        # Assertion: Skipped (manually approval)
+        transfer_approval_history = db.query(TransferApprovalHistory). \
+            filter(TransferApprovalHistory.token_address == "manual_token_address"). \
+            filter(TransferApprovalHistory.application_id == 0). \
+            first()
+        assert transfer_approval_history is None
+
         _expected = {
             "application_id": 0,
             "data": str(datetime.datetime.utcnow().timestamp())
@@ -332,7 +413,6 @@ class TestProcessor:
         token.issuer_address = _account
         token.abi = "abi"
         token.tx_hash = "tx_hash"
-        token.transfer_approval_required = True
         db.add(token)
 
         # Prepare data : Token (issuer does not exist)
@@ -342,14 +422,23 @@ class TestProcessor:
         dummy_issuer_token.issuer_address = "ISSUER_DUMMY_ADDRESS"
         dummy_issuer_token.abi = "abi"
         dummy_issuer_token.tx_hash = "tx_hash"
-        dummy_issuer_token.transfer_approval_required = True
         db.add(dummy_issuer_token)
+
+        # Prepare data : Token (manually approval)
+        manual_token = Token()
+        manual_token.type = TokenType.IBET_STRAIGHT_BOND
+        manual_token.token_address = "manual_token_address"
+        manual_token.issuer_address = _account
+        manual_token.abi = "abi"
+        manual_token.tx_hash = "tx_hash"
+        db.add(manual_token)
 
         # Prepare data : IDXTransferApproval
         idx_transfer_approval_0 = IDXTransferApproval()
         idx_transfer_approval_0.token_address = "token_address"
         idx_transfer_approval_0.exchange_address = "0x1234567890123456789012345678901234567890"
         idx_transfer_approval_0.application_id = 0
+        idx_transfer_approval_0.application_blocktimestamp = datetime.datetime.utcnow()
         db.add(idx_transfer_approval_0)
 
         # Prepare data : IDXTransferApproval, TransferApprovalHistory(approved)
@@ -357,6 +446,7 @@ class TestProcessor:
         idx_transfer_approval_1.token_address = "token_address"
         idx_transfer_approval_1.exchange_address = "0x1234567890123456789012345678901234567890"
         idx_transfer_approval_1.application_id = 1
+        idx_transfer_approval_1.application_blocktimestamp = datetime.datetime.utcnow()
         db.add(idx_transfer_approval_1)
 
         transfer_approval_history = TransferApprovalHistory()
@@ -371,6 +461,7 @@ class TestProcessor:
         idx_transfer_approval_2.token_address = "token_address"
         idx_transfer_approval_2.exchange_address = "0x1234567890123456789012345678901234567890"
         idx_transfer_approval_2.application_id = 2
+        idx_transfer_approval_2.application_blocktimestamp = datetime.datetime.utcnow()
         idx_transfer_approval_2.cancelled = True
         db.add(idx_transfer_approval_2)
 
@@ -379,7 +470,24 @@ class TestProcessor:
         idx_transfer_approval_4.token_address = "dummy_token_address"
         idx_transfer_approval_4.exchange_address = "0x1234567890123456789012345678901234567890"
         idx_transfer_approval_4.application_id = 0
+        idx_transfer_approval_4.application_blocktimestamp = datetime.datetime.utcnow()
         db.add(idx_transfer_approval_4)
+        db.commit()
+
+        # Prepare data : IDXTransferApproval(manually approval)
+        idx_transfer_approval_5 = IDXTransferApproval()
+        idx_transfer_approval_5.token_address = "manual_token_address"
+        idx_transfer_approval_5.exchange_address = "0x1234567890123456789012345678901234567890"
+        idx_transfer_approval_5.application_id = 0
+        idx_transfer_approval_5.application_blocktimestamp = datetime.datetime(2020, 1, 1, 12, 59, 59)
+        db.add(idx_transfer_approval_5)
+        db.commit()
+
+        # Prepare data : AdditionalTokenInfo(manually approval)
+        manual_additional_token_info = AdditionalTokenInfo()
+        manual_additional_token_info.token_address = "manual_token_address"
+        manual_additional_token_info.is_manual_transfer_approval = True
+        db.add(manual_additional_token_info)
         db.commit()
 
         # mock
@@ -432,6 +540,14 @@ class TestProcessor:
             first()
         assert transfer_approval_history is None
 
+        # Assertion: Skipped (manually approval)
+        transfer_approval_history = db.query(TransferApprovalHistory). \
+            filter(TransferApprovalHistory.token_address == "manual_token_address"). \
+            filter(TransferApprovalHistory.exchange_address == "0x1234567890123456789012345678901234567890"). \
+            filter(TransferApprovalHistory.application_id == 0). \
+            first()
+        assert transfer_approval_history is None
+
         _expected = {
             "escrow_id": 0,
             "data": str(datetime.datetime.utcnow().timestamp())
@@ -465,19 +581,20 @@ class TestProcessor:
         token.issuer_address = _account
         token.abi = "abi"
         token.tx_hash = "tx_hash"
-        token.transfer_approval_required = True
         db.add(token)
 
         # Prepare data : IDXTransferApproval
         idx_transfer_approval_0 = IDXTransferApproval()
         idx_transfer_approval_0.token_address = "token_address"
         idx_transfer_approval_0.application_id = 0
+        idx_transfer_approval_0.application_blocktimestamp = datetime.datetime.utcnow()
         db.add(idx_transfer_approval_0)
 
         # Prepare data : IDXTransferApproval(cancelled)
         idx_transfer_approval_1 = IDXTransferApproval()
         idx_transfer_approval_1.token_address = "token_address"
         idx_transfer_approval_1.application_id = 1
+        idx_transfer_approval_1.application_blocktimestamp = datetime.datetime.utcnow()
         idx_transfer_approval_1.cancelled = True
         db.add(idx_transfer_approval_1)
         db.commit()
@@ -552,7 +669,6 @@ class TestProcessor:
         token.issuer_address = _account
         token.abi = "abi"
         token.tx_hash = "tx_hash"
-        token.transfer_approval_required = True
         db.add(token)
 
         # Prepare data : IDXTransferApproval
@@ -560,6 +676,7 @@ class TestProcessor:
         idx_transfer_approval_0.token_address = "token_address"
         idx_transfer_approval_0.exchange_address = "0x1234567890123456789012345678901234567890"
         idx_transfer_approval_0.application_id = 0
+        idx_transfer_approval_0.application_blocktimestamp = datetime.datetime.utcnow()
         db.add(idx_transfer_approval_0)
 
         # Prepare data : IDXTransferApproval(cancelled)
@@ -567,6 +684,7 @@ class TestProcessor:
         idx_transfer_approval_1.token_address = "token_address"
         idx_transfer_approval_1.exchange_address = "0x1234567890123456789012345678901234567890"
         idx_transfer_approval_1.application_id = 1
+        idx_transfer_approval_1.application_blocktimestamp = datetime.datetime.utcnow()
         idx_transfer_approval_1.cancelled = True
         db.add(idx_transfer_approval_1)
         db.commit()
@@ -646,7 +764,6 @@ class TestProcessor:
         token.issuer_address = _account
         token.abi = "abi"
         token.tx_hash = "tx_hash"
-        token.transfer_approval_required = True
         db.add(token)
 
         # Prepare data : IDXTransferApproval
@@ -654,6 +771,7 @@ class TestProcessor:
         idx_transfer_approval = IDXTransferApproval()
         idx_transfer_approval.token_address = "token_address"
         idx_transfer_approval.application_id = 0
+        idx_transfer_approval.application_blocktimestamp = datetime.datetime.utcnow()
         db.add(idx_transfer_approval)
 
         # mock
@@ -700,13 +818,13 @@ class TestProcessor:
         token.issuer_address = _account
         token.abi = "abi"
         token.tx_hash = "tx_hash"
-        token.transfer_approval_required = True
         db.add(token)
 
         # Prepare data : IDXTransferApproval
         idx_transfer_approval = IDXTransferApproval()
         idx_transfer_approval.token_address = "token_address"
         idx_transfer_approval.application_id = 0
+        idx_transfer_approval.application_blocktimestamp = datetime.datetime.utcnow()
         db.add(idx_transfer_approval)
         db.commit()
 
