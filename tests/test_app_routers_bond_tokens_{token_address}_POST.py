@@ -21,7 +21,6 @@ from unittest.mock import (
     MagicMock,
     ANY
 )
-from datetime import datetime
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
@@ -112,11 +111,8 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         assert resp.status_code == 200
         assert resp.json() is None
         _additional_info = db.query(AdditionalTokenInfo).first()
-        assert _additional_info.id == 1
         assert _additional_info.token_address == _token_address
         assert _additional_info.is_manual_transfer_approval is True
-        assert isinstance(_additional_info.block_number, int)
-        assert isinstance(_additional_info.block_timestamp, datetime)
 
     # <Normal_2>
     # No request parameters

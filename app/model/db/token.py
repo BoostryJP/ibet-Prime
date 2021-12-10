@@ -52,15 +52,10 @@ class AdditionalTokenInfo(Base):
     """Additional Token Information"""
     __tablename__ = "additional_token_info"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
     # token address
-    token_address = Column(String(42), index=True)
+    token_address = Column(String(42), primary_key=True)
     # manually or not if transfer approval is required
     is_manual_transfer_approval = Column(Boolean)
-    # block number when registered
-    block_number = Column(BigInteger, nullable=False)
-    # block timestamp when registered
-    block_timestamp = Column(DateTime, nullable=False)
 
 
 class TokenAttrUpdate(Base):

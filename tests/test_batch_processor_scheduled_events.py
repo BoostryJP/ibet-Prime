@@ -265,11 +265,8 @@ class TestProcessor:
             first()
         assert _scheduled_event.status == 0
         _additional_info = db.query(AdditionalTokenInfo).first()
-        assert _additional_info.id == 1
         assert _additional_info.token_address == _token_address_2
         assert _additional_info.is_manual_transfer_approval is True
-        assert isinstance(_additional_info.block_number, int)
-        assert isinstance(_additional_info.block_timestamp, datetime)
 
     # <Normal_2_1>
     # IbetShare
@@ -480,11 +477,8 @@ class TestProcessor:
             first()
         assert _scheduled_event.status == 0
         _additional_info = db.query(AdditionalTokenInfo).first()
-        assert _additional_info.id == 1
         assert _additional_info.token_address == _token_address_2
         assert _additional_info.is_manual_transfer_approval is False
-        assert isinstance(_additional_info.block_number, int)
-        assert isinstance(_additional_info.block_timestamp, datetime)
 
     ###########################################################################
     # Error Case

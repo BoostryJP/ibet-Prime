@@ -18,7 +18,6 @@ SPDX-License-Identifier: Apache-2.0
 """
 from unittest.mock import patch
 from unittest.mock import ANY
-from datetime import datetime
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
@@ -333,11 +332,8 @@ class TestAppRoutersShareTokensPOST:
             assert update_token.trigger == "Issue"
 
             additional_info = db.query(AdditionalTokenInfo).first()
-            assert additional_info.id == 1
             assert additional_info.token_address == "contract_address_test1"
             assert additional_info.is_manual_transfer_approval is True
-            assert isinstance(additional_info.block_number, int)
-            assert isinstance(additional_info.block_timestamp, datetime)
 
     ###########################################################################
     # Error Case

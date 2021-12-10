@@ -109,8 +109,6 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         additional_info = AdditionalTokenInfo()
         additional_info.token_address = self.test_token_address
         additional_info.is_manual_transfer_approval = True
-        additional_info.block_number = 1
-        additional_info.block_timestamp = datetime.utcnow()
         db.add(additional_info)
 
         # mock
@@ -186,8 +184,6 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         additional_info = AdditionalTokenInfo()
         additional_info.token_address = self.test_token_address
         additional_info.is_manual_transfer_approval = True
-        additional_info.block_number = 1
-        additional_info.block_timestamp = datetime.utcnow()
         db.add(additional_info)
 
         # mock
@@ -546,8 +542,6 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         additional_info = AdditionalTokenInfo()
         additional_info.token_address = self.test_token_address
         additional_info.is_manual_transfer_approval = True
-        additional_info.block_number = 1
-        additional_info.block_timestamp = datetime.utcnow()
         db.add(additional_info)
 
         # request target api
@@ -610,8 +604,6 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         additional_info = AdditionalTokenInfo()
         additional_info.token_address = self.test_token_address
         additional_info.is_manual_transfer_approval = True
-        additional_info.block_number = 1
-        additional_info.block_timestamp = datetime.utcnow()
         db.add(additional_info)
 
         # request target api
@@ -675,8 +667,6 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         additional_info = AdditionalTokenInfo()
         additional_info.token_address = self.test_token_address
         additional_info.is_manual_transfer_approval = None  # not target
-        additional_info.block_number = 1
-        additional_info.block_timestamp = datetime.utcnow()
         db.add(additional_info)
 
         # request target api
@@ -740,8 +730,6 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         additional_info = AdditionalTokenInfo()
         additional_info.token_address = self.test_token_address
         additional_info.is_manual_transfer_approval = False
-        additional_info.block_number = 1
-        additional_info.block_timestamp = datetime.utcnow()
         db.add(additional_info)
 
         # request target api
@@ -808,8 +796,6 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         additional_info = AdditionalTokenInfo()
         additional_info.token_address = self.test_token_address
         additional_info.is_manual_transfer_approval = True
-        additional_info.block_number = 1
-        additional_info.block_timestamp = datetime.utcnow()
         db.add(additional_info)
 
         # request target API
@@ -873,8 +859,6 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         additional_info = AdditionalTokenInfo()
         additional_info.token_address = self.test_token_address
         additional_info.is_manual_transfer_approval = True
-        additional_info.block_number = 1
-        additional_info.block_timestamp = datetime.utcnow()
         db.add(additional_info)
 
         # mock
@@ -952,8 +936,6 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         additional_info = AdditionalTokenInfo()
         additional_info.token_address = self.test_token_address
         additional_info.is_manual_transfer_approval = True
-        additional_info.block_number = 1
-        additional_info.block_timestamp = datetime.utcnow()
         db.add(additional_info)
 
         # request target API
@@ -1017,8 +999,6 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         additional_info = AdditionalTokenInfo()
         additional_info.token_address = self.test_token_address
         additional_info.is_manual_transfer_approval = True
-        additional_info.block_number = 1
-        additional_info.block_timestamp = datetime.utcnow()
         db.add(additional_info)
 
         # mock

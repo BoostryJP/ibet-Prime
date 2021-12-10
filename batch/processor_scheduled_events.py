@@ -126,14 +126,15 @@ class DBSink:
         self.db.add(notification)
 
     def on_additional_token_info(self, token_address, **kwargs):
-        _additional_info = AdditionalTokenInfo()
-        _additional_info.token_address = token_address
-        block = web3.eth.get_block("latest")
-        _additional_info.block_number = block["number"]
-        _additional_info.block_timestamp = datetime.fromtimestamp(block["timestamp"], tz=timezone.utc)
+        _additional_info = self.db.query(AdditionalTokenInfo). \
+            filter(AdditionalTokenInfo.token_address == token_address). \
+            first()
+        if _additional_info is None:
+            _additional_info = AdditionalTokenInfo()
+            _additional_info.token_address = token_address
         if "is_manual_transfer_approval" in kwargs:
             setattr(_additional_info, "is_manual_transfer_approval", kwargs["is_manual_transfer_approval"])
-        self.db.add(_additional_info)
+        self.db.merge(_additional_info)
 
     def flush(self):
         self.db.commit()
@@ -236,7 +237,7 @@ class Processor:
                             private_key=private_key
                         )
 
-                        # Register additional token info data
+                        # Update or Register additional token info data
                         if "is_manual_transfer_approval" in _event.data:
                             self.sink.on_additional_token_info(
                                 _event.token_address,
@@ -253,7 +254,7 @@ class Processor:
                             private_key=private_key
                         )
 
-                        # Register additional token info data
+                        # Update or Register additional token info data
                         if "is_manual_transfer_approval" in _event.data:
                             self.sink.on_additional_token_info(
                                 _event.token_address,

@@ -17,7 +17,6 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import pytz
-from datetime import datetime
 from unittest import mock
 from unittest.mock import call
 
@@ -170,8 +169,6 @@ class TestAppRoutersBondTokensGET:
         additional_info_1 = AdditionalTokenInfo()
         additional_info_1.token_address = "token_address_test1"
         additional_info_1.is_manual_transfer_approval = True
-        additional_info_1.block_number = 1
-        additional_info_1.block_timestamp = datetime.utcnow()
         db.add(additional_info_1)
         db.commit()
 
@@ -222,8 +219,6 @@ class TestAppRoutersBondTokensGET:
         additional_info_2 = AdditionalTokenInfo()
         additional_info_2.token_address = "token_address_test2"
         additional_info_2.is_manual_transfer_approval = None  # not target
-        additional_info_2.block_number = 1
-        additional_info_2.block_timestamp = datetime.utcnow()
         db.add(additional_info_2)
         db.commit()
 

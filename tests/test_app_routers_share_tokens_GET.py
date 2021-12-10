@@ -19,7 +19,6 @@ SPDX-License-Identifier: Apache-2.0
 from unittest import mock
 from unittest.mock import call
 from pytz import timezone
-from datetime import datetime
 
 from config import TZ
 from app.model.blockchain import IbetShareContract
@@ -149,8 +148,6 @@ class TestAppRoutersShareTokensGET:
         additional_info_1 = AdditionalTokenInfo()
         additional_info_1.token_address = "token_address_test1"
         additional_info_1.is_manual_transfer_approval = True
-        additional_info_1.block_number = 1
-        additional_info_1.block_timestamp = datetime.utcnow()
         db.add(additional_info_1)
         db.commit()
 
@@ -192,8 +189,6 @@ class TestAppRoutersShareTokensGET:
         additional_info_2 = AdditionalTokenInfo()
         additional_info_2.token_address = "token_address_test2"
         additional_info_2.is_manual_transfer_approval = None  # not target
-        additional_info_2.block_number = 1
-        additional_info_2.block_timestamp = datetime.utcnow()
         db.add(additional_info_2)
         db.commit()
 

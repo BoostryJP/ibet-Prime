@@ -23,10 +23,7 @@ import sys
 import time
 
 from eth_keyfile import decode_keyfile_json
-from sqlalchemy import (
-    create_engine,
-    desc
-)
+from sqlalchemy import create_engine
 from sqlalchemy.orm import (
     sessionmaker,
     scoped_session
@@ -132,14 +129,9 @@ class Processor:
             first()
         return transfer_approval_history
 
-    def _get_additional_token_info(self,
-                                   token_address: str,
-                                   application_blocktimestamp: datetime) -> AdditionalTokenInfo:
+    def _get_additional_token_info(self, token_address: str) -> AdditionalTokenInfo:
         _additional_info = self.db.query(AdditionalTokenInfo). \
             filter(AdditionalTokenInfo.token_address == token_address). \
-            filter(AdditionalTokenInfo.is_manual_transfer_approval != None). \
-            filter(AdditionalTokenInfo.block_timestamp <= application_blocktimestamp). \
-            order_by(desc(AdditionalTokenInfo.block_number)). \
             first()
         return _additional_info
 
@@ -163,11 +155,8 @@ class Processor:
                 continue
 
             # Skip manually approval
-            additional_info = self._get_additional_token_info(
-                application.token_address,
-                application.application_blocktimestamp
-            )
-            if additional_info is not None and additional_info.is_manual_transfer_approval is True:
+            _additional_info = self._get_additional_token_info(application.token_address)
+            if _additional_info is not None and _additional_info.is_manual_transfer_approval is True:
                 continue
 
             try:

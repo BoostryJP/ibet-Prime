@@ -67,7 +67,6 @@ from app.utils.check_utils import (
     eoa_password_is_encrypted_value,
     check_auth
 )
-from app.utils.web3_utils import Web3Wrapper
 from app.utils.docs_utils import get_routers_responses
 from app.model.db import (
     Account,
@@ -100,7 +99,6 @@ router = APIRouter(
     tags=["bond"],
 )
 
-web3 = Web3Wrapper()
 local_tz = timezone(TZ)
 
 
@@ -231,9 +229,6 @@ def issue_token(
     if token.is_manual_transfer_approval is not None:
         _additional_info = AdditionalTokenInfo()
         _additional_info.token_address = contract_address
-        block = web3.eth.get_block("latest")
-        _additional_info.block_number = block["number"]
-        _additional_info.block_timestamp = datetime.fromtimestamp(block["timestamp"], tz=timezone("UTC"))
         _additional_info.is_manual_transfer_approval = token.is_manual_transfer_approval
         db.add(_additional_info)
 
@@ -283,11 +278,9 @@ def list_all_tokens(
         # Set additional info
         _additional_info = db.query(AdditionalTokenInfo). \
             filter(AdditionalTokenInfo.token_address == token.token_address). \
-            filter(AdditionalTokenInfo.is_manual_transfer_approval != None). \
-            order_by(desc(AdditionalTokenInfo.block_number)). \
             first()
         is_manual_transfer_approval = False
-        if _additional_info is not None:
+        if _additional_info is not None and _additional_info.is_manual_transfer_approval is not None:
             is_manual_transfer_approval = _additional_info.is_manual_transfer_approval
         bond_token["is_manual_transfer_approval"] = is_manual_transfer_approval
 
@@ -326,11 +319,9 @@ def retrieve_token(
     # Set additional info
     _additional_info = db.query(AdditionalTokenInfo). \
         filter(AdditionalTokenInfo.token_address == token_address). \
-        filter(AdditionalTokenInfo.is_manual_transfer_approval != None). \
-        order_by(desc(AdditionalTokenInfo.block_number)). \
         first()
     is_manual_transfer_approval = False
-    if _additional_info is not None:
+    if _additional_info is not None and _additional_info.is_manual_transfer_approval is not None:
         is_manual_transfer_approval = _additional_info.is_manual_transfer_approval
     bond_token["is_manual_transfer_approval"] = is_manual_transfer_approval
 
@@ -389,15 +380,16 @@ def update_token(
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
 
-    # Register additional token info data
+    # Update or Register additional token info data
     if token.is_manual_transfer_approval is not None:
-        _additional_info = AdditionalTokenInfo()
-        _additional_info.token_address = token_address
-        block = web3.eth.get_block("latest")
-        _additional_info.block_number = block["number"]
-        _additional_info.block_timestamp = datetime.fromtimestamp(block["timestamp"], tz=timezone("UTC"))
+        _additional_info = db.query(AdditionalTokenInfo). \
+            filter(AdditionalTokenInfo.token_address == token_address). \
+            first()
+        if _additional_info is None:
+            _additional_info = AdditionalTokenInfo()
+            _additional_info.token_address = token_address
         _additional_info.is_manual_transfer_approval = token.is_manual_transfer_approval
-        db.add(_additional_info)
+        db.merge(_additional_info)
 
     db.commit()
     return
@@ -1130,8 +1122,6 @@ def approve_transfer(
     # Check manually approval
     _additional_info = db.query(AdditionalTokenInfo). \
         filter(AdditionalTokenInfo.token_address == token_address). \
-        filter(AdditionalTokenInfo.is_manual_transfer_approval != None). \
-        order_by(desc(AdditionalTokenInfo.block_number)). \
         first()
     if _additional_info is None or _additional_info.is_manual_transfer_approval is not True:
         raise InvalidParameterError("token is automatic approval")

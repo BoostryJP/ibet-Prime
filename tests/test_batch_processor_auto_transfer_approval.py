@@ -147,31 +147,18 @@ class TestProcessor:
         db.add(idx_transfer_approval_5)
         db.commit()
 
+        # Prepare data : AdditionalTokenInfo
+        additional_token_info = AdditionalTokenInfo()
+        additional_token_info.token_address = "token_address"
+        additional_token_info.is_manual_transfer_approval = None
+        db.add(additional_token_info)
+        db.commit()
+
         # Prepare data : AdditionalTokenInfo(manually approval)
-        additional_token_info_1 = AdditionalTokenInfo()
-        additional_token_info_1.token_address = "manual_token_address"
-        additional_token_info_1.is_manual_transfer_approval = None
-        additional_token_info_1.block_number = 1
-        additional_token_info_1.block_timestamp = datetime.datetime(2020, 1, 1, 12, 59, 0)
-        db.add(additional_token_info_1)
-        additional_token_info_2 = AdditionalTokenInfo()
-        additional_token_info_2.token_address = "manual_token_address"
-        additional_token_info_2.is_manual_transfer_approval = False
-        additional_token_info_2.block_number = 2
-        additional_token_info_2.block_timestamp = datetime.datetime(2020, 1, 1, 12, 59, 1)
-        db.add(additional_token_info_2)
-        additional_token_info_3 = AdditionalTokenInfo()
-        additional_token_info_3.token_address = "manual_token_address"
-        additional_token_info_3.is_manual_transfer_approval = True
-        additional_token_info_3.block_number = 3
-        additional_token_info_3.block_timestamp = datetime.datetime(2020, 1, 1, 12, 59, 59)
-        db.add(additional_token_info_3)
-        additional_token_info_4 = AdditionalTokenInfo()
-        additional_token_info_4.token_address = "manual_token_address"
-        additional_token_info_4.is_manual_transfer_approval = False
-        additional_token_info_4.block_number = 4
-        additional_token_info_4.block_timestamp = datetime.datetime(2020, 1, 1, 13, 0, 0)
-        db.add(additional_token_info_4)
+        manual_additional_token_info = AdditionalTokenInfo()
+        manual_additional_token_info.token_address = "manual_token_address"
+        manual_additional_token_info.is_manual_transfer_approval = True
+        db.add(manual_additional_token_info)
         db.commit()
 
         # mock
@@ -324,31 +311,18 @@ class TestProcessor:
         db.add(idx_transfer_approval_5)
         db.commit()
 
+        # Prepare data : AdditionalTokenInf
+        additional_token_info = AdditionalTokenInfo()
+        additional_token_info.token_address = "token_address"
+        additional_token_info.is_manual_transfer_approval = False
+        db.add(additional_token_info)
+        db.commit()
+
         # Prepare data : AdditionalTokenInfo(manually approval)
-        additional_token_info_1 = AdditionalTokenInfo()
-        additional_token_info_1.token_address = "manual_token_address"
-        additional_token_info_1.is_manual_transfer_approval = None
-        additional_token_info_1.block_number = 1
-        additional_token_info_1.block_timestamp = datetime.datetime(2020, 1, 1, 12, 59, 0)
-        db.add(additional_token_info_1)
-        additional_token_info_2 = AdditionalTokenInfo()
-        additional_token_info_2.token_address = "manual_token_address"
-        additional_token_info_2.is_manual_transfer_approval = False
-        additional_token_info_2.block_number = 2
-        additional_token_info_2.block_timestamp = datetime.datetime(2020, 1, 1, 12, 59, 1)
-        db.add(additional_token_info_2)
-        additional_token_info_3 = AdditionalTokenInfo()
-        additional_token_info_3.token_address = "manual_token_address"
-        additional_token_info_3.is_manual_transfer_approval = True
-        additional_token_info_3.block_number = 3
-        additional_token_info_3.block_timestamp = datetime.datetime(2020, 1, 1, 12, 59, 59)
-        db.add(additional_token_info_3)
-        additional_token_info_4 = AdditionalTokenInfo()
-        additional_token_info_4.token_address = "manual_token_address"
-        additional_token_info_4.is_manual_transfer_approval = False
-        additional_token_info_4.block_number = 4
-        additional_token_info_4.block_timestamp = datetime.datetime(2020, 1, 1, 13, 0, 0)
-        db.add(additional_token_info_4)
+        manual_additional_token_info = AdditionalTokenInfo()
+        manual_additional_token_info.token_address = "manual_token_address"
+        manual_additional_token_info.is_manual_transfer_approval = True
+        db.add(manual_additional_token_info)
         db.commit()
 
         # mock
@@ -510,30 +484,10 @@ class TestProcessor:
         db.commit()
 
         # Prepare data : AdditionalTokenInfo(manually approval)
-        additional_token_info_1 = AdditionalTokenInfo()
-        additional_token_info_1.token_address = "manual_token_address"
-        additional_token_info_1.is_manual_transfer_approval = None
-        additional_token_info_1.block_number = 1
-        additional_token_info_1.block_timestamp = datetime.datetime(2020, 1, 1, 12, 59, 0)
-        db.add(additional_token_info_1)
-        additional_token_info_2 = AdditionalTokenInfo()
-        additional_token_info_2.token_address = "manual_token_address"
-        additional_token_info_2.is_manual_transfer_approval = False
-        additional_token_info_2.block_number = 2
-        additional_token_info_2.block_timestamp = datetime.datetime(2020, 1, 1, 12, 59, 1)
-        db.add(additional_token_info_2)
-        additional_token_info_3 = AdditionalTokenInfo()
-        additional_token_info_3.token_address = "manual_token_address"
-        additional_token_info_3.is_manual_transfer_approval = True
-        additional_token_info_3.block_number = 3
-        additional_token_info_3.block_timestamp = datetime.datetime(2020, 1, 1, 12, 59, 59)
-        db.add(additional_token_info_3)
-        additional_token_info_4 = AdditionalTokenInfo()
-        additional_token_info_4.token_address = "manual_token_address"
-        additional_token_info_4.is_manual_transfer_approval = False
-        additional_token_info_4.block_number = 4
-        additional_token_info_4.block_timestamp = datetime.datetime(2020, 1, 1, 13, 0, 0)
-        db.add(additional_token_info_4)
+        manual_additional_token_info = AdditionalTokenInfo()
+        manual_additional_token_info.token_address = "manual_token_address"
+        manual_additional_token_info.is_manual_transfer_approval = True
+        db.add(manual_additional_token_info)
         db.commit()
 
         # mock
