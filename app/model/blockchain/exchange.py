@@ -46,7 +46,7 @@ class IbetExchangeInterface:
         balance = ContractUtils.call_function(
             contract=self.exchange_contract,
             function_name="balanceOf",
-            args=(account_address, token_address, ),
+            args=(account_address, token_address,),
             default_returns=0
         )
         commitment = ContractUtils.call_function(
