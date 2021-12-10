@@ -16,11 +16,9 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import pytest
 from eth_keyfile import decode_keyfile_json
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
-from web3.exceptions import BadFunctionCallOutput as Web3BadFunctionCallOutput
 
 from app.model.blockchain import (
     IbetStraightBondContract,
@@ -235,20 +233,18 @@ class TestGetAccountBalance:
         assert exchange_balance["balance"] == 70
         assert exchange_balance["commitment"] == 30
 
-    ###########################################################################
-    # Error Case
-    ###########################################################################
-
-    # <Error_1>
-    # Web3BadFunctionCallOutput
+    # <Normal_3>
     # Not deployed contract
-    def test_error_1(self, db):
+    def test_normal_3(self, db):
         user1_account = config_eth_account("user1")
 
         # test IbetExchangeInterface.get_account_balance
-        with pytest.raises(Web3BadFunctionCallOutput):
-            exchange_interface = IbetExchangeInterface(ZERO_ADDRESS)
-            exchange_interface.get_account_balance(
-                account_address=user1_account["address"],
-                token_address=ZERO_ADDRESS
-            )
+        exchange_interface = IbetExchangeInterface(ZERO_ADDRESS)
+        exchange_balance = exchange_interface.get_account_balance(
+            account_address=user1_account["address"],
+            token_address=ZERO_ADDRESS
+        )
+
+        # assertion
+        assert exchange_balance["balance"] == 0
+        assert exchange_balance["commitment"] == 0

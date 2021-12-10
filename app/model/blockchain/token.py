@@ -24,10 +24,7 @@ from datetime import (
     timedelta
 )
 
-from web3.exceptions import (
-    TimeExhausted,
-    BadFunctionCallOutput
-)
+from web3.exceptions import TimeExhausted
 
 from config import (
     TOKEN_CACHE,
@@ -81,19 +78,25 @@ class IbetStandardTokenInterface:
             contract_name="IbetStandardTokenInterface",
             contract_address=contract_address
         )
-        balance = token_contract.functions.balanceOf(account_address).call()
-
-        tradable_exchange_address = token_contract.functions.tradableExchange().call()
+        balance = ContractUtils.call_function(
+            contract=token_contract,
+            function_name="balanceOf",
+            args=(account_address,),
+            default_returns=0
+        )
+        tradable_exchange_address = ContractUtils.call_function(
+            contract=token_contract,
+            function_name="tradableExchange",
+            args=(),
+            default_returns=ZERO_ADDRESS
+        )
         if tradable_exchange_address != ZERO_ADDRESS:
-            try:
-                exchange_contract = IbetExchangeInterface(tradable_exchange_address)
-                exchange_balance = exchange_contract.get_account_balance(
-                    account_address=account_address,
-                    token_address=contract_address
-                )
-                balance = balance + exchange_balance["balance"] + exchange_balance["commitment"]
-            except BadFunctionCallOutput:
-                pass
+            exchange_contract = IbetExchangeInterface(tradable_exchange_address)
+            exchange_balance = exchange_contract.get_account_balance(
+                account_address=account_address,
+                token_address=contract_address
+            )
+            balance = balance + exchange_balance["balance"] + exchange_balance["commitment"]
 
         return balance
 
@@ -219,39 +222,83 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         # Get data from contract
         bond_token = IbetStraightBondContract()
 
-        bond_token.issuer_address = bond_contract.functions.owner().call()
+        bond_token.issuer_address = ContractUtils.call_function(
+            bond_contract, "owner", (), ZERO_ADDRESS
+        )
         bond_token.token_address = contract_address
 
         # Set IbetStandardTokenInterface attribute
-        bond_token.name = bond_contract.functions.name().call()
-        bond_token.symbol = bond_contract.functions.symbol().call()
-        bond_token.total_supply = bond_contract.functions.totalSupply().call()
-        bond_token.tradable_exchange_contract_address = bond_contract.functions.tradableExchange().call()
-        bond_token.contact_information = bond_contract.functions.contactInformation().call()
-        bond_token.privacy_policy = bond_contract.functions.privacyPolicy().call()
-        bond_token.status = bond_contract.functions.status().call()
+        bond_token.name = ContractUtils.call_function(
+            bond_contract, "name", (), ""
+        )
+        bond_token.symbol = ContractUtils.call_function(
+            bond_contract, "symbol", (), ""
+        )
+        bond_token.total_supply = ContractUtils.call_function(
+            bond_contract, "totalSupply", (), 0
+        )
+        bond_token.tradable_exchange_contract_address = ContractUtils.call_function(
+            bond_contract, "tradableExchange", (), ZERO_ADDRESS
+        )
+        bond_token.contact_information = ContractUtils.call_function(
+            bond_contract, "contactInformation", (), ""
+        )
+        bond_token.privacy_policy = ContractUtils.call_function(
+            bond_contract, "privacyPolicy", (), ""
+        )
+        bond_token.status = ContractUtils.call_function(
+            bond_contract, "status", (), True
+        )
 
         # Set IbetSecurityTokenInterface attribute
-        bond_token.personal_info_contract_address = bond_contract.functions.personalInfoAddress().call()
-        bond_token.transferable = bond_contract.functions.transferable().call()
-        bond_token.is_offering = bond_contract.functions.isOffering().call()
-        bond_token.transfer_approval_required = bond_contract.functions.transferApprovalRequired().call()
+        bond_token.personal_info_contract_address = ContractUtils.call_function(
+            bond_contract, "personalInfoAddress", (), ZERO_ADDRESS
+        )
+        bond_token.transferable = ContractUtils.call_function(
+            bond_contract, "transferable", (), False
+        )
+        bond_token.is_offering = ContractUtils.call_function(
+            bond_contract, "isOffering", (), False
+        )
+        bond_token.transfer_approval_required = ContractUtils.call_function(
+            bond_contract, "transferApprovalRequired", (), False
+        )
 
         # Set IbetStraightBondToken attribute
-        bond_token.face_value = bond_contract.functions.faceValue().call()
-        bond_token.interest_rate = float(
-            Decimal(str(bond_contract.functions.interestRate().call())) * Decimal("0.0001")
+        bond_token.face_value = ContractUtils.call_function(
+            bond_contract, "faceValue", (), 0
         )
-        bond_token.redemption_date = bond_contract.functions.redemptionDate().call()
-        bond_token.redemption_value = bond_contract.functions.redemptionValue().call()
-        bond_token.return_date = bond_contract.functions.returnDate().call()
-        bond_token.return_amount = bond_contract.functions.returnAmount().call()
-        bond_token.purpose = bond_contract.functions.purpose().call()
-        bond_token.memo = bond_contract.functions.memo().call()
-        bond_token.is_redeemed = bond_contract.functions.isRedeemed().call()
+        bond_token.interest_rate = float(
+            Decimal(str(
+                ContractUtils.call_function(bond_contract, "interestRate", (), 0)
+            )) * Decimal("0.0001")
+        )
+        bond_token.redemption_date = ContractUtils.call_function(
+            bond_contract, "redemptionDate", (), ""
+        )
+        bond_token.redemption_value = ContractUtils.call_function(
+            bond_contract, "redemptionValue", (), 0
+        )
+        bond_token.return_date = ContractUtils.call_function(
+            bond_contract, "returnDate", (), ""
+        )
+        bond_token.return_amount = ContractUtils.call_function(
+            bond_contract, "returnAmount", (), ""
+        )
+        bond_token.purpose = ContractUtils.call_function(
+            bond_contract, "purpose", (), ""
+        )
+        bond_token.memo = ContractUtils.call_function(
+            bond_contract, "memo", (), ""
+        )
+        bond_token.is_redeemed = ContractUtils.call_function(
+            bond_contract, "isRedeemed", (), False
+        )
 
         interest_payment_date_list = []
-        interest_payment_date_string = bond_contract.functions.interestPaymentDate().call().replace("'", '"')
+        interest_payment_date_string = ContractUtils.call_function(
+            bond_contract, "interestPaymentDate", (), ""
+        ).replace("'", '"')
         interest_payment_date = {}
         try:
             if interest_payment_date_string != "":
@@ -635,31 +682,67 @@ class IbetShareContract(IbetSecurityTokenInterface):
         # Get data from contract
         share_token = IbetShareContract()
 
-        share_token.issuer_address = share_contract.functions.owner().call()
+        share_token.issuer_address = ContractUtils.call_function(
+            share_contract, "owner", (), ZERO_ADDRESS
+        )
         share_token.token_address = contract_address
 
         # Set IbetStandardTokenInterface attribute
-        share_token.name = share_contract.functions.name().call()
-        share_token.symbol = share_contract.functions.symbol().call()
-        share_token.total_supply = share_contract.functions.totalSupply().call()
-        share_token.tradable_exchange_contract_address = share_contract.functions.tradableExchange().call()
-        share_token.contact_information = share_contract.functions.contactInformation().call()
-        share_token.privacy_policy = share_contract.functions.privacyPolicy().call()
-        share_token.status = share_contract.functions.status().call()
+        share_token.name = ContractUtils.call_function(
+            share_contract, "name", (), ""
+        )
+        share_token.symbol = ContractUtils.call_function(
+            share_contract, "symbol", (), ""
+        )
+        share_token.total_supply = ContractUtils.call_function(
+            share_contract, "totalSupply", (), 0
+        )
+        share_token.tradable_exchange_contract_address = ContractUtils.call_function(
+            share_contract, "tradableExchange", (), ZERO_ADDRESS
+        )
+        share_token.contact_information = ContractUtils.call_function(
+            share_contract, "contactInformation", (), ""
+        )
+        share_token.privacy_policy = ContractUtils.call_function(
+            share_contract, "privacyPolicy", (), ""
+        )
+        share_token.status = ContractUtils.call_function(
+            share_contract, "status", (), True
+        )
 
         # Set IbetSecurityTokenInterface attribute
-        share_token.personal_info_contract_address = share_contract.functions.personalInfoAddress().call()
-        share_token.transferable = share_contract.functions.transferable().call()
-        share_token.is_offering = share_contract.functions.isOffering().call()
-        share_token.transfer_approval_required = share_contract.functions.transferApprovalRequired().call()
+        share_token.personal_info_contract_address = ContractUtils.call_function(
+            share_contract, "personalInfoAddress", (), ZERO_ADDRESS
+        )
+        share_token.transferable = ContractUtils.call_function(
+            share_contract, "transferable", (), False
+        )
+        share_token.is_offering = ContractUtils.call_function(
+            share_contract, "isOffering", (), False
+        )
+        share_token.transfer_approval_required = ContractUtils.call_function(
+            share_contract, "transferApprovalRequired", (), False
+        )
 
         # Set IbetShareToken attribute
-        share_token.issue_price = share_contract.functions.issuePrice().call()
-        share_token.cancellation_date = share_contract.functions.cancellationDate().call()
-        share_token.memo = share_contract.functions.memo().call()
-        share_token.principal_value = share_contract.functions.principalValue().call()
-        share_token.is_canceled = share_contract.functions.isCanceled().call()
-        _dividend_info = share_contract.functions.dividendInformation().call()
+        share_token.issue_price = ContractUtils.call_function(
+            share_contract, "issuePrice", (), 0
+        )
+        share_token.cancellation_date = ContractUtils.call_function(
+            share_contract, "cancellationDate", (), ""
+        )
+        share_token.memo = ContractUtils.call_function(
+            share_contract, "memo", (), ""
+        )
+        share_token.principal_value = ContractUtils.call_function(
+            share_contract, "principalValue", (), 0
+        )
+        share_token.is_canceled = ContractUtils.call_function(
+            share_contract, "isCanceled", (), False
+        )
+        _dividend_info = ContractUtils.call_function(
+            share_contract, "dividendInformation", (), (0, "", "")
+        )
         share_token.dividends = float(Decimal(str(_dividend_info[0])) * Decimal("0.01"))
         share_token.dividend_record_date = _dividend_info[1]
         share_token.dividend_payment_date = _dividend_info[2]

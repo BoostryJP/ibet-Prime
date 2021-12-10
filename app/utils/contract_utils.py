@@ -20,7 +20,11 @@ from typing import Tuple
 import json
 from datetime import datetime
 
-from web3.exceptions import TimeExhausted
+from web3 import contract
+from web3.exceptions import (
+    TimeExhausted,
+    BadFunctionCallOutput
+)
 from eth_utils import to_checksum_address
 from sqlalchemy import (
     create_engine,
@@ -133,6 +137,31 @@ class ContractUtils:
             abi=contract_json['abi'],
         )
         return contract
+
+    @staticmethod
+    def call_function(contract: contract,
+                      function_name: str,
+                      args: tuple,
+                      default_returns=None):
+        """Call contract function
+
+        :param contract: Contract
+        :param function_name: Function name
+        :param args: Function args
+        :param default_returns: Default return when BadFunctionCallOutput is raised
+        :return: Return from function or default return
+        """
+        _function = getattr(contract.functions, function_name)
+
+        try:
+            result = _function(*args).call()
+        except BadFunctionCallOutput:
+            if default_returns is not None:
+                return default_returns
+            else:
+                raise BadFunctionCallOutput
+
+        return result
 
     @staticmethod
     def send_transaction(transaction: dict, private_key: str):

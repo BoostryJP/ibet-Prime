@@ -26,7 +26,6 @@ from sqlalchemy.orm import (
     sessionmaker,
     scoped_session
 )
-from web3.exceptions import BadFunctionCallOutput
 
 path = os.path.join(os.path.dirname(__file__), '../')
 sys.path.append(path)
@@ -175,7 +174,12 @@ class Processor:
         """Synchronize issuer position"""
         for token in self.token_list:
             try:
-                issuer_address = token.functions.owner().call()
+                issuer_address = ContractUtils.call_function(
+                    contract=token,
+                    function_name="owner",
+                    args=(),
+                    default_returns=ZERO_ADDRESS
+                )
                 balance, exchange_balance, exchange_commitment = self.__get_account_balance(token, issuer_address)
                 self.sink.on_position(
                     token_address=to_checksum_address(token.address),
@@ -225,7 +229,12 @@ class Processor:
             try:
 
                 # Get exchange contract address
-                exchange_contract_address = token.functions.tradableExchange().call()
+                exchange_contract_address = ContractUtils.call_function(
+                    contract=token,
+                    function_name="tradableExchange",
+                    args=(),
+                    default_returns=ZERO_ADDRESS
+                )
 
                 # Get "HolderChanged" events from exchange contract
                 exchange_contract = ContractUtils.get_contract(
@@ -354,21 +363,29 @@ class Processor:
     def __get_account_balance(token_contract, account_address: str):
         """Get balance of account"""
 
-        balance = token_contract.functions.balanceOf(account_address).call()
+        balance = ContractUtils.call_function(
+            contract=token_contract,
+            function_name="balanceOf",
+            args=(),
+            default_returns=0
+        )
         exchange_balance = 0
         exchange_commitment = 0
-        tradable_exchange_address = token_contract.functions.tradableExchange().call()
+        tradable_exchange_address = ContractUtils.call_function(
+            contract=token_contract,
+            function_name="tradableExchange",
+            args=(),
+            default_returns=ZERO_ADDRESS
+        )
         if tradable_exchange_address != ZERO_ADDRESS:
-            try:
-                exchange_contract = IbetExchangeInterface(tradable_exchange_address)
-                exchange_contract_balance = exchange_contract.get_account_balance(
-                    account_address=account_address,
-                    token_address=token_contract.address
-                )
-                exchange_balance = exchange_contract_balance["balance"]
-                exchange_commitment = exchange_contract_balance["commitment"]
-            except BadFunctionCallOutput:
-                pass
+            exchange_contract = IbetExchangeInterface(tradable_exchange_address)
+            exchange_contract_balance = exchange_contract.get_account_balance(
+                account_address=account_address,
+                token_address=token_contract.address
+            )
+            exchange_balance = exchange_contract_balance["balance"]
+            exchange_commitment = exchange_contract_balance["commitment"]
+
         return balance, exchange_balance, exchange_commitment
 
 

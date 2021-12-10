@@ -183,8 +183,12 @@ class Processor:
     def __process_transfer(self, token_contract, block_from: int, block_to: int):
         try:
             # Get exchange contract address
-            exchange_contract_address = token_contract.functions.tradableExchange().call()
-
+            exchange_contract_address = ContractUtils.call_function(
+                contract=token_contract,
+                function_name="tradableExchange",
+                args=(),
+                default_returns=ZERO_ADDRESS
+            )
             # Get "HolderChanged" events from exchange contract
             exchange_contract = ContractUtils.get_contract(
                 contract_name="IbetExchangeInterface",

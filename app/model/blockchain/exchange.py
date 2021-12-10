@@ -43,15 +43,18 @@ class IbetExchangeInterface:
         :param token_address: token address
         :return: account balance
         """
-        balance = self.exchange_contract.functions.balanceOf(
-            account_address,
-            token_address
-        ).call()
-
-        commitment = self.exchange_contract.functions.commitmentOf(
-            account_address,
-            token_address
-        ).call()
+        balance = ContractUtils.call_function(
+            contract=self.exchange_contract,
+            function_name="balanceOf",
+            args=(account_address, token_address, ),
+            default_returns=0
+        )
+        commitment = ContractUtils.call_function(
+            contract=self.exchange_contract,
+            function_name="commitmentOf",
+            args=(account_address, token_address,),
+            default_returns=0
+        )
 
         return {
             "balance": balance,

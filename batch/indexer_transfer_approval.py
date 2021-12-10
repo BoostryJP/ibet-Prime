@@ -235,7 +235,12 @@ class Processor:
                 abi=issued_token.abi
             )
             self.token_list.append(token_contract)
-            tradable_exchange_address = token_contract.functions.tradableExchange().call()
+            tradable_exchange_address = ContractUtils.call_function(
+                contract=token_contract,
+                function_name="tradableExchange",
+                args=(),
+                default_returns=ZERO_ADDRESS
+            )
             if tradable_exchange_address != ZERO_ADDRESS:
                 _exchange_list_tmp.append(tradable_exchange_address)
 

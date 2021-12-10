@@ -26,7 +26,6 @@ from sqlalchemy.orm import (
     sessionmaker,
     scoped_session
 )
-from web3.exceptions import BadFunctionCallOutput
 from eth_utils import to_checksum_address
 
 path = os.path.join(os.path.dirname(__file__), '../')
@@ -42,6 +41,7 @@ from app.model.db import (
     IDXPersonalInfoBlockNumber
 )
 from app.model.blockchain import PersonalInfoContract
+from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
 import batch_log
 
@@ -123,20 +123,22 @@ class Processor:
         _tokens = self.db.query(Token).filter(Token.token_status == 1).all()
         tmp_list = []
         for _token in _tokens:
-            try:
-                abi = _token.abi
-                token_contract = web3.eth.contract(
-                    address=_token.token_address,
-                    abi=abi
-                )
-                personal_info_address = token_contract.functions.personalInfoAddress().call()
-                if personal_info_address != ZERO_ADDRESS:
-                    tmp_list.append({
-                        "issuer_address": _token.issuer_address,
-                        "personal_info_address": personal_info_address
-                    })
-            except BadFunctionCallOutput:
-                LOG.warning(f"Failed to get the PersonalInfo address: token = {_token.token_address}")
+            abi = _token.abi
+            token_contract = web3.eth.contract(
+                address=_token.token_address,
+                abi=abi
+            )
+            personal_info_address = ContractUtils.call_function(
+                contract=token_contract,
+                function_name="personalInfoAddress",
+                args=(),
+                default_returns=ZERO_ADDRESS
+            )
+            if personal_info_address != ZERO_ADDRESS:
+                tmp_list.append({
+                    "issuer_address": _token.issuer_address,
+                    "personal_info_address": personal_info_address
+                })
 
         # Remove duplicates from the list
         unique_list = list(map(json.loads, set(map(json.dumps, tmp_list))))
