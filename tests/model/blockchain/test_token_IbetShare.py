@@ -25,7 +25,6 @@ from pydantic.error_wrappers import ValidationError
 from eth_keyfile import decode_keyfile_json
 from unittest.mock import patch
 from web3.exceptions import (
-    BadFunctionCallOutput,
     InvalidAddress,
     TimeExhausted,
     TransactionNotFound,
@@ -458,23 +457,42 @@ class TestGet:
         assert share_contract.dividend_record_date == "20211229"  # dividendRecordDate
         assert share_contract.dividend_payment_date == "20211230"  # dividendPaymentDate
 
+    # <Normal_4>
+    # contract not deployed
+    def test_normal_4(self, db):
+        # execute the function
+        share_contract = IbetShareContract.get(contract_address=ZERO_ADDRESS)
+
+        # assertion
+        assert share_contract.issuer_address == ZERO_ADDRESS
+        assert share_contract.token_address == ZERO_ADDRESS
+        assert share_contract.name == ""
+        assert share_contract.symbol == ""
+        assert share_contract.total_supply == 0
+        assert share_contract.contact_information == ""
+        assert share_contract.privacy_policy == ""
+        assert share_contract.tradable_exchange_contract_address == ZERO_ADDRESS
+        assert share_contract.status is True
+        assert share_contract.personal_info_contract_address == ZERO_ADDRESS
+        assert share_contract.transferable is False
+        assert share_contract.is_offering is False
+        assert share_contract.transfer_approval_required is False
+        assert share_contract.issue_price == 0
+        assert share_contract.cancellation_date == ""
+        assert share_contract.memo == ""
+        assert share_contract.principal_value == 0
+        assert share_contract.is_canceled is False
+        assert share_contract.dividends == 0  # dividends
+        assert share_contract.dividend_record_date == ""  # dividendRecordDate
+        assert share_contract.dividend_payment_date == ""  # dividendPaymentDate
+
     ###########################################################################
     # Error Case
     ###########################################################################
 
     # <Error_1>
-    # Invalid argument type (contract_address does not exists)
-    def test_error_1(self, db):
-        # execute the function
-        with pytest.raises(BadFunctionCallOutput) as exc_info:
-            IbetShareContract.get(contract_address=ZERO_ADDRESS)
-        # assertion
-        assert exc_info.match("Could not transact with/call contract function,")
-        assert exc_info.match(", is contract deployed correctly and chain synced?")
-
-    # <Error_2>
     # Invalid argument type (contract_address is not address)
-    def test_error_2(self, db):
+    def test_error_1(self, db):
         # execute the function
         with pytest.raises(ValueError) as exc_info:
             IbetShareContract.get(contract_address=ZERO_ADDRESS[:-1])
@@ -625,34 +643,6 @@ class TestUpdate:
         assert _token_attr_update.id == 1
         assert _token_attr_update.token_address == contract_address
         assert _token_attr_update.updated_datetime > pre_datetime
-
-    # <Normal_3>
-    # contract_address does not exists
-    def test_normal_3(self, db):
-        test_account = config_eth_account("user1")
-        issuer_address = test_account.get("address")
-        private_key = decode_keyfile_json(
-            raw_keyfile_json=test_account.get("keyfile_json"),
-            password=test_account.get("password").encode("utf-8")
-        )
-
-        # update
-        _data = {
-            "interest_rate": 0.0001
-        }
-        _add_data = IbetShareUpdate(**_data)
-        IbetShareContract.update(
-            contract_address=ZERO_ADDRESS,
-            data=_add_data,
-            tx_from=issuer_address,
-            private_key=private_key
-        )
-        with pytest.raises(BadFunctionCallOutput) as exc_info:
-            IbetShareContract.get(contract_address=ZERO_ADDRESS)
-
-        # assertion
-        assert exc_info.match("Could not transact with/call contract function,")
-        assert exc_info.match(", is contract deployed correctly and chain synced?")
 
     ###########################################################################
     # Error Case
@@ -1401,32 +1391,6 @@ class TestAddSupply:
         assert _token_attr_update.token_address == contract_address
         assert _token_attr_update.updated_datetime > pre_datetime
 
-    # <Normal_2>
-    # contract_address does not exists
-    def test_normal_2(self, db):
-        test_account = config_eth_account("user1")
-        issuer_address = test_account.get("address")
-        private_key = decode_keyfile_json(
-            raw_keyfile_json=test_account.get("keyfile_json"),
-            password=test_account.get("password").encode("utf-8")
-        )
-        # add supply
-        _data = {
-            "account_address": issuer_address,
-            "amount": 10
-        }
-        _add_data = IbetShareAdd(**_data)
-        IbetShareContract.add_supply(
-            contract_address=ZERO_ADDRESS,
-            data=_add_data,
-            tx_from=issuer_address,
-            private_key=private_key
-        )
-        with pytest.raises(BadFunctionCallOutput) as exc_info:
-            IbetShareContract.get(contract_address=ZERO_ADDRESS)
-        assert exc_info.match("Could not transact with/call contract function,")
-        assert exc_info.match(", is contract deployed correctly and chain synced?")
-
     ###########################################################################
     # Error Case
     ###########################################################################
@@ -1773,6 +1737,21 @@ class TestGetAccountBalance:
         )
         assert balance == arguments[3]
 
+    # <Normal_2>
+    # not deployed contract_address
+    def test_normal_2(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+
+        # execute the function
+        balance = IbetShareContract.get_account_balance(
+            ZERO_ADDRESS,
+            issuer_address
+        )
+
+        # assertion
+        assert balance == 0
+
     ###########################################################################
     # Error Case
     ###########################################################################
@@ -1815,25 +1794,8 @@ class TestGetAccountBalance:
         assert exc_info.match(f"Unknown format {contract_address[:-1]}, attempted to normalize to ")
 
     # <Error_2>
-    # invalid contract_address : not deployed contract_address
-    def test_error_2(self, db):
-        test_account = config_eth_account("user1")
-        issuer_address = test_account.get("address")
-
-        # execute the function
-        with pytest.raises(BadFunctionCallOutput) as exc_info:
-            IbetShareContract.get_account_balance(
-                ZERO_ADDRESS,
-                issuer_address
-            )
-
-        # assertion
-        assert exc_info.match("Could not transact with/call contract function,")
-        assert exc_info.match(", is contract deployed correctly and chain synced?")
-
-    # <Error_3>
     # invalid account_address
-    def test_error_3(self, db):
+    def test_error_2(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1865,23 +1827,6 @@ class TestGetAccountBalance:
                 contract_address,
                 issuer_address[:-1]  # short
             )
-
-    # <Error_4>
-    # invalid contract_address : not deployed contract_address
-    def test_error_4(self, db):
-        test_account = config_eth_account("user1")
-        issuer_address = test_account.get("address")
-
-        # execute the function
-        with pytest.raises(BadFunctionCallOutput) as exc_info:
-            IbetShareContract.get_account_balance(
-                ZERO_ADDRESS,
-                issuer_address
-            )
-
-        # assertion
-        assert exc_info.match("Could not transact with/call contract function,")
-        assert exc_info.match(", is contract deployed correctly and chain synced?")
 
 
 class TestApproveTransfer:
