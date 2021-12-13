@@ -77,7 +77,7 @@ class DBSink:
         self.db = db
 
     def on_position(self, token_address: str, account_address: str,
-                    balance: int, exchange_balance: int, exchange_commitment: int):
+                    balance: int, exchange_balance: int, exchange_commitment: int, pending_transfer: int):
         """Update balance data
 
         :param token_address: token address
@@ -85,6 +85,7 @@ class DBSink:
         :param balance: balance
         :param exchange_balance: exchange balance
         :param exchange_commitment: exchange commitment
+        :param pending_transfer: pending transfer
         :return: None
         """
         position = self.db.query(IDXPosition). \
@@ -99,11 +100,12 @@ class DBSink:
             position.balance = balance
             position.exchange_balance = exchange_balance
             position.exchange_commitment = exchange_commitment
-            position.pending_transfer = 0
+            position.pending_transfer = pending_transfer
         else:
             position.balance = balance
             position.exchange_balance = exchange_balance
             position.exchange_commitment = exchange_commitment
+            position.pending_transfer = pending_transfer
         self.db.merge(position)
 
     def flush(self):
@@ -180,13 +182,15 @@ class Processor:
                     args=(),
                     default_returns=ZERO_ADDRESS
                 )
-                balance, exchange_balance, exchange_commitment = self.__get_account_balance(token, issuer_address)
+                balance, pending_transfer, exchange_balance, exchange_commitment = \
+                    self.__get_account_balance(token, issuer_address)
                 self.sink.on_position(
                     token_address=to_checksum_address(token.address),
                     account_address=issuer_address,
                     balance=balance,
                     exchange_balance=exchange_balance,
-                    exchange_commitment=exchange_commitment
+                    exchange_commitment=exchange_commitment,
+                    pending_transfer=pending_transfer
                 )
             except Exception as e:
                 LOG.exception(e)
@@ -207,13 +211,15 @@ class Processor:
                 for event in events:
                     args = event['args']
                     account = args.get("target_address", ZERO_ADDRESS)
-                    balance, exchange_balance, exchange_commitment = self.__get_account_balance(token, account)
+                    balance, pending_transfer, exchange_balance, exchange_commitment = \
+                        self.__get_account_balance(token, account)
                     self.sink.on_position(
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
                         exchange_balance=exchange_balance,
-                        exchange_commitment=exchange_commitment
+                        exchange_commitment=exchange_commitment,
+                        pending_transfer=pending_transfer
                     )
             except Exception as e:
                 LOG.exception(e)
@@ -281,26 +287,28 @@ class Processor:
                     # from address
                     from_account = args.get("from", ZERO_ADDRESS)
                     if from_account != exchange_contract_address:
-                        from_account_balance, from_account_exchange_balance, from_account_exchange_commitment = \
+                        from_balance, from_pending_transfer, from_exchange_balance, from_exchange_commitment = \
                             self.__get_account_balance(token, from_account)
                         self.sink.on_position(
                             token_address=to_checksum_address(token.address),
                             account_address=from_account,
-                            balance=from_account_balance,
-                            exchange_balance=from_account_exchange_balance,
-                            exchange_commitment=from_account_exchange_commitment
+                            balance=from_balance,
+                            exchange_balance=from_exchange_balance,
+                            exchange_commitment=from_exchange_commitment,
+                            pending_transfer=from_pending_transfer
                         )
                     # to address
                     to_account = args.get("to", ZERO_ADDRESS)
                     if to_account != exchange_contract_address:
-                        to_account_balance, to_account_exchange_balance, to_account_exchange_commitment = \
+                        to_balance, to_pending_transfer, to_exchange_balance, to_exchange_commitment = \
                             self.__get_account_balance(token, to_account)
                         self.sink.on_position(
                             token_address=to_checksum_address(token.address),
                             account_address=to_account,
-                            balance=to_account_balance,
-                            exchange_balance=to_account_exchange_balance,
-                            exchange_commitment=to_account_exchange_commitment
+                            balance=to_balance,
+                            exchange_balance=to_exchange_balance,
+                            exchange_commitment=to_exchange_commitment,
+                            pending_transfer=to_pending_transfer
                         )
             except Exception as e:
                 LOG.exception(e)
@@ -321,13 +329,15 @@ class Processor:
                 for event in events:
                     args = event['args']
                     account = args.get("from", ZERO_ADDRESS)
-                    balance, exchange_balance, exchange_commitment = self.__get_account_balance(token, account)
+                    balance, pending_transfer, exchange_balance, exchange_commitment = \
+                        self.__get_account_balance(token, account)
                     self.sink.on_position(
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
                         exchange_balance=exchange_balance,
-                        exchange_commitment=exchange_commitment
+                        exchange_commitment=exchange_commitment,
+                        pending_transfer=pending_transfer
                     )
             except Exception as e:
                 LOG.exception(e)
@@ -348,13 +358,15 @@ class Processor:
                 for event in events:
                     args = event['args']
                     account = args.get("to", ZERO_ADDRESS)
-                    balance, exchange_balance, exchange_commitment = self.__get_account_balance(token, account)
+                    balance, pending_transfer, exchange_balance, exchange_commitment = \
+                        self.__get_account_balance(token, account)
                     self.sink.on_position(
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
                         exchange_balance=exchange_balance,
-                        exchange_commitment=exchange_commitment
+                        exchange_commitment=exchange_commitment,
+                        pending_transfer=pending_transfer
                     )
             except Exception as e:
                 LOG.exception(e)
@@ -367,6 +379,12 @@ class Processor:
             contract=token_contract,
             function_name="balanceOf",
             args=(),
+            default_returns=0
+        )
+        pending_transfer = ContractUtils.call_function(
+            contract=token_contract,
+            function_name="pendingTransfer",
+            args=(account_address,),
             default_returns=0
         )
         exchange_balance = 0
@@ -386,7 +404,7 @@ class Processor:
             exchange_balance = exchange_contract_balance["balance"]
             exchange_commitment = exchange_contract_balance["commitment"]
 
-        return balance, exchange_balance, exchange_commitment
+        return balance, pending_transfer, exchange_balance, exchange_commitment
 
 
 _sink = Sinks()
