@@ -378,7 +378,7 @@ class Processor:
         balance = ContractUtils.call_function(
             contract=token_contract,
             function_name="balanceOf",
-            args=(),
+            args=(account_address,),
             default_returns=0
         )
         pending_transfer = ContractUtils.call_function(
