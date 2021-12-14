@@ -89,7 +89,7 @@ class Sinks:
 
     def on_info_notification(self, *args, **kwargs):
         for sink in self.sinks:
-            sink.on_transfer_approval(*args, **kwargs)
+            sink.on_info_notification(*args, **kwargs)
 
     def flush(self, *args, **kwargs):
         for sink in self.sinks:
