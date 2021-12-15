@@ -214,7 +214,7 @@ class Processor:
                 )
                 for event in events:
                     args = event["args"]
-                    account = args.get("target_address", ZERO_ADDRESS)
+                    account = args.get("targetAddress", ZERO_ADDRESS)
                     balance, pending_transfer, exchange_balance, exchange_commitment = \
                         self.__get_account_balance(token, account)
                     self.sink.on_position(
@@ -329,7 +329,7 @@ class Processor:
                 )
                 for event in events:
                     args = event["args"]
-                    account = args.get("from", ZERO_ADDRESS)
+                    account = args.get("accountAddress", ZERO_ADDRESS)
                     balance, pending_transfer, exchange_balance, exchange_commitment = \
                         self.__get_account_balance(token, account)
                     self.sink.on_position(
@@ -358,7 +358,7 @@ class Processor:
                 )
                 for event in events:
                     args = event["args"]
-                    account = args.get("to", ZERO_ADDRESS)
+                    account = args.get("recipientAddress", ZERO_ADDRESS)
                     balance, pending_transfer, exchange_balance, exchange_commitment = \
                         self.__get_account_balance(token, account)
                     self.sink.on_position(
@@ -387,7 +387,7 @@ class Processor:
                 )
                 for event in events:
                     args = event["args"]
-                    account = args.get("target_address", ZERO_ADDRESS)
+                    account = args.get("targetAddress", ZERO_ADDRESS)
                     balance, pending_transfer, exchange_balance, exchange_commitment = \
                         self.__get_account_balance(token, account)
                     self.sink.on_position(
