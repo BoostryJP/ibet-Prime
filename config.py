@@ -124,10 +124,6 @@ BULK_TRANSFER_WORKER_COUNT = int(os.environ.get("BULK_TRANSFER_WORKER_COUNT")) \
 BULK_TRANSFER_WORKER_LOT_SIZE = int(os.environ.get("BULK_TRANSFER_WORKER_LOT_SIZE")) \
     if os.environ.get("BULK_TRANSFER_WORKER_LOT_SIZE") else 5
 
-# System locale
-SYSTEM_LOCALE = [code.strip().upper() for code in os.environ.get("SYSTEM_LOCALE").split(",")] \
-    if os.environ.get("SYSTEM_LOCALE") else ["JPN"]
-
 # System timezone for REST API
 TZ = os.environ.get("TZ") or "Asia/Tokyo"
 
