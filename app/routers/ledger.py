@@ -197,7 +197,7 @@ def retrieve_ledger_history(
         # Get ibetfin Details token_detail_type
         _ibet_fin_details_list = db.query(LedgerDetailsTemplate). \
             filter(LedgerDetailsTemplate.token_address == token_address). \
-            filter(LedgerDetailsTemplate.data_type == LedgerDetailsDataType.IBET_FIN). \
+            filter(LedgerDetailsTemplate.data_type == LedgerDetailsDataType.IBET_FIN.value). \
             order_by(LedgerDetailsTemplate.id). \
             all()
         _ibet_fin_token_detail_type_list = [_details.token_detail_type for _details in _ibet_fin_details_list]
@@ -345,14 +345,14 @@ def create_update_ledger_template(
             _details.token_address = token_address
             _details.token_detail_type = details.token_detail_type
             _details.headers = details.headers
-            _details.data_type = details.data.type
+            _details.data_type = details.data.type.value
             _details.data_source = details.data.source
             _details.footers = details.footers
             db.add(_details)
         else:
             # Update Ledger Details Template
             _details.headers = details.headers
-            _details.data_type = details.data.type
+            _details.data_type = details.data.type.value
             _details.data_source = details.data.source
             _details.footers = details.footers
             db.merge(_details)

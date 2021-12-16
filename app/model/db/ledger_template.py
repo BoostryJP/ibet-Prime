@@ -16,6 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from enum import Enum
+
 from sqlalchemy import (
     Column,
     Integer,
@@ -65,6 +67,6 @@ class LedgerDetailsTemplate(Base):
     data_source = Column(String(42))
 
 
-class LedgerDetailsDataType:
+class LedgerDetailsDataType(str, Enum):
     IBET_FIN = "ibetfin"
     DB = "db"
