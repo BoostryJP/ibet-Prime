@@ -99,7 +99,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
                 "f-test2": "b"
             }
         ]
-        _details_1.data_type = LedgerDetailsDataType.IBET_FIN
+        _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
         _details_1.data_source = token_address
         db.add(_details_1)
 
@@ -126,7 +126,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
                 "f-test4": "b"
             }
         ]
-        _details_2.data_type = LedgerDetailsDataType.DB
+        _details_2.data_type = LedgerDetailsDataType.DB.value
         _details_2.data_source = "data_id_2"
         db.add(_details_2)
 
@@ -285,7 +285,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
                 "f-test2": "b"
             }
         ]
-        _details_1.data_type = LedgerDetailsDataType.IBET_FIN
+        _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
         _details_1.data_source = token_address
         db.add(_details_1)
 
@@ -312,7 +312,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
                 "f-test4": "b"
             }
         ]
-        _details_2.data_type = LedgerDetailsDataType.DB
+        _details_2.data_type = LedgerDetailsDataType.DB.value
         _details_2.data_source = "data_id_2"
         db.add(_details_2)
 
@@ -432,7 +432,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
         _details_1.token_detail_type = "権利_test_1"
         _details_1.headers = None  # optional
         _details_1.footers = None  # optional
-        _details_1.data_type = LedgerDetailsDataType.IBET_FIN
+        _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
         _details_1.data_source = None  # optional
         db.add(_details_1)
 

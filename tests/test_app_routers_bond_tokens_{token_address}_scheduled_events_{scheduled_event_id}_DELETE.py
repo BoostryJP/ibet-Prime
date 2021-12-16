@@ -79,7 +79,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
-        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.event_type = ScheduledEventType.UPDATE.value
         token_event.scheduled_datetime = datetime_now_utc
         token_event.status = 0
         token_event.data = data
@@ -102,7 +102,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
             "token_address": _token_address,
             "token_type": TokenType.IBET_STRAIGHT_BOND,
             "scheduled_datetime": datetime_now_str,
-            "event_type": ScheduledEventType.UPDATE,
+            "event_type": ScheduledEventType.UPDATE.value,
             "status": 0,
             "data": data,
             "created": datetime_now_str

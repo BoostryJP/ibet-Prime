@@ -21,25 +21,29 @@ import sys
 import threading
 import time
 import uuid
-from typing import List, Set, Optional, cast
+from typing import (
+    List,
+    Set,
+    Optional,
+    cast
+)
 
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import create_engine
 from sqlalchemy.orm import (
     sessionmaker,
-    scoped_session, Session
+    scoped_session,
+    Session
 )
 
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
-from datetime import (
-    datetime,
-    timezone
-)
+from datetime import datetime
 from config import (
     DATABASE_URL,
-    SCHEDULED_EVENTS_INTERVAL, SCHEDULED_EVENTS_WORKER_COUNT
+    SCHEDULED_EVENTS_INTERVAL,
+    SCHEDULED_EVENTS_WORKER_COUNT
 )
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.web3_utils import Web3Wrapper
@@ -228,7 +232,7 @@ class Processor:
                 # Token_type
                 if _event.token_type == TokenType.IBET_SHARE:
                     # Update
-                    if _event.event_type == ScheduledEventType.UPDATE:
+                    if _event.event_type == ScheduledEventType.UPDATE.value:
                         _update_data = IbetShareUpdate(**_event.data)
                         IbetShareContract.update(
                             contract_address=_event.token_address,
@@ -245,7 +249,7 @@ class Processor:
                             )
                 elif _event.token_type == TokenType.IBET_STRAIGHT_BOND:
                     # Update
-                    if _event.event_type == ScheduledEventType.UPDATE:
+                    if _event.event_type == ScheduledEventType.UPDATE.value:
                         _update_data = IbetStraightBondUpdate(**_event.data)
                         IbetStraightBondContract.update(
                             contract_address=_event.token_address,
