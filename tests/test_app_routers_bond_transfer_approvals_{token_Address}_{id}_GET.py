@@ -72,7 +72,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.id = id
         _idx_transfer_approval.token_address = self.test_token_address
-        _idx_transfer_approval.exchange_address = self.test_exchange_address
+        _idx_transfer_approval.exchange_address = None
         _idx_transfer_approval.application_id = 100
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -94,7 +94,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
         assert resp.json() == {
             "id": 10,
             "token_address": self.test_token_address,
-            "exchange_address": self.test_exchange_address,
+            "exchange_address": None,
             "application_id": 100,
             "from_address": self.test_from_address,
             "to_address": self.test_to_address,
@@ -103,7 +103,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
             "application_blocktimestamp": self.test_application_blocktimestamp_str,
             "approval_datetime": None,
             "approval_blocktimestamp": None,
-            "cancelled": False
+            "cancelled": False,
+            "is_issuer_cancelable": True,
         }
 
     # <Normal_2>
@@ -153,7 +154,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
             "application_blocktimestamp": self.test_application_blocktimestamp_str,
             "approval_datetime": None,
             "approval_blocktimestamp": None,
-            "cancelled": True
+            "cancelled": True,
+            "is_issuer_cancelable": False,
         }
 
     # <Normal_3>
@@ -203,7 +205,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
             "application_blocktimestamp": self.test_application_blocktimestamp_str,
             "approval_datetime": self.test_approval_datetime_str,
             "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
-            "cancelled": False
+            "cancelled": False,
+            "is_issuer_cancelable": False,
         }
 
     ###########################################################################

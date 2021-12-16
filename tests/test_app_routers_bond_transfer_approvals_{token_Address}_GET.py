@@ -109,7 +109,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
-                    "cancelled": False
+                    "cancelled": False,
+                    "is_issuer_cancelable": True,
                 },
                 {
                     "id": 2,
@@ -123,7 +124,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
-                    "cancelled": False
+                    "cancelled": False,
+                    "is_issuer_cancelable": True,
                 },
                 {
                     "id": 1,
@@ -137,7 +139,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
-                    "cancelled": False
+                    "cancelled": False,
+                    "is_issuer_cancelable": True,
                 },
             ]
         }
@@ -198,7 +201,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
-                    "cancelled": False
+                    "cancelled": False,
+                    "is_issuer_cancelable": True,
                 },
                 {
                     "id": 2,
@@ -212,7 +216,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
-                    "cancelled": False
+                    "cancelled": False,
+                    "is_issuer_cancelable": True,
                 },
                 {
                     "id": 1,
@@ -226,7 +231,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
-                    "cancelled": False
+                    "cancelled": False,
+                    "is_issuer_cancelable": True,
                 },
             ]
         }
@@ -287,7 +293,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
-                    "cancelled": False
+                    "cancelled": False,
+                    "is_issuer_cancelable": True,
                 }
             ]
         }
@@ -351,7 +358,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
-                    "cancelled": False
+                    "cancelled": False,
+                    "is_issuer_cancelable": False,
                 },
                 {
                     "id": 3,
@@ -365,7 +373,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
-                    "cancelled": False
+                    "cancelled": False,
+                    "is_issuer_cancelable": False,
                 },
                 {
                     "id": 1,
@@ -379,7 +388,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
-                    "cancelled": False
+                    "cancelled": False,
+                    "is_issuer_cancelable": False,
                 },
             ]
         }

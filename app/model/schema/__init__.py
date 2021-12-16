@@ -55,6 +55,7 @@ from .token import (
 )
 from .holder import HolderResponse
 from .transfer import (
+    UpdateTransferApprovalRequest,
     TransferResponse,
     TransferHistoryResponse,
     TransferApprovalResponse,
