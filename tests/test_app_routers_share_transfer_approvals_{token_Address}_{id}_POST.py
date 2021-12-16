@@ -206,9 +206,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
                     "issuer-address": issuer_address,
                     "eoa-password": E2EEUtils.encrypt("password")
                 },
-                json={
-                    "operation_type": "approve"
-                }
+                json={}
             )
 
         # Assertion
@@ -343,7 +341,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
 
     # <Error_1_2>
     # Validation Error
-    # missing body: operation_type
+    # missing headers: eoa-password
     def test_error_1_2(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -367,7 +365,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
             },
             "detail": [
                 {
-                    "loc": ["body", "operation_type"],
+                    "loc": ["header", "eoa-password"],
                     "msg": "field required",
                     "type": "value_error.missing"
                 },
@@ -376,43 +374,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
 
     # <Error_1_3>
     # Validation Error
-    # missing headers: eoa-password
-    def test_error_1_3(self, client, db):
-        issuer = config_eth_account("user1")
-        issuer_address = issuer["address"]
-        id = 10
-
-        # request target api
-        resp = client.post(
-            self.base_url.format(self.test_token_address, id),
-            headers={
-                "issuer-address": issuer_address,
-            },
-            json={
-                "operation_type": "approve"
-            }
-        )
-
-        # assertion
-        assert resp.status_code == 422
-        assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
-            "detail": [
-                {
-                    "loc": ["header", "eoa-password"],
-                    "msg": "field required",
-                    "type": "value_error.missing"
-                },
-            ]
-        }
-
-    # <Error_1_4>
-    # Validation Error
     # invalid value: body
-    def test_error_1_4(self, client, db):
+    def test_error_1_3(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -447,10 +410,10 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
             ]
         }
 
-    # <Error_1_5>
+    # <Error_1_4>
     # Validation Error
     # invalid value: header
-    def test_error_1_5(self, client, db):
+    def test_error_1_4(self, client, db):
         id = 10
 
         # request target api
@@ -460,9 +423,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
                 "issuer-address": "issuer_address",
                 "eoa-password": "password"
             },
-            json={
-                "operation_type": "approve"
-            }
+            json={}
         )
 
         # assertion
@@ -502,9 +463,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
             },
-            json={
-                "operation_type": "approve"
-            }
+            json={}
         )
 
         # assertion
@@ -540,9 +499,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password_test")
             },
-            json={
-                "operation_type": "approve"
-            }
+            json={}
         )
 
         # assertion
@@ -578,9 +535,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
             },
-            json={
-                "operation_type": "approve"
-            }
+            json={}
         )
 
         # assertion
@@ -624,9 +579,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
             },
-            json={
-                "operation_type": "approve"
-            }
+            json={}
         )
 
         # assertion
@@ -671,9 +624,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
             },
-            json={
-                "operation_type": "approve"
-            }
+            json={}
         )
 
         # assertion
@@ -736,9 +687,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
             },
-            json={
-                "operation_type": "approve"
-            }
+            json={}
         )
 
         # assertion
@@ -801,9 +750,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
             },
-            json={
-                "operation_type": "approve"
-            }
+            json={}
         )
 
         # assertion
@@ -932,9 +879,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
             },
-            json={
-                "operation_type": "approve"
-            }
+            json={}
         )
 
         # assertion
@@ -998,9 +943,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
             },
-            json={
-                "operation_type": "approve"
-            }
+            json={}
         )
 
         # assertion
@@ -1068,9 +1011,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
             },
-            json={
-                "operation_type": "approve"
-            }
+            json={}
         )
 
         # assertion
@@ -1148,9 +1089,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
                     "issuer-address": issuer_address,
                     "eoa-password": E2EEUtils.encrypt("password")
                 },
-                json={
-                    "operation_type": "approve"
-                }
+                json={}
             )
 
         # assertion
@@ -1230,9 +1169,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
             },
-            json={
-                "operation_type": "approve"
-            }
+            json={}
         )
 
         # assertion
@@ -1304,9 +1241,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
                     "issuer-address": issuer_address,
                     "eoa-password": E2EEUtils.encrypt("password")
                 },
-                json={
-                    "operation_type": "approve"
-                }
+                json={}
             )
 
         # assertion

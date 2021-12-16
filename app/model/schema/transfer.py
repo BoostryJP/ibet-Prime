@@ -36,7 +36,7 @@ from .types import (
 ############################
 class UpdateTransferApprovalRequest(BaseModel):
     """Update Transfer Approval Template schema (Request)"""
-    operation_type: TransferApprovalUpdatableOperationType = Field(...)
+    operation_type: TransferApprovalUpdatableOperationType = Field(TransferApprovalUpdatableOperationType.APPROVE)
 
 
 ############################
