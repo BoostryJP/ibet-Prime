@@ -243,6 +243,7 @@ class Processor:
             )
             if tradable_exchange_address != ZERO_ADDRESS:
                 _exchange_list_tmp.append(tradable_exchange_address)
+            LOG.info(f"{issued_token.token_address}, {tradable_exchange_address}")
 
         # Remove duplicate exchanges from a list
         for _exchange_address in list(set(_exchange_list_tmp)):
