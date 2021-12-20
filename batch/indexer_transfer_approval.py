@@ -410,7 +410,7 @@ class Processor:
                             application_id=args.get("escrowId"),
                             from_address=args.get("from", ZERO_ADDRESS),
                             to_address=args.get("to", ZERO_ADDRESS),
-                            value=args.get("value"),
+                            amount=args.get("value"),
                             optional_data_applicant=args.get("data"),
                             block_timestamp=block_timestamp
                         )
@@ -507,6 +507,7 @@ class Processor:
                     token_address=token_address,
                     id=transfer_approval.id
                 )
+
 
 _sink = Sinks()
 _sink.register(DBSink(db_session))
