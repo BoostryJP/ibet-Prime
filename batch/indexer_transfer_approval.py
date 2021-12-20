@@ -247,6 +247,7 @@ class Processor:
 
         # Remove duplicate exchanges from a list
         for _exchange_address in list(set(_exchange_list_tmp)):
+            LOG.info(f"{_exchange_address}")
             exchange_contract = ContractUtils.get_contract(
                 contract_name="IbetSecurityTokenEscrow",
                 contract_address=_exchange_address
