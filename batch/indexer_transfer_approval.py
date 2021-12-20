@@ -243,11 +243,10 @@ class Processor:
             )
             if tradable_exchange_address != ZERO_ADDRESS:
                 _exchange_list_tmp.append(tradable_exchange_address)
-            LOG.info(f"{issued_token.token_address}, {tradable_exchange_address}")
 
         # Remove duplicate exchanges from a list
         for _exchange_address in list(set(_exchange_list_tmp)):
-            LOG.info(f"{_exchange_address}")
+            LOG.info(f"exchange_address = {_exchange_address}")
             exchange_contract = ContractUtils.get_contract(
                 contract_name="IbetSecurityTokenEscrow",
                 contract_address=_exchange_address
@@ -472,6 +471,7 @@ class Processor:
                     fromBlock=block_from,
                     toBlock=block_to
                 )
+                LOG.info(events)
                 for event in events:
                     args = event["args"]
                     block_timestamp = self.get_block_timestamp(event=event)
