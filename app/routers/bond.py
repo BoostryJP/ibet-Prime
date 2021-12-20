@@ -31,7 +31,10 @@ from fastapi import (
     Request
 )
 from fastapi.exceptions import HTTPException
-from sqlalchemy import desc
+from sqlalchemy import (
+    desc,
+    or_
+)
 from sqlalchemy.orm import Session
 from eth_keyfile import decode_keyfile_json
 from pytz import timezone
@@ -1021,7 +1024,8 @@ def list_transfer_approval_history(
     if status is not None:
         if status == 0:  # unapproved
             query = query.filter(IDXTransferApproval.approval_blocktimestamp == None). \
-                filter(IDXTransferApproval.cancelled == False)
+                filter(or_(IDXTransferApproval.cancelled == False,
+                           IDXTransferApproval.cancelled == None))
         elif status == 1:  # approved
             query = query.filter(IDXTransferApproval.approval_blocktimestamp != None)
         else:  # canceled
