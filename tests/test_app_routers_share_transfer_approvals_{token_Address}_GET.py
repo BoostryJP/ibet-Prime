@@ -79,7 +79,9 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
             _idx_transfer_approval.approval_datetime = self.test_approval_datetime
             _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
-            _idx_transfer_approval.cancelled = False
+            if i == 2:
+                _idx_transfer_approval.cancelled = True
+                _idx_transfer_approval.transfer_approved = True
             db.add(_idx_transfer_approval)
 
         # request target API
@@ -109,7 +111,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
-                    "cancelled": False
+                    "cancelled": True,
+                    "transfer_approved": True,
                 },
                 {
                     "id": 2,
@@ -123,7 +126,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
-                    "cancelled": False
+                    "cancelled": False,
+                    "transfer_approved": False,
                 },
                 {
                     "id": 1,
@@ -137,7 +141,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
-                    "cancelled": False
+                    "cancelled": False,
+                    "transfer_approved": False,
                 },
             ]
         }
@@ -169,6 +174,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.approval_datetime = None
             _idx_transfer_approval.approval_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
+            _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
 
         # request target API
@@ -198,7 +204,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
-                    "cancelled": False
+                    "cancelled": False,
+                    "transfer_approved": False,
                 },
                 {
                     "id": 2,
@@ -212,7 +219,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
-                    "cancelled": False
+                    "cancelled": False,
+                    "transfer_approved": False,
                 },
                 {
                     "id": 1,
@@ -226,7 +234,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
-                    "cancelled": False
+                    "cancelled": False,
+                    "transfer_approved": False,
                 },
             ]
         }
@@ -258,6 +267,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.approval_datetime = self.test_approval_datetime
             _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
             _idx_transfer_approval.cancelled = False
+            _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
 
         # request target API
@@ -287,7 +297,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
-                    "cancelled": False
+                    "cancelled": False,
+                    "transfer_approved": False,
                 }
             ]
         }
@@ -322,6 +333,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.approval_datetime = self.test_approval_datetime
             _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
             _idx_transfer_approval.cancelled = False
+            _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
 
         # request target API
@@ -351,7 +363,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
-                    "cancelled": False
+                    "cancelled": False,
+                    "transfer_approved": False,
                 },
                 {
                     "id": 3,
@@ -365,7 +378,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
-                    "cancelled": False
+                    "cancelled": False,
+                    "transfer_approved": False,
                 },
                 {
                     "id": 1,
@@ -379,7 +393,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
-                    "cancelled": False
+                    "cancelled": False,
+                    "transfer_approved": False,
                 },
             ]
         }
