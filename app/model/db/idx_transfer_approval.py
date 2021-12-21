@@ -49,12 +49,14 @@ class IDXTransferApproval(Base):
     application_datetime = Column(DateTime)
     # Application Blocktimestamp
     application_blocktimestamp = Column(DateTime)
-    # Approval Datetime
+    # Approval Datetime(ownership vesting datetime)
     approval_datetime = Column(DateTime)
-    # Approval Blocktimestamp
+    # Approval Blocktimestamp(ownership vesting block timestamp)
     approval_blocktimestamp = Column(DateTime)
     # Cancellation Status
     cancelled = Column(Boolean)
+    # Approve Status
+    transfer_approved = Column(Boolean)
 
     def json(self):
         return {
@@ -68,7 +70,8 @@ class IDXTransferApproval(Base):
             "application_blocktimestamp": self.application_blocktimestamp,
             "approval_datetime": self.approval_datetime,
             "approval_blocktimestamp": self.approval_blocktimestamp,
-            "cancelled": self.cancelled
+            "cancelled": self.cancelled,
+            "transfer_approved": self.transfer_approved
         }
 
 

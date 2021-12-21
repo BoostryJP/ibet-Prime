@@ -100,7 +100,8 @@ class DBSink:
     def __init__(self, db):
         self.db = db
 
-    def on_transfer_approval(self, event_type: str,
+    def on_transfer_approval(self, contract_type: str,
+                             event_type: str,
                              token_address: str,
                              exchange_address: str,
                              application_id: int,
@@ -112,7 +113,8 @@ class DBSink:
                              block_timestamp: Optional[int] = None):
         """Update Transfer Approval data in DB
 
-        :param event_type: event type [ApplyFor, Cancel, Approve]
+        :param contract_type: contract type [Token, Exchange]
+        :param event_type: event type [ApplyFor, Cancel, Approve, Finish]
         :param token_address: token address
         :param exchange_address: exchange address (value is set if the event is from exchange)
         :param application_id: application id
@@ -158,7 +160,34 @@ class DBSink:
                 transfer_approval.from_address = from_address
                 transfer_approval.to_address = to_address
             transfer_approval.cancelled = True
-        elif event_type == "Approve":
+        elif contract_type == "Token" and event_type == "Approve":
+            if transfer_approval is None:
+                transfer_approval = IDXTransferApproval()
+                transfer_approval.token_address = token_address
+                transfer_approval.exchange_address = exchange_address
+                transfer_approval.application_id = application_id
+                transfer_approval.from_address = from_address
+                transfer_approval.to_address = to_address
+            try:
+                transfer_approval.approval_datetime = datetime.fromtimestamp(
+                    float(optional_data_approver),
+                    tz=timezone.utc
+                )
+            except ValueError:
+                transfer_approval.approval_datetime = None
+            transfer_approval.approval_blocktimestamp = datetime.fromtimestamp(
+                block_timestamp,
+                tz=timezone.utc
+            )
+            transfer_approval.transfer_approved = True
+        elif contract_type == "Exchange" and event_type == "Approve":
+            if transfer_approval is None:
+                transfer_approval = IDXTransferApproval()
+                transfer_approval.token_address = token_address
+                transfer_approval.exchange_address = exchange_address
+                transfer_approval.application_id = application_id
+            transfer_approval.transfer_approved = True
+        elif contract_type == "Exchange" and event_type == "Finish":
             if transfer_approval is None:
                 transfer_approval = IDXTransferApproval()
                 transfer_approval.token_address = token_address
@@ -278,6 +307,7 @@ class Processor:
         self.__sync_exchange_apply_for_transfer(block_from, block_to)
         self.__sync_exchange_cancel_transfer(block_from, block_to)
         self.__sync_exchange_approve_transfer(block_from, block_to)
+        self.__sync_exchange_finish_transfer(block_from, block_to)
         self.__set_idx_transfer_approval_block_number(block_to)
         self.sink.flush()
 
@@ -302,6 +332,7 @@ class Processor:
                     else:
                         block_timestamp = self.get_block_timestamp(event=event)
                         self.sink.on_transfer_approval(
+                            contract_type="Token",
                             event_type="ApplyFor",
                             token_address=token.address,
                             exchange_address=None,
@@ -338,6 +369,7 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     self.sink.on_transfer_approval(
+                        contract_type="Token",
                         event_type="Cancel",
                         token_address=token.address,
                         exchange_address=None,
@@ -372,6 +404,7 @@ class Processor:
                     args = event["args"]
                     block_timestamp = self.get_block_timestamp(event=event)
                     self.sink.on_transfer_approval(
+                        contract_type="Token",
                         event_type="Approve",
                         token_address=token.address,
                         exchange_address=None,
@@ -405,6 +438,7 @@ class Processor:
                     else:
                         block_timestamp = self.get_block_timestamp(event=event)
                         self.sink.on_transfer_approval(
+                            contract_type="Exchange",
                             event_type="ApplyFor",
                             token_address=args.get("token", ZERO_ADDRESS),
                             exchange_address=exchange.address,
@@ -441,6 +475,7 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     self.sink.on_transfer_approval(
+                        contract_type="Exchange",
                         event_type="Cancel",
                         token_address=args.get("token", ZERO_ADDRESS),
                         exchange_address=exchange.address,
@@ -474,9 +509,35 @@ class Processor:
                 LOG.info(events)
                 for event in events:
                     args = event["args"]
+                    self.sink.on_transfer_approval(
+                        contract_type="Exchange",
+                        event_type="Approve",
+                        token_address=args.get("token", ZERO_ADDRESS),
+                        exchange_address=exchange.address,
+                        application_id=args.get("escrowId"),
+                    )
+            except Exception as e:
+                LOG.exception(e)
+
+    def __sync_exchange_finish_transfer(self, block_from, block_to):
+        """Sync FinishTransfer events of exchanges
+
+        :param block_from: From Block
+        :param block_to: To Block
+        :return: None
+        """
+        for exchange in self.exchange_list:
+            try:
+                events = exchange.events.FinishTransfer.getLogs(
+                    fromBlock=block_from,
+                    toBlock=block_to
+                )
+                LOG.info(events)
+                for event in events:
+                    args = event["args"]
                     block_timestamp = self.get_block_timestamp(event=event)
                     self.sink.on_transfer_approval(
-                        event_type="Approve",
+                        event_type="Finish",
                         token_address=args.get("token", ZERO_ADDRESS),
                         exchange_address=exchange.address,
                         application_id=args.get("escrowId"),
