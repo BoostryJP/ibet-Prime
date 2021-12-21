@@ -39,3 +39,10 @@ class ResultSet(BaseModel):
 class TransferApprovalUpdatableOperationType(str, Enum):
     APPROVE = "approve"
     CANCEL = "cancel"
+
+
+class TransferSortItem(str, Enum):
+    BLOCK_TIMESTAMP = "block_timestamp"
+    FROM_ADDRESS = "from_address"
+    TO_ADDRESS = "to_address"
+    AMOUNT = "amount"
