@@ -165,26 +165,6 @@ class DBSink:
                 transfer_approval.token_address = token_address
                 transfer_approval.exchange_address = exchange_address
                 transfer_approval.application_id = application_id
-                transfer_approval.from_address = from_address
-                transfer_approval.to_address = to_address
-            try:
-                transfer_approval.approval_datetime = datetime.fromtimestamp(
-                    float(optional_data_approver),
-                    tz=timezone.utc
-                )
-            except ValueError:
-                transfer_approval.approval_datetime = None
-            transfer_approval.approval_blocktimestamp = datetime.fromtimestamp(
-                block_timestamp,
-                tz=timezone.utc
-            )
-            transfer_approval.transfer_approved = True
-        elif event_type == "Approve":
-            if transfer_approval is None:
-                transfer_approval = IDXTransferApproval()
-                transfer_approval.token_address = token_address
-                transfer_approval.exchange_address = exchange_address
-                transfer_approval.application_id = application_id
             transfer_approval.transfer_approved = True
         elif event_type == "Finish":
             if transfer_approval is None:
