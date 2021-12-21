@@ -160,12 +160,8 @@ class DBSink:
                 transfer_approval.to_address = to_address
             transfer_approval.cancelled = True
         elif event_type == "Approve":
-            if transfer_approval is None:
-                transfer_approval = IDXTransferApproval()
-                transfer_approval.token_address = token_address
-                transfer_approval.exchange_address = exchange_address
-                transfer_approval.application_id = application_id
-            transfer_approval.transfer_approved = True
+            if transfer_approval is not None:
+                transfer_approval.transfer_approved = True
         elif event_type == "Finish":
             if transfer_approval is None:
                 transfer_approval = IDXTransferApproval()
