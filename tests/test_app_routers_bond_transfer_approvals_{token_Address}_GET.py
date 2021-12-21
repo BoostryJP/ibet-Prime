@@ -113,6 +113,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": True,
                     "transfer_approved": True,
+                    "is_issuer_cancelable": True,
                 },
                 {
                     "id": 2,
@@ -128,6 +129,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": False,
                     "transfer_approved": False,
+                    "is_issuer_cancelable": True,
                 },
                 {
                     "id": 1,
@@ -143,6 +145,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": False,
                     "transfer_approved": False,
+                    "is_issuer_cancelable": True,
                 },
             ]
         }
@@ -206,6 +209,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "approval_blocktimestamp": None,
                     "cancelled": False,
                     "transfer_approved": False,
+                    "is_issuer_cancelable": True,
                 },
                 {
                     "id": 2,
@@ -221,6 +225,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "approval_blocktimestamp": None,
                     "cancelled": False,
                     "transfer_approved": False,
+                    "is_issuer_cancelable": True,
                 },
                 {
                     "id": 1,
@@ -236,6 +241,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "approval_blocktimestamp": None,
                     "cancelled": False,
                     "transfer_approved": False,
+                    "is_issuer_cancelable": True,
                 },
             ]
         }
@@ -299,6 +305,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": False,
                     "transfer_approved": False,
+                    "is_issuer_cancelable": True,
                 }
             ]
         }
@@ -365,6 +372,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": False,
                     "transfer_approved": False,
+                    "is_issuer_cancelable": False,
                 },
                 {
                     "id": 3,
@@ -380,6 +388,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": False,
                     "transfer_approved": False,
+                    "is_issuer_cancelable": False,
                 },
                 {
                     "id": 1,
@@ -395,6 +404,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": False,
                     "transfer_approved": False,
+                    "is_issuer_cancelable": False,
                 },
             ]
         }

@@ -36,6 +36,7 @@ from app.model.db import (
 )
 from app.model.schema import (
     IbetSecurityTokenApproveTransfer,
+    IbetSecurityTokenCancelTransfer,
     IbetSecurityTokenEscrowApproveTransfer
 )
 from app.utils.e2ee_utils import E2EEUtils
@@ -68,10 +69,11 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
     # Normal Case
     ###########################################################################
 
-    # <Normal_1>
+    # <Normal_1_1>
+    # APPROVE
     # token
     @pytest.mark.freeze_time('2021-04-27 12:34:56')
-    def test_normal_1(self, client, db):
+    def test_normal_1_1(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -124,6 +126,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
                 headers={
                     "issuer-address": issuer_address,
                     "eoa-password": E2EEUtils.encrypt("password")
+                },
+                json={
+                    "operation_type": "approve"
                 }
             )
 
@@ -143,10 +148,11 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             private_key=ANY
         )
 
-    # <Normal_2>
+    # <Normal_1_2>
+    # APPROVE
     # exchange
     @pytest.mark.freeze_time('2021-04-27 12:34:56')
-    def test_normal_2(self, client, db):
+    def test_normal_1_2(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -199,6 +205,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
                 headers={
                     "issuer-address": issuer_address,
                     "eoa-password": E2EEUtils.encrypt("password")
+                },
+                json={
+                    "operation_type": "approve"
                 }
             )
 
@@ -217,13 +226,92 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             private_key=ANY
         )
 
+    # <Normal_2_1>
+    # CANCEL
+    # token
+    @pytest.mark.freeze_time('2021-04-27 12:34:56')
+    def test_normal_2_1(self, client, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer["address"]
+
+        # prepare data
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = issuer["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        id = 10
+        _idx_transfer_approval = IDXTransferApproval()
+        _idx_transfer_approval.id = id
+        _idx_transfer_approval.token_address = self.test_token_address
+        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.application_id = 100
+        _idx_transfer_approval.from_address = self.test_from_address
+        _idx_transfer_approval.to_address = self.test_to_address
+        _idx_transfer_approval.amount = 200
+        _idx_transfer_approval.application_datetime = self.test_application_datetime
+        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.approval_datetime = None
+        _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancelled = None
+        db.add(_idx_transfer_approval)
+
+        additional_info = AdditionalTokenInfo()
+        additional_info.token_address = self.test_token_address
+        additional_info.is_manual_transfer_approval = True
+        db.add(additional_info)
+
+        # mock
+        IbetSecurityTokenContract_cancel_transfer = mock.patch(
+            target="app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
+            return_value=("test_tx_hash", {"status": 1})
+        )
+
+        # request target API
+        with IbetSecurityTokenContract_cancel_transfer as mock_transfer:
+            resp = client.post(
+                self.base_url.format(self.test_token_address, id),
+                headers={
+                    "issuer-address": issuer_address,
+                    "eoa-password": E2EEUtils.encrypt("password")
+                },
+                json={
+                    "operation_type": "cancel"
+                }
+            )
+
+        # Assertion
+        assert resp.status_code == 200
+        assert resp.json() is None
+
+        _expected = {
+            "application_id": 100,
+            "data": str(datetime.utcnow().timestamp())
+        }
+
+        mock_transfer.assert_called_once_with(
+            contract_address=self.test_token_address,
+            data=IbetSecurityTokenApproveTransfer(**_expected),
+            tx_from=issuer_address,
+            private_key=ANY
+        )
+
     ###########################################################################
     # Error Case
     ###########################################################################
 
     # <Error_1_1>
     # Validation Error
-    # missing headers: issuer-address
+    # missing headers: issuer-address, body
     def test_error_1_1(self, client, db):
         id = 10
 
@@ -245,12 +333,17 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
                     "msg": "field required",
                     "type": "value_error.missing"
                 },
+                {
+                    "loc": ["body"],
+                    "msg": "field required",
+                    "type": "value_error.missing"
+                },
             ]
         }
 
     # <Error_1_2>
     # Validation Error
-    # missing headers: eoa-password
+    # missing body: operation_type
     def test_error_1_2(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -261,6 +354,42 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             self.base_url.format(self.test_token_address, id),
             headers={
                 "issuer-address": issuer_address,
+            },
+            json={}
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "loc": ["body", "operation_type"],
+                    "msg": "field required",
+                    "type": "value_error.missing"
+                },
+            ]
+        }
+
+    # <Error_1_3>
+    # Validation Error
+    # missing headers: eoa-password
+    def test_error_1_3(self, client, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer["address"]
+        id = 10
+
+        # request target api
+        resp = client.post(
+            self.base_url.format(self.test_token_address, id),
+            headers={
+                "issuer-address": issuer_address,
+            },
+            json={
+                "operation_type": "approve"
             }
         )
 
@@ -280,10 +409,48 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             ]
         }
 
-    # <Error_1_3>
+    # <Error_1_4>
     # Validation Error
-    # invalid value
-    def test_error_1_3(self, client, db):
+    # invalid value: body
+    def test_error_1_4(self, client, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer["address"]
+
+        id = 10
+
+        # request target api
+        resp = client.post(
+            self.base_url.format(self.test_token_address, id),
+            headers={
+                "issuer-address": issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            },
+            json={
+                "operation_type": "AAAAA"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    "ctx": {"enum_values": ["approve", "cancel"]},
+                    "loc": ["body", "operation_type"],
+                    "msg": "value is not a valid enumeration member; permitted: 'approve', 'cancel'",
+                    "type": "type_error.enum"
+                }
+            ]
+        }
+
+    # <Error_1_5>
+    # Validation Error
+    # invalid value: header
+    def test_error_1_5(self, client, db):
         id = 10
 
         # request target api
@@ -292,6 +459,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             headers={
                 "issuer-address": "issuer_address",
                 "eoa-password": "password"
+            },
+            json={
+                "operation_type": "approve"
             }
         )
 
@@ -331,6 +501,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
+            },
+            json={
+                "operation_type": "approve"
             }
         )
 
@@ -366,6 +539,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password_test")
+            },
+            json={
+                "operation_type": "approve"
             }
         )
 
@@ -401,6 +577,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
+            },
+            json={
+                "operation_type": "approve"
             }
         )
 
@@ -444,6 +623,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
+            },
+            json={
+                "operation_type": "approve"
             }
         )
 
@@ -488,6 +670,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
+            },
+            json={
+                "operation_type": "approve"
             }
         )
 
@@ -550,6 +735,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
+            },
+            json={
+                "operation_type": "approve"
             }
         )
 
@@ -612,6 +800,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
+            },
+            json={
+                "operation_type": "approve"
             }
         )
 
@@ -627,9 +818,74 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
 
     # <Error_4_4>
     # Invalid Parameter Error
+    # application that cannot be canceled
+    def test_error_4_4(self, client, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer["address"]
+
+        # prepare data
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = issuer["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        id = 10
+        _idx_transfer_approval = IDXTransferApproval()
+        _idx_transfer_approval.id = id
+        _idx_transfer_approval.token_address = self.test_token_address
+        _idx_transfer_approval.exchange_address = self.test_exchange_address
+        _idx_transfer_approval.application_id = 100
+        _idx_transfer_approval.from_address = self.test_from_address
+        _idx_transfer_approval.to_address = self.test_to_address
+        _idx_transfer_approval.amount = 200
+        _idx_transfer_approval.application_datetime = self.test_application_datetime
+        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.approval_datetime = None
+        _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancelled = False
+        db.add(_idx_transfer_approval)
+
+        additional_info = AdditionalTokenInfo()
+        additional_info.token_address = self.test_token_address
+        additional_info.is_manual_transfer_approval = True
+        db.add(additional_info)
+
+        # request target api
+        resp = client.post(
+            self.base_url.format(self.test_token_address, id),
+            headers={
+                "issuer-address": issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            },
+            json={
+                "operation_type": "cancel"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "InvalidParameterError"
+            },
+            "detail": "application that cannot be canceled"
+        }
+
+    # <Error_4_5>
+    # Invalid Parameter Error
     # token is automatic approval
     # unset is_manual_transfer_approval
-    def test_error_4_4(self, client, db):
+    def test_error_4_5(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -675,6 +931,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
+            },
+            json={
+                "operation_type": "approve"
             }
         )
 
@@ -688,11 +947,11 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             "detail": "token is automatic approval"
         }
 
-    # <Error_4_5>
+    # <Error_4_6>
     # Invalid Parameter Error
     # token is automatic approval
     # is_manual_transfer_approval is automatic
-    def test_error_4_5(self, client, db):
+    def test_error_4_6(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -738,6 +997,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
+            },
+            json={
+                "operation_type": "approve"
             }
         )
 
@@ -752,6 +1014,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         }
 
     # <Error_5_1>
+    # APPROVE
     # Send Transaction Error
     # IbetSecurityTokenInterface.approve_transfer
     # raise SendTransactionError
@@ -804,6 +1067,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
+            },
+            json={
+                "operation_type": "approve"
             }
         )
 
@@ -818,9 +1084,11 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         }
 
     # <Error_5_2>
+    # APPROVE
     # Send Transaction Error
     # IbetSecurityTokenInterface.approve_transfer
     # return fail
+    @pytest.mark.freeze_time('2021-04-27 12:34:56')
     def test_error_5_2(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -872,12 +1140,16 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         )
 
         # request target API
-        with IbetSecurityTokenContract_approve_transfer, IbetSecurityTokenContract_cancel_transfer:
+        with IbetSecurityTokenContract_approve_transfer, \
+             IbetSecurityTokenContract_cancel_transfer as mock_transfer:
             resp = client.post(
                 self.base_url.format(self.test_token_address, id),
                 headers={
                     "issuer-address": issuer_address,
                     "eoa-password": E2EEUtils.encrypt("password")
+                },
+                json={
+                    "operation_type": "approve"
                 }
             )
 
@@ -891,7 +1163,20 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             "detail": "failed to send transaction"
         }
 
+        _expected = {
+            "application_id": 100,
+            "data": str(datetime.utcnow().timestamp())
+        }
+
+        mock_transfer.assert_called_once_with(
+            contract_address=self.test_token_address,
+            data=IbetSecurityTokenCancelTransfer(**_expected),
+            tx_from=issuer_address,
+            private_key=ANY
+        )
+
     # <Error_5_3>
+    # APPROVE
     # Send Transaction Error
     # IbetSecurityTokenEscrow.approve_transfer
     # raise SendTransactionError
@@ -944,6 +1229,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
+            },
+            json={
+                "operation_type": "approve"
             }
         )
 
@@ -958,6 +1246,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         }
 
     # <Error_5_4>
+    # APPROVE
     # Send Transaction Error
     # IbetSecurityTokenEscrow.approve_transfer
     # return fail
@@ -1014,6 +1303,153 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
                 headers={
                     "issuer-address": issuer_address,
                     "eoa-password": E2EEUtils.encrypt("password")
+                },
+                json={
+                    "operation_type": "approve"
+                }
+            )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 2,
+                "title": "SendTransactionError"
+            },
+            "detail": "failed to send transaction"
+        }
+
+    # <Error_6_1>
+    # CANCEL
+    # Send Transaction Error
+    # IbetSecurityTokenInterface.cancel_transfer
+    # raise SendTransactionError
+    @mock.patch(
+        "app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
+        MagicMock(side_effect=SendTransactionError()))
+    def test_error_6_1(self, client, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer["address"]
+
+        # prepare data
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = issuer["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        id = 10
+        _idx_transfer_approval = IDXTransferApproval()
+        _idx_transfer_approval.id = id
+        _idx_transfer_approval.token_address = self.test_token_address
+        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.application_id = 100
+        _idx_transfer_approval.from_address = self.test_from_address
+        _idx_transfer_approval.to_address = self.test_to_address
+        _idx_transfer_approval.amount = 200
+        _idx_transfer_approval.application_datetime = self.test_application_datetime
+        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.approval_datetime = None
+        _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancelled = None
+        db.add(_idx_transfer_approval)
+
+        additional_info = AdditionalTokenInfo()
+        additional_info.token_address = self.test_token_address
+        additional_info.is_manual_transfer_approval = True
+        db.add(additional_info)
+
+        # request target API
+        resp = client.post(
+            self.base_url.format(self.test_token_address, id),
+            headers={
+                "issuer-address": issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            },
+            json={
+                "operation_type": "cancel"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 2,
+                "title": "SendTransactionError"
+            },
+            "detail": "failed to send transaction"
+        }
+
+    # <Error_6_2>
+    # CANCEL
+    # Send Transaction Error
+    # IbetSecurityTokenInterface.cancel_transfer
+    # return fail
+    def test_error_6_2(self, client, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer["address"]
+
+        # prepare data
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = issuer["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        id = 10
+        _idx_transfer_approval = IDXTransferApproval()
+        _idx_transfer_approval.id = id
+        _idx_transfer_approval.token_address = self.test_token_address
+        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.application_id = 100
+        _idx_transfer_approval.from_address = self.test_from_address
+        _idx_transfer_approval.to_address = self.test_to_address
+        _idx_transfer_approval.amount = 200
+        _idx_transfer_approval.application_datetime = self.test_application_datetime
+        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.approval_datetime = None
+        _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancelled = None
+        db.add(_idx_transfer_approval)
+
+        additional_info = AdditionalTokenInfo()
+        additional_info.token_address = self.test_token_address
+        additional_info.is_manual_transfer_approval = True
+        db.add(additional_info)
+
+        # mock
+        IbetSecurityTokenContract_cancel_transfer = mock.patch(
+            target="app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
+            return_value=("test_tx_hash", {"status": 0})
+        )
+
+        # request target API
+        with IbetSecurityTokenContract_cancel_transfer:
+            resp = client.post(
+                self.base_url.format(self.test_token_address, id),
+                headers={
+                    "issuer-address": issuer_address,
+                    "eoa-password": E2EEUtils.encrypt("password")
+                },
+                json={
+                    "operation_type": "cancel"
                 }
             )
 
