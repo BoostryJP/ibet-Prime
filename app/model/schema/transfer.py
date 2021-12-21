@@ -73,6 +73,7 @@ class TransferApprovalResponse(BaseModel):
     approval_datetime: Optional[str]
     approval_blocktimestamp: Optional[str]
     cancelled: bool
+    transfer_approved: bool
     is_issuer_cancelable: bool
 
 

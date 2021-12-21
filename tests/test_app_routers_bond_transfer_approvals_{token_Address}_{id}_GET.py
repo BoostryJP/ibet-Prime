@@ -82,6 +82,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
+        _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
         # request target API
@@ -104,6 +105,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
             "approval_datetime": None,
             "approval_blocktimestamp": None,
             "cancelled": False,
+            "transfer_approved": False,
             "is_issuer_cancelable": True,
         }
 
@@ -133,6 +135,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = True
+        _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
         # request target API
@@ -155,12 +158,66 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
             "approval_datetime": None,
             "approval_blocktimestamp": None,
             "cancelled": True,
+            "transfer_approved": False,
             "is_issuer_cancelable": False,
         }
 
     # <Normal_3>
-    # approved data
+    # approved data(no ownership vesting)
     def test_normal_3(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        id = 10
+        _idx_transfer_approval = IDXTransferApproval()
+        _idx_transfer_approval.id = id
+        _idx_transfer_approval.token_address = self.test_token_address
+        _idx_transfer_approval.exchange_address = self.test_exchange_address
+        _idx_transfer_approval.application_id = 100
+        _idx_transfer_approval.from_address = self.test_from_address
+        _idx_transfer_approval.to_address = self.test_to_address
+        _idx_transfer_approval.amount = 200
+        _idx_transfer_approval.application_datetime = self.test_application_datetime
+        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.approval_datetime = None
+        _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancelled = None
+        _idx_transfer_approval.transfer_approved = True
+        db.add(_idx_transfer_approval)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address, id)
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "id": 10,
+            "token_address": self.test_token_address,
+            "exchange_address": self.test_exchange_address,
+            "application_id": 100,
+            "from_address": self.test_from_address,
+            "to_address": self.test_to_address,
+            "amount": 200,
+            "application_datetime": self.test_application_datetime_str,
+            "application_blocktimestamp": self.test_application_blocktimestamp_str,
+            "approval_datetime": None,
+            "approval_blocktimestamp": None,
+            "cancelled": False,
+            "transfer_approved": True,
+            "is_issuer_cancelable": False,
+        }
+
+    # <Normal_4>
+    # approved data
+    def test_normal_4(self, client, db):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -184,6 +241,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
         _idx_transfer_approval.approval_datetime = self.test_approval_datetime
         _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
         _idx_transfer_approval.cancelled = None
+        _idx_transfer_approval.transfer_approved = True
         db.add(_idx_transfer_approval)
 
         # request target API
@@ -206,6 +264,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
             "approval_datetime": self.test_approval_datetime_str,
             "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
             "cancelled": False,
+            "transfer_approved": True,
             "is_issuer_cancelable": False,
         }
 

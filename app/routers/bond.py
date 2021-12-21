@@ -1024,6 +1024,10 @@ def list_transfer_approval_history(
             cancelled = False
         else:
             cancelled = _transfer_approval.cancelled
+        if _transfer_approval.transfer_approved is None:
+            transfer_approved = False
+        else:
+            transfer_approved = _transfer_approval.transfer_approved
 
         application_datetime_utc = timezone("UTC").localize(_transfer_approval.application_datetime)
         application_datetime = application_datetime_utc.astimezone(local_tz).isoformat()
@@ -1061,6 +1065,7 @@ def list_transfer_approval_history(
             "approval_datetime": approval_datetime,
             "approval_blocktimestamp": approval_blocktimestamp,
             "cancelled": cancelled,
+            "transfer_approved": transfer_approved,
             "is_issuer_cancelable": is_issuer_cancelable
         })
 
@@ -1226,6 +1231,10 @@ def retrieve_transfer_approval_history(
         cancelled = False
     else:
         cancelled = _transfer_approval.cancelled
+    if _transfer_approval.transfer_approved is None:
+        transfer_approved = False
+    else:
+        transfer_approved = _transfer_approval.transfer_approved
 
     application_datetime_utc = timezone("UTC").localize(_transfer_approval.application_datetime)
     application_datetime = application_datetime_utc.astimezone(local_tz).isoformat()
@@ -1263,6 +1272,7 @@ def retrieve_transfer_approval_history(
         "approval_datetime": approval_datetime,
         "approval_blocktimestamp": approval_blocktimestamp,
         "cancelled": cancelled,
+        "transfer_approved": transfer_approved,
         "is_issuer_cancelable": is_issuer_cancelable
     }
 
