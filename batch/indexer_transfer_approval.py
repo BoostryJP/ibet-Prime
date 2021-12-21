@@ -64,14 +64,15 @@ db_session.configure(bind=engine)
 Batch process for indexing security token transfer approval events
 
 ibetSecurityToken
-  - ApplyForTransfer
-  - CancelTransfer
-  - ApproveTransfer
+  - ApplyForTransfer: 'ApplyFor'
+  - CancelTransfer: 'Cancel'
+  - ApproveTransfer: 'Finish'
 
 ibetSecurityTokenEscrow
-  - ApplyForTransfer
-  - CancelTransfer
-  - ApproveTransfer
+  - ApplyForTransfer: 'ApplyFor'
+  - CancelTransfer: 'Cancel'
+  - ApproveTransfer: 'Approve'
+  - FinishTransfer: 'Finish'
 
 """
 
