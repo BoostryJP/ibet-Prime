@@ -966,13 +966,141 @@ def list_transfer_history(
     }
 
 
+# GET: /share/transfer_approvals
+@router.get(
+    "/transfer_approvals",
+    response_model=TransferApprovalHistoryResponse,
+    responses=get_routers_responses(422)
+)
+def list_transfer_approval_history(
+        issuer_address: Optional[str] = Header(None),
+        token_address: Optional[str] = Query(None),
+        from_address: Optional[str] = Query(None),
+        to_address: Optional[str] = Query(None),
+        status: Optional[int] = Query(None, ge=0, le=3,
+                                      description="0:unapproved, 1:approved, 2:transferred, 3:canceled"),
+        is_issuer_cancelable: Optional[bool] = Query(None),
+        offset: Optional[int] = Query(None),
+        limit: Optional[int] = Query(None),
+        db: Session = Depends(db_session)
+):
+    """List transfer approval history"""
+    # Get transfer approval history
+    query = db.query(IDXTransferApproval). \
+        join(Token, IDXTransferApproval.token_address == Token.token_address). \
+        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.token_status != 2)
+    if issuer_address is not None:
+        query = query.filter(Token.issuer_address == issuer_address)
+    query = query.order_by(IDXTransferApproval.token_address,
+                           IDXTransferApproval.exchange_address,
+                           desc(IDXTransferApproval.id))
+    total = query.count()
+
+    # Search Filter
+    if token_address is not None:
+        query = query.filter(IDXTransferApproval.token_address == token_address)
+    if from_address is not None:
+        query = query.filter(IDXTransferApproval.from_address == from_address)
+    if to_address is not None:
+        query = query.filter(IDXTransferApproval.to_address == to_address)
+    if status is not None:
+        if status == 0:  # unapproved
+            query = query.filter(IDXTransferApproval.approval_blocktimestamp == None). \
+                filter(or_(IDXTransferApproval.cancelled == False,
+                           IDXTransferApproval.cancelled == None)). \
+                filter(or_(IDXTransferApproval.transfer_approved == False,
+                           IDXTransferApproval.transfer_approved == None))
+        elif status == 1:  # approved
+            query = query.filter(IDXTransferApproval.transfer_approved == True). \
+                filter(IDXTransferApproval.approval_blocktimestamp == None)
+        elif status == 2:  # transferred
+            query = query.filter(IDXTransferApproval.transfer_approved == True). \
+                filter(IDXTransferApproval.approval_blocktimestamp != None)
+        else:  # canceled
+            query = query.filter(IDXTransferApproval.cancelled == True)
+    if is_issuer_cancelable is not None:
+        if is_issuer_cancelable is True:
+            query = query.filter(IDXTransferApproval.exchange_address == None)
+        else:
+            query = query.filter(IDXTransferApproval.exchange_address != None)
+
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+    _transfer_approvals = query.all()
+    count = query.count()
+
+    transfer_approval_history = []
+    for _transfer_approval in _transfer_approvals:
+        if _transfer_approval.cancelled is None:
+            cancelled = False
+        else:
+            cancelled = _transfer_approval.cancelled
+        if _transfer_approval.transfer_approved is None:
+            transfer_approved = False
+        else:
+            transfer_approved = _transfer_approval.transfer_approved
+
+        application_datetime_utc = timezone("UTC").localize(_transfer_approval.application_datetime)
+        application_datetime = application_datetime_utc.astimezone(local_tz).isoformat()
+
+        application_blocktimestamp_utc = timezone("UTC").localize(_transfer_approval.application_blocktimestamp)
+        application_blocktimestamp = application_blocktimestamp_utc.astimezone(local_tz).isoformat()
+
+        if _transfer_approval.approval_datetime is not None:
+            approval_datetime_utc = timezone("UTC").localize(_transfer_approval.approval_datetime)
+            approval_datetime = approval_datetime_utc.astimezone(local_tz).isoformat()
+        else:
+            approval_datetime = None
+
+        if _transfer_approval.approval_blocktimestamp is not None:
+            approval_blocktimestamp_utc = timezone("UTC").localize(_transfer_approval.approval_blocktimestamp)
+            approval_blocktimestamp = approval_blocktimestamp_utc.astimezone(local_tz).isoformat()
+        else:
+            approval_blocktimestamp = None
+
+        if _transfer_approval.exchange_address is not None:
+            is_issuer_cancelable = False
+        else:
+            is_issuer_cancelable = True
+
+        transfer_approval_history.append({
+            "id": _transfer_approval.id,
+            "token_address": _transfer_approval.token_address,
+            "exchange_address": _transfer_approval.exchange_address,
+            "application_id": _transfer_approval.application_id,
+            "from_address": _transfer_approval.from_address,
+            "to_address": _transfer_approval.to_address,
+            "amount": _transfer_approval.amount,
+            "application_datetime": application_datetime,
+            "application_blocktimestamp": application_blocktimestamp,
+            "approval_datetime": approval_datetime,
+            "approval_blocktimestamp": approval_blocktimestamp,
+            "cancelled": cancelled,
+            "transfer_approved": transfer_approved,
+            "is_issuer_cancelable": is_issuer_cancelable
+        })
+
+    return {
+        "result_set": {
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": total
+        },
+        "transfer_approval_history": transfer_approval_history
+    }
+
+
 # GET: /share/transfer_approvals/{token_address}
 @router.get(
     "/transfer_approvals/{token_address}",
     response_model=TransferApprovalHistoryResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError)
 )
-def list_transfer_approval_history(
+def list_token_transfer_approval_history(
         token_address: str,
         from_address: Optional[str] = Query(None),
         to_address: Optional[str] = Query(None),
