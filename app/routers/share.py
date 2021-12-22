@@ -976,7 +976,8 @@ def list_transfer_approval_history(
         token_address: str,
         from_address: Optional[str] = Query(None),
         to_address: Optional[str] = Query(None),
-        status: Optional[int] = Query(None, ge=0, le=2, description="0:unapproved, 1:approved, 2:canceled"),
+        status: Optional[int] = Query(None, ge=0, le=3,
+                                      description="0:unapproved, 1:approved, 2:transferred, 3:canceled"),
         is_issuer_cancelable: Optional[bool] = Query(None),
         offset: Optional[int] = Query(None),
         limit: Optional[int] = Query(None),
@@ -1011,9 +1012,15 @@ def list_transfer_approval_history(
         if status == 0:  # unapproved
             query = query.filter(IDXTransferApproval.approval_blocktimestamp == None). \
                 filter(or_(IDXTransferApproval.cancelled == False,
-                           IDXTransferApproval.cancelled == None))
+                           IDXTransferApproval.cancelled == None)). \
+                filter(or_(IDXTransferApproval.transfer_approved == False,
+                           IDXTransferApproval.transfer_approved == None))
         elif status == 1:  # approved
-            query = query.filter(IDXTransferApproval.approval_blocktimestamp != None)
+            query = query.filter(IDXTransferApproval.transfer_approved == True). \
+                filter(IDXTransferApproval.approval_blocktimestamp == None)
+        elif status == 2:  # transferred
+            query = query.filter(IDXTransferApproval.transfer_approved == True). \
+                filter(IDXTransferApproval.approval_blocktimestamp != None)
         else:  # canceled
             query = query.filter(IDXTransferApproval.cancelled == True)
     if is_issuer_cancelable is not None:
