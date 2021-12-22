@@ -42,6 +42,7 @@ from config import (
 from app.model.db import (
     Token,
     TokenType,
+    AdditionalTokenInfo,
     IDXTransferApproval,
     IDXTransferApprovalBlockNumber,
     Notification,
@@ -534,6 +535,13 @@ class Processor:
                 first()
             sender = web3.eth.getTransaction(transaction_hash)["from"]
             if token is not None and token.issuer_address != sender:
+                if notice_code == 0:  # ApplyFor
+                    _additional_info = self.db.query(AdditionalTokenInfo). \
+                        filter(AdditionalTokenInfo.token_address == token_address). \
+                        first()
+                    if _additional_info is None or _additional_info.is_manual_transfer_approval is not True:
+                        # SKIP Automatic approval
+                        return
                 self.sink.on_info_notification(
                     issuer_address=token.issuer_address,
                     code=notice_code,
