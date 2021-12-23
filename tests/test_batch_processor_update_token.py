@@ -98,10 +98,9 @@ class TestProcessor:
             "cancellation_date": "20221231",
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-            "image_url": ["image_1"],  # update
             "transferable": False,  # update
             "status": False,  # update
-            "offering_status": True,  # update
+            "is_offering": True,  # update
             "contact_information": "contact info test",  # update
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
@@ -138,14 +137,14 @@ class TestProcessor:
             "interest_rate": 0.0001,  # update
             "interest_payment_date": ["0331", "0930"],  # update
             "transferable": False,  # update
-            "image_url": ["image_1"],  # update
             "status": False,  # update
-            "initial_offering_status": True,  # update
+            "is_offering": True,  # update
             "is_redeemed": True,  # update
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
             "contact_information": "contact info test",  # update
-            "privacy_policy": "privacy policy test"  # update
+            "privacy_policy": "privacy policy test",  # update
+            "transfer_approval_required": True,  # update
         }
         _update_token_2.status = 0
         _update_token_2.trigger = "Issue"
@@ -190,10 +189,9 @@ class TestProcessor:
                     dividends=None,
                     tradable_exchange_contract_address="0x0000000000000000000000000000000000000001",
                     personal_info_contract_address="0x0000000000000000000000000000000000000002",
-                    image_url=["image_1"],
                     transferable=False,
                     status=False,
-                    offering_status=True,
+                    is_offering=True,
                     contact_information="contact info test",
                     privacy_policy="privacy policy test",
                     transfer_approval_required=True,
@@ -209,14 +207,14 @@ class TestProcessor:
                     interest_rate=0.0001,
                     interest_payment_date=["0331", "0930"],
                     transferable=False,
-                    image_url=["image_1"],
                     status=False,
-                    initial_offering_status=True,
+                    is_offering=True,
                     is_redeemed=True,
                     tradable_exchange_contract_address="0x0000000000000000000000000000000000000001",
                     personal_info_contract_address="0x0000000000000000000000000000000000000002",
                     contact_information="contact info test",
-                    privacy_policy="privacy policy test"
+                    privacy_policy="privacy policy test",
+                    transfer_approval_required=True
                 ),
                 tx_from=_issuer_address,
                 private_key=ANY
@@ -249,6 +247,8 @@ class TestProcessor:
             assert _idx_position.token_address == _token_address_2
             assert _idx_position.account_address == _issuer_address
             assert _idx_position.balance == 2000
+            assert _idx_position.exchange_balance == 0
+            assert _idx_position.exchange_commitment == 0
             assert _idx_position.pending_transfer == 0
 
             _token_list = db.query(Token).order_by(Token.id).all()
@@ -316,10 +316,9 @@ class TestProcessor:
             "cancellation_date": "20221231",
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-            "image_url": ["image_1"],  # update
             "transferable": False,  # update
             "status": False,  # update
-            "offering_status": True,  # update
+            "is_offering": True,  # update
             "contact_information": "contact info test",  # update
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
@@ -356,14 +355,14 @@ class TestProcessor:
             "interest_rate": 0.0001,  # update
             "interest_payment_date": ["0331", "0930"],  # update
             "transferable": False,  # update
-            "image_url": ["image_1"],  # update
             "status": False,  # update
-            "initial_offering_status": True,  # update
+            "is_offering": True,  # update
             "is_redeemed": True,  # update
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
             "contact_information": "contact info test",  # update
-            "privacy_policy": "privacy policy test"  # update
+            "privacy_policy": "privacy policy test",  # update
+            "transfer_approval_required": True,  # update
         }
         _update_token_2.status = 0
         _update_token_2.trigger = "Issue"
@@ -434,10 +433,9 @@ class TestProcessor:
                 "cancellation_date": "20221231",
                 "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
                 "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-                "image_url": ["image_1"],  # update
                 "transferable": False,  # update
                 "status": False,  # update
-                "offering_status": True,  # update
+                "is_offering": True,  # update
                 "contact_information": "contact info test",  # update
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
@@ -468,14 +466,14 @@ class TestProcessor:
                 "interest_rate": 0.0001,  # update
                 "interest_payment_date": ["0331", "0930"],  # update
                 "transferable": False,  # update
-                "image_url": ["image_1"],  # update
                 "status": False,  # update
-                "initial_offering_status": True,  # update
+                "is_offering": True,  # update
                 "is_redeemed": True,  # update
                 "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
                 "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
                 "contact_information": "contact info test",  # update
-                "privacy_policy": "privacy policy test"  # update
+                "privacy_policy": "privacy policy test",  # update
+                "transfer_approval_required": True,  # update
             }
         }
 
@@ -521,10 +519,9 @@ class TestProcessor:
             "cancellation_date": "20221231",
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-            "image_url": ["image_1"],  # update
             "transferable": False,  # update
             "status": False,  # update
-            "offering_status": True,  # update
+            "is_offering": True,  # update
             "contact_information": "contact info test",  # update
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
@@ -561,14 +558,14 @@ class TestProcessor:
             "interest_rate": 0.0001,  # update
             "interest_payment_date": ["0331", "0930"],  # update
             "transferable": False,  # update
-            "image_url": ["image_1"],  # update
             "status": False,  # update
-            "initial_offering_status": True,  # update
+            "is_offering": True,  # update
             "is_redeemed": True,  # update
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
             "contact_information": "contact info test",  # update
-            "privacy_policy": "privacy policy test"  # update
+            "privacy_policy": "privacy policy test",  # update
+            "transfer_approval_required": True,  # update
         }
         _update_token_2.status = 0
         _update_token_2.trigger = "Issue"
@@ -639,10 +636,9 @@ class TestProcessor:
                 "cancellation_date": "20221231",
                 "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
                 "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-                "image_url": ["image_1"],  # update
                 "transferable": False,  # update
                 "status": False,  # update
-                "offering_status": True,  # update
+                "is_offering": True,  # update
                 "contact_information": "contact info test",  # update
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
@@ -673,14 +669,14 @@ class TestProcessor:
                 "interest_rate": 0.0001,  # update
                 "interest_payment_date": ["0331", "0930"],  # update
                 "transferable": False,  # update
-                "image_url": ["image_1"],  # update
                 "status": False,  # update
-                "initial_offering_status": True,  # update
+                "is_offering": True,  # update
                 "is_redeemed": True,  # update
                 "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
                 "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
                 "contact_information": "contact info test",  # update
-                "privacy_policy": "privacy policy test"  # update
+                "privacy_policy": "privacy policy test",  # update
+                "transfer_approval_required": True,  # update
             }
         }
 
@@ -726,10 +722,9 @@ class TestProcessor:
             "cancellation_date": "20221231",
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-            "image_url": ["image_1"],  # update
             "transferable": False,  # update
             "status": False,  # update
-            "offering_status": True,  # update
+            "is_offering": True,  # update
             "contact_information": "contact info test",  # update
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
@@ -766,14 +761,14 @@ class TestProcessor:
             "interest_rate": 0.0001,  # update
             "interest_payment_date": ["0331", "0930"],  # update
             "transferable": False,  # update
-            "image_url": ["image_1"],  # update
             "status": False,  # update
-            "initial_offering_status": True,  # update
+            "is_offering": True,  # update
             "is_redeemed": True,  # update
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
             "contact_information": "contact info test",  # update
-            "privacy_policy": "privacy policy test"  # update
+            "privacy_policy": "privacy policy test",  # update
+            "transfer_approval_required": True,  # update
         }
         _update_token_2.status = 0
         _update_token_2.trigger = "Issue"
@@ -848,10 +843,9 @@ class TestProcessor:
                     "cancellation_date": "20221231",
                     "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
                     "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-                    "image_url": ["image_1"],  # update
                     "transferable": False,  # update
                     "status": False,  # update
-                    "offering_status": True,  # update
+                    "is_offering": True,  # update
                     "contact_information": "contact info test",  # update
                     "privacy_policy": "privacy policy test",  # update
                     "transfer_approval_required": True,  # update
@@ -882,14 +876,14 @@ class TestProcessor:
                     "interest_rate": 0.0001,  # update
                     "interest_payment_date": ["0331", "0930"],  # update
                     "transferable": False,  # update
-                    "image_url": ["image_1"],  # update
                     "status": False,  # update
-                    "initial_offering_status": True,  # update
+                    "is_offering": True,  # update
                     "is_redeemed": True,  # update
                     "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
                     "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
                     "contact_information": "contact info test",  # update
-                    "privacy_policy": "privacy policy test"  # update
+                    "privacy_policy": "privacy policy test",  # update
+                    "transfer_approval_required": True,  # update
                 }
             }
 
@@ -935,10 +929,9 @@ class TestProcessor:
             "cancellation_date": "20221231",
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-            "image_url": ["image_1"],  # update
             "transferable": False,  # update
             "status": False,  # update
-            "offering_status": True,  # update
+            "is_offering": True,  # update
             "contact_information": "contact info test",  # update
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
@@ -975,14 +968,14 @@ class TestProcessor:
             "interest_rate": 0.0001,  # update
             "interest_payment_date": ["0331", "0930"],  # update
             "transferable": False,  # update
-            "image_url": ["image_1"],  # update
             "status": False,  # update
-            "initial_offering_status": True,  # update
+            "is_offering": True,  # update
             "is_redeemed": True,  # update
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
             "contact_information": "contact info test",  # update
-            "privacy_policy": "privacy policy test"  # update
+            "privacy_policy": "privacy policy test",  # update
+            "transfer_approval_required": True,  # update
         }
         _update_token_2.status = 0
         _update_token_2.trigger = "Issue"
@@ -1027,10 +1020,9 @@ class TestProcessor:
                     dividends=None,
                     tradable_exchange_contract_address="0x0000000000000000000000000000000000000001",
                     personal_info_contract_address="0x0000000000000000000000000000000000000002",
-                    image_url=["image_1"],
                     transferable=False,
                     status=False,
-                    offering_status=True,
+                    is_offering=True,
                     contact_information="contact info test",
                     privacy_policy="privacy policy test",
                     transfer_approval_required=True,
@@ -1046,14 +1038,14 @@ class TestProcessor:
                     interest_rate=0.0001,
                     interest_payment_date=["0331", "0930"],
                     transferable=False,
-                    image_url=["image_1"],
                     status=False,
-                    initial_offering_status=True,
+                    is_offering=True,
                     is_redeemed=True,
                     tradable_exchange_contract_address="0x0000000000000000000000000000000000000001",
                     personal_info_contract_address="0x0000000000000000000000000000000000000002",
                     contact_information="contact info test",
-                    privacy_policy="privacy policy test"
+                    privacy_policy="privacy policy test",
+                    transfer_approval_required=True
                 ),
                 tx_from=_issuer_address,
                 private_key=ANY
@@ -1101,10 +1093,9 @@ class TestProcessor:
                     "cancellation_date": "20221231",
                     "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
                     "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-                    "image_url": ["image_1"],  # update
                     "transferable": False,  # update
                     "status": False,  # update
-                    "offering_status": True,  # update
+                    "is_offering": True,  # update
                     "contact_information": "contact info test",  # update
                     "privacy_policy": "privacy policy test",  # update
                     "transfer_approval_required": True,  # update
@@ -1135,13 +1126,13 @@ class TestProcessor:
                     "interest_rate": 0.0001,  # update
                     "interest_payment_date": ["0331", "0930"],  # update
                     "transferable": False,  # update
-                    "image_url": ["image_1"],  # update
                     "status": False,  # update
-                    "initial_offering_status": True,  # update
+                    "is_offering": True,  # update
                     "is_redeemed": True,  # update
                     "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
                     "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
                     "contact_information": "contact info test",  # update
-                    "privacy_policy": "privacy policy test"  # update
+                    "privacy_policy": "privacy policy test",  # update
+                    "transfer_approval_required": True,  # update
                 }
             }

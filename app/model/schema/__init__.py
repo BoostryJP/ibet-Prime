@@ -42,12 +42,13 @@ from .token import (
     IbetStraightBondUpdate,
     IbetStraightBondTransfer,
     IbetStraightBondAdd,
-    IbetShareApproveTransfer,
-    IbetShareCancelTransfer,
     IbetShareCreate,
     IbetShareUpdate,
     IbetShareTransfer,
     IbetShareAdd,
+    IbetSecurityTokenApproveTransfer,
+    IbetSecurityTokenCancelTransfer,
+    IbetSecurityTokenEscrowApproveTransfer,
     TokenAddressResponse,
     IbetStraightBondResponse,
     IbetShareResponse
@@ -71,3 +72,9 @@ from .scheduled_events import (
     ScheduledEventResponse
 )
 from .personal_info import ModifyPersonalInfoRequest
+from .file import (
+    UploadFileRequest,
+    FileResponse,
+    ListAllFilesResponse,
+    DownloadFileResponse
+)

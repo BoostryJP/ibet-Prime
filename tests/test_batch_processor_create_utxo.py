@@ -43,7 +43,8 @@ from app.model.db import (
 from app.model.schema import (
     IbetShareTransfer,
     IbetStraightBondTransfer,
-    IbetStraightBondUpdate
+    IbetStraightBondUpdate,
+    IbetShareUpdate
 )
 from app.utils.contract_utils import ContractUtils
 from batch.processor_create_utxo import (
@@ -78,6 +79,12 @@ def deploy_bond_token_contract(address, private_key):
     ]
 
     contract_address, _, _ = IbetStraightBondContract.create(arguments, address, private_key)
+    IbetStraightBondContract.update(
+        contract_address,
+        IbetStraightBondUpdate(transferable=True),
+        address,
+        private_key
+    )
 
     return contract_address
 
@@ -86,15 +93,22 @@ def deploy_share_token_contract(address, private_key):
     arguments = [
         "token.name",
         "token.symbol",
-        100,
         20,
+        100,
         int(0.03 * 100),
         "token.dividend_record_date",
         "token.dividend_payment_date",
-        "token.cancellation_date"
+        "token.cancellation_date",
+        30
     ]
 
     contract_address, _, _ = IbetShareContract.create(arguments, address, private_key)
+    IbetShareContract.update(
+        contract_address,
+        IbetShareUpdate(transferable=True),
+        address,
+        private_key
+    )
 
     return contract_address
 
@@ -132,7 +146,7 @@ class TestProcessor:
         _token_1.abi = {}
         db.add(_token_1)
 
-        token_address_2 = deploy_bond_token_contract(issuer_address, issuer_private_key)
+        token_address_2 = deploy_share_token_contract(issuer_address, issuer_private_key)
         _token_2 = Token()
         _token_2.type = TokenType.IBET_SHARE
         _token_2.tx_hash = ""
@@ -426,6 +440,64 @@ class TestProcessor:
         assert _utox.account_address == user_address_2
         assert _utox.token_address == token_address_1
         assert _utox.amount == 20
+
+    # <Normal_4>
+    # to Exchange transfer only
+    @mock.patch("batch.processor_create_utxo.create_ledger")
+    def test_normal_4(self, mock_func, processor, db):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"],
+            password="password".encode("utf-8")
+        )
+        user_2 = config_eth_account("user2")
+        user_address_1 = user_2["address"]
+
+        # prepare data
+        token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key)
+        _token_1 = Token()
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND
+        _token_1.tx_hash = ""
+        _token_1.issuer_address = issuer_address
+        _token_1.token_address = token_address_1
+        _token_1.abi = {}
+        db.add(_token_1)
+
+        # set exchange address
+        storage_address, _, _ = \
+            ContractUtils.deploy_contract("EscrowStorage", [], issuer_address, issuer_private_key)
+        exchange_address, _, _ = \
+            ContractUtils.deploy_contract("IbetEscrow", [storage_address], issuer_address, issuer_private_key)
+        storage_contract = ContractUtils.get_contract("EscrowStorage", storage_address)
+        tx = storage_contract.functions.upgradeVersion(exchange_address).buildTransaction({
+            "chainId": CHAIN_ID,
+            "from": issuer_address,
+            "gas": TX_GAS_LIMIT,
+            "gasPrice": 0
+        })
+        ContractUtils.send_transaction(tx, issuer_private_key)
+        update_data = IbetStraightBondUpdate(tradable_exchange_contract_address=exchange_address)
+        IbetStraightBondContract.update(token_address_1, update_data, issuer_address, issuer_private_key)
+
+        # Execute Transfer Event
+        # Bond:issuer -> Exchange
+        _transfer_1 = IbetStraightBondTransfer(
+            token_address=token_address_1,
+            from_address=issuer_address,
+            to_address=exchange_address,
+            amount=100
+        )
+        IbetStraightBondContract.transfer(_transfer_1, issuer_address, issuer_private_key)
+
+        # Execute batch
+        # Assume: Not Create UTXO and Ledger
+        processor.process()
+
+        # assertion
+        _utox_list = db.query(UTXO).all()
+        assert len(_utox_list) == 0
+        mock_func.assert_not_called()
 
     ###########################################################################
     # Error Case

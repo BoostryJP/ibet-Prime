@@ -182,26 +182,72 @@ class Processor:
 
     def __process_transfer(self, token_contract, block_from: int, block_to: int):
         try:
-            # When a Transfer event occurs
-            events = token_contract.events.Transfer.getLogs(
+            # Get exchange contract address
+            exchange_contract_address = ContractUtils.call_function(
+                contract=token_contract,
+                function_name="tradableExchange",
+                args=(),
+                default_returns=ZERO_ADDRESS
+            )
+            # Get "HolderChanged" events from exchange contract
+            exchange_contract = ContractUtils.get_contract(
+                contract_name="IbetExchangeInterface",
+                contract_address=exchange_contract_address
+            )
+            exchange_contract_events = exchange_contract.events.HolderChanged.getLogs(
                 fromBlock=block_from,
                 toBlock=block_to
             )
+            tmp_events = []
+            for _event in exchange_contract_events:
+                if token_contract.address == _event["args"]["token"]:
+                    tmp_events.append({
+                        "event": _event["event"],
+                        "args": dict(_event["args"]),
+                        "transaction_hash": _event["transactionHash"].hex(),
+                        "block_number": _event["blockNumber"],
+                        "log_index": _event["logIndex"]
+                    })
+
+            # Get "Transfer" events from token contract
+            token_transfer_events = token_contract.events.Transfer.getLogs(
+                fromBlock=block_from,
+                toBlock=block_to
+            )
+            for _event in token_transfer_events:
+                tmp_events.append({
+                    "event": _event["event"],
+                    "args": dict(_event["args"]),
+                    "transaction_hash": _event["transactionHash"].hex(),
+                    "block_number": _event["blockNumber"],
+                    "log_index": _event["logIndex"]
+                })
+
+            # Marge & Sort: block_number > log_index
+            events = sorted(
+                tmp_events,
+                key=lambda x: (x["block_number"], x["log_index"])
+            )
+
+            # Sink
             event_triggered = False
             for event in events:
-                event_triggered = True
-
-                # Get contract event args
                 args = event["args"]
                 from_account = args.get("from", ZERO_ADDRESS)
                 to_account = args.get("to", ZERO_ADDRESS)
                 amount = args.get("value")
 
-                transaction_hash = event["transactionHash"].hex()
-                block_number = event["blockNumber"]
+                # Skip sinking in case of deposit to exchange or withdrawal from exchange
+                if from_account == exchange_contract_address or to_account == exchange_contract_address:
+                    continue
+
+                transaction_hash = event["transaction_hash"]
+                block_number = event["block_number"]
                 block_timestamp = datetime.utcfromtimestamp(web3.eth.get_block(block_number)["timestamp"])  # UTC
 
                 if amount is not None and amount <= sys.maxsize:
+                    event_triggered = True
+
                     # Update UTXO（from account）
                     self.sink.on_utxo(
                         spent=True,

@@ -25,6 +25,7 @@ from fastapi import (
     Query,
     Depends
 )
+from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
 
 from config import TZ
@@ -36,7 +37,6 @@ from app.utils.check_utils import (
     address_is_valid_address
 )
 from app.utils.docs_utils import get_routers_responses
-from app.exceptions import InvalidParameterError
 
 router = APIRouter(tags=["notification"])
 
@@ -110,7 +110,7 @@ def list_all_notifications(
 @router.delete(
     "/notifications/{notice_id}",
     response_model=None,
-    responses=get_routers_responses(422, InvalidParameterError)
+    responses=get_routers_responses(422, 404)
 )
 def delete_notification(
         notice_id: str,
@@ -127,7 +127,7 @@ def delete_notification(
         filter(Notification.issuer_address == issuer_address). \
         first()
     if _notification is None:
-        raise InvalidParameterError("notification does not exist")
+        raise HTTPException(status_code=404, detail="notification does not exist")
 
     # Delete Notification
     db.delete(_notification)

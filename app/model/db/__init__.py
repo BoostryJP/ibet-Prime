@@ -24,6 +24,7 @@ from .account import (
 )
 from .token import (
     Token,
+    AdditionalTokenInfo,
     TokenAttrUpdate,
     TokenType
 )
@@ -68,3 +69,4 @@ from .scheduled_events import (
     ScheduledEvents,
     ScheduledEventType
 )
+from .upload_file import UploadFile

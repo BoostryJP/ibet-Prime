@@ -36,6 +36,10 @@ class IDXPosition(Base):
     account_address = Column(String(42), index=True)
     # balance
     balance = Column(BigInteger)
+    # exchange balance
+    exchange_balance = Column(BigInteger)
+    # exchange commitment
+    exchange_commitment = Column(BigInteger)
     # pendingTransfer
     pending_transfer = Column(BigInteger)
 
@@ -43,6 +47,8 @@ class IDXPosition(Base):
         return {
             "account_address": self.account_address,
             "balance": self.balance,
+            "exchange_balance": self.exchange_balance,
+            "exchange_commitment": self.exchange_commitment,
             "pending_transfer": self.pending_transfer
         }
 

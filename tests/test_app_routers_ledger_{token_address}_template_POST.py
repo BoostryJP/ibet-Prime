@@ -143,6 +143,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
 
         # assertion
         assert resp.status_code == 200
+        assert resp.json() is None
         _template = db.query(LedgerTemplate). \
             first()
         assert _template.token_address == token_address
@@ -1069,11 +1070,11 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 404
         assert resp.json() == {
             "meta": {
                 "code": 1,
-                "title": "InvalidParameterError"
+                "title": "NotFound"
             },
             "detail": "token does not exist"
         }

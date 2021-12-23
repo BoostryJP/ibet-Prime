@@ -16,17 +16,23 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from unittest.mock import ANY, patch
+from unittest.mock import (
+    ANY,
+    patch
+)
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
 import config
+import string
+import random
 from app.exceptions import SendTransactionError
 from app.model.db import (
     Account,
     Token,
     TokenType,
+    AdditionalTokenInfo,
     UpdateToken,
     IDXPosition
 )
@@ -71,7 +77,7 @@ class TestAppRoutersBondTokensPOST:
         )
 
         with IbetStraightBondContract_create, \
-             TokenListContract_register:
+                TokenListContract_register:
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -125,10 +131,15 @@ class TestAppRoutersBondTokensPOST:
             assert position.token_address == "contract_address_test1"
             assert position.account_address == test_account["address"]
             assert position.balance == req_param["total_supply"]
+            assert position.exchange_balance == 0
+            assert position.exchange_commitment == 0
             assert position.pending_transfer == 0
 
             update_token = db.query(UpdateToken).first()
             assert update_token is None
+
+            additional_info = db.query(AdditionalTokenInfo).first()
+            assert additional_info is None
 
     # <Normal_2>
     # include updates
@@ -155,16 +166,16 @@ class TestAppRoutersBondTokensPOST:
         )
 
         with IbetStraightBondContract_create, \
-             TokenListContract_register:
+                TokenListContract_register:
             # request target api
             req_param = {
                 "name": "name_test1",
                 "symbol": "symbol_test1",
                 "total_supply": 10000,
                 "face_value": 200,
-                "redemption_date": "redemption_date_test1",
+                "redemption_date": "20211231",
                 "redemption_value": 4000,
-                "return_date": "return_date_test1",
+                "return_date": "20211231",
                 "return_amount": "return_amount_test1",
                 "purpose": "purpose_test1",
                 "interest_rate": 0.0001,  # update
@@ -172,12 +183,14 @@ class TestAppRoutersBondTokensPOST:
                 "transferable": False,  # update
                 "image_url": ["image_1"],  # update
                 "status": False,  # update
-                "initial_offering_status": True,  # update
+                "is_offering": True,  # update
                 "is_redeemed": True,  # update
                 "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
                 "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
                 "contact_information": "contact info test",  # update
-                "privacy_policy": "privacy policy test"  # update
+                "privacy_policy": "privacy policy test",  # update
+                "transfer_approval_required": True,  # update
+                "is_manual_transfer_approval": True  # update
             }
             resp = client.post(
                 self.apiurl,
@@ -191,10 +204,14 @@ class TestAppRoutersBondTokensPOST:
             # assertion
             IbetStraightBondContract.create.assert_called_with(
                 args=[
-                    "name_test1", "symbol_test1",
-                    10000, 200,
-                    "redemption_date_test1", 4000,
-                    "return_date_test1", "return_amount_test1",
+                    "name_test1",
+                    "symbol_test1",
+                    10000,
+                    200,
+                    "20211231",
+                    4000,
+                    "20211231",
+                    "return_amount_test1",
                     "purpose_test1"
                 ],
                 tx_from=test_account["address"],
@@ -231,13 +248,17 @@ class TestAppRoutersBondTokensPOST:
             assert update_token.status == 0
             assert update_token.trigger == "Issue"
 
+            additional_info = db.query(AdditionalTokenInfo).first()
+            assert additional_info.token_address == "contract_address_test1"
+            assert additional_info.is_manual_transfer_approval is True
+
     ###########################################################################
     # Error Case
     ###########################################################################
 
     # <Error_1>
     # Validation Error
-    # required fields
+    # missing fields
     def test_error_1(self, client, db):
         # request target api
         resp = client.post(
@@ -267,8 +288,7 @@ class TestAppRoutersBondTokensPOST:
 
     # <Error_2_1>
     # Validation Error
-    # interest_rate, interest_payment_date, tradable_exchange_contract_address,
-    # personal_info_contract_address, image_url
+    # format error
     def test_error_2_1(self, client, db):
         test_account = config_eth_account("user1")
 
@@ -278,22 +298,29 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": 10000,
             "face_value": 200,
-            "redemption_date": "redemption_date_test1",
+            "redemption_date": "20211231",
             "redemption_value": 4000,
-            "return_date": "redemption_value_test1",
+            "return_date": "20211231",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
             "interest_rate": 12.34567,
-            "interest_payment_date": ["2101", "2102", "2103", "2104", "2105", "2106", "2107", "2108", "2109", "2110",
-                                      "2111", "2112", "2113"],
+            "interest_payment_date": [
+                "0101",
+                "0201",
+                "0301",
+                "0401",
+                "0501",
+                "0601",
+                "0701",
+                "0801",
+                "0901",
+                "1001",
+                "1101",
+                "1201",
+                "1231"
+            ],
             "tradable_exchange_contract_address": "0x0",
             "personal_info_contract_address": "0x0",
-            "image_url": [
-                "http://test/test",
-                "http://test/test",
-                "http://test/test",
-                "http://test/test",
-            ],
         }
         resp = client.post(
             self.apiurl,
@@ -343,20 +370,12 @@ class TestAppRoutersBondTokensPOST:
                     "msg": "personal_info_contract_address is not a valid address",
                     "type": "value_error"
                 },
-                {
-                    "loc": [
-                        "body",
-                        "image_url"
-                    ],
-                    "msg": "The length of the list must be less than or equal to 3",
-                    "type": "value_error"
-                }
             ]
         }
 
     # <Error_2_2>
     # Validation Error
-    # issuer-address, eoa-password(required)
+    # required headers
     def test_error_2_2(self, client, db):
         # request target api
         req_param = {
@@ -364,9 +383,9 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": 10000,
             "face_value": 200,
-            "redemption_date": "redemption_date_test1",
+            "redemption_date": "20211231",
             "redemption_value": 4000,
-            "return_date": "redemption_value_test1",
+            "return_date": "20211231",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
         }
@@ -398,7 +417,7 @@ class TestAppRoutersBondTokensPOST:
 
     # <Error_2_3>
     # Validation Error
-    # eoa-password(not decrypt)
+    # eoa-password is not a Base64-encoded encrypted data
     def test_error_2_3(self, client, db):
         test_account_1 = config_eth_account("user1")
 
@@ -415,9 +434,9 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": 10000,
             "face_value": 200,
-            "redemption_date": "redemption_date_test1",
+            "redemption_date": "20211231",
             "redemption_value": 4000,
-            "return_date": "redemption_value_test1",
+            "return_date": "20211231",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
         }
@@ -446,7 +465,7 @@ class TestAppRoutersBondTokensPOST:
 
     # <Error_2_4>
     # Validation Error
-    # update items
+    # optional fields
     def test_error_2_4(self, client, db):
         # request target api
         req_param = {
@@ -454,9 +473,9 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": 10000,
             "face_value": 200,
-            "redemption_date": "redemption_date_test1",
+            "redemption_date": "20211231",
             "redemption_value": 4000,
-            "return_date": "redemption_value_test1",
+            "return_date": "20211231",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
             "is_redeemed": "invalid value"
@@ -487,7 +506,7 @@ class TestAppRoutersBondTokensPOST:
 
     # <Error_2_5>
     # Validation Error
-    # min value: total_supply, face_value, redemption_value, interest_rate
+    # min value
     def test_error_2_5(self, client, db):
         test_account = config_eth_account("user1")
 
@@ -497,9 +516,9 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": -1,
             "face_value": -1,
-            "redemption_date": "redemption_date_test1",
+            "redemption_date": "20211231",
             "redemption_value": -1,
-            "return_date": "return_date_test1",
+            "return_date": "20211231",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
             "interest_rate": -0.0001,  # update
@@ -507,12 +526,14 @@ class TestAppRoutersBondTokensPOST:
             "transferable": False,  # update
             "image_url": ["image_1"],  # update
             "status": False,  # update
-            "initial_offering_status": True,  # update
+            "is_offering": True,  # update
             "is_redeemed": True,  # update
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
             "contact_information": "contact info test",  # update
-            "privacy_policy": "privacy policy test"  # update
+            "privacy_policy": "privacy policy test",  # update
+            "transfer_approval_required": True,  # update
+            "is_manual_transfer_approval": True,  # update
         }
         resp = client.post(
             self.apiurl,
@@ -579,32 +600,34 @@ class TestAppRoutersBondTokensPOST:
 
     # <Error_2_6>
     # Validation Error
-    # max value: total_supply, face_value, redemption_value, interest_rate
+    # max value or max length
     def test_error_2_6(self, client, db):
         test_account = config_eth_account("user1")
 
         # request target api
         req_param = {
-            "name": "name_test1",
-            "symbol": "symbol_test1",
+            "name": GetRandomStr(101),
+            "symbol": GetRandomStr(101),
             "total_supply": 100_000_001,
             "face_value": 5_000_000_001,
-            "redemption_date": "redemption_date_test1",
+            "redemption_date": "20211231",
             "redemption_value": 5_000_000_001,
-            "return_date": "return_date_test1",
-            "return_amount": "return_amount_test1",
-            "purpose": "purpose_test1",
+            "return_date": "20211231",
+            "return_amount": GetRandomStr(2001),
+            "purpose": GetRandomStr(2001),
             "interest_rate": 100.0001,  # update
             "interest_payment_date": ["0331", "0930"],  # update
             "transferable": False,  # update
             "image_url": ["image_1"],  # update
             "status": False,  # update
-            "initial_offering_status": True,  # update
+            "is_offering": True,  # update
             "is_redeemed": True,  # update
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-            "contact_information": "contact info test",  # update
-            "privacy_policy": "privacy policy test"  # update
+            "contact_information": GetRandomStr(2001),  # update
+            "privacy_policy": GetRandomStr(5001),  # update
+            "transfer_approval_required": True,  # update
+            "is_manual_transfer_approval": True,  # update
         }
         resp = client.post(
             self.apiurl,
@@ -623,49 +646,119 @@ class TestAppRoutersBondTokensPOST:
             },
             "detail": [
                 {
-                    "ctx": {
-                        "limit_value": 100_000_000
-                    },
-                    "loc": [
-                        "body",
-                        "total_supply"
-                    ],
+                    "loc": ["body", "name"], 
+                    "msg": "ensure this value has at most 100 characters",
+                    "type": "value_error.any_str.max_length", 
+                    "ctx": {"limit_value": 100}
+                },
+                {
+                    "loc": ["body", "total_supply"], 
                     "msg": "ensure this value is less than or equal to 100000000",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le", 
+                    "ctx": {"limit_value": 100000000}
                 },
                 {
-                    "ctx": {
-                        "limit_value": 5_000_000_000
-                    },
-                    "loc": [
-                        "body",
-                        "face_value"
-                    ],
+                    "loc": ["body", "face_value"], 
                     "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le", 
+                    "ctx": {"limit_value": 5000000000}
                 },
                 {
-                    "ctx": {
-                        "limit_value": 5_000_000_000
-                    },
-                    "loc": [
-                        "body",
-                        "redemption_value"
-                    ],
+                    "loc": ["body", "purpose"],
+                    "msg": "ensure this value has at most 2000 characters",
+                    "type": "value_error.any_str.max_length",
+                    "ctx": {"limit_value": 2000}
+                },
+                {
+                    "loc": ["body", "symbol"], 
+                    "msg": "ensure this value has at most 100 characters",
+                    "type": "value_error.any_str.max_length", 
+                    "ctx": {"limit_value": 100}
+                },
+                {
+                    "loc": ["body", "redemption_value"],
                     "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le", 
+                    "ctx": {"limit_value": 5000000000}
                 },
                 {
-                    "ctx": {
-                        "limit_value": 100.0000
-                    },
-                    "loc": [
-                        "body",
-                        "interest_rate"
-                    ],
+                    "loc": ["body", "return_amount"], 
+                    "msg": "ensure this value has at most 2000 characters",
+                    "type": "value_error.any_str.max_length", 
+                    "ctx": {"limit_value": 2000}
+                },
+                {
+                    "loc": ["body", "interest_rate"], 
                     "msg": "ensure this value is less than or equal to 100.0",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le", 
+                    "ctx": {"limit_value": 100.0}
                 },
+                {
+                    "loc": ["body", "contact_information"], 
+                    "msg": "ensure this value has at most 2000 characters",
+                    "type": "value_error.any_str.max_length", 
+                    "ctx": {"limit_value": 2000}
+                },
+                {
+                    "loc": ["body", "privacy_policy"], 
+                    "msg": "ensure this value has at most 5000 characters",
+                    "type": "value_error.any_str.max_length", 
+                    "ctx": {"limit_value": 5000}
+                }
+            ]
+        }
+
+    # <Error_2_7>
+    # Validation Error
+    # YYYYMMDD/MMDD regex
+    def test_error_2_7(self, client, db):
+        # request target api
+        req_param = {
+            "name": "name_test1",
+            "symbol": "symbol_test1",
+            "total_supply": 10000,
+            "face_value": 200,
+            "redemption_date": "invalid_date",
+            "redemption_value": 4000,
+            "return_date": "invalid_date",
+            "return_amount": "return_amount_test1",
+            "purpose": "purpose_test1",
+            "interest_payment_date": ["invalid_date"],  # update
+        }
+        resp = client.post(
+            self.apiurl,
+            json=req_param,
+            headers={
+                "issuer-address": "issuer-address"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    'loc': ['body', 'redemption_date'],
+                    'msg': 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    'type': 'value_error.str.regex',
+                    'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                },
+                {
+                    'loc': ['body', 'return_date'],
+                    'msg': 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    'type': 'value_error.str.regex',
+                    'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                },
+                {
+                    'loc': ['body', 'interest_payment_date', 0],
+                    'msg': 'string does not match regex "^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    'type': 'value_error.str.regex',
+                    'ctx': {'pattern': '^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                }
             ]
         }
 
@@ -688,9 +781,9 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": 10000,
             "face_value": 200,
-            "redemption_date": "redemption_date_test1",
+            "redemption_date": "20211231",
             "redemption_value": 4000,
-            "return_date": "redemption_value_test1",
+            "return_date": "20211231",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
         }
@@ -731,9 +824,9 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": 10000,
             "face_value": 200,
-            "redemption_date": "redemption_date_test1",
+            "redemption_date": "20211231",
             "redemption_value": 4000,
-            "return_date": "redemption_value_test1",
+            "return_date": "20211231",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
         }
@@ -783,9 +876,9 @@ class TestAppRoutersBondTokensPOST:
                 "symbol": "symbol_test1",
                 "total_supply": 10000,
                 "face_value": 200,
-                "redemption_date": "redemption_date_test1",
+                "redemption_date": "20211231",
                 "redemption_value": 4000,
-                "return_date": "redemption_value_test1",
+                "return_date": "20211231",
                 "return_amount": "return_amount_test1",
                 "purpose": "purpose_test1",
             }
@@ -832,16 +925,16 @@ class TestAppRoutersBondTokensPOST:
         )
 
         with IbetStraightBondContract_create, \
-             TokenListContract_register:
+                TokenListContract_register:
             # request target api
             req_param = {
                 "name": "name_test1",
                 "symbol": "symbol_test1",
                 "total_supply": 10000,
                 "face_value": 200,
-                "redemption_date": "redemption_date_test1",
+                "redemption_date": "20211231",
                 "redemption_value": 4000,
-                "return_date": "return_date_test1",
+                "return_date": "20211231",
                 "return_amount": "return_amount_test1",
                 "purpose": "purpose_test1",
             }
@@ -863,3 +956,8 @@ class TestAppRoutersBondTokensPOST:
                 },
                 "detail": "failed to register token address token list"
             }
+
+
+def GetRandomStr(num):
+    dat = string.digits + string.ascii_lowercase + string.ascii_uppercase
+    return ''.join([random.choice(dat) for i in range(num)])

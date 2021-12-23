@@ -140,6 +140,7 @@ class TestAppRoutersLedgerTokenAddressTemplateDELETE:
 
         # assertion
         assert resp.status_code == 200
+        assert resp.json() is None
         _template_list = db.query(LedgerTemplate).all()
         assert len(_template_list) == 0
         _details_list = db.query(LedgerDetailsTemplate).all()
@@ -220,11 +221,11 @@ class TestAppRoutersLedgerTokenAddressTemplateDELETE:
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 404
         assert resp.json() == {
             "meta": {
                 "code": 1,
-                "title": "InvalidParameterError"
+                "title": "NotFound"
             },
             "detail": "token does not exist"
         }
@@ -289,11 +290,11 @@ class TestAppRoutersLedgerTokenAddressTemplateDELETE:
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 404
         assert resp.json() == {
             "meta": {
                 "code": 1,
-                "title": "InvalidParameterError"
+                "title": "NotFound"
             },
             "detail": "ledger template does not exist"
         }

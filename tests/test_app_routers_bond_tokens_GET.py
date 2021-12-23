@@ -21,7 +21,11 @@ from unittest import mock
 from unittest.mock import call
 
 from app.model.blockchain import IbetStraightBondContract
-from app.model.db import Token, TokenType
+from app.model.db import (
+    Token,
+    TokenType,
+    AdditionalTokenInfo
+)
 from config import TZ
 from tests.account_config import config_eth_account
 
@@ -66,11 +70,6 @@ class TestAppRoutersBondTokensGET:
         mock_token.name = "testtoken1"
         mock_token.symbol = "test1"
         mock_token.total_supply = 10000
-        mock_token.image_url = [
-            "http://hoge1.test/test1.png",
-            "http://hoge2.test/test1.png",
-            "http://hoge3.test/test1.png",
-        ]
         mock_token.contact_information = "contactInformation_test1"
         mock_token.privacy_policy = "privacyPolicy_test1"
         mock_token.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
@@ -83,7 +82,7 @@ class TestAppRoutersBondTokensGET:
         mock_token.purpose = "purpose_test1"
         mock_token.interest_rate = 0.003
         mock_token.transferable = True
-        mock_token.initial_offering_status = False
+        mock_token.is_offering = False
         mock_token.is_redeemed = False
         mock_token.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
         mock_token.interest_payment_date = [
@@ -94,6 +93,8 @@ class TestAppRoutersBondTokensGET:
             "interestPaymentDate9_test1", "interestPaymentDate10_test1",
             "interestPaymentDate11_test1", "interestPaymentDate12_test1",
         ]
+        mock_token.transfer_approval_required = True
+        mock_token.memo = "memo_test1"
 
         mock_get.side_effect = [
             mock_token
@@ -111,11 +112,6 @@ class TestAppRoutersBondTokensGET:
                 "name": "testtoken1",
                 "symbol": "test1",
                 "total_supply": 10000,
-                "image_url": [
-                    "http://hoge1.test/test1.png",
-                    "http://hoge2.test/test1.png",
-                    "http://hoge3.test/test1.png",
-                ],
                 "contact_information": "contactInformation_test1",
                 "privacy_policy": "privacyPolicy_test1",
                 "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
@@ -128,7 +124,7 @@ class TestAppRoutersBondTokensGET:
                 "purpose": "purpose_test1",
                 "interest_rate": 0.003,
                 "transferable": True,
-                "initial_offering_status": False,
+                "is_offering": False,
                 "is_redeemed": False,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
                 "interest_payment_date": [
@@ -140,7 +136,10 @@ class TestAppRoutersBondTokensGET:
                     "interestPaymentDate11_test1", "interestPaymentDate12_test1",
                 ],
                 "issue_datetime": _issue_datetime,
-                "token_status": 1
+                "token_status": 1,
+                "transfer_approval_required": True,
+                "is_manual_transfer_approval": False,
+                "memo": "memo_test1",
             },
         ]
 
@@ -167,17 +166,18 @@ class TestAppRoutersBondTokensGET:
         db.commit()
         _issue_datetime_1 = pytz.timezone("UTC").localize(token_1.created).astimezone(self.local_tz).isoformat()
 
+        additional_info_1 = AdditionalTokenInfo()
+        additional_info_1.token_address = "token_address_test1"
+        additional_info_1.is_manual_transfer_approval = True
+        db.add(additional_info_1)
+        db.commit()
+
         mock_token_1 = IbetStraightBondContract()
         mock_token_1.issuer_address = token_1.issuer_address
         mock_token_1.token_address = token_1.token_address
         mock_token_1.name = "testtoken1"
         mock_token_1.symbol = "test1"
         mock_token_1.total_supply = 10000
-        mock_token_1.image_url = [
-            "http://hoge1.test/test1.png",
-            "http://hoge2.test/test1.png",
-            "http://hoge3.test/test1.png",
-        ]
         mock_token_1.contact_information = "contactInformation_test1"
         mock_token_1.privacy_policy = "privacyPolicy_test1"
         mock_token_1.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
@@ -190,7 +190,7 @@ class TestAppRoutersBondTokensGET:
         mock_token_1.purpose = "purpose_test1"
         mock_token_1.interest_rate = 0.003
         mock_token_1.transferable = True
-        mock_token_1.initial_offering_status = False
+        mock_token_1.is_offering = False
         mock_token_1.is_redeemed = False
         mock_token_1.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
         mock_token_1.interest_payment_date = [
@@ -201,6 +201,8 @@ class TestAppRoutersBondTokensGET:
             "interestPaymentDate9_test1", "interestPaymentDate10_test1",
             "interestPaymentDate11_test1", "interestPaymentDate12_test1",
         ]
+        mock_token_1.transfer_approval_required = True
+        mock_token_1.memo = "memo_test1"
 
         # 2nd Data
         token_2 = Token()
@@ -214,17 +216,18 @@ class TestAppRoutersBondTokensGET:
         db.commit()
         _issue_datetime_2 = pytz.timezone("UTC").localize(token_2.created).astimezone(self.local_tz).isoformat()
 
+        additional_info_2 = AdditionalTokenInfo()
+        additional_info_2.token_address = "token_address_test2"
+        additional_info_2.is_manual_transfer_approval = None  # not target
+        db.add(additional_info_2)
+        db.commit()
+
         mock_token_2 = IbetStraightBondContract()
         mock_token_2.issuer_address = token_2.issuer_address
         mock_token_2.token_address = token_2.token_address
         mock_token_2.name = "testtoken2"
         mock_token_2.symbol = "test2"
         mock_token_2.total_supply = 50000
-        mock_token_2.image_url = [
-            "http://hoge1.test/test2.png",
-            "http://hoge2.test/test2.png",
-            "http://hoge3.test/test2.png",
-        ]
         mock_token_2.contact_information = "contactInformation_test2"
         mock_token_2.privacy_policy = "privacyPolicy_test2"
         mock_token_2.tradable_exchange_contract_address = "0x1234567890AbcdfE1234567890abcdfE12345680"
@@ -237,7 +240,7 @@ class TestAppRoutersBondTokensGET:
         mock_token_2.purpose = "purpose_test2"
         mock_token_2.interest_rate = 0.007
         mock_token_2.transferable = False
-        mock_token_2.initial_offering_status = False
+        mock_token_2.is_offering = False
         mock_token_2.is_redeemed = False
         mock_token_2.personal_info_contract_address = "0x1234567890abcdFE1234567890ABcdfE12345681"
         mock_token_2.interest_payment_date = [
@@ -248,6 +251,8 @@ class TestAppRoutersBondTokensGET:
             "interestPaymentDate9_test2", "interestPaymentDate10_test2",
             "interestPaymentDate11_test2", "interestPaymentDate12_test2",
         ]
+        mock_token_2.transfer_approval_required = False
+        mock_token_2.memo = "memo_test2"
 
         mock_get.side_effect = [
             mock_token_1, mock_token_2
@@ -266,11 +271,6 @@ class TestAppRoutersBondTokensGET:
                 "name": "testtoken1",
                 "symbol": "test1",
                 "total_supply": 10000,
-                "image_url": [
-                    "http://hoge1.test/test1.png",
-                    "http://hoge2.test/test1.png",
-                    "http://hoge3.test/test1.png",
-                ],
                 "contact_information": "contactInformation_test1",
                 "privacy_policy": "privacyPolicy_test1",
                 "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
@@ -283,7 +283,7 @@ class TestAppRoutersBondTokensGET:
                 "purpose": "purpose_test1",
                 "interest_rate": 0.003,
                 "transferable": True,
-                "initial_offering_status": False,
+                "is_offering": False,
                 "is_redeemed": False,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
                 "interest_payment_date": [
@@ -295,7 +295,10 @@ class TestAppRoutersBondTokensGET:
                     "interestPaymentDate11_test1", "interestPaymentDate12_test1",
                 ],
                 "issue_datetime": _issue_datetime_1,
-                "token_status": 1
+                "token_status": 1,
+                "transfer_approval_required": True,
+                "is_manual_transfer_approval": True,
+                "memo": "memo_test1",
             },
             {
                 "issuer_address": token_2.issuer_address,
@@ -303,11 +306,6 @@ class TestAppRoutersBondTokensGET:
                 "name": "testtoken2",
                 "symbol": "test2",
                 "total_supply": 50000,
-                "image_url": [
-                    "http://hoge1.test/test2.png",
-                    "http://hoge2.test/test2.png",
-                    "http://hoge3.test/test2.png",
-                ],
                 "contact_information": "contactInformation_test2",
                 "privacy_policy": "privacyPolicy_test2",
                 "tradable_exchange_contract_address": "0x1234567890AbcdfE1234567890abcdfE12345680",
@@ -320,7 +318,7 @@ class TestAppRoutersBondTokensGET:
                 "purpose": "purpose_test2",
                 "interest_rate": 0.007,
                 "transferable": False,
-                "initial_offering_status": False,
+                "is_offering": False,
                 "is_redeemed": False,
                 "personal_info_contract_address": "0x1234567890abcdFE1234567890ABcdfE12345681",
                 "interest_payment_date": [
@@ -332,7 +330,10 @@ class TestAppRoutersBondTokensGET:
                     "interestPaymentDate11_test2", "interestPaymentDate12_test2",
                 ],
                 "issue_datetime": _issue_datetime_2,
-                "token_status": 0
+                "token_status": 0,
+                "transfer_approval_required": False,
+                "is_manual_transfer_approval": False,
+                "memo": "memo_test2",
             },
         ]
 
@@ -386,11 +387,6 @@ class TestAppRoutersBondTokensGET:
         mock_token.name = "testtoken1"
         mock_token.symbol = "test1"
         mock_token.total_supply = 10000
-        mock_token.image_url = [
-            "http://hoge1.test/test1.png",
-            "http://hoge2.test/test1.png",
-            "http://hoge3.test/test1.png",
-        ]
         mock_token.contact_information = "contactInformation_test1"
         mock_token.privacy_policy = "privacyPolicy_test1"
         mock_token.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
@@ -403,7 +399,7 @@ class TestAppRoutersBondTokensGET:
         mock_token.purpose = "purpose_test1"
         mock_token.interest_rate = 0.003
         mock_token.transferable = True
-        mock_token.initial_offering_status = False
+        mock_token.is_offering = False
         mock_token.is_redeemed = False
         mock_token.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
         mock_token.interest_payment_date = [
@@ -414,6 +410,8 @@ class TestAppRoutersBondTokensGET:
             "interestPaymentDate9_test1", "interestPaymentDate10_test1",
             "interestPaymentDate11_test1", "interestPaymentDate12_test1",
         ]
+        mock_token.transfer_approval_required = True
+        mock_token.memo = "memo_test1"
 
         mock_get.side_effect = [
             mock_token
@@ -440,11 +438,6 @@ class TestAppRoutersBondTokensGET:
                 "name": "testtoken1",
                 "symbol": "test1",
                 "total_supply": 10000,
-                "image_url": [
-                    "http://hoge1.test/test1.png",
-                    "http://hoge2.test/test1.png",
-                    "http://hoge3.test/test1.png",
-                ],
                 "contact_information": "contactInformation_test1",
                 "privacy_policy": "privacyPolicy_test1",
                 "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
@@ -457,7 +450,7 @@ class TestAppRoutersBondTokensGET:
                 "purpose": "purpose_test1",
                 "interest_rate": 0.003,
                 "transferable": True,
-                "initial_offering_status": False,
+                "is_offering": False,
                 "is_redeemed": False,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
                 "interest_payment_date": [
@@ -469,7 +462,10 @@ class TestAppRoutersBondTokensGET:
                     "interestPaymentDate11_test1", "interestPaymentDate12_test1",
                 ],
                 "issue_datetime": _issue_datetime,
-                "token_status": 1
+                "token_status": 1,
+                "transfer_approval_required": True,
+                "is_manual_transfer_approval": False,
+                "memo": "memo_test1",
             },
         ]
 
@@ -502,11 +498,6 @@ class TestAppRoutersBondTokensGET:
         mock_token_1.name = "testtoken1"
         mock_token_1.symbol = "test1"
         mock_token_1.total_supply = 10000
-        mock_token_1.image_url = [
-            "http://hoge1.test/test1.png",
-            "http://hoge2.test/test1.png",
-            "http://hoge3.test/test1.png",
-        ]
         mock_token_1.contact_information = "contactInformation_test1"
         mock_token_1.privacy_policy = "privacyPolicy_test1"
         mock_token_1.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
@@ -519,7 +510,7 @@ class TestAppRoutersBondTokensGET:
         mock_token_1.purpose = "purpose_test1"
         mock_token_1.interest_rate = 0.003
         mock_token_1.transferable = True
-        mock_token_1.initial_offering_status = False
+        mock_token_1.is_offering = False
         mock_token_1.is_redeemed = False
         mock_token_1.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
         mock_token_1.interest_payment_date = [
@@ -530,6 +521,8 @@ class TestAppRoutersBondTokensGET:
             "interestPaymentDate9_test1", "interestPaymentDate10_test1",
             "interestPaymentDate11_test1", "interestPaymentDate12_test1",
         ]
+        mock_token_1.transfer_approval_required = True
+        mock_token_1.memo = "memo_test1"
 
         # 2nd Data
         token_2 = Token()
@@ -549,11 +542,6 @@ class TestAppRoutersBondTokensGET:
         mock_token_2.name = "testtoken2"
         mock_token_2.symbol = "test2"
         mock_token_2.total_supply = 50000
-        mock_token_2.image_url = [
-            "http://hoge1.test/test2.png",
-            "http://hoge2.test/test2.png",
-            "http://hoge3.test/test2.png",
-        ]
         mock_token_2.contact_information = "contactInformation_test2"
         mock_token_2.privacy_policy = "privacyPolicy_test2"
         mock_token_2.tradable_exchange_contract_address = "0x1234567890AbcdfE1234567890abcdfE12345680"
@@ -566,7 +554,7 @@ class TestAppRoutersBondTokensGET:
         mock_token_2.purpose = "purpose_test2"
         mock_token_2.interest_rate = 0.007
         mock_token_2.transferable = False
-        mock_token_2.initial_offering_status = False
+        mock_token_2.is_offering = False
         mock_token_2.is_redeemed = False
         mock_token_2.personal_info_contract_address = "0x1234567890abcdFE1234567890ABcdfE12345681"
         mock_token_2.interest_payment_date = [
@@ -577,6 +565,8 @@ class TestAppRoutersBondTokensGET:
             "interestPaymentDate9_test2", "interestPaymentDate10_test2",
             "interestPaymentDate11_test2", "interestPaymentDate12_test2",
         ]
+        mock_token_2.transfer_approval_required = False
+        mock_token_2.memo = "memo_test2"
 
         mock_get.side_effect = [
             mock_token_1, mock_token_2
@@ -604,11 +594,6 @@ class TestAppRoutersBondTokensGET:
                 "name": "testtoken1",
                 "symbol": "test1",
                 "total_supply": 10000,
-                "image_url": [
-                    "http://hoge1.test/test1.png",
-                    "http://hoge2.test/test1.png",
-                    "http://hoge3.test/test1.png",
-                ],
                 "contact_information": "contactInformation_test1",
                 "privacy_policy": "privacyPolicy_test1",
                 "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
@@ -621,7 +606,7 @@ class TestAppRoutersBondTokensGET:
                 "purpose": "purpose_test1",
                 "interest_rate": 0.003,
                 "transferable": True,
-                "initial_offering_status": False,
+                "is_offering": False,
                 "is_redeemed": False,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
                 "interest_payment_date": [
@@ -633,7 +618,10 @@ class TestAppRoutersBondTokensGET:
                     "interestPaymentDate11_test1", "interestPaymentDate12_test1",
                 ],
                 "issue_datetime": _issue_datetime_1,
-                "token_status": 1
+                "token_status": 1,
+                "transfer_approval_required": True,
+                "is_manual_transfer_approval": False,
+                "memo": "memo_test1",
             },
             {
                 "issuer_address": issuer_address_1,
@@ -641,11 +629,6 @@ class TestAppRoutersBondTokensGET:
                 "name": "testtoken2",
                 "symbol": "test2",
                 "total_supply": 50000,
-                "image_url": [
-                    "http://hoge1.test/test2.png",
-                    "http://hoge2.test/test2.png",
-                    "http://hoge3.test/test2.png",
-                ],
                 "contact_information": "contactInformation_test2",
                 "privacy_policy": "privacyPolicy_test2",
                 "tradable_exchange_contract_address": "0x1234567890AbcdfE1234567890abcdfE12345680",
@@ -658,7 +641,7 @@ class TestAppRoutersBondTokensGET:
                 "purpose": "purpose_test2",
                 "interest_rate": 0.007,
                 "transferable": False,
-                "initial_offering_status": False,
+                "is_offering": False,
                 "is_redeemed": False,
                 "personal_info_contract_address": "0x1234567890abcdFE1234567890ABcdfE12345681",
                 "interest_payment_date": [
@@ -670,7 +653,10 @@ class TestAppRoutersBondTokensGET:
                     "interestPaymentDate11_test2", "interestPaymentDate12_test2",
                 ],
                 "issue_datetime": _issue_datetime_2,
-                "token_status": 0
+                "token_status": 0,
+                "transfer_approval_required": False,
+                "is_manual_transfer_approval": False,
+                "memo": "memo_test2",
             },
         ]
 

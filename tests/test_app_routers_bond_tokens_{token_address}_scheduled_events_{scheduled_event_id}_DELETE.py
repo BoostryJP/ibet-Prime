@@ -63,18 +63,14 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
             "interest_payment_date": ["0101", "0701"],
             "redemption_value": 11000,
             "transferable": False,
-            "image_url": [
-                "http://sampleurl.com/some_image1.png",
-                "http://sampleurl.com/some_image2.png",
-                "http://sampleurl.com/some_image3.png"
-            ],
             "status": False,
-            "initial_offering_status": False,
+            "is_offering": False,
             "is_redeemed": True,
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
             "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
             "contact_information": "問い合わせ先test",
-            "privacy_policy": "プライバシーポリシーtest"
+            "privacy_policy": "プライバシーポリシーtest",
+            "memo": "memo_test1",
         }
         event_id = str(uuid.uuid4())
 

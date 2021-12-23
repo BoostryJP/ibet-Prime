@@ -56,15 +56,15 @@ class PersonalInfoContractTestUtils:
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
 
-class IbetShareContractTestUtils:
+class IbetSecurityTokenContractTestUtils:
 
     @staticmethod
     def apply_for_transfer(contract_address: str, tx_from: str, private_key: str, args: list):
-        share_contract = ContractUtils.get_contract(
-            contract_name="IbetShare",
+        security_token_contract = ContractUtils.get_contract(
+            contract_name="IbetSecurityTokenInterface",
             contract_address=contract_address
         )
-        tx = share_contract.functions.\
+        tx = security_token_contract.functions.\
             applyForTransfer(*args).\
             buildTransaction({
                 "chainId": CHAIN_ID,

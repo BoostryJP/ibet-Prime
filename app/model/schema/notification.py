@@ -25,7 +25,7 @@ from typing import (
 
 from pydantic import BaseModel
 
-from .result_set import ResultSet
+from .types import ResultSet
 
 
 ############################
@@ -64,7 +64,11 @@ class NotificationsListResponse(BaseModel):
                                                 "notice_type: ScheduleEventError\n" \
                                                 " - 0: Issuer does not exist\n" \
                                                 " - 1: Could not get the private key of the issuer\n" \
-                                                " - 2: Failed to send transaction"
+                                                " - 2: Failed to send transaction\n" \
+                                                "\n" \
+                                                "notice_type: TransferApprovalInfo\n" \
+                                                " - 0: apply for transfer\n" \
+                                                " - 1: cancel transfer"
 
 
 class ListAllNotificationsResponse(BaseModel):

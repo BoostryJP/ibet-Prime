@@ -35,7 +35,9 @@ class IDXTransferApproval(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     # Token Address
     token_address = Column(String(42), index=True)
-    # Application Id
+    # Exchange Address (value is set if the event is from exchange)
+    exchange_address = Column(String(42), index=True)
+    # Application Id (escrow id is set if the event is from exchange)
     application_id = Column(BigInteger, index=True)
     # Transfer From
     from_address = Column(String(42))
@@ -47,16 +49,19 @@ class IDXTransferApproval(Base):
     application_datetime = Column(DateTime)
     # Application Blocktimestamp
     application_blocktimestamp = Column(DateTime)
-    # Approval Datetime
+    # Approval Datetime(ownership vesting datetime)
     approval_datetime = Column(DateTime)
-    # Approval Blocktimestamp
+    # Approval Blocktimestamp(ownership vesting block timestamp)
     approval_blocktimestamp = Column(DateTime)
     # Cancellation Status
     cancelled = Column(Boolean)
+    # Approve Status
+    transfer_approved = Column(Boolean)
 
     def json(self):
         return {
             "token_address": self.token_address,
+            "exchange_address": self.exchange_address,
             "application_id": self.application_id,
             "from_address": self.from_address,
             "to_address": self.to_address,
@@ -65,7 +70,8 @@ class IDXTransferApproval(Base):
             "application_blocktimestamp": self.application_blocktimestamp,
             "approval_datetime": self.approval_datetime,
             "approval_blocktimestamp": self.approval_blocktimestamp,
-            "cancelled": self.cancelled
+            "cancelled": self.cancelled,
+            "transfer_approved": self.transfer_approved
         }
 
 

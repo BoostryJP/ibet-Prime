@@ -22,7 +22,7 @@ from typing import (
 )
 from pydantic import BaseModel
 
-from .result_set import ResultSet
+from .types import ResultSet
 
 
 ############################
@@ -47,7 +47,9 @@ class TransferHistoryResponse(BaseModel):
 
 class TransferApprovalResponse(BaseModel):
     """transfer approval data"""
+    id: int
     token_address: str
+    exchange_address: Optional[str]
     application_id: int
     from_address: str
     to_address: str
@@ -57,6 +59,7 @@ class TransferApprovalResponse(BaseModel):
     approval_datetime: Optional[str]
     approval_blocktimestamp: Optional[str]
     cancelled: bool
+    transfer_approved: bool
 
 
 class TransferApprovalHistoryResponse(BaseModel):

@@ -103,6 +103,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressPersonalInfoPOST
 
             # assertion
             assert resp.status_code == 200
+            assert resp.json() is None
             IbetShareContract.get.assert_called_with(_token_address)
             PersonalInfoContract.__init__.assert_called_with(
                 db=db,
@@ -450,7 +451,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressPersonalInfoPOST
         }
 
     # <Error_8>
-    # InvalidParameterError
+    # HTTPException 404
     # token not found
     def test_error_8(self, client, db):
         _issuer_account = config_eth_account("user1")
@@ -488,11 +489,11 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressPersonalInfoPOST
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 404
         assert resp.json() == {
             "meta": {
                 "code": 1,
-                "title": "InvalidParameterError"
+                "title": "NotFound"
             },
             "detail": "token not found"
         }

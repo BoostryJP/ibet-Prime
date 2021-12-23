@@ -92,6 +92,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdDELETE:
 
         # assertion
         assert resp.status_code == 200
+        assert resp.json() is None
         _details_data_list = db.query(LedgerDetailsData).all()
         assert len(_details_data_list) == 1
         assert _details_data_list[0].id == 3
@@ -175,11 +176,11 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdDELETE:
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 404
         assert resp.json() == {
             "meta": {
                 "code": 1,
-                "title": "InvalidParameterError"
+                "title": "NotFound"
             },
             "detail": "token does not exist"
         }

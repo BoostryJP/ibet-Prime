@@ -32,4 +32,6 @@ class HolderResponse(BaseModel):
     account_address: str
     personal_information: Dict[str, Any]
     balance: int
+    exchange_balance: int
+    exchange_commitment: int
     pending_transfer: int

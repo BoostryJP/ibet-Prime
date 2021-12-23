@@ -18,13 +18,18 @@ SPDX-License-Identifier: Apache-2.0
 """
 import uuid
 import pytz
-from typing import List
+from typing import (
+    List,
+    Optional
+)
+
 from fastapi import (
     APIRouter,
     Header,
     Query,
     Depends
 )
+from fastapi.exceptions import HTTPException
 from sqlalchemy import (
     func,
     desc
@@ -79,11 +84,11 @@ utc_tz = pytz.timezone("UTC")
 @router.get(
     "/{token_address}/history",
     response_model=ListAllLedgerHistoryResponse,
-    responses=get_routers_responses(422, InvalidParameterError)
+    responses=get_routers_responses(422, 404, InvalidParameterError)
 )
 def list_all_ledger_history(
         token_address: str,
-        issuer_address: str = Header(...),
+        issuer_address: Optional[str] = Header(None),
         offset: int = Query(None),
         limit: int = Query(None),
         db: Session = Depends(db_session)):
@@ -92,14 +97,20 @@ def list_all_ledger_history(
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    # Issuer Management Token Check
-    _token = db.query(Token). \
-        filter(Token.token_address == token_address). \
-        filter(Token.issuer_address == issuer_address). \
-        filter(Token.token_status != 2). \
-        first()
+    # Token Exist Check
+    if issuer_address is None:
+        _token = db.query(Token). \
+            filter(Token.token_address == token_address). \
+            filter(Token.token_status != 2). \
+            first()
+    else:
+        _token = db.query(Token). \
+            filter(Token.token_address == token_address). \
+            filter(Token.issuer_address == issuer_address). \
+            filter(Token.token_status != 2). \
+            first()
     if _token is None:
-        raise InvalidParameterError("token does not exist")
+        raise HTTPException(status_code=404, detail="token does not exist")
     if _token.token_status == 0:
         raise InvalidParameterError("wait for a while as the token is being processed")
 
@@ -142,12 +153,12 @@ def list_all_ledger_history(
 @router.get(
     "/{token_address}/history/{ledger_id}",
     response_model=RetrieveLedgerHistoryResponse,
-    responses=get_routers_responses(422, InvalidParameterError)
+    responses=get_routers_responses(422, 404, InvalidParameterError)
 )
 def retrieve_ledger_history(
         token_address: str,
         ledger_id: int,
-        issuer_address: str = Header(...),
+        issuer_address: Optional[str] = Header(None),
         latest_flg: int = Query(..., ge=0, le=1),
         db: Session = Depends(db_session)):
     """Retrieve Ledger"""
@@ -155,14 +166,20 @@ def retrieve_ledger_history(
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    # Issuer Management Token Check
-    _token = db.query(Token). \
-        filter(Token.token_address == token_address). \
-        filter(Token.issuer_address == issuer_address). \
-        filter(Token.token_status != 2). \
-        first()
+    # Token Exist Check
+    if issuer_address is None:
+        _token = db.query(Token). \
+            filter(Token.token_address == token_address). \
+            filter(Token.token_status != 2). \
+            first()
+    else:
+        _token = db.query(Token). \
+            filter(Token.token_address == token_address). \
+            filter(Token.issuer_address == issuer_address). \
+            filter(Token.token_status != 2). \
+            first()
     if _token is None:
-        raise InvalidParameterError("token does not exist")
+        raise HTTPException(status_code=404, detail="token does not exist")
     if _token.token_status == 0:
         raise InvalidParameterError("wait for a while as the token is being processed")
 
@@ -172,7 +189,7 @@ def retrieve_ledger_history(
         filter(Ledger.token_address == token_address). \
         first()
     if _ledger is None:
-        raise InvalidParameterError("ledger does not exist")
+        raise HTTPException(status_code=404, detail="ledger does not exist")
 
     resp = _ledger.ledger
     if latest_flg == 1:  # most recent
@@ -200,25 +217,31 @@ def retrieve_ledger_history(
 @router.get(
     "/{token_address}/template",
     response_model=LedgerTemplateResponse,
-    responses=get_routers_responses(422, InvalidParameterError)
+    responses=get_routers_responses(422, 404, InvalidParameterError)
 )
 def retrieve_ledger_template(
         token_address: str,
-        issuer_address: str = Header(...),
+        issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Retrieve Ledger Template"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    # Issuer Management Token Check
-    _token = db.query(Token). \
-        filter(Token.token_address == token_address). \
-        filter(Token.issuer_address == issuer_address). \
-        filter(Token.token_status != 2). \
-        first()
+    # Token Exist Check
+    if issuer_address is None:
+        _token = db.query(Token). \
+            filter(Token.token_address == token_address). \
+            filter(Token.token_status != 2). \
+            first()
+    else:
+        _token = db.query(Token). \
+            filter(Token.token_address == token_address). \
+            filter(Token.issuer_address == issuer_address). \
+            filter(Token.token_status != 2). \
+            first()
     if _token is None:
-        raise InvalidParameterError("token does not exist")
+        raise HTTPException(status_code=404, detail="token does not exist")
     if _token.token_status == 0:
         raise InvalidParameterError("wait for a while as the token is being processed")
 
@@ -227,7 +250,7 @@ def retrieve_ledger_template(
         filter(LedgerTemplate.token_address == token_address). \
         first()
     if _template is None:
-        raise InvalidParameterError("ledger template does not exist")
+        raise HTTPException(status_code=404, detail="ledger template does not exist")
 
     # Get Ledger Details Template
     _details_list = db.query(LedgerDetailsTemplate). \
@@ -260,7 +283,7 @@ def retrieve_ledger_template(
 @router.post(
     "/{token_address}/template",
     response_model=None,
-    responses=get_routers_responses(422, InvalidParameterError)
+    responses=get_routers_responses(422, 404, InvalidParameterError)
 )
 def create_update_ledger_template(
         token_address: str,
@@ -279,7 +302,7 @@ def create_update_ledger_template(
         filter(Token.token_status != 2). \
         first()
     if _token is None:
-        raise InvalidParameterError("token does not exist")
+        raise HTTPException(status_code=404, detail="token does not exist")
     if _token.token_status == 0:
         raise InvalidParameterError("wait for a while as the token is being processed")
 
@@ -355,7 +378,7 @@ def create_update_ledger_template(
 @router.delete(
     "/{token_address}/template",
     response_model=None,
-    responses=get_routers_responses(422, InvalidParameterError)
+    responses=get_routers_responses(422, 404, InvalidParameterError)
 )
 def delete_ledger_template(
         token_address: str,
@@ -373,7 +396,7 @@ def delete_ledger_template(
         filter(Token.token_status != 2). \
         first()
     if _token is None:
-        raise InvalidParameterError("token does not exist")
+        raise HTTPException(status_code=404, detail="token does not exist")
     if _token.token_status == 0:
         raise InvalidParameterError("wait for a while as the token is being processed")
 
@@ -382,7 +405,7 @@ def delete_ledger_template(
         filter(LedgerTemplate.token_address == token_address). \
         first()
     if _template is None:
-        raise InvalidParameterError("ledger template does not exist")
+        raise HTTPException(status_code=404, detail="ledger template does not exist")
     db.delete(_template)
 
     # Delete Ledger Details Template
@@ -400,11 +423,11 @@ def delete_ledger_template(
 @router.get(
     "/{token_address}/details_data",
     response_model=ListAllLedgerDetailsDataResponse,
-    responses=get_routers_responses(422, InvalidParameterError)
+    responses=get_routers_responses(422, 404, InvalidParameterError)
 )
 def list_all_ledger_details_data(
         token_address: str,
-        issuer_address: str = Header(...),
+        issuer_address: Optional[str] = Header(None),
         offset: int = Query(None),
         limit: int = Query(None),
         db: Session = Depends(db_session)):
@@ -413,14 +436,20 @@ def list_all_ledger_details_data(
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    # Issuer Management Token Check
-    _token = db.query(Token). \
-        filter(Token.token_address == token_address). \
-        filter(Token.issuer_address == issuer_address). \
-        filter(Token.token_status != 2). \
-        first()
+    # Token Exist Check
+    if issuer_address is None:
+        _token = db.query(Token). \
+            filter(Token.token_address == token_address). \
+            filter(Token.token_status != 2). \
+            first()
+    else:
+        _token = db.query(Token). \
+            filter(Token.token_address == token_address). \
+            filter(Token.issuer_address == issuer_address). \
+            filter(Token.token_status != 2). \
+            first()
     if _token is None:
-        raise InvalidParameterError("token does not exist")
+        raise HTTPException(status_code=404, detail="token does not exist")
     if _token.token_status == 0:
         raise InvalidParameterError("wait for a while as the token is being processed")
 
@@ -466,7 +495,7 @@ def list_all_ledger_details_data(
 @router.post(
     "/{token_address}/details_data",
     response_model=LedgerDetailsDataResponse,
-    responses=get_routers_responses(422, InvalidParameterError)
+    responses=get_routers_responses(422, 404, InvalidParameterError)
 )
 def create_ledger_details_data(
         token_address: str,
@@ -485,7 +514,7 @@ def create_ledger_details_data(
         filter(Token.token_status != 2). \
         first()
     if _token is None:
-        raise InvalidParameterError("token does not exist")
+        raise HTTPException(status_code=404, detail="token does not exist")
     if _token.token_status == 0:
         raise InvalidParameterError("wait for a while as the token is being processed")
 
@@ -510,26 +539,32 @@ def create_ledger_details_data(
 @router.get(
     "/{token_address}/details_data/{data_id}",
     response_model=List[RetrieveLedgerDetailsDataResponse],
-    responses=get_routers_responses(422, InvalidParameterError)
+    responses=get_routers_responses(422, 404, InvalidParameterError)
 )
 def retrieve_ledger_details_data(
         token_address: str,
         data_id: str,
-        issuer_address: str = Header(...),
+        issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Retrieve Ledger Details Data"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    # Issuer Management Token Check
-    _token = db.query(Token). \
-        filter(Token.token_address == token_address). \
-        filter(Token.issuer_address == issuer_address). \
-        filter(Token.token_status != 2). \
-        first()
+    # Token Exist Check
+    if issuer_address is None:
+        _token = db.query(Token). \
+            filter(Token.token_address == token_address). \
+            filter(Token.token_status != 2). \
+            first()
+    else:
+        _token = db.query(Token). \
+            filter(Token.token_address == token_address). \
+            filter(Token.issuer_address == issuer_address). \
+            filter(Token.token_status != 2). \
+            first()
     if _token is None:
-        raise InvalidParameterError("token does not exist")
+        raise HTTPException(status_code=404, detail="token does not exist")
     if _token.token_status == 0:
         raise InvalidParameterError("wait for a while as the token is being processed")
 
@@ -557,7 +592,7 @@ def retrieve_ledger_details_data(
 @router.post(
     "/{token_address}/details_data/{data_id}",
     response_model=None,
-    responses=get_routers_responses(422, InvalidParameterError)
+    responses=get_routers_responses(422, 404, InvalidParameterError)
 )
 def update_ledger_details_data(
         token_address: str,
@@ -577,7 +612,7 @@ def update_ledger_details_data(
         filter(Token.token_status != 2). \
         first()
     if _token is None:
-        raise InvalidParameterError("token does not exist")
+        raise HTTPException(status_code=404, detail="token does not exist")
     if _token.token_status == 0:
         raise InvalidParameterError("wait for a while as the token is being processed")
 
@@ -611,7 +646,7 @@ def update_ledger_details_data(
 @router.delete(
     "/{token_address}/details_data/{data_id}",
     response_model=None,
-    responses=get_routers_responses(422, InvalidParameterError)
+    responses=get_routers_responses(422, 404, InvalidParameterError)
 )
 def delete_ledger_details_data(
         token_address: str,
@@ -630,7 +665,7 @@ def delete_ledger_details_data(
         filter(Token.token_status != 2). \
         first()
     if _token is None:
-        raise InvalidParameterError("token does not exist")
+        raise HTTPException(status_code=404, detail="token does not exist")
     if _token.token_status == 0:
         raise InvalidParameterError("wait for a while as the token is being processed")
 

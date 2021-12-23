@@ -23,11 +23,14 @@ from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
 import config
+import random
+import string
 from app.exceptions import SendTransactionError
 from app.model.db import (
     Account,
     Token,
     TokenType,
+    AdditionalTokenInfo,
     UpdateToken,
     IDXPosition
 )
@@ -73,7 +76,7 @@ class TestAppRoutersShareTokensPOST:
         )
 
         with IbetShareContract_create, \
-             TokenListContract_register:
+                TokenListContract_register:
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -132,10 +135,15 @@ class TestAppRoutersShareTokensPOST:
             assert position.token_address == "contract_address_test1"
             assert position.account_address == test_account["address"]
             assert position.balance == req_param["total_supply"]
+            assert position.exchange_balance == 0
+            assert position.exchange_commitment == 0
             assert position.pending_transfer == 0
 
             update_token = db.query(UpdateToken).first()
             assert update_token is None
+
+            additional_info = db.query(AdditionalTokenInfo).first()
+            assert additional_info is None
 
     # <Normal_1_2>
     # create only
@@ -163,7 +171,7 @@ class TestAppRoutersShareTokensPOST:
         )
 
         with IbetShareContract_create, \
-             TokenListContract_register:
+                TokenListContract_register:
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -217,10 +225,15 @@ class TestAppRoutersShareTokensPOST:
             assert position.token_address == "contract_address_test1"
             assert position.account_address == test_account["address"]
             assert position.balance == req_param["total_supply"]
+            assert position.exchange_balance == 0
+            assert position.exchange_commitment == 0
             assert position.pending_transfer == 0
 
             update_token = db.query(UpdateToken).first()
             assert update_token is None
+
+            additional_info = db.query(AdditionalTokenInfo).first()
+            assert additional_info is None
 
     # <Normal_2>
     # include updates
@@ -247,7 +260,7 @@ class TestAppRoutersShareTokensPOST:
         )
 
         with IbetShareContract_create, \
-             TokenListContract_register:
+                TokenListContract_register:
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -260,13 +273,13 @@ class TestAppRoutersShareTokensPOST:
                 "cancellation_date": "20221231",
                 "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
                 "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-                "image_url": ["image_1"],  # update
                 "transferable": False,  # update
                 "status": False,  # update
-                "offering_status": True,  # update
+                "is_offering": True,  # update
                 "contact_information": "contact info test",  # update
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
+                "is_manual_transfer_approval": True,  # update
                 "principal_value": 1000,
                 "is_canceled": True
             }
@@ -318,13 +331,17 @@ class TestAppRoutersShareTokensPOST:
             assert update_token.status == 0
             assert update_token.trigger == "Issue"
 
+            additional_info = db.query(AdditionalTokenInfo).first()
+            assert additional_info.token_address == "contract_address_test1"
+            assert additional_info.is_manual_transfer_approval is True
+
     ###########################################################################
     # Error Case
     ###########################################################################
 
     # <Error_1>
     # Validation Error
-    # required fields
+    # missing fields
     def test_error_1(self, client, db):
         # request target api
         resp = client.post(
@@ -354,8 +371,7 @@ class TestAppRoutersShareTokensPOST:
 
     # <Error_2_1>
     # Validation Error
-    # dividends, tradable_exchange_contract_address,
-    # personal_info_contract_address, image_url
+    # format error
     def test_error_2_1(self, client, db):
         test_account = config_eth_account("user1")
 
@@ -371,12 +387,6 @@ class TestAppRoutersShareTokensPOST:
             "cancellation_date": "20221231",
             "tradable_exchange_contract_address": "0x0",
             "personal_info_contract_address": "0x0",
-            "image_url": [
-                "http://test.test/test",
-                "http://test.test/test",
-                "http://test.test/test",
-                "http://test.test/test"
-            ],
             "principal_value": 1000
         }
         resp = client.post(
@@ -406,14 +416,6 @@ class TestAppRoutersShareTokensPOST:
                 {
                     "loc": [
                         "body",
-                        "image_url"
-                    ],
-                    "msg": "The length of the list must be less than or equal to 3",
-                    "type": "value_error"
-                },
-                {
-                    "loc": [
-                        "body",
                         "tradable_exchange_contract_address"
                     ],
                     "msg": "tradable_exchange_contract_address is not a valid address",
@@ -431,7 +433,8 @@ class TestAppRoutersShareTokensPOST:
         }
 
     # <Error_2_2>
-    # Validation Error: issuer-address, eoa-password(required)
+    # Validation Error
+    # required headers
     def test_error_2_2(self, client, db):
         test_account = config_eth_account("user1")
 
@@ -474,7 +477,8 @@ class TestAppRoutersShareTokensPOST:
         }
 
     # <Error_2_3>
-    # Validation Error: eoa-password(not decrypt)
+    # Validation Error
+    # eoa-password is not a Base64-encoded encrypted data
     def test_error_2_3(self, client, db):
         test_account_1 = config_eth_account("user1")
 
@@ -522,7 +526,7 @@ class TestAppRoutersShareTokensPOST:
 
     # <Error_2_4>
     # Validation Error
-    # min value: issue_price, total_supply, dividends, principal_value
+    # min value
     def test_error_2_4(self, client, db):
         test_account = config_eth_account("user1")
 
@@ -538,10 +542,9 @@ class TestAppRoutersShareTokensPOST:
             "cancellation_date": "20221231",
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-            "image_url": ["image_1"],  # update
             "transferable": False,  # update
             "status": False,  # update
-            "offering_status": True,  # update
+            "is_offering": True,  # update
             "contact_information": "contact info test",  # update
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
@@ -613,14 +616,14 @@ class TestAppRoutersShareTokensPOST:
 
     # <Error_2_5>
     # Validation Error
-    # max value: issue_price, total_supply, dividends, principal_value
+    # max value or max length
     def test_error_2_5(self, client, db):
         test_account = config_eth_account("user1")
 
         # request target api
         req_param = {
-            "name": "name_test1",
-            "symbol": "symbol_test1",
+            "name": GetRandomStr(101),
+            "symbol": GetRandomStr(101),
             "issue_price": 5_000_000_001,
             "total_supply": 100_000_001,
             "dividends": 5_000_000_000.01,
@@ -629,12 +632,11 @@ class TestAppRoutersShareTokensPOST:
             "cancellation_date": "20221231",
             "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000001",  # update
             "personal_info_contract_address": "0x0000000000000000000000000000000000000002",  # update
-            "image_url": ["image_1"],  # update
             "transferable": False,  # update
             "status": False,  # update
-            "offering_status": True,  # update
-            "contact_information": "contact info test",  # update
-            "privacy_policy": "privacy policy test",  # update
+            "is_offering": True,  # update
+            "contact_information": GetRandomStr(2001),  # update
+            "privacy_policy": GetRandomStr(5001),  # update
             "transfer_approval_required": True,  # update
             "principal_value": 5_000_000_001,
             "is_canceled": True
@@ -656,49 +658,108 @@ class TestAppRoutersShareTokensPOST:
             },
             "detail": [
                 {
-                    "ctx": {
-                        "limit_value": 5_000_000_000
-                    },
-                    "loc": [
-                        "body",
-                        "issue_price"
-                    ],
-                    "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le"
+                    "loc": ["body", "name"],
+                    "msg": "ensure this value has at most 100 characters",
+                    "type": "value_error.any_str.max_length",
+                    "ctx": {"limit_value": 100}
                 },
                 {
-                    "ctx": {
-                        "limit_value": 5_000_000_000
-                    },
-                    "loc": [
-                        "body",
-                        "principal_value"
-                    ],
+                    "loc": ["body", "issue_price"],
                     "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le",
+                    "ctx": {"limit_value": 5000000000}
                 },
                 {
-                    "ctx": {
-                        "limit_value": 100_000_000
-                    },
-                    "loc": [
-                        "body",
-                        "total_supply"
-                    ],
+                    "loc": ["body", "principal_value"],
+                    "msg": "ensure this value is less than or equal to 5000000000",
+                    "type": "value_error.number.not_le",
+                    "ctx": {"limit_value": 5000000000}
+                },
+                {
+                    "loc": ["body", "total_supply"],
                     "msg": "ensure this value is less than or equal to 100000000",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le",
+                    "ctx": {"limit_value": 100000000}
                 },
                 {
-                    "ctx": {
-                        "limit_value": 5_000_000_000.0
-                    },
-                    "loc": [
-                        "body",
-                        "dividends"
-                    ],
-                    "msg": "ensure this value is less than or equal to 5000000000.0",
-                    "type": "value_error.number.not_le"
+                    "loc": ["body", "symbol"],
+                    "msg": "ensure this value has at most 100 characters",
+                    "type": "value_error.any_str.max_length",
+                    "ctx": {"limit_value": 100}
                 },
+                {
+                    "loc": ["body", "dividends"],
+                    "msg": "ensure this value is less than or equal to 5000000000.0",
+                    "type": "value_error.number.not_le",
+                    "ctx": {"limit_value": 5000000000.0}
+                },
+                {
+                    "loc": ["body", "contact_information"],
+                    "msg": "ensure this value has at most 2000 characters",
+                    "type": "value_error.any_str.max_length",
+                    "ctx": {"limit_value": 2000}
+                },
+                {
+                    "loc": ["body", "privacy_policy"],
+                    "msg": "ensure this value has at most 5000 characters",
+                    "type": "value_error.any_str.max_length",
+                    "ctx": {"limit_value": 5000}
+                }
+            ]
+        }
+
+    # <Error_2_6>
+    # Validation Error
+    # YYYYMMDD regex
+    def test_error_2_6(self, client, db):
+        test_account = config_eth_account("user1")
+
+        # request target api
+        req_param = {
+            "name": "name_test1",
+            "symbol": "symbol_test1",
+            "issue_price": 1000,
+            "total_supply": 10000,
+            "dividends": 123.45,
+            "dividend_record_date": "202101010",
+            "dividend_payment_date": "202101010",
+            "cancellation_date": "202201010",
+            "principal_value": 1000
+        }
+        resp = client.post(
+            self.apiurl,
+            json=req_param,
+            headers={
+                "issuer-address": test_account["address"]
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "RequestValidationError"
+            },
+            "detail": [
+                {
+                    'loc': ['body', 'dividend_record_date'],
+                    'msg': 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    'type': 'value_error.str.regex',
+                    'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                },
+                {
+                    'loc': ['body', 'dividend_payment_date'],
+                    'msg': 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    'type': 'value_error.str.regex',
+                    'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                },
+                {
+                    'loc': ['body', 'cancellation_date'],
+                    'msg': 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    'type': 'value_error.str.regex',
+                    'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                }
             ]
         }
 
@@ -867,7 +928,7 @@ class TestAppRoutersShareTokensPOST:
         )
 
         with IbetShareContract_create, \
-             TokenListContract_register:
+                TokenListContract_register:
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -898,3 +959,8 @@ class TestAppRoutersShareTokensPOST:
                 },
                 "detail": "failed to register token address token list"
             }
+
+
+def GetRandomStr(num):
+    dat = string.digits + string.ascii_lowercase + string.ascii_uppercase
+    return ''.join([random.choice(dat) for i in range(num)])

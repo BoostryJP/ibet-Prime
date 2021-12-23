@@ -91,6 +91,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
 
         # assertion
         assert resp.status_code == 200
+        assert resp.json() is None
         _details_data_list = db.query(LedgerDetailsData). \
             order_by(LedgerDetailsData.id). \
             all()
@@ -346,11 +347,11 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 404
         assert resp.json() == {
             "meta": {
                 "code": 1,
-                "title": "InvalidParameterError"
+                "title": "NotFound"
             },
             "detail": "token does not exist"
         }

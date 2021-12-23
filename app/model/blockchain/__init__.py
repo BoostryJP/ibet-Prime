@@ -16,7 +16,13 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from .exchange import (
+    IbetExchangeInterface,
+    IbetSecurityTokenEscrow
+)
 from .token import (
+    IbetStandardTokenInterface,
+    IbetSecurityTokenInterface,
     IbetStraightBondContract,
     IbetShareContract
 )

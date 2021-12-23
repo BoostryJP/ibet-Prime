@@ -100,6 +100,7 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
 
         # assertion
         assert resp.status_code == 200
+        assert resp.json() is None
         _notification_list = db.query(Notification).order_by(Notification.created).all()
         assert len(_notification_list) == 3
         _notification = _notification_list[0]
@@ -203,11 +204,11 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 404
         assert resp.json() == {
             "meta": {
                 "code": 1,
-                "title": "InvalidParameterError"
+                "title": "NotFound"
             },
             "detail": "notification does not exist"
         }

@@ -50,3 +50,4 @@ class NotificationType:
     ISSUE_ERROR = "IssueError"
     BULK_TRANSFER_ERROR = "BulkTransferError"
     SCHEDULE_EVENT_ERROR = "ScheduleEventError"
+    TRANSFER_APPROVAL_INFO = "TransferApprovalInfo"
