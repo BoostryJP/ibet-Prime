@@ -41,7 +41,7 @@ class TransferApprovalUpdatableOperationType(str, Enum):
     CANCEL = "cancel"
 
 
-class TransferSortItem(str, Enum):
+class TransfersSortItem(str, Enum):
     BLOCK_TIMESTAMP = "block_timestamp"
     FROM_ADDRESS = "from_address"
     TO_ADDRESS = "to_address"

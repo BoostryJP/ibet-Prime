@@ -62,7 +62,7 @@ from app.model.schema import (
     UpdateTransferApprovalRequest
 )
 from app.model.schema.types import (
-    TransferSortItem,
+    TransfersSortItem,
     TransferApprovalUpdatableOperationType
 )
 from app.utils.check_utils import (
@@ -904,7 +904,7 @@ def transfer_ownership(
 )
 def list_transfer_history(
         token_address: str,
-        sort_item: TransferSortItem = Query(TransferSortItem.BLOCK_TIMESTAMP),
+        sort_item: TransfersSortItem = Query(TransfersSortItem.BLOCK_TIMESTAMP),
         sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
         offset: Optional[int] = Query(None),
         limit: Optional[int] = Query(None),
@@ -933,7 +933,7 @@ def list_transfer_history(
         query = query.order_by(sort_attr)
     else:  # DESC
         query = query.order_by(desc(sort_attr))
-    if sort_item != TransferSortItem.BLOCK_TIMESTAMP:
+    if sort_item != TransfersSortItem.BLOCK_TIMESTAMP:
         # NOTE: Set secondary sort for consistent results
         query = query.order_by(desc(IDXTransfer.block_timestamp))
 
