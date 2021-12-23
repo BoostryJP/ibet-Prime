@@ -33,9 +33,14 @@ from fastapi import (
 from fastapi.exceptions import HTTPException
 from sqlalchemy import (
     desc,
-    or_
+    case,
+    and_,
+    literal_column
 )
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import (
+    Session,
+    aliased
+)
 from eth_keyfile import decode_keyfile_json
 from pytz import timezone
 
@@ -999,45 +1004,45 @@ def list_transfer_approval_history(
         db: Session = Depends(db_session)
 ):
     """List transfer approval history"""
+    # Create a subquery for 'status' added IDXTransferApproval
+    case_status = case(
+        [(and_(IDXTransferApproval.transfer_approved == True,
+               IDXTransferApproval.approval_blocktimestamp == None),
+          1),  # approved
+         (and_(IDXTransferApproval.transfer_approved == True,
+               IDXTransferApproval.approval_blocktimestamp != None),
+          2),  # transferred
+         (IDXTransferApproval.cancelled == True,
+          3)],  # canceled
+        else_=0).label("status")  # unapproved
+    subquery = aliased(IDXTransferApproval, db.query(IDXTransferApproval, case_status).subquery())
+
     # Get transfer approval history
-    query = db.query(IDXTransferApproval). \
-        join(Token, IDXTransferApproval.token_address == Token.token_address). \
+    query = db.query(subquery, literal_column("status")). \
+        join(Token, subquery.token_address == Token.token_address). \
         filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
         filter(Token.token_status != 2)
     if issuer_address is not None:
         query = query.filter(Token.issuer_address == issuer_address)
-    query = query.order_by(IDXTransferApproval.token_address,
-                           IDXTransferApproval.exchange_address,
-                           desc(IDXTransferApproval.id))
+    query = query.order_by(subquery.token_address,
+                           subquery.exchange_address,
+                           desc(subquery.id))
     total = query.count()
 
     # Search Filter
     if token_address is not None:
-        query = query.filter(IDXTransferApproval.token_address == token_address)
+        query = query.filter(subquery.token_address == token_address)
     if from_address is not None:
-        query = query.filter(IDXTransferApproval.from_address == from_address)
+        query = query.filter(subquery.from_address == from_address)
     if to_address is not None:
-        query = query.filter(IDXTransferApproval.to_address == to_address)
+        query = query.filter(subquery.to_address == to_address)
     if status is not None:
-        if status == 0:  # unapproved
-            query = query.filter(IDXTransferApproval.approval_blocktimestamp == None). \
-                filter(or_(IDXTransferApproval.cancelled == False,
-                           IDXTransferApproval.cancelled == None)). \
-                filter(or_(IDXTransferApproval.transfer_approved == False,
-                           IDXTransferApproval.transfer_approved == None))
-        elif status == 1:  # approved
-            query = query.filter(IDXTransferApproval.transfer_approved == True). \
-                filter(IDXTransferApproval.approval_blocktimestamp == None)
-        elif status == 2:  # transferred
-            query = query.filter(IDXTransferApproval.transfer_approved == True). \
-                filter(IDXTransferApproval.approval_blocktimestamp != None)
-        else:  # canceled
-            query = query.filter(IDXTransferApproval.cancelled == True)
+        query = query.filter(literal_column("status") == status)
     if is_issuer_cancelable is not None:
         if is_issuer_cancelable is True:
-            query = query.filter(IDXTransferApproval.exchange_address == None)
+            query = query.filter(subquery.exchange_address == None)
         else:
-            query = query.filter(IDXTransferApproval.exchange_address != None)
+            query = query.filter(subquery.exchange_address != None)
 
     if limit is not None:
         query = query.limit(limit)
@@ -1047,7 +1052,7 @@ def list_transfer_approval_history(
     count = query.count()
 
     transfer_approval_history = []
-    for _transfer_approval in _transfer_approvals:
+    for _transfer_approval, status in _transfer_approvals:
         if _transfer_approval.cancelled is None:
             cancelled = False
         else:
@@ -1094,7 +1099,8 @@ def list_transfer_approval_history(
             "approval_blocktimestamp": approval_blocktimestamp,
             "cancelled": cancelled,
             "transfer_approved": transfer_approved,
-            "is_issuer_cancelable": is_issuer_cancelable
+            "is_issuer_cancelable": is_issuer_cancelable,
+            "status": status
         })
 
     return {
@@ -1120,7 +1126,6 @@ def list_token_transfer_approval_history(
         to_address: Optional[str] = Query(None),
         status: Optional[int] = Query(None, ge=0, le=3,
                                       description="0:unapproved, 1:approved, 2:transferred, 3:canceled"),
-        is_issuer_cancelable: Optional[bool] = Query(None),
         offset: Optional[int] = Query(None),
         limit: Optional[int] = Query(None),
         db: Session = Depends(db_session)
@@ -1137,39 +1142,34 @@ def list_token_transfer_approval_history(
     if _token.token_status == 0:
         raise InvalidParameterError("wait for a while as the token is being processed")
 
+    # Create a subquery for 'status' added IDXTransferApproval
+    case_status = case(
+        [(and_(IDXTransferApproval.transfer_approved == True,
+               IDXTransferApproval.approval_blocktimestamp == None),
+          1),  # approved
+         (and_(IDXTransferApproval.transfer_approved == True,
+               IDXTransferApproval.approval_blocktimestamp != None),
+          2),  # transferred
+         (IDXTransferApproval.cancelled == True,
+          3)],  # canceled
+        else_=0).label("status")  # unapproved
+    subquery = aliased(IDXTransferApproval, db.query(IDXTransferApproval, case_status).subquery())
+
     # Get transfer approval history
-    query = db.query(IDXTransferApproval). \
-        filter(IDXTransferApproval.token_address == token_address). \
+    query = db.query(subquery, literal_column("status")). \
+        filter(subquery.token_address == token_address). \
         order_by(
-            IDXTransferApproval.exchange_address,
-            desc(IDXTransferApproval.id))
+            subquery.exchange_address,
+            desc(subquery.id))
     total = query.count()
 
     # Search Filter
     if from_address is not None:
-        query = query.filter(IDXTransferApproval.from_address == from_address)
+        query = query.filter(subquery.from_address == from_address)
     if to_address is not None:
-        query = query.filter(IDXTransferApproval.to_address == to_address)
+        query = query.filter(subquery.to_address == to_address)
     if status is not None:
-        if status == 0:  # unapproved
-            query = query.filter(IDXTransferApproval.approval_blocktimestamp == None). \
-                filter(or_(IDXTransferApproval.cancelled == False,
-                           IDXTransferApproval.cancelled == None)). \
-                filter(or_(IDXTransferApproval.transfer_approved == False,
-                           IDXTransferApproval.transfer_approved == None))
-        elif status == 1:  # approved
-            query = query.filter(IDXTransferApproval.transfer_approved == True). \
-                filter(IDXTransferApproval.approval_blocktimestamp == None)
-        elif status == 2:  # transferred
-            query = query.filter(IDXTransferApproval.transfer_approved == True). \
-                filter(IDXTransferApproval.approval_blocktimestamp != None)
-        else:  # canceled
-            query = query.filter(IDXTransferApproval.cancelled == True)
-    if is_issuer_cancelable is not None:
-        if is_issuer_cancelable is True:
-            query = query.filter(IDXTransferApproval.exchange_address == None)
-        else:
-            query = query.filter(IDXTransferApproval.exchange_address != None)
+        query = query.filter(literal_column("status") == status)
 
     if limit is not None:
         query = query.limit(limit)
@@ -1179,7 +1179,7 @@ def list_token_transfer_approval_history(
     count = query.count()
 
     transfer_approval_history = []
-    for _transfer_approval in _transfer_approvals:
+    for _transfer_approval, status in _transfer_approvals:
         if _transfer_approval.cancelled is None:
             cancelled = False
         else:
@@ -1220,7 +1220,8 @@ def list_token_transfer_approval_history(
             "approval_datetime": approval_datetime,
             "approval_blocktimestamp": approval_blocktimestamp,
             "cancelled": cancelled,
-            "transfer_approved": transfer_approved
+            "transfer_approved": transfer_approved,
+            "status": status
         })
 
     return {
@@ -1390,6 +1391,15 @@ def retrieve_transfer_approval_history(
     else:
         approval_blocktimestamp = None
 
+    status = 0
+    if _transfer_approval.transfer_approved is True:
+        if _transfer_approval.approval_blocktimestamp is None:
+            status = 1
+        else:
+            status = 2
+    if _transfer_approval.cancelled is True:
+        status = 3
+
     history = {
         "id": _transfer_approval.id,
         "token_address": token_address,
@@ -1403,7 +1413,8 @@ def retrieve_transfer_approval_history(
         "approval_datetime": approval_datetime,
         "approval_blocktimestamp": approval_blocktimestamp,
         "cancelled": cancelled,
-        "transfer_approved": transfer_approved
+        "transfer_approved": transfer_approved,
+        "status": status
     }
 
     return history

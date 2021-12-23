@@ -232,7 +232,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": False,
                     "transfer_approved": False,
-                    "is_issuer_cancelable": True
+                    "is_issuer_cancelable": True,
+                    "status": 0,
                 },
             ]
         }
@@ -391,7 +392,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": None,
                     "cancelled": False,
                     "transfer_approved": False,
-                    "is_issuer_cancelable": True
+                    "is_issuer_cancelable": True,
+                    "status": 0,
                 },
                 {
                     "id": 5,
@@ -407,7 +409,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": True,
                     "transfer_approved": True,
-                    "is_issuer_cancelable": False
+                    "is_issuer_cancelable": False,
+                    "status": 2,
                 },
                 {
                     "id": 4,
@@ -423,7 +426,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": True,
                     "transfer_approved": True,
-                    "is_issuer_cancelable": False
+                    "is_issuer_cancelable": False,
+                    "status": 2,
                 },
                 {
                     "id": 3,
@@ -439,7 +443,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": True,
                     "transfer_approved": True,
-                    "is_issuer_cancelable": True
+                    "is_issuer_cancelable": True,
+                    "status": 2,
                 },
                 {
                     "id": 2,
@@ -455,7 +460,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": True,
                     "transfer_approved": True,
-                    "is_issuer_cancelable": True
+                    "is_issuer_cancelable": True,
+                    "status": 2,
                 },
                 {
                     "id": 6,
@@ -471,7 +477,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": True,
                     "transfer_approved": True,
-                    "is_issuer_cancelable": True
+                    "is_issuer_cancelable": True,
+                    "status": 2,
                 },
             ]
         }
@@ -583,7 +590,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": False,
                     "transfer_approved": False,
-                    "is_issuer_cancelable": True
+                    "is_issuer_cancelable": True,
+                    "status": 0,
                 },
                 {
                     "id": 2,
@@ -599,7 +607,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": False,
                     "transfer_approved": False,
-                    "is_issuer_cancelable": True
+                    "is_issuer_cancelable": True,
+                    "status": 0,
                 },
             ]
         }
@@ -716,7 +725,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": False,
                     "transfer_approved": False,
-                    "is_issuer_cancelable": True
+                    "is_issuer_cancelable": True,
+                    "status": 0,
                 },
             ]
         }
@@ -813,7 +823,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": False,
                     "transfer_approved": False,
-                    "is_issuer_cancelable": True
+                    "is_issuer_cancelable": True,
+                    "status": 0,
                 },
             ]
         }
@@ -910,7 +921,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": False,
                     "transfer_approved": False,
-                    "is_issuer_cancelable": True
+                    "is_issuer_cancelable": True,
+                    "status": 0,
                 },
             ]
         }
@@ -1075,7 +1087,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": None,
                     "cancelled": False,
                     "transfer_approved": False,
-                    "is_issuer_cancelable": True
+                    "is_issuer_cancelable": True,
+                    "status": 0,
                 },
                 {
                     "id": 6,
@@ -1091,7 +1104,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": None,
                     "cancelled": False,
                     "transfer_approved": False,
-                    "is_issuer_cancelable": True
+                    "is_issuer_cancelable": True,
+                    "status": 0,
                 },
                 {
                     "id": 5,
@@ -1107,7 +1121,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": None,
                     "cancelled": False,
                     "transfer_approved": False,
-                    "is_issuer_cancelable": True
+                    "is_issuer_cancelable": True,
+                    "status": 0,
                 },
                 {
                     "id": 1,
@@ -1123,7 +1138,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": None,
                     "cancelled": False,
                     "transfer_approved": False,
-                    "is_issuer_cancelable": True
+                    "is_issuer_cancelable": True,
+                    "status": 0,
                 },
             ]
         }
@@ -1240,7 +1256,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": None,
                     "cancelled": False,
                     "transfer_approved": True,
-                    "is_issuer_cancelable": True
+                    "is_issuer_cancelable": True,
+                    "status": 1,
                 },
             ]
         }
@@ -1357,7 +1374,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": False,
                     "transfer_approved": True,
-                    "is_issuer_cancelable": True
+                    "is_issuer_cancelable": True,
+                    "status": 2,
                 },
             ]
         }
@@ -1474,7 +1492,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": None,
                     "cancelled": True,
                     "transfer_approved": False,
-                    "is_issuer_cancelable": True
+                    "is_issuer_cancelable": True,
+                    "status": 3,
                 },
             ]
         }
@@ -1572,7 +1591,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": False,
                     "transfer_approved": False,
-                    "is_issuer_cancelable": True
+                    "is_issuer_cancelable": True,
+                    "status": 0,
                 },
             ]
         }
@@ -1670,7 +1690,8 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
                     "cancelled": False,
                     "transfer_approved": False,
-                    "is_issuer_cancelable": False
+                    "is_issuer_cancelable": False,
+                    "status": 0,
                 },
             ]
         }

@@ -60,6 +60,7 @@ class TransferApprovalResponse(BaseModel):
     approval_blocktimestamp: Optional[str]
     cancelled: bool
     transfer_approved: bool
+    status: int
 
 
 class TransferApprovalHistoryResponse(BaseModel):
