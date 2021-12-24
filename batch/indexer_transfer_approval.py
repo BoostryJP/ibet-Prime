@@ -252,7 +252,6 @@ class Processor:
 
         # Remove duplicate exchanges from a list
         for _exchange_address in list(set(_exchange_list_tmp)):
-            LOG.info(f"exchange_address = {_exchange_address}")
             exchange_contract = ContractUtils.get_contract(
                 contract_name="IbetSecurityTokenEscrow",
                 contract_address=_exchange_address
@@ -478,7 +477,6 @@ class Processor:
                     fromBlock=block_from,
                     toBlock=block_to
                 )
-                LOG.info(events)
                 for event in events:
                     args = event["args"]
                     self.sink.on_transfer_approval(
@@ -503,7 +501,6 @@ class Processor:
                     fromBlock=block_from,
                     toBlock=block_to
                 )
-                LOG.info(events)
                 for event in events:
                     args = event["args"]
                     block_timestamp = self.get_block_timestamp(event=event)
