@@ -57,7 +57,8 @@ from .holder import HolderResponse
 from .transfer import (
     TransferResponse,
     TransferHistoryResponse,
-    TransferApprovalResponse,
+    TransferApprovalsResponse,
+    TransferApprovalTokenResponse,
     TransferApprovalHistoryResponse
 )
 from .bulk_transfer import (

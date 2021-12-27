@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from enum import Enum
 from typing import Optional
 
 from pydantic import (
@@ -34,3 +35,14 @@ class ResultSet(BaseModel):
     offset: Optional[int]
     limit: Optional[int]
     total: Optional[int]
+
+
+class TransferApprovalsSortItem(str, Enum):
+    ID = "id"
+    APPLICATION_ID = "application_id"
+    FROM_ADDRESS = "from_address"
+    TO_ADDRESS = "to_address"
+    AMOUNT = "amount"
+    APPLICATION_DATETIME = "application_datetime"
+    APPROVAL_DATETIME = "approval_datetime"
+    STATUS = "status"
