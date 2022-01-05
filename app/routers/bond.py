@@ -71,6 +71,7 @@ from app.model.schema import (
     IbetSecurityTokenCancelTransfer,
     IbetSecurityTokenEscrowApproveTransfer
 )
+from app.model.schema.types import TransferApprovalsSortItem
 from app.utils.check_utils import (
     validate_headers,
     address_is_valid_address,
@@ -1076,6 +1077,8 @@ def list_token_transfer_approval_history(
         to_address: Optional[str] = Query(None),
         status: Optional[int] = Query(None, ge=0, le=3,
                                       description="0:unapproved, 1:approved, 2:transferred, 3:canceled"),
+        sort_item: Optional[TransferApprovalsSortItem] = Query(TransferApprovalsSortItem.ID),
+        sort_order: Optional[int] = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
         offset: Optional[int] = Query(None),
         limit: Optional[int] = Query(None),
         db: Session = Depends(db_session)
@@ -1107,10 +1110,7 @@ def list_token_transfer_approval_history(
 
     # Get transfer approval history
     query = db.query(subquery, literal_column("status")). \
-        filter(subquery.token_address == token_address). \
-        order_by(
-            subquery.exchange_address,
-            desc(subquery.id))
+        filter(subquery.token_address == token_address)
     total = query.count()
 
     # Search Filter
@@ -1120,6 +1120,19 @@ def list_token_transfer_approval_history(
         query = query.filter(subquery.to_address == to_address)
     if status is not None:
         query = query.filter(literal_column("status") == status)
+
+    # Sort
+    if sort_item != TransferApprovalsSortItem.STATUS:
+        sort_attr = getattr(subquery, sort_item, None)
+    else:
+        sort_attr = literal_column("status")
+    if sort_order == 0:  # ASC
+        query = query.order_by(sort_attr)
+    else:  # DESC
+        query = query.order_by(desc(sort_attr))
+    if sort_item != TransferApprovalsSortItem.ID:
+        # NOTE: Set secondary sort for consistent results
+        query = query.order_by(desc(subquery.id))
 
     # Pagination
     if limit is not None:

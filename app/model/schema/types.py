@@ -39,6 +39,7 @@ class ResultSet(BaseModel):
 
 class TransferApprovalsSortItem(str, Enum):
     ID = "id"
+    EXCHANGE_ADDRESS = "exchange_address"
     APPLICATION_ID = "application_id"
     FROM_ADDRESS = "from_address"
     TO_ADDRESS = "to_address"

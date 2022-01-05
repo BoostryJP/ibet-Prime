@@ -44,10 +44,14 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
     test_to_address = "test_to_address"
     test_application_datetime = datetime(year=2019, month=9, day=1)
     test_application_datetime_str = timezone("UTC").localize(test_application_datetime).astimezone(local_tz).isoformat()
+    test_application_datetime_2 = datetime(year=2019, month=10, day=1)
+    test_application_datetime_str_2 = timezone("UTC").localize(test_application_datetime_2).astimezone(local_tz).isoformat()
     test_application_blocktimestamp = datetime(year=2019, month=9, day=2)
     test_application_blocktimestamp_str = timezone("UTC").localize(test_application_blocktimestamp).astimezone(local_tz).isoformat()
     test_approval_datetime = datetime(year=2019, month=9, day=3)
     test_approval_datetime_str = timezone("UTC").localize(test_approval_datetime).astimezone(local_tz).isoformat()
+    test_approval_datetime_2 = datetime(year=2019, month=10, day=3)
+    test_approval_datetime_str_2 = timezone("UTC").localize(test_approval_datetime_2).astimezone(local_tz).isoformat()
     test_approval_blocktimestamp = datetime(year=2019, month=9, day=4)
     test_approval_blocktimestamp_str = timezone("UTC").localize(test_approval_blocktimestamp).astimezone(local_tz).isoformat()
 
@@ -293,13 +297,13 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             },
             "transfer_approval_history": [
                 {
-                    "id": 2,
+                    "id": 3,
                     "token_address": self.test_token_address,
-                    "exchange_address": self.test_exchange_address + "0",
-                    "application_id": 1,
+                    "exchange_address": self.test_exchange_address + "1",
+                    "application_id": 2,
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
-                    "amount": 1,
+                    "amount": 2,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
@@ -309,13 +313,13 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "status": 0,
                 },
                 {
-                    "id": 3,
+                    "id": 2,
                     "token_address": self.test_token_address,
-                    "exchange_address": self.test_exchange_address + "1",
-                    "application_id": 2,
+                    "exchange_address": self.test_exchange_address + "0",
+                    "application_id": 1,
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
-                    "amount": 2,
+                    "amount": 1,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
@@ -843,6 +847,1135 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         }
         assert resp.json() == assumed_response
 
+    # <Normal_5_1>
+    # sort
+    # id
+    def test_normal_5_1(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_SHARE
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        # prepare data: IDXTransferApproval
+        for i in range(0, 3):
+            _idx_transfer_approval = IDXTransferApproval()
+            _idx_transfer_approval.token_address = self.test_token_address
+            _idx_transfer_approval.exchange_address = self.test_exchange_address
+            _idx_transfer_approval.application_id = i
+            _idx_transfer_approval.from_address = self.test_from_address
+            _idx_transfer_approval.to_address = self.test_to_address
+            _idx_transfer_approval.amount = i
+            _idx_transfer_approval.application_datetime = self.test_application_datetime
+            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.approval_datetime = self.test_approval_datetime
+            _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+            _idx_transfer_approval.cancelled = False
+            _idx_transfer_approval.transfer_approved = False
+            db.add(_idx_transfer_approval)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={
+                "sort_item": "id",
+                "sort_order": 0
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = {
+            "result_set": {
+                "count": 3,
+                "offset": None,
+                "limit": None,
+                "total": 3
+            },
+            "transfer_approval_history": [
+                {
+                    "id": 1,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 0,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 0,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 2,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 1,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 1,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 3,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 2,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 2,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+            ]
+        }
+        assert resp.json() == assumed_response
+
+    # <Normal_5_2>
+    # sort
+    # exchange_address
+    def test_normal_5_2(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_SHARE
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        # prepare data: IDXTransferApproval
+        for i in range(0, 4):
+            _idx_transfer_approval = IDXTransferApproval()
+            _idx_transfer_approval.token_address = self.test_token_address
+            if i % 2 == 0:
+                _idx_transfer_approval.exchange_address = self.test_exchange_address
+            _idx_transfer_approval.application_id = i
+            _idx_transfer_approval.from_address = self.test_from_address
+            _idx_transfer_approval.to_address = self.test_to_address
+            _idx_transfer_approval.amount = i
+            _idx_transfer_approval.application_datetime = self.test_application_datetime
+            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.approval_datetime = self.test_approval_datetime
+            _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+            _idx_transfer_approval.cancelled = False
+            _idx_transfer_approval.transfer_approved = False
+            db.add(_idx_transfer_approval)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={
+                "sort_item": "exchange_address",
+                "sort_order": 1
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = {
+            "result_set": {
+                "count": 4,
+                "offset": None,
+                "limit": None,
+                "total": 4
+            },
+            "transfer_approval_history": [
+                {
+                    "id": 4,
+                    "token_address": self.test_token_address,
+                    "exchange_address": None,
+                    "application_id": 3,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 3,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 2,
+                    "token_address": self.test_token_address,
+                    "exchange_address": None,
+                    "application_id": 1,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 1,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 3,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 2,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 2,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 1,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 0,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 0,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+            ]
+        }
+        assert resp.json() == assumed_response
+
+    # <Normal_5_3>
+    # sort
+    # application_id
+    def test_normal_5_3(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_SHARE
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        # prepare data: IDXTransferApproval
+        for i in range(0, 4):
+            _idx_transfer_approval = IDXTransferApproval()
+            _idx_transfer_approval.token_address = self.test_token_address
+            if i % 2 == 0:
+                _idx_transfer_approval.exchange_address = self.test_exchange_address
+            _idx_transfer_approval.application_id = int(i / 2)
+            _idx_transfer_approval.from_address = self.test_from_address
+            _idx_transfer_approval.to_address = self.test_to_address
+            _idx_transfer_approval.amount = i
+            _idx_transfer_approval.application_datetime = self.test_application_datetime
+            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.approval_datetime = self.test_approval_datetime
+            _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+            _idx_transfer_approval.cancelled = False
+            _idx_transfer_approval.transfer_approved = False
+            db.add(_idx_transfer_approval)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={
+                "sort_item": "application_id",
+                "sort_order": 0
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = {
+            "result_set": {
+                "count": 4,
+                "offset": None,
+                "limit": None,
+                "total": 4
+            },
+            "transfer_approval_history": [
+                {
+                    "id": 2,
+                    "token_address": self.test_token_address,
+                    "exchange_address": None,
+                    "application_id": 0,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 1,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 1,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 0,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 0,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 4,
+                    "token_address": self.test_token_address,
+                    "exchange_address": None,
+                    "application_id": 1,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 3,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 3,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 1,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 2,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+            ]
+        }
+        assert resp.json() == assumed_response
+
+    # <Normal_5_4>
+    # sort
+    # from_address
+    def test_normal_5_4(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_SHARE
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        # prepare data: IDXTransferApproval
+        for i in range(0, 4):
+            _idx_transfer_approval = IDXTransferApproval()
+            _idx_transfer_approval.token_address = self.test_token_address
+            _idx_transfer_approval.exchange_address = self.test_exchange_address
+            _idx_transfer_approval.application_id = i
+            _idx_transfer_approval.from_address = self.test_from_address + str(int((3 - i) / 2))
+            _idx_transfer_approval.to_address = self.test_to_address
+            _idx_transfer_approval.amount = i
+            _idx_transfer_approval.application_datetime = self.test_application_datetime
+            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.approval_datetime = self.test_approval_datetime
+            _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+            _idx_transfer_approval.cancelled = False
+            _idx_transfer_approval.transfer_approved = False
+            db.add(_idx_transfer_approval)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={
+                "sort_item": "from_address",
+                "sort_order": 1
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = {
+            "result_set": {
+                "count": 4,
+                "offset": None,
+                "limit": None,
+                "total": 4
+            },
+            "transfer_approval_history": [
+                {
+                    "id": 2,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 1,
+                    "from_address": self.test_from_address + "1",
+                    "to_address": self.test_to_address,
+                    "amount": 1,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 1,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 0,
+                    "from_address": self.test_from_address + "1",
+                    "to_address": self.test_to_address,
+                    "amount": 0,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 4,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 3,
+                    "from_address": self.test_from_address + "0",
+                    "to_address": self.test_to_address,
+                    "amount": 3,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 3,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 2,
+                    "from_address": self.test_from_address + "0",
+                    "to_address": self.test_to_address,
+                    "amount": 2,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+            ]
+        }
+        assert resp.json() == assumed_response
+
+    # <Normal_5_5>
+    # sort
+    # to_address
+    def test_normal_5_5(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_SHARE
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        # prepare data: IDXTransferApproval
+        for i in range(0, 4):
+            _idx_transfer_approval = IDXTransferApproval()
+            _idx_transfer_approval.token_address = self.test_token_address
+            _idx_transfer_approval.exchange_address = self.test_exchange_address
+            _idx_transfer_approval.application_id = i
+            _idx_transfer_approval.from_address = self.test_from_address
+            _idx_transfer_approval.to_address = self.test_to_address + str(int(i / 2))
+            _idx_transfer_approval.amount = i
+            _idx_transfer_approval.application_datetime = self.test_application_datetime
+            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.approval_datetime = self.test_approval_datetime
+            _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+            _idx_transfer_approval.cancelled = False
+            _idx_transfer_approval.transfer_approved = False
+            db.add(_idx_transfer_approval)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={
+                "sort_item": "to_address",
+                "sort_order": 0
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = {
+            "result_set": {
+                "count": 4,
+                "offset": None,
+                "limit": None,
+                "total": 4
+            },
+            "transfer_approval_history": [
+                {
+                    "id": 2,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 1,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address + "0",
+                    "amount": 1,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 1,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 0,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address + "0",
+                    "amount": 0,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 4,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 3,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address + "1",
+                    "amount": 3,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 3,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 2,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address + "1",
+                    "amount": 2,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+            ]
+        }
+        assert resp.json() == assumed_response
+
+    # <Normal_5_6>
+    # sort
+    # amount
+    def test_normal_5_6(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_SHARE
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        # prepare data: IDXTransferApproval
+        for i in range(0, 4):
+            _idx_transfer_approval = IDXTransferApproval()
+            _idx_transfer_approval.token_address = self.test_token_address
+            _idx_transfer_approval.exchange_address = self.test_exchange_address
+            _idx_transfer_approval.application_id = i
+            _idx_transfer_approval.from_address = self.test_from_address
+            _idx_transfer_approval.to_address = self.test_to_address
+            _idx_transfer_approval.amount = int((3 - i) / 2)
+            _idx_transfer_approval.application_datetime = self.test_application_datetime
+            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.approval_datetime = self.test_approval_datetime
+            _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+            _idx_transfer_approval.cancelled = False
+            _idx_transfer_approval.transfer_approved = False
+            db.add(_idx_transfer_approval)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={
+                "sort_item": "amount",
+                "sort_order": 1
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = {
+            "result_set": {
+                "count": 4,
+                "offset": None,
+                "limit": None,
+                "total": 4
+            },
+            "transfer_approval_history": [
+                {
+                    "id": 2,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 1,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 1,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 1,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 0,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 1,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 4,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 3,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 0,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 3,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 2,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 0,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+            ]
+        }
+        assert resp.json() == assumed_response
+
+    # <Normal_5_7>
+    # sort
+    # application_datetime
+    def test_normal_5_7(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_SHARE
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        # prepare data: IDXTransferApproval
+        for i in range(0, 4):
+            _idx_transfer_approval = IDXTransferApproval()
+            _idx_transfer_approval.token_address = self.test_token_address
+            _idx_transfer_approval.exchange_address = self.test_exchange_address
+            _idx_transfer_approval.application_id = i
+            _idx_transfer_approval.from_address = self.test_from_address
+            _idx_transfer_approval.to_address = self.test_to_address
+            _idx_transfer_approval.amount = i
+            if i % 2 == 0:
+                _idx_transfer_approval.application_datetime = self.test_application_datetime
+            else:
+                _idx_transfer_approval.application_datetime = self.test_application_datetime_2
+            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.approval_datetime = self.test_approval_datetime
+            _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+            _idx_transfer_approval.cancelled = False
+            _idx_transfer_approval.transfer_approved = False
+            db.add(_idx_transfer_approval)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={
+                "sort_item": "application_datetime",
+                "sort_order": 0
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = {
+            "result_set": {
+                "count": 4,
+                "offset": None,
+                "limit": None,
+                "total": 4
+            },
+            "transfer_approval_history": [
+                {
+                    "id": 3,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 2,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 2,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 1,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 0,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 0,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 4,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 3,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 3,
+                    "application_datetime": self.test_application_datetime_str_2,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 2,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 1,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 1,
+                    "application_datetime": self.test_application_datetime_str_2,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+            ]
+        }
+        assert resp.json() == assumed_response
+
+    # <Normal_5_8>
+    # sort
+    # approval_datetime
+    def test_normal_5_8(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_SHARE
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        # prepare data: IDXTransferApproval
+        for i in range(0, 4):
+            _idx_transfer_approval = IDXTransferApproval()
+            _idx_transfer_approval.token_address = self.test_token_address
+            _idx_transfer_approval.exchange_address = self.test_exchange_address
+            _idx_transfer_approval.application_id = i
+            _idx_transfer_approval.from_address = self.test_from_address
+            _idx_transfer_approval.to_address = self.test_to_address
+            _idx_transfer_approval.amount = i
+            _idx_transfer_approval.application_datetime = self.test_application_datetime
+            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            if i % 2 == 0:
+                _idx_transfer_approval.approval_datetime = self.test_approval_datetime
+            else:
+                _idx_transfer_approval.approval_datetime = self.test_approval_datetime_2
+            _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+            _idx_transfer_approval.cancelled = False
+            _idx_transfer_approval.transfer_approved = False
+            db.add(_idx_transfer_approval)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={
+                "sort_item": "approval_datetime",
+                "sort_order": 1
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = {
+            "result_set": {
+                "count": 4,
+                "offset": None,
+                "limit": None,
+                "total": 4
+            },
+            "transfer_approval_history": [
+                {
+                    "id": 4,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 3,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 3,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str_2,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 2,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 1,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 1,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str_2,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 3,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 2,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 2,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 1,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 0,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 0,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+            ]
+        }
+        assert resp.json() == assumed_response
+
+    # <Normal_5_9>
+    # sort
+    # status
+    def test_normal_5_9(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_SHARE
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        # prepare data: IDXTransferApproval
+        for i in range(0, 8):
+            _idx_transfer_approval = IDXTransferApproval()
+            _idx_transfer_approval.token_address = self.test_token_address
+            _idx_transfer_approval.exchange_address = self.test_exchange_address
+            _idx_transfer_approval.application_id = i
+            _idx_transfer_approval.from_address = self.test_from_address
+            _idx_transfer_approval.to_address = self.test_to_address
+            _idx_transfer_approval.amount = i
+            _idx_transfer_approval.application_datetime = self.test_application_datetime
+            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            if i == 0 or i == 1:
+                # unapproved
+                _idx_transfer_approval.approval_datetime = None
+                _idx_transfer_approval.approval_blocktimestamp = None
+                _idx_transfer_approval.cancelled = False
+                _idx_transfer_approval.transfer_approved = False
+            elif i == 2 or i == 3:
+                # approved
+                _idx_transfer_approval.approval_datetime = None
+                _idx_transfer_approval.approval_blocktimestamp = None
+                _idx_transfer_approval.cancelled = False
+                _idx_transfer_approval.transfer_approved = True
+            elif i == 4 or i == 5:
+                # transferred
+                _idx_transfer_approval.approval_datetime = self.test_approval_datetime
+                _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+                _idx_transfer_approval.cancelled = False
+                _idx_transfer_approval.transfer_approved = True
+            else:
+                # canceled
+                _idx_transfer_approval.approval_datetime = None
+                _idx_transfer_approval.approval_blocktimestamp = None
+                _idx_transfer_approval.cancelled = True
+                _idx_transfer_approval.transfer_approved = False
+            db.add(_idx_transfer_approval)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={
+                "sort_item": "status",
+                "sort_order": 0
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = {
+            "result_set": {
+                "count": 8,
+                "offset": None,
+                "limit": None,
+                "total": 8
+            },
+            "transfer_approval_history": [
+                {
+                    "id": 2,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 1,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 1,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": None,
+                    "approval_blocktimestamp": None,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 1,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 0,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 0,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": None,
+                    "approval_blocktimestamp": None,
+                    "cancelled": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                },
+                {
+                    "id": 4,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 3,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 3,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": None,
+                    "approval_blocktimestamp": None,
+                    "cancelled": False,
+                    "transfer_approved": True,
+                    "status": 1,
+                },
+                {
+                    "id": 3,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 2,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 2,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": None,
+                    "approval_blocktimestamp": None,
+                    "cancelled": False,
+                    "transfer_approved": True,
+                    "status": 1,
+                },
+                {
+                    "id": 6,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 5,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 5,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": True,
+                    "status": 2,
+                },
+                {
+                    "id": 5,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 4,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 4,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": self.test_approval_datetime_str,
+                    "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancelled": False,
+                    "transfer_approved": True,
+                    "status": 2,
+                },
+                {
+                    "id": 8,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 7,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 7,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": None,
+                    "approval_blocktimestamp": None,
+                    "cancelled": True,
+                    "transfer_approved": False,
+                    "status": 3,
+                },
+                {
+                    "id": 7,
+                    "token_address": self.test_token_address,
+                    "exchange_address": self.test_exchange_address,
+                    "application_id": 6,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 6,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": None,
+                    "approval_blocktimestamp": None,
+                    "cancelled": True,
+                    "transfer_approved": False,
+                    "status": 3,
+                },
+            ]
+        }
+        assert resp.json() == assumed_response
+
     ###########################################################################
     # Error Case
     ###########################################################################
@@ -950,7 +2083,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
 
     # <Error_2>
     # token not found
-    def test_error_2(self, client, db):
+    def test_error_1(self, client, db):
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address)
@@ -969,7 +2102,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
 
     # <Error_3>
     # processing token
-    def test_error_3(self, client, db):
+    def test_error_2(self, client, db):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_SHARE
