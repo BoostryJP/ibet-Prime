@@ -238,7 +238,7 @@ class Processor:
                 amount = args.get("value")
 
                 # Skip sinking in case of deposit to exchange or withdrawal from exchange
-                if from_account == exchange_contract_address or to_account == exchange_contract_address:
+                if web3.eth.getCode(from_account).hex() != "0x" or web3.eth.getCode(to_account).hex() != "0x":
                     continue
 
                 transaction_hash = event["transaction_hash"]
