@@ -107,7 +107,7 @@ class TestProcessor:
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address_1
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
-        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.event_type = ScheduledEventType.UPDATE.value
         token_event.scheduled_datetime = datetime_past_str
         token_event.status = 2
         token_event.data = update_data
@@ -118,7 +118,7 @@ class TestProcessor:
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address_2
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
-        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.event_type = ScheduledEventType.UPDATE.value
         token_event.scheduled_datetime = datetime_now_str
         token_event.status = 0
         token_event.data = update_data
@@ -129,7 +129,7 @@ class TestProcessor:
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address_3
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
-        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.event_type = ScheduledEventType.UPDATE.value
         token_event.scheduled_datetime = datetime_pending_str
         token_event.status = 0
         token_event.data = update_data
@@ -213,7 +213,7 @@ class TestProcessor:
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address_1
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
-        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.event_type = ScheduledEventType.UPDATE.value
         token_event.scheduled_datetime = datetime_past_str
         token_event.status = 2
         token_event.data = update_data
@@ -224,7 +224,7 @@ class TestProcessor:
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address_2
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
-        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.event_type = ScheduledEventType.UPDATE.value
         token_event.scheduled_datetime = datetime_now_str
         token_event.status = 0
         token_event.data = update_data
@@ -235,7 +235,7 @@ class TestProcessor:
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address_3
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
-        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.event_type = ScheduledEventType.UPDATE.value
         token_event.scheduled_datetime = datetime_pending_str
         token_event.status = 0
         token_event.data = update_data
@@ -319,7 +319,7 @@ class TestProcessor:
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address_1
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
-        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.event_type = ScheduledEventType.UPDATE.value
         token_event.scheduled_datetime = datetime_past_str
         token_event.status = 2
         token_event.data = update_data
@@ -330,7 +330,7 @@ class TestProcessor:
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address_2
         token_event.token_type = TokenType.IBET_SHARE
-        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.event_type = ScheduledEventType.UPDATE.value
         token_event.scheduled_datetime = datetime_now_str
         token_event.status = 0
         token_event.data = update_data
@@ -341,7 +341,7 @@ class TestProcessor:
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address_3
         token_event.token_type = TokenType.IBET_SHARE
-        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.event_type = ScheduledEventType.UPDATE.value
         token_event.scheduled_datetime = datetime_pending_str
         token_event.status = 0
         token_event.data = update_data
@@ -425,7 +425,7 @@ class TestProcessor:
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address_1
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
-        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.event_type = ScheduledEventType.UPDATE.value
         token_event.scheduled_datetime = datetime_past_str
         token_event.status = 2
         token_event.data = update_data
@@ -436,7 +436,7 @@ class TestProcessor:
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address_2
         token_event.token_type = TokenType.IBET_SHARE
-        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.event_type = ScheduledEventType.UPDATE.value
         token_event.scheduled_datetime = datetime_now_str
         token_event.status = 0
         token_event.data = update_data
@@ -447,7 +447,7 @@ class TestProcessor:
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address_3
         token_event.token_type = TokenType.IBET_SHARE
-        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.event_type = ScheduledEventType.UPDATE.value
         token_event.scheduled_datetime = datetime_pending_str
         token_event.status = 0
         token_event.data = update_data
@@ -502,7 +502,7 @@ class TestProcessor:
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
-        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.event_type = ScheduledEventType.UPDATE.value
         token_event.scheduled_datetime = datetime_now_str
         token_event.status = 0
         token_event.data = update_data
@@ -552,7 +552,7 @@ class TestProcessor:
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
         token_event.token_type = TokenType.IBET_SHARE
-        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.event_type = ScheduledEventType.UPDATE.value
         token_event.scheduled_datetime = datetime_now_str
         token_event.status = 0
         token_event.data = update_data
@@ -605,7 +605,7 @@ class TestProcessor:
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
-        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.event_type = ScheduledEventType.UPDATE.value
         token_event.scheduled_datetime = datetime_now_str
         token_event.status = 0
         token_event.data = update_data
@@ -666,7 +666,7 @@ class TestProcessor:
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
         token_event.token_type = TokenType.IBET_SHARE
-        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.event_type = ScheduledEventType.UPDATE.value
         token_event.scheduled_datetime = datetime_now_str
         token_event.status = 0
         token_event.data = update_data

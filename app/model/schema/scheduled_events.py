@@ -31,6 +31,7 @@ from app.model.schema.token import (
     IbetStraightBondUpdate,
     IbetShareUpdate
 )
+from app.model.db.scheduled_events import ScheduledEventType
 
 
 ############################
@@ -39,14 +40,14 @@ from app.model.schema.token import (
 class IbetStraightBondScheduledUpdate(BaseModel):
     """scheduled event (Request)"""
     scheduled_datetime: datetime
-    event_type: str = Field(..., regex="^Update$")
+    event_type: ScheduledEventType = Field(...)
     data: IbetStraightBondUpdate
 
 
 class IbetShareScheduledUpdate(BaseModel):
     """scheduled event (Request)"""
     scheduled_datetime: datetime
-    event_type: str = Field(..., regex="^Update$")
+    event_type: ScheduledEventType = Field(...)
     data: IbetShareUpdate
 
 

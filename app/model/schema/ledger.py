@@ -28,6 +28,7 @@ from pydantic import (
 from datetime import datetime
 
 from .types import ResultSet
+from app.model.db.ledger_template import LedgerDetailsDataType
 
 
 ############################
@@ -36,7 +37,7 @@ from .types import ResultSet
 
 class CreateUpdateLedgerDetailsDataTemplateRequest(BaseModel):
     """Create or Update Ledger Details Data Template schema (Request)"""
-    type: str = Field(..., regex="^ibetfin$|^db$")
+    type: LedgerDetailsDataType = Field(...)
     source: Optional[str] = Field(None, max_length=42)
 
 
