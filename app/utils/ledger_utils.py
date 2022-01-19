@@ -99,7 +99,7 @@ def create_ledger(token_address: str, db: Session):
 
 def __get_details_data_list(token_address: str, token_type: str, data_type: str, data_source: str, db: Session):
     data_list = []
-    if data_type == LedgerDetailsDataType.DB:
+    if data_type == LedgerDetailsDataType.DB.value:
         data_list = []
         # Get Ledger Details Data from DB
         _details_data_list = db.query(LedgerDetailsData). \
@@ -117,7 +117,7 @@ def __get_details_data_list(token_address: str, token_type: str, data_type: str,
                 "balance": _details_data.balance,
                 "acquisition_date": _details_data.acquisition_date,
             })
-    elif data_type == LedgerDetailsDataType.IBET_FIN:
+    elif data_type == LedgerDetailsDataType.IBET_FIN.value:
         data_list = __get_details_data_list_from_ibetfin(token_address, token_type, db)
 
     return data_list

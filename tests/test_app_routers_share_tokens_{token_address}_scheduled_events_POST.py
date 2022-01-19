@@ -111,7 +111,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         assert resp_1.json() == {"scheduled_event_id": _scheduled_event.event_id}
         assert _scheduled_event.token_type == TokenType.IBET_SHARE
         assert _scheduled_event.scheduled_datetime == datetime_now_utc.replace(tzinfo=None)
-        assert _scheduled_event.event_type == ScheduledEventType.UPDATE
+        assert _scheduled_event.event_type == ScheduledEventType.UPDATE.value
         assert _scheduled_event.status == 0
         assert _scheduled_event.data == update_data
 
@@ -184,7 +184,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         assert resp.json() == {"scheduled_event_id": _scheduled_event.event_id}
         assert _scheduled_event.token_type == TokenType.IBET_SHARE
         assert _scheduled_event.scheduled_datetime == datetime_now_jst.astimezone(timezone.utc).replace(tzinfo=None)
-        assert _scheduled_event.event_type == ScheduledEventType.UPDATE
+        assert _scheduled_event.event_type == ScheduledEventType.UPDATE.value
         assert _scheduled_event.status == 0
         assert _scheduled_event.data == update_data
 
@@ -392,10 +392,10 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
                 "msg": "invalid datetime format",
                 "type": "value_error.datetime"
             }, {
-                "ctx": {"pattern": "^Update$"},
+                "ctx": {"enum_values": ["Update"]},
                 "loc": ["body", "event_type"],
-                "msg": 'string does not match regex "^Update$"',
-                "type": "value_error.str.regex"
+                "msg": "value is not a valid enumeration member; permitted: 'Update'",
+                "type": "type_error.enum"
             }, {
                 "loc": ["body", "data", "dividends"],
                 "msg": "value is not a valid float",
