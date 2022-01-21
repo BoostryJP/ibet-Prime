@@ -47,6 +47,23 @@ class TransferHistoryResponse(BaseModel):
 
 class TransferApprovalResponse(BaseModel):
     """transfer approval data"""
+    issuer_address: str
+    token_address: str
+    application_count: int
+    unapproved_count: int
+    approved_count: int
+    transferred_count: int
+    canceled_count: int
+
+
+class TransferApprovalsResponse(BaseModel):
+    """transfer approvals"""
+    result_set: ResultSet
+    transfer_approvals: List[TransferApprovalResponse]
+
+
+class TransferApprovalTokenResponse(BaseModel):
+    """transfer approval token data"""
     id: int
     token_address: str
     exchange_address: Optional[str]
@@ -60,9 +77,10 @@ class TransferApprovalResponse(BaseModel):
     approval_blocktimestamp: Optional[str]
     cancelled: bool
     transfer_approved: bool
+    status: int
 
 
 class TransferApprovalHistoryResponse(BaseModel):
-    """transfer approval history"""
+    """transfer approval token history"""
     result_set: ResultSet
-    transfer_approval_history: List[TransferApprovalResponse]
+    transfer_approval_history: List[TransferApprovalTokenResponse]

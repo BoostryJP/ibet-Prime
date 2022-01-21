@@ -41,3 +41,15 @@ class TransfersSortItem(str, Enum):
     FROM_ADDRESS = "from_address"
     TO_ADDRESS = "to_address"
     AMOUNT = "amount"
+
+
+class TransferApprovalsSortItem(str, Enum):
+    ID = "id"
+    EXCHANGE_ADDRESS = "exchange_address"
+    APPLICATION_ID = "application_id"
+    FROM_ADDRESS = "from_address"
+    TO_ADDRESS = "to_address"
+    AMOUNT = "amount"
+    APPLICATION_DATETIME = "application_datetime"
+    APPROVAL_DATETIME = "approval_datetime"
+    STATUS = "status"
