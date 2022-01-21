@@ -951,6 +951,9 @@ def list_transfer_history(
         filter(IDXTransfer.token_address == token_address)
     total = query.count()
 
+    # NOTE: Because it don`t filter, `total` and `count` will be the same.
+    count = total
+
     # Sort
     sort_attr = getattr(IDXTransfer, sort_item.value, None)
     if sort_order == 0:  # ASC
@@ -967,7 +970,6 @@ def list_transfer_history(
     if offset is not None:
         query = query.offset(offset)
     _transfers = query.all()
-    count = query.count()
 
     transfer_history = []
     for _transfer in _transfers:
@@ -1036,13 +1038,15 @@ def list_transfer_approval_history(
         order_by(Token.issuer_address, subquery.token_address)
     total = query.count()
 
+    # NOTE: Because it don`t filter, `total` and `count` will be the same.
+    count = total
+
     # Pagination
     if limit is not None:
         query = query.limit(limit)
     if offset is not None:
         query = query.offset(offset)
     _transfer_approvals = query.all()
-    count = query.count()
 
     transfer_approvals = []
     for issuer_address, token_address, application_count, \
@@ -1123,6 +1127,7 @@ def list_token_transfer_approval_history(
         query = query.filter(subquery.to_address == to_address)
     if status is not None:
         query = query.filter(literal_column("status") == status)
+    count = query.count()
 
     # Sort
     if sort_item != TransferApprovalsSortItem.STATUS:
@@ -1143,7 +1148,6 @@ def list_token_transfer_approval_history(
     if offset is not None:
         query = query.offset(offset)
     _transfer_approvals = query.all()
-    count = query.count()
 
     transfer_approval_history = []
     for _transfer_approval, status in _transfer_approvals:

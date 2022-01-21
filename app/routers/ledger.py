@@ -117,7 +117,10 @@ def list_all_ledger_history(
     query = db.query(Ledger). \
         filter(Ledger.token_address == token_address). \
         order_by(desc(Ledger.id))
-    count = query.count()
+    total = query.count()
+
+    # NOTE: Because it don`t filter, `total` and `count` will be the same.
+    count = total
 
     if limit is not None:
         query = query.limit(limit)
@@ -141,7 +144,7 @@ def list_all_ledger_history(
             "count": count,
             "offset": offset,
             "limit": limit,
-            "total": count
+            "total": total
         },
         "ledgers": ledgers
     }
@@ -460,7 +463,10 @@ def list_all_ledger_details_data(
         filter(LedgerDetailsData.token_address == token_address). \
         group_by(LedgerDetailsData.data_id). \
         order_by(LedgerDetailsData.data_id)
-    count = query.count()
+    total = query.count()
+
+    # NOTE: Because it don`t filter, `total` and `count` will be the same.
+    count = total
 
     if limit is not None:
         query = query.limit(limit)
@@ -480,10 +486,10 @@ def list_all_ledger_details_data(
 
     resp = {
         "result_set": {
-            "count": count,
+            "count": total,
             "offset": offset,
             "limit": limit,
-            "total": count
+            "total": total
         },
         "details_data": details_data
     }
