@@ -980,7 +980,7 @@ class TestAppRoutersBondTransferApprovalsGET:
         assert resp.status_code == 200
         assumed_response = {
             "result_set": {
-                "count": 2,
+                "count": 4,
                 "offset": 1,
                 "limit": 2,
                 "total": 4
