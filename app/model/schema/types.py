@@ -36,6 +36,25 @@ class ResultSet(BaseModel):
     total: Optional[int]
 
 
-class TransferApprovalUpdatableOperationType(str, Enum):
+class TransfersSortItem(str, Enum):
+    BLOCK_TIMESTAMP = "block_timestamp"
+    FROM_ADDRESS = "from_address"
+    TO_ADDRESS = "to_address"
+    AMOUNT = "amount"
+
+
+class TransferApprovalsSortItem(str, Enum):
+    ID = "id"
+    EXCHANGE_ADDRESS = "exchange_address"
+    APPLICATION_ID = "application_id"
+    FROM_ADDRESS = "from_address"
+    TO_ADDRESS = "to_address"
+    AMOUNT = "amount"
+    APPLICATION_DATETIME = "application_datetime"
+    APPROVAL_DATETIME = "approval_datetime"
+    STATUS = "status"
+
+
+class UpdateTransferApprovalOperationType(str, Enum):
     APPROVE = "approve"
     CANCEL = "cancel"

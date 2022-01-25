@@ -358,7 +358,7 @@ class TestCreateLedger:
                 },
             }
         ]
-        _details_1.data_type = LedgerDetailsDataType.IBET_FIN
+        _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
         _details_1.data_source = token_address_1
         db.add(_details_1)
 
@@ -386,7 +386,7 @@ class TestCreateLedger:
                 "f-d-test項目2": "d-test値2",
             }
         ]
-        _details_2.data_type = LedgerDetailsDataType.DB
+        _details_2.data_type = LedgerDetailsDataType.DB.value
         _details_2.data_source = "data_id_2"
         db.add(_details_2)
 
@@ -804,7 +804,7 @@ class TestCreateLedger:
                 },
             }
         ]
-        _details_1.data_type = LedgerDetailsDataType.IBET_FIN
+        _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
         _details_1.data_source = token_address_1
         db.add(_details_1)
 
@@ -832,7 +832,7 @@ class TestCreateLedger:
                 "f-d-test項目2": "d-test値2",
             }
         ]
-        _details_2.data_type = LedgerDetailsDataType.DB
+        _details_2.data_type = LedgerDetailsDataType.DB.value
         _details_2.data_source = "data_id_2"
         db.add(_details_2)
 

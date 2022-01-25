@@ -107,6 +107,7 @@ class DBSink:
                 position.exchange_balance = exchange_balance
             if exchange_commitment is not None:
                 position.exchange_commitment = exchange_commitment
+            self.db.merge(position)
         elif any(value is not None and value > 0
                  for value in [balance, pending_transfer, exchange_balance, exchange_commitment]):
             LOG.debug(f"Position created (Share): token_address={token_address}, account_address={account_address}")
@@ -117,8 +118,7 @@ class DBSink:
             position.pending_transfer = pending_transfer or 0
             position.exchange_balance = exchange_balance or 0
             position.exchange_commitment = exchange_commitment or 0
-
-        self.db.merge(position)
+            self.db.add(position)
 
     def flush(self):
         self.db.commit()
@@ -266,18 +266,10 @@ class Processor:
                     fromBlock=block_from,
                     toBlock=block_to
                 )
-
-                # Get exchange contract address
-                exchange_contract_address = ContractUtils.call_function(
-                    contract=token,
-                    function_name="tradableExchange",
-                    args=(),
-                    default_returns=ZERO_ADDRESS
-                )
                 for event in events:
                     args = event["args"]
                     for account in [args.get("from", ZERO_ADDRESS), args.get("to", ZERO_ADDRESS)]:
-                        if account != exchange_contract_address:
+                        if web3.eth.getCode(account).hex() == "0x":
                             balance, pending_transfer, exchange_balance, exchange_commitment = \
                                 self.__get_account_balance_all(token, account)
                             self.sink.on_position(

@@ -31,8 +31,18 @@ from fastapi import (
     Request
 )
 from fastapi.exceptions import HTTPException
-from sqlalchemy import desc
-from sqlalchemy.orm import Session
+from sqlalchemy import (
+    desc,
+    case,
+    and_,
+    or_,
+    func,
+    literal_column
+)
+from sqlalchemy.orm import (
+    Session,
+    aliased
+)
 from eth_keyfile import decode_keyfile_json
 from pytz import timezone
 
@@ -46,9 +56,10 @@ from app.model.schema import (
     IbetShareResponse,
     TokenAddressResponse,
     HolderResponse,
+    TransferApprovalsResponse,
     TransferHistoryResponse,
     TransferApprovalHistoryResponse,
-    TransferApprovalResponse,
+    TransferApprovalTokenResponse,
     BulkTransferUploadIdResponse,
     BulkTransferUploadResponse,
     BulkTransferResponse,
@@ -61,7 +72,11 @@ from app.model.schema import (
     IbetSecurityTokenEscrowApproveTransfer,
     UpdateTransferApprovalRequest
 )
-from app.model.schema.types import TransferApprovalUpdatableOperationType
+from app.model.schema.types import (
+    TransfersSortItem,
+    TransferApprovalsSortItem,
+    UpdateTransferApprovalOperationType
+)
 from app.utils.check_utils import (
     validate_headers,
     address_is_valid_address,
@@ -901,7 +916,7 @@ def transfer_ownership(
 )
 def list_transfer_history(
         token_address: str,
-        sort_item: str = Query("block_timestamp", regex="^block_timestamp$|^from_address$|^to_address$|^amount$"),
+        sort_item: TransfersSortItem = Query(TransfersSortItem.BLOCK_TIMESTAMP),
         sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
         offset: Optional[int] = Query(None),
         limit: Optional[int] = Query(None),
@@ -924,13 +939,16 @@ def list_transfer_history(
         filter(IDXTransfer.token_address == token_address)
     total = query.count()
 
+    # NOTE: Because it don`t filter, `total` and `count` will be the same.
+    count = query.count()
+
     # Sort
-    sort_attr = getattr(IDXTransfer, sort_item, None)
+    sort_attr = getattr(IDXTransfer, sort_item.value, None)
     if sort_order == 0:  # ASC
         query = query.order_by(sort_attr)
     else:  # DESC
         query = query.order_by(desc(sort_attr))
-    if sort_item != "block_timestamp":
+    if sort_item != TransfersSortItem.BLOCK_TIMESTAMP:
         # NOTE: Set secondary sort for consistent results
         query = query.order_by(desc(IDXTransfer.block_timestamp))
 
@@ -940,7 +958,6 @@ def list_transfer_history(
     if offset is not None:
         query = query.offset(offset)
     _transfers = query.all()
-    count = query.count()
 
     transfer_history = []
     for _transfer in _transfers:
@@ -965,14 +982,98 @@ def list_transfer_history(
     }
 
 
+# GET: /share/transfer_approvals
+@router.get(
+    "/transfer_approvals",
+    response_model=TransferApprovalsResponse,
+    responses=get_routers_responses(422)
+)
+def list_transfer_approval_history(
+        issuer_address: Optional[str] = Header(None),
+        offset: Optional[int] = Query(None),
+        limit: Optional[int] = Query(None),
+        db: Session = Depends(db_session)
+):
+    """List transfer approval history"""
+    # Create a subquery for 'status' added IDXTransferApproval
+    case_status = case(
+        [(and_(IDXTransferApproval.transfer_approved == True,
+               IDXTransferApproval.approval_blocktimestamp == None),
+          1),  # approved
+         (and_(IDXTransferApproval.transfer_approved == True,
+               IDXTransferApproval.approval_blocktimestamp != None),
+          2),  # transferred
+         (IDXTransferApproval.cancelled == True,
+          3)],  # canceled
+        else_=0).label("status")  # unapproved
+    subquery = aliased(IDXTransferApproval,
+                       db.query(IDXTransferApproval, case_status).subquery())
+
+    # Get transfer approval history
+    query = db.query(Token.issuer_address,
+                     subquery.token_address,
+                     func.count(subquery.id),
+                     func.count(or_(literal_column("status") == 0, None)),
+                     func.count(or_(literal_column("status") == 1, None)),
+                     func.count(or_(literal_column("status") == 2, None)),
+                     func.count(or_(literal_column("status") == 3, None))). \
+        join(Token, subquery.token_address == Token.token_address). \
+        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.token_status != 2)
+    if issuer_address is not None:
+        query = query.filter(Token.issuer_address == issuer_address)
+    query = query.group_by(Token.issuer_address, subquery.token_address). \
+        order_by(Token.issuer_address, subquery.token_address)
+    total = query.count()
+
+    # NOTE: Because it don`t filter, `total` and `count` will be the same.
+    count = query.count()
+
+    # Pagination
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+    _transfer_approvals = query.all()
+
+    transfer_approvals = []
+    for issuer_address, token_address, application_count, \
+            unapproved_count, approved_count, transferred_count, canceled_count in _transfer_approvals:
+        transfer_approvals.append({
+            "issuer_address": issuer_address,
+            "token_address": token_address,
+            "application_count": application_count,
+            "unapproved_count": unapproved_count,
+            "approved_count": approved_count,
+            "transferred_count": transferred_count,
+            "canceled_count": canceled_count,
+        })
+
+    return {
+        "result_set": {
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": total
+        },
+        "transfer_approvals": transfer_approvals
+    }
+
+
 # GET: /share/transfer_approvals/{token_address}
 @router.get(
     "/transfer_approvals/{token_address}",
     response_model=TransferApprovalHistoryResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError)
 )
-def list_transfer_approval_history(
+def list_token_transfer_approval_history(
         token_address: str,
+        from_address: Optional[str] = Query(None),
+        to_address: Optional[str] = Query(None),
+        status: Optional[int] = Query(None, ge=0, le=3,
+                                      description="0:unapproved, 1:approved, 2:transferred, 3:canceled"),
+        sort_item: Optional[TransferApprovalsSortItem] = Query(TransferApprovalsSortItem.ID),
+        sort_order: Optional[int] = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
         offset: Optional[int] = Query(None),
         limit: Optional[int] = Query(None),
         db: Session = Depends(db_session)
@@ -989,23 +1090,55 @@ def list_transfer_approval_history(
     if _token.token_status == 0:
         raise InvalidParameterError("wait for a while as the token is being processed")
 
+    # Create a subquery for 'status' added IDXTransferApproval
+    case_status = case(
+        [(and_(IDXTransferApproval.transfer_approved == True,
+               IDXTransferApproval.approval_blocktimestamp == None),
+          1),  # approved
+         (and_(IDXTransferApproval.transfer_approved == True,
+               IDXTransferApproval.approval_blocktimestamp != None),
+          2),  # transferred
+         (IDXTransferApproval.cancelled == True,
+          3)],  # canceled
+        else_=0).label("status")  # unapproved
+    subquery = aliased(IDXTransferApproval, db.query(IDXTransferApproval, case_status).subquery())
+
     # Get transfer approval history
-    query = db.query(IDXTransferApproval). \
-        filter(IDXTransferApproval.token_address == token_address). \
-        order_by(
-            IDXTransferApproval.exchange_address,
-            desc(IDXTransferApproval.id))
+    query = db.query(subquery, literal_column("status")). \
+        filter(subquery.token_address == token_address)
     total = query.count()
 
+    # Search Filter
+    if from_address is not None:
+        query = query.filter(subquery.from_address == from_address)
+    if to_address is not None:
+        query = query.filter(subquery.to_address == to_address)
+    if status is not None:
+        query = query.filter(literal_column("status") == status)
+    count = query.count()
+
+    # Sort
+    if sort_item != TransferApprovalsSortItem.STATUS:
+        sort_attr = getattr(subquery, sort_item, None)
+    else:
+        sort_attr = literal_column("status")
+    if sort_order == 0:  # ASC
+        query = query.order_by(sort_attr)
+    else:  # DESC
+        query = query.order_by(desc(sort_attr))
+    if sort_item != TransferApprovalsSortItem.ID:
+        # NOTE: Set secondary sort for consistent results
+        query = query.order_by(desc(subquery.id))
+
+    # Pagination
     if limit is not None:
         query = query.limit(limit)
     if offset is not None:
         query = query.offset(offset)
     _transfer_approvals = query.all()
-    count = query.count()
 
     transfer_approval_history = []
-    for _transfer_approval in _transfer_approvals:
+    for _transfer_approval, status in _transfer_approvals:
         if _transfer_approval.cancelled is None:
             cancelled = False
         else:
@@ -1014,6 +1147,10 @@ def list_transfer_approval_history(
             transfer_approved = False
         else:
             transfer_approved = _transfer_approval.transfer_approved
+        if _transfer_approval.exchange_address is not None:
+            issuer_cancelable = False
+        else:
+            issuer_cancelable = True
 
         application_datetime_utc = timezone("UTC").localize(_transfer_approval.application_datetime)
         application_datetime = application_datetime_utc.astimezone(local_tz).isoformat()
@@ -1033,11 +1170,6 @@ def list_transfer_approval_history(
         else:
             approval_blocktimestamp = None
 
-        if _transfer_approval.exchange_address is not None:
-            is_issuer_cancelable = False
-        else:
-            is_issuer_cancelable = True
-
         transfer_approval_history.append({
             "id": _transfer_approval.id,
             "token_address": token_address,
@@ -1052,7 +1184,8 @@ def list_transfer_approval_history(
             "approval_blocktimestamp": approval_blocktimestamp,
             "cancelled": cancelled,
             "transfer_approved": transfer_approved,
-            "is_issuer_cancelable": is_issuer_cancelable
+            "status": status,
+            "issuer_cancelable": issuer_cancelable
         })
 
     return {
@@ -1069,18 +1202,18 @@ def list_transfer_approval_history(
 # POST: /share/transfer_approvals/{token_address}/{id}
 @router.post(
     "/transfer_approvals/{token_address}/{id}",
-    responses=get_routers_responses(422, 410, 404, InvalidParameterError)
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError)
 )
-def update_transfer_approval(
+def update_approve_transfer(
         request: Request,
-        data: UpdateTransferApprovalRequest,
         token_address: str,
         id: int,
+        data: UpdateTransferApprovalRequest,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
         db: Session = Depends(db_session)
 ):
-    """Update share token's transfer approval"""
+    """Update share token transfer approval"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address),
@@ -1118,7 +1251,7 @@ def update_transfer_approval(
         raise InvalidParameterError("already approved")
     if _transfer_approval.cancelled is True:
         raise InvalidParameterError("canceled application")
-    if data.operation_type == TransferApprovalUpdatableOperationType.CANCEL and \
+    if data.operation_type == UpdateTransferApprovalOperationType.CANCEL and \
             _transfer_approval.exchange_address is not None:
         raise InvalidParameterError("application that cannot be canceled")
 
@@ -1132,7 +1265,7 @@ def update_transfer_approval(
     # Send transaction
     try:
         now = str(datetime.utcnow().timestamp())
-        if data.operation_type == TransferApprovalUpdatableOperationType.APPROVE:
+        if data.operation_type == UpdateTransferApprovalOperationType.APPROVE:
             if _transfer_approval.exchange_address is None:
                 _data = {
                     "application_id": _transfer_approval.application_id,
@@ -1185,7 +1318,7 @@ def update_transfer_approval(
 # GET: /share/transfer_approvals/{token_address}/{id}
 @router.get(
     "/transfer_approvals/{token_address}/{id}",
-    response_model=TransferApprovalResponse,
+    response_model=TransferApprovalTokenResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError)
 )
 def retrieve_transfer_approval_history(
@@ -1221,6 +1354,10 @@ def retrieve_transfer_approval_history(
         transfer_approved = False
     else:
         transfer_approved = _transfer_approval.transfer_approved
+    if _transfer_approval.exchange_address is not None:
+        issuer_cancelable = False
+    else:
+        issuer_cancelable = True
 
     application_datetime_utc = timezone("UTC").localize(_transfer_approval.application_datetime)
     application_datetime = application_datetime_utc.astimezone(local_tz).isoformat()
@@ -1240,10 +1377,14 @@ def retrieve_transfer_approval_history(
     else:
         approval_blocktimestamp = None
 
-    if _transfer_approval.exchange_address is not None:
-        is_issuer_cancelable = False
-    else:
-        is_issuer_cancelable = True
+    status = 0
+    if _transfer_approval.transfer_approved is True:
+        if _transfer_approval.approval_blocktimestamp is None:
+            status = 1
+        else:
+            status = 2
+    if _transfer_approval.cancelled is True:
+        status = 3
 
     history = {
         "id": _transfer_approval.id,
@@ -1259,7 +1400,8 @@ def retrieve_transfer_approval_history(
         "approval_blocktimestamp": approval_blocktimestamp,
         "cancelled": cancelled,
         "transfer_approved": transfer_approved,
-        "is_issuer_cancelable": is_issuer_cancelable
+        "status": status,
+        "issuer_cancelable": issuer_cancelable
     }
 
     return history

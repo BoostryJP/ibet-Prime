@@ -42,6 +42,7 @@ from config import (
 from app.model.db import (
     Token,
     TokenType,
+    AdditionalTokenInfo,
     IDXTransferApproval,
     IDXTransferApprovalBlockNumber,
     Notification,
@@ -251,7 +252,6 @@ class Processor:
 
         # Remove duplicate exchanges from a list
         for _exchange_address in list(set(_exchange_list_tmp)):
-            LOG.info(f"exchange_address = {_exchange_address}")
             exchange_contract = ContractUtils.get_contract(
                 contract_name="IbetSecurityTokenEscrow",
                 contract_address=_exchange_address
@@ -477,7 +477,6 @@ class Processor:
                     fromBlock=block_from,
                     toBlock=block_to
                 )
-                LOG.info(events)
                 for event in events:
                     args = event["args"]
                     self.sink.on_transfer_approval(
@@ -502,7 +501,6 @@ class Processor:
                     fromBlock=block_from,
                     toBlock=block_to
                 )
-                LOG.info(events)
                 for event in events:
                     args = event["args"]
                     block_timestamp = self.get_block_timestamp(event=event)
@@ -534,6 +532,13 @@ class Processor:
                 first()
             sender = web3.eth.getTransaction(transaction_hash)["from"]
             if token is not None and token.issuer_address != sender:
+                if notice_code == 0:  # ApplyFor
+                    _additional_info = self.db.query(AdditionalTokenInfo). \
+                        filter(AdditionalTokenInfo.token_address == token_address). \
+                        first()
+                    if _additional_info is None or _additional_info.is_manual_transfer_approval is not True:
+                        # SKIP Automatic approval
+                        return
                 self.sink.on_info_notification(
                     issuer_address=token.issuer_address,
                     code=notice_code,

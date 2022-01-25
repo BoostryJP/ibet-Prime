@@ -106,7 +106,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
             "approval_blocktimestamp": None,
             "cancelled": False,
             "transfer_approved": False,
-            "is_issuer_cancelable": True
+            "status": 0,
+            "issuer_cancelable": True,
         }
 
     # <Normal_2>
@@ -159,7 +160,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
             "approval_blocktimestamp": None,
             "cancelled": True,
             "transfer_approved": False,
-            "is_issuer_cancelable": False
+            "status": 3,
+            "issuer_cancelable": False,
         }
 
     # <Normal_3>
@@ -212,7 +214,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
             "approval_blocktimestamp": None,
             "cancelled": False,
             "transfer_approved": True,
-            "is_issuer_cancelable": False
+            "status": 1,
+            "issuer_cancelable": False,
         }
 
     # <Normal_4>
@@ -265,7 +268,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
             "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
             "cancelled": False,
             "transfer_approved": True,
-            "is_issuer_cancelable": False
+            "status": 2,
+            "issuer_cancelable": False,
         }
 
     ###########################################################################

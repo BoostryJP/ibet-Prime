@@ -58,7 +58,8 @@ from .transfer import (
     UpdateTransferApprovalRequest,
     TransferResponse,
     TransferHistoryResponse,
-    TransferApprovalResponse,
+    TransferApprovalsResponse,
+    TransferApprovalTokenResponse,
     TransferApprovalHistoryResponse
 )
 from .bulk_transfer import (

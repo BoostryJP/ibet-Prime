@@ -153,7 +153,7 @@ class TestAppRoutersShareTransfersGET:
         assert resp.status_code == 200
         assumed_response = {
             "result_set": {
-                "count": 1,
+                "count": 3,
                 "offset": 1,
                 "limit": 1,
                 "total": 3
@@ -573,12 +573,11 @@ class TestAppRoutersShareTransfersGET:
             },
             "detail": [
                 {
-                    "ctx": {
-                        "pattern": "^block_timestamp$|^from_address$|^to_address$|^amount$"
-                    },
+                    "ctx": {"enum_values": ["block_timestamp", "from_address", "to_address", "amount"]},
                     "loc": ["query", "sort_item"],
-                    "msg": 'string does not match regex "^block_timestamp$|^from_address$|^to_address$|^amount$"',
-                    "type": "value_error.str.regex"
+                    "msg": "value is not a valid enumeration member; permitted: 'block_timestamp', 'from_address', "
+                           "'to_address', 'amount'",
+                    "type": "type_error.enum"
                 }
             ]
         }

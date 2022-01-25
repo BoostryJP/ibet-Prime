@@ -36,7 +36,6 @@ from app.model.db import (
 )
 from app.model.schema import (
     IbetSecurityTokenApproveTransfer,
-    IbetSecurityTokenCancelTransfer,
     IbetSecurityTokenEscrowApproveTransfer
 )
 from app.utils.e2ee_utils import E2EEUtils
@@ -123,12 +122,12 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         with IbetSecurityTokenContract_approve_transfer as mock_transfer:
             resp = client.post(
                 self.base_url.format(self.test_token_address, id),
+                json={
+                    "operation_type": "approve"
+                },
                 headers={
                     "issuer-address": issuer_address,
                     "eoa-password": E2EEUtils.encrypt("password")
-                },
-                json={
-                    "operation_type": "approve"
                 }
             )
 
@@ -202,12 +201,12 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         with IbetSecurityTokenEscrow_approve_transfer as mock_transfer:
             resp = client.post(
                 self.base_url.format(self.test_token_address, id),
+                json={
+                    "operation_type": "approve"
+                },
                 headers={
                     "issuer-address": issuer_address,
                     "eoa-password": E2EEUtils.encrypt("password")
-                },
-                json={
-                    "operation_type": "approve"
                 }
             )
 
@@ -352,10 +351,10 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
+            json={},
             headers={
                 "issuer-address": issuer_address,
-            },
-            json={}
+            }
         )
 
         # assertion
@@ -385,11 +384,11 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
-            headers={
-                "issuer-address": issuer_address,
-            },
             json={
                 "operation_type": "approve"
+            },
+            headers={
+                "issuer-address": issuer_address,
             }
         )
 
@@ -415,18 +414,17 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
     def test_error_1_4(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
-
         id = 10
 
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
+            json={
+                "operation_type": "test"
+            },
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
-            },
-            json={
-                "operation_type": "AAAAA"
             }
         )
 
@@ -439,11 +437,11 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
             },
             "detail": [
                 {
-                    "ctx": {"enum_values": ["approve", "cancel"]},
                     "loc": ["body", "operation_type"],
+                    "ctx": {"enum_values": ["approve", "cancel"]},
                     "msg": "value is not a valid enumeration member; permitted: 'approve', 'cancel'",
                     "type": "type_error.enum"
-                }
+                },
             ]
         }
 
@@ -456,12 +454,12 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
+            json={
+                "operation_type": "approve"
+            },
             headers={
                 "issuer-address": "issuer_address",
                 "eoa-password": "password"
-            },
-            json={
-                "operation_type": "approve"
             }
         )
 
@@ -498,12 +496,12 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
+            json={
+                "operation_type": "approve"
+            },
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
-            },
-            json={
-                "operation_type": "approve"
             }
         )
 
@@ -536,12 +534,12 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
+            json={
+                "operation_type": "approve"
+            },
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password_test")
-            },
-            json={
-                "operation_type": "approve"
             }
         )
 
@@ -574,12 +572,12 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
+            json={
+                "operation_type": "approve"
+            },
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
-            },
-            json={
-                "operation_type": "approve"
             }
         )
 
@@ -620,12 +618,12 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
+            json={
+                "operation_type": "approve"
+            },
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
-            },
-            json={
-                "operation_type": "approve"
             }
         )
 
@@ -667,12 +665,12 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
+            json={
+                "operation_type": "approve"
+            },
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
-            },
-            json={
-                "operation_type": "approve"
             }
         )
 
@@ -732,12 +730,12 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
+            json={
+                "operation_type": "approve"
+            },
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
-            },
-            json={
-                "operation_type": "approve"
             }
         )
 
@@ -797,12 +795,12 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
+            json={
+                "operation_type": "approve"
+            },
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
-            },
-            json={
-                "operation_type": "approve"
             }
         )
 
@@ -928,12 +926,12 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
+            json={
+                "operation_type": "approve"
+            },
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
-            },
-            json={
-                "operation_type": "approve"
             }
         )
 
@@ -994,12 +992,12 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
+            json={
+                "operation_type": "approve"
+            },
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
-            },
-            json={
-                "operation_type": "approve"
             }
         )
 
@@ -1064,12 +1062,12 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         # request target API
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
+            json={
+                "operation_type": "approve"
+            },
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
-            },
-            json={
-                "operation_type": "approve"
             }
         )
 
@@ -1088,7 +1086,6 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
     # Send Transaction Error
     # IbetSecurityTokenInterface.approve_transfer
     # return fail
-    @pytest.mark.freeze_time('2021-04-27 12:34:56')
     def test_error_5_2(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -1140,16 +1137,15 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         )
 
         # request target API
-        with IbetSecurityTokenContract_approve_transfer, \
-             IbetSecurityTokenContract_cancel_transfer as mock_transfer:
+        with IbetSecurityTokenContract_approve_transfer, IbetSecurityTokenContract_cancel_transfer:
             resp = client.post(
                 self.base_url.format(self.test_token_address, id),
+                json={
+                    "operation_type": "approve"
+                },
                 headers={
                     "issuer-address": issuer_address,
                     "eoa-password": E2EEUtils.encrypt("password")
-                },
-                json={
-                    "operation_type": "approve"
                 }
             )
 
@@ -1162,18 +1158,6 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
             },
             "detail": "failed to send transaction"
         }
-
-        _expected = {
-            "application_id": 100,
-            "data": str(datetime.utcnow().timestamp())
-        }
-
-        mock_transfer.assert_called_once_with(
-            contract_address=self.test_token_address,
-            data=IbetSecurityTokenCancelTransfer(**_expected),
-            tx_from=issuer_address,
-            private_key=ANY
-        )
 
     # <Error_5_3>
     # APPROVE
@@ -1226,12 +1210,12 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         # request target API
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
+            json={
+                "operation_type": "approve"
+            },
             headers={
                 "issuer-address": issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
-            },
-            json={
-                "operation_type": "approve"
             }
         )
 
@@ -1300,12 +1284,12 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         with IbetSecurityTokenEscrow_approve_transfer:
             resp = client.post(
                 self.base_url.format(self.test_token_address, id),
+                json={
+                    "operation_type": "approve"
+                },
                 headers={
                     "issuer-address": issuer_address,
                     "eoa-password": E2EEUtils.encrypt("password")
-                },
-                json={
-                    "operation_type": "approve"
                 }
             )
 

@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 # SPDX-License-Identifier: Apache-2.0
+from enum import Enum
+
 from sqlalchemy import (
     Column,
     Integer,
@@ -49,5 +51,5 @@ class ScheduledEvents(Base):
     data = Column(JSON, nullable=False)
 
 
-class ScheduledEventType:
+class ScheduledEventType(str, Enum):
     UPDATE = "Update"
