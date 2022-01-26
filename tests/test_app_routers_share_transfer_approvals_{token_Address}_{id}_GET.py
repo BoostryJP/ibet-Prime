@@ -72,7 +72,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.id = id
         _idx_transfer_approval.token_address = self.test_token_address
-        _idx_transfer_approval.exchange_address = self.test_exchange_address
+        _idx_transfer_approval.exchange_address = None
         _idx_transfer_approval.application_id = 100
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -95,7 +95,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
         assert resp.json() == {
             "id": 10,
             "token_address": self.test_token_address,
-            "exchange_address": self.test_exchange_address,
+            "exchange_address": None,
             "application_id": 100,
             "from_address": self.test_from_address,
             "to_address": self.test_to_address,
@@ -107,6 +107,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
             "cancelled": False,
             "transfer_approved": False,
             "status": 0,
+            "issuer_cancelable": True,
         }
 
     # <Normal_2>
@@ -160,6 +161,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
             "cancelled": True,
             "transfer_approved": False,
             "status": 3,
+            "issuer_cancelable": False,
         }
 
     # <Normal_3>
@@ -213,6 +215,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
             "cancelled": False,
             "transfer_approved": True,
             "status": 1,
+            "issuer_cancelable": False,
         }
 
     # <Normal_4>
@@ -266,6 +269,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
             "cancelled": False,
             "transfer_approved": True,
             "status": 2,
+            "issuer_cancelable": False,
         }
 
     ###########################################################################

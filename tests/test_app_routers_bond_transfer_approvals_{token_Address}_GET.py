@@ -148,6 +148,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": True,
                 },
                 {
                     "id": 2,
@@ -164,6 +165,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": True,
                 },
                 {
                     "id": 1,
@@ -180,6 +182,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": True,
                 },
             ]
         }
@@ -244,6 +247,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": True,
                 }
             ]
         }
@@ -311,6 +315,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 2,
@@ -327,6 +332,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 1,
@@ -343,6 +349,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
             ]
         }
@@ -411,6 +418,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": True,
                 }
             ]
         }
@@ -479,6 +487,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": True,
                 }
             ]
         }
@@ -564,6 +573,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": True,
                 },
                 {
                     "id": 6,
@@ -580,6 +590,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": True,
                 },
                 {
                     "id": 5,
@@ -596,6 +607,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": True,
                 },
                 {
                     "id": 2,
@@ -612,6 +624,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": True,
                 },
             ]
         }
@@ -689,6 +702,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": True,
                     "status": 1,
+                    "issuer_cancelable": True,
                 }
             ]
         }
@@ -766,6 +780,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": True,
                     "status": 2,
+                    "issuer_cancelable": True,
                 }
             ]
         }
@@ -842,6 +857,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": True,
                     "transfer_approved": False,
                     "status": 3,
+                    "issuer_cancelable": True,
                 }
             ]
         }
@@ -911,6 +927,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 2,
@@ -927,6 +944,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 3,
@@ -943,6 +961,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
             ]
         }
@@ -1013,6 +1032,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": True,
                 },
                 {
                     "id": 2,
@@ -1029,6 +1049,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": True,
                 },
                 {
                     "id": 3,
@@ -1045,6 +1066,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 1,
@@ -1061,6 +1083,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
             ]
         }
@@ -1131,6 +1154,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": True,
                 },
                 {
                     "id": 1,
@@ -1147,6 +1171,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 4,
@@ -1163,6 +1188,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": True,
                 },
                 {
                     "id": 3,
@@ -1179,6 +1205,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
             ]
         }
@@ -1248,6 +1275,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 1,
@@ -1264,6 +1292,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 4,
@@ -1280,6 +1309,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 3,
@@ -1296,6 +1326,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
             ]
         }
@@ -1365,6 +1396,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 1,
@@ -1381,6 +1413,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 4,
@@ -1397,6 +1430,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 3,
@@ -1413,6 +1447,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
             ]
         }
@@ -1482,6 +1517,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 1,
@@ -1498,6 +1534,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 4,
@@ -1514,6 +1551,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 3,
@@ -1530,6 +1568,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
             ]
         }
@@ -1602,6 +1641,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 1,
@@ -1618,6 +1658,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 4,
@@ -1634,6 +1675,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 2,
@@ -1650,6 +1692,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
             ]
         }
@@ -1722,6 +1765,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 2,
@@ -1738,6 +1782,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 3,
@@ -1754,6 +1799,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 1,
@@ -1770,6 +1816,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
             ]
         }
@@ -1859,6 +1906,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 1,
@@ -1875,6 +1923,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": False,
                     "status": 0,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 4,
@@ -1891,6 +1940,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": True,
                     "status": 1,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 3,
@@ -1907,6 +1957,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": True,
                     "status": 1,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 6,
@@ -1923,6 +1974,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": True,
                     "status": 2,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 5,
@@ -1939,6 +1991,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": False,
                     "transfer_approved": True,
                     "status": 2,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 8,
@@ -1955,6 +2008,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": True,
                     "transfer_approved": False,
                     "status": 3,
+                    "issuer_cancelable": False,
                 },
                 {
                     "id": 7,
@@ -1971,6 +2025,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "cancelled": True,
                     "transfer_approved": False,
                     "status": 3,
+                    "issuer_cancelable": False,
                 },
             ]
         }

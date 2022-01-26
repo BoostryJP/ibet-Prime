@@ -69,11 +69,13 @@ from app.model.schema import (
     ModifyPersonalInfoRequest,
     IbetSecurityTokenApproveTransfer,
     IbetSecurityTokenCancelTransfer,
-    IbetSecurityTokenEscrowApproveTransfer
+    IbetSecurityTokenEscrowApproveTransfer,
+    UpdateTransferApprovalRequest
 )
 from app.model.schema.types import (
     TransfersSortItem,
-    TransferApprovalsSortItem
+    TransferApprovalsSortItem,
+    UpdateTransferApprovalOperationType
 )
 from app.utils.check_utils import (
     validate_headers,
@@ -1145,6 +1147,10 @@ def list_token_transfer_approval_history(
             transfer_approved = False
         else:
             transfer_approved = _transfer_approval.transfer_approved
+        if _transfer_approval.exchange_address is not None:
+            issuer_cancelable = False
+        else:
+            issuer_cancelable = True
 
         application_datetime_utc = timezone("UTC").localize(_transfer_approval.application_datetime)
         application_datetime = application_datetime_utc.astimezone(local_tz).isoformat()
@@ -1178,7 +1184,8 @@ def list_token_transfer_approval_history(
             "approval_blocktimestamp": approval_blocktimestamp,
             "cancelled": cancelled,
             "transfer_approved": transfer_approved,
-            "status": status
+            "status": status,
+            "issuer_cancelable": issuer_cancelable
         })
 
     return {
@@ -1195,17 +1202,18 @@ def list_token_transfer_approval_history(
 # POST: /share/transfer_approvals/{token_address}/{id}
 @router.post(
     "/transfer_approvals/{token_address}/{id}",
-    responses=get_routers_responses(422, 410, 404, InvalidParameterError)
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError)
 )
-def approve_transfer(
+def update_transfer_approval(
         request: Request,
         token_address: str,
         id: int,
+        data: UpdateTransferApprovalRequest,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
         db: Session = Depends(db_session)
 ):
-    """Approve share token transfer"""
+    """Update on the status of a share transfer approval"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address),
@@ -1243,6 +1251,10 @@ def approve_transfer(
         raise InvalidParameterError("already approved")
     if _transfer_approval.cancelled is True:
         raise InvalidParameterError("canceled application")
+    if data.operation_type == UpdateTransferApprovalOperationType.CANCEL and \
+            _transfer_approval.exchange_address is not None:
+        # Cancellation is possible only against approval of the transfer of a token contract.
+        raise InvalidParameterError("application that cannot be canceled")
 
     # Check manually approval
     _additional_info = db.query(AdditionalTokenInfo). \
@@ -1252,35 +1264,53 @@ def approve_transfer(
         raise InvalidParameterError("token is automatic approval")
 
     # Send transaction
+    #  - APPROVE -> approveTransfer
+    #    In the case of a transfer approval for a token, if the transaction is reverted,
+    #    a cancelTransfer is performed immediately.
+    #  - CANCEL -> cancelTransfer
     try:
         now = str(datetime.utcnow().timestamp())
-        if _transfer_approval.exchange_address is None:
+        if data.operation_type == UpdateTransferApprovalOperationType.APPROVE:
+            if _transfer_approval.exchange_address is None:
+                _data = {
+                    "application_id": _transfer_approval.application_id,
+                    "data": now
+                }
+                _, tx_receipt = IbetShareContract.approve_transfer(
+                    contract_address=token_address,
+                    data=IbetSecurityTokenApproveTransfer(**_data),
+                    tx_from=issuer_address,
+                    private_key=private_key,
+                )
+                if tx_receipt["status"] != 1:  # Success
+                    IbetShareContract.cancel_transfer(
+                        contract_address=token_address,
+                        data=IbetSecurityTokenCancelTransfer(**_data),
+                        tx_from=issuer_address,
+                        private_key=private_key,
+                    )
+                    raise SendTransactionError
+            else:
+                _data = {
+                    "escrow_id": _transfer_approval.application_id,
+                    "data": now
+                }
+                escrow = IbetSecurityTokenEscrow(_transfer_approval.exchange_address)
+                _, tx_receipt = escrow.approve_transfer(
+                    data=IbetSecurityTokenEscrowApproveTransfer(**_data),
+                    tx_from=issuer_address,
+                    private_key=private_key,
+                )
+                if tx_receipt["status"] != 1:  # Success
+                    raise SendTransactionError
+        else:  # CANCEL
             _data = {
                 "application_id": _transfer_approval.application_id,
                 "data": now
             }
-            _, tx_receipt = IbetShareContract.approve_transfer(
+            _, tx_receipt = IbetShareContract.cancel_transfer(
                 contract_address=token_address,
-                data=IbetSecurityTokenApproveTransfer(**_data),
-                tx_from=issuer_address,
-                private_key=private_key,
-            )
-            if tx_receipt["status"] != 1:  # Success
-                IbetShareContract.cancel_transfer(
-                    contract_address=token_address,
-                    data=IbetSecurityTokenCancelTransfer(**_data),
-                    tx_from=issuer_address,
-                    private_key=private_key,
-                )
-                raise SendTransactionError
-        else:
-            _data = {
-                "escrow_id": _transfer_approval.application_id,
-                "data": now
-            }
-            escrow = IbetSecurityTokenEscrow(_transfer_approval.exchange_address)
-            _, tx_receipt = escrow.approve_transfer(
-                data=IbetSecurityTokenEscrowApproveTransfer(**_data),
+                data=IbetSecurityTokenCancelTransfer(**_data),
                 tx_from=issuer_address,
                 private_key=private_key,
             )
@@ -1329,6 +1359,10 @@ def retrieve_transfer_approval_history(
         transfer_approved = False
     else:
         transfer_approved = _transfer_approval.transfer_approved
+    if _transfer_approval.exchange_address is not None:
+        issuer_cancelable = False
+    else:
+        issuer_cancelable = True
 
     application_datetime_utc = timezone("UTC").localize(_transfer_approval.application_datetime)
     application_datetime = application_datetime_utc.astimezone(local_tz).isoformat()
@@ -1371,7 +1405,8 @@ def retrieve_transfer_approval_history(
         "approval_blocktimestamp": approval_blocktimestamp,
         "cancelled": cancelled,
         "transfer_approved": transfer_approved,
-        "status": status
+        "status": status,
+        "issuer_cancelable": issuer_cancelable
     }
 
     return history

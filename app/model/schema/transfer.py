@@ -20,9 +20,23 @@ from typing import (
     List,
     Optional
 )
-from pydantic import BaseModel
+from pydantic import (
+    BaseModel,
+    Field
+)
 
-from .types import ResultSet
+from .types import (
+    ResultSet,
+    UpdateTransferApprovalOperationType
+)
+
+
+############################
+# REQUEST
+############################
+class UpdateTransferApprovalRequest(BaseModel):
+    """Update Transfer Approval schema (Request)"""
+    operation_type: UpdateTransferApprovalOperationType = Field(...)
 
 
 ############################
@@ -78,6 +92,7 @@ class TransferApprovalTokenResponse(BaseModel):
     cancelled: bool
     transfer_approved: bool
     status: int
+    issuer_cancelable: bool
 
 
 class TransferApprovalHistoryResponse(BaseModel):

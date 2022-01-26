@@ -53,3 +53,8 @@ class TransferApprovalsSortItem(str, Enum):
     APPLICATION_DATETIME = "application_datetime"
     APPROVAL_DATETIME = "approval_datetime"
     STATUS = "status"
+
+
+class UpdateTransferApprovalOperationType(str, Enum):
+    APPROVE = "approve"
+    CANCEL = "cancel"
