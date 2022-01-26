@@ -1218,7 +1218,7 @@ def list_token_transfer_approval_history(
     "/transfer_approvals/{token_address}/{id}",
     responses=get_routers_responses(422, 401, 404, InvalidParameterError)
 )
-def update_approve_transfer(
+def update_transfer_approval(
         request: Request,
         token_address: str,
         id: int,
@@ -1227,7 +1227,7 @@ def update_approve_transfer(
         eoa_password: Optional[str] = Header(None),
         db: Session = Depends(db_session)
 ):
-    """Update bond token transfer approval"""
+    """Update on the status of a bond transfer approval"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address),
@@ -1267,6 +1267,7 @@ def update_approve_transfer(
         raise InvalidParameterError("canceled application")
     if data.operation_type == UpdateTransferApprovalOperationType.CANCEL and \
             _transfer_approval.exchange_address is not None:
+        # Cancellation is possible only against approval of the transfer of a token contract.
         raise InvalidParameterError("application that cannot be canceled")
 
     # Check manually approval
@@ -1277,6 +1278,10 @@ def update_approve_transfer(
         raise InvalidParameterError("token is automatic approval")
 
     # Send transaction
+    #  - APPROVE -> approveTransfer
+    #    In the case of a transfer approval for a token, if the transaction is reverted,
+    #    a cancelTransfer is performed immediately.
+    #  - CANCEL -> cancelTransfer
     try:
         now = str(datetime.utcnow().timestamp())
         if data.operation_type == UpdateTransferApprovalOperationType.APPROVE:
