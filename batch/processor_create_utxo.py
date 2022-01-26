@@ -184,6 +184,17 @@ class Processor:
         self.db.merge(_utxo_block_number)
 
     def __process_transfer(self, token_contract, block_from: int, block_to: int):
+        """Process Transfer Event
+
+        - The process of updating UTXO data by capturing the following events
+        - `Transfer` event on Token contracts
+        - `HolderChanged` event on Exchange contracts
+
+        :param token_contract: Token contract
+        :param block_from: Block from
+        :param block_to: Block to
+        :return: Whether events have occurred or not
+        """
         try:
             # Get exchange contract address
             exchange_contract_address = ContractUtils.call_function(
@@ -279,6 +290,16 @@ class Processor:
             return False
 
     def __process_issue(self, token_contract, block_from: int, block_to: int):
+        """Process Issue Event
+
+        - The process of updating UTXO data by capturing the following events
+        - `Issue` event on Token contracts
+
+        :param token_contract: Token contract
+        :param block_from: Block from
+        :param block_to: Block to
+        :return: Whether events have occurred or not
+        """
         try:
             # Get "Issue" events from token contract
             events = token_contract.events.Issue.getLogs(
