@@ -44,7 +44,9 @@ from app.model.schema import (
     IbetShareTransfer,
     IbetStraightBondTransfer,
     IbetStraightBondUpdate,
-    IbetShareUpdate
+    IbetShareUpdate,
+    IbetStraightBondAdd,
+    IbetShareAdd
 )
 from app.utils.contract_utils import ContractUtils
 from batch.processor_create_utxo import (
@@ -122,7 +124,6 @@ class TestProcessor:
     # <Normal_1>
     # Execute Batch Run 1st: No Event
     # Execute Batch Run 2nd: Executed Transfer Event
-    # Localized:JPN
     @mock.patch("batch.processor_create_utxo.create_ledger")
     def test_normal_1(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
@@ -498,6 +499,78 @@ class TestProcessor:
         _utox_list = db.query(UTXO).all()
         assert len(_utox_list) == 0
         mock_func.assert_not_called()
+
+    # <Normal_5>
+    # Add Supply
+    @mock.patch("batch.processor_create_utxo.create_ledger")
+    def test_normal_5(self, mock_func, processor, db):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"],
+            password="password".encode("utf-8")
+        )
+        user_2 = config_eth_account("user2")
+        user_address_1 = user_2["address"]
+        user_3 = config_eth_account("user3")
+        user_address_2 = user_3["address"]
+
+        # prepare data
+        token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key)
+        _token_1 = Token()
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND
+        _token_1.tx_hash = ""
+        _token_1.issuer_address = issuer_address
+        _token_1.token_address = token_address_1
+        _token_1.abi = {}
+        db.add(_token_1)
+
+        token_address_2 = deploy_share_token_contract(issuer_address, issuer_private_key)
+        _token_2 = Token()
+        _token_2.type = TokenType.IBET_SHARE
+        _token_2.tx_hash = ""
+        _token_2.issuer_address = issuer_address
+        _token_2.token_address = token_address_2
+        _token_2.abi = {}
+        db.add(_token_2)
+
+        # Execute Issue Event
+        # Share
+        _add_supply_1 = IbetShareAdd(
+            account_address=user_address_1,
+            amount=70
+        )
+        IbetShareContract.add_supply(token_address_1, _add_supply_1, issuer_address, issuer_private_key)
+        time.sleep(1)
+
+        # Bond
+        _add_supply_2 = IbetStraightBondAdd(
+            account_address=user_address_2,
+            amount=80
+        )
+        IbetStraightBondContract.add_supply(token_address_2, _add_supply_2, issuer_address, issuer_private_key)
+        time.sleep(1)
+
+        # Execute batch
+        latest_block = web3.eth.blockNumber
+        processor.process()
+
+        # assertion
+        _utox_list = db.query(UTXO).order_by(UTXO.created).all()
+        assert len(_utox_list) == 2
+        _utox = _utox_list[0]
+        assert _utox.transaction_hash is not None
+        assert _utox.account_address == user_address_1
+        assert _utox.token_address == token_address_1
+        assert _utox.amount == 70
+        _utox = _utox_list[1]
+        assert _utox.transaction_hash is not None
+        assert _utox.account_address == user_address_2
+        assert _utox.token_address == token_address_2
+        assert _utox.amount == 80
+
+        _utox_block_number = db.query(UTXOBlockNumber).first()
+        assert _utox_block_number.latest_block_number == latest_block
 
     ###########################################################################
     # Error Case

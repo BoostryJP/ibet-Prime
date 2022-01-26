@@ -105,7 +105,7 @@ class IbetStandardTokenInterface:
         return balance
 
     @staticmethod
-    def is_token_attr_update(contract_address: str, base_datetime: datetime):
+    def is_token_attr_updated(contract_address: str, base_datetime: datetime):
         db_session = Session(autocommit=False, autoflush=True, bind=engine)
         is_updated = False
         try:
@@ -240,7 +240,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             if contract_address in IbetStraightBondContract.cache:
                 token_cache = IbetStraightBondContract.cache[contract_address]
                 is_updated = \
-                    IbetStraightBondContract.is_token_attr_update(contract_address, token_cache.get("cached_datetime"))
+                    IbetStraightBondContract.is_token_attr_updated(contract_address, token_cache.get("cached_datetime"))
                 if is_updated is False and token_cache.get("expiration_datetime") > datetime.utcnow():
                     # Get data from cache
                     bond_token = IbetStraightBondContract()
@@ -701,7 +701,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
             if contract_address in IbetShareContract.cache:
                 token_cache = IbetShareContract.cache[contract_address]
                 is_updated = \
-                    IbetShareContract.is_token_attr_update(contract_address, token_cache.get("cached_datetime"))
+                    IbetShareContract.is_token_attr_updated(contract_address, token_cache.get("cached_datetime"))
                 if is_updated is False and token_cache.get("expiration_datetime") > datetime.utcnow():
                     # Get data from cache
                     share_token = IbetShareContract()

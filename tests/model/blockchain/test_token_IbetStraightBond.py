@@ -1761,7 +1761,7 @@ class TestGetAccountBalance:
             )
 
 
-class TestIsTokenAttrUpdate:
+class TestIsTokenAttrUpdated:
     token_address = "0x0123456789abcDEF0123456789abCDef01234567"
 
     ###########################################################################
@@ -1774,7 +1774,7 @@ class TestIsTokenAttrUpdate:
         before_datetime = datetime.utcnow()
 
         # Test
-        result = IbetStraightBondContract.is_token_attr_update(self.token_address, before_datetime)
+        result = IbetStraightBondContract.is_token_attr_updated(self.token_address, before_datetime)
 
         # assertion
         assert result is False
@@ -1794,7 +1794,7 @@ class TestIsTokenAttrUpdate:
         db.commit()
 
         # Test
-        result = IbetStraightBondContract.is_token_attr_update(self.token_address, after_datetime)
+        result = IbetStraightBondContract.is_token_attr_updated(self.token_address, after_datetime)
 
         # assertion
         assert result is False
@@ -1814,7 +1814,7 @@ class TestIsTokenAttrUpdate:
         db.commit()
 
         # Test
-        result = IbetStraightBondContract.is_token_attr_update(self.token_address, before_datetime)
+        result = IbetStraightBondContract.is_token_attr_updated(self.token_address, before_datetime)
 
         # assertion
         assert result is True

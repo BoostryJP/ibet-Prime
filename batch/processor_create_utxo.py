@@ -144,7 +144,10 @@ class Processor:
                 block_to = block_from + CREATE_UTXO_BLOCK_LOT_MAX_SIZE - 1
             LOG.info(f"syncing from={block_from}, to={block_to}")
             for token_contract in self.token_contract_list:
-                self.__process_transfer(token_contract, block_from, block_to)
+                event_triggered = False
+                event_triggered = event_triggered | self.__process_transfer(token_contract, block_from, block_to)
+                event_triggered = event_triggered | self.__process_issue(token_contract, block_from, block_to)
+                self.__process_event_triggered(token_contract, event_triggered)
             self.__set_utxo_block_number(block_to)
             self.sink.flush()
 
@@ -270,6 +273,51 @@ class Processor:
                         block_timestamp=block_timestamp
                     )
 
+            return event_triggered
+        except Exception as e:
+            LOG.exception(e)
+            return False
+
+    def __process_issue(self, token_contract, block_from: int, block_to: int):
+        try:
+            # Get "Issue" events from token contract
+            events = token_contract.events.Issue.getLogs(
+                fromBlock=block_from,
+                toBlock=block_to
+            )
+
+            # Sink
+            event_triggered = False
+            for event in events:
+                args = event["args"]
+                account = args.get("targetAddress", ZERO_ADDRESS)
+                amount = args.get("amount")
+
+                transaction_hash = event["transactionHash"].hex()
+                block_number = event["blockNumber"]
+                block_timestamp = datetime.utcfromtimestamp(web3.eth.get_block(block_number)["timestamp"])  # UTC
+
+                if amount is not None and amount <= sys.maxsize:
+                    event_triggered = True
+
+                    # Update UTXO
+                    self.sink.on_utxo(
+                        spent=False,
+                        transaction_hash=transaction_hash,
+                        token_address=token_contract.address,
+                        account_address=account,
+                        amount=amount,
+                        block_number=block_number,
+                        block_timestamp=block_timestamp
+                    )
+
+            return event_triggered
+        except Exception as e:
+            LOG.exception(e)
+            return False
+
+    def __process_event_triggered(self, token_contract, event_triggered: bool):
+        try:
             if event_triggered is True:
                 # Create Ledger
                 create_ledger(token_contract.address, self.db)
