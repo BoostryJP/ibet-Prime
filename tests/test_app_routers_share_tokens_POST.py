@@ -16,8 +16,14 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from unittest.mock import patch
-from unittest.mock import ANY
+from unittest.mock import (
+    ANY,
+    patch
+)
+from datetime import (
+    datetime,
+    timezone
+)
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
@@ -32,8 +38,10 @@ from app.model.db import (
     TokenType,
     AdditionalTokenInfo,
     UpdateToken,
-    IDXPosition
+    IDXPosition,
+    UTXO
 )
+from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from app.model.blockchain.token import IbetShareContract
 from app.model.blockchain.token_list import TokenListContract
@@ -74,9 +82,17 @@ class TestAppRoutersShareTokensPOST:
             target="app.model.blockchain.token_list.TokenListContract.register",
             return_value=None
         )
+        ContractUtils_get_block_by_transaction_hash = patch(
+            target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
+            return_value={
+                "number": 12345,
+                "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=timezone.utc).timestamp()
+            }
+        )
 
         with IbetShareContract_create, \
-                TokenListContract_register:
+                TokenListContract_register, \
+                ContractUtils_get_block_by_transaction_hash:
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -114,6 +130,9 @@ class TestAppRoutersShareTokensPOST:
                 account_address=test_account["address"],
                 private_key=ANY
             )
+            ContractUtils.get_block_by_transaction_hash(
+                tx_hash="tx_hash_test1"
+            )
 
             assert resp.status_code == 200
             assert resp.json()["token_address"] == "contract_address_test1"
@@ -138,6 +157,14 @@ class TestAppRoutersShareTokensPOST:
             assert position.exchange_balance == 0
             assert position.exchange_commitment == 0
             assert position.pending_transfer == 0
+
+            utxo = db.query(UTXO).first()
+            assert utxo.transaction_hash == "tx_hash_test1"
+            assert utxo.account_address == test_account["address"]
+            assert utxo.token_address == "contract_address_test1"
+            assert utxo.amount == req_param["total_supply"]
+            assert utxo.block_number == 12345
+            assert utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
 
             update_token = db.query(UpdateToken).first()
             assert update_token is None
@@ -169,9 +196,17 @@ class TestAppRoutersShareTokensPOST:
             target="app.model.blockchain.token_list.TokenListContract.register",
             return_value=None
         )
+        ContractUtils_get_block_by_transaction_hash = patch(
+            target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
+            return_value={
+                "number": 12345,
+                "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=timezone.utc).timestamp()
+            }
+        )
 
         with IbetShareContract_create, \
-                TokenListContract_register:
+                TokenListContract_register, \
+                ContractUtils_get_block_by_transaction_hash:
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -204,6 +239,9 @@ class TestAppRoutersShareTokensPOST:
                 account_address=test_account["address"],
                 private_key=ANY
             )
+            ContractUtils.get_block_by_transaction_hash(
+                tx_hash="tx_hash_test1"
+            )
 
             assert resp.status_code == 200
             assert resp.json()["token_address"] == "contract_address_test1"
@@ -228,6 +266,14 @@ class TestAppRoutersShareTokensPOST:
             assert position.exchange_balance == 0
             assert position.exchange_commitment == 0
             assert position.pending_transfer == 0
+
+            utxo = db.query(UTXO).first()
+            assert utxo.transaction_hash == "tx_hash_test1"
+            assert utxo.account_address == test_account["address"]
+            assert utxo.token_address == "contract_address_test1"
+            assert utxo.amount == req_param["total_supply"]
+            assert utxo.block_number == 12345
+            assert utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
 
             update_token = db.query(UpdateToken).first()
             assert update_token is None
@@ -258,9 +304,17 @@ class TestAppRoutersShareTokensPOST:
             target="app.model.blockchain.token_list.TokenListContract.register",
             return_value=None
         )
+        ContractUtils_get_block_by_transaction_hash = patch(
+            target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
+            return_value={
+                "number": 12345,
+                "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=timezone.utc).timestamp()
+            }
+        )
 
         with IbetShareContract_create, \
-                TokenListContract_register:
+                TokenListContract_register, \
+                ContractUtils_get_block_by_transaction_hash:
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -302,6 +356,7 @@ class TestAppRoutersShareTokensPOST:
                 private_key=ANY
             )
             TokenListContract.register.assert_not_called()
+            ContractUtils.get_block_by_transaction_hash.assert_not_called()
 
             assert resp.status_code == 200
             assert resp.json()["token_address"] == "contract_address_test1"
@@ -321,6 +376,9 @@ class TestAppRoutersShareTokensPOST:
 
             position = db.query(IDXPosition).first()
             assert position is None
+
+            utxo = db.query(UTXO).first()
+            assert utxo is None
 
             update_token = db.query(UpdateToken).first()
             assert update_token.id == 1

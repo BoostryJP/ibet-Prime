@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import pytest
+import time
 from unittest import mock
 from binascii import Error
 from datetime import datetime
@@ -1827,6 +1828,117 @@ class TestGetAccountBalance:
                 contract_address,
                 issuer_address[:-1]  # short
             )
+
+
+class TestIsTokenAttrUpdated:
+    token_address = "0x0123456789abcDEF0123456789abCDef01234567"
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    # not exists
+    def test_normal_1(self, db):
+        before_datetime = datetime.utcnow()
+
+        # Test
+        result = IbetShareContract.is_token_attr_updated(self.token_address, before_datetime)
+
+        # assertion
+        assert result is False
+
+    # <Normal_2>
+    # prev data exists
+    def test_normal_2(self, db):
+        before_datetime = datetime.utcnow()
+        time.sleep(1)
+        after_datetime = datetime.utcnow()
+
+        # prepare data
+        _update = TokenAttrUpdate()
+        _update.token_address = self.token_address
+        _update.updated_datetime = before_datetime
+        db.add(_update)
+        db.commit()
+
+        # Test
+        result = IbetShareContract.is_token_attr_updated(self.token_address, after_datetime)
+
+        # assertion
+        assert result is False
+
+    # <Normal_3>
+    # next data exists
+    def test_normal_3(self, db):
+        before_datetime = datetime.utcnow()
+        time.sleep(1)
+        after_datetime = datetime.utcnow()
+
+        # prepare data
+        _update = TokenAttrUpdate()
+        _update.token_address = self.token_address
+        _update.updated_datetime = after_datetime
+        db.add(_update)
+        db.commit()
+
+        # Test
+        result = IbetShareContract.is_token_attr_updated(self.token_address, before_datetime)
+
+        # assertion
+        assert result is True
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+
+class TestSetTokenAttrUpdate:
+    token_address = "0x0123456789abcDEF0123456789abCDef01234567"
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    # data not exists
+    @pytest.mark.freeze_time('2021-04-27 12:34:56')
+    def test_normal_1(self, db):
+        # Test
+        IbetShareContract.set_token_attr_update(self.token_address)
+
+        # assertion
+        _update = db.query(TokenAttrUpdate).first()
+        assert _update.id == 1
+        assert _update.token_address == self.token_address
+        assert _update.updated_datetime == datetime(2021, 4, 27, 12, 34, 56)
+
+    # <Normal_2>
+    # data exists
+    def test_normal_2(self, db, freezer):
+
+        # prepare data
+        _update = TokenAttrUpdate()
+        _update.token_address = self.token_address
+        _update.updated_datetime = datetime.utcnow()
+        db.add(_update)
+        db.commit()
+
+        # Mock datetime
+        freezer.move_to('2021-04-27 12:34:56')
+
+        # Test
+        IbetShareContract.set_token_attr_update(self.token_address)
+
+        # assertion
+        _update = db.query(TokenAttrUpdate).filter(TokenAttrUpdate.id == 2).first()
+        assert _update.id == 2
+        assert _update.token_address == self.token_address
+        assert _update.updated_datetime == datetime(2021, 4, 27, 12, 34, 56)
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
 
 
 class TestApproveTransfer:

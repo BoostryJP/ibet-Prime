@@ -77,6 +77,7 @@ from app.model.schema.types import (
     TransferApprovalsSortItem,
     UpdateTransferApprovalOperationType
 )
+from app.utils.contract_utils import ContractUtils
 from app.utils.check_utils import (
     validate_headers,
     address_is_valid_address,
@@ -97,7 +98,8 @@ from app.model.db import (
     BulkTransferUpload,
     IDXTransfer,
     IDXTransferApproval,
-    ScheduledEvents
+    ScheduledEvents,
+    UTXO
 )
 from app.model.blockchain import (
     IbetShareContract,
@@ -218,6 +220,17 @@ def issue_token(
         _position.exchange_commitment = 0
         _position.pending_transfer = 0
         db.add(_position)
+
+        # Insert issuer's UTXO data
+        block = ContractUtils.get_block_by_transaction_hash(tx_hash)
+        _utxo = UTXO()
+        _utxo.transaction_hash = tx_hash
+        _utxo.account_address = issuer_address
+        _utxo.token_address = contract_address
+        _utxo.amount = token.total_supply
+        _utxo.block_number = block["number"]
+        _utxo.block_timestamp = datetime.utcfromtimestamp(block["timestamp"])
+        db.add(_utxo)
 
         token_status = 1  # succeeded
 
