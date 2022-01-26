@@ -32,7 +32,8 @@ sys.path.append(path)
 
 from config import (
     CHAIN_ID,
-    TX_GAS_LIMIT
+    TX_GAS_LIMIT,
+    ZERO_ADDRESS
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
@@ -74,9 +75,12 @@ class PersonalInfoContract:
         }
 
         # Get encrypted personal information
-        personal_info_state = self.personal_info_contract.functions. \
-            personal_info(account_address, self.issuer.issuer_address). \
-            call()
+        personal_info_state = ContractUtils.call_function(
+            contract=self.personal_info_contract,
+            function_name="personal_info",
+            args=(account_address, self.issuer.issuer_address,),
+            default_returns=[ZERO_ADDRESS, ZERO_ADDRESS, ""]
+        )
         encrypted_info = personal_info_state[2]
 
         if encrypted_info == "":
