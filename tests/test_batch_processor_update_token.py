@@ -17,7 +17,15 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import pytest
-from unittest.mock import patch, ANY, call
+from unittest.mock import (
+    patch,
+    ANY,
+    call
+)
+from datetime import (
+    datetime,
+    timezone
+)
 
 from config import TOKEN_LIST_CONTRACT_ADDRESS
 from app.model.schema import (
@@ -31,7 +39,8 @@ from app.model.db import (
     UpdateToken,
     IDXPosition,
     Notification,
-    NotificationType
+    NotificationType,
+    UTXO
 )
 from app.utils.e2ee_utils import E2EEUtils
 from app.exceptions import SendTransactionError
@@ -76,7 +85,7 @@ class TestProcessor:
 
         _token_1 = Token()
         _token_1.type = TokenType.IBET_SHARE
-        _token_1.tx_hash = ""
+        _token_1.tx_hash = "tx_hash_1"
         _token_1.issuer_address = _issuer_address
         _token_1.token_address = _token_address_1
         _token_1.abi = ""
@@ -113,7 +122,7 @@ class TestProcessor:
 
         _token_2 = Token()
         _token_2.type = TokenType.IBET_STRAIGHT_BOND
-        _token_2.tx_hash = ""
+        _token_2.tx_hash = "tx_hash_2"
         _token_2.issuer_address = _issuer_address
         _token_2.token_address = _token_address_2
         _token_2.abi = ""
@@ -170,12 +179,18 @@ class TestProcessor:
         _update_token_4.trigger = "Issue"
         db.add(_update_token_4)
 
+        mock_block = {
+            "number": 12345,
+            "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=timezone.utc).timestamp()
+        }
         with patch(target="app.model.blockchain.token.IbetShareContract.update",
                    return_value=None) as IbetShareContract_update, \
                 patch(target="app.model.blockchain.token.IbetStraightBondContract.update",
                       return_value=None) as IbetStraightBondContract_update, \
                 patch(target="app.model.blockchain.token_list.TokenListContract.register",
-                      return_value=None) as TokenListContract_register:
+                      return_value=None) as TokenListContract_register, \
+                patch(target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
+                      return_value=mock_block) as ContractUtils_get_block_by_transaction_hash:
             # Execute batch
             processor.process()
 
@@ -233,6 +248,11 @@ class TestProcessor:
                      private_key=ANY),
             ])
 
+            ContractUtils_get_block_by_transaction_hash.assert_has_calls([
+                call("tx_hash_1"),
+                call("tx_hash_2"),
+            ])
+
             # assertion(DB)
             _idx_position_list = db.query(IDXPosition).order_by(IDXPosition.id).all()
             assert len(_idx_position_list) == 2
@@ -250,6 +270,22 @@ class TestProcessor:
             assert _idx_position.exchange_balance == 0
             assert _idx_position.exchange_commitment == 0
             assert _idx_position.pending_transfer == 0
+
+            _utxo_list = db.query(UTXO).order_by(UTXO.transaction_hash).all()
+            _utxo = _utxo_list[0]
+            assert _utxo.transaction_hash == "tx_hash_1"
+            assert _utxo.account_address == _issuer_address
+            assert _utxo.token_address == _token_address_1
+            assert _utxo.amount == 10000
+            assert _utxo.block_number == 12345
+            assert _utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
+            _utxo = _utxo_list[1]
+            assert _utxo.transaction_hash == "tx_hash_2"
+            assert _utxo.account_address == _issuer_address
+            assert _utxo.token_address == _token_address_2
+            assert _utxo.amount == 2000
+            assert _utxo.block_number == 12345
+            assert _utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
 
             _token_list = db.query(Token).order_by(Token.id).all()
             _token = _token_list[0]
@@ -394,6 +430,9 @@ class TestProcessor:
         # assertion(DB)
         _idx_position_list = db.query(IDXPosition).order_by(IDXPosition.id).all()
         assert len(_idx_position_list) == 0
+
+        _utxo_list = db.query(UTXO).order_by(UTXO.transaction_hash).all()
+        assert len(_utxo_list) == 0
 
         _token_list = db.query(Token).order_by(Token.id).all()
         _token = _token_list[0]
@@ -597,6 +636,9 @@ class TestProcessor:
         # assertion(DB)
         _idx_position_list = db.query(IDXPosition).order_by(IDXPosition.id).all()
         assert len(_idx_position_list) == 0
+
+        _utxo_list = db.query(UTXO).order_by(UTXO.transaction_hash).all()
+        assert len(_utxo_list) == 0
 
         _token_list = db.query(Token).order_by(Token.id).all()
         _token = _token_list[0]
@@ -804,6 +846,9 @@ class TestProcessor:
             # assertion(DB)
             _idx_position_list = db.query(IDXPosition).order_by(IDXPosition.id).all()
             assert len(_idx_position_list) == 0
+
+            _utxo_list = db.query(UTXO).order_by(UTXO.transaction_hash).all()
+            assert len(_utxo_list) == 0
 
             _token_list = db.query(Token).order_by(Token.id).all()
             _token = _token_list[0]
@@ -1054,6 +1099,9 @@ class TestProcessor:
             # assertion(DB)
             _idx_position_list = db.query(IDXPosition).order_by(IDXPosition.id).all()
             assert len(_idx_position_list) == 0
+
+            _utxo_list = db.query(UTXO).order_by(UTXO.transaction_hash).all()
+            assert len(_utxo_list) == 0
 
             _token_list = db.query(Token).order_by(Token.id).all()
             _token = _token_list[0]

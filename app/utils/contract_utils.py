@@ -18,7 +18,6 @@ SPDX-License-Identifier: Apache-2.0
 """
 from typing import Tuple
 import json
-from datetime import datetime
 
 from web3 import contract
 from web3.exceptions import (
@@ -26,10 +25,7 @@ from web3.exceptions import (
     BadFunctionCallOutput
 )
 from eth_utils import to_checksum_address
-from sqlalchemy import (
-    create_engine,
-    desc
-)
+from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
@@ -38,8 +34,6 @@ from config import (
     TX_GAS_LIMIT,
     DATABASE_URL
 )
-from app.database import engine
-from app.model.db import TokenAttrUpdate
 from app.utils.web3_utils import Web3Wrapper
 from app.exceptions import SendTransactionError
 from app.model.db import TransactionLock
@@ -216,29 +210,12 @@ class ContractUtils:
         return tx_hash.hex(), tx_receipt
 
     @staticmethod
-    def is_token_attr_update(contract_address: str, base_datetime: datetime):
-        db_session = Session(autocommit=False, autoflush=True, bind=engine)
-        is_updated = False
-        try:
-            _token_attr_update = db_session.query(TokenAttrUpdate). \
-                filter(TokenAttrUpdate.token_address == contract_address). \
-                order_by(desc(TokenAttrUpdate.id)). \
-                first()
-            if _token_attr_update is not None \
-                    and _token_attr_update.updated_datetime > base_datetime:
-                is_updated = True
-        finally:
-            db_session.close()
-        return is_updated
+    def get_block_by_transaction_hash(tx_hash: str):
+        """Get block by transaction hash
 
-    @staticmethod
-    def set_token_attr_update(contract_address: str):
-        db_session = Session(autocommit=False, autoflush=True, bind=engine)
-        try:
-            _token_attr_update = TokenAttrUpdate()
-            _token_attr_update.token_address = contract_address
-            _token_attr_update.updated_datetime = datetime.utcnow()
-            db_session.add(_token_attr_update)
-            db_session.commit()
-        finally:
-            db_session.close()
+        :param tx_hash: transaction hash
+        :return: block
+        """
+        tx = web3.eth.getTransaction(tx_hash)
+        block = web3.eth.get_block(tx["blockNumber"])
+        return block

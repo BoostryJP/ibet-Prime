@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from datetime import datetime
 from typing import List
 import os
 import sys
@@ -37,6 +38,7 @@ from config import (
     UPDATE_TOKEN_INTERVAL,
     TOKEN_LIST_CONTRACT_ADDRESS
 )
+from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from app.model.db import (
     Account,
@@ -45,7 +47,8 @@ from app.model.db import (
     UpdateToken,
     Notification,
     NotificationType,
-    IDXPosition
+    IDXPosition,
+    UTXO
 )
 from app.model.blockchain import (
     IbetStraightBondContract,
@@ -268,6 +271,20 @@ class Processor:
                     _position.exchange_commitment = 0
                     _position.pending_transfer = 0
                     self.db.add(_position)
+
+                    # Insert issuer's UTXO data
+                    _token = self.db.query(Token). \
+                        filter(Token.token_address == _update_token.token_address). \
+                        first()
+                    block = ContractUtils.get_block_by_transaction_hash(_token.tx_hash)
+                    _utxo = UTXO()
+                    _utxo.transaction_hash = _token.tx_hash
+                    _utxo.account_address = _update_token.issuer_address
+                    _utxo.token_address = _update_token.token_address
+                    _utxo.amount = _update_token.arguments.get("total_supply")
+                    _utxo.block_number = block["number"]
+                    _utxo.block_timestamp = datetime.utcfromtimestamp(block["timestamp"])
+                    self.db.add(_utxo)
 
                 self.sink.on_finish_update_process(
                     record_id=_update_token.id,
