@@ -46,6 +46,7 @@ from app.model.blockchain import (
     IbetShareContract,
     IbetStraightBondContract
 )
+from app.utils.contract_utils import ContractUtils
 import batch_log
 
 process_name = "PROCESSOR-Modify-Personal-Info"
@@ -115,10 +116,12 @@ class Processor:
 
                 # Get target PersonalInfo contract accessor
                 for contract_accessor in contract_accessor_list:
-                    is_registered = contract_accessor. \
-                        personal_info_contract.functions. \
-                        isRegistered(idx_personal_info.account_address, idx_personal_info.issuer_address). \
-                        call()
+                    is_registered = ContractUtils.call_function(
+                        contract=contract_accessor.personal_info_contract,
+                        function_name="isRegistered",
+                        args=(idx_personal_info.account_address, idx_personal_info.issuer_address,),
+                        default_returns=False
+                    )
                     if is_registered:
                         target_contract_accessor = contract_accessor
                         break
@@ -170,9 +173,12 @@ class Processor:
     def __modify_personal_info(self, temporary, idx_personal_info, personal_info_contract_accessor):
 
         # Unset information assumes completed.
-        personal_info_state = personal_info_contract_accessor.personal_info_contract.functions. \
-            personal_info(idx_personal_info.account_address, idx_personal_info.issuer_address). \
-            call()
+        personal_info_state = ContractUtils.call_function(
+            contract=personal_info_contract_accessor.personal_info_contract,
+            function_name="personal_info",
+            args=(idx_personal_info.account_address, idx_personal_info.issuer_address,),
+            default_returns=[ZERO_ADDRESS, ZERO_ADDRESS, ""]
+        )
         encrypted_info = personal_info_state[2]
         if encrypted_info == "":
             return False
