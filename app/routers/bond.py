@@ -53,6 +53,7 @@ from app.model.schema import (
     IbetStraightBondUpdate,
     IbetStraightBondTransfer,
     IbetStraightBondAdd,
+    IbetStraightBondRedeem,
     IbetStraightBondResponse,
     TokenAddressResponse,
     HolderResponse,
@@ -434,7 +435,7 @@ def update_token(
 def additional_issue(
         request: Request,
         token_address: str,
-        token: IbetStraightBondAdd,
+        data: IbetStraightBondAdd,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
@@ -470,7 +471,62 @@ def additional_issue(
     try:
         IbetStraightBondContract.add_supply(
             contract_address=token_address,
-            data=token,
+            data=data,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+    except SendTransactionError:
+        raise SendTransactionError("failed to send transaction")
+
+    return
+
+
+# POST: /bond/tokens/{token_address}/redeem
+@router.post(
+    "/tokens/{token_address}/redeem",
+    response_model=None,
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
+)
+def redemption_issue(
+        request: Request,
+        token_address: str,
+        data: IbetStraightBondRedeem,
+        issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Redeem token"""
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
+                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
+
+    # Authentication
+    _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
+
+    # Get private key
+    keyfile_json = _account.keyfile
+    private_key = decode_keyfile_json(
+        raw_keyfile_json=keyfile_json,
+        password=decrypt_password.encode("utf-8")
+    )
+
+    # Get Token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
+
+    # Send transaction
+    try:
+        IbetStraightBondContract.redeem_supply(
+            contract_address=token_address,
+            data=data,
             tx_from=issuer_address,
             private_key=private_key
         )
