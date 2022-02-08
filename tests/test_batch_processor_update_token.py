@@ -44,19 +44,13 @@ from app.model.db import (
 )
 from app.utils.e2ee_utils import E2EEUtils
 from app.exceptions import SendTransactionError
-from batch.processor_update_token import (
-    Sinks,
-    DBSink,
-    Processor
-)
+from batch.processor_update_token import Processor
 from tests.account_config import config_eth_account
 
 
 @pytest.fixture(scope="function")
 def processor(db):
-    _sink = Sinks()
-    _sink.register(DBSink(db))
-    return Processor(sink=_sink, db=db)
+    return Processor()
 
 
 class TestProcessor:
@@ -178,6 +172,8 @@ class TestProcessor:
         _update_token_4.status = 2
         _update_token_4.trigger = "Issue"
         db.add(_update_token_4)
+
+        db.commit()
 
         mock_block = {
             "number": 12345,
@@ -424,6 +420,8 @@ class TestProcessor:
         _update_token_4.trigger = "Issue"
         db.add(_update_token_4)
 
+        db.commit()
+
         # Execute batch
         processor.process()
 
@@ -630,6 +628,8 @@ class TestProcessor:
         _update_token_4.trigger = "Issue"
         db.add(_update_token_4)
 
+        db.commit()
+
         # Execute batch
         processor.process()
 
@@ -835,6 +835,8 @@ class TestProcessor:
         _update_token_4.status = 2
         _update_token_4.trigger = "Issue"
         db.add(_update_token_4)
+
+        db.commit()
 
         with patch(target="app.model.blockchain.token.IbetShareContract.update",
                    rside_effect=SendTransactionError()) as IbetShareContract_update, \
@@ -1045,6 +1047,8 @@ class TestProcessor:
         _update_token_4.status = 2
         _update_token_4.trigger = "Issue"
         db.add(_update_token_4)
+
+        db.commit()
 
         with patch(target="app.model.blockchain.token.IbetShareContract.update",
                    return_value=None) as IbetShareContract_update, \

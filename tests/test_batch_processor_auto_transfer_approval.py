@@ -39,20 +39,14 @@ from app.model.schema.token import (
     IbetSecurityTokenEscrowApproveTransfer
 )
 from app.exceptions import SendTransactionError
-from batch.processor_auto_transfer_approval import (
-    Sinks,
-    DBSink,
-    Processor
-)
+from batch.processor_auto_transfer_approval import Processor
 
 from tests.account_config import config_eth_account
 
 
 @pytest.fixture(scope="function")
 def processor(db):
-    _sink = Sinks()
-    _sink.register(DBSink(db))
-    return Processor(sink=_sink, db=db)
+    return Processor()
 
 
 class TestProcessor:
@@ -137,7 +131,6 @@ class TestProcessor:
         idx_transfer_approval_4.application_id = 0
         idx_transfer_approval_4.application_blocktimestamp = datetime.datetime.utcnow()
         db.add(idx_transfer_approval_4)
-        db.commit()
 
         # Prepare data : IDXTransferApproval(manually approval)
         idx_transfer_approval_5 = IDXTransferApproval()
@@ -145,20 +138,19 @@ class TestProcessor:
         idx_transfer_approval_5.application_id = 0
         idx_transfer_approval_5.application_blocktimestamp = datetime.datetime(2020, 1, 1, 12, 59, 59)
         db.add(idx_transfer_approval_5)
-        db.commit()
 
         # Prepare data : AdditionalTokenInfo
         additional_token_info = AdditionalTokenInfo()
         additional_token_info.token_address = "token_address"
         additional_token_info.is_manual_transfer_approval = None
         db.add(additional_token_info)
-        db.commit()
 
         # Prepare data : AdditionalTokenInfo(manually approval)
         manual_additional_token_info = AdditionalTokenInfo()
         manual_additional_token_info.token_address = "manual_token_address"
         manual_additional_token_info.is_manual_transfer_approval = True
         db.add(manual_additional_token_info)
+
         db.commit()
 
         # mock
@@ -301,7 +293,6 @@ class TestProcessor:
         idx_transfer_approval_4.application_id = 0
         idx_transfer_approval_4.application_blocktimestamp = datetime.datetime.utcnow()
         db.add(idx_transfer_approval_4)
-        db.commit()
 
         # Prepare data : IDXTransferApproval(manually approval)
         idx_transfer_approval_5 = IDXTransferApproval()
@@ -309,20 +300,19 @@ class TestProcessor:
         idx_transfer_approval_5.application_id = 0
         idx_transfer_approval_5.application_blocktimestamp = datetime.datetime(2020, 1, 1, 12, 59, 59)
         db.add(idx_transfer_approval_5)
-        db.commit()
 
         # Prepare data : AdditionalTokenInf
         additional_token_info = AdditionalTokenInfo()
         additional_token_info.token_address = "token_address"
         additional_token_info.is_manual_transfer_approval = False
         db.add(additional_token_info)
-        db.commit()
 
         # Prepare data : AdditionalTokenInfo(manually approval)
         manual_additional_token_info = AdditionalTokenInfo()
         manual_additional_token_info.token_address = "manual_token_address"
         manual_additional_token_info.is_manual_transfer_approval = True
         db.add(manual_additional_token_info)
+
         db.commit()
 
         # mock
@@ -472,7 +462,6 @@ class TestProcessor:
         idx_transfer_approval_4.application_id = 0
         idx_transfer_approval_4.application_blocktimestamp = datetime.datetime.utcnow()
         db.add(idx_transfer_approval_4)
-        db.commit()
 
         # Prepare data : IDXTransferApproval(manually approval)
         idx_transfer_approval_5 = IDXTransferApproval()
@@ -481,13 +470,13 @@ class TestProcessor:
         idx_transfer_approval_5.application_id = 0
         idx_transfer_approval_5.application_blocktimestamp = datetime.datetime(2020, 1, 1, 12, 59, 59)
         db.add(idx_transfer_approval_5)
-        db.commit()
 
         # Prepare data : AdditionalTokenInfo(manually approval)
         manual_additional_token_info = AdditionalTokenInfo()
         manual_additional_token_info.token_address = "manual_token_address"
         manual_additional_token_info.is_manual_transfer_approval = True
         db.add(manual_additional_token_info)
+
         db.commit()
 
         # mock
@@ -597,6 +586,7 @@ class TestProcessor:
         idx_transfer_approval_1.application_blocktimestamp = datetime.datetime.utcnow()
         idx_transfer_approval_1.cancelled = True
         db.add(idx_transfer_approval_1)
+
         db.commit()
 
         # mock
@@ -687,6 +677,7 @@ class TestProcessor:
         idx_transfer_approval_1.application_blocktimestamp = datetime.datetime.utcnow()
         idx_transfer_approval_1.cancelled = True
         db.add(idx_transfer_approval_1)
+
         db.commit()
 
         # mock
@@ -774,6 +765,8 @@ class TestProcessor:
         idx_transfer_approval.application_blocktimestamp = datetime.datetime.utcnow()
         db.add(idx_transfer_approval)
 
+        db.commit()
+
         # mock
         IbetSecurityTokenContract_approve_transfer = patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
@@ -826,6 +819,7 @@ class TestProcessor:
         idx_transfer_approval.application_id = 0
         idx_transfer_approval.application_blocktimestamp = datetime.datetime.utcnow()
         db.add(idx_transfer_approval)
+
         db.commit()
 
         # mock

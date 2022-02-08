@@ -22,10 +22,8 @@ import time
 from typing import Any, Callable
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import (
-    sessionmaker,
-    scoped_session
-)
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from web3.types import (
@@ -45,14 +43,13 @@ from config import (
     BLOCK_GENERATION_SPEED_THRESHOLD
 )
 from app.model.db import Node
+from app.exceptions import ServiceUnavailableError
 import batch_log
 
 process_name = "PROCESSOR-Monitor-Block-Sync"
 LOG = batch_log.get_logger(process_name=process_name)
 
-engine = create_engine(DATABASE_URL, echo=False)
-db_session = scoped_session(sessionmaker())
-db_session.configure(bind=engine)
+db_engine = create_engine(DATABASE_URL, echo=False)
 
 
 class Web3WrapperException(Exception):
@@ -86,42 +83,6 @@ def web3_exception_handler_middleware(
 EXPECTED_BLOCKS_PER_SEC = 1
 
 
-class Sinks:
-    def __init__(self):
-        self.sinks = []
-
-    def register(self, sink):
-        self.sinks.append(sink)
-
-    def on_node(self, *args, **kwargs):
-        for sink in self.sinks:
-            sink.on_node(*args, **kwargs)
-
-    def flush(self, *args, **kwargs):
-        for sink in self.sinks:
-            sink.flush(*args, **kwargs)
-
-
-class DBSink:
-    def __init__(self, db):
-        self.db = db
-
-    def on_node(self, endpoint_uri: str, priority: int, is_synced: bool):
-        _node = self.db.query(Node).filter(Node.endpoint_uri == endpoint_uri).first()
-        if _node is not None:
-            _node.is_synced = is_synced
-            self.db.merge(_node)
-        else:
-            _node = Node()
-            _node.endpoint_uri = endpoint_uri
-            _node.priority = priority
-            _node.is_synced = is_synced
-            self.db.add(_node)
-
-    def flush(self):
-        self.db.commit()
-
-
 class RingBuffer:
     def __init__(self, size, default=None):
         self._next = 0
@@ -136,25 +97,30 @@ class RingBuffer:
 
 
 class Processor:
-    def __init__(self, sink, db):
-        self.sink = sink
-        self.db = db
-        self.node_info = {}
-
-        self.__set_node_info(endpoint_uri=WEB3_HTTP_PROVIDER, priority=0)
-        for endpoint_uri in WEB3_HTTP_PROVIDER_STANDBY:
-            self.__set_node_info(endpoint_uri=endpoint_uri, priority=1)
-        self.sink.flush()
+    def __init__(self):
+        db_session = self.__get_db_session()
+        try:
+            self.node_info = {}
+            self.__set_node_info(db_session=db_session, endpoint_uri=WEB3_HTTP_PROVIDER, priority=0)
+            for endpoint_uri in WEB3_HTTP_PROVIDER_STANDBY:
+                self.__set_node_info(db_session=db_session, endpoint_uri=endpoint_uri, priority=1)
+            db_session.commit()
+        finally:
+            db_session.close()
 
     def process(self):
-        for endpoint_uri in self.node_info.keys():
-            try:
-                self.__process(endpoint_uri=endpoint_uri)
-            except Web3WrapperException:
-                self.__web3_errors(endpoint_uri=endpoint_uri)
-                LOG.error(f"Node connection failed: {endpoint_uri}")
+        db_session = self.__get_db_session()
+        try:
+            for endpoint_uri in self.node_info.keys():
+                try:
+                    self.__process(db_session=db_session, endpoint_uri=endpoint_uri)
+                except Web3WrapperException:
+                    self.__web3_errors(db_session=db_session, endpoint_uri=endpoint_uri)
+                    LOG.error(f"Node connection failed: {endpoint_uri}")
+        finally:
+            db_session.close()
 
-    def __set_node_info(self, endpoint_uri: str, priority: int):
+    def __set_node_info(self, db_session: Session, endpoint_uri: str, priority: int):
         self.node_info[endpoint_uri] = {
             "priority": priority
         }
@@ -170,7 +136,7 @@ class Processor:
             #       so the past block number is acquired.
             block = web3.eth.get_block(max(web3.eth.blockNumber - BLOCK_SYNC_STATUS_CALC_PERIOD, 0))
         except Web3WrapperException:
-            self.__web3_errors(endpoint_uri=endpoint_uri)
+            self.__web3_errors(db_session=db_session, endpoint_uri=endpoint_uri)
             LOG.error(f"Node connection failed: {endpoint_uri}")
             block = {
                 "timestamp": time.time(),
@@ -184,7 +150,7 @@ class Processor:
         history = RingBuffer(BLOCK_SYNC_STATUS_CALC_PERIOD, data)
         self.node_info[endpoint_uri]["history"] = history
 
-    def __process(self, endpoint_uri: str):
+    def __process(self, db_session: Session, endpoint_uri: str):
         is_synced = True
         errors = []
         priority = self.node_info[endpoint_uri]["priority"]
@@ -218,9 +184,14 @@ class Processor:
         history.append(data)
 
         # Update database
-        _node = self.db.query(Node).filter(Node.endpoint_uri == endpoint_uri).first()
+        _node = db_session.query(Node).filter(Node.endpoint_uri == endpoint_uri).first()
         status_changed = False if _node is not None and _node.is_synced == is_synced else True
-        self.sink.on_node(endpoint_uri=endpoint_uri, priority=priority, is_synced=is_synced)
+        self.__sink_on_node(
+            db_session=db_session,
+            endpoint_uri=endpoint_uri,
+            priority=priority,
+            is_synced=is_synced
+        )
 
         # Output logs
         if status_changed:
@@ -233,30 +204,52 @@ class Processor:
                 # If the same previous processing status, log output with WARING level.
                 LOG.warning(f"{endpoint_uri} Block synchronization is down: %s", errors)
 
-        self.sink.flush()
+        db_session.commit()
 
-    def __web3_errors(self, endpoint_uri: str):
+    def __web3_errors(self, db_session: Session, endpoint_uri: str):
         try:
             priority = self.node_info[endpoint_uri]["priority"]
-            self.sink.on_node(endpoint_uri=endpoint_uri, priority=priority, is_synced=False)
-            self.sink.flush()
+            self.__sink_on_node(
+                db_session=db_session,
+                endpoint_uri=endpoint_uri,
+                priority=priority,
+                is_synced=False
+            )
+            db_session.commit()
         except Exception as ex:
             # Unexpected errors(DB error, etc)
             LOG.exception(ex)
 
+    @staticmethod
+    def __get_db_session():
+        return Session(autocommit=False, autoflush=True, bind=db_engine)
 
-_sink = Sinks()
-_sink.register(DBSink(db_session))
-processor = Processor(sink=_sink, db=db_session)
+    @staticmethod
+    def __sink_on_node(db_session: Session, endpoint_uri: str, priority: int, is_synced: bool):
+        _node = db_session.query(Node).filter(Node.endpoint_uri == endpoint_uri).first()
+        if _node is not None:
+            _node.is_synced = is_synced
+            db_session.merge(_node)
+        else:
+            _node = Node()
+            _node.endpoint_uri = endpoint_uri
+            _node.priority = priority
+            _node.is_synced = is_synced
+            db_session.add(_node)
 
 
 def main():
     LOG.info("Service started successfully")
+    processor = Processor()
 
     while True:
         try:
             processor.process()
             LOG.debug("Processed")
+        except ServiceUnavailableError:
+            LOG.warning("An external service was unavailable")
+        except SQLAlchemyError as sa_err:
+            LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
         except Exception as ex:
             # Unexpected errors(DB error, etc)
             LOG.exception(ex)

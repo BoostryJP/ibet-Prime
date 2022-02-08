@@ -26,10 +26,8 @@ from sqlalchemy import (
     create_engine,
     or_
 )
-from sqlalchemy.orm import (
-    sessionmaker,
-    scoped_session
-)
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 
 path = os.path.join(os.path.dirname(__file__), '../')
 sys.path.append(path)
@@ -45,33 +43,55 @@ import batch_log
 process_name = "PROCESSOR-Generate-RSA-Key"
 LOG = batch_log.get_logger(process_name=process_name)
 
-engine = create_engine(DATABASE_URL, echo=False)
-db_session = scoped_session(sessionmaker())
-db_session.configure(bind=engine)
+db_engine = create_engine(DATABASE_URL, echo=False)
 
 
-class Sinks:
-    def __init__(self):
-        self.sinks = []
+class Processor:
 
-    def register(self, sink):
-        self.sinks.append(sink)
+    def process(self):
+        db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
+        try:
+            account_list = self.__get_account_list(db_session=db_session)
 
-    def on_completed(self, *args, **kwargs):
-        for sink in self.sinks:
-            sink.on_completed(*args, **kwargs)
+            for account in account_list:
+                # rsa_passphrase is encrypted, so decrypt it.
+                passphrase = E2EEUtils.decrypt(account.rsa_passphrase)
 
-    def flush(self, *args, **kwargs):
-        for sink in self.sinks:
-            sink.flush(*args, **kwargs)
+                LOG.info(f"Generate Start: issuer_address={account.issuer_address}")
+                rsa_private_pem, rsa_public_pem = self.__generate_rsa_key(passphrase)
+                LOG.info(f"Generate End: issuer_address={account.issuer_address}")
 
+                self.__sink_on_account(
+                    db_session=db_session,
+                    issuer_address=account.issuer_address,
+                    rsa_private_pem=rsa_private_pem,
+                    rsa_public_pem=rsa_public_pem
+                )
+                db_session.commit()
+        finally:
+            db_session.close()
 
-class DBSink:
-    def __init__(self, db):
-        self.db = db
+    def __get_account_list(self, db_session: Session):
+        account_list = db_session.query(Account). \
+            filter(
+            or_(
+                Account.rsa_status == AccountRsaStatus.CREATING.value,
+                Account.rsa_status == AccountRsaStatus.CHANGING.value)). \
+            all()
 
-    def on_completed(self, issuer_address, rsa_private_pem, rsa_public_pem):
-        account = self.db.query(Account). \
+        return account_list
+
+    def __generate_rsa_key(self, passphrase: str):
+        random_func = Random.new().read
+        rsa = RSA.generate(10240, random_func)
+        rsa_private_pem = rsa.exportKey(format="PEM", passphrase=passphrase).decode()
+        rsa_public_pem = rsa.publickey().exportKey().decode()
+
+        return rsa_private_pem, rsa_public_pem
+
+    @staticmethod
+    def __sink_on_account(db_session: Session, issuer_address: str, rsa_private_pem: str, rsa_public_pem: str):
+        account = db_session.query(Account). \
             filter(Account.issuer_address == issuer_address). \
             first()
         if account is not None:
@@ -83,62 +103,19 @@ class DBSink:
             account.rsa_private_key = rsa_private_pem
             account.rsa_public_key = rsa_public_pem
             account.rsa_status = rsa_status
-            self.db.merge(account)
-
-    def flush(self):
-        self.db.commit()
-
-
-class Processor:
-    def __init__(self, sink, db):
-        self.sink = sink
-        self.db = db
-
-    def process(self):
-        account_list = self.__get_account_list()
-
-        for account in account_list:
-            # rsa_passphrase is encrypted, so decrypt it.
-            passphrase = E2EEUtils.decrypt(account.rsa_passphrase)
-
-            LOG.info(f"Generate Start: issuer_address={account.issuer_address}")
-            rsa_private_pem, rsa_public_pem = self.__generate_rsa_key(passphrase)
-            LOG.info(f"Generate End: issuer_address={account.issuer_address}")
-
-            self.sink.on_completed(account.issuer_address, rsa_private_pem, rsa_public_pem)
-            self.sink.flush()
-
-    def __get_account_list(self):
-        account_list = self.db.query(Account). \
-            filter(
-            or_(
-                Account.rsa_status == AccountRsaStatus.CREATING.value,
-                Account.rsa_status == AccountRsaStatus.CHANGING.value)). \
-            all()
-
-        return account_list
-
-    def __generate_rsa_key(self, passphrase):
-        random_func = Random.new().read
-        rsa = RSA.generate(10240, random_func)
-        rsa_private_pem = rsa.exportKey(format="PEM", passphrase=passphrase).decode()
-        rsa_public_pem = rsa.publickey().exportKey().decode()
-
-        return rsa_private_pem, rsa_public_pem
-
-
-_sink = Sinks()
-_sink.register(DBSink(db_session))
-processor = Processor(sink=_sink, db=db_session)
+            db_session.merge(account)
 
 
 def main():
     LOG.info("Service started successfully")
+    processor = Processor()
 
     while True:
         try:
             processor.process()
             LOG.debug("Processed")
+        except SQLAlchemyError as sa_err:
+            LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
         except Exception as ex:
             LOG.exception(ex)
 

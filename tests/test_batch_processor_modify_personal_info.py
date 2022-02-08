@@ -22,13 +22,31 @@ from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from eth_keyfile import decode_keyfile_json
 
-from config import WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT
-from app.model.blockchain import IbetStraightBondContract, IbetShareContract, PersonalInfoContract
+from config import (
+WEB3_HTTP_PROVIDER,
+CHAIN_ID,
+TX_GAS_LIMIT
+)
+from app.model.blockchain import (
+IbetStraightBondContract,
+IbetShareContract,
+PersonalInfoContract
+)
 from app.utils.contract_utils import ContractUtils
-from app.model.db import Account, AccountRsaKeyTemporary, AccountRsaStatus, Token, TokenType, IDXPersonalInfo
+from app.model.db import (
+Account,
+AccountRsaKeyTemporary,
+AccountRsaStatus,
+Token,
+TokenType,
+IDXPersonalInfo
+)
 from app.utils.e2ee_utils import E2EEUtils
-from app.model.schema import IbetStraightBondUpdate, IbetShareUpdate
-from batch.processor_modify_personal_info import Sinks, DBSink, Processor
+from app.model.schema import (
+IbetStraightBondUpdate,
+IbetShareUpdate
+)
+from batch.processor_modify_personal_info import Processor
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
@@ -37,9 +55,7 @@ web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 @pytest.fixture(scope='function')
 def processor(db):
-    _sink = Sinks()
-    _sink.register(DBSink(db))
-    return Processor(sink=_sink, db=db)
+    return Processor()
 
 
 def deploy_personal_info_contract(issuer_user):
@@ -283,6 +299,8 @@ class TestProcessor:
                                        }
                                    ])
 
+        db.commit()
+
         # Execute batch(Run 1st)
         # Assume: Skip processing
         processor.process()
@@ -341,6 +359,8 @@ class TestProcessor:
         account.rsa_private_key = personal_user_1["rsa_private_key"]
         account.rsa_public_key = personal_user_1["rsa_public_key"]
         db.merge(account)
+
+        db.commit()
 
         # Execute batch(Run 2nd)
         # Assume: modified PersonalInfo, but DB not update
