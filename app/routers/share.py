@@ -52,7 +52,7 @@ from app.model.schema import (
     IbetShareCreate,
     IbetShareUpdate,
     IbetShareTransfer,
-    IbetShareAdd,
+    IbetShareAdditionalIssue,
     IbetShareRedeem,
     IbetShareResponse,
     TokenAddressResponse,
@@ -412,20 +412,20 @@ def update_token(
     return
 
 
-# POST: /share/tokens/{token_address}/add
+# POST: /share/tokens/{token_address}/additional_issue
 @router.post(
-    "/tokens/{token_address}/add",
+    "/tokens/{token_address}/additional_issue",
     response_model=None,
     responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
 )
 def additional_issue(
         request: Request,
         token_address: str,
-        data: IbetShareAdd,
+        data: IbetShareAdditionalIssue,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
-    """Add token"""
+    """Additional issue"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address),
@@ -455,7 +455,7 @@ def additional_issue(
 
     # Send transaction
     try:
-        IbetShareContract.add_supply(
+        IbetShareContract.additional_issue(
             contract_address=token_address,
             data=data,
             tx_from=issuer_address,
@@ -473,14 +473,14 @@ def additional_issue(
     response_model=None,
     responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
 )
-def redemption_issue(
+def redeem_token(
         request: Request,
         token_address: str,
         data: IbetShareRedeem,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
-    """Redeem token"""
+    """Redeem a token"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address),
@@ -510,7 +510,7 @@ def redemption_issue(
 
     # Send transaction
     try:
-        IbetShareContract.redeem_supply(
+        IbetShareContract.redeem(
             contract_address=token_address,
             data=data,
             tx_from=issuer_address,

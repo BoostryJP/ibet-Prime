@@ -37,7 +37,7 @@ from app.model.blockchain import IbetStraightBondContract
 from app.utils.contract_utils import ContractUtils
 from app.model.schema import (
     IbetStraightBondUpdate,
-    IbetStraightBondAdd,
+    IbetStraightBondAdditionalIssue,
     IbetStraightBondRedeem,
     IbetStraightBondTransfer,
     IbetSecurityTokenApproveTransfer,
@@ -1301,7 +1301,7 @@ class TestTransfer:
         assert isinstance(exc_info.value.args[0], TransactionNotFound)
 
 
-class TestAddSupply:
+class TestAdditionalIssue:
 
     ###########################################################################
     # Normal Case
@@ -1329,14 +1329,14 @@ class TestAddSupply:
             private_key=private_key
         )
 
-        # add supply
+        # additional issue
         _data = {
             "account_address": issuer_address,
             "amount": 10
         }
-        _add_data = IbetStraightBondAdd(**_data)
+        _add_data = IbetStraightBondAdditionalIssue(**_data)
         pre_datetime = datetime.utcnow()
-        IbetStraightBondContract.add_supply(
+        IbetStraightBondContract.additional_issue(
             contract_address=contract_address,
             data=_add_data,
             tx_from=issuer_address,
@@ -1382,14 +1382,14 @@ class TestAddSupply:
             private_key=private_key
         )
 
-        # add supply
+        # additional issue
         _data = {
             "account_address": issuer_address,
             "amount": 10
         }
-        _add_data = IbetStraightBondAdd(**_data)
+        _add_data = IbetStraightBondAdditionalIssue(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
-            IbetStraightBondContract.add_supply(
+            IbetStraightBondContract.additional_issue(
                 contract_address=contract_address[:-1],  # short
                 data=_add_data,
                 tx_from=issuer_address,
@@ -1399,12 +1399,12 @@ class TestAddSupply:
         assert exc_info.match("Unknown format.*, attempted to normalize to.*")
 
     # <Error_2>
-    # validation (IbetStraightBondAdd)
+    # validation (IbetStraightBondAdditionalIssue)
     # required field
     def test_error_2(self, db):
         _data = {}
         with pytest.raises(ValidationError) as exc_info:
-            IbetStraightBondAdd(**_data)
+            IbetStraightBondAdditionalIssue(**_data)
         assert exc_info.value.errors() == [
             {
                 "loc": ("account_address",),
@@ -1418,7 +1418,7 @@ class TestAddSupply:
         ]
 
     # <Error_3>
-    # validation (IbetStraightBondAdd)
+    # validation (IbetStraightBondAdditionalIssue)
     # invalid parameter
     def test_error_3(self, db):
         _data = {
@@ -1426,7 +1426,7 @@ class TestAddSupply:
             "amount": 0
         }
         with pytest.raises(ValidationError) as exc_info:
-            IbetStraightBondAdd(**_data)
+            IbetStraightBondAdditionalIssue(**_data)
         assert exc_info.value.errors() == [
             {
                 "loc": ("account_address",),
@@ -1443,7 +1443,7 @@ class TestAddSupply:
         ]
 
     # <Error_4>
-    # validation (IbetStraightBondAdd)
+    # validation (IbetStraightBondAdditionalIssue)
     # invalid parameter: max value
     def test_error_4(self, db):
         test_account = config_eth_account("user1")
@@ -1453,7 +1453,7 @@ class TestAddSupply:
             "amount": 100_000_001
         }
         with pytest.raises(ValidationError) as exc_info:
-            IbetStraightBondAdd(**_data)
+            IbetStraightBondAdditionalIssue(**_data)
         assert exc_info.value.errors() == [
             {
                 "ctx": {
@@ -1488,14 +1488,14 @@ class TestAddSupply:
             private_key=private_key
         )
 
-        # add supply
+        # additional issue
         _data = {
             "account_address": issuer_address,
             "amount": 10
         }
-        _add_data = IbetStraightBondAdd(**_data)
+        _add_data = IbetStraightBondAdditionalIssue(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
-            IbetStraightBondContract.add_supply(
+            IbetStraightBondContract.additional_issue(
                 contract_address=contract_address,
                 data=_add_data,
                 tx_from="invalid_tx_from",
@@ -1527,14 +1527,14 @@ class TestAddSupply:
             private_key=private_key
         )
 
-        # add supply
+        # additional issue
         _data = {
             "account_address": issuer_address,
             "amount": 10
         }
-        _add_data = IbetStraightBondAdd(**_data)
+        _add_data = IbetStraightBondAdditionalIssue(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
-            IbetStraightBondContract.add_supply(
+            IbetStraightBondContract.additional_issue(
                 contract_address=contract_address,
                 data=_add_data,
                 tx_from=test_account.get("address"),
@@ -1572,15 +1572,15 @@ class TestAddSupply:
             side_effect=TimeExhausted
         )
 
-        # add supply
+        # additional issue
         _data = {
             "account_address": issuer_address,
             "amount": 10
         }
-        _add_data = IbetStraightBondAdd(**_data)
+        _add_data = IbetStraightBondAdditionalIssue(**_data)
         with Web3_sendRawTransaction:
             with pytest.raises(SendTransactionError) as exc_info:
-                IbetStraightBondContract.add_supply(
+                IbetStraightBondContract.additional_issue(
                     contract_address=contract_address,
                     data=_add_data,
                     tx_from=test_account.get("address"),
@@ -1617,15 +1617,15 @@ class TestAddSupply:
             side_effect=TransactionNotFound
         )
 
-        # add supply
+        # additional issue
         _data = {
             "account_address": issuer_address,
             "amount": 10
         }
-        _add_data = IbetStraightBondAdd(**_data)
+        _add_data = IbetStraightBondAdditionalIssue(**_data)
         with Web3_sendRawTransaction:
             with pytest.raises(SendTransactionError) as exc_info:
-                IbetStraightBondContract.add_supply(
+                IbetStraightBondContract.additional_issue(
                     contract_address=contract_address,
                     data=_add_data,
                     tx_from=issuer_address,
@@ -1634,7 +1634,7 @@ class TestAddSupply:
         assert isinstance(exc_info.value.args[0], TransactionNotFound)
 
 
-class TestRedeemSupply:
+class TestRedeem:
 
     ###########################################################################
     # Normal Case
@@ -1662,14 +1662,14 @@ class TestRedeemSupply:
             private_key=private_key
         )
 
-        # add supply
+        # redeem
         _data = {
             "account_address": issuer_address,
             "amount": 10
         }
         _add_data = IbetStraightBondRedeem(**_data)
         pre_datetime = datetime.utcnow()
-        IbetStraightBondContract.redeem_supply(
+        IbetStraightBondContract.redeem(
             contract_address=contract_address,
             data=_add_data,
             tx_from=issuer_address,
@@ -1715,14 +1715,14 @@ class TestRedeemSupply:
             private_key=private_key
         )
 
-        # add supply
+        # redeem
         _data = {
             "account_address": issuer_address,
             "amount": 10
         }
         _add_data = IbetStraightBondRedeem(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
-            IbetStraightBondContract.redeem_supply(
+            IbetStraightBondContract.redeem(
                 contract_address=contract_address[:-1],  # short
                 data=_add_data,
                 tx_from=issuer_address,
@@ -1821,14 +1821,14 @@ class TestRedeemSupply:
             private_key=private_key
         )
 
-        # add supply
+        # redeem
         _data = {
             "account_address": issuer_address,
             "amount": 10
         }
         _add_data = IbetStraightBondRedeem(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
-            IbetStraightBondContract.redeem_supply(
+            IbetStraightBondContract.redeem(
                 contract_address=contract_address,
                 data=_add_data,
                 tx_from="invalid_tx_from",
@@ -1860,14 +1860,14 @@ class TestRedeemSupply:
             private_key=private_key
         )
 
-        # add supply
+        # redeem
         _data = {
             "account_address": issuer_address,
             "amount": 10
         }
         _add_data = IbetStraightBondRedeem(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
-            IbetStraightBondContract.redeem_supply(
+            IbetStraightBondContract.redeem(
                 contract_address=contract_address,
                 data=_add_data,
                 tx_from=test_account.get("address"),
@@ -1905,7 +1905,7 @@ class TestRedeemSupply:
             side_effect=TimeExhausted
         )
 
-        # add supply
+        # redeem
         _data = {
             "account_address": issuer_address,
             "amount": 10
@@ -1913,7 +1913,7 @@ class TestRedeemSupply:
         _add_data = IbetStraightBondRedeem(**_data)
         with Web3_sendRawTransaction:
             with pytest.raises(SendTransactionError) as exc_info:
-                IbetStraightBondContract.redeem_supply(
+                IbetStraightBondContract.redeem(
                     contract_address=contract_address,
                     data=_add_data,
                     tx_from=test_account.get("address"),
@@ -1950,7 +1950,7 @@ class TestRedeemSupply:
             side_effect=TransactionNotFound
         )
 
-        # add supply
+        # redeem
         _data = {
             "account_address": issuer_address,
             "amount": 10
@@ -1958,7 +1958,7 @@ class TestRedeemSupply:
         _add_data = IbetStraightBondRedeem(**_data)
         with Web3_sendRawTransaction:
             with pytest.raises(SendTransactionError) as exc_info:
-                IbetStraightBondContract.redeem_supply(
+                IbetStraightBondContract.redeem(
                     contract_address=contract_address,
                     data=_add_data,
                     tx_from=issuer_address,

@@ -34,7 +34,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemPOST:
     ###########################################################################
 
     # <Normal_1>
-    @mock.patch("app.model.blockchain.token.IbetShareContract.redeem_supply")
+    @mock.patch("app.model.blockchain.token.IbetShareContract.redeem")
     def test_normal_1(self, IbetShareContract_mock, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -460,7 +460,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemPOST:
 
     # <Error_10>
     # Send Transaction Error
-    @mock.patch("app.model.blockchain.token.IbetShareContract.redeem_supply",
+    @mock.patch("app.model.blockchain.token.IbetShareContract.redeem",
                 MagicMock(side_effect=SendTransactionError()))
     def test_error_10(self, client, db):
         test_account = config_eth_account("user1")

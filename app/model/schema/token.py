@@ -138,7 +138,7 @@ class IbetStraightBondUpdate(BaseModel):
         return v
 
 
-class IbetStraightBondAdd(BaseModel):
+class IbetStraightBondAdditionalIssue(BaseModel):
     """ibet Straight Bond schema (Additional Issue)"""
     account_address: str
     amount: int = Field(..., ge=1, le=100_000_000)
@@ -151,7 +151,7 @@ class IbetStraightBondAdd(BaseModel):
 
 
 class IbetStraightBondRedeem(BaseModel):
-    """ibet Straight Bond schema (Redemption Issue)"""
+    """ibet Straight Bond schema (Redeem)"""
     account_address: str
     amount: int = Field(..., ge=1, le=100_000_000)
 
@@ -306,7 +306,7 @@ class IbetShareTransfer(BaseModel):
         return v
 
 
-class IbetShareAdd(BaseModel):
+class IbetShareAdditionalIssue(BaseModel):
     """ibet Share schema (Additional Issue)"""
     account_address: str
     amount: int = Field(..., ge=1, le=100_000_000)
@@ -319,7 +319,7 @@ class IbetShareAdd(BaseModel):
 
 
 class IbetShareRedeem(BaseModel):
-    """ibet Share schema (Redemption Issue)"""
+    """ibet Share schema (Redeem)"""
     account_address: str
     amount: int = Field(..., ge=1, le=100_000_000)
 

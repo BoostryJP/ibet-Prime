@@ -40,11 +40,11 @@ from app.model.db import TokenAttrUpdate
 from app.model.schema import (
     IbetStraightBondUpdate,
     IbetStraightBondTransfer,
-    IbetStraightBondAdd,
+    IbetStraightBondAdditionalIssue,
     IbetStraightBondRedeem,
     IbetShareUpdate,
     IbetShareTransfer,
-    IbetShareAdd,
+    IbetShareAdditionalIssue,
     IbetShareRedeem,
     IbetSecurityTokenApproveTransfer,
     IbetSecurityTokenCancelTransfer
@@ -627,11 +627,11 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             raise SendTransactionError(err)
 
     @staticmethod
-    def add_supply(contract_address: str,
-                   data: IbetStraightBondAdd,
-                   tx_from: str,
-                   private_key: str):
-        """Add token supply"""
+    def additional_issue(contract_address: str,
+                         data: IbetStraightBondAdditionalIssue,
+                         tx_from: str,
+                         private_key: str):
+        """Additional issue"""
         try:
             bond_contract = ContractUtils.get_contract(
                 contract_name="IbetStraightBond",
@@ -658,11 +658,11 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             raise SendTransactionError(err)
 
     @staticmethod
-    def redeem_supply(contract_address: str,
-                      data: IbetStraightBondRedeem,
-                      tx_from: str,
-                      private_key: str):
-        """Redeem token supply"""
+    def redeem(contract_address: str,
+               data: IbetStraightBondRedeem,
+               tx_from: str,
+               private_key: str):
+        """Redeem a token"""
         try:
             bond_contract = ContractUtils.get_contract(
                 contract_name="IbetStraightBond",
@@ -1079,11 +1079,11 @@ class IbetShareContract(IbetSecurityTokenInterface):
             raise SendTransactionError(err)
 
     @staticmethod
-    def add_supply(contract_address: str,
-                   data: IbetShareAdd,
-                   tx_from: str,
-                   private_key: str):
-        """Add token supply"""
+    def additional_issue(contract_address: str,
+                         data: IbetShareAdditionalIssue,
+                         tx_from: str,
+                         private_key: str):
+        """Additional issue"""
         try:
             share_contract = ContractUtils.get_contract(
                 contract_name="IbetShare",
@@ -1110,11 +1110,11 @@ class IbetShareContract(IbetSecurityTokenInterface):
             raise SendTransactionError(err)
 
     @staticmethod
-    def redeem_supply(contract_address: str,
-                      data: IbetShareRedeem,
-                      tx_from: str,
-                      private_key: str):
-        """Redeem token supply"""
+    def redeem(contract_address: str,
+               data: IbetShareRedeem,
+               tx_from: str,
+               private_key: str):
+        """Redeem a token"""
         try:
             share_contract = ContractUtils.get_contract(
                 contract_name="IbetShare",
