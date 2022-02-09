@@ -138,8 +138,20 @@ class IbetStraightBondUpdate(BaseModel):
         return v
 
 
-class IbetStraightBondAdd(BaseModel):
+class IbetStraightBondAdditionalIssue(BaseModel):
     """ibet Straight Bond schema (Additional Issue)"""
+    account_address: str
+    amount: int = Field(..., ge=1, le=100_000_000)
+
+    @validator("account_address")
+    def account_address_is_valid_address(cls, v):
+        if not Web3.isAddress(v):
+            raise ValueError("account_address is not a valid address")
+        return v
+
+
+class IbetStraightBondRedeem(BaseModel):
+    """ibet Straight Bond schema (Redeem)"""
     account_address: str
     amount: int = Field(..., ge=1, le=100_000_000)
 
@@ -294,8 +306,20 @@ class IbetShareTransfer(BaseModel):
         return v
 
 
-class IbetShareAdd(BaseModel):
+class IbetShareAdditionalIssue(BaseModel):
     """ibet Share schema (Additional Issue)"""
+    account_address: str
+    amount: int = Field(..., ge=1, le=100_000_000)
+
+    @validator("account_address")
+    def account_address_is_valid_address(cls, v):
+        if not Web3.isAddress(v):
+            raise ValueError("account_address is not a valid address")
+        return v
+
+
+class IbetShareRedeem(BaseModel):
+    """ibet Share schema (Redeem)"""
     account_address: str
     amount: int = Field(..., ge=1, le=100_000_000)
 
