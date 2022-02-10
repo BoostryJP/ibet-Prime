@@ -367,6 +367,7 @@ class TestProcessor:
         processor.process()
 
         # assertion(Run 2nd)
+        db.rollback()
         _account = db.query(Account).first()
         assert _account.issuer_address == user_1["address"]
         assert _account.keyfile == user_1["keyfile_json"]
@@ -420,6 +421,7 @@ class TestProcessor:
         processor.process()
 
         # assertion(Run 3rd)
+        db.rollback()
         _account = db.query(Account).first()
         assert _account.issuer_address == user_1["address"]
         assert _account.keyfile == user_1["keyfile_json"]

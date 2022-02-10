@@ -167,7 +167,8 @@ class ContractUtils:
         db_engine = create_engine(
             DB_URI,
             connect_args={"options": "-c lock_timeout=10000"},
-            echo=False
+            echo=False,
+            pool_pre_ping=True
         )
         local_session = Session(autocommit=False, autoflush=True, bind=db_engine)
 

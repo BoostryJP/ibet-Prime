@@ -61,7 +61,7 @@ import batch_log
 process_name = "PROCESSOR-Auto-Transfer-Approval"
 LOG = batch_log.get_logger(process_name=process_name)
 
-db_engine = create_engine(DATABASE_URL, echo=False)
+db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 
 class Processor:
