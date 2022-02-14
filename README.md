@@ -150,7 +150,7 @@ You will see the alternative automatic documentation provided by ReDoc:
 
 This repository is version controlled using the following flow.
 
-![branching_model](https://user-images.githubusercontent.com/963333/128751565-3268b1e3-185b-4f09-870f-b6d96519eb54.png)
+![branching_model](https://user-images.githubusercontent.com/963333/153910560-2c67f8ad-73ae-4aaa-9e9f-9242643f6098.png)
 
 ## License
 
