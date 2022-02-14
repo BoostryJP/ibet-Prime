@@ -49,8 +49,8 @@ from app.model.schema import (
     IbetStraightBondTransfer,
     IbetStraightBondUpdate,
     IbetShareUpdate,
-    IbetStraightBondAdd,
-    IbetShareAdd
+    IbetStraightBondAdditionalIssue,
+    IbetShareAdditionalIssue
 )
 from app.utils.contract_utils import ContractUtils
 from batch.processor_create_utxo import Processor
@@ -506,7 +506,7 @@ class TestProcessor:
         mock_func.assert_not_called()
 
     # <Normal_5>
-    # Add Supply
+    # Additional Issue
     @mock.patch("batch.processor_create_utxo.create_ledger")
     def test_normal_5(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
@@ -543,19 +543,19 @@ class TestProcessor:
 
         # Execute Issue Event
         # Share
-        _add_supply_1 = IbetShareAdd(
+        _additional_issue_1 = IbetShareAdditionalIssue(
             account_address=user_address_1,
             amount=70
         )
-        IbetShareContract.add_supply(token_address_1, _add_supply_1, issuer_address, issuer_private_key)
+        IbetShareContract.additional_issue(token_address_1, _additional_issue_1, issuer_address, issuer_private_key)
         time.sleep(1)
 
         # Bond
-        _add_supply_2 = IbetStraightBondAdd(
+        _additional_issue_2 = IbetStraightBondAdditionalIssue(
             account_address=user_address_2,
             amount=80
         )
-        IbetStraightBondContract.add_supply(token_address_2, _add_supply_2, issuer_address, issuer_private_key)
+        IbetStraightBondContract.additional_issue(token_address_2, _additional_issue_2, issuer_address, issuer_private_key)
         time.sleep(1)
 
         # Execute batch

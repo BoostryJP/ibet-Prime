@@ -25,16 +25,16 @@ from app.exceptions import SendTransactionError
 from tests.account_config import config_eth_account
 
 
-class TestAppRoutersShareTokensTokenAddressAddPOST:
+class TestAppRoutersShareTokensTokenAddressRedeemPOST:
     # target API endpoint
-    base_url = "/share/tokens/{}/add"
+    base_url = "/share/tokens/{}/redeem"
 
     ###########################################################################
     # Normal Case
     ###########################################################################
 
     # <Normal_1>
-    @mock.patch("app.model.blockchain.token.IbetShareContract.add_supply")
+    @mock.patch("app.model.blockchain.token.IbetShareContract.redeem")
     def test_normal_1(self, IbetShareContract_mock, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -460,7 +460,7 @@ class TestAppRoutersShareTokensTokenAddressAddPOST:
 
     # <Error_10>
     # Send Transaction Error
-    @mock.patch("app.model.blockchain.token.IbetShareContract.add_supply",
+    @mock.patch("app.model.blockchain.token.IbetShareContract.redeem",
                 MagicMock(side_effect=SendTransactionError()))
     def test_error_10(self, client, db):
         test_account = config_eth_account("user1")
