@@ -34,20 +34,14 @@ from app.model.db import (
 )
 from app.utils.e2ee_utils import E2EEUtils
 from app.exceptions import SendTransactionError
-from batch.processor_scheduled_events import (
-    Sinks,
-    DBSink,
-    Processor
-)
+from batch.processor_scheduled_events import Processor
 
 from tests.account_config import config_eth_account
 
 
 @pytest.fixture(scope="function")
 def processor(db):
-    _sink = Sinks()
-    _sink.register(DBSink(db))
-    return Processor(sink=_sink, db=db, thread_num=0)
+    return Processor(thread_num=0)
 
 
 class TestProcessor:
@@ -134,6 +128,8 @@ class TestProcessor:
         token_event.status = 0
         token_event.data = update_data
         db.add(token_event)
+
+        db.commit()
 
         # mock
         IbetStraightBondContract_update = patch(
@@ -241,6 +237,8 @@ class TestProcessor:
         token_event.data = update_data
         db.add(token_event)
 
+        db.commit()
+
         # mock
         IbetStraightBondContract_update = patch(
             target="app.model.blockchain.token.IbetStraightBondContract.update",
@@ -346,6 +344,8 @@ class TestProcessor:
         token_event.status = 0
         token_event.data = update_data
         db.add(token_event)
+
+        db.commit()
 
         # mock
         IbetShareContract_update = patch(
@@ -453,6 +453,8 @@ class TestProcessor:
         token_event.data = update_data
         db.add(token_event)
 
+        db.commit()
+
         # mock
         IbetShareContract_update = patch(
             target="app.model.blockchain.token.IbetShareContract.update",
@@ -508,6 +510,8 @@ class TestProcessor:
         token_event.data = update_data
         db.add(token_event)
 
+        db.commit()
+
         # Execute batch
         processor.process()
 
@@ -557,6 +561,8 @@ class TestProcessor:
         token_event.status = 0
         token_event.data = update_data
         db.add(token_event)
+
+        db.commit()
 
         # Execute batch
         processor.process()
@@ -610,6 +616,8 @@ class TestProcessor:
         token_event.status = 0
         token_event.data = update_data
         db.add(token_event)
+
+        db.commit()
 
         # mock
         IbetStraightBondContract_update = patch(
@@ -671,6 +679,8 @@ class TestProcessor:
         token_event.status = 0
         token_event.data = update_data
         db.add(token_event)
+
+        db.commit()
 
         # mock
         IbetShareContract_update = patch(

@@ -24,10 +24,8 @@ from itertools import groupby
 
 from eth_utils import to_checksum_address
 from sqlalchemy import create_engine
-from sqlalchemy.orm import (
-    sessionmaker,
-    scoped_session
-)
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
@@ -41,6 +39,7 @@ from app.model.db import (
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
+from app.exceptions import ServiceUnavailableError
 import batch_log
 from config import (
     DATABASE_URL,
@@ -53,103 +52,46 @@ LOG = batch_log.get_logger(process_name=process_name)
 
 web3 = Web3Wrapper()
 
-engine = create_engine(DATABASE_URL, echo=False)
-db_session = scoped_session(sessionmaker())
-db_session.configure(bind=engine)
-
-
-class Sinks:
-    def __init__(self):
-        self.sinks = []
-
-    def register(self, _sink):
-        self.sinks.append(_sink)
-
-    def on_position(self, *args, **kwargs):
-        for sink in self.sinks:
-            sink.on_position(*args, **kwargs)
-
-    def flush(self, *args, **kwargs):
-        for sink in self.sinks:
-            sink.flush(*args, **kwargs)
-
-
-class DBSink:
-    def __init__(self, db):
-        self.db = db
-
-    def on_position(self, token_address: str,
-                    account_address: str,
-                    balance: Optional[int] = None,
-                    exchange_balance: Optional[int] = None,
-                    exchange_commitment: Optional[int] = None,
-                    pending_transfer: Optional[int] = None):
-        """Update balance data
-
-        :param token_address: token address
-        :param account_address: account address
-        :param balance: balance
-        :param exchange_balance: exchange balance
-        :param exchange_commitment: exchange commitment
-        :param pending_transfer: pending transfer
-        :return: None
-        """
-        position = self.db.query(IDXPosition). \
-            filter(IDXPosition.token_address == token_address). \
-            filter(IDXPosition.account_address == account_address). \
-            first()
-        if position is not None:
-            if balance is not None:
-                position.balance = balance
-            if pending_transfer is not None:
-                position.pending_transfer = pending_transfer
-            if exchange_balance is not None:
-                position.exchange_balance = exchange_balance
-            if exchange_commitment is not None:
-                position.exchange_commitment = exchange_commitment
-            self.db.merge(position)
-        elif any(value is not None and value > 0
-                 for value in [balance, pending_transfer, exchange_balance, exchange_commitment]):
-            LOG.debug(f"Position created (Share): token_address={token_address}, account_address={account_address}")
-            position = IDXPosition()
-            position.token_address = token_address
-            position.account_address = account_address
-            position.balance = balance or 0
-            position.pending_transfer = pending_transfer or 0
-            position.exchange_balance = exchange_balance or 0
-            position.exchange_commitment = exchange_commitment or 0
-            self.db.add(position)
-
-    def flush(self):
-        self.db.commit()
+db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 
 class Processor:
-    def __init__(self, sink, db):
-        self.sink = sink
+    def __init__(self):
         self.latest_block = web3.eth.blockNumber
-        self.db = db
         self.token_list = []
         self.exchange_address_list = []
 
     def sync_new_logs(self):
-        self.__get_contract_list()
+        db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
+        try:
+            self.__get_contract_list(db_session=db_session)
 
-        # Get from_block_number and to_block_number for contract event filter
-        idx_position_block_number = self.__get_idx_position_block_number()
-        latest_block = web3.eth.blockNumber
+            # Get from_block_number and to_block_number for contract event filter
+            idx_position_block_number = self.__get_idx_position_block_number(db_session=db_session)
+            latest_block = web3.eth.blockNumber
 
-        if idx_position_block_number >= latest_block:
-            LOG.debug("skip process")
-            pass
-        else:
-            self.__sync_all(idx_position_block_number + 1, latest_block)
+            if idx_position_block_number >= latest_block:
+                LOG.debug("skip process")
+                pass
+            else:
+                self.__sync_all(
+                    db_session=db_session,
+                    block_from=idx_position_block_number + 1,
+                    block_to=latest_block
+                )
+                self.__set_idx_position_block_number(
+                    db_session=db_session,
+                    block_number=latest_block
+                )
+                db_session.commit()
+        finally:
+            db_session.close()
 
-    def __get_contract_list(self):
+    def __get_contract_list(self, db_session: Session):
         self.token_list = []
         self.exchange_address_list = []
 
-        issued_token_list = self.db.query(Token). \
+        issued_token_list = db_session.query(Token). \
             filter(Token.type == TokenType.IBET_SHARE). \
             filter(Token.token_status == 1). \
             all()
@@ -173,40 +115,38 @@ class Processor:
         # Remove duplicate exchanges from a list
         self.exchange_address_list = list(set(_exchange_list_tmp))
 
-    def __get_idx_position_block_number(self):
-        _idx_position_block_number = self.db.query(IDXPositionShareBlockNumber). \
+    def __get_idx_position_block_number(self, db_session: Session):
+        _idx_position_block_number = db_session.query(IDXPositionShareBlockNumber). \
             first()
         if _idx_position_block_number is None:
             return 0
         else:
             return _idx_position_block_number.latest_block_number
 
-    def __set_idx_position_block_number(self, block_number: int):
-        _idx_position_block_number = self.db.query(IDXPositionShareBlockNumber). \
+    def __set_idx_position_block_number(self, db_session: Session, block_number: int):
+        _idx_position_block_number = db_session.query(IDXPositionShareBlockNumber). \
             first()
         if _idx_position_block_number is None:
             _idx_position_block_number = IDXPositionShareBlockNumber()
 
         _idx_position_block_number.latest_block_number = block_number
-        self.db.merge(_idx_position_block_number)
+        db_session.merge(_idx_position_block_number)
 
-    def __sync_all(self, block_from: int, block_to: int):
+    def __sync_all(self, db_session: Session, block_from: int, block_to: int):
         LOG.info("syncing from={}, to={}".format(block_from, block_to))
-        self.__sync_issuer()
-        self.__sync_issue(block_from, block_to)
-        self.__sync_transfer(block_from, block_to)
-        self.__sync_lock(block_from, block_to)
-        self.__sync_unlock(block_from, block_to)
-        self.__sync_redeem(block_from, block_to)
-        self.__sync_apply_for_transfer(block_from, block_to)
-        self.__sync_cancel_transfer(block_from, block_to)
-        self.__sync_approve_transfer(block_from, block_to)
-        self.__sync_exchange(block_from, block_to)
-        self.__sync_escrow(block_from, block_to)
-        self.__set_idx_position_block_number(block_to)
-        self.sink.flush()
+        self.__sync_issuer(db_session)
+        self.__sync_issue(db_session, block_from, block_to)
+        self.__sync_transfer(db_session, block_from, block_to)
+        self.__sync_lock(db_session, block_from, block_to)
+        self.__sync_unlock(db_session, block_from, block_to)
+        self.__sync_redeem(db_session, block_from, block_to)
+        self.__sync_apply_for_transfer(db_session, block_from, block_to)
+        self.__sync_cancel_transfer(db_session, block_from, block_to)
+        self.__sync_approve_transfer(db_session, block_from, block_to)
+        self.__sync_exchange(db_session, block_from, block_to)
+        self.__sync_escrow(db_session, block_from, block_to)
 
-    def __sync_issuer(self):
+    def __sync_issuer(self, db_session: Session):
         """Synchronize issuer position"""
         for token in self.token_list:
             try:
@@ -217,7 +157,8 @@ class Processor:
                     default_returns=ZERO_ADDRESS
                 )
                 balance, pending_transfer = self.__get_account_balance_token(token, issuer_address)
-                self.sink.on_position(
+                self.__sink_on_position(
+                    db_session=db_session,
                     token_address=to_checksum_address(token.address),
                     account_address=issuer_address,
                     balance=balance,
@@ -226,9 +167,10 @@ class Processor:
             except Exception as e:
                 LOG.exception(e)
 
-    def __sync_issue(self, block_from: int, block_to: int):
+    def __sync_issue(self, db_session: Session, block_from: int, block_to: int):
         """Synchronize Issue events
 
+        :param db_session: database session
         :param block_from: from block number
         :param block_to: to block number
         :return: None
@@ -243,7 +185,8 @@ class Processor:
                     args = event['args']
                     account = args.get("targetAddress", ZERO_ADDRESS)
                     balance, pending_transfer = self.__get_account_balance_token(token, account)
-                    self.sink.on_position(
+                    self.__sink_on_position(
+                        db_session=db_session,
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
@@ -252,9 +195,10 @@ class Processor:
             except Exception as e:
                 LOG.exception(e)
 
-    def __sync_transfer(self, block_from: int, block_to: int):
+    def __sync_transfer(self, db_session: Session, block_from: int, block_to: int):
         """Synchronize Transfer events
 
+        :param db_session: database session
         :param block_from: from block number
         :param block_to: to block number
         :return: None
@@ -272,7 +216,8 @@ class Processor:
                         if web3.eth.getCode(account).hex() == "0x":
                             balance, pending_transfer, exchange_balance, exchange_commitment = \
                                 self.__get_account_balance_all(token, account)
-                            self.sink.on_position(
+                            self.__sink_on_position(
+                                db_session=db_session,
                                 token_address=to_checksum_address(token.address),
                                 account_address=account,
                                 balance=balance,
@@ -283,9 +228,10 @@ class Processor:
             except Exception as e:
                 LOG.exception(e)
 
-    def __sync_lock(self, block_from: int, block_to: int):
+    def __sync_lock(self, db_session: Session, block_from: int, block_to: int):
         """Synchronize Lock events
 
+        :param db_session: database session
         :param block_from: from block number
         :param block_to: to block number
         :return: None
@@ -300,7 +246,8 @@ class Processor:
                     args = event['args']
                     account = args.get("accountAddress", ZERO_ADDRESS)
                     balance, pending_transfer = self.__get_account_balance_token(token, account)
-                    self.sink.on_position(
+                    self.__sink_on_position(
+                        db_session=db_session,
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
@@ -309,9 +256,10 @@ class Processor:
             except Exception as e:
                 LOG.exception(e)
 
-    def __sync_unlock(self, block_from: int, block_to: int):
+    def __sync_unlock(self, db_session: Session, block_from: int, block_to: int):
         """Synchronize Unlock events
 
+        :param db_session: database session
         :param block_from: from block number
         :param block_to: to block number
         :return: None
@@ -326,7 +274,8 @@ class Processor:
                     args = event['args']
                     account = args.get("recipientAddress", ZERO_ADDRESS)
                     balance, pending_transfer = self.__get_account_balance_token(token, account)
-                    self.sink.on_position(
+                    self.__sink_on_position(
+                        db_session=db_session,
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
@@ -335,9 +284,10 @@ class Processor:
             except Exception as e:
                 LOG.exception(e)
 
-    def __sync_redeem(self, block_from: int, block_to: int):
+    def __sync_redeem(self, db_session: Session, block_from: int, block_to: int):
         """Synchronize Redeem events
 
+        :param db_session: database session
         :param block_from: from block number
         :param block_to: to block number
         :return: None
@@ -352,7 +302,8 @@ class Processor:
                     args = event["args"]
                     account = args.get("targetAddress", ZERO_ADDRESS)
                     balance, pending_transfer = self.__get_account_balance_token(token, account)
-                    self.sink.on_position(
+                    self.__sink_on_position(
+                        db_session=db_session,
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
@@ -361,9 +312,10 @@ class Processor:
             except Exception as e:
                 LOG.exception(e)
 
-    def __sync_apply_for_transfer(self, block_from: int, block_to: int):
+    def __sync_apply_for_transfer(self, db_session: Session, block_from: int, block_to: int):
         """Sync ApplyForTransfer Events
 
+        :param db_session: database session
         :param block_from: From block
         :param block_to: To block
         :return: None
@@ -378,7 +330,8 @@ class Processor:
                     args = event["args"]
                     account = args.get("from", ZERO_ADDRESS)
                     balance, pending_transfer = self.__get_account_balance_token(token, account)
-                    self.sink.on_position(
+                    self.__sink_on_position(
+                        db_session=db_session,
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
@@ -387,9 +340,10 @@ class Processor:
             except Exception as e:
                 LOG.exception(e)
 
-    def __sync_cancel_transfer(self, block_from: int, block_to: int):
+    def __sync_cancel_transfer(self, db_session: Session, block_from: int, block_to: int):
         """Sync CancelTransfer Events
 
+        :param db_session: database session
         :param block_from: From block
         :param block_to: To block
         :return: None
@@ -404,7 +358,8 @@ class Processor:
                     args = event["args"]
                     account = args.get("from", ZERO_ADDRESS)
                     balance, pending_transfer = self.__get_account_balance_token(token, account)
-                    self.sink.on_position(
+                    self.__sink_on_position(
+                        db_session=db_session,
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
@@ -413,9 +368,10 @@ class Processor:
             except Exception as e:
                 LOG.exception(e)
 
-    def __sync_approve_transfer(self, block_from: int, block_to: int):
+    def __sync_approve_transfer(self, db_session: Session, block_from: int, block_to: int):
         """Sync ApproveTransfer Events
 
+        :param db_session: database session
         :param block_from: From block
         :param block_to: To block
         :return: None
@@ -430,7 +386,8 @@ class Processor:
                     args = event["args"]
                     for account in [args.get("from", ZERO_ADDRESS), args.get("to", ZERO_ADDRESS)]:
                         balance, pending_transfer = self.__get_account_balance_token(token, account)
-                        self.sink.on_position(
+                        self.__sink_on_position(
+                            db_session=db_session,
                             token_address=to_checksum_address(token.address),
                             account_address=account,
                             balance=balance,
@@ -439,9 +396,10 @@ class Processor:
             except Exception as e:
                 LOG.exception(e)
 
-    def __sync_exchange(self, block_from: int, block_to: int):
+    def __sync_exchange(self, db_session: Session, block_from: int, block_to: int):
         """Sync Events from IbetExchange
 
+        :param db_session: database session
         :param block_from: From block
         :param block_to: To block
         :return: None
@@ -537,7 +495,8 @@ class Processor:
                         token_address=token_address,
                         account_address=account_address
                     )
-                    self.sink.on_position(
+                    self.__sink_on_position(
+                        db_session=db_session,
                         token_address=token_address,
                         account_address=account_address,
                         exchange_balance=exchange_balance,
@@ -546,9 +505,10 @@ class Processor:
             except Exception as e:
                 LOG.exception(e)
 
-    def __sync_escrow(self, block_from: int, block_to: int):
+    def __sync_escrow(self, db_session: Session, block_from: int, block_to: int):
         """Sync Events from IbetSecurityTokenEscrow
 
+        :param db_session: database session
         :param block_from: From block
         :param block_to: To block
         :return: None
@@ -611,7 +571,8 @@ class Processor:
                         token_address=token_address,
                         account_address=account_address
                     )
-                    self.sink.on_position(
+                    self.__sink_on_position(
+                        db_session=db_session,
                         token_address=token_address,
                         account_address=account_address,
                         exchange_balance=exchange_balance,
@@ -619,6 +580,51 @@ class Processor:
                     )
             except Exception as e:
                 LOG.exception(e)
+
+    @staticmethod
+    def __sink_on_position(db_session: Session,
+                           token_address: str,
+                           account_address: str,
+                           balance: Optional[int] = None,
+                           exchange_balance: Optional[int] = None,
+                           exchange_commitment: Optional[int] = None,
+                           pending_transfer: Optional[int] = None):
+        """Update balance data
+
+        :param db_session: database session
+        :param token_address: token address
+        :param account_address: account address
+        :param balance: balance
+        :param exchange_balance: exchange balance
+        :param exchange_commitment: exchange commitment
+        :param pending_transfer: pending transfer
+        :return: None
+        """
+        position = db_session.query(IDXPosition). \
+            filter(IDXPosition.token_address == token_address). \
+            filter(IDXPosition.account_address == account_address). \
+            first()
+        if position is not None:
+            if balance is not None:
+                position.balance = balance
+            if pending_transfer is not None:
+                position.pending_transfer = pending_transfer
+            if exchange_balance is not None:
+                position.exchange_balance = exchange_balance
+            if exchange_commitment is not None:
+                position.exchange_commitment = exchange_commitment
+            db_session.merge(position)
+        elif any(value is not None and value > 0
+                 for value in [balance, pending_transfer, exchange_balance, exchange_commitment]):
+            LOG.debug(f"Position created (Share): token_address={token_address}, account_address={account_address}")
+            position = IDXPosition()
+            position.token_address = token_address
+            position.account_address = account_address
+            position.balance = balance or 0
+            position.pending_transfer = pending_transfer or 0
+            position.exchange_balance = exchange_balance or 0
+            position.exchange_commitment = exchange_commitment or 0
+            db_session.add(position)
 
     @staticmethod
     def __get_account_balance_all(token_contract, account_address: str):
@@ -685,18 +691,18 @@ class Processor:
         return exchange_contract_balance["balance"], exchange_contract_balance["commitment"]
 
 
-_sink = Sinks()
-_sink.register(DBSink(db_session))
-processor = Processor(sink=_sink, db=db_session)
-
-
 def main():
     LOG.info("Service started successfully")
+    processor = Processor()
 
     while True:
         try:
             processor.sync_new_logs()
             LOG.debug("Processed")
+        except ServiceUnavailableError:
+            LOG.warning("An external service was unavailable")
+        except SQLAlchemyError as sa_err:
+            LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
         except Exception as ex:
             LOG.exception(ex)
 

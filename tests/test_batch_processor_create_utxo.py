@@ -18,7 +18,11 @@ SPDX-License-Identifier: Apache-2.0
 """
 import pytest
 from unittest import mock
-from unittest.mock import call, MagicMock
+from unittest.mock import (
+    call,
+    MagicMock,
+    ANY
+)
 import time
 
 from web3 import Web3
@@ -49,11 +53,7 @@ from app.model.schema import (
     IbetShareAdditionalIssue
 )
 from app.utils.contract_utils import ContractUtils
-from batch.processor_create_utxo import (
-    Sinks,
-    DBSink,
-    Processor
-)
+from batch.processor_create_utxo import Processor
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
@@ -62,9 +62,7 @@ web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 @pytest.fixture(scope='function')
 def processor(db):
-    _sink = Sinks()
-    _sink.register(DBSink(db))
-    return Processor(sink=_sink, db=db)
+    return Processor()
 
 
 def deploy_bond_token_contract(address, private_key):
@@ -156,6 +154,8 @@ class TestProcessor:
         _token_2.abi = {}
         db.add(_token_2)
 
+        db.commit()
+
         # Execute batch(Run 1st)
         # Assume: Skip processing
         latest_block = web3.eth.blockNumber
@@ -213,7 +213,8 @@ class TestProcessor:
         processor.process()
 
         # assertion
-        _utox_list = db.query(UTXO).all()
+        db.rollback()
+        _utox_list = db.query(UTXO).order_by(UTXO.created).all()
         # 1.Bond token:issuer -> user1 (tx2)
         # 2.Bond token:issuer -> user2 (tx3)
         # 3.Share token:issuer -> user1 (tx1)
@@ -251,8 +252,8 @@ class TestProcessor:
         assert _utox_block_number.latest_block_number == _utox_list[3].block_number
 
         mock_func.assert_has_calls([
-            call(token_address_1, db),
-            call(token_address_2, db)
+            call(token_address=token_address_1, db=ANY),
+            call(token_address=token_address_2, db=ANY)
         ])
 
     # <Normal_2>
@@ -286,6 +287,8 @@ class TestProcessor:
         _utxo_block_number.latest_block_number = latest_block_number
         db.add(_utxo_block_number)
 
+        db.commit()
+
         # Transfer event 6 times
         _transfer = IbetStraightBondTransfer(
             token_address=token_address_1,
@@ -318,7 +321,7 @@ class TestProcessor:
         # Assertion
         _utxo_block_number = db.query(UTXOBlockNumber).first()
         assert _utxo_block_number.latest_block_number == latest_block_number + 5
-        _utox_list = db.query(UTXO).order_by(UTXO.block_timestamp).all()
+        _utox_list = db.query(UTXO).order_by(UTXO.created).all()
         assert len(_utox_list) == 5
         _utox = _utox_list[0]
         assert _utox.transaction_hash is not None
@@ -383,6 +386,8 @@ class TestProcessor:
         _token_1.token_address = token_address_1
         _token_1.abi = {}
         db.add(_token_1)
+
+        db.commit()
 
         token_contract = ContractUtils.get_contract("IbetStraightBond", token_address_1)
 
@@ -452,8 +457,6 @@ class TestProcessor:
             raw_keyfile_json=user_1["keyfile_json"],
             password="password".encode("utf-8")
         )
-        user_2 = config_eth_account("user2")
-        user_address_1 = user_2["address"]
 
         # prepare data
         token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key)
@@ -464,6 +467,8 @@ class TestProcessor:
         _token_1.token_address = token_address_1
         _token_1.abi = {}
         db.add(_token_1)
+
+        db.commit()
 
         # set exchange address
         storage_address, _, _ = \
@@ -534,6 +539,8 @@ class TestProcessor:
         _token_2.abi = {}
         db.add(_token_2)
 
+        db.commit()
+
         # Execute Issue Event
         # Share
         _additional_issue_1 = IbetShareAdditionalIssue(
@@ -595,6 +602,8 @@ class TestProcessor:
         _token_1.token_address = token_address_1
         _token_1.abi = {}
         db.add(_token_1)
+
+        db.commit()
 
         # Execute batch
         latest_block = web3.eth.blockNumber

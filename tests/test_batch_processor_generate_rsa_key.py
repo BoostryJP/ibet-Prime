@@ -21,15 +21,13 @@ from unittest import mock
 
 from app.model.db import Account, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
-from batch.processor_generate_rsa_key import Sinks, DBSink, Processor
+from batch.processor_generate_rsa_key import Processor
 from tests.account_config import config_eth_account
 
 
 @pytest.fixture(scope='function')
 def processor(db):
-    _sink = Sinks()
-    _sink.register(DBSink(db))
-    return Processor(sink=_sink, db=db)
+    return Processor()
 
 
 class TestProcessor:
@@ -106,6 +104,8 @@ class TestProcessor:
         account_4.rsa_passphrase = rsa_passphrase_4
         account_4.rsa_status = AccountRsaStatus.SET.value
         db.add(account_4)
+
+        db.commit()
 
         # Mock start
         patch = mock.patch("Crypto.PublicKey.RSA.generate")
