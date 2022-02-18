@@ -186,7 +186,8 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0
             })
-            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            tx_hash, tx_receipt = ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            return tx_hash, tx_receipt
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:

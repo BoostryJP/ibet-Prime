@@ -2402,7 +2402,7 @@ class TestApproveTransfer:
             "application_id": 0,
             "data": "approve transfer test"
         }
-        IbetShareContract.approve_transfer(
+        tx_hash, tx_receipt = IbetShareContract.approve_transfer(
             contract_address=token_address,
             data=IbetSecurityTokenApproveTransfer(**approve_data),
             tx_from=issuer_address,
@@ -2410,6 +2410,8 @@ class TestApproveTransfer:
         )
 
         # assertion
+        assert isinstance(tx_hash, str) and int(tx_hash, 16) > 0
+        assert tx_receipt["status"] == 1
         share_token = ContractUtils.get_contract(
             contract_name="IbetShare",
             contract_address=token_address
@@ -2657,7 +2659,7 @@ class TestCancelTransfer:
         }
         _approve_transfer_data = IbetSecurityTokenCancelTransfer(**cancel_data)
 
-        IbetShareContract.cancel_transfer(
+        tx_hash, tx_receipt = IbetShareContract.cancel_transfer(
             contract_address=token_address,
             data=_approve_transfer_data,
             tx_from=issuer_address,
@@ -2665,6 +2667,8 @@ class TestCancelTransfer:
         )
 
         # assertion
+        assert isinstance(tx_hash, str) and int(tx_hash, 16) > 0
+        assert tx_receipt["status"] == 1
         share_token = ContractUtils.get_contract(
             contract_name="IbetShare",
             contract_address=token_address

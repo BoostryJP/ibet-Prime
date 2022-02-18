@@ -278,6 +278,7 @@ class TestApproveTransfer:
         )
 
         # assertion
+        assert isinstance(tx_hash, str) and int(tx_hash, 16) > 0
         assert tx_receipt["status"] == 1
         account_balance = security_token_escrow.get_account_balance(
             user2_account["address"],
