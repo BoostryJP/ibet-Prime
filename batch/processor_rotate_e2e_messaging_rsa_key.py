@@ -37,7 +37,6 @@ sys.path.append(path)
 from config import (
     DATABASE_URL,
     ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL,
-    E2E_MESSAGING_RSA_DEFAULT_PASSPHRASE,
     E2E_MESSAGING_CONTRACT_ADDRESS
 )
 from app.model.blockchain import E2EMessaging
@@ -103,14 +102,14 @@ class Processor:
                 filter(E2EMessagingAccountRsaKey.account_address == e2e_messaging_account.account_address). \
                 order_by(desc(E2EMessagingAccountRsaKey.block_timestamp)). \
                 first()
-            pass_phrase = E2E_MESSAGING_RSA_DEFAULT_PASSPHRASE
-            if _account_rsa_key is not None:
-                latest_time = int(_account_rsa_key.block_timestamp.timestamp())
-                interval = e2e_messaging_account.rsa_key_generate_interval * 3600
-                if base_time - latest_time < interval:
-                    # SKIP if within the interval
-                    return
-                pass_phrase = E2EEUtils.decrypt(_account_rsa_key.rsa_passphrase)
+            if _account_rsa_key is None:
+                return
+            latest_time = int(_account_rsa_key.block_timestamp.timestamp())
+            interval = e2e_messaging_account.rsa_key_generate_interval * 3600
+            if base_time - latest_time < interval:
+                # SKIP if within the interval
+                return
+            pass_phrase = E2EEUtils.decrypt(_account_rsa_key.rsa_passphrase)
 
             # Generate RSA key
             random_func = Random.new().read

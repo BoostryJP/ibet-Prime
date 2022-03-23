@@ -31,7 +31,6 @@ from datetime import (
 
 from eth_keyfile import decode_keyfile_json
 
-from config import E2E_MESSAGING_RSA_DEFAULT_PASSPHRASE
 from app.model.blockchain import E2EMessaging
 from app.model.db import (
     E2EMessagingAccount,
@@ -158,6 +157,28 @@ class TestProcessor:
         assert _rsa_key.rsa_passphrase == "rsa_passphrase_1"
         assert _rsa_key.block_timestamp == _rsa_key_1.block_timestamp
 
+    # <Normal_1_4>
+    # RSA key not created
+    def test_normal_1_4(self, processor, db, e2e_messaging_contract):
+        user_1 = config_eth_account("user1")
+        user_address_1 = user_1["address"]
+
+        # Prepare data : E2EMessagingAccount
+        _account = E2EMessagingAccount()
+        _account.account_address = user_address_1
+        _account.rsa_key_generate_interval = 1
+        _account.rsa_generation = 2
+        db.add(_account)
+
+        db.commit()
+
+        # Run target process
+        processor.process()
+
+        # Assertion
+        _rsa_key_list = db.query(E2EMessagingAccountRsaKey).order_by(E2EMessagingAccountRsaKey.block_timestamp).all()
+        assert len(_rsa_key_list) == 0
+
     # <Normal_2>
     # auto generate and rotate
     def test_normal_2(self, processor, db, e2e_messaging_contract):
@@ -188,36 +209,36 @@ class TestProcessor:
         datetime_now = datetime.utcnow()
 
         # Prepare data : E2EMessagingAccountRsaKey
-        _rsa_key_1 = E2EMessagingAccountRsaKey()
-        _rsa_key_1.transaction_hash = "tx_1"
-        _rsa_key_1.account_address = user_address_1
-        _rsa_key_1.rsa_private_key = "rsa_private_key_1"
-        _rsa_key_1.rsa_public_key = "rsa_public_key_1"
-        _rsa_key_1.rsa_passphrase = "rsa_passphrase_1"
-        _rsa_key_1.block_timestamp = datetime_now + timedelta(hours=-1, seconds=-3)
-        db.add(_rsa_key_1)
+        _rsa_key_1_1 = E2EMessagingAccountRsaKey()
+        _rsa_key_1_1.transaction_hash = "tx_1"
+        _rsa_key_1_1.account_address = user_address_1
+        _rsa_key_1_1.rsa_private_key = "rsa_private_key_1_1"
+        _rsa_key_1_1.rsa_public_key = "rsa_public_key_1_1"
+        _rsa_key_1_1.rsa_passphrase = "rsa_passphrase_1_1"
+        _rsa_key_1_1.block_timestamp = datetime_now + timedelta(hours=-1, seconds=-3)
+        db.add(_rsa_key_1_1)
         time.sleep(1)
 
         # Prepare data : E2EMessagingAccountRsaKey
-        _rsa_key_2 = E2EMessagingAccountRsaKey()
-        _rsa_key_2.transaction_hash = "tx_2"
-        _rsa_key_2.account_address = user_address_1
-        _rsa_key_2.rsa_private_key = "rsa_private_key_2"
-        _rsa_key_2.rsa_public_key = "rsa_public_key_2"
-        _rsa_key_2.rsa_passphrase = "rsa_passphrase_2"
-        _rsa_key_2.block_timestamp = datetime_now + timedelta(hours=-1, seconds=-2)
-        db.add(_rsa_key_2)
+        _rsa_key_1_2 = E2EMessagingAccountRsaKey()
+        _rsa_key_1_2.transaction_hash = "tx_2"
+        _rsa_key_1_2.account_address = user_address_1
+        _rsa_key_1_2.rsa_private_key = "rsa_private_key_1_2"
+        _rsa_key_1_2.rsa_public_key = "rsa_public_key_1_2"
+        _rsa_key_1_2.rsa_passphrase = "rsa_passphrase_1_2"
+        _rsa_key_1_2.block_timestamp = datetime_now + timedelta(hours=-1, seconds=-2)
+        db.add(_rsa_key_1_2)
         time.sleep(1)
 
         # Prepare data : E2EMessagingAccountRsaKey
-        _rsa_key_3 = E2EMessagingAccountRsaKey()
-        _rsa_key_3.transaction_hash = "tx_3"
-        _rsa_key_3.account_address = user_address_1
-        _rsa_key_3.rsa_private_key = "rsa_private_key_3"
-        _rsa_key_3.rsa_public_key = "rsa_public_key_3"
-        _rsa_key_3.rsa_passphrase = E2EEUtils.encrypt("latest_passphrase")
-        _rsa_key_3.block_timestamp = datetime_now + timedelta(hours=-1, seconds=-1)
-        db.add(_rsa_key_3)
+        _rsa_key_1_3 = E2EMessagingAccountRsaKey()
+        _rsa_key_1_3.transaction_hash = "tx_3"
+        _rsa_key_1_3.account_address = user_address_1
+        _rsa_key_1_3.rsa_private_key = "rsa_private_key_1_3"
+        _rsa_key_1_3.rsa_public_key = "rsa_public_key_1_3"
+        _rsa_key_1_3.rsa_passphrase = E2EEUtils.encrypt("latest_passphrase_1")
+        _rsa_key_1_3.block_timestamp = datetime_now + timedelta(hours=-1, seconds=-1)
+        db.add(_rsa_key_1_3)
         time.sleep(1)
 
         # Prepare data : E2EMessagingAccount
@@ -229,12 +250,23 @@ class TestProcessor:
         _account.rsa_generation = 2
         db.add(_account)
 
+        # Prepare data : E2EMessagingAccountRsaKey
+        _rsa_key_2_1 = E2EMessagingAccountRsaKey()
+        _rsa_key_2_1.transaction_hash = "tx_4"
+        _rsa_key_2_1.account_address = user_address_2
+        _rsa_key_2_1.rsa_private_key = "rsa_private_key_2_1"
+        _rsa_key_2_1.rsa_public_key = "rsa_public_key_2_2"
+        _rsa_key_2_1.rsa_passphrase = E2EEUtils.encrypt("latest_passphrase_2")
+        _rsa_key_2_1.block_timestamp = datetime_now + timedelta(hours=-1, seconds=-1)
+        db.add(_rsa_key_2_1)
+        time.sleep(1)
+
         db.commit()
 
         # mock
         mock_E2EMessaging_set_public_key = mock.patch(
             target="app.model.blockchain.e2e_messaging.E2EMessaging.set_public_key",
-            side_effect=[("tx_4", {"blockNumber": 12345}), ("tx_5", {"blockNumber": 12350})]
+            side_effect=[("tx_5", {"blockNumber": 12345}), ("tx_6", {"blockNumber": 12350})]
         )
         mock_ContractUtils_get_block_by_transaction_hash = mock.patch(
             target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
@@ -269,7 +301,7 @@ class TestProcessor:
                      private_key=user_private_key_1),
             ])
             ContractUtils.get_block_by_transaction_hash.assert_has_calls(
-                [call(tx_hash="tx_4"), call(tx_hash="tx_5")]
+                [call(tx_hash="tx_5"), call(tx_hash="tx_6")]
             )
 
         _rsa_key_list = db.query(E2EMessagingAccountRsaKey). \
@@ -281,34 +313,42 @@ class TestProcessor:
         assert _rsa_key.id == 3
         assert _rsa_key.transaction_hash == "tx_3"
         assert _rsa_key.account_address == user_address_1
-        assert _rsa_key.rsa_private_key == "rsa_private_key_3"
-        assert _rsa_key.rsa_public_key == "rsa_public_key_3"
-        assert E2EEUtils.decrypt(_rsa_key.rsa_passphrase) == "latest_passphrase"
-        assert _rsa_key.block_timestamp == _rsa_key_3.block_timestamp
+        assert _rsa_key.rsa_private_key == "rsa_private_key_1_3"
+        assert _rsa_key.rsa_public_key == "rsa_public_key_1_3"
+        assert E2EEUtils.decrypt(_rsa_key.rsa_passphrase) == "latest_passphrase_1"
+        assert _rsa_key.block_timestamp == _rsa_key_1_3.block_timestamp
         _rsa_key = _rsa_key_list[1]
-        assert _rsa_key.id == 5
-        assert _rsa_key.transaction_hash == "tx_5"
+        assert _rsa_key.id == 6
+        assert _rsa_key.transaction_hash == "tx_6"
         assert _rsa_key.account_address == user_address_1
         assert _rsa_key.rsa_private_key is not None
         assert _rsa_key.rsa_private_key == ANY
         assert _rsa_key.rsa_public_key is not None
         assert _rsa_key.rsa_public_key == ANY
-        assert E2EEUtils.decrypt(_rsa_key.rsa_passphrase) == "latest_passphrase"
+        assert E2EEUtils.decrypt(_rsa_key.rsa_passphrase) == "latest_passphrase_1"
         assert _rsa_key.block_timestamp == datetime(2099, 4, 27, 12, 34, 59)
         _rsa_key_list = db.query(E2EMessagingAccountRsaKey). \
             filter(E2EMessagingAccountRsaKey.account_address == user_address_2). \
             order_by(E2EMessagingAccountRsaKey.block_timestamp). \
             all()
-        assert len(_rsa_key_list) == 1
+        assert len(_rsa_key_list) == 2
         _rsa_key = _rsa_key_list[0]
         assert _rsa_key.id == 4
         assert _rsa_key.transaction_hash == "tx_4"
+        assert _rsa_key.account_address == user_address_2
+        assert _rsa_key.rsa_private_key == "rsa_private_key_2_1"
+        assert _rsa_key.rsa_public_key == "rsa_public_key_2_2"
+        assert E2EEUtils.decrypt(_rsa_key.rsa_passphrase) == "latest_passphrase_2"
+        assert _rsa_key.block_timestamp == _rsa_key_1_3.block_timestamp
+        _rsa_key = _rsa_key_list[1]
+        assert _rsa_key.id == 5
+        assert _rsa_key.transaction_hash == "tx_5"
         assert _rsa_key.account_address == user_address_2
         assert _rsa_key.rsa_private_key is not None
         assert _rsa_key.rsa_private_key == ANY
         assert _rsa_key.rsa_public_key is not None
         assert _rsa_key.rsa_public_key == ANY
-        assert E2EEUtils.decrypt(_rsa_key.rsa_passphrase) == E2E_MESSAGING_RSA_DEFAULT_PASSPHRASE
+        assert E2EEUtils.decrypt(_rsa_key.rsa_passphrase) == "latest_passphrase_2"
         assert _rsa_key.block_timestamp == datetime(2099, 4, 27, 12, 34, 56)
 
     ###########################################################################
@@ -359,6 +399,19 @@ class TestProcessor:
         _account.rsa_generation = 2
         db.add(_account)
 
+        datetime_now = datetime.utcnow()
+
+        # Prepare data : E2EMessagingAccountRsaKey
+        _rsa_key = E2EMessagingAccountRsaKey()
+        _rsa_key.transaction_hash = "tx_3"
+        _rsa_key.account_address = user_address_1
+        _rsa_key.rsa_private_key = "rsa_private_key_1_3"
+        _rsa_key.rsa_public_key = "rsa_public_key_1_3"
+        _rsa_key.rsa_passphrase = E2EEUtils.encrypt("latest_passphrase_1")
+        _rsa_key.block_timestamp = datetime_now + timedelta(hours=-1, seconds=-1)
+        db.add(_rsa_key)
+        time.sleep(1)
+
         db.commit()
 
         # mock
@@ -381,4 +434,4 @@ class TestProcessor:
             )
 
         _rsa_key_list = db.query(E2EMessagingAccountRsaKey).order_by(E2EMessagingAccountRsaKey.block_timestamp).all()
-        assert len(_rsa_key_list) == 0
+        assert len(_rsa_key_list) == 1
