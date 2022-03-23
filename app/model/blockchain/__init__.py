@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from .e2e_messaging import E2EMessaging
 from .exchange import (
     IbetExchangeInterface,
     IbetSecurityTokenEscrow

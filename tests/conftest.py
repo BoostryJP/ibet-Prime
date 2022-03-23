@@ -202,3 +202,51 @@ def ibet_security_token_escrow_contract():
     ContractUtils.send_transaction(tx, deployer_private_key)
 
     return ContractUtils.get_contract("IbetSecurityTokenEscrow", contract_address)
+
+
+@pytest.fixture(scope='function')
+def ibet_security_token_escrow_contract():
+    user_1 = config_eth_account("user1")
+    deployer_address = user_1["address"]
+    deployer_private_key = decode_keyfile_json(
+        raw_keyfile_json=user_1["keyfile_json"],
+        password="password".encode("utf-8")
+    )
+
+    # Deploy storage contract
+    storage_contract_address, _, _ = ContractUtils.deploy_contract("EscrowStorage",
+                                                                   [],
+                                                                   deployer_address,
+                                                                   deployer_private_key)
+
+    # Deploy security token escrow contract
+    contract_address, _, _ = ContractUtils.deploy_contract("IbetSecurityTokenEscrow",
+                                                           [storage_contract_address],
+                                                           deployer_address,
+                                                           deployer_private_key)
+
+    # Upgrade version
+    storage_contract = ContractUtils.get_contract("EscrowStorage", storage_contract_address)
+    tx = storage_contract.functions.upgradeVersion(contract_address).buildTransaction({
+        "chainId": CHAIN_ID,
+        "from": deployer_address,
+        "gas": TX_GAS_LIMIT,
+        "gasPrice": 0
+    })
+    ContractUtils.send_transaction(tx, deployer_private_key)
+
+    return ContractUtils.get_contract("IbetSecurityTokenEscrow", contract_address)
+
+
+@pytest.fixture(scope='function')
+def e2e_messaging_contract():
+    user_1 = config_eth_account("user1")
+    deployer_address = user_1["address"]
+    deployer_private_key = decode_keyfile_json(
+        raw_keyfile_json=user_1["keyfile_json"],
+        password="password".encode("utf-8")
+    )
+
+    # Deploy e2e messaging contract
+    contract_address, _, _ = ContractUtils.deploy_contract("E2EMessaging", [], deployer_address, deployer_private_key)
+    return ContractUtils.get_contract("E2EMessaging", contract_address)

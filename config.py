@@ -59,6 +59,7 @@ CHAIN_ID = int(os.environ.get("CHAIN_ID")) if os.environ.get("CHAIN_ID") else 20
 TX_GAS_LIMIT = int(os.environ.get("TX_GAS_LIMIT")) if os.environ.get("TX_GAS_LIMIT") else 6000000
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 TOKEN_LIST_CONTRACT_ADDRESS = os.environ.get('TOKEN_LIST_CONTRACT_ADDRESS')
+E2E_MESSAGING_CONTRACT_ADDRESS = os.environ.get('TOKEN_LIST_CONTRACT_ADDRESS')
 
 # Token data cache
 TOKEN_CACHE = False if os.environ.get("TOKEN_CACHE") == "0" else True
@@ -92,6 +93,15 @@ PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG = \
     "passphrase must be 8 to 200 alphanumeric or symbolic characters"
 PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE = \
     os.environ.get("PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE") or \
+    "password"
+E2E_MESSAGING_RSA_PASSPHRASE_PATTERN = \
+    os.environ.get("E2E_MESSAGING_RSA_PASSPHRASE_PATTERN") or \
+    "^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,200}$"
+E2E_MESSAGING_RSA_PASSPHRASE_PATTERN_MSG = \
+    os.environ.get("E2E_MESSAGING_RSA_PASSPHRASE_PATTERN_MSG") or \
+    "passphrase must be 8 to 200 alphanumeric or symbolic characters"
+E2E_MESSAGING_RSA_DEFAULT_PASSPHRASE = \
+    os.environ.get("E2E_MESSAGING_RSA_DEFAULT_PASSPHRASE") or \
     "password"
 EOA_PASSWORD_CHECK_ENABLED = False if os.environ.get("EOA_PASSWORD_CHECK_ENABLED") == "0" else True
 
@@ -174,3 +184,9 @@ CREATE_UTXO_BLOCK_LOT_MAX_SIZE = int(os.environ.get("CREATE_UTXO_BLOCK_LOT_MAX_S
 # NOTE: (Reference information) WSGI server and app used by ibet-Prime has no request body size limit.
 MAX_UPLOAD_FILE_SIZE = int(os.environ.get("MAX_UPLOAD_FILE_SIZE")) \
     if os.environ.get("MAX_UPLOAD_FILE_SIZE") else 100_000_000
+
+# Rotate E2E Messaging RSA Key
+ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL = int(os.environ.get("ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL")) \
+    if os.environ.get("ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL") else 10
+E2E_MESSAGING_RSA_DEFAULT_PASSPHRASE = \
+    os.environ.get("ROTATE_E2E_MESSAGING_RSA_KEY_DEFAULT_PASSPHRASE") or "password"

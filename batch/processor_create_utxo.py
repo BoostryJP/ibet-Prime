@@ -127,8 +127,6 @@ class Processor:
         if _utxo_block_number is None:
             _utxo_block_number = UTXOBlockNumber()
         _utxo_block_number.latest_block_number = block_number
-        print("=======")
-        print(block_number)
         db_session.merge(_utxo_block_number)
 
     def __process_transfer(self, db_session: Session, token_contract: Contract, block_from: int, block_to: int):

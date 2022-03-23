@@ -36,7 +36,6 @@ from app.database import db_session
 from app.model.db import UploadFile
 from app.model.schema import (
     UploadFileRequest,
-    FileResponse,
     ListAllFilesResponse,
     DownloadFileResponse
 )

@@ -30,4 +30,8 @@ python batch/processor_monitor_block_sync.py &
 python batch/processor_auto_transfer_approval.py &
 python batch/processor_update_token.py &
 
+if [ -n "${E2E_MESSAGING_CONTRACT_ADDRESS}" ]; then
+  python batch/processor_rotate_e2e_messaging_rsa_key.py &
+fi
+
 tail -f /dev/null
