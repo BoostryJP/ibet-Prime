@@ -291,8 +291,75 @@ class TestAppRoutersE2EMessagingReceiveGET:
 
     # <Normal_4_1>
     # Search Filter
-    # type
+    # from_address
     def test_normal_4_1(self, client, db):
+        # prepare data
+        e2e_messaging = {
+            "from_address": "0x1234567890123456789012345678900000000010",
+            "to_address": "0x1234567890123456789012345678900000000000",
+            "type": "type_test1",
+            "message": "message_test1",
+            "send_timestamp": datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
+        }
+        self.insert_data(db, e2e_messaging)
+        e2e_messaging = {
+            "from_address": "0x1234567890123456789012345678900000000011",
+            "to_address": "0x1234567890123456789012345678900000000001",
+            "type": "type_test2",
+            "message": "message_test2",
+            "send_timestamp": datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
+        }
+        self.insert_data(db, e2e_messaging)
+        e2e_messaging = {
+            "from_address": "0x1234567890123456789012345678900000000010",
+            "to_address": "0x1234567890123456789012345678900000000002",
+            "type": "type_test3",
+            "message": "message_test3",
+            "send_timestamp": datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
+        }
+        self.insert_data(db, e2e_messaging)
+
+        # request target api
+        resp = client.get(
+            self.base_url,
+            params={
+                "from_address": "0x1234567890123456789012345678900000000010"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {
+                "count": 2,
+                "offset": None,
+                "limit": None,
+                "total": 3
+            },
+            "e2e_messages": [
+                {
+                    "id": 3,
+                    "from_address": "0x1234567890123456789012345678900000000010",
+                    "to_address": "0x1234567890123456789012345678900000000002",
+                    "type": "type_test3",
+                    "message": "message_test3",
+                    "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
+                },
+                {
+                    "id": 1,
+                    "from_address": "0x1234567890123456789012345678900000000010",
+                    "to_address": "0x1234567890123456789012345678900000000000",
+                    "type": "type_test1",
+                    "message": "message_test1",
+                    "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
+                },
+            ]
+        }
+
+    # <Normal_4_2>
+    # Search Filter
+    # type
+    def test_normal_4_2(self, client, db):
         # prepare data
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
@@ -351,6 +418,105 @@ class TestAppRoutersE2EMessagingReceiveGET:
                     "to_address": "0x1234567890123456789012345678900000000000",
                     "type": "type_test1",
                     "message": "message_test1",
+                    "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
+                },
+            ]
+        }
+
+    # <Normal_4_3>
+    # Search Filter
+    # message
+    def test_normal_4_3(self, client, db):
+        # prepare data
+        e2e_messaging = {
+            "from_address": "0x1234567890123456789012345678900000000010",
+            "to_address": "0x1234567890123456789012345678900000000000",
+            "type": "type_test1",
+            "message": "wordmessage_test1",
+            "send_timestamp": datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
+        }
+        self.insert_data(db, e2e_messaging)
+        e2e_messaging = {
+            "from_address": "0x1234567890123456789012345678900000000011",
+            "to_address": "0x1234567890123456789012345678900000000001",
+            "type": "type_test2",
+            "message": "message_test2",
+            "send_timestamp": datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
+        }
+        self.insert_data(db, e2e_messaging)
+        e2e_messaging = {
+            "from_address": "0x1234567890123456789012345678900000000012",
+            "to_address": "0x1234567890123456789012345678900000000002",
+            "type": "type_test3",
+            "message": "message_test3word",
+            "send_timestamp": datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
+        }
+        self.insert_data(db, e2e_messaging)
+        e2e_messaging = {
+            "from_address": "0x1234567890123456789012345678900000000013",
+            "to_address": "0x1234567890123456789012345678900000000003",
+            "type": "type_test4",
+            "message": "messageword_test4",
+            "send_timestamp": datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
+        }
+        self.insert_data(db, e2e_messaging)
+        e2e_messaging = {
+            "from_address": "0x1234567890123456789012345678900000000014",
+            "to_address": "0x1234567890123456789012345678900000000004",
+            "type": "type_test5",
+            "message": "word",
+            "send_timestamp": datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
+        }
+        self.insert_data(db, e2e_messaging)
+
+        # request target api
+        resp = client.get(
+            self.base_url,
+            params={
+                "message": "word"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {
+                "count": 4,
+                "offset": None,
+                "limit": None,
+                "total": 5
+            },
+            "e2e_messages": [
+                {
+                    "id": 5,
+                    "from_address": "0x1234567890123456789012345678900000000014",
+                    "to_address": "0x1234567890123456789012345678900000000004",
+                    "type": "type_test5",
+                    "message": "word",
+                    "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
+                },
+                {
+                    "id": 4,
+                    "from_address": "0x1234567890123456789012345678900000000013",
+                    "to_address": "0x1234567890123456789012345678900000000003",
+                    "type": "type_test4",
+                    "message": "messageword_test4",
+                    "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
+                },
+                {
+                    "id": 3,
+                    "from_address": "0x1234567890123456789012345678900000000012",
+                    "to_address": "0x1234567890123456789012345678900000000002",
+                    "type": "type_test3",
+                    "message": "message_test3word",
+                    "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
+                },
+                {
+                    "id": 1,
+                    "from_address": "0x1234567890123456789012345678900000000010",
+                    "to_address": "0x1234567890123456789012345678900000000000",
+                    "type": "type_test1",
+                    "message": "wordmessage_test1",
                     "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
                 },
             ]

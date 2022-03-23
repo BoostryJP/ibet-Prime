@@ -64,7 +64,9 @@ utc_tz = pytz.timezone("UTC")
 )
 def list_all_e2e_messages(
         account_address: Optional[str] = Header(None),
+        from_address: Optional[str] = Query(None),
         _type: Optional[str] = Query(None, alias="type"),
+        message: Optional[str] = Query(None, description="partial match"),
         offset: Optional[int] = Query(None),
         limit: Optional[int] = Query(None),
         db: Session = Depends(db_session)):
@@ -83,8 +85,12 @@ def list_all_e2e_messages(
     total = query.count()
 
     # Search Filter
+    if from_address is not None:
+        query = query.filter(IDXE2EMessaging.from_address == from_address)
     if _type is not None:
         query = query.filter(IDXE2EMessaging.type == _type)
+    if message is not None:
+        query = query.filter(IDXE2EMessaging.message.like("%" + message + "%"))
     count = query.count()
 
     # Pagination

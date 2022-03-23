@@ -63,7 +63,7 @@ utc_tz = pytz.timezone("UTC")
 def list_all_upload_files(
         issuer_address: Optional[str] = Header(None),
         relation: Optional[str] = Query(None),
-        file_name: Optional[str] = Query(None),
+        file_name: Optional[str] = Query(None, description="partial match"),
         offset: Optional[int] = Query(None),
         limit: Optional[int] = Query(None),
         db: Session = Depends(db_session)):
