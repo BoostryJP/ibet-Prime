@@ -54,7 +54,7 @@ class TestAppRoutersE2EMessagingAccountsPOST:
         assert resp.status_code == 200
         assert resp.json() == {
             "account_address": ANY,
-            "auto_generate_interval": None,
+            "rsa_key_generate_interval": None,
             "rsa_generation": None,
             "rsa_public_key": None,
             "rsa_status": AccountRsaStatus.UNSET.value,
@@ -69,7 +69,7 @@ class TestAppRoutersE2EMessagingAccountsPOST:
         assert _account.account_address == resp.json()["account_address"]
         assert _account.keyfile is not None
         assert E2EEUtils.decrypt(_account.eoa_password) == password
-        assert _account.auto_generate_interval is None
+        assert _account.rsa_key_generate_interval is None
         assert _account.rsa_generation is None
         assert _account.is_deleted is False
 
@@ -83,7 +83,7 @@ class TestAppRoutersE2EMessagingAccountsPOST:
         password = self.valid_password
         req_param = {
             "eoa_password": E2EEUtils.encrypt(password),
-            "auto_generate_interval": 1,
+            "rsa_key_generate_interval": 1,
             "rsa_generation": 2,
         }
 
@@ -105,7 +105,7 @@ class TestAppRoutersE2EMessagingAccountsPOST:
         assert resp.status_code == 200
         assert resp.json() == {
             "account_address": ANY,
-            "auto_generate_interval": 1,
+            "rsa_key_generate_interval": 1,
             "rsa_generation": 2,
             "rsa_public_key": None,
             "rsa_status": AccountRsaStatus.UNSET.value,
@@ -120,7 +120,7 @@ class TestAppRoutersE2EMessagingAccountsPOST:
         assert _account.account_address == resp.json()["account_address"]
         assert _account.keyfile is not None
         assert E2EEUtils.decrypt(_account.eoa_password) == password
-        assert _account.auto_generate_interval == 1
+        assert _account.rsa_key_generate_interval == 1
         assert _account.rsa_generation == 2
         assert _account.is_deleted is False
 
@@ -156,7 +156,7 @@ class TestAppRoutersE2EMessagingAccountsPOST:
     def test_error_1_2(self, client, db):
         req_param = {
             "eoa_password": base64.encodebytes("password".encode("utf-8")).decode(),
-            "auto_generate_interval": 0,
+            "rsa_key_generate_interval": 0,
             "rsa_generation": 0,
         }
 
@@ -176,7 +176,7 @@ class TestAppRoutersE2EMessagingAccountsPOST:
                     "type": "value_error"
                 },
                 {
-                    "loc": ["body", "auto_generate_interval"],
+                    "loc": ["body", "rsa_key_generate_interval"],
                     "ctx": {"limit_value": 1},
                     "msg": "ensure this value is greater than or equal to 1",
                     "type": "value_error.number.not_ge"
@@ -197,7 +197,7 @@ class TestAppRoutersE2EMessagingAccountsPOST:
         password = self.valid_password
         req_param = {
             "eoa_password": E2EEUtils.encrypt(password),
-            "auto_generate_interval": 10_001,
+            "rsa_key_generate_interval": 10_001,
             "rsa_generation": 101,
         }
 
@@ -212,7 +212,7 @@ class TestAppRoutersE2EMessagingAccountsPOST:
             },
             "detail": [
                 {
-                    "loc": ["body", "auto_generate_interval"],
+                    "loc": ["body", "rsa_key_generate_interval"],
                     "ctx": {"limit_value": 10_000},
                     "msg": "ensure this value is less than or equal to 10000",
                     "type": "value_error.number.not_le"

@@ -37,7 +37,7 @@ from app.utils.check_utils import check_value_is_encrypted
 class E2EMessagingAccountCreateKeyRequest(BaseModel):
     """E2E Messaging Account Create schema (REQUEST)"""
     eoa_password: str
-    auto_generate_interval: Optional[int] = Field(None, ge=1, le=10_000)
+    rsa_key_generate_interval: Optional[int] = Field(None, ge=1, le=10_000)
     rsa_generation: Optional[int] = Field(None, ge=1, le=100)
 
     @validator("eoa_password")
@@ -49,20 +49,20 @@ class E2EMessagingAccountCreateKeyRequest(BaseModel):
     class Config:
         @staticmethod
         def schema_extra(schema: Dict[str, Any], _) -> None:
-            auto_generate_interval_schema = schema["properties"]["auto_generate_interval"]
-            auto_generate_interval_schema["description"] = "Unit is hour"
+            rsa_key_generate_interval_schema = schema["properties"]["rsa_key_generate_interval"]
+            rsa_key_generate_interval_schema["description"] = "Unit is hour"
 
 
 class E2EMessagingAccountUpdateRequest(BaseModel):
     """E2E Messaging Account Update schema (REQUEST)"""
-    auto_generate_interval: Optional[int] = Field(None, ge=1, le=10_000)
+    rsa_key_generate_interval: Optional[int] = Field(None, ge=1, le=10_000)
     rsa_generation: Optional[int] = Field(None, ge=1, le=100)
 
     class Config:
         @staticmethod
         def schema_extra(schema: Dict[str, Any], _) -> None:
-            auto_generate_interval_schema = schema["properties"]["auto_generate_interval"]
-            auto_generate_interval_schema["description"] = "Unit is hour"
+            rsa_key_generate_interval_schema = schema["properties"]["rsa_key_generate_interval"]
+            rsa_key_generate_interval_schema["description"] = "Unit is hour"
 
 
 class E2EMessagingAccountGenerateRsaKeyRequest(BaseModel):
@@ -119,7 +119,7 @@ class E2EMessagingAccountChangeRSAPassphraseRequest(BaseModel):
 class E2EMessagingAccountResponse(BaseModel):
     """E2E Messaging Account schema (Response)"""
     account_address: str
-    auto_generate_interval: Optional[int]
+    rsa_key_generate_interval: Optional[int]
     rsa_generation: Optional[int]
     rsa_public_key: Optional[str]
     rsa_status: int

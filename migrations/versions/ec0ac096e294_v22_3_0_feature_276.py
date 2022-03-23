@@ -26,7 +26,7 @@ def upgrade():
     sa.Column('account_address', sa.String(length=42), nullable=False),
     sa.Column('keyfile', sa.JSON(), nullable=True),
     sa.Column('eoa_password', sa.String(length=2000), nullable=True),
-    sa.Column('auto_generate_interval', sa.Integer(), nullable=True),
+    sa.Column('rsa_key_generate_interval', sa.Integer(), nullable=True),
     sa.Column('rsa_generation', sa.Integer(), nullable=True),
     sa.Column('is_deleted', sa.Boolean(), nullable=True),
     sa.PrimaryKeyConstraint('account_address')

@@ -40,7 +40,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
         # prepare data
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000000"
-        _account.auto_generate_interval = 1
+        _account.rsa_key_generate_interval = 1
         _account.rsa_generation = 2
         db.add(_account)
 
@@ -74,7 +74,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
         assert resp.status_code == 200
         assert resp.json() == {
             "account_address": "0x1234567890123456789012345678900000000000",
-            "auto_generate_interval": 1,
+            "rsa_key_generate_interval": 1,
             "rsa_generation": 2,
             "rsa_public_key": None,
             "rsa_status": AccountRsaStatus.UNSET.value,

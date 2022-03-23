@@ -87,7 +87,7 @@ class TestProcessor:
         # Prepare data : E2EMessagingAccount
         _account = E2EMessagingAccount()
         _account.account_address = user_address_1
-        _account.auto_generate_interval = None
+        _account.rsa_key_generate_interval = None
         _account.rsa_generation = None
         db.add(_account)
 
@@ -127,7 +127,7 @@ class TestProcessor:
         # Prepare data : E2EMessagingAccount
         _account = E2EMessagingAccount()
         _account.account_address = user_address_1
-        _account.auto_generate_interval = 99999
+        _account.rsa_key_generate_interval = 99999
         _account.rsa_generation = None
         db.add(_account)
 
@@ -181,7 +181,7 @@ class TestProcessor:
         _account.account_address = user_address_1
         _account.keyfile = user_keyfile_1
         _account.eoa_password = E2EEUtils.encrypt("password")
-        _account.auto_generate_interval = 1
+        _account.rsa_key_generate_interval = 1
         _account.rsa_generation = 2
         db.add(_account)
 
@@ -225,7 +225,7 @@ class TestProcessor:
         _account.account_address = user_address_2
         _account.keyfile = user_keyfile_2
         _account.eoa_password = E2EEUtils.encrypt("password")
-        _account.auto_generate_interval = 1
+        _account.rsa_key_generate_interval = 1
         _account.rsa_generation = 2
         db.add(_account)
 
@@ -327,7 +327,7 @@ class TestProcessor:
         _account.account_address = user_address_1
         _account.keyfile = user_keyfile_1
         _account.eoa_password = E2EEUtils.encrypt("password_invalid")
-        _account.auto_generate_interval = 1
+        _account.rsa_key_generate_interval = 1
         _account.rsa_generation = 2
         db.add(_account)
 
@@ -355,7 +355,7 @@ class TestProcessor:
         _account.account_address = user_address_1
         _account.keyfile = user_keyfile_1
         _account.eoa_password = E2EEUtils.encrypt("password")
-        _account.auto_generate_interval = 1
+        _account.rsa_key_generate_interval = 1
         _account.rsa_generation = 2
         db.add(_account)
 

@@ -117,7 +117,7 @@ def create_key(
     _account.account_address = addr
     _account.keyfile = keyfile_json
     _account.eoa_password = E2EEUtils.encrypt(eoa_password)
-    _account.auto_generate_interval = data.auto_generate_interval
+    _account.rsa_key_generate_interval = data.rsa_key_generate_interval
     _account.rsa_generation = data.rsa_generation
     _account.is_deleted = False
     db.add(_account)
@@ -131,7 +131,7 @@ def create_key(
 
     return {
         "account_address": _account.account_address,
-        "auto_generate_interval": _account.auto_generate_interval,
+        "rsa_key_generate_interval": _account.rsa_key_generate_interval,
         "rsa_generation": _account.rsa_generation,
         "rsa_public_key": None,
         "rsa_status": AccountRsaStatus.UNSET.value,
@@ -176,7 +176,7 @@ def list_all_accounts(db: Session = Depends(db_session)):
 
         account_list.append({
             "account_address": _account.account_address,
-            "auto_generate_interval": _account.auto_generate_interval,
+            "rsa_key_generate_interval": _account.rsa_key_generate_interval,
             "rsa_generation": _account.rsa_generation,
             "rsa_public_key": rsa_public_key,
             "rsa_status": rsa_status,
@@ -214,7 +214,7 @@ def retrieve_account(account_address: str, db: Session = Depends(db_session)):
 
     return {
         "account_address": _account.account_address,
-        "auto_generate_interval": _account.auto_generate_interval,
+        "rsa_key_generate_interval": _account.rsa_key_generate_interval,
         "rsa_generation": _account.rsa_generation,
         "rsa_public_key": rsa_public_key,
         "rsa_status": rsa_status,
@@ -251,7 +251,7 @@ def update_account(
         rsa_public_key = None
         rsa_status = AccountRsaStatus.UNSET.value
 
-    _account.auto_generate_interval = data.auto_generate_interval
+    _account.rsa_key_generate_interval = data.rsa_key_generate_interval
     _account.rsa_generation = data.rsa_generation
     db.merge(_account)
 
@@ -259,7 +259,7 @@ def update_account(
 
     return {
         "account_address": _account.account_address,
-        "auto_generate_interval": _account.auto_generate_interval,
+        "rsa_key_generate_interval": _account.rsa_key_generate_interval,
         "rsa_generation": _account.rsa_generation,
         "rsa_public_key": rsa_public_key,
         "rsa_status": rsa_status,
@@ -294,7 +294,7 @@ def delete_account(account_address: str, db: Session = Depends(db_session)):
 
     return {
         "account_address": _account.account_address,
-        "auto_generate_interval": _account.auto_generate_interval,
+        "rsa_key_generate_interval": _account.rsa_key_generate_interval,
         "rsa_generation": _account.rsa_generation,
         "rsa_public_key": None,
         "rsa_status": AccountRsaStatus.UNSET.value,
@@ -368,7 +368,7 @@ def generate_rsa_key(
 
     return {
         "account_address": _account.account_address,
-        "auto_generate_interval": _account.auto_generate_interval,
+        "rsa_key_generate_interval": _account.rsa_key_generate_interval,
         "rsa_generation": _account.rsa_generation,
         "rsa_public_key": rsa_public_key,
         "rsa_status": AccountRsaStatus.SET.value,

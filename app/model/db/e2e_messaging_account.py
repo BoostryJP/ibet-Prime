@@ -39,8 +39,8 @@ class E2EMessagingAccount(Base):
     keyfile = Column(JSON)
     # ethereum account password(encrypted)
     eoa_password = Column(String(2000))
-    # Automatically generated rotation interval(hour)
-    auto_generate_interval = Column(Integer)
+    # RSA key auto-generation interval(hour)
+    rsa_key_generate_interval = Column(Integer)
     # Number of RSA key generations
     rsa_generation = Column(Integer)
     # delete flag

@@ -52,7 +52,7 @@ class TestAppRoutersE2EMessagingAccountsGET:
         # prepare data
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000000"
-        _account.auto_generate_interval = 1
+        _account.rsa_key_generate_interval = 1
         _account.rsa_generation = 2
         db.add(_account)
 
@@ -66,7 +66,7 @@ class TestAppRoutersE2EMessagingAccountsGET:
         assert resp.json() == [
             {
                 "account_address": "0x1234567890123456789012345678900000000000",
-                "auto_generate_interval": 1,
+                "rsa_key_generate_interval": 1,
                 "rsa_generation": 2,
                 "rsa_public_key": None,
                 "rsa_status": AccountRsaStatus.UNSET.value,
@@ -84,7 +84,7 @@ class TestAppRoutersE2EMessagingAccountsGET:
 
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000001"
-        _account.auto_generate_interval = 1
+        _account.rsa_key_generate_interval = 1
         _account.rsa_generation = 2
         _account.is_deleted = True
         db.add(_account)
@@ -135,7 +135,7 @@ class TestAppRoutersE2EMessagingAccountsGET:
         assert resp.json() == [
             {
                 "account_address": "0x1234567890123456789012345678900000000000",
-                "auto_generate_interval": None,
+                "rsa_key_generate_interval": None,
                 "rsa_generation": None,
                 "rsa_public_key": None,
                 "rsa_status": AccountRsaStatus.UNSET.value,
@@ -143,7 +143,7 @@ class TestAppRoutersE2EMessagingAccountsGET:
             },
             {
                 "account_address": "0x1234567890123456789012345678900000000001",
-                "auto_generate_interval": 1,
+                "rsa_key_generate_interval": 1,
                 "rsa_generation": 2,
                 "rsa_public_key": None,
                 "rsa_status": AccountRsaStatus.UNSET.value,
@@ -151,7 +151,7 @@ class TestAppRoutersE2EMessagingAccountsGET:
             },
             {
                 "account_address": "0x1234567890123456789012345678900000000002",
-                "auto_generate_interval": None,
+                "rsa_key_generate_interval": None,
                 "rsa_generation": None,
                 "rsa_public_key": "rsa_public_key_2_1",
                 "rsa_status": AccountRsaStatus.SET.value,
@@ -159,7 +159,7 @@ class TestAppRoutersE2EMessagingAccountsGET:
             },
             {
                 "account_address": "0x1234567890123456789012345678900000000003",
-                "auto_generate_interval": None,
+                "rsa_key_generate_interval": None,
                 "rsa_generation": None,
                 "rsa_public_key": "rsa_public_key_3_3",
                 "rsa_status": AccountRsaStatus.SET.value,

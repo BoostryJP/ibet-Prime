@@ -96,7 +96,7 @@ class Processor:
 
     def __auto_generate_rsa_key(self, db_session: Session, base_time: int, e2e_messaging_account: E2EMessagingAccount):
 
-        if e2e_messaging_account.auto_generate_interval is not None:
+        if e2e_messaging_account.rsa_key_generate_interval is not None:
 
             # Get latest RSA key
             _account_rsa_key = db_session.query(E2EMessagingAccountRsaKey). \
@@ -106,7 +106,7 @@ class Processor:
             pass_phrase = E2E_MESSAGING_RSA_DEFAULT_PASSPHRASE
             if _account_rsa_key is not None:
                 latest_time = int(_account_rsa_key.block_timestamp.timestamp())
-                interval = e2e_messaging_account.auto_generate_interval * 3600
+                interval = e2e_messaging_account.rsa_key_generate_interval * 3600
                 if base_time - latest_time < interval:
                     # SKIP if within the interval
                     return

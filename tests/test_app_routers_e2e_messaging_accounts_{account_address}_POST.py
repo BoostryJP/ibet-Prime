@@ -40,7 +40,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
         # prepare data
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000000"
-        _account.auto_generate_interval = 1
+        _account.rsa_key_generate_interval = 1
         _account.rsa_generation = 2
         db.add(_account)
 
@@ -55,14 +55,14 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
         assert resp.status_code == 200
         assert resp.json() == {
             "account_address": "0x1234567890123456789012345678900000000000",
-            "auto_generate_interval": None,
+            "rsa_key_generate_interval": None,
             "rsa_generation": None,
             "rsa_public_key": None,
             "rsa_status": AccountRsaStatus.UNSET.value,
             "is_deleted": False,
         }
         _account = db.query(E2EMessagingAccount).first()
-        assert _account.auto_generate_interval is None
+        assert _account.rsa_key_generate_interval is None
         assert _account.rsa_generation is None
 
     # <Normal_2>
@@ -96,7 +96,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
 
         # request target api
         req_param = {
-            "auto_generate_interval": 1,
+            "rsa_key_generate_interval": 1,
             "rsa_generation": 2,
         }
         resp = client.post(
@@ -108,14 +108,14 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
         assert resp.status_code == 200
         assert resp.json() == {
             "account_address": "0x1234567890123456789012345678900000000000",
-            "auto_generate_interval": 1,
+            "rsa_key_generate_interval": 1,
             "rsa_generation": 2,
             "rsa_public_key": "rsa_public_key_1_3",
             "rsa_status": AccountRsaStatus.SET.value,
             "is_deleted": False,
         }
         _account = db.query(E2EMessagingAccount).first()
-        assert _account.auto_generate_interval == 1
+        assert _account.rsa_key_generate_interval == 1
         assert _account.rsa_generation == 2
 
     ###########################################################################
@@ -149,7 +149,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
     # min
     def test_error_1_2(self, client, db):
         req_param = {
-            "auto_generate_interval": 0,
+            "rsa_key_generate_interval": 0,
             "rsa_generation": 0,
         }
         resp = client.post(
@@ -166,7 +166,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
             },
             "detail": [
                 {
-                    "loc": ["body", "auto_generate_interval"],
+                    "loc": ["body", "rsa_key_generate_interval"],
                     "ctx": {"limit_value": 1},
                     "msg": "ensure this value is greater than or equal to 1",
                     "type": "value_error.number.not_ge"
@@ -185,7 +185,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
     # max
     def test_error_1_3(self, client, db):
         req_param = {
-            "auto_generate_interval": 10_001,
+            "rsa_key_generate_interval": 10_001,
             "rsa_generation": 101,
         }
         resp = client.post(
@@ -202,7 +202,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
             },
             "detail": [
                 {
-                    "loc": ["body", "auto_generate_interval"],
+                    "loc": ["body", "rsa_key_generate_interval"],
                     "ctx": {"limit_value": 10_000},
                     "msg": "ensure this value is less than or equal to 10000",
                     "type": "value_error.number.not_le"

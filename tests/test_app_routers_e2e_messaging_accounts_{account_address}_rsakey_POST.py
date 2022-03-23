@@ -121,7 +121,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressRsakeyPOST:
         assert resp.status_code == 200
         assert resp.json() == {
             "account_address": user_address_1,
-            "auto_generate_interval": None,
+            "rsa_key_generate_interval": None,
             "rsa_generation": None,
             "rsa_public_key": ANY,
             "rsa_status": AccountRsaStatus.SET.value,
@@ -203,7 +203,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressRsakeyPOST:
         assert resp.status_code == 200
         assert resp.json() == {
             "account_address": user_address_1,
-            "auto_generate_interval": None,
+            "rsa_key_generate_interval": None,
             "rsa_generation": None,
             "rsa_public_key": ANY,
             "rsa_status": AccountRsaStatus.SET.value,
