@@ -75,7 +75,7 @@ Acceptable message formats follow.
 }
 
 type's max length is 50.
-decoded message's max length is 2000.
+decoded message's max length is 5000.
 """
 
 
@@ -244,7 +244,7 @@ class Processor:
             LOG.warning(f"Message could not be decoded: text={text}", exc_info=e)
             return None
 
-        if len(decrypt_message) > 2000:
+        if len(decrypt_message) > 5000:
             LOG.warning(f"Message could not be decoded: text={text}")
             return None
 

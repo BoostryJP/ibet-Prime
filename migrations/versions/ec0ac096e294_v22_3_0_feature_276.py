@@ -53,7 +53,7 @@ def upgrade():
     sa.Column('from_address', sa.String(length=42), nullable=True),
     sa.Column('to_address', sa.String(length=42), nullable=True),
     sa.Column('type', sa.String(length=50), nullable=False),
-    sa.Column('message', sa.String(length=2000), nullable=False),
+    sa.Column('message', sa.String(length=5000), nullable=False),
     sa.Column('send_timestamp', sa.DateTime(), nullable=True),
     sa.Column('block_timestamp', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id')

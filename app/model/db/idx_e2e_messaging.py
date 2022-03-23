@@ -40,7 +40,7 @@ class IDXE2EMessaging(Base):
     # type
     type = Column(String(50), nullable=False)
     # message
-    message = Column(String(2000), nullable=False)
+    message = Column(String(5000), nullable=False)
     # send timestamp
     send_timestamp = Column(DateTime)
     # block timestamp

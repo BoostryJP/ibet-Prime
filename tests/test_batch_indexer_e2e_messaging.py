@@ -430,7 +430,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         # Send Message(user3 -> user2)
         _type_4 = "a" * 50
-        message_message_str_4 = "a" * 2000
+        message_message_str_4 = "a" * 5000
         sending_tx_hash_4, sending_tx_receipt = E2EMessaging.send_message_external(
             e2e_messaging_contract.address,
             user_address_2,
@@ -937,7 +937,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         aes_key = os.urandom(32)
         aes_iv = os.urandom(16)
         aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
-        pad_message = pad(("a" * 2001).encode("utf-8"), AES.block_size)
+        pad_message = pad(("a" * 5001).encode("utf-8"), AES.block_size)
         encrypted_message = base64.b64encode(aes_iv + aes_cipher.encrypt(pad_message)).decode()
         rsa_key = RSA.import_key(self.rsa_public_key)
         rsa_cipher = PKCS1_OAEP.new(rsa_key)
