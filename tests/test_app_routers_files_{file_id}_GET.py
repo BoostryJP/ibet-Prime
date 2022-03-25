@@ -52,6 +52,7 @@ abc def"""
         _upload_file.content = file_content_bin
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
+        _upload_file.label = "label_1"
         db.add(_upload_file)
 
         # request target api
@@ -69,6 +70,7 @@ abc def"""
             "content": base64.b64encode(file_content_bin).decode(),
             "content_size": len(file_content_bin),
             "description": "description_1",
+            "label": "label_1",
         }
 
     # <Normal_1_2>
@@ -92,6 +94,7 @@ abc def"""
         _upload_file.content = file_content_bin
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
+        _upload_file.label = "label_1"
         db.add(_upload_file)
 
         # request target api
@@ -112,6 +115,7 @@ abc def"""
             "content": base64.b64encode(file_content_bin).decode(),
             "content_size": len(file_content_bin),
             "description": "description_1",
+            "label": "label_1",
         }
 
     # <Normal_2>
@@ -129,6 +133,7 @@ abc def"""
         _upload_file.content = file_content_bin
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
+        _upload_file.label = "label_1"
         db.add(_upload_file)
 
         # request target api
@@ -146,6 +151,7 @@ abc def"""
             "content": base64.b64encode(file_content_bin).decode(),
             "content_size": len(file_content_bin),
             "description": "description_1",
+            "label": "label_1",
         }
 
     ###########################################################################
@@ -217,6 +223,7 @@ abc def"""
         _upload_file.content = file_content_bin
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
+        _upload_file.label = "label_1"
         db.add(_upload_file)
 
         # request target API

@@ -45,6 +45,7 @@ class UploadFileRequest(BaseModel):
     file_name: str = Field(..., max_length=256)
     content: str
     description: Optional[str] = Field(None, max_length=1000)
+    label: Optional[str] = Field(None, max_length=200)
 
     @validator("content")
     def content_is_less_than_max_upload_file_size(cls, v):
@@ -77,6 +78,7 @@ class FileResponse(BaseModel):
     file_name: str
     content_size: int
     description: Optional[str]
+    label: Optional[str]
     created: datetime
 
 
@@ -95,6 +97,7 @@ class DownloadFileResponse(BaseModel):
     content: str
     content_size: int
     description: Optional[str]
+    label: Optional[str]
 
     class Config:
         @staticmethod
