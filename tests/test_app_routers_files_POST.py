@@ -49,6 +49,7 @@ abc def"""
             "file_name": "file_name_1",
             "content": base64.b64encode(file_content_bin).decode(),
             "description": "description_1",
+            "label": "label_1"
         }
         resp = client.post(
             self.base_url,
@@ -70,6 +71,7 @@ abc def"""
         assert _upload_file.content == file_content_bin
         assert _upload_file.content_size == len(file_content_bin)
         assert _upload_file.description == "description_1"
+        assert _upload_file.label == "label_1"
 
     # <Normal_2>
     # binary file
@@ -82,6 +84,7 @@ abc def"""
             "file_name": "file_name_1",
             "content": base64.b64encode(file_content_bin).decode(),
             "description": "description_1",
+            "label": "label_1"
         }
         resp = client.post(
             self.base_url,
@@ -103,6 +106,7 @@ abc def"""
         assert _upload_file.content == file_content_bin
         assert _upload_file.content_size == len(file_content_bin)
         assert _upload_file.description == "description_1"
+        assert _upload_file.label == "label_1"
 
     ###########################################################################
     # Error Case
@@ -213,6 +217,10 @@ abc def"""
                                "12345678901234567890123456789012345678901234567890"
                                "12345678901234567890123456789012345678901234567890"
                                "123456789012345678901234567890123456789012345678901",
+                "label": "12345678901234567890123456789012345678901234567890"
+                         "12345678901234567890123456789012345678901234567890"
+                         "12345678901234567890123456789012345678901234567890"
+                         "123456789012345678901234567890123456789012345678901"
             },
             headers={
                 "issuer-address": self.issuer_address,
@@ -250,6 +258,12 @@ abc def"""
                     "type": "value_error.any_str.max_length",
                     "ctx": {"limit_value": 1000}
                 },
+                {
+                    "loc": ["body", "label"],
+                    "msg": "ensure this value has at most 200 characters",
+                    "type": "value_error.any_str.max_length",
+                    "ctx": {"limit_value": 200}
+                },
             ]
         }
 
@@ -264,6 +278,7 @@ abc def"""
             "file_name": "file_name_1",
             "content": "あいう",
             "description": "description_1",
+            "label": "label_1",
         }
         resp = client.post(
             self.base_url,
