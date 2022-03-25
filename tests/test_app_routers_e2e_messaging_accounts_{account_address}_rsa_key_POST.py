@@ -21,53 +21,20 @@ from datetime import datetime
 
 from app.model.db import (
     E2EMessagingAccount,
-    E2EMessagingAccountRsaKey,
-    AccountRsaStatus
+    E2EMessagingAccountRsaKey
 )
 
 
-class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
+class TestAppRoutersE2EMessagingAccountsAccountAddressRSAKeyPOST:
     # target API endpoint
-    base_url = "/e2e_messaging_accounts/{account_address}"
+    base_url = "/e2e_messaging/accounts/{account_address}/rsa_key"
 
     ###########################################################################
     # Normal Case
     ###########################################################################
 
     # <Normal_1>
-    # RSA key is None
     def test_normal_1(self, client, db):
-        # prepare data
-        _account = E2EMessagingAccount()
-        _account.account_address = "0x1234567890123456789012345678900000000000"
-        _account.rsa_key_generate_interval = 1
-        _account.rsa_generation = 2
-        db.add(_account)
-
-        # request target api
-        req_param = {}
-        resp = client.post(
-            self.base_url.format(account_address="0x1234567890123456789012345678900000000000"),
-            json=req_param,
-        )
-
-        # assertion
-        assert resp.status_code == 200
-        assert resp.json() == {
-            "account_address": "0x1234567890123456789012345678900000000000",
-            "rsa_key_generate_interval": None,
-            "rsa_generation": None,
-            "rsa_public_key": None,
-            "rsa_status": AccountRsaStatus.UNSET.value,
-            "is_deleted": False,
-        }
-        _account = db.query(E2EMessagingAccount).first()
-        assert _account.rsa_key_generate_interval is None
-        assert _account.rsa_generation is None
-
-    # <Normal_2>
-    # RSA key is not None
-    def test_normal_2(self, client, db):
         # prepare data
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000000"
@@ -111,12 +78,60 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
             "rsa_key_generate_interval": 1,
             "rsa_generation": 2,
             "rsa_public_key": "rsa_public_key_1_3",
-            "rsa_status": AccountRsaStatus.SET.value,
             "is_deleted": False,
         }
         _account = db.query(E2EMessagingAccount).first()
         assert _account.rsa_key_generate_interval == 1
         assert _account.rsa_generation == 2
+
+    # <Normal_2>
+    # default value
+    def test_normal_2(self, client, db):
+        # prepare data
+        _account = E2EMessagingAccount()
+        _account.account_address = "0x1234567890123456789012345678900000000000"
+        db.add(_account)
+
+        _rsa_key = E2EMessagingAccountRsaKey()
+        _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
+        _rsa_key.rsa_public_key = "rsa_public_key_1_1"
+        _rsa_key.block_timestamp = datetime.utcnow()
+        db.add(_rsa_key)
+        time.sleep(1)
+
+        _rsa_key = E2EMessagingAccountRsaKey()
+        _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
+        _rsa_key.rsa_public_key = "rsa_public_key_1_2"
+        _rsa_key.block_timestamp = datetime.utcnow()
+        db.add(_rsa_key)
+        time.sleep(1)
+
+        _rsa_key = E2EMessagingAccountRsaKey()
+        _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
+        _rsa_key.rsa_public_key = "rsa_public_key_1_3"
+        _rsa_key.block_timestamp = datetime.utcnow()
+        db.add(_rsa_key)
+        time.sleep(1)
+
+        # request target api
+        req_param = {}
+        resp = client.post(
+            self.base_url.format(account_address="0x1234567890123456789012345678900000000000"),
+            json=req_param,
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "account_address": "0x1234567890123456789012345678900000000000",
+            "rsa_key_generate_interval": 24,
+            "rsa_generation": 7,
+            "rsa_public_key": "rsa_public_key_1_3",
+            "is_deleted": False,
+        }
+        _account = db.query(E2EMessagingAccount).first()
+        assert _account.rsa_key_generate_interval == 24
+        assert _account.rsa_generation == 7
 
     ###########################################################################
     # Error Case
@@ -149,8 +164,8 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
     # min
     def test_error_1_2(self, client, db):
         req_param = {
-            "rsa_key_generate_interval": 0,
-            "rsa_generation": 0,
+            "rsa_key_generate_interval": -1,
+            "rsa_generation": -1,
         }
         resp = client.post(
             self.base_url.format(account_address="0x1234567890123456789012345678900000000000"),
@@ -167,14 +182,14 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
             "detail": [
                 {
                     "loc": ["body", "rsa_key_generate_interval"],
-                    "ctx": {"limit_value": 1},
-                    "msg": "ensure this value is greater than or equal to 1",
+                    "ctx": {"limit_value": 0},
+                    "msg": "ensure this value is greater than or equal to 0",
                     "type": "value_error.number.not_ge"
                 },
                 {
                     "loc": ["body", "rsa_generation"],
-                    "ctx": {"limit_value": 1},
-                    "msg": "ensure this value is greater than or equal to 1",
+                    "ctx": {"limit_value": 0},
+                    "msg": "ensure this value is greater than or equal to 0",
                     "type": "value_error.number.not_ge"
                 },
             ]

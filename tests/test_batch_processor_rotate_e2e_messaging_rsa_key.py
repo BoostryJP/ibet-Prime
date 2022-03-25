@@ -157,28 +157,6 @@ class TestProcessor:
         assert _rsa_key.rsa_passphrase == "rsa_passphrase_1"
         assert _rsa_key.block_timestamp == _rsa_key_1.block_timestamp
 
-    # <Normal_1_4>
-    # RSA key not created
-    def test_normal_1_4(self, processor, db, e2e_messaging_contract):
-        user_1 = config_eth_account("user1")
-        user_address_1 = user_1["address"]
-
-        # Prepare data : E2EMessagingAccount
-        _account = E2EMessagingAccount()
-        _account.account_address = user_address_1
-        _account.rsa_key_generate_interval = 1
-        _account.rsa_generation = 2
-        db.add(_account)
-
-        db.commit()
-
-        # Run target process
-        processor.process()
-
-        # Assertion
-        _rsa_key_list = db.query(E2EMessagingAccountRsaKey).order_by(E2EMessagingAccountRsaKey.block_timestamp).all()
-        assert len(_rsa_key_list) == 0
-
     # <Normal_2>
     # auto generate and rotate
     def test_normal_2(self, processor, db, e2e_messaging_contract):
@@ -356,7 +334,7 @@ class TestProcessor:
     ###########################################################################
 
     # <Error_1>
-    # Could not get the private key
+    # Could not get the EOA private key
     def test_error_1(self, processor, db):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
@@ -370,6 +348,19 @@ class TestProcessor:
         _account.rsa_key_generate_interval = 1
         _account.rsa_generation = 2
         db.add(_account)
+
+        datetime_now = datetime.utcnow()
+
+        # Prepare data : E2EMessagingAccountRsaKey
+        _rsa_key = E2EMessagingAccountRsaKey()
+        _rsa_key.transaction_hash = "tx_3"
+        _rsa_key.account_address = user_address_1
+        _rsa_key.rsa_private_key = "rsa_private_key_1_3"
+        _rsa_key.rsa_public_key = "rsa_public_key_1_3"
+        _rsa_key.rsa_passphrase = E2EEUtils.encrypt("latest_passphrase_1")
+        _rsa_key.block_timestamp = datetime_now + timedelta(hours=-1, seconds=-1)
+        db.add(_rsa_key)
+        time.sleep(1)
 
         db.commit()
 

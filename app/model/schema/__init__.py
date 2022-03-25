@@ -27,16 +27,13 @@ from .account import (
     AccountResponse
 )
 from .e2e_messaging import (
-    E2EMessagingResponse,
-    ListAllE2EMessagingResponse
-)
-from .e2e_messaging_account import (
-    E2EMessagingAccountCreateKeyRequest,
-    E2EMessagingAccountUpdateRequest,
-    E2EMessagingAccountGenerateRsaKeyRequest,
+    E2EMessagingAccountCreateRequest,
+    E2EMessagingAccountUpdateRsaKeyRequest,
     E2EMessagingAccountChangeEOAPasswordRequest,
     E2EMessagingAccountChangeRSAPassphraseRequest,
-    E2EMessagingAccountResponse
+    E2EMessagingAccountResponse,
+    E2EMessagingResponse,
+    ListAllE2EMessagingResponse
 )
 from .ledger import (
     CreateUpdateLedgerTemplateRequest,

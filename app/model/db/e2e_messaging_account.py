@@ -40,9 +40,9 @@ class E2EMessagingAccount(Base):
     # ethereum account password(encrypted)
     eoa_password = Column(String(2000))
     # RSA key auto-generation interval(hour)
-    rsa_key_generate_interval = Column(Integer)
+    rsa_key_generate_interval = Column(Integer, default=0)
     # Number of RSA key generations
-    rsa_generation = Column(Integer)
+    rsa_generation = Column(Integer, default=0)
     # delete flag
     is_deleted = Column(Boolean, default=False)
 

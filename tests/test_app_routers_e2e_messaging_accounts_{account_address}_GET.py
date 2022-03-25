@@ -21,46 +21,20 @@ from datetime import datetime
 
 from app.model.db import (
     E2EMessagingAccount,
-    E2EMessagingAccountRsaKey,
-    AccountRsaStatus
+    E2EMessagingAccountRsaKey
 )
 
 
 class TestAppRoutersE2EMessagingAccountsAccountAddressGET:
     # target API endpoint
-    base_url = "/e2e_messaging_accounts/{account_address}"
+    base_url = "/e2e_messaging/accounts/{account_address}"
 
     ###########################################################################
     # Normal Case
     ###########################################################################
 
     # <Normal_1>
-    # RSA key is None
     def test_normal_1(self, client, db):
-        # prepare data
-        _account = E2EMessagingAccount()
-        _account.account_address = "0x1234567890123456789012345678900000000000"
-        db.add(_account)
-
-        # request target api
-        resp = client.get(
-            self.base_url.format(account_address="0x1234567890123456789012345678900000000000"),
-        )
-
-        # assertion
-        assert resp.status_code == 200
-        assert resp.json() == {
-            "account_address": "0x1234567890123456789012345678900000000000",
-            "rsa_key_generate_interval": None,
-            "rsa_generation": None,
-            "rsa_public_key": None,
-            "rsa_status": AccountRsaStatus.UNSET.value,
-            "is_deleted": False,
-        }
-
-    # <Normal_2>
-    # RSA key is not None
-    def test_normal_2(self, client, db):
         # prepare data
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000000"
@@ -101,8 +75,31 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressGET:
             "rsa_key_generate_interval": 1,
             "rsa_generation": 2,
             "rsa_public_key": "rsa_public_key_1_3",
-            "rsa_status": AccountRsaStatus.SET.value,
             "is_deleted": False,
+        }
+
+    # <Normal_2>
+    # deleted(RSA key is None)
+    def test_normal_2(self, client, db):
+        # prepare data
+        _account = E2EMessagingAccount()
+        _account.account_address = "0x1234567890123456789012345678900000000000"
+        _account.is_deleted = True
+        db.add(_account)
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(account_address="0x1234567890123456789012345678900000000000"),
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "account_address": "0x1234567890123456789012345678900000000000",
+            "rsa_key_generate_interval": 0,
+            "rsa_generation": 0,
+            "rsa_public_key": None,
+            "is_deleted": True,
         }
 
     ###########################################################################

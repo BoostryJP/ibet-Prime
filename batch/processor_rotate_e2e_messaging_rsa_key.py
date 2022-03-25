@@ -95,15 +95,13 @@ class Processor:
 
     def __auto_generate_rsa_key(self, db_session: Session, base_time: int, e2e_messaging_account: E2EMessagingAccount):
 
-        if e2e_messaging_account.rsa_key_generate_interval is not None:
+        if e2e_messaging_account.rsa_key_generate_interval > 0:
 
             # Get latest RSA key
             _account_rsa_key = db_session.query(E2EMessagingAccountRsaKey). \
                 filter(E2EMessagingAccountRsaKey.account_address == e2e_messaging_account.account_address). \
                 order_by(desc(E2EMessagingAccountRsaKey.block_timestamp)). \
                 first()
-            if _account_rsa_key is None:
-                return
             latest_time = int(_account_rsa_key.block_timestamp.timestamp())
             interval = e2e_messaging_account.rsa_key_generate_interval * 3600
             if base_time - latest_time < interval:
@@ -125,7 +123,7 @@ class Processor:
                     password=eoa_password.encode("utf-8")
                 )
             except Exception as err:
-                LOG.exception(f"Could not get the private key: "
+                LOG.exception(f"Could not get the EOA private key: "
                               f"account_address={e2e_messaging_account.account_address}", err)
                 return
             try:
@@ -153,7 +151,7 @@ class Processor:
 
     def __rotate_rsa_key(self, db_session: Session, e2e_messaging_account: E2EMessagingAccount):
 
-        if e2e_messaging_account.rsa_generation is not None:
+        if e2e_messaging_account.rsa_generation > 0:
 
             # Delete RSA key that exceeds the number of generations
             _account_rsa_key_over_generation_list = db_session.query(E2EMessagingAccountRsaKey). \

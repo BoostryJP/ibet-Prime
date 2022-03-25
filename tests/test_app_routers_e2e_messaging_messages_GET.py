@@ -25,10 +25,9 @@ from app.model.db import (
 )
 
 
-class TestAppRoutersE2EMessagingReceiveGET:
+class TestAppRoutersE2EMessagingMessagesGET:
     # target API endpoint
-    base_url = "/e2e_messaging/receive"
-
+    base_url = "/e2e_messaging/messages"
 
     def insert_data(self, db, e2e_messaging):
         _e2e_messaging = IDXE2EMessaging()
@@ -54,14 +53,6 @@ class TestAppRoutersE2EMessagingReceiveGET:
     # <Normal_1>
     # 0 record(not E2E account)
     def test_normal_1(self, client, db):
-        # prepare data
-        _e2e_messaging = IDXE2EMessaging()
-        _e2e_messaging.from_address = "0x1234567890123456789012345678900000000010"
-        _e2e_messaging.to_address = "0x1234567890123456789012345678900000000000"  # not registry account address
-        _e2e_messaging.type = "dummy_type"
-        _e2e_messaging.message = "dummy message"
-        _e2e_messaging.send_timestamp = datetime.utcnow()
-        db.add(_e2e_messaging)
 
         # request target api
         resp = client.get(
@@ -80,10 +71,9 @@ class TestAppRoutersE2EMessagingReceiveGET:
             "e2e_messages": []
         }
 
-    # <Normal_2_1>
+    # <Normal_2>
     # 1 record
-    # not specify header
-    def test_normal_2_1(self, client, db):
+    def test_normal_2(self, client, db):
         # prepare data
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
@@ -116,57 +106,6 @@ class TestAppRoutersE2EMessagingReceiveGET:
                     "type": "type_test1",
                     "message": "message_test1",
                     "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
-                },
-            ]
-        }
-
-    # <Normal_2_2>
-    # 1 record
-    # specify header
-    def test_normal_2_2(self, client, db):
-        # prepare data
-        e2e_messaging = {
-            "from_address": "0x1234567890123456789012345678900000000010",
-            "to_address": "0x1234567890123456789012345678900000000000",
-            "type": "type_test1",
-            "message": "message_test1",
-            "send_timestamp": datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
-        }
-        self.insert_data(db, e2e_messaging)
-        e2e_messaging = {
-            "from_address": "0x1234567890123456789012345678900000000011",
-            "to_address": "0x1234567890123456789012345678900000000001",  # target address
-            "type": "type_test2",
-            "message": "message_test2",
-            "send_timestamp": datetime.strptime("2022/01/01 15:20:31.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
-        }
-        self.insert_data(db, e2e_messaging)
-
-        # request target api
-        resp = client.get(
-            self.base_url,
-            headers={
-                "account-address": "0x1234567890123456789012345678900000000001",
-            },
-        )
-
-        # assertion
-        assert resp.status_code == 200
-        assert resp.json() == {
-            "result_set": {
-                "count": 1,
-                "offset": None,
-                "limit": None,
-                "total": 1
-            },
-            "e2e_messages": [
-                {
-                    "id": 2,
-                    "from_address": "0x1234567890123456789012345678900000000011",
-                    "to_address": "0x1234567890123456789012345678900000000001",
-                    "type": "type_test2",
-                    "message": "message_test2",
-                    "send_timestamp": "2022-01-02T00:20:31.000001+09:00",
                 },
             ]
         }
@@ -358,8 +297,75 @@ class TestAppRoutersE2EMessagingReceiveGET:
 
     # <Normal_4_2>
     # Search Filter
-    # type
+    # to_address
     def test_normal_4_2(self, client, db):
+        # prepare data
+        e2e_messaging = {
+            "from_address": "0x1234567890123456789012345678900000000010",
+            "to_address": "0x1234567890123456789012345678900000000000",
+            "type": "type_test1",
+            "message": "message_test1",
+            "send_timestamp": datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
+        }
+        self.insert_data(db, e2e_messaging)
+        e2e_messaging = {
+            "from_address": "0x1234567890123456789012345678900000000011",
+            "to_address": "0x1234567890123456789012345678900000000001",
+            "type": "type_test2",
+            "message": "message_test2",
+            "send_timestamp": datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
+        }
+        self.insert_data(db, e2e_messaging)
+        e2e_messaging = {
+            "from_address": "0x1234567890123456789012345678900000000012",
+            "to_address": "0x1234567890123456789012345678900000000000",
+            "type": "type_test3",
+            "message": "message_test3",
+            "send_timestamp": datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
+        }
+        self.insert_data(db, e2e_messaging)
+
+        # request target api
+        resp = client.get(
+            self.base_url,
+            params={
+                "to_address": "0x1234567890123456789012345678900000000000"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {
+                "count": 2,
+                "offset": None,
+                "limit": None,
+                "total": 3
+            },
+            "e2e_messages": [
+                {
+                    "id": 3,
+                    "from_address": "0x1234567890123456789012345678900000000012",
+                    "to_address": "0x1234567890123456789012345678900000000000",
+                    "type": "type_test3",
+                    "message": "message_test3",
+                    "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
+                },
+                {
+                    "id": 1,
+                    "from_address": "0x1234567890123456789012345678900000000010",
+                    "to_address": "0x1234567890123456789012345678900000000000",
+                    "type": "type_test1",
+                    "message": "message_test1",
+                    "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
+                },
+            ]
+        }
+
+    # <Normal_4_3>
+    # Search Filter
+    # type
+    def test_normal_4_3(self, client, db):
         # prepare data
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
@@ -423,10 +429,10 @@ class TestAppRoutersE2EMessagingReceiveGET:
             ]
         }
 
-    # <Normal_4_3>
+    # <Normal_4_4>
     # Search Filter
     # message
-    def test_normal_4_3(self, client, db):
+    def test_normal_4_4(self, client, db):
         # prepare data
         e2e_messaging = {
             "from_address": "0x1234567890123456789012345678900000000010",
@@ -613,7 +619,6 @@ class TestAppRoutersE2EMessagingReceiveGET:
     # Parameter Error
     # Query
     def test_error_1(self, client, db):
-
         # request target API
         resp = client.get(
             self.base_url,
@@ -641,34 +646,5 @@ class TestAppRoutersE2EMessagingReceiveGET:
                     "msg": "value is not a valid integer",
                     "type": "type_error.integer"
                 },
-            ]
-        }
-
-    # <Error_2>
-    # Parameter Error
-    # Header
-    def test_error_2(self, client, db):
-
-        # request target API
-        resp = client.get(
-            self.base_url,
-            headers={
-                "account-address": "test",
-            },
-        )
-
-        # assertion
-        assert resp.status_code == 422
-        assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
-            "detail": [
-                {
-                    "loc": ["header", "account-address"],
-                    "msg": "account-address is not a valid address",
-                    "type": "value_error"
-                }
             ]
         }

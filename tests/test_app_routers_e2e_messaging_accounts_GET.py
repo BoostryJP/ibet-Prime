@@ -21,14 +21,13 @@ from datetime import datetime
 
 from app.model.db import (
     E2EMessagingAccount,
-    E2EMessagingAccountRsaKey,
-    AccountRsaStatus
+    E2EMessagingAccountRsaKey
 )
 
 
 class TestAppRoutersE2EMessagingAccountsGET:
     # target API endpoint
-    base_url = "/e2e_messaging_accounts"
+    base_url = "/e2e_messaging/accounts"
 
     ###########################################################################
     # Normal Case
@@ -56,6 +55,13 @@ class TestAppRoutersE2EMessagingAccountsGET:
         _account.rsa_generation = 2
         db.add(_account)
 
+        _rsa_key = E2EMessagingAccountRsaKey()
+        _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
+        _rsa_key.rsa_public_key = "rsa_public_key_1_1"
+        _rsa_key.block_timestamp = datetime.utcnow()
+        db.add(_rsa_key)
+        time.sleep(1)
+
         # request target api
         resp = client.get(
             self.base_url,
@@ -68,8 +74,7 @@ class TestAppRoutersE2EMessagingAccountsGET:
                 "account_address": "0x1234567890123456789012345678900000000000",
                 "rsa_key_generate_interval": 1,
                 "rsa_generation": 2,
-                "rsa_public_key": None,
-                "rsa_status": AccountRsaStatus.UNSET.value,
+                "rsa_public_key": "rsa_public_key_1_1",
                 "is_deleted": False
             },
         ]
@@ -82,6 +87,13 @@ class TestAppRoutersE2EMessagingAccountsGET:
         _account.account_address = "0x1234567890123456789012345678900000000000"
         db.add(_account)
 
+        _rsa_key = E2EMessagingAccountRsaKey()
+        _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
+        _rsa_key.rsa_public_key = "rsa_public_key_1_1"
+        _rsa_key.block_timestamp = datetime.utcnow()
+        db.add(_rsa_key)
+        time.sleep(1)
+
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000001"
         _account.rsa_key_generate_interval = 1
@@ -91,6 +103,8 @@ class TestAppRoutersE2EMessagingAccountsGET:
 
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000002"
+        _account.rsa_key_generate_interval = 3
+        _account.rsa_generation = 4
         db.add(_account)
 
         _rsa_key = E2EMessagingAccountRsaKey()
@@ -135,10 +149,9 @@ class TestAppRoutersE2EMessagingAccountsGET:
         assert resp.json() == [
             {
                 "account_address": "0x1234567890123456789012345678900000000000",
-                "rsa_key_generate_interval": None,
-                "rsa_generation": None,
-                "rsa_public_key": None,
-                "rsa_status": AccountRsaStatus.UNSET.value,
+                "rsa_key_generate_interval": 0,
+                "rsa_generation": 0,
+                "rsa_public_key": "rsa_public_key_1_1",
                 "is_deleted": False
             },
             {
@@ -146,23 +159,20 @@ class TestAppRoutersE2EMessagingAccountsGET:
                 "rsa_key_generate_interval": 1,
                 "rsa_generation": 2,
                 "rsa_public_key": None,
-                "rsa_status": AccountRsaStatus.UNSET.value,
                 "is_deleted": True
             },
             {
                 "account_address": "0x1234567890123456789012345678900000000002",
-                "rsa_key_generate_interval": None,
-                "rsa_generation": None,
+                "rsa_key_generate_interval": 3,
+                "rsa_generation": 4,
                 "rsa_public_key": "rsa_public_key_2_1",
-                "rsa_status": AccountRsaStatus.SET.value,
                 "is_deleted": False
             },
             {
                 "account_address": "0x1234567890123456789012345678900000000003",
-                "rsa_key_generate_interval": None,
-                "rsa_generation": None,
+                "rsa_key_generate_interval": 0,
+                "rsa_generation": 0,
                 "rsa_public_key": "rsa_public_key_3_3",
-                "rsa_status": AccountRsaStatus.SET.value,
                 "is_deleted": False
             },
         ]

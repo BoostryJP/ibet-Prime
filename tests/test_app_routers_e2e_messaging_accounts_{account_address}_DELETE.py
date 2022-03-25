@@ -21,14 +21,13 @@ from datetime import datetime
 
 from app.model.db import (
     E2EMessagingAccount,
-    E2EMessagingAccountRsaKey,
-    AccountRsaStatus
+    E2EMessagingAccountRsaKey
 )
 
 
 class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
     # target API endpoint
-    base_url = "/e2e_messaging_accounts/{account_address}"
+    base_url = "/e2e_messaging/accounts/{account_address}"
 
     ###########################################################################
     # Normal Case
@@ -77,7 +76,6 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
             "rsa_key_generate_interval": 1,
             "rsa_generation": 2,
             "rsa_public_key": None,
-            "rsa_status": AccountRsaStatus.UNSET.value,
             "is_deleted": True,
         }
         _account = db.query(E2EMessagingAccount).first()

@@ -31,7 +31,6 @@ from app.routers import (
     index,
     account,
     bond,
-    e2e_messaging_account,
     e2e_messaging,
     file,
     ledger,
@@ -70,7 +69,6 @@ async def root():
 app.include_router(index.router)
 app.include_router(account.router)
 app.include_router(bond.router)
-app.include_router(e2e_messaging_account.router)
 app.include_router(e2e_messaging.router)
 app.include_router(file.router)
 app.include_router(ledger.router)

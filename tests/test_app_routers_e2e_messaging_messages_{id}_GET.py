@@ -25,9 +25,9 @@ from app.model.db import (
 )
 
 
-class TestAppRoutersE2EMessagingReceiveIdGET:
+class TestAppRoutersE2EMessagingMessagesIdGET:
     # target API endpoint
-    base_url = "/e2e_messaging/receive/{id}"
+    base_url = "/e2e_messaging/messages/{id}"
 
     def insert_data(self, db, e2e_messaging):
         _e2e_messaging = IDXE2EMessaging()
@@ -192,38 +192,9 @@ class TestAppRoutersE2EMessagingReceiveIdGET:
     ###########################################################################
 
     # <Error_1>
-    # Parameter Error
-    # Header
-    def test_error_1(self, client, db):
-
-        # request target API
-        resp = client.get(
-            self.base_url.format(id=1),
-            headers={
-                "account-address": "test",
-            },
-        )
-
-        # assertion
-        assert resp.status_code == 422
-        assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
-            "detail": [
-                {
-                    "loc": ["header", "account-address"],
-                    "msg": "account-address is not a valid address",
-                    "type": "value_error"
-                }
-            ]
-        }
-
-    # <Error_2_1>
     # Not Found Error
     # no data
-    def test_error_2_1(self, client, db):
+    def test_error_1(self, client, db):
         # prepare data
         e2e_messaging = {
             "id": 10,
@@ -238,43 +209,6 @@ class TestAppRoutersE2EMessagingReceiveIdGET:
         # request target API
         resp = client.get(
             self.base_url.format(id=1),  # other id
-        )
-
-        # assertion
-        assert resp.status_code == 404
-        assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "e2e messaging not found",
-        }
-
-    # <Error_2_2>
-    # Not Found Error
-    # send data
-    def test_error_2_2(self, client, db):
-        # prepare data
-        e2e_messaging = {
-            "id": 10,
-            "from_address": "0x1234567890123456789012345678900000000010",
-            "to_address": "0x1234567890123456789012345678900000000000",  # not registry account address
-            "type": "type_test1",
-            "message": "test_message1",
-            "send_timestamp": datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
-        }
-        _e2e_messaging = IDXE2EMessaging()
-        _e2e_messaging.id = e2e_messaging["id"]
-        _e2e_messaging.from_address = e2e_messaging["from_address"]
-        _e2e_messaging.to_address = e2e_messaging["to_address"]
-        _e2e_messaging.type = e2e_messaging["type"]
-        _e2e_messaging.message = e2e_messaging["message"]
-        _e2e_messaging.send_timestamp = e2e_messaging["send_timestamp"]
-        db.add(_e2e_messaging)
-
-        # request target API
-        resp = client.get(
-            self.base_url.format(id=10),
         )
 
         # assertion

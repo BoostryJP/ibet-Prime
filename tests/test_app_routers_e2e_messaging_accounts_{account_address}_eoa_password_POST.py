@@ -27,7 +27,7 @@ from tests.account_config import config_eth_account
 
 class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
     # target API endpoint
-    base_url = "/e2e_messaging_accounts/{account_address}/eoa_password"
+    base_url = "/e2e_messaging/accounts/{account_address}/eoa_password"
 
     ###########################################################################
     # Normal Case

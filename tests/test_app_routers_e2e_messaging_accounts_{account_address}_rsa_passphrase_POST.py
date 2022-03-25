@@ -33,7 +33,7 @@ from tests.account_config import config_eth_account
 
 class TestAppRoutersE2EMessagingAccountsAccountAddressRsakeyPOST:
     # target API endpoint
-    base_url = "/e2e_messaging_accounts/{account_address}/rsa_passphrase"
+    base_url = "/e2e_messaging/accounts/{account_address}/rsa_passphrase"
 
     rsa_private_key = """-----BEGIN RSA PRIVATE KEY-----
 Proc-Type: 4,ENCRYPTED
