@@ -29,7 +29,6 @@ import pytz
 from fastapi import (
     APIRouter,
     Depends,
-    Header,
     Query,
     Path
 )
@@ -138,12 +137,6 @@ def create_account(
     rsa = RSA.generate(4096, random_func)
     rsa_private_key = rsa.exportKey(format="PEM", passphrase=rsa_passphrase).decode()
     rsa_public_key = rsa.publickey().exportKey().decode()
-
-    # Get private key
-    private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile_json,
-        password=eoa_password.encode("utf-8")
-    )
 
     # Send transaction
     try:

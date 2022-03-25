@@ -152,7 +152,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
     # <Normal_2_1>
     # Single event logs
-    # not generated RSA key
+    # not generated RSA key after send
     def test_normal_2_1(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
@@ -222,7 +222,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
     # <Normal_2_2>
     # Single event logs
-    # generated RSA key
+    # generated RSA key after send
     def test_normal_2_2(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]

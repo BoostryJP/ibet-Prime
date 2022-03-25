@@ -20,7 +20,6 @@ import base64
 from unittest import mock
 from unittest.mock import MagicMock
 from unittest.mock import ANY
-import time
 from datetime import (
     datetime,
     timezone
@@ -29,7 +28,6 @@ from datetime import (
 from config import (
     EOA_PASSWORD_PATTERN_MSG,
     E2E_MESSAGING_RSA_DEFAULT_PASSPHRASE,
-    E2E_MESSAGING_RSA_PASSPHRASE_PATTERN,
     E2E_MESSAGING_RSA_PASSPHRASE_PATTERN_MSG
 )
 from app.model.blockchain import E2EMessaging

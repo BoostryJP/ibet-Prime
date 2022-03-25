@@ -59,7 +59,7 @@ CHAIN_ID = int(os.environ.get("CHAIN_ID")) if os.environ.get("CHAIN_ID") else 20
 TX_GAS_LIMIT = int(os.environ.get("TX_GAS_LIMIT")) if os.environ.get("TX_GAS_LIMIT") else 6000000
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 TOKEN_LIST_CONTRACT_ADDRESS = os.environ.get('TOKEN_LIST_CONTRACT_ADDRESS')
-E2E_MESSAGING_CONTRACT_ADDRESS = os.environ.get('TOKEN_LIST_CONTRACT_ADDRESS')
+E2E_MESSAGING_CONTRACT_ADDRESS = os.environ.get('E2E_MESSAGING_CONTRACT_ADDRESS')
 
 # Token data cache
 TOKEN_CACHE = False if os.environ.get("TOKEN_CACHE") == "0" else True
