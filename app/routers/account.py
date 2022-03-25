@@ -130,7 +130,7 @@ def list_all_accounts(db: Session = Depends(db_session)):
     """List all accounts"""
 
     # Register key data to the DB
-    _accounts = db.query(Account).all()
+    _accounts = db.query(Account).order_by(Account.issuer_address).all()
 
     account_list = []
     for _account in _accounts:

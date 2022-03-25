@@ -30,6 +30,14 @@ from .token import (
 )
 from .bulk_transfer_upload import BulkTransferUpload
 from .bulk_transfer import BulkTransfer
+from .e2e_messaging_account import (
+    E2EMessagingAccount,
+    E2EMessagingAccountRsaKey
+)
+from .idx_e2e_messaging import (
+    IDXE2EMessaging,
+    IDXE2EMessagingBlockNumber
+)
 from .idx_transfer import (
     IDXTransfer,
     IDXTransferBlockNumber

@@ -26,6 +26,15 @@ from .account import (
     AccountChangeRSAPassphraseRequest,
     AccountResponse
 )
+from .e2e_messaging import (
+    E2EMessagingAccountCreateRequest,
+    E2EMessagingAccountUpdateRsaKeyRequest,
+    E2EMessagingAccountChangeEOAPasswordRequest,
+    E2EMessagingAccountChangeRSAPassphraseRequest,
+    E2EMessagingAccountResponse,
+    E2EMessagingResponse,
+    ListAllE2EMessagingResponse
+)
 from .ledger import (
     CreateUpdateLedgerTemplateRequest,
     CreateUpdateLedgerDetailsDataRequest,

@@ -27,4 +27,8 @@ python batch/indexer_position_share.py &
 python batch/indexer_transfer.py &
 python batch/indexer_transfer_approval.py &
 
+if [ -n "${E2E_MESSAGING_CONTRACT_ADDRESS}" ]; then
+  python batch/indexer_e2e_messaging.py &
+fi
+
 tail -f /dev/null
