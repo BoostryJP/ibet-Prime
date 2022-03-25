@@ -41,7 +41,7 @@
     - Password: issuerapipass
     - DB: issuerapidb
     - DB for test use: issuerapidb_test
-- TokenList contract of the ibet-SmartContract must have been deployed beforehand.
+- TokenList and E2EMessaging contract of the ibet-SmartContract must have been deployed beforehand.
 
 ### Install packages
 
@@ -95,6 +95,12 @@ The main environment variables are as follows.
         <td>TOKEN_LIST_CONTRACT_ADDRESS</td>
         <td>True</td>
         <td nowrap>TokenList contract address</td>
+        <td>0x0000000000000000000000000000000000000000</td>
+    </tr>
+    <tr>
+        <td>E2E_MESSAGING_CONTRACT_ADDRESS</td>
+        <td>True</td>
+        <td nowrap>E2EMessaging contract address</td>
         <td>0x0000000000000000000000000000000000000000</td>
     </tr>
     <tr>
