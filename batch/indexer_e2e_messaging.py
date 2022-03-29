@@ -140,9 +140,11 @@ class Processor:
         :return: None
         """
         try:
-            events = self.e2e_messaging_contract.events.Message.getLogs(
-                fromBlock=block_from,
-                toBlock=block_to
+            events = ContractUtils.get_event_logs(
+                contract=self.e2e_messaging_contract,
+                event="Message",
+                block_from=block_from,
+                block_to=block_to
             )
             for event in events:
                 transaction_hash = event["transactionHash"].hex()

@@ -22,7 +22,8 @@ import json
 from web3 import contract
 from web3.exceptions import (
     TimeExhausted,
-    BadFunctionCallOutput
+    BadFunctionCallOutput,
+    ABIFunctionNotFound
 )
 from eth_utils import to_checksum_address
 from sqlalchemy import create_engine
@@ -142,18 +143,18 @@ class ContractUtils:
         :param contract: Contract
         :param function_name: Function name
         :param args: Function args
-        :param default_returns: Default return when BadFunctionCallOutput is raised
+        :param default_returns: Default return when web3 exceptions are raised
         :return: Return from function or default return
         """
         _function = getattr(contract.functions, function_name)
 
         try:
             result = _function(*args).call()
-        except BadFunctionCallOutput:
+        except (BadFunctionCallOutput, ABIFunctionNotFound) as web3_exception:
             if default_returns is not None:
                 return default_returns
             else:
-                raise BadFunctionCallOutput
+                raise web3_exception
 
         return result
 
@@ -220,3 +221,27 @@ class ContractUtils:
         tx = web3.eth.getTransaction(tx_hash)
         block = web3.eth.get_block(tx["blockNumber"])
         return block
+
+    @staticmethod
+    def get_event_logs(contract: contract,
+                       event: str,
+                       block_from: int = None,
+                       block_to: int = None):
+        """Get contract event logs
+
+        :param contract: Contract
+        :param event: Event
+        :param block_from: fromBlock
+        :param block_to: toBlock
+        :return: Event logs
+        """
+        _event = getattr(contract.events, event)
+        try:
+            result = _event.getLogs(
+                fromBlock=block_from,
+                toBlock=block_to
+            )
+        except ABIFunctionNotFound:
+            return []
+
+        return result

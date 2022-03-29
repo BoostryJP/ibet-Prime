@@ -155,9 +155,11 @@ class Processor:
                 contract_name="IbetExchangeInterface",
                 contract_address=exchange_contract_address
             )
-            exchange_contract_events = exchange_contract.events.HolderChanged.getLogs(
-                fromBlock=block_from,
-                toBlock=block_to
+            exchange_contract_events = ContractUtils.get_event_logs(
+                contract=exchange_contract,
+                event="HolderChanged",
+                block_from=block_from,
+                block_to=block_to
             )
             tmp_events = []
             for _event in exchange_contract_events:
@@ -171,9 +173,11 @@ class Processor:
                     })
 
             # Get "Transfer" events from token contract
-            token_transfer_events = token_contract.events.Transfer.getLogs(
-                fromBlock=block_from,
-                toBlock=block_to
+            token_transfer_events = ContractUtils.get_event_logs(
+                contract=token_contract,
+                event="Transfer",
+                block_from=block_from,
+                block_to=block_to
             )
             for _event in token_transfer_events:
                 tmp_events.append({
@@ -252,9 +256,11 @@ class Processor:
         """
         try:
             # Get "Issue" events from token contract
-            events = token_contract.events.Issue.getLogs(
-                fromBlock=block_from,
-                toBlock=block_to
+            events = ContractUtils.get_event_logs(
+                contract=token_contract,
+                event="Issue",
+                block_from=block_from,
+                block_to=block_to
             )
 
             # Sink
