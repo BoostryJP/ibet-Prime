@@ -174,9 +174,11 @@ class Processor:
         """
         for token in self.token_list:
             try:
-                events = token.events.ApplyForTransfer.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                events = ContractUtils.get_event_logs(
+                    contract=token,
+                    event="ApplyForTransfer",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for event in events:
                     args = event["args"]
@@ -218,9 +220,11 @@ class Processor:
         """
         for token in self.token_list:
             try:
-                events = token.events.CancelTransfer.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                events = ContractUtils.get_event_logs(
+                    contract=token,
+                    event="CancelTransfer",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for event in events:
                     args = event["args"]
@@ -254,9 +258,11 @@ class Processor:
         """
         for token in self.token_list:
             try:
-                events = token.events.ApproveTransfer.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                events = ContractUtils.get_event_logs(
+                    contract=token,
+                    event="ApproveTransfer",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for event in events:
                     args = event["args"]
@@ -285,9 +291,11 @@ class Processor:
         """
         for exchange in self.exchange_list:
             try:
-                events = exchange.events.ApplyForTransfer.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                events = ContractUtils.get_event_logs(
+                    contract=exchange,
+                    event="ApplyForTransfer",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for event in events:
                     args = event["args"]
@@ -329,9 +337,11 @@ class Processor:
         """
         for exchange in self.exchange_list:
             try:
-                events = exchange.events.CancelTransfer.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                events = ContractUtils.get_event_logs(
+                    contract=exchange,
+                    event="CancelTransfer",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for event in events:
                     args = event["args"]
@@ -365,9 +375,11 @@ class Processor:
         """
         for exchange in self.exchange_list:
             try:
-                events = exchange.events.ApproveTransfer.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                events = ContractUtils.get_event_logs(
+                    contract=exchange,
+                    event="ApproveTransfer",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for event in events:
                     args = event["args"]
@@ -391,9 +403,11 @@ class Processor:
         """
         for exchange in self.exchange_list:
             try:
-                events = exchange.events.FinishTransfer.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                events = ContractUtils.get_event_logs(
+                    contract=exchange,
+                    event="FinishTransfer",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for event in events:
                     args = event["args"]

@@ -25,6 +25,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.utils.contract_utils import ContractUtils
+
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
@@ -121,9 +123,11 @@ class Processor:
         """
         for token in self.token_list:
             try:
-                events = token.events.Transfer.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                events = ContractUtils.get_event_logs(
+                    contract=token,
+                    event="Transfer",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for event in events:
                     args = event["args"]

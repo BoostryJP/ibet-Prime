@@ -171,9 +171,11 @@ class PersonalInfoContract:
         :param block_to: block to
         :return: event entries
         """
-        events = self.personal_info_contract.events.Register.getLogs(
-            fromBlock=block_from,
-            toBlock=block_to
+        events = ContractUtils.get_event_logs(
+            contract=self.personal_info_contract,
+            event="Register",
+            block_from=block_from,
+            block_to=block_to
         )
         return events
 
@@ -184,8 +186,10 @@ class PersonalInfoContract:
         :param block_to: block to
         :return: event entries
         """
-        events = self.personal_info_contract.events.Modify.getLogs(
-            fromBlock=block_from,
-            toBlock=block_to
+        events = ContractUtils.get_event_logs(
+            contract=self.personal_info_contract,
+            event="Modify",
+            block_from=block_from,
+            block_to=block_to
         )
         return events

@@ -177,9 +177,11 @@ class Processor:
         """
         for token in self.token_list:
             try:
-                events = token.events.Issue.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                events = ContractUtils.get_event_logs(
+                    contract=token,
+                    event="Issue",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for event in events:
                     args = event['args']
@@ -206,9 +208,11 @@ class Processor:
         for token in self.token_list:
             try:
                 # Get "Transfer" events from token contract
-                events = token.events.Transfer.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                events = ContractUtils.get_event_logs(
+                    contract=token,
+                    event="Transfer",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for event in events:
                     args = event["args"]
@@ -238,9 +242,11 @@ class Processor:
         """
         for token in self.token_list:
             try:
-                events = token.events.Lock.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                events = ContractUtils.get_event_logs(
+                    contract=token,
+                    event="Lock",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for event in events:
                     args = event['args']
@@ -266,9 +272,11 @@ class Processor:
         """
         for token in self.token_list:
             try:
-                events = token.events.Unlock.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                events = ContractUtils.get_event_logs(
+                    contract=token,
+                    event="Unlock",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for event in events:
                     args = event['args']
@@ -294,9 +302,11 @@ class Processor:
         """
         for token in self.token_list:
             try:
-                events = token.events.Redeem.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                events = ContractUtils.get_event_logs(
+                    contract=token,
+                    event="Redeem",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for event in events:
                     args = event["args"]
@@ -322,9 +332,11 @@ class Processor:
         """
         for token in self.token_list:
             try:
-                events = token.events.ApplyForTransfer.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                events = ContractUtils.get_event_logs(
+                    contract=token,
+                    event="ApplyForTransfer",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for event in events:
                     args = event["args"]
@@ -350,9 +362,11 @@ class Processor:
         """
         for token in self.token_list:
             try:
-                events = token.events.CancelTransfer.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                events = ContractUtils.get_event_logs(
+                    contract=token,
+                    event="CancelTransfer",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for event in events:
                     args = event["args"]
@@ -378,9 +392,11 @@ class Processor:
         """
         for token in self.token_list:
             try:
-                events = token.events.ApproveTransfer.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                events = ContractUtils.get_event_logs(
+                    contract=token,
+                    event="ApproveTransfer",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for event in events:
                     args = event["args"]
@@ -411,9 +427,11 @@ class Processor:
                 account_list_tmp = []
 
                 # NewOrder event
-                _event_list = exchange.events.NewOrder.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                _event_list = ContractUtils.get_event_logs(
+                    contract=exchange,
+                    event="NewOrder",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for _event in _event_list:
                     account_list_tmp.append({
@@ -422,9 +440,11 @@ class Processor:
                     })
 
                 # CancelOrder event
-                _event_list = exchange.events.CancelOrder.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                _event_list = ContractUtils.get_event_logs(
+                    contract=exchange,
+                    event="CancelOrder",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for _event in _event_list:
                     account_list_tmp.append({
@@ -433,9 +453,11 @@ class Processor:
                     })
 
                 # ForceCancelOrder event
-                _event_list = exchange.events.ForceCancelOrder.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                _event_list = ContractUtils.get_event_logs(
+                    contract=exchange,
+                    event="ForceCancelOrder",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for _event in _event_list:
                     account_list_tmp.append({
@@ -444,9 +466,11 @@ class Processor:
                     })
 
                 # Agree event
-                _event_list = exchange.events.Agree.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                _event_list = ContractUtils.get_event_logs(
+                    contract=exchange,
+                    event="Agree",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for _event in _event_list:
                     account_list_tmp.append({
@@ -455,9 +479,11 @@ class Processor:
                     })
 
                 # SettlementOK event
-                _event_list = exchange.events.SettlementOK.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                _event_list = ContractUtils.get_event_logs(
+                    contract=exchange,
+                    event="SettlementOK",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for _event in _event_list:
                     account_list_tmp.append({
@@ -470,9 +496,11 @@ class Processor:
                     })
 
                 # SettlementNG event
-                _event_list = exchange.events.SettlementNG.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                _event_list = ContractUtils.get_event_logs(
+                    contract=exchange,
+                    event="SettlementNG",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for _event in _event_list:
                     account_list_tmp.append({
@@ -520,9 +548,11 @@ class Processor:
                 account_list_tmp = []
 
                 # EscrowCreated event
-                _event_list = escrow.events.EscrowCreated.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                _event_list = ContractUtils.get_event_logs(
+                    contract=escrow,
+                    event="EscrowCreated",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for _event in _event_list:
                     account_list_tmp.append({
@@ -531,9 +561,11 @@ class Processor:
                     })
 
                 # EscrowCanceled event
-                _event_list = escrow.events.EscrowCanceled.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                _event_list = ContractUtils.get_event_logs(
+                    contract=escrow,
+                    event="EscrowCanceled",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for _event in _event_list:
                     account_list_tmp.append({
@@ -542,9 +574,11 @@ class Processor:
                     })
 
                 # EscrowFinished event
-                _event_list = escrow.events.EscrowFinished.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
+                _event_list = ContractUtils.get_event_logs(
+                    contract=escrow,
+                    event="EscrowFinished",
+                    block_from=block_from,
+                    block_to=block_to
                 )
                 for _event in _event_list:
                     account_list_tmp.append({
