@@ -24,6 +24,7 @@ from unittest.mock import (
     ANY
 )
 import time
+from datetime import datetime
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
@@ -50,7 +51,9 @@ from app.model.schema import (
     IbetStraightBondUpdate,
     IbetShareUpdate,
     IbetStraightBondAdditionalIssue,
-    IbetShareAdditionalIssue
+    IbetShareAdditionalIssue,
+    IbetStraightBondRedeem,
+    IbetShareRedeem,
 )
 from app.utils.contract_utils import ContractUtils
 from batch.processor_create_utxo import Processor
@@ -575,6 +578,141 @@ class TestProcessor:
         assert _utox.account_address == user_address_2
         assert _utox.token_address == token_address_2
         assert _utox.amount == 80
+
+        _utox_block_number = db.query(UTXOBlockNumber).first()
+        assert _utox_block_number.latest_block_number == latest_block
+
+    # <Normal_6>
+    # Redeem
+    @mock.patch("batch.processor_create_utxo.create_ledger")
+    def test_normal_6(self, mock_func, processor, db):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"],
+            password="password".encode("utf-8")
+        )
+        user_2 = config_eth_account("user2")
+        user_address_1 = user_2["address"]
+        user_3 = config_eth_account("user3")
+        user_address_2 = user_3["address"]
+
+        # prepare data
+        token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key)
+        _token_1 = Token()
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND
+        _token_1.tx_hash = ""
+        _token_1.issuer_address = issuer_address
+        _token_1.token_address = token_address_1
+        _token_1.abi = {}
+        db.add(_token_1)
+
+        token_address_2 = deploy_share_token_contract(issuer_address, issuer_private_key)
+        _token_2 = Token()
+        _token_2.type = TokenType.IBET_SHARE
+        _token_2.tx_hash = ""
+        _token_2.issuer_address = issuer_address
+        _token_2.token_address = token_address_2
+        _token_2.abi = {}
+        db.add(_token_2)
+
+        db.commit()
+
+        # Execute Issue Event
+        # Share
+        _additional_issue_1 = IbetShareAdditionalIssue(
+            account_address=user_address_1,
+            amount=10
+        )
+        IbetShareContract.additional_issue(token_address_1, _additional_issue_1, issuer_address, issuer_private_key)
+        time.sleep(1)
+        _additional_issue_2 = IbetShareAdditionalIssue(
+            account_address=user_address_1,
+            amount=20
+        )
+        IbetShareContract.additional_issue(token_address_1, _additional_issue_2, issuer_address, issuer_private_key)
+        time.sleep(1)
+
+        # Bond
+        _additional_issue_3 = IbetStraightBondAdditionalIssue(
+            account_address=user_address_2,
+            amount=30
+        )
+        IbetStraightBondContract.additional_issue(token_address_2, _additional_issue_3, issuer_address, issuer_private_key)
+        time.sleep(1)
+        _additional_issue_4 = IbetStraightBondAdditionalIssue(
+            account_address=user_address_2,
+            amount=40
+        )
+        IbetStraightBondContract.additional_issue(token_address_2, _additional_issue_4, issuer_address, issuer_private_key)
+        time.sleep(1)
+
+        # Before execute
+        processor.process()
+        _utox_list = db.query(UTXO).order_by(UTXO.created).all()
+        assert len(_utox_list) == 4
+        _utox = _utox_list[0]
+        assert _utox.transaction_hash is not None
+        assert _utox.account_address == user_address_1
+        assert _utox.token_address == token_address_1
+        assert _utox.amount == 10
+        _utox = _utox_list[1]
+        assert _utox.transaction_hash is not None
+        assert _utox.account_address == user_address_1
+        assert _utox.token_address == token_address_1
+        assert _utox.amount == 20
+        _utox = _utox_list[2]
+        assert _utox.transaction_hash is not None
+        assert _utox.account_address == user_address_2
+        assert _utox.token_address == token_address_2
+        assert _utox.amount == 30
+        _utox = _utox_list[3]
+        assert _utox.transaction_hash is not None
+        assert _utox.account_address == user_address_2
+        assert _utox.token_address == token_address_2
+        assert _utox.amount == 40
+
+        # Execute Redeem Event
+        # Share
+        _redeem_1 = IbetShareRedeem(
+            account_address=user_address_1,
+            amount=20
+        )
+        IbetShareContract.redeem(token_address_1, _redeem_1, issuer_address, issuer_private_key)
+        time.sleep(1)
+
+        # Bond
+        _redeem_2 = IbetStraightBondRedeem(
+            account_address=user_address_2,
+            amount=40
+        )
+        IbetStraightBondContract.redeem(token_address_2, _redeem_2, issuer_address, issuer_private_key)
+        time.sleep(1)
+
+        # Execute batch
+        latest_block = web3.eth.blockNumber
+        processor.process()
+
+        # assertion
+        db.rollback()
+        _utox_list = db.query(UTXO).order_by(UTXO.created).all()
+        assert len(_utox_list) == 4
+        _utox = _utox_list[0]
+        assert _utox.account_address == user_address_1
+        assert _utox.token_address == token_address_1
+        assert _utox.amount == 0
+        _utox = _utox_list[1]
+        assert _utox.account_address == user_address_1
+        assert _utox.token_address == token_address_1
+        assert _utox.amount == 10
+        _utox = _utox_list[2]
+        assert _utox.account_address == user_address_2
+        assert _utox.token_address == token_address_2
+        assert _utox.amount == 0
+        _utox = _utox_list[3]
+        assert _utox.account_address == user_address_2
+        assert _utox.token_address == token_address_2
+        assert _utox.amount == 30
 
         _utox_block_number = db.query(UTXOBlockNumber).first()
         assert _utox_block_number.latest_block_number == latest_block
