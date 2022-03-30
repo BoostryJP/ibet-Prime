@@ -23,7 +23,8 @@ from web3 import contract
 from web3.exceptions import (
     TimeExhausted,
     BadFunctionCallOutput,
-    ABIFunctionNotFound
+    ABIFunctionNotFound,
+    ABIEventFunctionNotFound
 )
 from eth_utils import to_checksum_address
 from sqlalchemy import create_engine
@@ -241,7 +242,7 @@ class ContractUtils:
                 fromBlock=block_from,
                 toBlock=block_to
             )
-        except ABIFunctionNotFound:
+        except ABIEventFunctionNotFound:
             return []
 
         return result
