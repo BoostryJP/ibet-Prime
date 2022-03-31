@@ -84,7 +84,10 @@ from .scheduled_events import (
     ScheduledEventIdResponse,
     ScheduledEventResponse
 )
-from .personal_info import ModifyPersonalInfoRequest
+from .personal_info import (
+    ModifyPersonalInfoRequest,
+    RegisterPersonalInfoRequest
+)
 from .file import (
     UploadFileRequest,
     FileResponse,

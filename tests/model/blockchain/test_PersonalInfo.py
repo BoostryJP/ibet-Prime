@@ -236,6 +236,129 @@ class TestGetInfo:
         }
 
 
+class TestRegisterInfo:
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    # not register
+    def test_normal_1(self, db):
+        issuer = config_eth_account("user1")
+        personal_info_contract = initialize(issuer, db)
+
+        # Run Test
+        setting_user = config_eth_account("user2")
+        register_data = {
+            "key_manager": "0987654321",
+            "name": "name_test2",
+            "postal_code": "2002000",
+            "address": "テスト住所2",
+            "email": "sample@test.test2",
+            "birth": "19800101"
+        }
+        personal_info_contract.register_info(setting_user["address"], register_data)
+
+        get_info = personal_info_contract.get_info(setting_user["address"])
+
+        assert get_info == register_data
+
+    # <Normal_2>
+    # registered
+    def test_normal_2(self, db):
+        issuer = config_eth_account("user1")
+        personal_info_contract = initialize(issuer, db)
+
+        # Set personal information data
+        setting_user = config_eth_account("user2")
+        rsa_password = "password"
+        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password)
+        cipher = PKCS1_OAEP.new(rsa)
+        data = {
+            "key_manager": "1234567890",
+            "name": "name_test1",
+            "postal_code": "1001000",
+            "address": "テスト住所",
+            "email": "sample@test.test",
+            "birth": "19801231"
+        }
+        ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
+        contract = personal_info_contract.personal_info_contract
+        tx = contract.functions.register(issuer["address"], ciphertext).buildTransaction({
+            "nonce": web3.eth.getTransactionCount(setting_user["address"]),
+            "from": setting_user["address"],
+            "gas": TX_GAS_LIMIT,
+            "gasPrice": 0,
+            "chainId": CHAIN_ID
+        })
+        eoa_password = "password"
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=setting_user["keyfile_json"],
+            password=eoa_password.encode("utf-8")
+        )
+        ContractUtils.send_transaction(tx, private_key)
+
+        # Run Test
+        update_data = {
+            "key_manager": "0987654321",
+            "name": "name_test2",
+            "postal_code": "2002000",
+            "address": "テスト住所2",
+            "email": "sample@test.test2",
+            "birth": "19800101"
+        }
+        personal_info_contract.register_info(setting_user["address"], update_data)
+
+        get_info = personal_info_contract.get_info(setting_user["address"])
+
+        assert get_info == update_data
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
+    # SendTransactionError(Timeout)
+    def test_error_1(self, db):
+        issuer = config_eth_account("user1")
+        personal_info_contract = initialize(issuer, db)
+
+        # Run Test
+        setting_user = config_eth_account("user2")
+        register_data = {
+            "key_manager": "0987654321",
+            "name": "name_test2",
+            "postal_code": "2002000",
+            "address": "テスト住所2",
+            "email": "sample@test.test2",
+            "birth": "19800101"
+        }
+        with mock.patch("web3.eth.Eth.waitForTransactionReceipt", MagicMock(side_effect=TimeExhausted())):
+            with pytest.raises(SendTransactionError):
+                personal_info_contract.register_info(setting_user["address"], register_data)
+
+    # <Error_1>
+    # SendTransactionError(Other Error)
+    def test_error_2(self, db):
+        issuer = config_eth_account("user1")
+        personal_info_contract = initialize(issuer, db)
+
+        # Run Test
+        setting_user = config_eth_account("user2")
+        register_data = {
+            "key_manager": "0987654321",
+            "name": "name_test2",
+            "postal_code": "2002000",
+            "address": "テスト住所2",
+            "email": "sample@test.test2",
+            "birth": "19800101"
+        }
+        with mock.patch("web3.eth.Eth.waitForTransactionReceipt", MagicMock(side_effect=TypeError())):
+            with pytest.raises(SendTransactionError):
+                personal_info_contract.modify_info(setting_user["address"], register_data)
+
+
 class TestModifyInfo:
 
     ###########################################################################
