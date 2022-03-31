@@ -44,3 +44,5 @@ class UploadFile(Base):
     content_size = Column(Integer)
     # description
     description = Column(String(1000))
+    # label
+    label = Column(String(200))

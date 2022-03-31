@@ -26,6 +26,15 @@ from .account import (
     AccountChangeRSAPassphraseRequest,
     AccountResponse
 )
+from .e2e_messaging import (
+    E2EMessagingAccountCreateRequest,
+    E2EMessagingAccountUpdateRsaKeyRequest,
+    E2EMessagingAccountChangeEOAPasswordRequest,
+    E2EMessagingAccountChangeRSAPassphraseRequest,
+    E2EMessagingAccountResponse,
+    E2EMessagingResponse,
+    ListAllE2EMessagingResponse
+)
 from .ledger import (
     CreateUpdateLedgerTemplateRequest,
     CreateUpdateLedgerDetailsDataRequest,
@@ -41,11 +50,13 @@ from .token import (
     IbetStraightBondCreate,
     IbetStraightBondUpdate,
     IbetStraightBondTransfer,
-    IbetStraightBondAdd,
+    IbetStraightBondAdditionalIssue,
+    IbetStraightBondRedeem,
     IbetShareCreate,
     IbetShareUpdate,
     IbetShareTransfer,
-    IbetShareAdd,
+    IbetShareAdditionalIssue,
+    IbetShareRedeem,
     IbetSecurityTokenApproveTransfer,
     IbetSecurityTokenCancelTransfer,
     IbetSecurityTokenEscrowApproveTransfer,
@@ -55,9 +66,11 @@ from .token import (
 )
 from .holder import HolderResponse
 from .transfer import (
+    UpdateTransferApprovalRequest,
     TransferResponse,
     TransferHistoryResponse,
-    TransferApprovalResponse,
+    TransferApprovalsResponse,
+    TransferApprovalTokenResponse,
     TransferApprovalHistoryResponse
 )
 from .bulk_transfer import (

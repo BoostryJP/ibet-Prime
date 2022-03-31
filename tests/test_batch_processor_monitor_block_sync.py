@@ -29,11 +29,7 @@ from config import (
     WEB3_HTTP_PROVIDER
 )
 from app.model.db import Node
-from batch.processor_monitor_block_sync import (
-    Sinks,
-    DBSink,
-    Processor
-)
+from batch.processor_monitor_block_sync import Processor
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
@@ -41,9 +37,7 @@ web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 @pytest.fixture(scope='function')
 def processor(db):
-    _sink = Sinks()
-    _sink.register(DBSink(db))
-    return Processor(sink=_sink, db=db)
+    return Processor()
 
 
 class TestProcessor:
@@ -76,6 +70,7 @@ class TestProcessor:
             processor.process()
 
         # assertion
+        db.rollback()
         _node = db.query(Node).first()
         assert _node.is_synced == False
 
@@ -85,6 +80,7 @@ class TestProcessor:
         processor.process()
 
         # assertion
+        db.rollback()
         _node = db.query(Node).first()
         assert _node.is_synced == True
 
@@ -102,6 +98,7 @@ class TestProcessor:
             processor.process()
 
         # assertion
+        db.rollback()
         _node = db.query(Node).first()
         assert _node.is_synced == False
 
@@ -119,6 +116,7 @@ class TestProcessor:
             processor.process()
 
         # assertion
+        db.rollback()
         _node = db.query(Node).first()
         assert _node.is_synced == True
 
@@ -126,11 +124,10 @@ class TestProcessor:
     # standby node is down to sync
     @mock.patch("batch.processor_monitor_block_sync.WEB3_HTTP_PROVIDER_STANDBY", ["http://test1:1000"])
     def test_normal_2(self, db):
-        _sink = Sinks()
-        _sink.register(DBSink(db))
-        processor = Processor(sink=_sink, db=db)
+        processor = Processor()
 
         # pre assertion
+        db.rollback()
         _node = db.query(Node).first()
         assert _node.id == 1
         assert _node.endpoint_uri == "http://test1:1000"
@@ -144,6 +141,7 @@ class TestProcessor:
         processor.node_info["http://test1:1000"]["web3"].manager.provider.endpoint_uri = org_value
 
         # assertion
+        db.rollback()
         _node = db.query(Node).filter(Node.endpoint_uri == "http://test1:1000").first()
         assert _node.is_synced == True
 
@@ -157,11 +155,10 @@ class TestProcessor:
                 ["http://test1:1000", "http://test2:2000"])
     @mock.patch("web3.providers.rpc.HTTPProvider.make_request", MagicMock(side_effect=Exception()))
     def test_error_1(self, db):
-        _sink = Sinks()
-        _sink.register(DBSink(db))
-        Processor(sink=_sink, db=db)
+        Processor()
 
         # assertion
+        db.rollback()
         _node_list = db.query(Node).order_by(Node.id).all()
         assert len(_node_list) == 3
         _node = _node_list[0]
@@ -186,6 +183,7 @@ class TestProcessor:
         processor.process()
 
         # assertion
+        db.rollback()
         _node = db.query(Node).first()
         assert _node.id == 1
         assert _node.endpoint_uri == WEB3_HTTP_PROVIDER
@@ -199,6 +197,7 @@ class TestProcessor:
         processor.node_info[WEB3_HTTP_PROVIDER]["web3"].manager.provider.endpoint_uri = org_value
 
         # assertion
+        db.rollback()
         _node = db.query(Node).first()
         assert _node.id == 1
         assert _node.endpoint_uri == WEB3_HTTP_PROVIDER

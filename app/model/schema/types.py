@@ -16,13 +16,13 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from enum import Enum
 from typing import Optional
 
 from pydantic import (
     BaseModel,
     constr
 )
-
 
 MMDD_constr = constr(regex="^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$")
 YYYYMMDD_constr = constr(regex="^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$")
@@ -34,3 +34,27 @@ class ResultSet(BaseModel):
     offset: Optional[int]
     limit: Optional[int]
     total: Optional[int]
+
+
+class TransfersSortItem(str, Enum):
+    BLOCK_TIMESTAMP = "block_timestamp"
+    FROM_ADDRESS = "from_address"
+    TO_ADDRESS = "to_address"
+    AMOUNT = "amount"
+
+
+class TransferApprovalsSortItem(str, Enum):
+    ID = "id"
+    EXCHANGE_ADDRESS = "exchange_address"
+    APPLICATION_ID = "application_id"
+    FROM_ADDRESS = "from_address"
+    TO_ADDRESS = "to_address"
+    AMOUNT = "amount"
+    APPLICATION_DATETIME = "application_datetime"
+    APPROVAL_DATETIME = "approval_datetime"
+    STATUS = "status"
+
+
+class UpdateTransferApprovalOperationType(str, Enum):
+    APPROVE = "approve"
+    CANCEL = "cancel"

@@ -28,7 +28,7 @@ from .base import Base
 
 
 class IDXTransferApproval(Base):
-    """INDEX Position"""
+    """INDEX Transfer Approval"""
     __tablename__ = 'idx_transfer_approval'
 
     # Sequence Id

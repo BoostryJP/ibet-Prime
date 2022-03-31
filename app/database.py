@@ -30,6 +30,7 @@ options = {
     "pool_recycle": 3600,
     "pool_size": 10,
     "pool_timeout": 30,
+    "pool_pre_ping": True,
     "max_overflow": 30,
     "echo": DB_ECHO,
     "execution_options": {

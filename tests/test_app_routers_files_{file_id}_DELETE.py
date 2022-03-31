@@ -50,6 +50,7 @@ abc def"""
         _upload_file.content = file_content_bin
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
+        _upload_file.label = "label_1"
         db.add(_upload_file)
 
         # request target api
@@ -145,6 +146,7 @@ abc def"""
         _upload_file.content = file_content_bin
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
+        _upload_file.label = "label_1"
         db.add(_upload_file)
 
         # request target API

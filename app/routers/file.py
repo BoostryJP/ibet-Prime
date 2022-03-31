@@ -36,7 +36,6 @@ from app.database import db_session
 from app.model.db import UploadFile
 from app.model.schema import (
     UploadFileRequest,
-    FileResponse,
     ListAllFilesResponse,
     DownloadFileResponse
 )
@@ -64,7 +63,8 @@ utc_tz = pytz.timezone("UTC")
 def list_all_upload_files(
         issuer_address: Optional[str] = Header(None),
         relation: Optional[str] = Query(None),
-        file_name: Optional[str] = Query(None),
+        file_name: Optional[str] = Query(None, description="partial match"),
+        label: Optional[str] = Query(None, description="partial match"),
         offset: Optional[int] = Query(None),
         limit: Optional[int] = Query(None),
         db: Session = Depends(db_session)):
@@ -84,6 +84,8 @@ def list_all_upload_files(
         query = query.filter(UploadFile.relation == relation)
     if file_name is not None:
         query = query.filter(UploadFile.file_name.like("%" + file_name + "%"))
+    if label is not None:
+        query = query.filter(UploadFile.label.like("%" + label + "%"))
     count = query.count()
 
     # Pagination
@@ -104,6 +106,7 @@ def list_all_upload_files(
             "file_name": _upload_file.file_name,
             "content_size": _upload_file.content_size,
             "description": _upload_file.description,
+            "label": _upload_file.label,
             "created": created_formatted,
         })
 
@@ -147,6 +150,7 @@ def upload_file(
     _upload_file.content = content_binary
     _upload_file.content_size = len(content_binary)
     _upload_file.description = data.description
+    _upload_file.label = data.label
     db.add(_upload_file)
 
     db.commit()
@@ -192,6 +196,7 @@ def download_file(
         "content": content,
         "content_size": _upload_file.content_size,
         "description": _upload_file.description,
+        "label": _upload_file.label,
     }
 
     return resp

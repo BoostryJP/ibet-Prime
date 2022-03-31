@@ -389,3 +389,73 @@ class TestSendTransaction:
         assert ex_info.typename == "SendTransactionError"
 
         db.rollback()
+
+
+class TestGetBlockByTransactionHash:
+    test_account = config_eth_account("user1")
+    eoa_password = "password"
+    private_key = decode_keyfile_json(
+        raw_keyfile_json=test_account["keyfile_json"],
+        password=eoa_password.encode("utf-8")
+    )
+
+    test_contract_name = "IbetCoupon"
+    test_arg = [
+        "test_coupon_name",
+        "TEST",
+        100,
+        ZERO_ADDRESS,
+        "test_details",
+        "test_return_details",
+        "test_memo",
+        "20210531",
+        True,
+        "test_contract_information",
+        "test_privacy_policy"
+    ]
+    contract_file = f"contracts/{test_contract_name}.json"
+    contract_json = json.load(open(contract_file, "r"))
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+    # <Normal_1>
+    def test_normal_1(self, db: Session):
+        # Contract
+        contract = web3.eth.contract(
+            abi=self.contract_json["abi"],
+            bytecode=self.contract_json["bytecode"],
+            bytecode_runtime=self.contract_json["deployedBytecode"],
+        )
+
+        # Build transaction
+        tx = contract.constructor(*self.test_arg).buildTransaction(
+            transaction={
+                "chainId": CHAIN_ID,
+                "from": self.test_account["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        nonce = web3.eth.getTransactionCount(self.test_account["address"])
+        tx["nonce"] = nonce
+        signed_tx = web3.eth.account.sign_transaction(
+            transaction_dict=tx,
+            private_key=self.private_key
+        )
+
+        # Send Transaction
+        tx_hash = web3.eth.sendRawTransaction(signed_tx.rawTransaction.hex())
+        tx_receipt = web3.eth.waitForTransactionReceipt(
+            transaction_hash=tx_hash,
+            timeout=10
+        )
+
+        block = ContractUtils.get_block_by_transaction_hash(tx_hash)
+
+        assert block["number"] == tx_receipt["blockNumber"]
+        assert block["timestamp"] > 0
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################

@@ -43,11 +43,15 @@ from config import (
 from app.model.db import Node
 from app.exceptions import ServiceUnavailableError
 
-engine = create_engine(DATABASE_URL, echo=DB_ECHO)
+engine = create_engine(DATABASE_URL, echo=DB_ECHO, pool_pre_ping=True)
 thread_local = threading.local()
 
 
 class Web3Wrapper:
+
+    def __init__(self):
+        if "pytest" not in sys.modules:
+            FailOverHTTPProvider.set_fail_over_mode(True)
 
     @property
     def eth(self):
@@ -69,7 +73,8 @@ class Web3Wrapper:
         web3 = self._get_web3()
         return web3.net
 
-    def _get_web3(self) -> Web3:
+    @staticmethod
+    def _get_web3() -> Web3:
         # Get web3 for each threads because make to FailOverHTTPProvider thread-safe
         try:
             web3 = thread_local.web3
@@ -82,8 +87,8 @@ class Web3Wrapper:
 
 
 class FailOverHTTPProvider(Web3.HTTPProvider):
-    # Note: It set True or False when loaded module.
-    is_default = None
+
+    fail_over_mode = False  # If False, use only the default(primary) provider
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -92,61 +97,45 @@ class FailOverHTTPProvider(Web3.HTTPProvider):
     def make_request(self, method: RPCEndpoint, params: Any) -> RPCResponse:
         db_session = Session(autocommit=False, autoflush=True, bind=engine)
         try:
-            if FailOverHTTPProvider.is_default is not None and not FailOverHTTPProvider.is_default:
-                counter = 0
-                while counter <= WEB3_REQUEST_RETRY_COUNT:
-                    # Switch alive node
-                    _node = db_session.query(Node). \
-                        filter(Node.is_synced == True). \
-                        order_by(Node.priority). \
-                        order_by(Node.id). \
-                        first()
-                    if _node is None:
-                        counter += 1
-                        if counter <= WEB3_REQUEST_RETRY_COUNT:
-                            time.sleep(WEB3_REQUEST_WAIT_TIME)
-                            continue
-                        raise ServiceUnavailableError("block synchronization is down")
-                    self.endpoint_uri = URI(_node.endpoint_uri)
-
-                    # Call RPC method
-                    try:
-                        return super().make_request(method, params)
-                    except (ConnectionError, JSONDecodeError):
-                        # NOTE: JSONDecodeError occurs when a request is sent during the termination process of Quorum.
-                        counter += 1
-                        if counter <= WEB3_REQUEST_RETRY_COUNT:
-                            time.sleep(WEB3_REQUEST_WAIT_TIME)
-                            continue
-                        raise ServiceUnavailableError("block synchronization is down")
-            else:
-                # Use default(primary) node
+            if FailOverHTTPProvider.fail_over_mode is True:
+                # If never running the block monitoring processor,
+                # use default(primary) node.
+                if db_session.query(Node).first() is None:
+                    self.endpoint_uri = URI(WEB3_HTTP_PROVIDER)
+                    return super().make_request(method, params)
+                else:
+                    counter = 0
+                    while counter <= WEB3_REQUEST_RETRY_COUNT:
+                        # Switch alive node
+                        _node = db_session.query(Node). \
+                            filter(Node.is_synced == True). \
+                            order_by(Node.priority). \
+                            order_by(Node.id). \
+                            first()
+                        if _node is None:
+                            counter += 1
+                            if counter <= WEB3_REQUEST_RETRY_COUNT:
+                                time.sleep(WEB3_REQUEST_WAIT_TIME)
+                                continue
+                            raise ServiceUnavailableError("Block synchronization is down")
+                        self.endpoint_uri = URI(_node.endpoint_uri)
+                        try:
+                            return super().make_request(method, params)
+                        except (ConnectionError, JSONDecodeError):
+                            # NOTE:
+                            #  JSONDecodeError will be raised if a request is sent
+                            #  while Quorum is terminating.
+                            counter += 1
+                            if counter <= WEB3_REQUEST_RETRY_COUNT:
+                                time.sleep(WEB3_REQUEST_WAIT_TIME)
+                                continue
+                            raise ServiceUnavailableError("Block synchronization is down")
+            else:  # Use default provider
                 self.endpoint_uri = URI(WEB3_HTTP_PROVIDER)
-                FailOverHTTPProvider.set_is_default(db_session)
-
-                # Call RPC method
                 return super().make_request(method, params)
         finally:
             db_session.close()
 
     @staticmethod
-    def set_is_default(db_session: Session):
-        node = db_session.query(Node). \
-            filter(Node.endpoint_uri != None). \
-            first()
-        if node is None:
-            FailOverHTTPProvider.is_default = True
-        else:
-            FailOverHTTPProvider.is_default = False
-
-
-# NOTE: Loaded module before DB table create when executed from Pytest.
-if "pytest" not in sys.modules:
-    db_session = Session(autocommit=False, autoflush=True, bind=engine)
-    try:
-        # First loaded module
-        if FailOverHTTPProvider.is_default is None:
-            # If never running the block monitor processor, use default(primary) node.
-            FailOverHTTPProvider.set_is_default(db_session)
-    finally:
-        db_session.close()
+    def set_fail_over_mode(use_fail_over: bool):
+        FailOverHTTPProvider.fail_over_mode = use_fail_over

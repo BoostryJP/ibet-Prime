@@ -117,7 +117,10 @@ def list_all_ledger_history(
     query = db.query(Ledger). \
         filter(Ledger.token_address == token_address). \
         order_by(desc(Ledger.id))
-    count = query.count()
+    total = query.count()
+
+    # NOTE: Because it don`t filter, `total` and `count` will be the same.
+    count = total
 
     if limit is not None:
         query = query.limit(limit)
@@ -141,7 +144,7 @@ def list_all_ledger_history(
             "count": count,
             "offset": offset,
             "limit": limit,
-            "total": count
+            "total": total
         },
         "ledgers": ledgers
     }
@@ -197,7 +200,7 @@ def retrieve_ledger_history(
         # Get ibetfin Details token_detail_type
         _ibet_fin_details_list = db.query(LedgerDetailsTemplate). \
             filter(LedgerDetailsTemplate.token_address == token_address). \
-            filter(LedgerDetailsTemplate.data_type == LedgerDetailsDataType.IBET_FIN). \
+            filter(LedgerDetailsTemplate.data_type == LedgerDetailsDataType.IBET_FIN.value). \
             order_by(LedgerDetailsTemplate.id). \
             all()
         _ibet_fin_token_detail_type_list = [_details.token_detail_type for _details in _ibet_fin_details_list]
@@ -345,14 +348,14 @@ def create_update_ledger_template(
             _details.token_address = token_address
             _details.token_detail_type = details.token_detail_type
             _details.headers = details.headers
-            _details.data_type = details.data.type
+            _details.data_type = details.data.type.value
             _details.data_source = details.data.source
             _details.footers = details.footers
             db.add(_details)
         else:
             # Update Ledger Details Template
             _details.headers = details.headers
-            _details.data_type = details.data.type
+            _details.data_type = details.data.type.value
             _details.data_source = details.data.source
             _details.footers = details.footers
             db.merge(_details)
@@ -460,7 +463,10 @@ def list_all_ledger_details_data(
         filter(LedgerDetailsData.token_address == token_address). \
         group_by(LedgerDetailsData.data_id). \
         order_by(LedgerDetailsData.data_id)
-    count = query.count()
+    total = query.count()
+
+    # NOTE: Because it don`t filter, `total` and `count` will be the same.
+    count = total
 
     if limit is not None:
         query = query.limit(limit)
@@ -480,10 +486,10 @@ def list_all_ledger_details_data(
 
     resp = {
         "result_set": {
-            "count": count,
+            "count": total,
             "offset": offset,
             "limit": limit,
-            "total": count
+            "total": total
         },
         "details_data": details_data
     }

@@ -80,7 +80,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         }
                     ],
                     "data": {
-                        "type": LedgerDetailsDataType.IBET_FIN,
+                        "type": LedgerDetailsDataType.IBET_FIN.value,
                         "source": token_address,
                     },
                     "footers": [
@@ -107,7 +107,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         }
                     ],
                     "data": {
-                        "type": LedgerDetailsDataType.DB,
+                        "type": LedgerDetailsDataType.DB.value,
                         "source": "data_id_2",
                     },
                     "footers": [
@@ -197,7 +197,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 "f-fuga-1": "bbb-1",
             }
         ]
-        assert _details.data_type == LedgerDetailsDataType.IBET_FIN
+        assert _details.data_type == LedgerDetailsDataType.IBET_FIN.value
         assert _details.data_source == token_address
         _details = _details_list[1]
         assert _details.id == 2
@@ -223,7 +223,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 "f-fuga-2": "bbb-2",
             }
         ]
-        assert _details.data_type == LedgerDetailsDataType.DB
+        assert _details.data_type == LedgerDetailsDataType.DB.value
         assert _details.data_source == "data_id_2"
 
         mock_func.assert_called_with(token_address, db)
@@ -294,7 +294,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 "f-fuga-2": "bbb-2",
             }
         ]
-        _details_1.data_type = LedgerDetailsDataType.DB
+        _details_1.data_type = LedgerDetailsDataType.DB.value
         _details_1.data_source = "data_id_1"
         db.add(_details_1)
 
@@ -321,7 +321,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 "f-fuga-3": "bbb-3",
             }
         ]
-        _details_2.data_type = LedgerDetailsDataType.DB
+        _details_2.data_type = LedgerDetailsDataType.DB.value
         _details_2.data_source = "data_id_2"
         db.add(_details_2)
 
@@ -352,7 +352,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         }
                     ],
                     "data": {
-                        "type": LedgerDetailsDataType.IBET_FIN,
+                        "type": LedgerDetailsDataType.IBET_FIN.value,
                         "source": token_address,
                     },
                     "footers": [
@@ -379,7 +379,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         },
                     ],
                     "data": {
-                        "type": LedgerDetailsDataType.IBET_FIN,
+                        "type": LedgerDetailsDataType.IBET_FIN.value,
                         "source": token_address,
                     },
                     "footers": [
@@ -468,7 +468,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 "f-fuga-2_update": "bbb-2_update",
             }
         ]
-        assert _details.data_type == LedgerDetailsDataType.IBET_FIN
+        assert _details.data_type == LedgerDetailsDataType.IBET_FIN.value
         assert _details.data_source == token_address
         _details = _details_list[1]
         assert _details.id == 3
@@ -494,7 +494,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 "f-fuga-1": "bbb-1",
             }
         ]
-        assert _details.data_type == LedgerDetailsDataType.IBET_FIN
+        assert _details.data_type == LedgerDetailsDataType.IBET_FIN.value
         assert _details.data_source == token_address
 
         mock_func.assert_called_with(token_address, db)
@@ -566,7 +566,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         }
                     ],
                     "data": {
-                        "type": LedgerDetailsDataType.IBET_FIN,
+                        "type": LedgerDetailsDataType.IBET_FIN.value,
                         "source": token_address,
                     },
                     "footers": [
@@ -593,7 +593,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         }
                     ],
                     "data": {
-                        "type": LedgerDetailsDataType.DB,
+                        "type": LedgerDetailsDataType.DB.value,
                         "source": "data_id_2",
                     },
                     "footers": [
@@ -860,10 +860,10 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
 
                 },
                 {
-                    "ctx": {"pattern": "^ibetfin$|^db$"},
+                    "ctx": {"enum_values": ["ibetfin", "db"]},
                     "loc": ["body", "details", 0, "data", "type"],
-                    "msg": 'string does not match regex "^ibetfin$|^db$"',
-                    "type": "value_error.str.regex"
+                    "msg": "value is not a valid enumeration member; permitted: 'ibetfin', 'db'",
+                    "type": "type_error.enum"
                 },
                 {
 
@@ -921,7 +921,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         "fuga": "bbb",
                     },
                     "data": {
-                        "type": LedgerDetailsDataType.IBET_FIN,
+                        "type": LedgerDetailsDataType.IBET_FIN.value,
                         "source": token_address,
                     },
                     "footers": {
@@ -1008,7 +1008,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         }
                     ],
                     "data": {
-                        "type": LedgerDetailsDataType.IBET_FIN,
+                        "type": LedgerDetailsDataType.IBET_FIN.value,
                         "source": token_address,
                     },
                     "footers": [
@@ -1035,7 +1035,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         }
                     ],
                     "data": {
-                        "type": LedgerDetailsDataType.DB,
+                        "type": LedgerDetailsDataType.DB.value,
                         "source": "data_id_2",
                     },
                     "footers": [
@@ -1123,7 +1123,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         }
                     ],
                     "data": {
-                        "type": LedgerDetailsDataType.IBET_FIN,
+                        "type": LedgerDetailsDataType.IBET_FIN.value,
                         "source": token_address,
                     },
                     "footers": [
@@ -1150,7 +1150,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         }
                     ],
                     "data": {
-                        "type": LedgerDetailsDataType.DB,
+                        "type": LedgerDetailsDataType.DB.value,
                         "source": "data_id_2",
                     },
                     "footers": [

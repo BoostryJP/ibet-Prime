@@ -21,6 +21,11 @@ PROC_LIST="${PROC_LIST} batch/indexer_personal_info.py"
 PROC_LIST="${PROC_LIST} batch/indexer_position_bond.py"
 PROC_LIST="${PROC_LIST} batch/indexer_position_share.py"
 PROC_LIST="${PROC_LIST} batch/indexer_transfer.py"
+PROC_LIST="${PROC_LIST} batch/indexer_transfer_approval.py"
+
+if [ -n "${E2E_MESSAGING_CONTRACT_ADDRESS}" ]; then
+  PROC_LIST="${PROC_LIST} batch/indexer_e2e_messaging.py"
+fi
 
 for i in ${PROC_LIST}; do
   # shellcheck disable=SC2009

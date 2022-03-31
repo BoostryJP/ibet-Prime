@@ -68,6 +68,7 @@ abc def"""
         _upload_file.content = file_content_1_bin
         _upload_file.content_size = len(file_content_1_bin)
         _upload_file.description = "description_1"
+        _upload_file.label = "label_1"
         _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
         db.add(_upload_file)
 
@@ -93,6 +94,7 @@ abc def"""
                     "file_name": "file_name_1",
                     "content_size": len(file_content_1_bin),
                     "description": "description_1",
+                    "label": "label_1",
                     "created": "2022-01-02T00:20:30.000001+09:00",
                 },
             ]
@@ -112,6 +114,7 @@ abc def"""
         _upload_file.content = file_content_bin
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
+        _upload_file.label = "label_1"
         _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
         db.add(_upload_file)
 
@@ -123,6 +126,7 @@ abc def"""
         _upload_file.content = file_content_bin
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_2"
+        _upload_file.label = "label_2"
         _upload_file.created = datetime.strptime("2022/01/02 00:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
         db.add(_upload_file)
 
@@ -148,6 +152,7 @@ abc def"""
                     "file_name": "file_name_2",
                     "content_size": len(file_content_bin),
                     "description": "description_2",
+                    "label": "label_2",
                     "created": "2022-01-02T09:20:30.000001+09:00",
                 },
                 {
@@ -157,6 +162,7 @@ abc def"""
                     "file_name": "file_name_1",
                     "content_size": len(file_content_bin),
                     "description": "description_1",
+                    "label": "label_1",
                     "created": "2022-01-02T00:20:30.000001+09:00",
                 },
             ]
@@ -177,6 +183,7 @@ abc def"""
         _upload_file.content = file_content_bin
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
+        _upload_file.label = "label_1"
         _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
         db.add(_upload_file)
 
@@ -188,6 +195,7 @@ abc def"""
         _upload_file.content = file_content_bin
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_2"
+        _upload_file.label = "label_2"
         _upload_file.created = datetime.strptime("2022/01/02 00:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
         db.add(_upload_file)
 
@@ -216,6 +224,7 @@ abc def"""
                     "file_name": "file_name_1",
                     "content_size": len(file_content_bin),
                     "description": "description_1",
+                    "label": "label_1",
                     "created": "2022-01-02T00:20:30.000001+09:00",
                 },
             ]
@@ -236,6 +245,7 @@ abc def"""
         _upload_file.content = file_content_bin
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
+        _upload_file.label = "label_1"
         _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
         db.add(_upload_file)
 
@@ -247,6 +257,7 @@ abc def"""
         _upload_file.content = file_content_bin
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_2"
+        _upload_file.label = "label_2"
         _upload_file.created = datetime.strptime("2022/01/02 00:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
         db.add(_upload_file)
 
@@ -275,6 +286,7 @@ abc def"""
                     "file_name": "file_name_1",
                     "content_size": len(file_content_bin),
                     "description": "description_1",
+                    "label": "label_1",
                     "created": "2022-01-02T00:20:30.000001+09:00",
                 },
             ]
@@ -295,6 +307,7 @@ abc def"""
         _upload_file.content = file_content_bin
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
+        _upload_file.label = "label_1"
         _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
         db.add(_upload_file)
 
@@ -306,6 +319,7 @@ abc def"""
         _upload_file.content = file_content_bin
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_2"
+        _upload_file.label = "label_2"
         _upload_file.created = datetime.strptime("2022/01/02 00:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
         db.add(_upload_file)
 
@@ -334,6 +348,113 @@ abc def"""
                     "file_name": "file_name_1",
                     "content_size": len(file_content_bin),
                     "description": "description_1",
+                    "label": "label_1",
+                    "created": "2022-01-02T00:20:30.000001+09:00",
+                },
+            ]
+        }
+
+    # <Normal_4_4>
+    # Search Filter
+    # label
+    def test_normal_4_4(self, client, db):
+        file_content_bin = self.file_content.encode()
+
+        # prepare data
+        _upload_file = UploadFile()
+        _upload_file.file_id = "file_id_1"
+        _upload_file.issuer_address = self.issuer_address
+        _upload_file.relation = self.token_address
+        _upload_file.file_name = "file_name_1"
+        _upload_file.content = file_content_bin
+        _upload_file.content_size = len(file_content_bin)
+        _upload_file.description = "description_1"
+        _upload_file.label = "単語label_1"
+        _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        db.add(_upload_file)
+
+        _upload_file = UploadFile()
+        _upload_file.file_id = "file_id_2"
+        _upload_file.issuer_address = self.issuer_address
+        _upload_file.relation = self.token_address
+        _upload_file.file_name = "file_name_2"
+        _upload_file.content = file_content_bin
+        _upload_file.content_size = len(file_content_bin)
+        _upload_file.description = "description_2"
+        _upload_file.label = "label_2"  # not target
+        _upload_file.created = datetime.strptime("2022/01/02 00:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        db.add(_upload_file)
+
+        _upload_file = UploadFile()
+        _upload_file.file_id = "file_id_3"
+        _upload_file.issuer_address = self.issuer_address
+        _upload_file.relation = self.token_address
+        _upload_file.file_name = "file_name_3"
+        _upload_file.content = file_content_bin
+        _upload_file.content_size = len(file_content_bin)
+        _upload_file.description = "description_3"
+        _upload_file.label = "label単語_3"
+        _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        db.add(_upload_file)
+
+        _upload_file = UploadFile()
+        _upload_file.file_id = "file_id_4"
+        _upload_file.issuer_address = self.issuer_address
+        _upload_file.relation = self.token_address
+        _upload_file.file_name = "file_name_4"
+        _upload_file.content = file_content_bin
+        _upload_file.content_size = len(file_content_bin)
+        _upload_file.description = "description_4"
+        _upload_file.label = "label_4単語"
+        _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        db.add(_upload_file)
+
+        # request target api
+        resp = client.get(
+            self.base_url,
+            params={
+                "label": "単語",
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {
+                "count": 3,
+                "offset": None,
+                "limit": None,
+                "total": 4
+            },
+            "files": [
+                {
+                    "file_id": "file_id_4",
+                    "issuer_address": self.issuer_address,
+                    "relation": self.token_address,
+                    "file_name": "file_name_4",
+                    "content_size": len(file_content_bin),
+                    "description": "description_4",
+                    "label": "label_4単語",
+                    "created": "2022-01-02T00:20:30.000001+09:00",
+                },
+                {
+                    "file_id": "file_id_3",
+                    "issuer_address": self.issuer_address,
+                    "relation": self.token_address,
+                    "file_name": "file_name_3",
+                    "content_size": len(file_content_bin),
+                    "description": "description_3",
+                    "label": "label単語_3",
+                    "created": "2022-01-02T00:20:30.000001+09:00",
+                },
+                {
+                    "file_id": "file_id_1",
+                    "issuer_address": self.issuer_address,
+                    "relation": self.token_address,
+                    "file_name": "file_name_1",
+                    "content_size": len(file_content_bin),
+                    "description": "description_1",
+                    "label": "単語label_1",
                     "created": "2022-01-02T00:20:30.000001+09:00",
                 },
             ]
@@ -353,6 +474,7 @@ abc def"""
         _upload_file.content = file_content_bin
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
+        _upload_file.label = "label_1"
         _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
         db.add(_upload_file)
 
@@ -364,6 +486,7 @@ abc def"""
         _upload_file.content = file_content_bin
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_2"
+        _upload_file.label = "label_2"
         _upload_file.created = datetime.strptime("2022/01/02 00:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
         db.add(_upload_file)
 
@@ -375,6 +498,7 @@ abc def"""
         _upload_file.content = file_content_bin
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_3"
+        _upload_file.label = "label_3"
         _upload_file.created = datetime.strptime("2022/01/02 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/03
         db.add(_upload_file)
 
@@ -386,6 +510,7 @@ abc def"""
         _upload_file.content = file_content_bin
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_4"
+        _upload_file.label = "label_4"
         _upload_file.created = datetime.strptime("2022/01/03 00:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/03
         db.add(_upload_file)
 
@@ -415,6 +540,7 @@ abc def"""
                     "file_name": "file_name_3",
                     "content_size": len(file_content_bin),
                     "description": "description_3",
+                    "label": "label_3",
                     "created": "2022-01-03T00:20:30.000001+09:00",
                 },
                 {
@@ -424,6 +550,7 @@ abc def"""
                     "file_name": "file_name_2",
                     "content_size": len(file_content_bin),
                     "description": "description_2",
+                    "label": "label_2",
                     "created": "2022-01-02T09:20:30.000001+09:00",
                 },
             ]

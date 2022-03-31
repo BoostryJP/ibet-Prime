@@ -24,6 +24,8 @@ from datetime import (
     timedelta
 )
 
+from sqlalchemy import desc
+from sqlalchemy.orm import Session
 from web3.exceptions import TimeExhausted
 
 from config import (
@@ -33,13 +35,17 @@ from config import (
     TX_GAS_LIMIT,
     ZERO_ADDRESS
 )
+from app.database import engine
+from app.model.db import TokenAttrUpdate
 from app.model.schema import (
     IbetStraightBondUpdate,
     IbetStraightBondTransfer,
-    IbetStraightBondAdd,
+    IbetStraightBondAdditionalIssue,
+    IbetStraightBondRedeem,
     IbetShareUpdate,
     IbetShareTransfer,
-    IbetShareAdd,
+    IbetShareAdditionalIssue,
+    IbetShareRedeem,
     IbetSecurityTokenApproveTransfer,
     IbetSecurityTokenCancelTransfer
 )
@@ -100,6 +106,34 @@ class IbetStandardTokenInterface:
 
         return balance
 
+    @staticmethod
+    def is_token_attr_updated(contract_address: str, base_datetime: datetime):
+        db_session = Session(autocommit=False, autoflush=True, bind=engine)
+        is_updated = False
+        try:
+            _token_attr_update = db_session.query(TokenAttrUpdate). \
+                filter(TokenAttrUpdate.token_address == contract_address). \
+                order_by(desc(TokenAttrUpdate.id)). \
+                first()
+            if _token_attr_update is not None \
+                    and _token_attr_update.updated_datetime > base_datetime:
+                is_updated = True
+        finally:
+            db_session.close()
+        return is_updated
+
+    @staticmethod
+    def set_token_attr_update(contract_address: str):
+        db_session = Session(autocommit=False, autoflush=True, bind=engine)
+        try:
+            _token_attr_update = TokenAttrUpdate()
+            _token_attr_update.token_address = contract_address
+            _token_attr_update.updated_datetime = datetime.utcnow()
+            db_session.add(_token_attr_update)
+            db_session.commit()
+        finally:
+            db_session.close()
+
 
 class IbetSecurityTokenInterface(IbetStandardTokenInterface):
     personal_info_contract_address: str
@@ -152,7 +186,8 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0
             })
-            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            tx_hash, tx_receipt = ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            return tx_hash, tx_receipt
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
@@ -207,7 +242,10 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         if TOKEN_CACHE:
             if contract_address in IbetStraightBondContract.cache:
                 token_cache = IbetStraightBondContract.cache[contract_address]
-                is_updated = ContractUtils.is_token_attr_update(contract_address, token_cache.get("cached_datetime"))
+                is_updated = IbetStraightBondContract.is_token_attr_updated(
+                    contract_address=contract_address,
+                    base_datetime=token_cache.get("cached_datetime")
+                )
                 if is_updated is False and token_cache.get("expiration_datetime") > datetime.utcnow():
                     # Get data from cache
                     bond_token = IbetStraightBondContract()
@@ -559,7 +597,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         # Delete Cache
-        ContractUtils.set_token_attr_update(contract_address)
+        IbetStraightBondContract.set_token_attr_update(contract_address)
         IbetStraightBondContract.cache.pop(contract_address)
 
     @staticmethod
@@ -590,11 +628,11 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             raise SendTransactionError(err)
 
     @staticmethod
-    def add_supply(contract_address: str,
-                   data: IbetStraightBondAdd,
-                   tx_from: str,
-                   private_key: str):
-        """Add token supply"""
+    def additional_issue(contract_address: str,
+                         data: IbetStraightBondAdditionalIssue,
+                         tx_from: str,
+                         private_key: str):
+        """Additional issue"""
         try:
             bond_contract = ContractUtils.get_contract(
                 contract_name="IbetStraightBond",
@@ -613,7 +651,38 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
             # Delete Cache
-            ContractUtils.set_token_attr_update(contract_address)
+            IbetStraightBondContract.set_token_attr_update(contract_address)
+            IbetStraightBondContract.cache.pop(contract_address)
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+    @staticmethod
+    def redeem(contract_address: str,
+               data: IbetStraightBondRedeem,
+               tx_from: str,
+               private_key: str):
+        """Redeem a token"""
+        try:
+            bond_contract = ContractUtils.get_contract(
+                contract_name="IbetStraightBond",
+                contract_address=contract_address
+            )
+            _target_address = data.account_address
+            _amount = data.amount
+            tx = bond_contract.functions.redeemFrom(
+                _target_address, ZERO_ADDRESS, _amount
+            ).buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+            # Delete Cache
+            IbetStraightBondContract.set_token_attr_update(contract_address)
             IbetStraightBondContract.cache.pop(contract_address)
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
@@ -667,7 +736,10 @@ class IbetShareContract(IbetSecurityTokenInterface):
         if TOKEN_CACHE:
             if contract_address in IbetShareContract.cache:
                 token_cache = IbetShareContract.cache[contract_address]
-                is_updated = ContractUtils.is_token_attr_update(contract_address, token_cache.get("cached_datetime"))
+                is_updated = IbetShareContract.is_token_attr_updated(
+                    contract_address=contract_address,
+                    base_datetime=token_cache.get("cached_datetime")
+                )
                 if is_updated is False and token_cache.get("expiration_datetime") > datetime.utcnow():
                     # Get data from cache
                     share_token = IbetShareContract()
@@ -977,7 +1049,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         # Delete Cache
-        ContractUtils.set_token_attr_update(contract_address)
+        IbetShareContract.set_token_attr_update(contract_address)
         IbetShareContract.cache.pop(contract_address)
 
     @staticmethod
@@ -1008,11 +1080,11 @@ class IbetShareContract(IbetSecurityTokenInterface):
             raise SendTransactionError(err)
 
     @staticmethod
-    def add_supply(contract_address: str,
-                   data: IbetShareAdd,
-                   tx_from: str,
-                   private_key: str):
-        """Add token supply"""
+    def additional_issue(contract_address: str,
+                         data: IbetShareAdditionalIssue,
+                         tx_from: str,
+                         private_key: str):
+        """Additional issue"""
         try:
             share_contract = ContractUtils.get_contract(
                 contract_name="IbetShare",
@@ -1031,7 +1103,38 @@ class IbetShareContract(IbetSecurityTokenInterface):
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
             # Delete Cache
-            ContractUtils.set_token_attr_update(contract_address)
+            IbetShareContract.set_token_attr_update(contract_address)
+            IbetShareContract.cache.pop(contract_address)
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+    @staticmethod
+    def redeem(contract_address: str,
+               data: IbetShareRedeem,
+               tx_from: str,
+               private_key: str):
+        """Redeem a token"""
+        try:
+            share_contract = ContractUtils.get_contract(
+                contract_name="IbetShare",
+                contract_address=contract_address
+            )
+            _target_address = data.account_address
+            _amount = data.amount
+            tx = share_contract.functions.redeemFrom(
+                _target_address, ZERO_ADDRESS, _amount
+            ).buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+            # Delete Cache
+            IbetShareContract.set_token_attr_update(contract_address)
             IbetShareContract.cache.pop(contract_address)
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)

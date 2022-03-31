@@ -29,20 +29,14 @@ from app.model.db import (
 )
 from app.utils.e2ee_utils import E2EEUtils
 from app.exceptions import SendTransactionError
-from batch.processor_bulk_transfer import (
-    Sinks,
-    DBSink,
-    Processor
-)
+from batch.processor_bulk_transfer import Processor
 
 from tests.account_config import config_eth_account
 
 
 @pytest.fixture(scope="function")
 def processor(db):
-    _sink = Sinks()
-    _sink.register(DBSink(db))
-    return Processor(sink=_sink, db=db, thread_num=0)
+    return Processor(thread_num=0)
 
 
 class TestProcessor:

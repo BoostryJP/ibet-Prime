@@ -1,7 +1,7 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-21.12-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-22.3-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
@@ -19,7 +19,7 @@
 ## Dependencies
 
 - [python3](https://www.python.org/downloads/release/python-3811/) version 3.8 or greater
-- [PostgreSQL](https://www.postgresql.org/) - Version 10
+- [PostgreSQL](https://www.postgresql.org/) - Version 13
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - We support the official GoQuorum node of [ibet-Network](https://github.com/BoostryJP/ibet-Network).
   - We use [ganache-cli](https://github.com/trufflesuite/ganache-cli) for local development and unit testing, and we use the latest version.
@@ -41,7 +41,7 @@
     - Password: issuerapipass
     - DB: issuerapidb
     - DB for test use: issuerapidb_test
-- TokenList contract of the ibet-SmartContract must have been deployed beforehand.
+- TokenList and E2EMessaging contract of the ibet-SmartContract must have been deployed beforehand.
 
 ### Install packages
 
@@ -98,6 +98,12 @@ The main environment variables are as follows.
         <td>0x0000000000000000000000000000000000000000</td>
     </tr>
     <tr>
+        <td>E2E_MESSAGING_CONTRACT_ADDRESS</td>
+        <td>True</td>
+        <td nowrap>E2EMessaging contract address</td>
+        <td>0x0000000000000000000000000000000000000000</td>
+    </tr>
+    <tr>
         <td>TZ</td>
         <td>False</td>
         <td nowrap>Timezone</td>
@@ -150,7 +156,7 @@ You will see the alternative automatic documentation provided by ReDoc:
 
 This repository is version controlled using the following flow.
 
-![branching_model](https://user-images.githubusercontent.com/963333/128751565-3268b1e3-185b-4f09-870f-b6d96519eb54.png)
+![branching_model](https://user-images.githubusercontent.com/963333/153910560-2c67f8ad-73ae-4aaa-9e9f-9242643f6098.png)
 
 ## License
 

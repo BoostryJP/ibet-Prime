@@ -26,6 +26,10 @@ PROC_LIST="${PROC_LIST} batch/processor_monitor_block_sync.py"
 PROC_LIST="${PROC_LIST} batch/processor_auto_transfer_approval.py"
 PROC_LIST="${PROC_LIST} batch/processor_update_token.py"
 
+if [ -n "${E2E_MESSAGING_CONTRACT_ADDRESS}" ]; then
+  PROC_LIST="${PROC_LIST} batch/processor_rotate_e2e_messaging_rsa_key.py"
+fi
+
 for i in ${PROC_LIST}; do
   # shellcheck disable=SC2009
   ps -ef | grep -v grep | grep "$i"

@@ -31,6 +31,7 @@ from app.routers import (
     index,
     account,
     bond,
+    e2e_messaging,
     file,
     ledger,
     notification,
@@ -42,7 +43,7 @@ from app.log import output_access_log
 
 app = FastAPI(
     title="ibet Prime",
-    version="21.12.0"
+    version="22.3.0"
 )
 
 
@@ -68,6 +69,7 @@ async def root():
 app.include_router(index.router)
 app.include_router(account.router)
 app.include_router(bond.router)
+app.include_router(e2e_messaging.router)
 app.include_router(file.router)
 app.include_router(ledger.router)
 app.include_router(notification.router)

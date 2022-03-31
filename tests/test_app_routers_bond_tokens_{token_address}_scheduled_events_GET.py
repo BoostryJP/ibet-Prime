@@ -75,7 +75,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsGET:
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
-        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.event_type = ScheduledEventType.UPDATE.value
         token_event.scheduled_datetime = datetime_now_utc
         token_event.status = 0
         token_event.data = update_data
@@ -98,7 +98,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsGET:
                 "token_address": _token_address,
                 "token_type": TokenType.IBET_STRAIGHT_BOND,
                 "scheduled_datetime": datetime_now_str,
-                "event_type": ScheduledEventType.UPDATE,
+                "event_type": ScheduledEventType.UPDATE.value,
                 "status": 0,
                 "data": update_data,
                 "created": datetime_now_str
@@ -145,7 +145,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsGET:
             token_event.issuer_address = _issuer_address
             token_event.token_address = _token_address
             token_event.token_type = TokenType.IBET_STRAIGHT_BOND
-            token_event.event_type = ScheduledEventType.UPDATE
+            token_event.event_type = ScheduledEventType.UPDATE.value
             token_event.scheduled_datetime = _datetime
             token_event.status = 0
             token_event.data = update_data
@@ -165,7 +165,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsGET:
                 "token_address": _token_address,
                 "token_type": TokenType.IBET_STRAIGHT_BOND,
                 "scheduled_datetime": timezone("UTC").localize(datetime_list[0]).astimezone(self.local_tz).isoformat(),
-                "event_type": ScheduledEventType.UPDATE,
+                "event_type": ScheduledEventType.UPDATE.value,
                 "status": 0,
                 "data": update_data,
                 "created": timezone("UTC").localize(datetime_list[0]).astimezone(self.local_tz).isoformat(),
@@ -174,7 +174,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsGET:
                 "token_address": _token_address,
                 "token_type": TokenType.IBET_STRAIGHT_BOND,
                 "scheduled_datetime": timezone("UTC").localize(datetime_list[1]).astimezone(self.local_tz).isoformat(),
-                "event_type": ScheduledEventType.UPDATE,
+                "event_type": ScheduledEventType.UPDATE.value,
                 "status": 0,
                 "data": update_data,
                 "created": timezone("UTC").localize(datetime_list[1]).astimezone(self.local_tz).isoformat(),
