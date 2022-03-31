@@ -25,8 +25,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.utils.contract_utils import ContractUtils
-
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
@@ -39,6 +37,7 @@ from app.model.db import (
     IDXTransfer,
     IDXTransferBlockNumber
 )
+from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
 from app.exceptions import ServiceUnavailableError
 import batch_log
