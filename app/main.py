@@ -43,7 +43,7 @@ from app.log import output_access_log
 
 app = FastAPI(
     title="ibet Prime",
-    version="22.3.0"
+    version="22.6.0"
 )
 
 
