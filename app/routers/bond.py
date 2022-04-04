@@ -65,6 +65,7 @@ from app.model.schema import (
     ScheduledEventIdResponse,
     ScheduledEventResponse,
     ModifyPersonalInfoRequest,
+    RegisterPersonalInfoRequest,
     TransferApprovalsResponse,
     TransferApprovalHistoryResponse,
     TransferApprovalTokenResponse,
@@ -935,6 +936,60 @@ def modify_holder_personal_info(
         )
     except SendTransactionError:
         raise SendTransactionError("failed to modify personal information")
+
+    return
+
+
+# POST: /bond/tokens/{token_address}/personal_info
+@router.post(
+    "/tokens/{token_address}/personal_info",
+    response_model=None,
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
+)
+def register_holder_personal_info(
+        request: Request,
+        token_address: str,
+        personal_info: RegisterPersonalInfoRequest,
+        issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Register the holder's personal information"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value])
+    )
+
+    # Authentication
+    check_auth(issuer_address, eoa_password, db, request)
+
+    # Verify that the token is issued by the issuer_address
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
+
+    # Register Personal Info
+    token_contract = IbetStraightBondContract.get(token_address)
+    try:
+        personal_info_contract = PersonalInfoContract(
+            db=db,
+            issuer_address=issuer_address,
+            contract_address=token_contract.personal_info_contract_address
+        )
+        personal_info_contract.register_info(
+            account_address=personal_info.account_address,
+            data=personal_info.dict()
+        )
+    except SendTransactionError:
+        raise SendTransactionError("failed to register personal information")
 
     return
 
