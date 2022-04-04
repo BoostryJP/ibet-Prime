@@ -64,7 +64,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
@@ -132,7 +132,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
@@ -604,7 +604,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
 
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
@@ -731,7 +731,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
@@ -778,7 +778,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address

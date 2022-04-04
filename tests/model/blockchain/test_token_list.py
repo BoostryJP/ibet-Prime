@@ -92,7 +92,7 @@ class TestRegisterTokenList:
 
         TokenListContract.register(
             token_address=share_token_address,
-            token_template=TokenType.IBET_SHARE,
+            token_template=TokenType.IBET_SHARE.value,
             token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
             account_address=issuer_address,
             private_key=private_key
@@ -125,7 +125,7 @@ class TestRegisterTokenList:
 
         TokenListContract.register(
             token_address=bond_token_address,
-            token_template=TokenType.IBET_STRAIGHT_BOND,
+            token_template=TokenType.IBET_STRAIGHT_BOND.value,
             token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
             account_address=issuer_address,
             private_key=private_key
@@ -139,11 +139,11 @@ class TestRegisterTokenList:
         assert token_list_contract.functions.getListLength().call() == 2
         _share_token = token_list_contract.functions.getTokenByAddress(share_token_address).call()
         assert _share_token[0] == share_token_address
-        assert _share_token[1] == TokenType.IBET_SHARE
+        assert _share_token[1] == TokenType.IBET_SHARE.value
         assert _share_token[2] == issuer_address
         _bond_token = token_list_contract.functions.getTokenByAddress(bond_token_address).call()
         assert _bond_token[0] == bond_token_address
-        assert _bond_token[1] == TokenType.IBET_STRAIGHT_BOND
+        assert _bond_token[1] == TokenType.IBET_STRAIGHT_BOND.value
         assert _bond_token[2] == issuer_address
 
     ###########################################################################
@@ -161,7 +161,7 @@ class TestRegisterTokenList:
         with pytest.raises(SendTransactionError) as exc_info:
             TokenListContract.register(
                 token_address="dummy_token_address",
-                token_template=TokenType.IBET_SHARE,
+                token_template=TokenType.IBET_SHARE.value,
                 token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                 account_address=issuer_address,
                 private_key=private_key
@@ -180,7 +180,7 @@ class TestRegisterTokenList:
         with pytest.raises(SendTransactionError) as exc_info:
             TokenListContract.register(
                 token_address=ZERO_ADDRESS,
-                token_template=TokenType.IBET_STRAIGHT_BOND,
+                token_template=TokenType.IBET_STRAIGHT_BOND.value,
                 token_list_address="dummy_token_list_address",
                 account_address=issuer_address,
                 private_key=private_key
@@ -199,7 +199,7 @@ class TestRegisterTokenList:
         with pytest.raises(SendTransactionError) as exc_info:
             TokenListContract.register(
                 token_address=ZERO_ADDRESS,
-                token_template=TokenType.IBET_SHARE,
+                token_template=TokenType.IBET_SHARE.value,
                 token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                 account_address=issuer_address[:-1],
                 private_key=private_key
@@ -214,7 +214,7 @@ class TestRegisterTokenList:
         with pytest.raises(SendTransactionError) as exc_info:
             TokenListContract.register(
                 token_address=ZERO_ADDRESS,
-                token_template=TokenType.IBET_SHARE,
+                token_template=TokenType.IBET_SHARE.value,
                 token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                 account_address=issuer_address,
                 private_key="not private key"
@@ -241,7 +241,7 @@ class TestRegisterTokenList:
             with pytest.raises(SendTransactionError):
                 TokenListContract.register(
                     token_address=ZERO_ADDRESS,
-                    token_template=TokenType.IBET_SHARE,
+                    token_template=TokenType.IBET_SHARE.value,
                     token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                     account_address=issuer_address,
                     private_key=private_key

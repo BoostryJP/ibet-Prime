@@ -172,7 +172,7 @@ class Processor:
 
             try:
                 # Token_type
-                if _event.token_type == TokenType.IBET_SHARE:
+                if _event.token_type == TokenType.IBET_SHARE.value:
                     # Update
                     if _event.event_type == ScheduledEventType.UPDATE.value:
                         _update_data = IbetShareUpdate(**_event.data)
@@ -190,7 +190,7 @@ class Processor:
                                 token_address=_event.token_address,
                                 is_manual_transfer_approval=_event.data["is_manual_transfer_approval"]
                             )
-                elif _event.token_type == TokenType.IBET_STRAIGHT_BOND:
+                elif _event.token_type == TokenType.IBET_STRAIGHT_BOND.value:
                     # Update
                     if _event.event_type == ScheduledEventType.UPDATE.value:
                         _update_data = IbetStraightBondUpdate(**_event.data)

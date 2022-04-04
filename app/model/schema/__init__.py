@@ -85,6 +85,10 @@ from .scheduled_events import (
     ScheduledEventResponse
 )
 from .personal_info import ModifyPersonalInfoRequest
+from .position import (
+    PositionResponse,
+    ListAllPositionResponse
+)
 from .file import (
     UploadFileRequest,
     FileResponse,

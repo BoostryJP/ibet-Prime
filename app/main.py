@@ -35,6 +35,7 @@ from app.routers import (
     file,
     ledger,
     notification,
+    position,
     share
 )
 from app.utils.docs_utils import custom_openapi
@@ -73,6 +74,7 @@ app.include_router(e2e_messaging.router)
 app.include_router(file.router)
 app.include_router(ledger.router)
 app.include_router(notification.router)
+app.include_router(position.router)
 app.include_router(share.router)
 
 

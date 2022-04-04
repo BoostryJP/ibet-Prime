@@ -95,7 +95,7 @@ class TestProcessor:
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = _account["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
-            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
             bulk_transfer_upload.status = i  # pending:0, succeeded:1, failed:2
             db.add(bulk_transfer_upload)
 
@@ -104,7 +104,7 @@ class TestProcessor:
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = _account["address"]
             bulk_transfer.upload_id = self.upload_id_list[0]
-            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
             bulk_transfer.token_address = self.bulk_transfer_token[i]
             bulk_transfer.from_address = _from_address["address"]
             bulk_transfer.to_address = _to_address["address"]
@@ -156,7 +156,7 @@ class TestProcessor:
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = _account["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
-            bulk_transfer_upload.token_type = TokenType.IBET_SHARE
+            bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
             bulk_transfer_upload.status = i  # pending:0, succeeded:1, failed:2
             db.add(bulk_transfer_upload)
 
@@ -165,7 +165,7 @@ class TestProcessor:
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = _account["address"]
             bulk_transfer.upload_id = self.upload_id_list[0]
-            bulk_transfer.token_type = TokenType.IBET_SHARE
+            bulk_transfer.token_type = TokenType.IBET_SHARE.value
             bulk_transfer.token_address = self.bulk_transfer_token[i]
             bulk_transfer.from_address = _from_address["address"]
             bulk_transfer.to_address = _to_address["address"]
@@ -217,31 +217,31 @@ class TestProcessor:
         bulk_transfer_upload = BulkTransferUpload()
         bulk_transfer_upload.issuer_address = _other_issuer_address_1  # other thread processed issuer
         bulk_transfer_upload.upload_id = self.upload_id_list[0]
-        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
         bulk_transfer_upload.status = 0
         db.add(bulk_transfer_upload)
         bulk_transfer_upload = BulkTransferUpload()
         bulk_transfer_upload.issuer_address = _other_issuer_address_1  # other thread processed issuer
         bulk_transfer_upload.upload_id = self.upload_id_list[1]
-        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
         bulk_transfer_upload.status = 0
         db.add(bulk_transfer_upload)
         bulk_transfer_upload = BulkTransferUpload()
         bulk_transfer_upload.issuer_address = _other_issuer_address_1  # skip issuer
         bulk_transfer_upload.upload_id = self.upload_id_list[2]
-        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
         bulk_transfer_upload.status = 0
         db.add(bulk_transfer_upload)
         bulk_transfer_upload = BulkTransferUpload()
         bulk_transfer_upload.issuer_address = _account["address"]
         bulk_transfer_upload.upload_id = self.upload_id_list[3]
-        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
         bulk_transfer_upload.status = 0
         db.add(bulk_transfer_upload)
         bulk_transfer_upload = BulkTransferUpload()
         bulk_transfer_upload.issuer_address = _account["address"]
         bulk_transfer_upload.upload_id = self.upload_id_list[4]
-        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
         bulk_transfer_upload.status = 0
         db.add(bulk_transfer_upload)
 
@@ -250,7 +250,7 @@ class TestProcessor:
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = _account["address"]
             bulk_transfer.upload_id = self.upload_id_list[3]
-            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
             bulk_transfer.token_address = self.bulk_transfer_token[i]
             bulk_transfer.from_address = _from_address["address"]
             bulk_transfer.to_address = _to_address["address"]
@@ -261,7 +261,7 @@ class TestProcessor:
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = _account["address"]
             bulk_transfer.upload_id = self.upload_id_list[4]
-            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
             bulk_transfer.token_address = self.bulk_transfer_token[i]
             bulk_transfer.from_address = _from_address["address"]
             bulk_transfer.to_address = _to_address["address"]
@@ -336,25 +336,25 @@ class TestProcessor:
         bulk_transfer_upload = BulkTransferUpload()
         bulk_transfer_upload.issuer_address = _account["address"]  # other thread processed issuer
         bulk_transfer_upload.upload_id = self.upload_id_list[0]
-        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
         bulk_transfer_upload.status = 0
         db.add(bulk_transfer_upload)
         bulk_transfer_upload = BulkTransferUpload()
         bulk_transfer_upload.issuer_address = _account["address"]  # other thread processed issuer
         bulk_transfer_upload.upload_id = self.upload_id_list[1]
-        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
         bulk_transfer_upload.status = 0
         db.add(bulk_transfer_upload)
         bulk_transfer_upload = BulkTransferUpload()
         bulk_transfer_upload.issuer_address = _account["address"]  # other thread same issuer
         bulk_transfer_upload.upload_id = self.upload_id_list[2]
-        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
         bulk_transfer_upload.status = 0
         db.add(bulk_transfer_upload)
         bulk_transfer_upload = BulkTransferUpload()
         bulk_transfer_upload.issuer_address = _account["address"]  # other thread same issuer
         bulk_transfer_upload.upload_id = self.upload_id_list[3]
-        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
         bulk_transfer_upload.status = 0
         db.add(bulk_transfer_upload)
 
@@ -363,7 +363,7 @@ class TestProcessor:
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = _account["address"]
             bulk_transfer.upload_id = self.upload_id_list[2]
-            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
             bulk_transfer.token_address = self.bulk_transfer_token[i]
             bulk_transfer.from_address = _from_address["address"]
             bulk_transfer.to_address = _to_address["address"]
@@ -374,7 +374,7 @@ class TestProcessor:
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = _account["address"]
             bulk_transfer.upload_id = self.upload_id_list[3]
-            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
             bulk_transfer.token_address = self.bulk_transfer_token[i]
             bulk_transfer.from_address = _from_address["address"]
             bulk_transfer.to_address = _to_address["address"]
@@ -441,7 +441,7 @@ class TestProcessor:
         bulk_transfer_upload = BulkTransferUpload()
         bulk_transfer_upload.issuer_address = _account["address"]
         bulk_transfer_upload.upload_id = self.upload_id_list[0]
-        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
         bulk_transfer_upload.status = 0  # pending
         db.add(bulk_transfer_upload)
 
@@ -464,7 +464,7 @@ class TestProcessor:
         assert _notification.code == 0
         assert _notification.metainfo == {
             "upload_id": self.upload_id_list[0],
-            "token_type": TokenType.IBET_STRAIGHT_BOND,
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
             "error_transfer_id": []
         }
 
@@ -484,7 +484,7 @@ class TestProcessor:
         bulk_transfer_upload = BulkTransferUpload()
         bulk_transfer_upload.issuer_address = _account["address"]
         bulk_transfer_upload.upload_id = self.upload_id_list[0]
-        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
         bulk_transfer_upload.status = 0  # pending
         db.add(bulk_transfer_upload)
 
@@ -507,7 +507,7 @@ class TestProcessor:
         assert _notification.code == 1
         assert _notification.metainfo == {
             "upload_id": self.upload_id_list[0],
-            "token_type": TokenType.IBET_STRAIGHT_BOND,
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
             "error_transfer_id": []
         }
 
@@ -529,7 +529,7 @@ class TestProcessor:
         bulk_transfer_upload = BulkTransferUpload()
         bulk_transfer_upload.issuer_address = _account["address"]
         bulk_transfer_upload.upload_id = self.upload_id_list[0]
-        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
         bulk_transfer_upload.status = 0  # pending:0
         db.add(bulk_transfer_upload)
 
@@ -537,7 +537,7 @@ class TestProcessor:
         bulk_transfer = BulkTransfer()
         bulk_transfer.issuer_address = _account["address"]
         bulk_transfer.upload_id = self.upload_id_list[0]
-        bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
+        bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
         bulk_transfer.token_address = self.bulk_transfer_token[0]
         bulk_transfer.from_address = _from_address["address"]
         bulk_transfer.to_address = _to_address["address"]
@@ -578,7 +578,7 @@ class TestProcessor:
             assert _notification.code == 2
             assert _notification.metainfo == {
                 "upload_id": self.upload_id_list[0],
-                "token_type": TokenType.IBET_STRAIGHT_BOND,
+                "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                 "error_transfer_id": [1]
             }
 
@@ -600,7 +600,7 @@ class TestProcessor:
         bulk_transfer_upload = BulkTransferUpload()
         bulk_transfer_upload.issuer_address = _account["address"]
         bulk_transfer_upload.upload_id = self.upload_id_list[0]
-        bulk_transfer_upload.token_type = TokenType.IBET_SHARE
+        bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
         bulk_transfer_upload.status = 0  # pending:0
         db.add(bulk_transfer_upload)
 
@@ -608,7 +608,7 @@ class TestProcessor:
         bulk_transfer = BulkTransfer()
         bulk_transfer.issuer_address = _account["address"]
         bulk_transfer.upload_id = self.upload_id_list[0]
-        bulk_transfer.token_type = TokenType.IBET_SHARE
+        bulk_transfer.token_type = TokenType.IBET_SHARE.value
         bulk_transfer.token_address = self.bulk_transfer_token[0]
         bulk_transfer.from_address = _from_address["address"]
         bulk_transfer.to_address = _to_address["address"]
@@ -649,7 +649,7 @@ class TestProcessor:
             assert _notification.code == 2
             assert _notification.metainfo == {
                 "upload_id": self.upload_id_list[0],
-                "token_type": TokenType.IBET_SHARE,
+                "token_type": TokenType.IBET_SHARE.value,
                 "error_transfer_id": [1]
             }
 
@@ -673,7 +673,7 @@ class TestProcessor:
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = _account["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
-            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
             bulk_transfer_upload.status = i  # pending:0, succeeded:1, failed:2
             db.add(bulk_transfer_upload)
 
@@ -682,7 +682,7 @@ class TestProcessor:
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = _account["address"]
             bulk_transfer.upload_id = self.upload_id_list[0]
-            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
+            bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
             bulk_transfer.token_address = self.bulk_transfer_token[i]
             bulk_transfer.from_address = _from_address["address"]
             bulk_transfer.to_address = _to_address["address"]
@@ -723,6 +723,6 @@ class TestProcessor:
             assert _notification.code == 2
             assert _notification.metainfo == {
                 "upload_id": self.upload_id_list[0],
-                "token_type": TokenType.IBET_STRAIGHT_BOND,
+                "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                 "error_transfer_id": [3]
             }

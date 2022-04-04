@@ -120,7 +120,7 @@ class TestAppRoutersBondTokensPOST:
             TokenListContract.register.assert_called_with(
                 token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                 token_address="contract_address_test1",
-                token_template=TokenType.IBET_STRAIGHT_BOND,
+                token_template=TokenType.IBET_STRAIGHT_BOND.value,
                 account_address=test_account["address"],
                 private_key=ANY
             )
@@ -137,7 +137,7 @@ class TestAppRoutersBondTokensPOST:
             assert 1 == len(token_after)
             token_1 = token_after[0]
             assert token_1.id == 1
-            assert token_1.type == TokenType.IBET_STRAIGHT_BOND
+            assert token_1.type == TokenType.IBET_STRAIGHT_BOND.value
             assert token_1.tx_hash == "tx_hash_test1"
             assert token_1.issuer_address == test_account["address"]
             assert token_1.token_address == "contract_address_test1"
@@ -263,7 +263,7 @@ class TestAppRoutersBondTokensPOST:
             assert 1 == len(token_after)
             token_1 = token_after[0]
             assert token_1.id == 1
-            assert token_1.type == TokenType.IBET_STRAIGHT_BOND
+            assert token_1.type == TokenType.IBET_STRAIGHT_BOND.value
             assert token_1.tx_hash == "tx_hash_test1"
             assert token_1.issuer_address == test_account["address"]
             assert token_1.token_address == "contract_address_test1"
@@ -280,7 +280,7 @@ class TestAppRoutersBondTokensPOST:
             assert update_token.id == 1
             assert update_token.token_address == "contract_address_test1"
             assert update_token.issuer_address == test_account["address"]
-            assert update_token.type == TokenType.IBET_STRAIGHT_BOND
+            assert update_token.type == TokenType.IBET_STRAIGHT_BOND.value
             assert update_token.arguments == req_param
             assert update_token.status == 0
             assert update_token.trigger == "Issue"

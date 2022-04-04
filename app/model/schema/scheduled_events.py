@@ -27,7 +27,8 @@ from pydantic import (
 )
 
 from datetime import datetime
-from app.model.schema.token import (
+from app.model.db import TokenType
+from app.model.schema import (
     IbetStraightBondUpdate,
     IbetShareUpdate
 )
@@ -63,7 +64,7 @@ class ScheduledEventResponse(BaseModel):
     """scheduled event (Response)"""
     scheduled_event_id: str
     token_address: str
-    token_type: str
+    token_type: TokenType
     scheduled_datetime: datetime
     event_type: str
     status: int

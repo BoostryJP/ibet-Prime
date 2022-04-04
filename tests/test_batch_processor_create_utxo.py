@@ -138,7 +138,7 @@ class TestProcessor:
         # prepare data
         token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key)
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
@@ -147,7 +147,7 @@ class TestProcessor:
 
         token_address_2 = deploy_share_token_contract(issuer_address, issuer_private_key)
         _token_2 = Token()
-        _token_2.type = TokenType.IBET_SHARE
+        _token_2.type = TokenType.IBET_SHARE.value
         _token_2.tx_hash = ""
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
@@ -275,7 +275,7 @@ class TestProcessor:
         # prepare data
         token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key)
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
@@ -380,7 +380,7 @@ class TestProcessor:
         # prepare data
         token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key)
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
@@ -461,7 +461,7 @@ class TestProcessor:
         # prepare data
         token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key)
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
@@ -523,7 +523,7 @@ class TestProcessor:
         # prepare data
         token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key)
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
@@ -532,7 +532,7 @@ class TestProcessor:
 
         token_address_2 = deploy_share_token_contract(issuer_address, issuer_private_key)
         _token_2 = Token()
-        _token_2.type = TokenType.IBET_SHARE
+        _token_2.type = TokenType.IBET_SHARE.value
         _token_2.tx_hash = ""
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
@@ -596,7 +596,7 @@ class TestProcessor:
         # prepare data
         token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key)
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1

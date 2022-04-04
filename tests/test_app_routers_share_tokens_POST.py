@@ -126,7 +126,7 @@ class TestAppRoutersShareTokensPOST:
             TokenListContract.register.assert_called_with(
                 token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                 token_address="contract_address_test1",
-                token_template=TokenType.IBET_SHARE,
+                token_template=TokenType.IBET_SHARE.value,
                 account_address=test_account["address"],
                 private_key=ANY
             )
@@ -143,7 +143,7 @@ class TestAppRoutersShareTokensPOST:
             assert 1 == len(token_after)
             token_1 = token_after[0]
             assert token_1.id == 1
-            assert token_1.type == TokenType.IBET_SHARE
+            assert token_1.type == TokenType.IBET_SHARE.value
             assert token_1.tx_hash == "tx_hash_test1"
             assert token_1.issuer_address == test_account["address"]
             assert token_1.token_address == "contract_address_test1"
@@ -235,7 +235,7 @@ class TestAppRoutersShareTokensPOST:
             TokenListContract.register.assert_called_with(
                 token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                 token_address="contract_address_test1",
-                token_template=TokenType.IBET_SHARE,
+                token_template=TokenType.IBET_SHARE.value,
                 account_address=test_account["address"],
                 private_key=ANY
             )
@@ -252,7 +252,7 @@ class TestAppRoutersShareTokensPOST:
             assert 1 == len(token_after)
             token_1 = token_after[0]
             assert token_1.id == 1
-            assert token_1.type == TokenType.IBET_SHARE
+            assert token_1.type == TokenType.IBET_SHARE.value
             assert token_1.tx_hash == "tx_hash_test1"
             assert token_1.issuer_address == test_account["address"]
             assert token_1.token_address == "contract_address_test1"
@@ -367,7 +367,7 @@ class TestAppRoutersShareTokensPOST:
             assert 1 == len(token_after)
             token_1 = token_after[0]
             assert token_1.id == 1
-            assert token_1.type == TokenType.IBET_SHARE
+            assert token_1.type == TokenType.IBET_SHARE.value
             assert token_1.tx_hash == "tx_hash_test1"
             assert token_1.issuer_address == test_account["address"]
             assert token_1.token_address == "contract_address_test1"
@@ -384,7 +384,7 @@ class TestAppRoutersShareTokensPOST:
             assert update_token.id == 1
             assert update_token.token_address == "contract_address_test1"
             assert update_token.issuer_address == test_account["address"]
-            assert update_token.type == TokenType.IBET_SHARE
+            assert update_token.type == TokenType.IBET_SHARE.value
             assert update_token.arguments == req_param
             assert update_token.status == 0
             assert update_token.trigger == "Issue"

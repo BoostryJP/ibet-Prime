@@ -55,7 +55,7 @@ class TestAppRoutersShareTokensGET:
         issuer_address_1 = user_1["address"]
 
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = "tx_hash_test1"
         token.issuer_address = issuer_address_1
         token.token_address = "token_address_test1"
@@ -136,7 +136,7 @@ class TestAppRoutersShareTokensGET:
         issuer_address_2 = user_2["address"]
         # 1st Data
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE
+        token_1.type = TokenType.IBET_SHARE.value
         token_1.tx_hash = "tx_hash_test1"
         token_1.issuer_address = issuer_address_1
         token_1.token_address = "token_address_test1"
@@ -176,7 +176,7 @@ class TestAppRoutersShareTokensGET:
 
         # 2nd Data
         token_2 = Token()
-        token_2.type = TokenType.IBET_SHARE
+        token_2.type = TokenType.IBET_SHARE.value
         token_2.tx_hash = "tx_hash_test2"
         token_2.issuer_address = issuer_address_2
         token_2.token_address = "token_address_test2"
@@ -292,7 +292,7 @@ class TestAppRoutersShareTokensGET:
         issuer_address_1 = user_1["address"]
         # No Target Data
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = "tx_hash_test1"
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
@@ -314,7 +314,7 @@ class TestAppRoutersShareTokensGET:
         issuer_address_2 = user_2["address"]
 
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE
+        token_1.type = TokenType.IBET_SHARE.value
         token_1.tx_hash = "tx_hash_test1"
         token_1.issuer_address = issuer_address_1
         token_1.token_address = "token_address_test1"
@@ -349,7 +349,7 @@ class TestAppRoutersShareTokensGET:
 
         # No Target Data
         token_2 = Token()
-        token_2.type = TokenType.IBET_SHARE
+        token_2.type = TokenType.IBET_SHARE.value
         token_2.tx_hash = "tx_hash_test1"
         token_2.issuer_address = issuer_address_2
         token_2.token_address = "token_address_test1"
@@ -403,7 +403,7 @@ class TestAppRoutersShareTokensGET:
         issuer_address_2 = user_2["address"]
         # 1st Data
         token_1 = Token()
-        token_1.type = TokenType.IBET_SHARE
+        token_1.type = TokenType.IBET_SHARE.value
         token_1.tx_hash = "tx_hash_test1"
         token_1.issuer_address = issuer_address_1
         token_1.token_address = "token_address_test1"
@@ -437,7 +437,7 @@ class TestAppRoutersShareTokensGET:
 
         # 2nd Data
         token_2 = Token()
-        token_2.type = TokenType.IBET_SHARE
+        token_2.type = TokenType.IBET_SHARE.value
         token_2.tx_hash = "tx_hash_test2"
         token_2.issuer_address = issuer_address_1
         token_2.token_address = "token_address_test2"
@@ -476,7 +476,7 @@ class TestAppRoutersShareTokensGET:
 
         # No Target Data
         token_3 = Token()
-        token_3.type = TokenType.IBET_SHARE
+        token_3.type = TokenType.IBET_SHARE.value
         token_3.tx_hash = "tx_hash_test1"
         token_3.issuer_address = issuer_address_2
         token_3.token_address = "token_address_test1"

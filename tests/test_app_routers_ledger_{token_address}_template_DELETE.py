@@ -43,7 +43,7 @@ class TestAppRoutersLedgerTokenAddressTemplateDELETE:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -239,7 +239,7 @@ class TestAppRoutersLedgerTokenAddressTemplateDELETE:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -274,7 +274,7 @@ class TestAppRoutersLedgerTokenAddressTemplateDELETE:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address

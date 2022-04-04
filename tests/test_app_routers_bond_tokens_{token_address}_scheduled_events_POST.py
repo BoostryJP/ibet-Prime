@@ -58,7 +58,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
@@ -108,7 +108,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
             first()
         assert resp.status_code == 200
         assert resp.json() == {"scheduled_event_id": _scheduled_event.event_id}
-        assert _scheduled_event.token_type == TokenType.IBET_STRAIGHT_BOND
+        assert _scheduled_event.token_type == TokenType.IBET_STRAIGHT_BOND.value
         assert _scheduled_event.scheduled_datetime == datetime_now_utc.replace(tzinfo=None)
         assert _scheduled_event.event_type == ScheduledEventType.UPDATE.value
         assert _scheduled_event.status == 0
@@ -130,7 +130,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
@@ -180,7 +180,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
             first()
         assert resp_1.status_code == 200
         assert resp_1.json() == {"scheduled_event_id": _scheduled_event.event_id}
-        assert _scheduled_event.token_type == TokenType.IBET_STRAIGHT_BOND
+        assert _scheduled_event.token_type == TokenType.IBET_STRAIGHT_BOND.value
         assert _scheduled_event.scheduled_datetime == \
                datetime_now_jst.astimezone(timezone.utc).replace(tzinfo=None)
         assert _scheduled_event.event_type == ScheduledEventType.UPDATE.value
@@ -286,7 +286,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
@@ -420,7 +420,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address

@@ -16,14 +16,15 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from enum import Enum
+
 from sqlalchemy import (
     Column,
     Integer,
     String,
     JSON,
     DateTime,
-    Boolean,
-    BigInteger
+    Boolean
 )
 
 from .base import Base
@@ -70,6 +71,6 @@ class TokenAttrUpdate(Base):
     updated_datetime = Column(DateTime, nullable=False)
 
 
-class TokenType:
+class TokenType(str, Enum):
     IBET_STRAIGHT_BOND = "IbetStraightBond"
     IBET_SHARE = "IbetShare"
