@@ -133,7 +133,7 @@ class RetrieveLedgerHistoryResponse(BaseModel):
 
 class LedgerDetailsDataTemplateResponse(BaseModel):
     """Ledger Details Data Template schema (Response)"""
-    type: str
+    type: LedgerDetailsDataType
     source: Optional[str]
 
 

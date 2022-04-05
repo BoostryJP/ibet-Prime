@@ -65,7 +65,13 @@ class AccountRsaKeyTemporary(Base):
     rsa_passphrase = Column(String(2000))
 
 
-class AccountRsaStatus(Enum):
+class AccountRsaStatus(int, Enum):
+    """
+    0:UNSET
+    1:CREATING
+    2:CHANGING
+    3:SET
+    """
     UNSET = 0
     CREATING = 1
     CHANGING = 2

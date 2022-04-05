@@ -66,7 +66,7 @@ class ScheduledEventResponse(BaseModel):
     token_address: str
     token_type: TokenType
     scheduled_datetime: datetime
-    event_type: str
+    event_type: ScheduledEventType
     status: int
     data: Dict[str, Any]
     created: str
