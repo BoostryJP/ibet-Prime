@@ -47,7 +47,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
@@ -80,7 +80,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
@@ -152,7 +152,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
@@ -332,7 +332,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address

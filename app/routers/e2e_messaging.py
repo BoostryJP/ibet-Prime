@@ -43,7 +43,6 @@ from sha3 import keccak_256
 from coincurve import PublicKey
 from Crypto import Random
 from Crypto.PublicKey import RSA
-from eth_keyfile import decode_keyfile_json
 from eth_utils import to_checksum_address
 import eth_keyfile
 import boto3

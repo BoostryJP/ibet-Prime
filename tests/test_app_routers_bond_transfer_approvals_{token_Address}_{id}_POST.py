@@ -84,7 +84,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -163,7 +163,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -241,7 +241,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -606,7 +606,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -652,7 +652,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -699,7 +699,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -764,7 +764,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -829,7 +829,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -895,7 +895,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -961,7 +961,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -1031,7 +1031,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -1098,7 +1098,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -1179,7 +1179,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -1246,7 +1246,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -1323,7 +1323,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -1390,7 +1390,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address

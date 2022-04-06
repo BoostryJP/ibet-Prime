@@ -78,7 +78,7 @@ class TestProcessor:
         db.add(account)
 
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_SHARE
+        _token_1.type = TokenType.IBET_SHARE.value
         _token_1.tx_hash = "tx_hash_1"
         _token_1.issuer_address = _issuer_address
         _token_1.token_address = _token_address_1
@@ -89,7 +89,7 @@ class TestProcessor:
         _update_token_1 = UpdateToken()
         _update_token_1.token_address = _token_address_1
         _update_token_1.issuer_address = _issuer_address
-        _update_token_1.type = TokenType.IBET_SHARE
+        _update_token_1.type = TokenType.IBET_SHARE.value
         _update_token_1.arguments = {
             "name": "name_test1",
             "symbol": "symbol_test1",
@@ -115,7 +115,7 @@ class TestProcessor:
         db.add(_update_token_1)
 
         _token_2 = Token()
-        _token_2.type = TokenType.IBET_STRAIGHT_BOND
+        _token_2.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_2.tx_hash = "tx_hash_2"
         _token_2.issuer_address = _issuer_address
         _token_2.token_address = _token_address_2
@@ -126,7 +126,7 @@ class TestProcessor:
         _update_token_2 = UpdateToken()
         _update_token_2.token_address = _token_address_2
         _update_token_2.issuer_address = _issuer_address
-        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND
+        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND.value
         _update_token_2.arguments = {
             "name": "name_test1",
             "symbol": "symbol_test1",
@@ -157,7 +157,7 @@ class TestProcessor:
         _update_token_3 = UpdateToken()
         _update_token_3.token_address = _token_address_3
         _update_token_3.issuer_address = _issuer_address
-        _update_token_3.type = TokenType.IBET_SHARE
+        _update_token_3.type = TokenType.IBET_SHARE.value
         _update_token_3.arguments = {}
         _update_token_3.status = 1
         _update_token_3.trigger = "Issue"
@@ -167,7 +167,7 @@ class TestProcessor:
         _update_token_4 = UpdateToken()
         _update_token_4.token_address = _token_address_4
         _update_token_4.issuer_address = _issuer_address
-        _update_token_4.type = TokenType.IBET_SHARE
+        _update_token_4.type = TokenType.IBET_SHARE.value
         _update_token_4.arguments = {}
         _update_token_4.status = 2
         _update_token_4.trigger = "Issue"
@@ -234,12 +234,12 @@ class TestProcessor:
             TokenListContract_register.assert_has_calls([
                 call(token_list_address=TOKEN_LIST_CONTRACT_ADDRESS,
                      token_address=_token_address_1,
-                     token_template=TokenType.IBET_SHARE,
+                     token_template=TokenType.IBET_SHARE.value,
                      account_address=_issuer_address,
                      private_key=ANY),
                 call(token_list_address=TOKEN_LIST_CONTRACT_ADDRESS,
                      token_address=_token_address_2,
-                     token_template=TokenType.IBET_STRAIGHT_BOND,
+                     token_template=TokenType.IBET_STRAIGHT_BOND.value,
                      account_address=_issuer_address,
                      private_key=ANY),
             ])
@@ -325,7 +325,7 @@ class TestProcessor:
         db.add(account)
 
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_SHARE
+        _token_1.type = TokenType.IBET_SHARE.value
         _token_1.tx_hash = ""
         _token_1.issuer_address = _issuer_address
         _token_1.token_address = _token_address_1
@@ -336,7 +336,7 @@ class TestProcessor:
         _update_token_1 = UpdateToken()
         _update_token_1.token_address = _token_address_1
         _update_token_1.issuer_address = _issuer_address
-        _update_token_1.type = TokenType.IBET_SHARE
+        _update_token_1.type = TokenType.IBET_SHARE.value
         _update_token_1.arguments = {
             "name": "name_test1",
             "symbol": "symbol_test1",
@@ -362,7 +362,7 @@ class TestProcessor:
         db.add(_update_token_1)
 
         _token_2 = Token()
-        _token_2.type = TokenType.IBET_STRAIGHT_BOND
+        _token_2.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_2.tx_hash = ""
         _token_2.issuer_address = _issuer_address
         _token_2.token_address = _token_address_2
@@ -373,7 +373,7 @@ class TestProcessor:
         _update_token_2 = UpdateToken()
         _update_token_2.token_address = _token_address_2
         _update_token_2.issuer_address = _issuer_address
-        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND
+        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND.value
         _update_token_2.arguments = {
             "name": "name_test1",
             "symbol": "symbol_test1",
@@ -404,7 +404,7 @@ class TestProcessor:
         _update_token_3 = UpdateToken()
         _update_token_3.token_address = _token_address_3
         _update_token_3.issuer_address = _issuer_address
-        _update_token_3.type = TokenType.IBET_SHARE
+        _update_token_3.type = TokenType.IBET_SHARE.value
         _update_token_3.arguments = {}
         _update_token_3.status = 1
         _update_token_3.trigger = "Issue"
@@ -414,7 +414,7 @@ class TestProcessor:
         _update_token_4 = UpdateToken()
         _update_token_4.token_address = _token_address_4
         _update_token_4.issuer_address = _issuer_address
-        _update_token_4.type = TokenType.IBET_SHARE
+        _update_token_4.type = TokenType.IBET_SHARE.value
         _update_token_4.arguments = {}
         _update_token_4.status = 2
         _update_token_4.trigger = "Issue"
@@ -458,7 +458,7 @@ class TestProcessor:
         assert _notification.code == 0
         assert _notification.metainfo == {
             "token_address": _token_address_1,
-            "token_type": TokenType.IBET_SHARE,
+            "token_type": TokenType.IBET_SHARE.value,
             "arguments": {
                 "name": "name_test1",
                 "symbol": "symbol_test1",
@@ -489,7 +489,7 @@ class TestProcessor:
         assert _notification.code == 0
         assert _notification.metainfo == {
             "token_address": _token_address_2,
-            "token_type": TokenType.IBET_STRAIGHT_BOND,
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
             "arguments": {
                 "name": "name_test1",
                 "symbol": "symbol_test1",
@@ -533,7 +533,7 @@ class TestProcessor:
         db.add(account)
 
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_SHARE
+        _token_1.type = TokenType.IBET_SHARE.value
         _token_1.tx_hash = ""
         _token_1.issuer_address = _issuer_address
         _token_1.token_address = _token_address_1
@@ -544,7 +544,7 @@ class TestProcessor:
         _update_token_1 = UpdateToken()
         _update_token_1.token_address = _token_address_1
         _update_token_1.issuer_address = _issuer_address
-        _update_token_1.type = TokenType.IBET_SHARE
+        _update_token_1.type = TokenType.IBET_SHARE.value
         _update_token_1.arguments = {
             "name": "name_test1",
             "symbol": "symbol_test1",
@@ -570,7 +570,7 @@ class TestProcessor:
         db.add(_update_token_1)
 
         _token_2 = Token()
-        _token_2.type = TokenType.IBET_STRAIGHT_BOND
+        _token_2.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_2.tx_hash = ""
         _token_2.issuer_address = _issuer_address
         _token_2.token_address = _token_address_2
@@ -581,7 +581,7 @@ class TestProcessor:
         _update_token_2 = UpdateToken()
         _update_token_2.token_address = _token_address_2
         _update_token_2.issuer_address = _issuer_address
-        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND
+        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND.value
         _update_token_2.arguments = {
             "name": "name_test1",
             "symbol": "symbol_test1",
@@ -612,7 +612,7 @@ class TestProcessor:
         _update_token_3 = UpdateToken()
         _update_token_3.token_address = _token_address_3
         _update_token_3.issuer_address = _issuer_address
-        _update_token_3.type = TokenType.IBET_SHARE
+        _update_token_3.type = TokenType.IBET_SHARE.value
         _update_token_3.arguments = {}
         _update_token_3.status = 1
         _update_token_3.trigger = "Issue"
@@ -622,7 +622,7 @@ class TestProcessor:
         _update_token_4 = UpdateToken()
         _update_token_4.token_address = _token_address_4
         _update_token_4.issuer_address = _issuer_address
-        _update_token_4.type = TokenType.IBET_SHARE
+        _update_token_4.type = TokenType.IBET_SHARE.value
         _update_token_4.arguments = {}
         _update_token_4.status = 2
         _update_token_4.trigger = "Issue"
@@ -666,7 +666,7 @@ class TestProcessor:
         assert _notification.code == 1
         assert _notification.metainfo == {
             "token_address": _token_address_1,
-            "token_type": TokenType.IBET_SHARE,
+            "token_type": TokenType.IBET_SHARE.value,
             "arguments": {
                 "name": "name_test1",
                 "symbol": "symbol_test1",
@@ -697,7 +697,7 @@ class TestProcessor:
         assert _notification.code == 1
         assert _notification.metainfo == {
             "token_address": _token_address_2,
-            "token_type": TokenType.IBET_STRAIGHT_BOND,
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
             "arguments": {
                 "name": "name_test1",
                 "symbol": "symbol_test1",
@@ -741,7 +741,7 @@ class TestProcessor:
         db.add(account)
 
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_SHARE
+        _token_1.type = TokenType.IBET_SHARE.value
         _token_1.tx_hash = ""
         _token_1.issuer_address = _issuer_address
         _token_1.token_address = _token_address_1
@@ -752,7 +752,7 @@ class TestProcessor:
         _update_token_1 = UpdateToken()
         _update_token_1.token_address = _token_address_1
         _update_token_1.issuer_address = _issuer_address
-        _update_token_1.type = TokenType.IBET_SHARE
+        _update_token_1.type = TokenType.IBET_SHARE.value
         _update_token_1.arguments = {
             "name": "name_test1",
             "symbol": "symbol_test1",
@@ -778,7 +778,7 @@ class TestProcessor:
         db.add(_update_token_1)
 
         _token_2 = Token()
-        _token_2.type = TokenType.IBET_STRAIGHT_BOND
+        _token_2.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_2.tx_hash = ""
         _token_2.issuer_address = _issuer_address
         _token_2.token_address = _token_address_2
@@ -789,7 +789,7 @@ class TestProcessor:
         _update_token_2 = UpdateToken()
         _update_token_2.token_address = _token_address_2
         _update_token_2.issuer_address = _issuer_address
-        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND
+        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND.value
         _update_token_2.arguments = {
             "name": "name_test1",
             "symbol": "symbol_test1",
@@ -820,7 +820,7 @@ class TestProcessor:
         _update_token_3 = UpdateToken()
         _update_token_3.token_address = _token_address_3
         _update_token_3.issuer_address = _issuer_address
-        _update_token_3.type = TokenType.IBET_SHARE
+        _update_token_3.type = TokenType.IBET_SHARE.value
         _update_token_3.arguments = {}
         _update_token_3.status = 1
         _update_token_3.trigger = "Issue"
@@ -830,7 +830,7 @@ class TestProcessor:
         _update_token_4 = UpdateToken()
         _update_token_4.token_address = _token_address_4
         _update_token_4.issuer_address = _issuer_address
-        _update_token_4.type = TokenType.IBET_SHARE
+        _update_token_4.type = TokenType.IBET_SHARE.value
         _update_token_4.arguments = {}
         _update_token_4.status = 2
         _update_token_4.trigger = "Issue"
@@ -878,7 +878,7 @@ class TestProcessor:
             assert _notification.code == 2
             assert _notification.metainfo == {
                 "token_address": _token_address_1,
-                "token_type": TokenType.IBET_SHARE,
+                "token_type": TokenType.IBET_SHARE.value,
                 "arguments": {
                     "name": "name_test1",
                     "symbol": "symbol_test1",
@@ -909,7 +909,7 @@ class TestProcessor:
             assert _notification.code == 2
             assert _notification.metainfo == {
                 "token_address": _token_address_2,
-                "token_type": TokenType.IBET_STRAIGHT_BOND,
+                "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                 "arguments": {
                     "name": "name_test1",
                     "symbol": "symbol_test1",
@@ -953,7 +953,7 @@ class TestProcessor:
         db.add(account)
 
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_SHARE
+        _token_1.type = TokenType.IBET_SHARE.value
         _token_1.tx_hash = ""
         _token_1.issuer_address = _issuer_address
         _token_1.token_address = _token_address_1
@@ -964,7 +964,7 @@ class TestProcessor:
         _update_token_1 = UpdateToken()
         _update_token_1.token_address = _token_address_1
         _update_token_1.issuer_address = _issuer_address
-        _update_token_1.type = TokenType.IBET_SHARE
+        _update_token_1.type = TokenType.IBET_SHARE.value
         _update_token_1.arguments = {
             "name": "name_test1",
             "symbol": "symbol_test1",
@@ -990,7 +990,7 @@ class TestProcessor:
         db.add(_update_token_1)
 
         _token_2 = Token()
-        _token_2.type = TokenType.IBET_STRAIGHT_BOND
+        _token_2.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_2.tx_hash = ""
         _token_2.issuer_address = _issuer_address
         _token_2.token_address = _token_address_2
@@ -1001,7 +1001,7 @@ class TestProcessor:
         _update_token_2 = UpdateToken()
         _update_token_2.token_address = _token_address_2
         _update_token_2.issuer_address = _issuer_address
-        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND
+        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND.value
         _update_token_2.arguments = {
             "name": "name_test1",
             "symbol": "symbol_test1",
@@ -1032,7 +1032,7 @@ class TestProcessor:
         _update_token_3 = UpdateToken()
         _update_token_3.token_address = _token_address_3
         _update_token_3.issuer_address = _issuer_address
-        _update_token_3.type = TokenType.IBET_SHARE
+        _update_token_3.type = TokenType.IBET_SHARE.value
         _update_token_3.arguments = {}
         _update_token_3.status = 1
         _update_token_3.trigger = "Issue"
@@ -1042,7 +1042,7 @@ class TestProcessor:
         _update_token_4 = UpdateToken()
         _update_token_4.token_address = _token_address_4
         _update_token_4.issuer_address = _issuer_address
-        _update_token_4.type = TokenType.IBET_SHARE
+        _update_token_4.type = TokenType.IBET_SHARE.value
         _update_token_4.arguments = {}
         _update_token_4.status = 2
         _update_token_4.trigger = "Issue"
@@ -1133,7 +1133,7 @@ class TestProcessor:
             assert _notification.code == 2
             assert _notification.metainfo == {
                 "token_address": _token_address_1,
-                "token_type": TokenType.IBET_SHARE,
+                "token_type": TokenType.IBET_SHARE.value,
                 "arguments": {
                     "name": "name_test1",
                     "symbol": "symbol_test1",
@@ -1164,7 +1164,7 @@ class TestProcessor:
             assert _notification.code == 2
             assert _notification.metainfo == {
                 "token_address": _token_address_2,
-                "token_type": TokenType.IBET_STRAIGHT_BOND,
+                "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                 "arguments": {
                     "name": "name_test1",
                     "symbol": "symbol_test1",

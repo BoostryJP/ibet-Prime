@@ -689,9 +689,9 @@ def delete_ledger_details_data(
 
 
 def __get_personal_info(token_address: str, token_type: str, account_address: str, db: Session):
-    if token_type == TokenType.IBET_SHARE:
+    if token_type == TokenType.IBET_SHARE.value:
         token_contract = IbetShareContract.get(token_address)
-    elif token_type == TokenType.IBET_STRAIGHT_BOND:
+    elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
         token_contract = IbetStraightBondContract.get(token_address)
 
     issuer_address = token_contract.issuer_address

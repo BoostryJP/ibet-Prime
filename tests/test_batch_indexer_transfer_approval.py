@@ -134,7 +134,7 @@ class TestProcessor:
 
         # Prepare data : Token(processing token)
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         token_1.token_address = "test1"
         token_1.issuer_address = issuer_address
         token_1.abi = "abi"
@@ -176,7 +176,7 @@ class TestProcessor:
                                                       transfer_approval_required=True)
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
@@ -185,7 +185,7 @@ class TestProcessor:
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND
+        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
@@ -239,7 +239,7 @@ class TestProcessor:
                                                       transfer_approval_required=True)
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
@@ -248,7 +248,7 @@ class TestProcessor:
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND
+        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
@@ -336,7 +336,7 @@ class TestProcessor:
                                                       transfer_approval_required=True)
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
@@ -351,7 +351,7 @@ class TestProcessor:
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND
+        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
@@ -439,7 +439,7 @@ class TestProcessor:
                                                       transfer_approval_required=True)
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
@@ -454,7 +454,7 @@ class TestProcessor:
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND
+        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
@@ -552,7 +552,7 @@ class TestProcessor:
                                                       transfer_approval_required=True)
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
@@ -561,7 +561,7 @@ class TestProcessor:
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND
+        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
@@ -679,7 +679,7 @@ class TestProcessor:
                                                       transfer_approval_required=True)
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
@@ -688,7 +688,7 @@ class TestProcessor:
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND
+        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
@@ -811,7 +811,7 @@ class TestProcessor:
                                                       transfer_approval_required=True)
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
@@ -820,7 +820,7 @@ class TestProcessor:
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND
+        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
@@ -919,7 +919,7 @@ class TestProcessor:
                                                       transfer_approval_required=True)
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
@@ -928,7 +928,7 @@ class TestProcessor:
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND
+        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
@@ -1070,7 +1070,7 @@ class TestProcessor:
                                                       transfer_approval_required=True)
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
@@ -1079,7 +1079,7 @@ class TestProcessor:
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND
+        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"
@@ -1210,7 +1210,7 @@ class TestProcessor:
                                                       transfer_approval_required=True)
         token_address_1 = token_contract_1.address
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
@@ -1219,7 +1219,7 @@ class TestProcessor:
 
         # Prepare data : Token(processing token)
         token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND
+        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
         token_2.token_address = "test1"
         token_2.issuer_address = issuer_address
         token_2.abi = "abi"

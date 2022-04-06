@@ -16,36 +16,35 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from typing import List
 from pydantic import BaseModel
 
+from .types import ResultSet
 from app.model.db import TokenType
+
+
+############################
+# REQUEST
+############################
 
 
 ############################
 # RESPONSE
 ############################
 
-class BulkTransferUploadIdResponse(BaseModel):
-    """bulk transfer upload id"""
-    upload_id: str
-
-
-class BulkTransferUploadResponse(BaseModel):
-    """bulk transfer upload"""
-    upload_id: str
-    issuer_address: str
-    token_type: TokenType
-    status: int
-    created: str
-
-
-class BulkTransferResponse(BaseModel):
-    """bulk transfer data"""
-    upload_id: str
+class PositionResponse(BaseModel):
+    """Position schema (Response)"""
     issuer_address: str
     token_address: str
     token_type: TokenType
-    from_address: str
-    to_address: str
-    amount: int
-    status: int
+    token_name: str
+    balance: int
+    exchange_balance: int
+    exchange_commitment: int
+    pending_transfer: int
+
+
+class ListAllPositionResponse(BaseModel):
+    """List All Position schema (Response)"""
+    result_set: ResultSet
+    positions: List[PositionResponse]

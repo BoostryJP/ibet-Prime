@@ -130,10 +130,10 @@ class Processor:
                 try:
                     # Token Update
                     token_template = ""
-                    if _update_token.type == TokenType.IBET_SHARE:
+                    if _update_token.type == TokenType.IBET_SHARE.value:
                         _update_data = self.__create_update_data(
                             trigger=_update_token.trigger,
-                            token_type=TokenType.IBET_SHARE,
+                            token_type=TokenType.IBET_SHARE.value,
                             arguments=_update_token.arguments
                         )
                         IbetShareContract.update(
@@ -142,12 +142,12 @@ class Processor:
                             tx_from=_update_token.issuer_address,
                             private_key=private_key
                         )
-                        token_template = TokenType.IBET_SHARE
+                        token_template = TokenType.IBET_SHARE.value
 
-                    elif _update_token.type == TokenType.IBET_STRAIGHT_BOND:
+                    elif _update_token.type == TokenType.IBET_STRAIGHT_BOND.value:
                         _update_data = self.__create_update_data(
                             trigger=_update_token.trigger,
-                            token_type=TokenType.IBET_STRAIGHT_BOND,
+                            token_type=TokenType.IBET_STRAIGHT_BOND.value,
                             arguments=_update_token.arguments
                         )
                         IbetStraightBondContract.update(
@@ -156,7 +156,7 @@ class Processor:
                             tx_from=_update_token.issuer_address,
                             private_key=private_key
                         )
-                        token_template = TokenType.IBET_STRAIGHT_BOND
+                        token_template = TokenType.IBET_STRAIGHT_BOND.value
 
                     if _update_token.trigger == "Issue":
 
@@ -229,7 +229,7 @@ class Processor:
     def __create_update_data(self, trigger, token_type, arguments):
         if trigger == "Issue":
             # NOTE: Items set at the time of issue do not need to be updated.
-            if token_type == TokenType.IBET_SHARE:
+            if token_type == TokenType.IBET_SHARE.value:
                 update_data = {
                     "tradable_exchange_contract_address": arguments.get("tradable_exchange_contract_address"),
                     "personal_info_contract_address": arguments.get("personal_info_contract_address"),
@@ -242,7 +242,7 @@ class Processor:
                     "is_canceled": arguments.get("is_canceled")
                 }
                 return IbetShareUpdate(**update_data)
-            elif token_type == TokenType.IBET_STRAIGHT_BOND:
+            elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
                 update_data = {
                     "interest_rate": arguments.get("interest_rate"),
                     "interest_payment_date": arguments.get("interest_payment_date"),

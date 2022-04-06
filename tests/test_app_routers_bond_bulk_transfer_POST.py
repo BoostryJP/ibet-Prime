@@ -71,7 +71,7 @@ class TestAppRoutersBondBulkTransferPOST:
         # prepare data : Tokens
         for _t in self.req_tokens:
             _token = Token()
-            _token.type = TokenType.IBET_STRAIGHT_BOND
+            _token.type = TokenType.IBET_STRAIGHT_BOND.value
             _token.tx_hash = ""
             _token.issuer_address = self.admin_address
             _token.token_address = _t
@@ -118,14 +118,14 @@ class TestAppRoutersBondBulkTransferPOST:
         assert len(bulk_transfer) == 2
         assert bulk_transfer[0].issuer_address == self.admin_address
         assert bulk_transfer[0].token_address == self.req_tokens[0]
-        assert bulk_transfer[0].token_type == TokenType.IBET_STRAIGHT_BOND
+        assert bulk_transfer[0].token_type == TokenType.IBET_STRAIGHT_BOND.value
         assert bulk_transfer[0].from_address == self.from_address
         assert bulk_transfer[0].to_address == self.to_address
         assert bulk_transfer[0].amount == 5
         assert bulk_transfer[0].status == 0
         assert bulk_transfer[1].issuer_address == self.admin_address
         assert bulk_transfer[1].token_address == self.req_tokens[1]
-        assert bulk_transfer[1].token_type == TokenType.IBET_STRAIGHT_BOND
+        assert bulk_transfer[1].token_type == TokenType.IBET_STRAIGHT_BOND.value
         assert bulk_transfer[1].from_address == self.from_address
         assert bulk_transfer[1].to_address == self.to_address
         assert bulk_transfer[1].amount == 10
@@ -487,7 +487,7 @@ class TestAppRoutersBondBulkTransferPOST:
 
         # prepare data : Tokens
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.issuer_address = self.admin_address
         _token.token_address = self.req_tokens[0]

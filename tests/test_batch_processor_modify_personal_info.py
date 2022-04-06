@@ -196,7 +196,7 @@ class TestProcessor:
         personal_info_contract_address_1 = deploy_personal_info_contract(user_1)
         token_contract_address_1 = deploy_bond_token_contract(user_1, personal_info_contract_address_1)
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         token_1.tx_hash = "tx_hash"
         token_1.issuer_address = issuer_address_1
         token_1.token_address = token_contract_address_1
@@ -206,7 +206,7 @@ class TestProcessor:
         personal_info_contract_address_2 = deploy_personal_info_contract(user_1)
         token_contract_address_2 = deploy_share_token_contract(user_1, personal_info_contract_address_2)
         token_2 = Token()
-        token_2.type = TokenType.IBET_SHARE
+        token_2.type = TokenType.IBET_SHARE.value
         token_2.tx_hash = "tx_hash"
         token_2.issuer_address = issuer_address_1
         token_2.token_address = token_contract_address_2
@@ -215,7 +215,7 @@ class TestProcessor:
 
         token_contract_address_3 = deploy_bond_token_contract(user_1, None)
         token_3 = Token()
-        token_3.type = TokenType.IBET_STRAIGHT_BOND
+        token_3.type = TokenType.IBET_STRAIGHT_BOND.value
         token_3.tx_hash = "tx_hash"
         token_3.issuer_address = issuer_address_1
         token_3.token_address = token_contract_address_3
@@ -224,7 +224,7 @@ class TestProcessor:
 
         token_contract_address_4 = deploy_share_token_contract(user_1, None)
         token_4 = Token()
-        token_4.type = TokenType.IBET_SHARE
+        token_4.type = TokenType.IBET_SHARE.value
         token_4.tx_hash = "tx_hash"
         token_4.issuer_address = issuer_address_1
         token_4.token_address = token_contract_address_4

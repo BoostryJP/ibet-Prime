@@ -193,7 +193,7 @@ def issue_token(
         _update_token = UpdateToken()
         _update_token.token_address = contract_address
         _update_token.issuer_address = issuer_address
-        _update_token.type = TokenType.IBET_SHARE
+        _update_token.type = TokenType.IBET_SHARE.value
         _update_token.arguments = token_dict
         _update_token.status = 0  # pending
         _update_token.trigger = "Issue"
@@ -206,7 +206,7 @@ def issue_token(
             TokenListContract.register(
                 token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                 token_address=contract_address,
-                token_template=TokenType.IBET_SHARE,
+                token_template=TokenType.IBET_SHARE.value,
                 account_address=issuer_address,
                 private_key=private_key
             )
@@ -238,7 +238,7 @@ def issue_token(
 
     # Register token data
     _token = Token()
-    _token.type = TokenType.IBET_SHARE
+    _token.type = TokenType.IBET_SHARE.value
     _token.tx_hash = tx_hash
     _token.issuer_address = issuer_address
     _token.token_address = contract_address
@@ -277,11 +277,11 @@ def list_all_tokens(
     # Get issued token list
     if issuer_address is None:
         tokens = db.query(Token). \
-            filter(Token.type == TokenType.IBET_SHARE). \
+            filter(Token.type == TokenType.IBET_SHARE.value). \
             all()
     else:
         tokens = db.query(Token). \
-            filter(Token.type == TokenType.IBET_SHARE). \
+            filter(Token.type == TokenType.IBET_SHARE.value). \
             filter(Token.issuer_address == issuer_address). \
             all()
 
@@ -319,7 +319,7 @@ def retrieve_token(
     """Retrieve token"""
     # Get Token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.type == TokenType.IBET_SHARE.value). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
         first()
@@ -377,7 +377,7 @@ def update_token(
 
     # Get Token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.type == TokenType.IBET_SHARE.value). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -444,7 +444,7 @@ def additional_issue(
 
     # Get Token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.type == TokenType.IBET_SHARE.value). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -499,7 +499,7 @@ def redeem_token(
 
     # Get Token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.type == TokenType.IBET_SHARE.value). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -536,13 +536,13 @@ def list_all_scheduled_events(
 
     if issuer_address is None:
         _token_events = db.query(ScheduledEvents). \
-            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
+            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE.value). \
             filter(ScheduledEvents.token_address == token_address). \
             order_by(ScheduledEvents.id). \
             all()
     else:
         _token_events = db.query(ScheduledEvents). \
-            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
+            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE.value). \
             filter(ScheduledEvents.issuer_address == issuer_address). \
             filter(ScheduledEvents.token_address == token_address). \
             order_by(ScheduledEvents.id). \
@@ -556,7 +556,7 @@ def list_all_scheduled_events(
             {
                 "scheduled_event_id": _token_event.event_id,
                 "token_address": token_address,
-                "token_type": TokenType.IBET_SHARE,
+                "token_type": TokenType.IBET_SHARE.value,
                 "scheduled_datetime": scheduled_datetime_utc.astimezone(local_tz).isoformat(),
                 "event_type": _token_event.event_type,
                 "status": _token_event.status,
@@ -593,7 +593,7 @@ def schedule_new_update_event(
 
     # Verify that the token is issued by the issuer
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.type == TokenType.IBET_SHARE.value). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -608,7 +608,7 @@ def schedule_new_update_event(
     _scheduled_event.event_id = str(uuid.uuid4())
     _scheduled_event.issuer_address = issuer_address
     _scheduled_event.token_address = token_address
-    _scheduled_event.token_type = TokenType.IBET_SHARE
+    _scheduled_event.token_type = TokenType.IBET_SHARE.value
     _scheduled_event.scheduled_datetime = event_data.scheduled_datetime
     _scheduled_event.event_type = event_data.event_type
     _scheduled_event.data = event_data.data.dict()
@@ -634,13 +634,13 @@ def retrieve_token_event(
 
     if issuer_address is None:
         _token_event = db.query(ScheduledEvents). \
-            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
+            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE.value). \
             filter(ScheduledEvents.event_id == scheduled_event_id). \
             filter(ScheduledEvents.token_address == token_address). \
             first()
     else:
         _token_event = db.query(ScheduledEvents). \
-            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
+            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE.value). \
             filter(ScheduledEvents.event_id == scheduled_event_id). \
             filter(ScheduledEvents.issuer_address == issuer_address). \
             filter(ScheduledEvents.token_address == token_address). \
@@ -653,7 +653,7 @@ def retrieve_token_event(
     return {
         "scheduled_event_id": _token_event.event_id,
         "token_address": token_address,
-        "token_type": TokenType.IBET_SHARE,
+        "token_type": TokenType.IBET_SHARE.value,
         "scheduled_datetime": scheduled_datetime_utc.astimezone(local_tz).isoformat(),
         "event_type": _token_event.event_type,
         "status": _token_event.status,
@@ -688,7 +688,7 @@ def delete_scheduled_event(
 
     # Delete an event
     _token_event = db.query(ScheduledEvents). \
-        filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
+        filter(ScheduledEvents.token_type == TokenType.IBET_SHARE.value). \
         filter(ScheduledEvents.event_id == scheduled_event_id). \
         filter(ScheduledEvents.issuer_address == issuer_address). \
         filter(ScheduledEvents.token_address == token_address). \
@@ -701,7 +701,7 @@ def delete_scheduled_event(
     rtn = {
         "scheduled_event_id": _token_event.event_id,
         "token_address": token_address,
-        "token_type": TokenType.IBET_SHARE,
+        "token_type": TokenType.IBET_SHARE.value,
         "scheduled_datetime": scheduled_datetime_utc.astimezone(local_tz).isoformat(),
         "event_type": _token_event.event_type,
         "status": _token_event.status,
@@ -739,7 +739,7 @@ def list_all_holders(
 
     # Get Token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.type == TokenType.IBET_SHARE.value). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -815,7 +815,7 @@ def retrieve_holder(
 
     # Get Token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.type == TokenType.IBET_SHARE.value). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -898,7 +898,7 @@ def modify_holder_personal_info(
 
     # Verify that the token is issued by the issuer_address
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.type == TokenType.IBET_SHARE.value). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -952,7 +952,7 @@ def register_holder_personal_info(
 
     # Verify that the token is issued by the issuer_address
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.type == TokenType.IBET_SHARE.value). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -1010,7 +1010,7 @@ def transfer_ownership(
 
     # Check that it is a token that has been issued.
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.type == TokenType.IBET_SHARE.value). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token.token_address). \
         filter(Token.token_status != 2). \
@@ -1049,7 +1049,7 @@ def list_transfer_history(
     """List token transfer history"""
     # Get token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.type == TokenType.IBET_SHARE.value). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
         first()
@@ -1142,7 +1142,7 @@ def list_transfer_approval_history(
                      func.count(or_(literal_column("status") == 2, None)),
                      func.count(or_(literal_column("status") == 3, None))). \
         join(Token, subquery.token_address == Token.token_address). \
-        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.type == TokenType.IBET_SHARE.value). \
         filter(Token.token_status != 2)
     if issuer_address is not None:
         query = query.filter(Token.issuer_address == issuer_address)
@@ -1205,7 +1205,7 @@ def list_token_transfer_approval_history(
     """List token transfer approval history"""
     # Get token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.type == TokenType.IBET_SHARE.value). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
         first()
@@ -1355,7 +1355,7 @@ def update_transfer_approval(
 
     # Get token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.type == TokenType.IBET_SHARE.value). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
         first()
@@ -1458,7 +1458,7 @@ def retrieve_transfer_approval_history(
     """Retrieve share token transfer approval history"""
     # Get token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.type == TokenType.IBET_SHARE.value). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
         first()
@@ -1563,7 +1563,7 @@ def bulk_transfer_ownership(
     # Verify that the tokens are issued by the issuer_address
     for _token in tokens:
         _issued_token = db.query(Token). \
-            filter(Token.type == TokenType.IBET_SHARE). \
+            filter(Token.type == TokenType.IBET_SHARE.value). \
             filter(Token.issuer_address == issuer_address). \
             filter(Token.token_address == _token.token_address). \
             filter(Token.token_status != 2). \
@@ -1580,7 +1580,7 @@ def bulk_transfer_ownership(
     _bulk_transfer_upload = BulkTransferUpload()
     _bulk_transfer_upload.upload_id = upload_id
     _bulk_transfer_upload.issuer_address = issuer_address
-    _bulk_transfer_upload.token_type = TokenType.IBET_SHARE
+    _bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
     _bulk_transfer_upload.status = 0
     db.add(_bulk_transfer_upload)
 
@@ -1590,7 +1590,7 @@ def bulk_transfer_ownership(
         _bulk_transfer.issuer_address = issuer_address
         _bulk_transfer.upload_id = upload_id
         _bulk_transfer.token_address = _token.token_address
-        _bulk_transfer.token_type = TokenType.IBET_SHARE
+        _bulk_transfer.token_type = TokenType.IBET_SHARE.value
         _bulk_transfer.from_address = _token.from_address
         _bulk_transfer.to_address = _token.to_address
         _bulk_transfer.amount = _token.amount
@@ -1619,13 +1619,13 @@ def list_bulk_transfer_upload(
     # Get bulk transfer upload list
     if issuer_address is None:
         _uploads = db.query(BulkTransferUpload). \
-            filter(BulkTransferUpload.token_type == TokenType.IBET_SHARE). \
+            filter(BulkTransferUpload.token_type == TokenType.IBET_SHARE.value). \
             order_by(BulkTransferUpload.issuer_address). \
             all()
     else:
         _uploads = db.query(BulkTransferUpload). \
             filter(BulkTransferUpload.issuer_address == issuer_address). \
-            filter(BulkTransferUpload.token_type == TokenType.IBET_SHARE). \
+            filter(BulkTransferUpload.token_type == TokenType.IBET_SHARE.value). \
             all()
 
     uploads = []
@@ -1661,14 +1661,14 @@ def retrieve_bulk_transfer(
     if issuer_address is None:
         _bulk_transfers = db.query(BulkTransfer). \
             filter(BulkTransfer.upload_id == upload_id). \
-            filter(BulkTransfer.token_type == TokenType.IBET_SHARE). \
+            filter(BulkTransfer.token_type == TokenType.IBET_SHARE.value). \
             order_by(BulkTransfer.issuer_address). \
             all()
     else:
         _bulk_transfers = db.query(BulkTransfer). \
             filter(BulkTransfer.issuer_address == issuer_address). \
             filter(BulkTransfer.upload_id == upload_id). \
-            filter(BulkTransfer.token_type == TokenType.IBET_SHARE). \
+            filter(BulkTransfer.token_type == TokenType.IBET_SHARE.value). \
             all()
 
     bulk_transfers = []

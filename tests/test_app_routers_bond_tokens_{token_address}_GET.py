@@ -43,7 +43,7 @@ class TestAppRoutersBondTokensTokenAddressGET:
     def test_normal_1(self, mock_get, client, db):
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
         token.tx_hash = "tx_hash_test1"
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
@@ -143,7 +143,7 @@ class TestAppRoutersBondTokensTokenAddressGET:
     def test_normal_2(self, mock_get, client, db):
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
         token.tx_hash = "tx_hash_test1"
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
@@ -260,7 +260,7 @@ class TestAppRoutersBondTokensTokenAddressGET:
     def test_error_2(self, client, db):
         # prepare data
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
         token.tx_hash = "tx_hash_test1"
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"

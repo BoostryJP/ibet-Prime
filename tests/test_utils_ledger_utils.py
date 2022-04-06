@@ -191,7 +191,7 @@ class TestCreateLedger:
         token_address_1 = deploy_share_token_contract(issuer_address, issuer_private_key,
                                                       personal_info_contract_address)
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_SHARE
+        _token_1.type = TokenType.IBET_SHARE.value
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
@@ -420,7 +420,7 @@ class TestCreateLedger:
         _ledger = db.query(Ledger).first()
         assert _ledger.id == 1
         assert _ledger.token_address == token_address_1
-        assert _ledger.token_type == TokenType.IBET_SHARE
+        assert _ledger.token_type == TokenType.IBET_SHARE.value
         now_ymd = datetime.now(pytz.timezone(TZ)).strftime("%Y/%m/%d")
         assert _ledger.ledger == {
             "created": now_ymd,
@@ -635,7 +635,7 @@ class TestCreateLedger:
         token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key,
                                                      personal_info_contract_address)
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
@@ -866,7 +866,7 @@ class TestCreateLedger:
         _ledger = db.query(Ledger).first()
         assert _ledger.id == 1
         assert _ledger.token_address == token_address_1
-        assert _ledger.token_type == TokenType.IBET_STRAIGHT_BOND
+        assert _ledger.token_type == TokenType.IBET_STRAIGHT_BOND.value
         now_ymd = datetime.now(pytz.timezone(TZ)).strftime("%Y/%m/%d")
         assert _ledger.ledger == {
             "created": now_ymd,
@@ -1037,7 +1037,7 @@ class TestCreateLedger:
         # Token
         token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key, ZERO_ADDRESS)
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1

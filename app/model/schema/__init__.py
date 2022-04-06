@@ -88,6 +88,10 @@ from .personal_info import (
     ModifyPersonalInfoRequest,
     RegisterPersonalInfoRequest
 )
+from .position import (
+    PositionResponse,
+    ListAllPositionResponse
+)
 from .file import (
     UploadFileRequest,
     FileResponse,

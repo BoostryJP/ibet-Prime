@@ -92,7 +92,7 @@ class Processor:
         self.exchange_address_list = []
 
         issued_token_list = db_session.query(Token). \
-            filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+            filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
             filter(Token.token_status == 1). \
             all()
         _exchange_list_tmp = []

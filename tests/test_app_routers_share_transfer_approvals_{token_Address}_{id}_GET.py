@@ -61,7 +61,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
     def test_normal_1(self, client, db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE
+        _token.type = TokenType.IBET_SHARE.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
@@ -115,7 +115,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
     def test_normal_2(self, client, db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE
+        _token.type = TokenType.IBET_SHARE.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
@@ -169,7 +169,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
     def test_normal_3(self, client, db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE
+        _token.type = TokenType.IBET_SHARE.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
@@ -223,7 +223,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
     def test_normal_4(self, client, db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE
+        _token.type = TokenType.IBET_SHARE.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
@@ -303,7 +303,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
 
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE
+        _token.type = TokenType.IBET_SHARE.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
@@ -333,7 +333,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
 
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_SHARE
+        _token.type = TokenType.IBET_SHARE.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address

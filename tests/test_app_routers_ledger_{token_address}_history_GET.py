@@ -43,7 +43,7 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -52,14 +52,14 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
         _ledger_1.ledger = {}
         _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
         db.add(_ledger_1)
 
         _ledger_2 = Ledger()
         _ledger_2.token_address = token_address
-        _ledger_2.token_type = TokenType.IBET_STRAIGHT_BOND
+        _ledger_2.token_type = TokenType.IBET_STRAIGHT_BOND.value
         _ledger_2.ledger = {}
         _ledger_2.ledger_created = datetime.strptime("2022/01/02 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
         db.add(_ledger_2)
@@ -85,13 +85,13 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
                 {
                     "id": 2,
                     "token_address": token_address,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                     "created": "2022-01-02T09:20:30+09:00",
                 },
                 {
                     "id": 1,
                     "token_address": token_address,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                     "created": "2022-01-02T00:20:30+09:00",
                 }
             ]
@@ -106,7 +106,7 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -115,14 +115,14 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
         _ledger_1.ledger = {}
         _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
         db.add(_ledger_1)
 
         _ledger_2 = Ledger()
         _ledger_2.token_address = token_address
-        _ledger_2.token_type = TokenType.IBET_STRAIGHT_BOND
+        _ledger_2.token_type = TokenType.IBET_STRAIGHT_BOND.value
         _ledger_2.ledger = {}
         _ledger_2.ledger_created = datetime.strptime("2022/01/02 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
         db.add(_ledger_2)
@@ -145,13 +145,13 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
                 {
                     "id": 2,
                     "token_address": token_address,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                     "created": "2022-01-02T09:20:30+09:00",
                 },
                 {
                     "id": 1,
                     "token_address": token_address,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                     "created": "2022-01-02T00:20:30+09:00",
                 }
             ]
@@ -166,7 +166,7 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -175,28 +175,28 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
         _ledger_1.ledger = {}
         _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
         db.add(_ledger_1)
 
         _ledger_2 = Ledger()
         _ledger_2.token_address = token_address
-        _ledger_2.token_type = TokenType.IBET_STRAIGHT_BOND
+        _ledger_2.token_type = TokenType.IBET_STRAIGHT_BOND.value
         _ledger_2.ledger = {}
         _ledger_2.ledger_created = datetime.strptime("2022/01/02 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
         db.add(_ledger_2)
 
         _ledger_3 = Ledger()
         _ledger_3.token_address = token_address
-        _ledger_3.token_type = TokenType.IBET_STRAIGHT_BOND
+        _ledger_3.token_type = TokenType.IBET_STRAIGHT_BOND.value
         _ledger_3.ledger = {}
         _ledger_3.ledger_created = datetime.strptime("2022/01/02 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/03
         db.add(_ledger_3)
 
         _ledger_4 = Ledger()
         _ledger_4.token_address = token_address
-        _ledger_4.token_type = TokenType.IBET_STRAIGHT_BOND
+        _ledger_4.token_type = TokenType.IBET_STRAIGHT_BOND.value
         _ledger_4.ledger = {}
         _ledger_4.ledger_created = datetime.strptime("2022/01/03 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/03
         db.add(_ledger_4)
@@ -226,13 +226,13 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
                 {
                     "id": 3,
                     "token_address": token_address,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                     "created": "2022-01-03T00:20:30+09:00",
                 },
                 {
                     "id": 2,
                     "token_address": token_address,
-                    "token_type": TokenType.IBET_STRAIGHT_BOND,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                     "created": "2022-01-02T09:20:30+09:00",
                 }
             ]
@@ -281,7 +281,7 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.issuer_address = "0x1234567890123456789012345678901234567899"  # not target
         _token.token_address = token_address
@@ -345,7 +345,7 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address

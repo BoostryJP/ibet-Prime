@@ -72,7 +72,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
         token.token_address = "token_address"
         token.issuer_address = _account
         token.abi = "abi"
@@ -81,7 +81,7 @@ class TestProcessor:
 
         # Prepare data : Token (issuer does not exist)
         dummy_issuer_token = Token()
-        dummy_issuer_token.type = TokenType.IBET_STRAIGHT_BOND
+        dummy_issuer_token.type = TokenType.IBET_STRAIGHT_BOND.value
         dummy_issuer_token.token_address = "dummy_issuer_token_address"
         dummy_issuer_token.issuer_address = "ISSUER_DUMMY_ADDRESS"
         dummy_issuer_token.abi = "abi"
@@ -90,7 +90,7 @@ class TestProcessor:
 
         # Prepare data : Token (manually approval)
         manual_token = Token()
-        manual_token.type = TokenType.IBET_STRAIGHT_BOND
+        manual_token.type = TokenType.IBET_STRAIGHT_BOND.value
         manual_token.token_address = "manual_token_address"
         manual_token.issuer_address = _account
         manual_token.abi = "abi"
@@ -234,7 +234,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.token_address = "token_address"
         token.issuer_address = _account
         token.abi = "abi"
@@ -243,7 +243,7 @@ class TestProcessor:
 
         # Prepare data : Token (issuer does not exist)
         dummy_issuer_token = Token()
-        dummy_issuer_token.type = TokenType.IBET_SHARE
+        dummy_issuer_token.type = TokenType.IBET_SHARE.value
         dummy_issuer_token.token_address = "dummy_issuer_token_address"
         dummy_issuer_token.issuer_address = "ISSUER_DUMMY_ADDRESS"
         dummy_issuer_token.abi = "abi"
@@ -252,7 +252,7 @@ class TestProcessor:
 
         # Prepare data : Token (manually approval)
         manual_token = Token()
-        manual_token.type = TokenType.IBET_STRAIGHT_BOND
+        manual_token.type = TokenType.IBET_STRAIGHT_BOND.value
         manual_token.token_address = "manual_token_address"
         manual_token.issuer_address = _account
         manual_token.abi = "abi"
@@ -398,7 +398,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.token_address = "token_address"
         token.issuer_address = _account
         token.abi = "abi"
@@ -407,7 +407,7 @@ class TestProcessor:
 
         # Prepare data : Token (issuer does not exist)
         dummy_issuer_token = Token()
-        dummy_issuer_token.type = TokenType.IBET_SHARE
+        dummy_issuer_token.type = TokenType.IBET_SHARE.value
         dummy_issuer_token.token_address = "dummy_issuer_token_address"
         dummy_issuer_token.issuer_address = "ISSUER_DUMMY_ADDRESS"
         dummy_issuer_token.abi = "abi"
@@ -416,7 +416,7 @@ class TestProcessor:
 
         # Prepare data : Token (manually approval)
         manual_token = Token()
-        manual_token.type = TokenType.IBET_STRAIGHT_BOND
+        manual_token.type = TokenType.IBET_STRAIGHT_BOND.value
         manual_token.token_address = "manual_token_address"
         manual_token.issuer_address = _account
         manual_token.abi = "abi"
@@ -565,7 +565,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.token_address = "token_address"
         token.issuer_address = _account
         token.abi = "abi"
@@ -654,7 +654,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.token_address = "token_address"
         token.issuer_address = _account
         token.abi = "abi"
@@ -750,7 +750,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.token_address = "token_address"
         token.issuer_address = _account
         token.abi = "abi"
@@ -806,7 +806,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.token_address = "token_address"
         token.issuer_address = _account
         token.abi = "abi"

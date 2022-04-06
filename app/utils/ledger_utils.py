@@ -48,7 +48,7 @@ def create_ledger(token_address: str, db: Session):
         filter(Token.token_address == token_address). \
         filter(Token.token_status == 1). \
         first()
-    if _token.type != TokenType.IBET_SHARE and _token.type != TokenType.IBET_STRAIGHT_BOND:
+    if _token.type != TokenType.IBET_SHARE.value and _token.type != TokenType.IBET_STRAIGHT_BOND.value:
         return
 
     _template = db.query(LedgerTemplate). \
@@ -124,10 +124,10 @@ def __get_details_data_list(token_address: str, token_type: str, data_type: str,
 
 
 def __get_details_data_list_from_ibetfin(token_address: str, token_type: str, db: Session):
-    if token_type == TokenType.IBET_SHARE:
+    if token_type == TokenType.IBET_SHARE.value:
         token_contract = IbetShareContract.get(token_address)
         price = token_contract.principal_value
-    elif token_type == TokenType.IBET_STRAIGHT_BOND:
+    elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
         token_contract = IbetStraightBondContract.get(token_address)
         price = token_contract.face_value
 

@@ -59,7 +59,7 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
@@ -582,7 +582,7 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
@@ -639,7 +639,7 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address

@@ -129,9 +129,9 @@ class Processor:
             all()
         personal_info_contract_list = set()
         for token in token_list:
-            if token.type == TokenType.IBET_SHARE:
+            if token.type == TokenType.IBET_SHARE.value:
                 token_contract = IbetShareContract.get(token.token_address)
-            elif token.type == TokenType.IBET_STRAIGHT_BOND:
+            elif token.type == TokenType.IBET_STRAIGHT_BOND.value:
                 token_contract = IbetStraightBondContract.get(token.token_address)
             else:
                 continue
