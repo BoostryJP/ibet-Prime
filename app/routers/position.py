@@ -72,7 +72,7 @@ def list_all_position(
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    # Get E2E Messaging
+    # Get a list of positions
     query = db.query(IDXPosition, Token). \
         join(Token, IDXPosition.token_address == Token.token_address). \
         filter(IDXPosition.account_address == account_address). \
