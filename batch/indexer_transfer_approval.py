@@ -278,6 +278,14 @@ class Processor:
                         optional_data_approver=args.get("data"),
                         block_timestamp=block_timestamp
                     )
+                    self.__register_notification(
+                        db_session=db_session,
+                        transaction_hash=event["transactionHash"],
+                        token_address=token.address,
+                        exchange_address=None,
+                        application_id=args.get("index"),
+                        notice_code=2
+                    )
             except Exception as e:
                 LOG.exception(e)
 
@@ -390,6 +398,14 @@ class Processor:
                         exchange_address=exchange.address,
                         application_id=args.get("escrowId"),
                     )
+                    self.__register_notification(
+                        db_session=db_session,
+                        transaction_hash=event["transactionHash"],
+                        token_address=args.get("token", ZERO_ADDRESS),
+                        exchange_address=exchange.address,
+                        application_id=args.get("escrowId"),
+                        notice_code=2
+                    )
             except Exception as e:
                 LOG.exception(e)
 
@@ -423,6 +439,14 @@ class Processor:
                         optional_data_approver=args.get("data"),
                         block_timestamp=block_timestamp
                     )
+                    self.__register_notification(
+                        db_session=db_session,
+                        transaction_hash=event["transactionHash"],
+                        token_address=args.get("token", ZERO_ADDRESS),
+                        exchange_address=exchange.address,
+                        application_id=args.get("escrowId"),
+                        notice_code=3
+                    )
             except Exception as e:
                 LOG.exception(e)
 
@@ -446,25 +470,42 @@ class Processor:
                 filter(Token.token_address == token_address). \
                 first()
             sender = web3.eth.getTransaction(transaction_hash)["from"]
-            if token is not None and token.issuer_address != sender:
-                if notice_code == 0:  # ApplyFor
-                    _additional_info = db_session.query(AdditionalTokenInfo). \
-                        filter(AdditionalTokenInfo.token_address == token_address). \
-                        first()
-                    if _additional_info is None or _additional_info.is_manual_transfer_approval is not True:
-                        # SKIP Automatic approval
-                        return
-                self.__sink_on_info_notification(
-                    db_session=db_session,
-                    issuer_address=token.issuer_address,
-                    code=notice_code,
-                    token_address=token_address,
-                    id=transfer_approval.id
-                )
+            if token is not None:
+                if token.issuer_address != sender:  # Operate from other than issuer
+                    if notice_code == 0:  # ApplyForTransfer
+                        _additional_info = db_session.query(AdditionalTokenInfo). \
+                            filter(AdditionalTokenInfo.token_address == token_address). \
+                            first()
+                        if _additional_info is not None and _additional_info.is_manual_transfer_approval is True:
+                            # In case of automatic approval, notification registration is skipped.
+                            self.__sink_on_info_notification(
+                                db_session=db_session,
+                                issuer_address=token.issuer_address,
+                                code=notice_code,
+                                token_address=token_address,
+                                id=transfer_approval.id
+                            )
+                    elif notice_code == 1 or notice_code == 3:  # CancelTransfer
+                        self.__sink_on_info_notification(
+                            db_session=db_session,
+                            issuer_address=token.issuer_address,
+                            code=notice_code,
+                            token_address=token_address,
+                            id=transfer_approval.id
+                        )
+                else:  # Operate from issuer
+                    if notice_code == 2:  # ApproveTransfer
+                        self.__sink_on_info_notification(
+                            db_session=db_session,
+                            issuer_address=token.issuer_address,
+                            code=notice_code,
+                            token_address=token_address,
+                            id=transfer_approval.id
+                        )
 
     @staticmethod
     def __get_block_timestamp(event) -> int:
-        block_timestamp = web3.eth.getBlock(event["blockNumber"])["timestamp"]
+        block_timestamp = web3.eth.get_block(event["blockNumber"])["timestamp"]
         return block_timestamp
 
     @staticmethod

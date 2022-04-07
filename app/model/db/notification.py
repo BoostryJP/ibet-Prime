@@ -25,6 +25,29 @@ from sqlalchemy import (
 
 from .base import Base
 
+"""
+notice_type: IssueError
+- 0: Issuer does not exist
+- 1: Could not get the private key of the issuer
+- 2: Failed to send transaction
+
+notice_type: BulkTransferError
+- 0: Issuer does not exist
+- 1: Could not get the private key of the issuer
+- 2: Failed to send transaction
+
+notice_type: ScheduleEventError
+- 0: Issuer does not exist
+- 1: Could not get the private key of the issuer
+- 2: Failed to send transaction
+
+notice_type: TransferApprovalInfo
+- 0: Apply for transfer
+- 1: Cancel transfer
+- 2: Approve transfer
+- 3: Escrow finished (Only occurs in security token escrow)
+"""
+
 
 class Notification(Base):
     """Notification"""

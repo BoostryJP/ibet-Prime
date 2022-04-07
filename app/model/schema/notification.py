@@ -67,8 +67,10 @@ class NotificationsListResponse(BaseModel):
                                                 " - 2: Failed to send transaction\n" \
                                                 "\n" \
                                                 "notice_type: TransferApprovalInfo\n" \
-                                                " - 0: apply for transfer\n" \
-                                                " - 1: cancel transfer"
+                                                " - 0: Apply for transfer\n" \
+                                                " - 1: Cancel transfer\n" \
+                                                " - 2: Approve transfer\n" \
+                                                " - 3: Escrow finished (Only occurs in security token escrow)"
 
 
 class ListAllNotificationsResponse(BaseModel):
