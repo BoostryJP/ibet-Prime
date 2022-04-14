@@ -54,9 +54,11 @@ class IDXTransferApproval(Base):
     # Approval Blocktimestamp(ownership vesting block timestamp)
     approval_blocktimestamp = Column(DateTime)
     # Cancellation Status
-    cancelled = Column(Boolean)
+    cancelled = Column(Boolean)  # default = None
+    # Escrow Finished Status
+    escrow_finished = Column(Boolean)  # default = None
     # Approve Status
-    transfer_approved = Column(Boolean)
+    transfer_approved = Column(Boolean)  # default = None
 
     def json(self):
         return {
@@ -71,6 +73,7 @@ class IDXTransferApproval(Base):
             "approval_datetime": self.approval_datetime,
             "approval_blocktimestamp": self.approval_blocktimestamp,
             "cancelled": self.cancelled,
+            "escrow_finished": self.escrow_finished,
             "transfer_approved": self.transfer_approved
         }
 

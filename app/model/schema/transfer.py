@@ -65,7 +65,7 @@ class TransferApprovalResponse(BaseModel):
     token_address: str
     application_count: int
     unapproved_count: int
-    approved_count: int
+    escrow_finished_count: int
     transferred_count: int
     canceled_count: int
 
@@ -90,6 +90,7 @@ class TransferApprovalTokenResponse(BaseModel):
     approval_datetime: Optional[str]
     approval_blocktimestamp: Optional[str]
     cancelled: bool
+    escrow_finished: bool
     transfer_approved: bool
     status: int
     issuer_cancelable: bool

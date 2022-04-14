@@ -48,13 +48,11 @@ class TestAppRoutersShareTransferApprovalsGET:
     test_application_datetime = datetime(year=2019, month=9, day=1)
     test_application_datetime_str = timezone("UTC").localize(test_application_datetime).astimezone(local_tz).isoformat()
     test_application_blocktimestamp = datetime(year=2019, month=9, day=2)
-    test_application_blocktimestamp_str = timezone("UTC").localize(test_application_blocktimestamp).astimezone(
-        local_tz).isoformat()
+    test_application_blocktimestamp_str = timezone("UTC").localize(test_application_blocktimestamp).astimezone(local_tz).isoformat()
     test_approval_datetime = datetime(year=2019, month=9, day=3)
     test_approval_datetime_str = timezone("UTC").localize(test_approval_datetime).astimezone(local_tz).isoformat()
     test_approval_blocktimestamp = datetime(year=2019, month=9, day=4)
-    test_approval_blocktimestamp_str = timezone("UTC").localize(test_approval_blocktimestamp).astimezone(
-        local_tz).isoformat()
+    test_approval_blocktimestamp_str = timezone("UTC").localize(test_approval_blocktimestamp).astimezone(local_tz).isoformat()
 
     ###########################################################################
     # Normal Case
@@ -161,7 +159,6 @@ class TestAppRoutersShareTransferApprovalsGET:
         db.add(_token)
 
         # prepare data: IDXTransferApproval(issuer-1 token)
-        # unapproved-1
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
         _idx_transfer_approval.exchange_address = None
@@ -174,54 +171,10 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
-        _idx_transfer_approval.transfer_approved = None
+        _idx_transfer_approval.escrow_finished = None
+        _idx_transfer_approval.transfer_approved = None  # unapproved
         db.add(_idx_transfer_approval)
-        # unapproved-2
-        _idx_transfer_approval = IDXTransferApproval()
-        _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
-        _idx_transfer_approval.application_id = 2
-        _idx_transfer_approval.from_address = self.test_from_address
-        _idx_transfer_approval.to_address = self.test_to_address
-        _idx_transfer_approval.amount = 2
-        _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
-        _idx_transfer_approval.approval_datetime = None
-        _idx_transfer_approval.approval_blocktimestamp = None
-        _idx_transfer_approval.cancelled = False
-        _idx_transfer_approval.transfer_approved = False
-        db.add(_idx_transfer_approval)
-        # unapproved-3
-        _idx_transfer_approval = IDXTransferApproval()
-        _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
-        _idx_transfer_approval.application_id = 3
-        _idx_transfer_approval.from_address = self.test_from_address
-        _idx_transfer_approval.to_address = self.test_to_address
-        _idx_transfer_approval.amount = 3
-        _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
-        _idx_transfer_approval.approval_datetime = None
-        _idx_transfer_approval.approval_blocktimestamp = None
-        _idx_transfer_approval.cancelled = None
-        _idx_transfer_approval.transfer_approved = False
-        db.add(_idx_transfer_approval)
-        # unapproved-4
-        _idx_transfer_approval = IDXTransferApproval()
-        _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
-        _idx_transfer_approval.application_id = 4
-        _idx_transfer_approval.from_address = self.test_from_address
-        _idx_transfer_approval.to_address = self.test_to_address
-        _idx_transfer_approval.amount = 4
-        _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
-        _idx_transfer_approval.approval_datetime = None
-        _idx_transfer_approval.approval_blocktimestamp = None
-        _idx_transfer_approval.cancelled = False
-        _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
-        # approved-1
+
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
         _idx_transfer_approval.exchange_address = None
@@ -234,39 +187,10 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
-        _idx_transfer_approval.transfer_approved = True
+        _idx_transfer_approval.escrow_finished = True  # escrow_finished
+        _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
-        # approved-2
-        _idx_transfer_approval = IDXTransferApproval()
-        _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
-        _idx_transfer_approval.application_id = 12
-        _idx_transfer_approval.from_address = self.test_from_address
-        _idx_transfer_approval.to_address = self.test_to_address
-        _idx_transfer_approval.amount = 12
-        _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
-        _idx_transfer_approval.approval_datetime = None
-        _idx_transfer_approval.approval_blocktimestamp = None
-        _idx_transfer_approval.cancelled = False
-        _idx_transfer_approval.transfer_approved = True
-        db.add(_idx_transfer_approval)
-        # approved-2
-        _idx_transfer_approval = IDXTransferApproval()
-        _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
-        _idx_transfer_approval.application_id = 13
-        _idx_transfer_approval.from_address = self.test_from_address
-        _idx_transfer_approval.to_address = self.test_to_address
-        _idx_transfer_approval.amount = 13
-        _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
-        _idx_transfer_approval.approval_datetime = None
-        _idx_transfer_approval.approval_blocktimestamp = None
-        _idx_transfer_approval.cancelled = False
-        _idx_transfer_approval.transfer_approved = True
-        db.add(_idx_transfer_approval)
-        # transferred-1
+
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
         _idx_transfer_approval.exchange_address = None
@@ -279,24 +203,10 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.approval_datetime = self.test_approval_datetime
         _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
         _idx_transfer_approval.cancelled = None
-        _idx_transfer_approval.transfer_approved = True
+        _idx_transfer_approval.escrow_finished = True  # escrow_finished
+        _idx_transfer_approval.transfer_approved = True  # transferred
         db.add(_idx_transfer_approval)
-        # transferred-2
-        _idx_transfer_approval = IDXTransferApproval()
-        _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
-        _idx_transfer_approval.application_id = 22
-        _idx_transfer_approval.from_address = self.test_from_address
-        _idx_transfer_approval.to_address = self.test_to_address
-        _idx_transfer_approval.amount = 22
-        _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
-        _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-        _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
-        _idx_transfer_approval.cancelled = False
-        _idx_transfer_approval.transfer_approved = True
-        db.add(_idx_transfer_approval)
-        # canceled-1
+
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
         _idx_transfer_approval.exchange_address = None
@@ -308,7 +218,8 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
-        _idx_transfer_approval.cancelled = True
+        _idx_transfer_approval.cancelled = True  # cancelled
+        _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
@@ -330,10 +241,10 @@ class TestAppRoutersShareTransferApprovalsGET:
                 {
                     "issuer_address": self.test_issuer_address_1,
                     "token_address": self.test_token_address_1,
-                    "application_count": 10,
-                    "unapproved_count": 4,
-                    "approved_count": 3,
-                    "transferred_count": 2,
+                    "application_count": 4,
+                    "unapproved_count": 1,
+                    "escrow_finished_count": 1,
+                    "transferred_count": 1,
                     "canceled_count": 1,
                 },
             ]
@@ -372,7 +283,6 @@ class TestAppRoutersShareTransferApprovalsGET:
         db.add(_token)
 
         # prepare data: IDXTransferApproval(issuer-1 token-1)
-        # unapproved-1
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
         _idx_transfer_approval.exchange_address = None
@@ -385,54 +295,10 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
-        _idx_transfer_approval.transfer_approved = None
+        _idx_transfer_approval.escrow_finished = None
+        _idx_transfer_approval.transfer_approved = None  # unapproved
         db.add(_idx_transfer_approval)
-        # unapproved-2
-        _idx_transfer_approval = IDXTransferApproval()
-        _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
-        _idx_transfer_approval.application_id = 2
-        _idx_transfer_approval.from_address = self.test_from_address
-        _idx_transfer_approval.to_address = self.test_to_address
-        _idx_transfer_approval.amount = 2
-        _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
-        _idx_transfer_approval.approval_datetime = None
-        _idx_transfer_approval.approval_blocktimestamp = None
-        _idx_transfer_approval.cancelled = False
-        _idx_transfer_approval.transfer_approved = False
-        db.add(_idx_transfer_approval)
-        # unapproved-3
-        _idx_transfer_approval = IDXTransferApproval()
-        _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
-        _idx_transfer_approval.application_id = 3
-        _idx_transfer_approval.from_address = self.test_from_address
-        _idx_transfer_approval.to_address = self.test_to_address
-        _idx_transfer_approval.amount = 3
-        _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
-        _idx_transfer_approval.approval_datetime = None
-        _idx_transfer_approval.approval_blocktimestamp = None
-        _idx_transfer_approval.cancelled = None
-        _idx_transfer_approval.transfer_approved = False
-        db.add(_idx_transfer_approval)
-        # unapproved-4
-        _idx_transfer_approval = IDXTransferApproval()
-        _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
-        _idx_transfer_approval.application_id = 4
-        _idx_transfer_approval.from_address = self.test_from_address
-        _idx_transfer_approval.to_address = self.test_to_address
-        _idx_transfer_approval.amount = 4
-        _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
-        _idx_transfer_approval.approval_datetime = None
-        _idx_transfer_approval.approval_blocktimestamp = None
-        _idx_transfer_approval.cancelled = False
-        _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
-        # approved-1
+
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
         _idx_transfer_approval.exchange_address = None
@@ -445,9 +311,10 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
-        _idx_transfer_approval.transfer_approved = True
+        _idx_transfer_approval.escrow_finished = True  # escrow_finished
+        _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
-        # approved-2
+
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
         _idx_transfer_approval.exchange_address = None
@@ -459,55 +326,10 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
-        _idx_transfer_approval.cancelled = False
-        _idx_transfer_approval.transfer_approved = True
+        _idx_transfer_approval.escrow_finished = True  # escrow_finished
+        _idx_transfer_approval.transfer_approved = True  # transferred
         db.add(_idx_transfer_approval)
-        # approved-2
-        _idx_transfer_approval = IDXTransferApproval()
-        _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
-        _idx_transfer_approval.application_id = 13
-        _idx_transfer_approval.from_address = self.test_from_address
-        _idx_transfer_approval.to_address = self.test_to_address
-        _idx_transfer_approval.amount = 13
-        _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
-        _idx_transfer_approval.approval_datetime = None
-        _idx_transfer_approval.approval_blocktimestamp = None
-        _idx_transfer_approval.cancelled = False
-        _idx_transfer_approval.transfer_approved = True
-        db.add(_idx_transfer_approval)
-        # transferred-1
-        _idx_transfer_approval = IDXTransferApproval()
-        _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
-        _idx_transfer_approval.application_id = 21
-        _idx_transfer_approval.from_address = self.test_from_address
-        _idx_transfer_approval.to_address = self.test_to_address
-        _idx_transfer_approval.amount = 21
-        _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
-        _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-        _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
-        _idx_transfer_approval.cancelled = None
-        _idx_transfer_approval.transfer_approved = True
-        db.add(_idx_transfer_approval)
-        # transferred-2
-        _idx_transfer_approval = IDXTransferApproval()
-        _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
-        _idx_transfer_approval.application_id = 22
-        _idx_transfer_approval.from_address = self.test_from_address
-        _idx_transfer_approval.to_address = self.test_to_address
-        _idx_transfer_approval.amount = 22
-        _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
-        _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-        _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
-        _idx_transfer_approval.cancelled = False
-        _idx_transfer_approval.transfer_approved = True
-        db.add(_idx_transfer_approval)
-        # canceled-1
+
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
         _idx_transfer_approval.exchange_address = None
@@ -519,12 +341,12 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
-        _idx_transfer_approval.cancelled = True
+        _idx_transfer_approval.cancelled = True  # cancelled
+        _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
         # prepare data: IDXTransferApproval(issuer-1 token-2)
-        # unapproved-1
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_2
         _idx_transfer_approval.exchange_address = None
@@ -537,11 +359,11 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
-        _idx_transfer_approval.transfer_approved = None
+        _idx_transfer_approval.escrow_finished = None
+        _idx_transfer_approval.transfer_approved = None  # unapproved
         db.add(_idx_transfer_approval)
 
         # prepare data: IDXTransferApproval(issuer-2)
-        # unapproved-1
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_3
         _idx_transfer_approval.exchange_address = None
@@ -554,7 +376,8 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
-        _idx_transfer_approval.transfer_approved = None
+        _idx_transfer_approval.escrow_finished = None
+        _idx_transfer_approval.transfer_approved = None  # unapproved
         db.add(_idx_transfer_approval)
 
         # request target API
@@ -578,10 +401,10 @@ class TestAppRoutersShareTransferApprovalsGET:
                 {
                     "issuer_address": self.test_issuer_address_1,
                     "token_address": self.test_token_address_1,
-                    "application_count": 10,
-                    "unapproved_count": 4,
-                    "approved_count": 3,
-                    "transferred_count": 2,
+                    "application_count": 4,
+                    "unapproved_count": 1,
+                    "escrow_finished_count": 1,
+                    "transferred_count": 1,
                     "canceled_count": 1,
                 },
                 {
@@ -589,7 +412,7 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "token_address": self.test_token_address_2,
                     "application_count": 1,
                     "unapproved_count": 1,
-                    "approved_count": 0,
+                    "escrow_finished_count": 0,
                     "transferred_count": 0,
                     "canceled_count": 0,
                 },
@@ -629,7 +452,6 @@ class TestAppRoutersShareTransferApprovalsGET:
         db.add(_token)
 
         # prepare data: IDXTransferApproval(issuer-1 token-1)
-        # unapproved-1
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
         _idx_transfer_approval.exchange_address = None
@@ -642,54 +464,10 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
-        _idx_transfer_approval.transfer_approved = None
+        _idx_transfer_approval.escrow_finished = None
+        _idx_transfer_approval.transfer_approved = None  # unapproved
         db.add(_idx_transfer_approval)
-        # unapproved-2
-        _idx_transfer_approval = IDXTransferApproval()
-        _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
-        _idx_transfer_approval.application_id = 2
-        _idx_transfer_approval.from_address = self.test_from_address
-        _idx_transfer_approval.to_address = self.test_to_address
-        _idx_transfer_approval.amount = 2
-        _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
-        _idx_transfer_approval.approval_datetime = None
-        _idx_transfer_approval.approval_blocktimestamp = None
-        _idx_transfer_approval.cancelled = False
-        _idx_transfer_approval.transfer_approved = False
-        db.add(_idx_transfer_approval)
-        # unapproved-3
-        _idx_transfer_approval = IDXTransferApproval()
-        _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
-        _idx_transfer_approval.application_id = 3
-        _idx_transfer_approval.from_address = self.test_from_address
-        _idx_transfer_approval.to_address = self.test_to_address
-        _idx_transfer_approval.amount = 3
-        _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
-        _idx_transfer_approval.approval_datetime = None
-        _idx_transfer_approval.approval_blocktimestamp = None
-        _idx_transfer_approval.cancelled = None
-        _idx_transfer_approval.transfer_approved = False
-        db.add(_idx_transfer_approval)
-        # unapproved-4
-        _idx_transfer_approval = IDXTransferApproval()
-        _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
-        _idx_transfer_approval.application_id = 4
-        _idx_transfer_approval.from_address = self.test_from_address
-        _idx_transfer_approval.to_address = self.test_to_address
-        _idx_transfer_approval.amount = 4
-        _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
-        _idx_transfer_approval.approval_datetime = None
-        _idx_transfer_approval.approval_blocktimestamp = None
-        _idx_transfer_approval.cancelled = False
-        _idx_transfer_approval.transfer_approved = None
-        db.add(_idx_transfer_approval)
-        # approved-1
+
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
         _idx_transfer_approval.exchange_address = None
@@ -702,9 +480,10 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
-        _idx_transfer_approval.transfer_approved = True
+        _idx_transfer_approval.escrow_finished = True  # escrow_finished
+        _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
-        # approved-2
+
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
         _idx_transfer_approval.exchange_address = None
@@ -716,55 +495,10 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
-        _idx_transfer_approval.cancelled = False
-        _idx_transfer_approval.transfer_approved = True
+        _idx_transfer_approval.escrow_finished = True  # escrow_finished
+        _idx_transfer_approval.transfer_approved = True  # transferred
         db.add(_idx_transfer_approval)
-        # approved-2
-        _idx_transfer_approval = IDXTransferApproval()
-        _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
-        _idx_transfer_approval.application_id = 13
-        _idx_transfer_approval.from_address = self.test_from_address
-        _idx_transfer_approval.to_address = self.test_to_address
-        _idx_transfer_approval.amount = 13
-        _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
-        _idx_transfer_approval.approval_datetime = None
-        _idx_transfer_approval.approval_blocktimestamp = None
-        _idx_transfer_approval.cancelled = False
-        _idx_transfer_approval.transfer_approved = True
-        db.add(_idx_transfer_approval)
-        # transferred-1
-        _idx_transfer_approval = IDXTransferApproval()
-        _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
-        _idx_transfer_approval.application_id = 21
-        _idx_transfer_approval.from_address = self.test_from_address
-        _idx_transfer_approval.to_address = self.test_to_address
-        _idx_transfer_approval.amount = 21
-        _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
-        _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-        _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
-        _idx_transfer_approval.cancelled = None
-        _idx_transfer_approval.transfer_approved = True
-        db.add(_idx_transfer_approval)
-        # transferred-2
-        _idx_transfer_approval = IDXTransferApproval()
-        _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
-        _idx_transfer_approval.application_id = 22
-        _idx_transfer_approval.from_address = self.test_from_address
-        _idx_transfer_approval.to_address = self.test_to_address
-        _idx_transfer_approval.amount = 22
-        _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
-        _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-        _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
-        _idx_transfer_approval.cancelled = False
-        _idx_transfer_approval.transfer_approved = True
-        db.add(_idx_transfer_approval)
-        # canceled-1
+
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
         _idx_transfer_approval.exchange_address = None
@@ -776,12 +510,12 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
-        _idx_transfer_approval.cancelled = True
+        _idx_transfer_approval.cancelled = True  # cancelled
+        _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
         # prepare data: IDXTransferApproval(issuer-1 token-2)
-        # unapproved-1
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_2
         _idx_transfer_approval.exchange_address = None
@@ -794,11 +528,11 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
-        _idx_transfer_approval.transfer_approved = None
+        _idx_transfer_approval.escrow_finished = None
+        _idx_transfer_approval.transfer_approved = None  # unapproved
         db.add(_idx_transfer_approval)
 
         # prepare data: IDXTransferApproval(issuer-2)
-        # unapproved-1
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_3
         _idx_transfer_approval.exchange_address = None
@@ -811,7 +545,8 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
-        _idx_transfer_approval.transfer_approved = None
+        _idx_transfer_approval.escrow_finished = None
+        _idx_transfer_approval.transfer_approved = None  # unapproved
         db.add(_idx_transfer_approval)
 
         # request target API
@@ -832,10 +567,10 @@ class TestAppRoutersShareTransferApprovalsGET:
                 {
                     "issuer_address": self.test_issuer_address_1,
                     "token_address": self.test_token_address_1,
-                    "application_count": 10,
-                    "unapproved_count": 4,
-                    "approved_count": 3,
-                    "transferred_count": 2,
+                    "application_count": 4,
+                    "unapproved_count": 1,
+                    "escrow_finished_count": 1,
+                    "transferred_count": 1,
                     "canceled_count": 1,
                 },
                 {
@@ -843,7 +578,7 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "token_address": self.test_token_address_2,
                     "application_count": 1,
                     "unapproved_count": 1,
-                    "approved_count": 0,
+                    "escrow_finished_count": 0,
                     "transferred_count": 0,
                     "canceled_count": 0,
                 },
@@ -852,7 +587,7 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "token_address": self.test_token_address_3,
                     "application_count": 1,
                     "unapproved_count": 1,
-                    "approved_count": 0,
+                    "escrow_finished_count": 0,
                     "transferred_count": 0,
                     "canceled_count": 0,
                 },
@@ -900,7 +635,6 @@ class TestAppRoutersShareTransferApprovalsGET:
         db.add(_token)
 
         # prepare data: IDXTransferApproval(issuer-1 token-1)
-        # unapproved-1
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
         _idx_transfer_approval.exchange_address = None
@@ -913,11 +647,11 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
+        _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
         # prepare data: IDXTransferApproval(issuer-1 token-2)
-        # unapproved-1
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_2
         _idx_transfer_approval.exchange_address = None
@@ -930,11 +664,11 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
+        _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
         # prepare data: IDXTransferApproval(issuer-1 token-2)
-        # unapproved-1
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_3
         _idx_transfer_approval.exchange_address = None
@@ -947,11 +681,11 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
+        _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
         # prepare data: IDXTransferApproval(issuer-1 token-2)
-        # unapproved-1
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_4
         _idx_transfer_approval.exchange_address = None
@@ -964,6 +698,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
+        _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
@@ -991,7 +726,7 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "token_address": self.test_token_address_2,
                     "application_count": 1,
                     "unapproved_count": 1,
-                    "approved_count": 0,
+                    "escrow_finished_count": 0,
                     "transferred_count": 0,
                     "canceled_count": 0,
                 },
@@ -1000,7 +735,7 @@ class TestAppRoutersShareTransferApprovalsGET:
                     "token_address": self.test_token_address_3,
                     "application_count": 1,
                     "unapproved_count": 1,
-                    "approved_count": 0,
+                    "escrow_finished_count": 0,
                     "transferred_count": 0,
                     "canceled_count": 0,
                 },

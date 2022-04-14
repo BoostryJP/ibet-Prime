@@ -27,7 +27,7 @@
 
 ## Supported ibet smart contract version
 
-* ibet-SmartContract: version 21.12.0
+* ibet-SmartContract: version 22.3.0
 
 
 ## Setup
