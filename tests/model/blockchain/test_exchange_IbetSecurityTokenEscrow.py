@@ -269,7 +269,20 @@ class TestApproveTransfer:
             private_key=user2_account_pk
         )
 
-        # test IbetExchangeInterface.get_account_balance
+        # Finish Escrow
+        latest_escrow_id = escrow_contract.functions.latestEscrowId().call()
+        tx = escrow_contract.functions.finishEscrow(latest_escrow_id).buildTransaction({
+            "chainId": CHAIN_ID,
+            "from": user2_account["address"],
+            "gas": TX_GAS_LIMIT,
+            "gasPrice": 0
+        })
+        ContractUtils.send_transaction(
+            transaction=tx,
+            private_key=user2_account_pk
+        )
+
+        # test IbetSecurityTokenEscrow.approve_transfer
         security_token_escrow = IbetSecurityTokenEscrow(escrow_contract.address)
         tx_hash, tx_receipt = security_token_escrow.approve_transfer(
             data=IbetSecurityTokenEscrowApproveTransfer(escrow_id=1, data="test"),
@@ -280,12 +293,20 @@ class TestApproveTransfer:
         # assertion
         assert isinstance(tx_hash, str) and int(tx_hash, 16) > 0
         assert tx_receipt["status"] == 1
-        account_balance = security_token_escrow.get_account_balance(
+
+        user2_balance = security_token_escrow.get_account_balance(
             user2_account["address"],
             token_contract.address
         )
-        assert account_balance["balance"] == 90
-        assert account_balance["commitment"] == 10
+        assert user2_balance["balance"] == 90
+        assert user2_balance["commitment"] == 0
+
+        user3_balance = security_token_escrow.get_account_balance(
+            user3_account["address"],
+            token_contract.address
+        )
+        assert user3_balance["balance"] == 10
+        assert user3_balance["commitment"] == 0
 
     ###########################################################################
     # Error Case
