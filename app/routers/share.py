@@ -1128,7 +1128,7 @@ def list_transfer_approval_history(
                 1
             ),  # EscrowFinish(escrow_finished)
             (
-                and_(IDXTransferApproval.transfer_approved == True),
+                IDXTransferApproval.transfer_approved == True,
                 2
             ),  # Approve(transferred)
             (
