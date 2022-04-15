@@ -1135,17 +1135,27 @@ def list_transfer_approval_history(
     """List transfer approval history"""
     # Create a subquery for 'status' added IDXTransferApproval
     case_status = case(
-        [(and_(IDXTransferApproval.transfer_approved == True,
-               IDXTransferApproval.approval_blocktimestamp == None),
-          1),  # approved
-         (and_(IDXTransferApproval.transfer_approved == True,
-               IDXTransferApproval.approval_blocktimestamp != None),
-          2),  # transferred
-         (IDXTransferApproval.cancelled == True,
-          3)],  # canceled
-        else_=0).label("status")  # unapproved
-    subquery = aliased(IDXTransferApproval,
-                       db.query(IDXTransferApproval, case_status).subquery())
+        [
+            (
+                and_(IDXTransferApproval.escrow_finished == True,
+                     IDXTransferApproval.transfer_approved == None),
+                1
+            ),  # EscrowFinish(escrow_finished)
+            (
+                IDXTransferApproval.transfer_approved == True,
+                2
+            ),  # Approve(transferred)
+            (
+                IDXTransferApproval.cancelled == True,
+                3
+            )  # Cancel(canceled)
+        ],
+        else_=0  # ApplyFor(unapproved)
+    ).label("status")
+    subquery = aliased(
+        IDXTransferApproval,
+        db.query(IDXTransferApproval, case_status).subquery()
+    )
 
     # Get transfer approval history
     query = db.query(Token.issuer_address,
@@ -1176,13 +1186,14 @@ def list_transfer_approval_history(
 
     transfer_approvals = []
     for issuer_address, token_address, application_count, \
-            unapproved_count, approved_count, transferred_count, canceled_count in _transfer_approvals:
+        unapproved_count, escrow_finished_count, transferred_count, canceled_count \
+            in _transfer_approvals:
         transfer_approvals.append({
             "issuer_address": issuer_address,
             "token_address": token_address,
             "application_count": application_count,
             "unapproved_count": unapproved_count,
-            "approved_count": approved_count,
+            "escrow_finished_count": escrow_finished_count,
             "transferred_count": transferred_count,
             "canceled_count": canceled_count,
         })
@@ -1208,8 +1219,12 @@ def list_token_transfer_approval_history(
         token_address: str,
         from_address: Optional[str] = Query(None),
         to_address: Optional[str] = Query(None),
-        status: Optional[int] = Query(None, ge=0, le=3,
-                                      description="0:unapproved, 1:approved, 2:transferred, 3:canceled"),
+        status: Optional[int] = Query(
+            None,
+            ge=0,
+            le=3,
+            description="0:unapproved, 1:escrow_finished, 2:transferred, 3:canceled"
+        ),
         sort_item: Optional[TransferApprovalsSortItem] = Query(TransferApprovalsSortItem.ID),
         sort_order: Optional[int] = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
         offset: Optional[int] = Query(None),
@@ -1230,16 +1245,27 @@ def list_token_transfer_approval_history(
 
     # Create a subquery for 'status' added IDXTransferApproval
     case_status = case(
-        [(and_(IDXTransferApproval.transfer_approved == True,
-               IDXTransferApproval.approval_blocktimestamp == None),
-          1),  # approved
-         (and_(IDXTransferApproval.transfer_approved == True,
-               IDXTransferApproval.approval_blocktimestamp != None),
-          2),  # transferred
-         (IDXTransferApproval.cancelled == True,
-          3)],  # canceled
-        else_=0).label("status")  # unapproved
-    subquery = aliased(IDXTransferApproval, db.query(IDXTransferApproval, case_status).subquery())
+        [
+            (
+                and_(IDXTransferApproval.escrow_finished == True,
+                     IDXTransferApproval.transfer_approved == None),
+                1
+            ),  # EscrowFinish(escrow_finished)
+            (
+                IDXTransferApproval.transfer_approved == True,
+                2
+            ),  # Approve(transferred)
+            (
+                IDXTransferApproval.cancelled == True,
+                3
+            )  # Cancel(canceled)
+        ],
+        else_=0  # ApplyFor(unapproved)
+    ).label("status")
+    subquery = aliased(
+        IDXTransferApproval,
+        db.query(IDXTransferApproval, case_status).subquery()
+    )
 
     # Get transfer approval history
     query = db.query(subquery, literal_column("status")). \
@@ -1277,14 +1303,21 @@ def list_token_transfer_approval_history(
 
     transfer_approval_history = []
     for _transfer_approval, status in _transfer_approvals:
-        if _transfer_approval.cancelled is None:
+        if _transfer_approval.cancelled is True:
+            cancelled = True
+        else:
             cancelled = False
+
+        if _transfer_approval.transfer_approved is True:
+            transfer_approved = True
         else:
-            cancelled = _transfer_approval.cancelled
-        if _transfer_approval.transfer_approved is None:
             transfer_approved = False
-        else:
-            transfer_approved = _transfer_approval.transfer_approved
+
+        escrow_finished = False
+        if _transfer_approval.exchange_address is not None:
+            if _transfer_approval.escrow_finished is True:
+                escrow_finished = True
+
         if _transfer_approval.exchange_address is not None:
             issuer_cancelable = False
         else:
@@ -1321,6 +1354,7 @@ def list_token_transfer_approval_history(
             "approval_datetime": approval_datetime,
             "approval_blocktimestamp": approval_blocktimestamp,
             "cancelled": cancelled,
+            "escrow_finished": escrow_finished,
             "transfer_approved": transfer_approved,
             "status": status,
             "issuer_cancelable": issuer_cancelable
@@ -1385,10 +1419,14 @@ def update_transfer_approval(
         first()
     if _transfer_approval is None:
         raise HTTPException(status_code=404, detail="transfer approval not found")
-    if _transfer_approval.approval_blocktimestamp is not None:
+
+    if _transfer_approval.transfer_approved is True:
         raise InvalidParameterError("already approved")
     if _transfer_approval.cancelled is True:
         raise InvalidParameterError("canceled application")
+    if _transfer_approval.exchange_address is not None and \
+            _transfer_approval.escrow_finished is not True:
+        raise InvalidParameterError("escrow has not been finished yet")
     if data.operation_type == UpdateTransferApprovalOperationType.CANCEL and \
             _transfer_approval.exchange_address is not None:
         # Cancellation is possible only against approval of the transfer of a token contract.
@@ -1489,14 +1527,21 @@ def retrieve_transfer_approval_history(
     if _transfer_approval is None:
         raise HTTPException(status_code=404, detail="transfer approval not found")
 
-    if _transfer_approval.cancelled is None:
+    if _transfer_approval.cancelled is True:
+        cancelled = True
+    else:
         cancelled = False
+
+    if _transfer_approval.transfer_approved is True:
+        transfer_approved = True
     else:
-        cancelled = _transfer_approval.cancelled
-    if _transfer_approval.transfer_approved is None:
         transfer_approved = False
-    else:
-        transfer_approved = _transfer_approval.transfer_approved
+
+    escrow_finished = False
+    if _transfer_approval.exchange_address is not None:
+        if _transfer_approval.escrow_finished is True:
+            escrow_finished = True
+
     if _transfer_approval.exchange_address is not None:
         issuer_cancelable = False
     else:
@@ -1521,13 +1566,12 @@ def retrieve_transfer_approval_history(
         approval_blocktimestamp = None
 
     status = 0
-    if _transfer_approval.transfer_approved is True:
-        if _transfer_approval.approval_blocktimestamp is None:
-            status = 1
-        else:
-            status = 2
-    if _transfer_approval.cancelled is True:
-        status = 3
+    if _transfer_approval.escrow_finished is True and _transfer_approval.transfer_approved is not True:
+        status = 1  # EscrowFinish(escrow_finished)
+    elif _transfer_approval.transfer_approved is True:
+        status = 2  # Approve(transferred)
+    elif _transfer_approval.cancelled is True:
+        status = 3  # Cancel(canceled)
 
     history = {
         "id": _transfer_approval.id,
@@ -1542,6 +1586,7 @@ def retrieve_transfer_approval_history(
         "approval_datetime": approval_datetime,
         "approval_blocktimestamp": approval_blocktimestamp,
         "cancelled": cancelled,
+        "escrow_finished": escrow_finished,
         "transfer_approved": transfer_approved,
         "status": status,
         "issuer_cancelable": issuer_cancelable

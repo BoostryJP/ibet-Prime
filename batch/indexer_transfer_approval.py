@@ -64,13 +64,13 @@ Batch process for indexing security token transfer approval events
 ibetSecurityToken
   - ApplyForTransfer: 'ApplyFor'
   - CancelTransfer: 'Cancel'
-  - ApproveTransfer: 'Finish'
+  - ApproveTransfer: 'Approve'
 
 ibetSecurityTokenEscrow
   - ApplyForTransfer: 'ApplyFor'
   - CancelTransfer: 'Cancel'
+  - EscrowFinished: 'EscrowFinish'
   - ApproveTransfer: 'Approve'
-  - FinishTransfer: 'Finish'
 
 """
 
@@ -161,8 +161,8 @@ class Processor:
         self.__sync_token_approve_transfer(db_session, block_from, block_to)
         self.__sync_exchange_apply_for_transfer(db_session, block_from, block_to)
         self.__sync_exchange_cancel_transfer(db_session, block_from, block_to)
+        self.__sync_exchange_escrow_finished(db_session, block_from, block_to)
         self.__sync_exchange_approve_transfer(db_session, block_from, block_to)
-        self.__sync_exchange_finish_transfer(db_session, block_from, block_to)
 
     def __sync_token_apply_for_transfer(self, db_session: Session, block_from, block_to):
         """Sync ApplyForTransfer Events of Tokens
@@ -269,7 +269,7 @@ class Processor:
                     block_timestamp = self.__get_block_timestamp(event=event)
                     self.__sink_on_transfer_approval(
                         db_session=db_session,
-                        event_type="Finish",
+                        event_type="Approve",
                         token_address=token.address,
                         exchange_address=None,
                         application_id=args.get("index"),
@@ -373,10 +373,49 @@ class Processor:
             except Exception as e:
                 LOG.exception(e)
 
-    def __sync_exchange_approve_transfer(self, db_session: Session, block_from, block_to):
+    def __sync_exchange_escrow_finished(self, db_session: Session, block_from: int, block_to: int):
+        """Sync EscrowFinished events of exchanges
+
+        :param db_session: ORM session
+        :param block_from: From Block
+        :param block_to: To Block
+        :return: None
+        """
+        for exchange in self.exchange_list:
+            try:
+                events = ContractUtils.get_event_logs(
+                    contract=exchange,
+                    event="EscrowFinished",
+                    block_from=block_from,
+                    block_to=block_to,
+                    argument_filters={"transferApprovalRequired": True}
+                )
+                for event in events:
+                    args = event["args"]
+                    self.__sink_on_transfer_approval(
+                        db_session=db_session,
+                        event_type="EscrowFinish",
+                        token_address=args.get("token", ZERO_ADDRESS),
+                        exchange_address=exchange.address,
+                        application_id=args.get("escrowId"),
+                        from_address=args.get("sender", ZERO_ADDRESS),
+                        to_address=args.get("recipient", ZERO_ADDRESS)
+                    )
+                    self.__register_notification(
+                        db_session=db_session,
+                        transaction_hash=event["transactionHash"],
+                        token_address=args.get("token", ZERO_ADDRESS),
+                        exchange_address=exchange.address,
+                        application_id=args.get("escrowId"),
+                        notice_code=3
+                    )
+            except Exception as e:
+                LOG.exception(e)
+
+    def __sync_exchange_approve_transfer(self, db_session: Session, block_from: int, block_to: int):
         """Sync ApproveTransfer events of exchanges
 
-        :param db_session: database session
+        :param db_session: ORM session
         :param block_from: From Block
         :param block_to: To Block
         :return: None
@@ -391,51 +430,13 @@ class Processor:
                 )
                 for event in events:
                     args = event["args"]
+                    block_timestamp = self.__get_block_timestamp(event=event)
                     self.__sink_on_transfer_approval(
                         db_session=db_session,
                         event_type="Approve",
                         token_address=args.get("token", ZERO_ADDRESS),
                         exchange_address=exchange.address,
                         application_id=args.get("escrowId"),
-                    )
-                    self.__register_notification(
-                        db_session=db_session,
-                        transaction_hash=event["transactionHash"],
-                        token_address=args.get("token", ZERO_ADDRESS),
-                        exchange_address=exchange.address,
-                        application_id=args.get("escrowId"),
-                        notice_code=2
-                    )
-            except Exception as e:
-                LOG.exception(e)
-
-    def __sync_exchange_finish_transfer(self, db_session: Session, block_from, block_to):
-        """Sync FinishTransfer events of exchanges
-
-        :param db_session: database session
-        :param block_from: From Block
-        :param block_to: To Block
-        :return: None
-        """
-        for exchange in self.exchange_list:
-            try:
-                events = ContractUtils.get_event_logs(
-                    contract=exchange,
-                    event="FinishTransfer",
-                    block_from=block_from,
-                    block_to=block_to
-                )
-                for event in events:
-                    args = event["args"]
-                    block_timestamp = self.__get_block_timestamp(event=event)
-                    self.__sink_on_transfer_approval(
-                        db_session=db_session,
-                        event_type="Finish",
-                        token_address=args.get("token", ZERO_ADDRESS),
-                        exchange_address=exchange.address,
-                        application_id=args.get("escrowId"),
-                        from_address=args.get("from", ZERO_ADDRESS),
-                        to_address=args.get("to", ZERO_ADDRESS),
                         optional_data_approver=args.get("data"),
                         block_timestamp=block_timestamp
                     )
@@ -445,7 +446,7 @@ class Processor:
                         token_address=args.get("token", ZERO_ADDRESS),
                         exchange_address=exchange.address,
                         application_id=args.get("escrowId"),
-                        notice_code=3
+                        notice_code=2
                     )
             except Exception as e:
                 LOG.exception(e)
@@ -485,7 +486,7 @@ class Processor:
                                 token_address=token_address,
                                 id=transfer_approval.id
                             )
-                    elif notice_code == 1 or notice_code == 3:  # CancelTransfer
+                    elif notice_code == 1 or notice_code == 3:  # CancelTransfer or EscrowFinished
                         self.__sink_on_info_notification(
                             db_session=db_session,
                             issuer_address=token.issuer_address,
@@ -561,37 +562,25 @@ class Processor:
                 tz=timezone.utc
             )
         elif event_type == "Cancel":
-            if transfer_approval is None:
-                transfer_approval = IDXTransferApproval()
-                transfer_approval.token_address = token_address
-                transfer_approval.exchange_address = exchange_address
-                transfer_approval.application_id = application_id
-                transfer_approval.from_address = from_address
-                transfer_approval.to_address = to_address
-            transfer_approval.cancelled = True
+            if transfer_approval is not None:
+                transfer_approval.cancelled = True
+        elif event_type == "EscrowFinish":
+            if transfer_approval is not None:
+                transfer_approval.escrow_finished = True
         elif event_type == "Approve":
             if transfer_approval is not None:
-                transfer_approval.transfer_approved = True
-        elif event_type == "Finish":
-            if transfer_approval is None:
-                transfer_approval = IDXTransferApproval()
-                transfer_approval.token_address = token_address
-                transfer_approval.exchange_address = exchange_address
-                transfer_approval.application_id = application_id
-                transfer_approval.from_address = from_address
-                transfer_approval.to_address = to_address
-            try:
-                transfer_approval.approval_datetime = datetime.fromtimestamp(
-                    float(optional_data_approver),
+                try:
+                    transfer_approval.approval_datetime = datetime.fromtimestamp(
+                        float(optional_data_approver),
+                        tz=timezone.utc
+                    )
+                except ValueError:
+                    transfer_approval.approval_datetime = None
+                transfer_approval.approval_blocktimestamp = datetime.fromtimestamp(
+                    block_timestamp,
                     tz=timezone.utc
                 )
-            except ValueError:
-                transfer_approval.approval_datetime = None
-            transfer_approval.approval_blocktimestamp = datetime.fromtimestamp(
-                block_timestamp,
-                tz=timezone.utc
-            )
-            transfer_approval.transfer_approved = True
+                transfer_approval.transfer_approved = True
         db_session.merge(transfer_approval)
 
     @staticmethod

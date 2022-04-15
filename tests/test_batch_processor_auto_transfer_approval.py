@@ -429,6 +429,7 @@ class TestProcessor:
         idx_transfer_approval_0.exchange_address = "0x1234567890123456789012345678901234567890"
         idx_transfer_approval_0.application_id = 0
         idx_transfer_approval_0.application_blocktimestamp = datetime.datetime.utcnow()
+        idx_transfer_approval_0.escrow_finished = True
         db.add(idx_transfer_approval_0)
 
         # Prepare data : IDXTransferApproval, TransferApprovalHistory(approved)
@@ -437,6 +438,7 @@ class TestProcessor:
         idx_transfer_approval_1.exchange_address = "0x1234567890123456789012345678901234567890"
         idx_transfer_approval_1.application_id = 1
         idx_transfer_approval_1.application_blocktimestamp = datetime.datetime.utcnow()
+        idx_transfer_approval_1.escrow_finished = True
         db.add(idx_transfer_approval_1)
 
         transfer_approval_history = TransferApprovalHistory()
@@ -453,6 +455,7 @@ class TestProcessor:
         idx_transfer_approval_2.application_id = 2
         idx_transfer_approval_2.application_blocktimestamp = datetime.datetime.utcnow()
         idx_transfer_approval_2.cancelled = True
+        idx_transfer_approval_2.escrow_finished = None
         db.add(idx_transfer_approval_2)
 
         # Prepare data : IDXTransferApproval(Token does not exists)
@@ -461,6 +464,7 @@ class TestProcessor:
         idx_transfer_approval_4.exchange_address = "0x1234567890123456789012345678901234567890"
         idx_transfer_approval_4.application_id = 0
         idx_transfer_approval_4.application_blocktimestamp = datetime.datetime.utcnow()
+        idx_transfer_approval_4.escrow_finished = None
         db.add(idx_transfer_approval_4)
 
         # Prepare data : IDXTransferApproval(manually approval)
@@ -469,6 +473,7 @@ class TestProcessor:
         idx_transfer_approval_5.exchange_address = "0x1234567890123456789012345678901234567890"
         idx_transfer_approval_5.application_id = 0
         idx_transfer_approval_5.application_blocktimestamp = datetime.datetime(2020, 1, 1, 12, 59, 59)
+        idx_transfer_approval_5.escrow_finished = None
         db.add(idx_transfer_approval_5)
 
         # Prepare data : AdditionalTokenInfo(manually approval)
@@ -667,6 +672,7 @@ class TestProcessor:
         idx_transfer_approval_0.exchange_address = "0x1234567890123456789012345678901234567890"
         idx_transfer_approval_0.application_id = 0
         idx_transfer_approval_0.application_blocktimestamp = datetime.datetime.utcnow()
+        idx_transfer_approval_0.escrow_finished = True
         db.add(idx_transfer_approval_0)
 
         # Prepare data : IDXTransferApproval(cancelled)

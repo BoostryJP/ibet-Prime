@@ -73,6 +73,10 @@ class Processor:
 
             applications = []
             for application in applications_tmp:
+                if application.exchange_address is not None and application.escrow_finished is not True:
+                    # For transfer applications on escrow, skip processing if escrow has not been finished.
+                    continue
+                # Skip data that has already been approved for transfer.
                 transfer_approval_history = self.__get_transfer_approval_history(
                     db_session=db_session,
                     token_address=application.token_address,
@@ -147,7 +151,7 @@ class Processor:
     def __get_transfer_approval_history(self,
                                         db_session: Session,
                                         token_address: str,
-                                        exchange_address: str,
+                                        exchange_address: Optional[str],
                                         application_id: int) -> TransferApprovalHistory:
         transfer_approval_history = db_session.query(TransferApprovalHistory). \
             filter(TransferApprovalHistory.token_address == token_address). \

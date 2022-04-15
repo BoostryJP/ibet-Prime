@@ -227,7 +227,8 @@ class ContractUtils:
     def get_event_logs(contract: contract,
                        event: str,
                        block_from: int = None,
-                       block_to: int = None):
+                       block_to: int = None,
+                       argument_filters: dict = None):
         """Get contract event logs
 
         :param contract: Contract
@@ -240,7 +241,8 @@ class ContractUtils:
         try:
             result = _event.getLogs(
                 fromBlock=block_from,
-                toBlock=block_to
+                toBlock=block_to,
+                argument_filters=argument_filters
             )
         except ABIEventFunctionNotFound:
             return []
