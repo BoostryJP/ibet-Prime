@@ -1,5 +1,6 @@
 alembic==1.5.6
 anyio==3.5.0
+asgiref==3.5.0
 asn1crypto==1.5.1
 attrs==21.4.0
 base58==2.1.1
@@ -9,7 +10,7 @@ botocore==1.20.112
 certifi==2021.10.8
 cffi==1.15.0
 chardet==4.0.0
-click==7.1.2
+click==8.1.2
 coincurve==14.0.0
 cytoolz==0.11.2
 eth-abi==2.1.1
@@ -21,7 +22,7 @@ eth-rlp==0.2.1
 eth-typing==2.3.0
 eth-utils==1.10.0
 fastapi==0.75.2
-gunicorn==20.0.4
+gunicorn==20.1.0
 h11==0.13.0
 hexbytes==0.2.2
 idna==2.10
@@ -56,7 +57,7 @@ starlette==0.17.1
 toolz==0.11.2
 typing_extensions==4.2.0
 urllib3==1.26.9
-uvicorn==0.13.3
+uvicorn==0.17.6
 varint==1.0.2
 web3==5.15.0
 websockets==8.1
