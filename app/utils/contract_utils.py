@@ -237,8 +237,8 @@ class ContractUtils:
         :param block_to: toBlock
         :return: Event logs
         """
-        _event = getattr(contract.events, event)
         try:
+            _event = getattr(contract.events, event)
             result = _event.getLogs(
                 fromBlock=block_from,
                 toBlock=block_to,
