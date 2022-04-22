@@ -59,6 +59,128 @@ class PersonalInfoContractTestUtils:
 class IbetSecurityTokenContractTestUtils:
 
     @staticmethod
+    def balance_of(contract_address: str, account_address: str):
+        security_token_contract = ContractUtils.get_contract(
+            contract_name="IbetSecurityTokenInterface",
+            contract_address=contract_address
+        )
+        return security_token_contract.functions.balanceOf(account_address).call()
+
+    @staticmethod
+    def transfer(contract_address: str, tx_from: str, private_key: str, args: list):
+        security_token_contract = ContractUtils.get_contract(
+            contract_name="IbetSecurityTokenInterface",
+            contract_address=contract_address
+        )
+        tx = security_token_contract.functions.\
+            transfer(*args).\
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+    @staticmethod
+    def authorize_lock_address(contract_address: str, tx_from: str, private_key: str, args: list):
+        security_token_contract = ContractUtils.get_contract(
+            contract_name="IbetSecurityTokenInterface",
+            contract_address=contract_address
+        )
+        tx = security_token_contract.functions.\
+            authorizeLockAddress(*args).\
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+    @staticmethod
+    def lock(contract_address: str, tx_from: str, private_key: str, args: list):
+        security_token_contract = ContractUtils.get_contract(
+            contract_name="IbetSecurityTokenInterface",
+            contract_address=contract_address
+        )
+        tx = security_token_contract.functions.\
+            lock(*args).\
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+    @staticmethod
+    def unlock(contract_address: str, tx_from: str, private_key: str, args: list):
+        security_token_contract = ContractUtils.get_contract(
+            contract_name="IbetSecurityTokenInterface",
+            contract_address=contract_address
+        )
+        tx = security_token_contract.functions.\
+            unlock(*args).\
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+    @staticmethod
+    def issue_from(contract_address: str, tx_from: str, private_key: str, args: list):
+        security_token_contract = ContractUtils.get_contract(
+            contract_name="IbetSecurityTokenInterface",
+            contract_address=contract_address
+        )
+        tx = security_token_contract.functions.\
+            issueFrom(*args).\
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+    @staticmethod
+    def redeem_from(contract_address: str, tx_from: str, private_key: str, args: list):
+        security_token_contract = ContractUtils.get_contract(
+            contract_name="IbetSecurityTokenInterface",
+            contract_address=contract_address
+        )
+        tx = security_token_contract.functions.\
+            redeemFrom(*args).\
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+
+    @staticmethod
+    def set_transfer_approve_required(contract_address: str, tx_from: str, private_key: str, args: list):
+        security_token_contract = ContractUtils.get_contract(
+            contract_name="IbetSecurityTokenInterface",
+            contract_address=contract_address
+        )
+        tx = security_token_contract.functions.\
+            setTransferApprovalRequired(*args).\
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+
+    @staticmethod
     def apply_for_transfer(contract_address: str, tx_from: str, private_key: str, args: list):
         security_token_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenInterface",
@@ -73,3 +195,243 @@ class IbetSecurityTokenContractTestUtils:
                 "gasPrice": 0
             })
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+    @staticmethod
+    def cancel_transfer(contract_address: str, tx_from: str, private_key: str, args: list):
+        security_token_contract = ContractUtils.get_contract(
+            contract_name="IbetSecurityTokenInterface",
+            contract_address=contract_address
+        )
+        tx = security_token_contract.functions.\
+            cancelTransfer(*args).\
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+
+    @staticmethod
+    def approve_transfer(contract_address: str, tx_from: str, private_key: str, args: list):
+        security_token_contract = ContractUtils.get_contract(
+            contract_name="IbetSecurityTokenInterface",
+            contract_address=contract_address
+        )
+        tx = security_token_contract.functions.\
+            approveTransfer(*args).\
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+
+class IbetExchangeContractTestUtils:
+
+    @staticmethod
+    def balance_of(contract_address: str, account_address: str, token_address: str):
+        exchange_contract = ContractUtils.get_contract(
+            contract_name="IbetExchange",
+            contract_address=contract_address
+        )
+        return exchange_contract.functions.balanceOf(account_address, token_address).call()
+
+
+    @staticmethod
+    def create_order(contract_address: str, tx_from: str, private_key: str, args: list):
+        exchange_contract = ContractUtils.get_contract(
+            contract_name="IbetExchange",
+            contract_address=contract_address
+        )
+        tx = exchange_contract.functions.\
+            createOrder(*args). \
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+    @staticmethod
+    def get_latest_order_id(contract_address: str):
+        exchange_contract = ContractUtils.get_contract(
+            contract_name="IbetExchange",
+            contract_address=contract_address
+        )
+        return exchange_contract.functions.latestOrderId().call()
+
+    @staticmethod
+    def force_cancel_order(contract_address: str, tx_from: str, private_key: str, args: list):
+        exchange_contract = ContractUtils.get_contract(
+            contract_name="IbetExchange",
+            contract_address=contract_address
+        )
+        tx = exchange_contract.functions. \
+            forceCancelOrder(*args). \
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+    @staticmethod
+    def cancel_order(contract_address: str, tx_from: str, private_key: str, args: list):
+        exchange_contract = ContractUtils.get_contract(
+            contract_name="IbetExchange",
+            contract_address=contract_address
+        )
+        tx = exchange_contract.functions. \
+            cancelOrder(*args). \
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+    @staticmethod
+    def execute_order(contract_address: str, tx_from: str, private_key: str, args: list):
+        exchange_contract = ContractUtils.get_contract(
+            contract_name="IbetExchange",
+            contract_address=contract_address
+        )
+        tx = exchange_contract.functions. \
+            executeOrder(*args). \
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+    @staticmethod
+    def get_latest_agreementid(contract_address: str, order_id: int):
+        exchange_contract = ContractUtils.get_contract(
+            contract_name="IbetExchange",
+            contract_address=contract_address
+        )
+        return exchange_contract.functions.latestAgreementId(order_id).call()
+
+    @staticmethod
+    def cancel_agreement(contract_address: str, tx_from: str, private_key: str, args: list):
+        exchange_contract = ContractUtils.get_contract(
+            contract_name="IbetExchange",
+            contract_address=contract_address
+        )
+        tx = exchange_contract.functions. \
+            cancelAgreement(*args). \
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+    @staticmethod
+    def confirm_agreement(contract_address: str, tx_from: str, private_key: str, args: list):
+        exchange_contract = ContractUtils.get_contract(
+            contract_name="IbetExchange",
+            contract_address=contract_address
+        )
+        tx = exchange_contract.functions. \
+            confirmAgreement(*args). \
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+
+class IbetSecurityTokenEscrowContractTestUtils:
+
+    @staticmethod
+    def balance_of(contract_address: str, account_address: str, token_address: str):
+        escrow_contract = ContractUtils.get_contract(
+            contract_name="IbetSecurityTokenEscrow",
+            contract_address=contract_address
+        )
+        return escrow_contract.functions.balanceOf(account_address, token_address).call()
+
+    @staticmethod
+    def create_escrow(contract_address: str, tx_from: str, private_key: str, args: list):
+        escrow_contract = ContractUtils.get_contract(
+            contract_name="IbetSecurityTokenEscrow",
+            contract_address=contract_address
+        )
+        tx = escrow_contract.functions.\
+            createEscrow(*args). \
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+    @staticmethod
+    def cancel_escrow(contract_address: str, tx_from: str, private_key: str, args: list):
+        escrow_contract = ContractUtils.get_contract(
+            contract_name="IbetSecurityTokenEscrow",
+            contract_address=contract_address
+        )
+        tx = escrow_contract.functions.\
+            cancelEscrow(*args). \
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+    @staticmethod
+    def approve_transfer(contract_address: str, tx_from: str, private_key: str, args: list):
+        escrow_contract = ContractUtils.get_contract(
+            contract_name="IbetSecurityTokenEscrow",
+            contract_address=contract_address
+        )
+        tx = escrow_contract.functions.\
+            approveTransfer(*args). \
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+    @staticmethod
+    def finish_escrow(contract_address: str, tx_from: str, private_key: str, args: list):
+        escrow_contract = ContractUtils.get_contract(
+            contract_name="IbetSecurityTokenEscrow",
+            contract_address=contract_address
+        )
+        tx = escrow_contract.functions.\
+            finishEscrow(*args). \
+            buildTransaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+
+    @staticmethod
+    def get_latest_escrow_id(contract_address: str):
+        escrow_contract = ContractUtils.get_contract(
+            contract_name="IbetSecurityTokenEscrow",
+            contract_address=contract_address
+        )
+        return escrow_contract.functions.latestEscrowId().call()
