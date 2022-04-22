@@ -131,11 +131,12 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             self.base_url.format(token_address=token_address, list_id=list_id)
         )
         db.query(TokenHolder).filter().all()
+        sorted_holders = sorted(holders, key=lambda x: x['account_address'])
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
             "status": TokenHolderBatchStatus.DONE.value,
-            "holders": holders,
+            "holders": sorted_holders,
         }
 
     ####################################################################

@@ -192,7 +192,7 @@ def get_token_holders(
     _token_holders: List[TokenHolder] = (
         db.query(TokenHolder)
         .filter(TokenHolder.holder_list_id == _same_list_id_record.id)
-        .order_by(asc(TokenHolder.holder_list_id))
+        .order_by(asc(TokenHolder.account_address))
         .all()
     )
     token_holders = [_token_holder.json() for _token_holder in _token_holders]
