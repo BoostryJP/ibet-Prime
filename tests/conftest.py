@@ -81,7 +81,7 @@ def db():
     app.dependency_overrides[db_session] = db_session
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='function', autouse=True)
 def block_number(request):
     # save blockchain state before function starts
     evm_snapshot = web3.provider.make_request(RPCEndpoint("evm_snapshot"), [])
