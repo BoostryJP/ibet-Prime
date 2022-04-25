@@ -24,7 +24,6 @@ from unittest.mock import MagicMock
 import pytest
 
 from eth_keyfile import decode_keyfile_json
-import config
 
 
 from app.model.db import (
@@ -32,8 +31,7 @@ from app.model.db import (
     TokenType,
     TokenHoldersList,
     TokenHolderBatchStatus,
-    TokenHolder,
-    IDXPosition,
+    TokenHolder
 )
 from app.model.blockchain import (
     IbetStraightBondContract,
@@ -43,9 +41,8 @@ from app.model.blockchain import (
 from app.model.schema import IbetStraightBondUpdate, IbetShareUpdate
 from app.utils.web3_utils import Web3Wrapper
 from app.utils.contract_utils import ContractUtils
-from batch.indexer_position_bond import Processor as BondIndexer
-from batch.indexer_position_share import Processor as ShareIndexer
 from batch.indexer_token_holders import Processor, LOG
+from config import ZERO_ADDRESS
 from tests.account_config import config_eth_account
 from tests.utils.contract_utils import (
     IbetSecurityTokenContractTestUtils as STContractUtils,
@@ -62,16 +59,6 @@ def processor(db):
     return Processor()
 
 
-@pytest.fixture(scope="function")
-def bond_indexer(db):
-    return BondIndexer()
-
-
-@pytest.fixture(scope="function")
-def share_indexer(db):
-    return ShareIndexer()
-
-
 @pytest.fixture
 def contract_list(db):
     test_account = config_eth_account("user1")
@@ -86,7 +73,6 @@ def contract_list(db):
         deployer=deployer_address,
         private_key=private_key,
     )
-    config.TOKEN_LIST_CONTRACT_ADDRESS = contract_address
     return contract_address
 
 
@@ -207,10 +193,8 @@ class TestProcessor:
     # StraightBond
     # Events
     # - Transfer
-    # - Lock
-    # - Unlock
     # - Exchange
-    #   - MakeOrder/CancelOrder/ForceCancelOrderTakeOrder
+    #   - MakeOrder/CancelOrder/ForceCancelOrder/TakeOrder
     #   - CancelAgreement/ConfirmAgreement
     # - IssueFrom
     # - RedeemFrom
@@ -221,7 +205,6 @@ class TestProcessor:
         contract_list,
         personal_info_contract,
         ibet_exchange_contract,
-        bond_indexer: BondIndexer,
         block_number: None,
     ):
         exchange_contract = ibet_exchange_contract
@@ -264,15 +247,13 @@ class TestProcessor:
         PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_2, user_pk_2, [issuer_address, ""])
         PersonalInfoContractTestUtils.register(personal_info_contract.address, issuer_address, issuer_private_key, [issuer_address, ""])
 
-        STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
+        STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 30000])
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_2, 10000])
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [exchange_contract.address, 10000])
+        # user1: 30000 user2: 10000
 
         STContractUtils.authorize_lock_address(token_contract.address, issuer_address, issuer_private_key, [user_address_1, True])
         STContractUtils.authorize_lock_address(token_contract.address, issuer_address, issuer_private_key, [user_address_2, True])
-
-        STContractUtils.lock(token_contract.address, user_address_1, user_pk_1, [user_address_2, 10000])
-        STContractUtils.unlock(token_contract.address, user_address_2, user_pk_2, [user_address_1, user_address_1, 5000])
 
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 10000])
         IbetExchangeContractTestUtils.create_order(
@@ -280,6 +261,7 @@ class TestProcessor:
         )
         latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(exchange_contract.address)
         IbetExchangeContractTestUtils.cancel_order(exchange_contract.address, user_address_1, user_pk_1, [latest_order_id])
+        # user1: 30000 user2: 10000
 
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 10000])
         IbetExchangeContractTestUtils.create_order(
@@ -287,6 +269,7 @@ class TestProcessor:
         )
         latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(exchange_contract.address)
         IbetExchangeContractTestUtils.force_cancel_order(exchange_contract.address, issuer_address, issuer_private_key, [latest_order_id])
+        # user1: 30000 user2: 10000
 
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 10000])
         IbetExchangeContractTestUtils.create_order(
@@ -298,6 +281,7 @@ class TestProcessor:
         IbetExchangeContractTestUtils.confirm_agreement(
             exchange_contract.address, issuer_address, issuer_private_key, [latest_order_id, latest_agreement_id]
         )
+        # user1: 20000 user2: 20000
 
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 4000])
         IbetExchangeContractTestUtils.create_order(
@@ -309,6 +293,7 @@ class TestProcessor:
         IbetExchangeContractTestUtils.cancel_agreement(
             exchange_contract.address, issuer_address, issuer_private_key, [latest_order_id, latest_agreement_id]
         )
+        # user1: 20000 user2: 20000
 
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 4000])
         IbetExchangeContractTestUtils.create_order(
@@ -320,12 +305,15 @@ class TestProcessor:
         IbetExchangeContractTestUtils.confirm_agreement(
             exchange_contract.address, issuer_address, issuer_private_key, [latest_order_id, latest_agreement_id]
         )
+        # user1: 16000 user2: 24000
 
-        STContractUtils.issue_from(token_contract.address, issuer_address, issuer_private_key, [issuer_address, config.ZERO_ADDRESS, 40000])
-        STContractUtils.redeem_from(token_contract.address, issuer_address, issuer_private_key, [user_address_2, config.ZERO_ADDRESS, 10000])
+        STContractUtils.issue_from(token_contract.address, issuer_address, issuer_private_key, [issuer_address, ZERO_ADDRESS, 40000])
+        STContractUtils.redeem_from(token_contract.address, issuer_address, issuer_private_key, [user_address_2, ZERO_ADDRESS, 10000])
+        # user1: 16000 user2: 14000
 
-        STContractUtils.issue_from(token_contract.address, issuer_address, issuer_private_key, [user_address_2, config.ZERO_ADDRESS, 30000])
-        STContractUtils.redeem_from(token_contract.address, issuer_address, issuer_private_key, [issuer_address, config.ZERO_ADDRESS, 10000])
+        STContractUtils.issue_from(token_contract.address, issuer_address, issuer_private_key, [user_address_2, ZERO_ADDRESS, 30000])
+        STContractUtils.redeem_from(token_contract.address, issuer_address, issuer_private_key, [issuer_address, ZERO_ADDRESS, 10000])
+        # user1: 16000 user2: 44000
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
@@ -334,12 +322,12 @@ class TestProcessor:
         db.add(_token_holders_list)
         db.commit()
 
-        bond_indexer.sync_new_logs()
         # Issuer transfers issued token to user1 again to proceed block_number on chain.
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
 
         # Then execute processor.
-        processor.collect()
+        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+            processor.collect()
 
         user1_record: TokenHolder = (
             db.query(TokenHolder)
@@ -354,34 +342,10 @@ class TestProcessor:
             .first()
         )
 
-        assert user1_record.exchange_balance == 0
-        assert user1_record.balance == 1000
-        assert user1_record.exchange_commitment == 0
-        assert user1_record.pending_transfer == 0
-
-        assert user2_record.exchange_balance == 0
-        assert user2_record.balance == 44000
-        assert user2_record.exchange_commitment == 0
-        assert user2_record.pending_transfer == 0
+        assert user1_record.hold_balance == 16000
+        assert user2_record.hold_balance == 44000
 
         assert len(list(db.query(TokenHolder).filter(TokenHolder.holder_list_id == _token_holders_list.id))) == 2
-
-        _user1_record_validator: IDXPosition = (
-            db.query(IDXPosition).filter(IDXPosition.account_address == user1_record.account_address).order_by(IDXPosition.created).first()
-        )
-        _user2_record_validator: IDXPosition = (
-            db.query(IDXPosition).filter(IDXPosition.account_address == user2_record.account_address).order_by(IDXPosition.created).first()
-        )
-
-        assert user1_record.balance == _user1_record_validator.balance
-        assert user1_record.pending_transfer == _user1_record_validator.pending_transfer
-        assert user1_record.exchange_balance == _user1_record_validator.exchange_balance
-        assert user1_record.exchange_commitment == _user1_record_validator.exchange_commitment
-
-        assert user2_record.balance == _user2_record_validator.balance
-        assert user2_record.pending_transfer == _user2_record_validator.pending_transfer
-        assert user2_record.exchange_balance == _user2_record_validator.exchange_balance
-        assert user2_record.exchange_commitment == _user2_record_validator.exchange_commitment
 
     # <Normal_2>
     # StraightBond
@@ -400,7 +364,6 @@ class TestProcessor:
         contract_list,
         personal_info_contract,
         ibet_security_token_escrow_contract,
-        bond_indexer: BondIndexer,
         block_number: None,
     ):
         user_1 = config_eth_account("user1")
@@ -444,6 +407,7 @@ class TestProcessor:
 
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [ibet_security_token_escrow_contract.address, 10000])
+        # user1: 20000 user2: 0
 
         STContractUtils.set_transfer_approve_required(token_contract.address, issuer_address, issuer_private_key, [True])
         STContractUtils.apply_for_transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 10000, "to user1#1"])
@@ -451,6 +415,7 @@ class TestProcessor:
 
         STContractUtils.cancel_transfer(token_contract.address, issuer_address, issuer_private_key, [0, "to user1#1"])
         STContractUtils.approve_transfer(token_contract.address, issuer_address, issuer_private_key, [1, "to user2#1"])
+        # user1: 20000 user2: 10000
 
         STEscrowContractUtils.create_escrow(
             ibet_security_token_escrow_contract.address,
@@ -465,6 +430,7 @@ class TestProcessor:
         STEscrowContractUtils.approve_transfer(
             ibet_security_token_escrow_contract.address, issuer_address, issuer_private_key, [latest_security_escrow_id, ""]
         )
+        # user1: 13000 user2: 17000
 
         STEscrowContractUtils.create_escrow(
             ibet_security_token_escrow_contract.address,
@@ -476,6 +442,7 @@ class TestProcessor:
         STEscrowContractUtils.finish_escrow(
             ibet_security_token_escrow_contract.address, issuer_address, issuer_private_key, [latest_security_escrow_id]
         )
+        # user1: 13000 user2: 17000
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
@@ -484,14 +451,13 @@ class TestProcessor:
         db.add(_token_holders_list)
         db.commit()
 
-        bond_indexer.sync_new_logs()
-
         # Issuer transfers issued token to user1 again to proceed block_number on chain.
         STContractUtils.set_transfer_approve_required(token_contract.address, issuer_address, issuer_private_key, [False])
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
 
         # Then execute processor.
-        processor.collect()
+        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+            processor.collect()
 
         user1_record: TokenHolder = (
             db.query(TokenHolder)
@@ -506,34 +472,10 @@ class TestProcessor:
             .first()
         )
 
-        assert user1_record.exchange_balance == 1000
-        assert user1_record.balance == 10000  # 20000
-        assert user1_record.exchange_commitment == 2000
-        assert user1_record.pending_transfer == 0
-
-        assert user2_record.exchange_balance == 7000
-        assert user2_record.balance == 10000
-        assert user2_record.exchange_commitment == 0
-        assert user2_record.pending_transfer == 0
+        assert user1_record.hold_balance == 13000
+        assert user2_record.hold_balance == 17000
 
         assert len(list(db.query(TokenHolder).filter(TokenHolder.holder_list_id == _token_holders_list.id))) == 2
-
-        _user1_record_validator: IDXPosition = (
-            db.query(IDXPosition).filter(IDXPosition.account_address == user1_record.account_address).order_by(IDXPosition.created).first()
-        )
-        _user2_record_validator: IDXPosition = (
-            db.query(IDXPosition).filter(IDXPosition.account_address == user2_record.account_address).order_by(IDXPosition.created).first()
-        )
-
-        assert user1_record.balance == _user1_record_validator.balance
-        assert user1_record.pending_transfer == _user1_record_validator.pending_transfer
-        assert user1_record.exchange_balance == _user1_record_validator.exchange_balance
-        assert user1_record.exchange_commitment == _user1_record_validator.exchange_commitment
-
-        assert user2_record.balance == _user2_record_validator.balance
-        assert user2_record.pending_transfer == _user2_record_validator.pending_transfer
-        assert user2_record.exchange_balance == _user2_record_validator.exchange_balance
-        assert user2_record.exchange_commitment == _user2_record_validator.exchange_commitment
 
     # <Normal_3>
     # StraightBond
@@ -547,7 +489,6 @@ class TestProcessor:
         contract_list,
         personal_info_contract,
         ibet_security_token_escrow_contract,
-        bond_indexer: BondIndexer,
         block_number: None,
     ):
         user_1 = config_eth_account("user1")
@@ -592,9 +533,11 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_2, 10000])
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [ibet_security_token_escrow_contract.address, 10000])
+        # user1: 20000 user2: 10000
 
         STContractUtils.set_transfer_approve_required(token_contract.address, issuer_address, issuer_private_key, [True])
         STContractUtils.apply_for_transfer(token_contract.address, user_address_1, user_pk_1, [user_address_2, 10000, "to user2#1"])
+        # user1: 20000 user2: 10000
 
         STEscrowContractUtils.create_escrow(
             ibet_security_token_escrow_contract.address,
@@ -616,6 +559,7 @@ class TestProcessor:
         STEscrowContractUtils.approve_transfer(
             ibet_security_token_escrow_contract.address, issuer_address, issuer_private_key, [latest_security_escrow_id, ""]
         )
+        # user1: 17000 user2: 13000
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
@@ -624,13 +568,13 @@ class TestProcessor:
         db.add(_token_holders_list)
         db.commit()
 
-        bond_indexer.sync_new_logs()
         # Issuer transfers issued token to user1 again to proceed block_number on chain.
         STContractUtils.set_transfer_approve_required(token_contract.address, issuer_address, issuer_private_key, [False])
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
 
         # Then execute processor.
-        processor.collect()
+        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+            processor.collect()
 
         user1_record: TokenHolder = (
             db.query(TokenHolder)
@@ -645,43 +589,17 @@ class TestProcessor:
             .first()
         )
 
-        assert user1_record.exchange_balance == 0
-        assert user1_record.balance == 0
-        assert user1_record.exchange_commitment == 7000
-        assert user1_record.pending_transfer == 10000
-
-        assert user2_record.exchange_balance == 3000
-        assert user2_record.balance == 10000
-        assert user2_record.exchange_commitment == 0
-        assert user2_record.pending_transfer == 0
+        assert user1_record.hold_balance == 17000
+        assert user2_record.hold_balance == 13000
 
         assert len(list(db.query(TokenHolder).filter(TokenHolder.holder_list_id == _token_holders_list.id))) == 2
-
-        _user1_record_validator: IDXPosition = (
-            db.query(IDXPosition).filter(IDXPosition.account_address == user1_record.account_address).order_by(IDXPosition.created).first()
-        )
-        _user2_record_validator: IDXPosition = (
-            db.query(IDXPosition).filter(IDXPosition.account_address == user2_record.account_address).order_by(IDXPosition.created).first()
-        )
-
-        assert user1_record.balance == _user1_record_validator.balance
-        assert user1_record.pending_transfer == _user1_record_validator.pending_transfer
-        assert user1_record.exchange_balance == _user1_record_validator.exchange_balance
-        assert user1_record.exchange_commitment == _user1_record_validator.exchange_commitment
-
-        assert user2_record.balance == _user2_record_validator.balance
-        assert user2_record.pending_transfer == _user2_record_validator.pending_transfer
-        assert user2_record.exchange_balance == _user2_record_validator.exchange_balance
-        assert user2_record.exchange_commitment == _user2_record_validator.exchange_commitment
 
     # <Normal_4>
     # Share
     # Events
     # - Transfer
-    # - Lock
-    # - Unlock
     # - Exchange
-    #   - MakeOrder/CancelOrder/ForceCancelOrderTakeOrder
+    #   - MakeOrder/CancelOrder/ForceCancelOrder/TakeOrder
     #   - CancelAgreement/ConfirmAgreement
     # - IssueFrom
     # - RedeemFrom
@@ -692,7 +610,6 @@ class TestProcessor:
         contract_list,
         personal_info_contract,
         ibet_exchange_contract,
-        share_indexer: ShareIndexer,
         block_number: None,
     ):
         exchange_contract = ibet_exchange_contract
@@ -738,12 +655,10 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_2, 10000])
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [exchange_contract.address, 10000])
+        # user1: 20000 user2: 10000
 
         STContractUtils.authorize_lock_address(token_contract.address, issuer_address, issuer_private_key, [user_address_1, True])
         STContractUtils.authorize_lock_address(token_contract.address, issuer_address, issuer_private_key, [user_address_2, True])
-
-        STContractUtils.lock(token_contract.address, user_address_1, user_pk_1, [user_address_2, 10000])
-        STContractUtils.unlock(token_contract.address, user_address_2, user_pk_2, [user_address_1, user_address_1, 5000])
 
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 10000])
         IbetExchangeContractTestUtils.create_order(
@@ -751,6 +666,7 @@ class TestProcessor:
         )
         latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(exchange_contract.address)
         IbetExchangeContractTestUtils.cancel_order(exchange_contract.address, user_address_1, user_pk_1, [latest_order_id])
+        # user1: 20000 user2: 10000
 
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 10000])
         IbetExchangeContractTestUtils.create_order(
@@ -758,6 +674,7 @@ class TestProcessor:
         )
         latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(exchange_contract.address)
         IbetExchangeContractTestUtils.force_cancel_order(exchange_contract.address, issuer_address, issuer_private_key, [latest_order_id])
+        # user1: 20000 user2: 10000
 
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 10000])
         IbetExchangeContractTestUtils.create_order(
@@ -769,6 +686,7 @@ class TestProcessor:
         IbetExchangeContractTestUtils.confirm_agreement(
             exchange_contract.address, issuer_address, issuer_private_key, [latest_order_id, latest_agreement_id]
         )
+        # user1: 10000 user2: 20000
 
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 4000])
         IbetExchangeContractTestUtils.create_order(
@@ -780,6 +698,7 @@ class TestProcessor:
         IbetExchangeContractTestUtils.cancel_agreement(
             exchange_contract.address, issuer_address, issuer_private_key, [latest_order_id, latest_agreement_id]
         )
+        # user1: 10000 user2: 20000
 
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 4000])
         IbetExchangeContractTestUtils.create_order(
@@ -791,12 +710,15 @@ class TestProcessor:
         IbetExchangeContractTestUtils.confirm_agreement(
             exchange_contract.address, issuer_address, issuer_private_key, [latest_order_id, latest_agreement_id]
         )
+        # user1: 6000 user2: 24000
 
-        STContractUtils.issue_from(token_contract.address, issuer_address, issuer_private_key, [issuer_address, config.ZERO_ADDRESS, 40000])
-        STContractUtils.redeem_from(token_contract.address, issuer_address, issuer_private_key, [user_address_2, config.ZERO_ADDRESS, 10000])
+        STContractUtils.issue_from(token_contract.address, issuer_address, issuer_private_key, [issuer_address, ZERO_ADDRESS, 40000])
+        STContractUtils.redeem_from(token_contract.address, issuer_address, issuer_private_key, [user_address_2, ZERO_ADDRESS, 10000])
+        # user1: 6000 user2: 14000
 
-        STContractUtils.issue_from(token_contract.address, issuer_address, issuer_private_key, [user_address_2, config.ZERO_ADDRESS, 30000])
-        STContractUtils.redeem_from(token_contract.address, issuer_address, issuer_private_key, [issuer_address, config.ZERO_ADDRESS, 10000])
+        STContractUtils.issue_from(token_contract.address, issuer_address, issuer_private_key, [user_address_2, ZERO_ADDRESS, 30000])
+        STContractUtils.redeem_from(token_contract.address, issuer_address, issuer_private_key, [issuer_address, ZERO_ADDRESS, 10000])
+        # user1: 6000 user2: 44000
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
@@ -805,12 +727,12 @@ class TestProcessor:
         db.add(_token_holders_list)
         db.commit()
 
-        share_indexer.sync_new_logs()
         # Issuer transfers issued token to user1 again to proceed block_number on chain.
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
 
         # Then execute processor.
-        processor.collect()
+        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+            processor.collect()
 
         user1_record: TokenHolder = (
             db.query(TokenHolder)
@@ -825,34 +747,10 @@ class TestProcessor:
             .first()
         )
 
-        assert user1_record.exchange_balance == 0
-        assert user1_record.balance == 1000
-        assert user1_record.exchange_commitment == 0
-        assert user1_record.pending_transfer == 0
-
-        assert user2_record.exchange_balance == 0
-        assert user2_record.balance == 44000
-        assert user2_record.exchange_commitment == 0
-        assert user2_record.pending_transfer == 0
+        assert user1_record.hold_balance == 6000
+        assert user2_record.hold_balance == 44000
 
         assert len(list(db.query(TokenHolder).filter(TokenHolder.holder_list_id == _token_holders_list.id))) == 2
-
-        _user1_record_validator: IDXPosition = (
-            db.query(IDXPosition).filter(IDXPosition.account_address == user1_record.account_address).order_by(IDXPosition.created).first()
-        )
-        _user2_record_validator: IDXPosition = (
-            db.query(IDXPosition).filter(IDXPosition.account_address == user2_record.account_address).order_by(IDXPosition.created).first()
-        )
-
-        assert user1_record.balance == _user1_record_validator.balance
-        assert user1_record.pending_transfer == _user1_record_validator.pending_transfer
-        assert user1_record.exchange_balance == _user1_record_validator.exchange_balance
-        assert user1_record.exchange_commitment == _user1_record_validator.exchange_commitment
-
-        assert user2_record.balance == _user2_record_validator.balance
-        assert user2_record.pending_transfer == _user2_record_validator.pending_transfer
-        assert user2_record.exchange_balance == _user2_record_validator.exchange_balance
-        assert user2_record.exchange_commitment == _user2_record_validator.exchange_commitment
 
     # <Normal_5>
     # Share
@@ -871,7 +769,6 @@ class TestProcessor:
         contract_list,
         personal_info_contract,
         ibet_security_token_escrow_contract,
-        share_indexer: ShareIndexer,
         block_number: None,
     ):
         user_1 = config_eth_account("user1")
@@ -915,6 +812,7 @@ class TestProcessor:
 
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [ibet_security_token_escrow_contract.address, 10000])
+        # user1: 20000 user2: 0
 
         STContractUtils.set_transfer_approve_required(token_contract.address, issuer_address, issuer_private_key, [True])
         STContractUtils.apply_for_transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 10000, "to user1#1"])
@@ -922,6 +820,7 @@ class TestProcessor:
 
         STContractUtils.cancel_transfer(token_contract.address, issuer_address, issuer_private_key, [0, "to user1#1"])
         STContractUtils.approve_transfer(token_contract.address, issuer_address, issuer_private_key, [1, "to user2#1"])
+        # user1: 20000 user2: 10000
 
         STEscrowContractUtils.create_escrow(
             ibet_security_token_escrow_contract.address,
@@ -936,6 +835,7 @@ class TestProcessor:
         STEscrowContractUtils.approve_transfer(
             ibet_security_token_escrow_contract.address, issuer_address, issuer_private_key, [latest_security_escrow_id, ""]
         )
+        # user1: 13000 user2: 17000
 
         STEscrowContractUtils.create_escrow(
             ibet_security_token_escrow_contract.address,
@@ -947,6 +847,7 @@ class TestProcessor:
         STEscrowContractUtils.finish_escrow(
             ibet_security_token_escrow_contract.address, issuer_address, issuer_private_key, [latest_security_escrow_id]
         )
+        # user1: 13000 user2: 17000
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
@@ -955,14 +856,13 @@ class TestProcessor:
         db.add(_token_holders_list)
         db.commit()
 
-        share_indexer.sync_new_logs()
-
         # Issuer transfers issued token to user1 again to proceed block_number on chain.
         STContractUtils.set_transfer_approve_required(token_contract.address, issuer_address, issuer_private_key, [False])
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
 
         # Then execute processor.
-        processor.collect()
+        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+            processor.collect()
 
         user1_record: TokenHolder = (
             db.query(TokenHolder)
@@ -977,34 +877,10 @@ class TestProcessor:
             .first()
         )
 
-        assert user1_record.exchange_balance == 1000
-        assert user1_record.balance == 10000  # 20000
-        assert user1_record.exchange_commitment == 2000
-        assert user1_record.pending_transfer == 0
-
-        assert user2_record.exchange_balance == 7000
-        assert user2_record.balance == 10000
-        assert user2_record.exchange_commitment == 0
-        assert user2_record.pending_transfer == 0
+        assert user1_record.hold_balance == 13000
+        assert user2_record.hold_balance == 17000
 
         assert len(list(db.query(TokenHolder).filter(TokenHolder.holder_list_id == _token_holders_list.id))) == 2
-
-        _user1_record_validator: IDXPosition = (
-            db.query(IDXPosition).filter(IDXPosition.account_address == user1_record.account_address).order_by(IDXPosition.created).first()
-        )
-        _user2_record_validator: IDXPosition = (
-            db.query(IDXPosition).filter(IDXPosition.account_address == user2_record.account_address).order_by(IDXPosition.created).first()
-        )
-
-        assert user1_record.balance == _user1_record_validator.balance
-        assert user1_record.pending_transfer == _user1_record_validator.pending_transfer
-        assert user1_record.exchange_balance == _user1_record_validator.exchange_balance
-        assert user1_record.exchange_commitment == _user1_record_validator.exchange_commitment
-
-        assert user2_record.balance == _user2_record_validator.balance
-        assert user2_record.pending_transfer == _user2_record_validator.pending_transfer
-        assert user2_record.exchange_balance == _user2_record_validator.exchange_balance
-        assert user2_record.exchange_commitment == _user2_record_validator.exchange_commitment
 
     # <Normal_6>
     # Share
@@ -1018,7 +894,6 @@ class TestProcessor:
         contract_list,
         personal_info_contract,
         ibet_security_token_escrow_contract,
-        share_indexer: ShareIndexer,
         block_number: None,
     ):
         user_1 = config_eth_account("user1")
@@ -1063,9 +938,11 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_2, 10000])
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [ibet_security_token_escrow_contract.address, 10000])
+        # user1: 20000 user2: 10000
 
         STContractUtils.set_transfer_approve_required(token_contract.address, issuer_address, issuer_private_key, [True])
         STContractUtils.apply_for_transfer(token_contract.address, user_address_1, user_pk_1, [user_address_2, 10000, "to user2#1"])
+        # user1: 20000 user2: 10000
 
         STEscrowContractUtils.create_escrow(
             ibet_security_token_escrow_contract.address,
@@ -1073,6 +950,7 @@ class TestProcessor:
             user_pk_1,
             [token_contract.address, user_address_2, 7000, issuer_address, "", ""],
         )
+        # user1: 20000 user2: 10000
         STEscrowContractUtils.create_escrow(
             ibet_security_token_escrow_contract.address,
             user_address_1,
@@ -1087,6 +965,7 @@ class TestProcessor:
         STEscrowContractUtils.approve_transfer(
             ibet_security_token_escrow_contract.address, issuer_address, issuer_private_key, [latest_security_escrow_id, ""]
         )
+        # user1: 17000 user2: 13000
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
@@ -1095,13 +974,13 @@ class TestProcessor:
         db.add(_token_holders_list)
         db.commit()
 
-        share_indexer.sync_new_logs()
         # Issuer transfers issued token to user1 again to proceed block_number on chain.
         STContractUtils.set_transfer_approve_required(token_contract.address, issuer_address, issuer_private_key, [False])
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
 
         # Then execute processor.
-        processor.collect()
+        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+            processor.collect()
 
         user1_record: TokenHolder = (
             db.query(TokenHolder)
@@ -1116,305 +995,33 @@ class TestProcessor:
             .first()
         )
 
-        assert user1_record.exchange_balance == 0
-        assert user1_record.balance == 0
-        assert user1_record.exchange_commitment == 7000
-        assert user1_record.pending_transfer == 10000
-
-        assert user2_record.exchange_balance == 3000
-        assert user2_record.balance == 10000
-        assert user2_record.exchange_commitment == 0
-        assert user2_record.pending_transfer == 0
+        assert user1_record.hold_balance == 17000
+        assert user2_record.hold_balance == 13000
 
         assert len(list(db.query(TokenHolder).filter(TokenHolder.holder_list_id == _token_holders_list.id))) == 2
 
-        _user1_record_validator: IDXPosition = (
-            db.query(IDXPosition).filter(IDXPosition.account_address == user1_record.account_address).order_by(IDXPosition.created).first()
-        )
-        _user2_record_validator: IDXPosition = (
-            db.query(IDXPosition).filter(IDXPosition.account_address == user2_record.account_address).order_by(IDXPosition.created).first()
-        )
-
-        assert user1_record.balance == _user1_record_validator.balance
-        assert user1_record.pending_transfer == _user1_record_validator.pending_transfer
-        assert user1_record.exchange_balance == _user1_record_validator.exchange_balance
-        assert user1_record.exchange_commitment == _user1_record_validator.exchange_commitment
-
-        assert user2_record.balance == _user2_record_validator.balance
-        assert user2_record.pending_transfer == _user2_record_validator.pending_transfer
-        assert user2_record.exchange_balance == _user2_record_validator.exchange_balance
-        assert user2_record.exchange_commitment == _user2_record_validator.exchange_commitment
-
     # <Normal_7>
     # StraightBond
-    # Use checkpoint.
-    def test_normal_7(
-        self,
-        processor,
-        db,
-        contract_list,
-        personal_info_contract,
-        ibet_exchange_contract,
-        bond_indexer: BondIndexer,
-        block_number: None,
-    ):
-        exchange_contract = ibet_exchange_contract
-        user_1 = config_eth_account("user1")
-        issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8"))
-        user_2 = config_eth_account("user2")
-        user_address_1 = user_2["address"]
-        user_pk_1 = decode_keyfile_json(raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8"))
-        user_3 = config_eth_account("user3")
-        user_address_2 = user_3["address"]
-        user_pk_2 = decode_keyfile_json(raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8"))
-
-        # Issuer issues bond token.
-        token_contract = deploy_bond_token_contract(
-            issuer_address,
-            issuer_private_key,
-            personal_info_contract.address,
-            tradable_exchange_contract_address=exchange_contract.address,
-            transfer_approval_required=False,
-        )
-        token_address_1 = token_contract.address
-        token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
-        token_1.token_address = token_address_1
-        token_1.issuer_address = issuer_address
-        token_1.abi = token_contract.abi
-        token_1.tx_hash = "tx_hash"
-        db.add(token_1)
-
-        TokenListContract.register(
-            token_list_address=contract_list,
-            token_address=token_contract.address,
-            token_template=TokenType.IBET_STRAIGHT_BOND.value,
-            account_address=issuer_address,
-            private_key=issuer_private_key,
-        )
-
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_1, user_pk_1, [issuer_address, ""])
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_2, user_pk_2, [issuer_address, ""])
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, issuer_address, issuer_private_key, [issuer_address, ""])
-
-        STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
-        STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_2, 10000])
-        STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [exchange_contract.address, 10000])
-
-        STContractUtils.authorize_lock_address(token_contract.address, issuer_address, issuer_private_key, [user_address_1, True])
-        STContractUtils.authorize_lock_address(token_contract.address, issuer_address, issuer_private_key, [user_address_2, True])
-
-        STContractUtils.lock(token_contract.address, user_address_1, user_pk_1, [user_address_2, 10000])
-        STContractUtils.unlock(token_contract.address, user_address_2, user_pk_2, [user_address_1, user_address_1, 5000])
-
-        # Insert collection record with above token and current block number
-        list_id = str(uuid.uuid4())
-        block_number = web3.eth.blockNumber
-        _token_holders_list = token_holders_list(token_contract.address, block_number, list_id)
-        db.add(_token_holders_list)
-        db.commit()
-
-        bond_indexer.sync_new_logs()
-        # Issuer transfers issued token to user1 again to proceed block_number on chain.
-        STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
-
-        # Then execute processor.
-        processor.collect()
-
-        user1_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-            .filter(TokenHolder.account_address == user_address_1)
-            .first()
-        )
-        user2_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-            .filter(TokenHolder.account_address == user_address_2)
-            .first()
-        )
-        _user1_record_validator: IDXPosition = (
-            db.query(IDXPosition).filter(IDXPosition.account_address == user1_record.account_address).order_by(IDXPosition.created).first()
-        )
-        _user2_record_validator: IDXPosition = (
-            db.query(IDXPosition).filter(IDXPosition.account_address == user2_record.account_address).order_by(IDXPosition.created).first()
-        )
-
-        assert user1_record.balance == _user1_record_validator.balance
-        assert user1_record.pending_transfer == _user1_record_validator.pending_transfer
-        assert user1_record.exchange_balance == _user1_record_validator.exchange_balance
-        assert user1_record.exchange_commitment == _user1_record_validator.exchange_commitment
-
-        assert user2_record.balance == _user2_record_validator.balance
-        assert user2_record.pending_transfer == _user2_record_validator.pending_transfer
-        assert user2_record.exchange_balance == _user2_record_validator.exchange_balance
-        assert user2_record.exchange_commitment == _user2_record_validator.exchange_commitment
-
-        STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 10000])
-        IbetExchangeContractTestUtils.create_order(
-            exchange_contract.address, user_address_1, user_pk_1, [token_contract.address, 10000, 100, False, issuer_address]
-        )
-        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(exchange_contract.address)
-        IbetExchangeContractTestUtils.cancel_order(exchange_contract.address, user_address_1, user_pk_1, [latest_order_id])
-
-        STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 10000])
-        IbetExchangeContractTestUtils.create_order(
-            exchange_contract.address, user_address_1, user_pk_1, [token_contract.address, 10000, 100, False, issuer_address]
-        )
-        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(exchange_contract.address)
-        IbetExchangeContractTestUtils.force_cancel_order(exchange_contract.address, issuer_address, issuer_private_key, [latest_order_id])
-
-        STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 10000])
-        IbetExchangeContractTestUtils.create_order(
-            exchange_contract.address, user_address_1, user_pk_1, [token_contract.address, 10000, 100, False, issuer_address]
-        )
-        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(exchange_contract.address)
-        IbetExchangeContractTestUtils.execute_order(exchange_contract.address, user_address_2, user_pk_2, [latest_order_id, 10000, True])
-        latest_agreement_id = IbetExchangeContractTestUtils.get_latest_agreementid(exchange_contract.address, latest_order_id)
-        IbetExchangeContractTestUtils.confirm_agreement(
-            exchange_contract.address, issuer_address, issuer_private_key, [latest_order_id, latest_agreement_id]
-        )
-
-        # Insert collection record with above token and current block number
-        list_id = str(uuid.uuid4())
-        block_number = web3.eth.blockNumber
-        _token_holders_list = token_holders_list(token_contract.address, block_number, list_id)
-        db.add(_token_holders_list)
-        db.commit()
-
-        bond_indexer.sync_new_logs()
-        # Issuer transfers issued token to user1 again to proceed block_number on chain.
-        STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
-
-        # Then execute processor.
-        processor.collect()
-
-        user1_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-            .filter(TokenHolder.account_address == user_address_1)
-            .first()
-        )
-        user2_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-            .filter(TokenHolder.account_address == user_address_2)
-            .first()
-        )
-
-        _user1_record_validator: IDXPosition = (
-            db.query(IDXPosition).filter(IDXPosition.account_address == user1_record.account_address).order_by(IDXPosition.created).first()
-        )
-        _user2_record_validator: IDXPosition = (
-            db.query(IDXPosition).filter(IDXPosition.account_address == user2_record.account_address).order_by(IDXPosition.created).first()
-        )
-
-        assert user1_record.balance == _user1_record_validator.balance
-        assert user1_record.pending_transfer == _user1_record_validator.pending_transfer
-        assert user1_record.exchange_balance == _user1_record_validator.exchange_balance
-        assert user1_record.exchange_commitment == _user1_record_validator.exchange_commitment
-
-        assert user2_record.balance == _user2_record_validator.balance
-        assert user2_record.pending_transfer == _user2_record_validator.pending_transfer
-        assert user2_record.exchange_balance == _user2_record_validator.exchange_balance
-        assert user2_record.exchange_commitment == _user2_record_validator.exchange_commitment
-
-        STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 4000])
-        IbetExchangeContractTestUtils.create_order(
-            exchange_contract.address, user_address_2, user_pk_2, [token_contract.address, 4000, 100, True, issuer_address]
-        )
-        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(exchange_contract.address)
-        IbetExchangeContractTestUtils.execute_order(exchange_contract.address, user_address_1, user_pk_1, [latest_order_id, 4000, False])
-        latest_agreement_id = IbetExchangeContractTestUtils.get_latest_agreementid(exchange_contract.address, latest_order_id)
-        IbetExchangeContractTestUtils.cancel_agreement(
-            exchange_contract.address, issuer_address, issuer_private_key, [latest_order_id, latest_agreement_id]
-        )
-
-        STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 4000])
-        IbetExchangeContractTestUtils.create_order(
-            exchange_contract.address, user_address_2, user_pk_2, [token_contract.address, 4000, 100, True, issuer_address]
-        )
-        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(exchange_contract.address)
-        IbetExchangeContractTestUtils.execute_order(exchange_contract.address, user_address_1, user_pk_1, [latest_order_id, 4000, False])
-        latest_agreement_id = IbetExchangeContractTestUtils.get_latest_agreementid(exchange_contract.address, latest_order_id)
-        IbetExchangeContractTestUtils.confirm_agreement(
-            exchange_contract.address, issuer_address, issuer_private_key, [latest_order_id, latest_agreement_id]
-        )
-
-        STContractUtils.issue_from(token_contract.address, issuer_address, issuer_private_key, [issuer_address, config.ZERO_ADDRESS, 40000])
-        STContractUtils.redeem_from(token_contract.address, issuer_address, issuer_private_key, [user_address_2, config.ZERO_ADDRESS, 10000])
-
-        STContractUtils.issue_from(token_contract.address, issuer_address, issuer_private_key, [user_address_2, config.ZERO_ADDRESS, 30000])
-        STContractUtils.redeem_from(token_contract.address, issuer_address, issuer_private_key, [issuer_address, config.ZERO_ADDRESS, 10000])
-
-        STContractUtils.issue_from(token_contract.address, issuer_address, issuer_private_key, [issuer_address, issuer_address, 40000])
-        STContractUtils.redeem_from(token_contract.address, issuer_address, issuer_private_key, [issuer_address, issuer_address, 40000])
-        # Insert collection record with above token and current block number
-        list_id = str(uuid.uuid4())
-        block_number = web3.eth.blockNumber
-        _token_holders_list = token_holders_list(token_contract.address, block_number, list_id)
-        db.add(_token_holders_list)
-        db.commit()
-
-        bond_indexer.sync_new_logs()
-        # Issuer transfers issued token to user1 again to proceed block_number on chain.
-        STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
-
-        # Then execute processor.
-        processor.collect()
-
-        user1_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-            .filter(TokenHolder.account_address == user_address_1)
-            .first()
-        )
-        user2_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-            .filter(TokenHolder.account_address == user_address_2)
-            .first()
-        )
-
-        _user1_record_validator: IDXPosition = (
-            db.query(IDXPosition).filter(IDXPosition.account_address == user1_record.account_address).order_by(IDXPosition.created).first()
-        )
-        _user2_record_validator: IDXPosition = (
-            db.query(IDXPosition).filter(IDXPosition.account_address == user2_record.account_address).order_by(IDXPosition.created).first()
-        )
-
-        assert user1_record.balance == _user1_record_validator.balance
-        assert user1_record.pending_transfer == _user1_record_validator.pending_transfer
-        assert user1_record.exchange_balance == _user1_record_validator.exchange_balance
-        assert user1_record.exchange_commitment == _user1_record_validator.exchange_commitment
-
-        assert user2_record.balance == _user2_record_validator.balance
-        assert user2_record.pending_transfer == _user2_record_validator.pending_transfer
-        assert user2_record.exchange_balance == _user2_record_validator.exchange_balance
-        assert user2_record.exchange_commitment == _user2_record_validator.exchange_commitment
-
-    # <Normal_8>
-    # StraightBond
     # Jobs are queued and pending jobs are to be processed one by one.
-    def test_normal_8(
+    def test_normal_7(
         self,
         processor: Processor,
         db,
         contract_list,
         personal_info_contract,
         ibet_exchange_contract,
-        bond_indexer: BondIndexer,
         block_number: None,
         caplog,
     ):
         exchange_contract = ibet_exchange_contract
-        processor.collect()
+        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+            processor.collect()
         LOG.setLevel(logging.DEBUG)
         LOG.addHandler(caplog.handler)
         with caplog.at_level(logging.DEBUG):
-            processor.collect()
-            assert f"There are no pending collect batch" in caplog.text
+            with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+                processor.collect()
+        assert f"There are no pending collect batch" in caplog.text
 
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1474,11 +1081,13 @@ class TestProcessor:
         db.commit()
 
         # Then execute processor.
-        processor.collect()
+        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+            processor.collect()
 
         LOG.addHandler(caplog.handler)
-        with caplog.at_level(logging.INFO):
-            processor.collect()
+        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+            with caplog.at_level(logging.INFO):
+                processor.collect()
         assert f"Token holder list({_token_holders_list2.list_id}) status changes to be done." in caplog.text
         assert f"Collect job has been completed" in caplog.text
 
@@ -1495,13 +1104,13 @@ class TestProcessor:
         contract_list,
         personal_info_contract,
         ibet_exchange_contract,
-        bond_indexer: BondIndexer,
         block_number: None,
         caplog,
     ):
         LOG.addHandler(caplog.handler)
-        with caplog.at_level(logging.DEBUG):
-            processor.collect()
+        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+            with caplog.at_level(logging.DEBUG):
+                processor.collect()
         assert "There are no pending collect batch" in caplog.text
         assert "Collect job has been completed" in caplog.text
 
@@ -1515,13 +1124,12 @@ class TestProcessor:
         contract_list,
         personal_info_contract,
         ibet_exchange_contract,
-        bond_indexer: BondIndexer,
         block_number: None,
         caplog,
     ):
         # Insert collection definition with token address Zero
         target_token_holders_list = TokenHoldersList()
-        target_token_holders_list.token_address = config.ZERO_ADDRESS
+        target_token_holders_list.token_address = ZERO_ADDRESS
         target_token_holders_list.list_id = str(uuid.uuid4())
         target_token_holders_list.batch_status = TokenHolderBatchStatus.PENDING.value
         target_token_holders_list.block_number = 1000
@@ -1530,8 +1138,9 @@ class TestProcessor:
 
         # Debug message should be shown that points out token contract must be listed.
         LOG.addHandler(caplog.handler)
-        with caplog.at_level(logging.DEBUG):
-            processor.collect()
+        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+            with caplog.at_level(logging.DEBUG):
+                processor.collect()
         assert "Token contract must be listed to TokenList contract." in caplog.text
         assert f"Collect job has been completed" in caplog.text
 
@@ -1548,7 +1157,6 @@ class TestProcessor:
         contract_list,
         personal_info_contract,
         ibet_exchange_contract,
-        bond_indexer: BondIndexer,
         block_number: None,
         caplog,
     ):
@@ -1603,9 +1211,10 @@ class TestProcessor:
         db.commit()
 
         mock_lib = MagicMock()
-        with mock.patch.object(Processor, "_Processor__sync_all", return_value=mock_lib) as __sync_all_mock:
+        with mock.patch.object(Processor, "_Processor__process_all", return_value=mock_lib) as __sync_all_mock:
             # Then execute processor.
             __sync_all_mock.return_value = None
-            processor.collect()
+            with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+                processor.collect()
             _records: List[TokenHolder] = db.query(TokenHolder).filter(TokenHolder.holder_list_id == _token_holders_list.id).all()
             assert len(_records) == 0

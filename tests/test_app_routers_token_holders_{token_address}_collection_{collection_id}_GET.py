@@ -46,7 +46,6 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # Normal_1
     # GET
     # Holders in response is empty.
-    # Request header is set.
     @mock.patch("web3.eth.Eth.blockNumber", 100)
     def test_normal_1(self, client, db):
         # Issue Token
@@ -88,7 +87,6 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # Normal_2
     # GET
     # Holders in response is filled.
-    # Request header is not set.
     def test_normal_2(self, client, db):
         # Issue Token
         user = config_eth_account("user1")
@@ -119,16 +117,14 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
             _token_holder.account_address = config_eth_account(user)["address"]
-            _token_holder.balance = 10000 * i
-            _token_holder.pending_transfer = 0
-            _token_holder.exchange_balance = 0
-            _token_holder.exchange_commitment = 0
+            _token_holder.hold_balance = 10000 * (i+1)
             db.add(_token_holder)
             holders.append(_token_holder.json())
 
         # request target api
         resp = client.get(
-            self.base_url.format(token_address=token_address, list_id=list_id)
+            self.base_url.format(token_address=token_address, list_id=list_id),
+            headers={"issuer-address": issuer_address},
         )
         db.query(TokenHolder).filter().all()
         sorted_holders = sorted(holders, key=lambda x: x['account_address'])
@@ -322,4 +318,50 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         assert resp.json() == {
             "meta": {"code": 1, "title": "InvalidParameterError"},
             "detail": f"list_id: {list_id} is not related to token_address: {token_address2}",
+        }
+
+    # Error_6
+    # 422: Request Validation Error
+    # Issuer-address in request header is not set.
+    @mock.patch("web3.eth.Eth.blockNumber", 100)
+    def test_error_6(self, client, db):
+        # Issue Token
+        user = config_eth_account("user1")
+        issuer_address = user["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        db.add(_token)
+
+        list_id = str(uuid.uuid4())
+        _token_holders_collection = TokenHoldersList()
+        _token_holders_collection.list_id = list_id
+        _token_holders_collection.token_address = token_address
+        _token_holders_collection.block_number = 100
+        _token_holders_collection.batch_status = TokenHolderBatchStatus.DONE.value
+
+        db.add(_token_holders_collection)
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(token_address=token_address, list_id=list_id)
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    'loc': ['header', 'issuer-address'],
+                    'msg': 'field required',
+                    'type': 'value_error.missing'
+                }
+            ]
         }

@@ -67,11 +67,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
             headers={"issuer-address": issuer_address},
         )
 
-        stored_data: TokenHoldersList = (
-            db.query(TokenHoldersList)
-            .filter(TokenHoldersList.list_id == list_id)
-            .first()
-        )
+        stored_data: TokenHoldersList = db.query(TokenHoldersList).filter(TokenHoldersList.list_id == list_id).first()
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
@@ -416,4 +412,39 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         assert resp.json() == {
             "meta": {"code": 1, "title": "InvalidParameterError"},
             "detail": "wait for a while as the token is being processed",
+        }
+
+    # Error_7
+    # 422: Validation Error
+    # Issuer-address in request header is not set.
+    @mock.patch("web3.eth.Eth.blockNumber", 100)
+    def test_error_7(self, client, db):
+        # issue token
+        user = config_eth_account("user1")
+        issuer_address = user["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        db.add(_token)
+
+        list_id = str(uuid.uuid4())
+
+        # request target API
+        req_param = {"block_number": 100, "list_id": list_id}
+        # request target api
+        resp = client.post(
+            self.base_url.format(token_address=token_address),
+            json=req_param,
+        )
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [{"loc": ["header", "issuer-address"], "msg": "field required", "type": "value_error.missing"}],
         }

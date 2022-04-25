@@ -75,10 +75,7 @@ class GetTokenHoldersListResponse(BaseModel):
                 "holders": [
                     {
                         "account_address": "0x85a8b8887a4bD76859751b10C8aC8EC5f3aA1bDB",
-                        "balance": 30000,
-                        "pending_transfer": 0,
-                        "exchange_balance": 20000,
-                        "exchange_commitment": 10000,
+                        "hold_balance": 30000
                     }
                 ],
             }

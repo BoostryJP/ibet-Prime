@@ -40,10 +40,7 @@ def upgrade():
             "holder_list_id", sa.BigInteger(), autoincrement=True, nullable=False
         ),
         sa.Column("account_address", sa.String(length=42), nullable=False),
-        sa.Column("balance", sa.BigInteger(), nullable=False),
-        sa.Column("exchange_balance", sa.BigInteger(), nullable=False),
-        sa.Column("exchange_commitment", sa.BigInteger(), nullable=False),
-        sa.Column("pending_transfer", sa.BigInteger(), nullable=False),
+        sa.Column("hold_balance", sa.BigInteger(), nullable=False),
         sa.PrimaryKeyConstraint("holder_list_id", "account_address"),
     )
     # ### end Alembic commands ###

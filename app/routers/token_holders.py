@@ -68,7 +68,7 @@ def create_collection(
         example="0xABCdeF1234567890abcdEf123456789000000000",
         description="UUID v4 required",
     ),
-    issuer_address: str = Header(None),
+    issuer_address: str = Header(...),
     db: Session = Depends(db_session),
 ):
     """Create collection"""
@@ -152,14 +152,19 @@ def get_token_holders(
         example="cfd83622-34dc-4efe-a68b-2cc275d3d824",
         description="UUID v4 required",
     ),
+    issuer_address: str = Header(...),
     db: Session = Depends(db_session),
 ):
     """Get token holders"""
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get Token to ensure input token valid
     query = (
         db.query(Token)
         .filter(Token.token_address == token_address)
+        .filter(Token.issuer_address == issuer_address)
         .filter(Token.token_status != 2)
     )
     _token = query.first()
