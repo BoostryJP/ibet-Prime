@@ -147,9 +147,8 @@ class ContractUtils:
         :param default_returns: Default return when web3 exceptions are raised
         :return: Return from function or default return
         """
-        _function = getattr(contract.functions, function_name)
-
         try:
+            _function = getattr(contract.functions, function_name)
             result = _function(*args).call()
         except (BadFunctionCallOutput, ABIFunctionNotFound) as web3_exception:
             if default_returns is not None:
