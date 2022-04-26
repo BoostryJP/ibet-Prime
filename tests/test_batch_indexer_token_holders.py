@@ -19,8 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import logging
 import uuid
 from typing import List
-from unittest import mock
-from unittest.mock import MagicMock
+from unittest.mock import patch, MagicMock
 import pytest
 
 from eth_keyfile import decode_keyfile_json
@@ -60,7 +59,7 @@ def processor(db):
 
 
 @pytest.fixture
-def contract_list(db):
+def contract_list():
     test_account = config_eth_account("user1")
     deployer_address = test_account.get("address")
     private_key = decode_keyfile_json(
@@ -326,7 +325,7 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
 
         # Then execute processor.
-        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
             processor.collect()
 
         user1_record: TokenHolder = (
@@ -456,7 +455,7 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
 
         # Then execute processor.
-        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
             processor.collect()
 
         user1_record: TokenHolder = (
@@ -573,7 +572,7 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
 
         # Then execute processor.
-        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
             processor.collect()
 
         user1_record: TokenHolder = (
@@ -731,7 +730,7 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
 
         # Then execute processor.
-        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
             processor.collect()
 
         user1_record: TokenHolder = (
@@ -861,7 +860,7 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
 
         # Then execute processor.
-        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
             processor.collect()
 
         user1_record: TokenHolder = (
@@ -979,7 +978,7 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
 
         # Then execute processor.
-        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
             processor.collect()
 
         user1_record: TokenHolder = (
@@ -1011,17 +1010,19 @@ class TestProcessor:
         personal_info_contract,
         ibet_exchange_contract,
         block_number: None,
-        caplog,
+        caplog: pytest.LogCaptureFixture,
     ):
         exchange_contract = ibet_exchange_contract
-        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
             processor.collect()
         LOG.setLevel(logging.DEBUG)
         LOG.addHandler(caplog.handler)
         with caplog.at_level(logging.DEBUG):
-            with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+            with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
                 processor.collect()
         assert f"There are no pending collect batch" in caplog.text
+        LOG.removeHandler(caplog.handler)
+        LOG.setLevel(logging.INFO)
 
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1081,13 +1082,16 @@ class TestProcessor:
         db.commit()
 
         # Then execute processor.
-        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
             processor.collect()
 
+        LOG.setLevel(logging.DEBUG)
         LOG.addHandler(caplog.handler)
-        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
             with caplog.at_level(logging.INFO):
                 processor.collect()
+        LOG.removeHandler(caplog.handler)
+        LOG.setLevel(logging.INFO)
         assert f"Token holder list({_token_holders_list2.list_id}) status changes to be done." in caplog.text
         assert f"Collect job has been completed" in caplog.text
 
@@ -1105,12 +1109,15 @@ class TestProcessor:
         personal_info_contract,
         ibet_exchange_contract,
         block_number: None,
-        caplog,
+        caplog: pytest.LogCaptureFixture,
     ):
+        LOG.setLevel(logging.DEBUG)
         LOG.addHandler(caplog.handler)
-        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
             with caplog.at_level(logging.DEBUG):
                 processor.collect()
+        LOG.removeHandler(caplog.handler)
+        LOG.setLevel(logging.INFO)
         assert "There are no pending collect batch" in caplog.text
         assert "Collect job has been completed" in caplog.text
 
@@ -1125,7 +1132,7 @@ class TestProcessor:
         personal_info_contract,
         ibet_exchange_contract,
         block_number: None,
-        caplog,
+        caplog: pytest.LogCaptureFixture,
     ):
         # Insert collection definition with token address Zero
         target_token_holders_list = TokenHoldersList()
@@ -1137,10 +1144,13 @@ class TestProcessor:
         db.commit()
 
         # Debug message should be shown that points out token contract must be listed.
+        LOG.setLevel(logging.DEBUG)
         LOG.addHandler(caplog.handler)
-        with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
             with caplog.at_level(logging.DEBUG):
                 processor.collect()
+        LOG.removeHandler(caplog.handler)
+        LOG.setLevel(logging.INFO)
         assert "Token contract must be listed to TokenList contract." in caplog.text
         assert f"Collect job has been completed" in caplog.text
 
@@ -1158,7 +1168,7 @@ class TestProcessor:
         personal_info_contract,
         ibet_exchange_contract,
         block_number: None,
-        caplog,
+        caplog: pytest.LogCaptureFixture,
     ):
         exchange_contract = ibet_exchange_contract
         user_1 = config_eth_account("user1")
@@ -1211,10 +1221,10 @@ class TestProcessor:
         db.commit()
 
         mock_lib = MagicMock()
-        with mock.patch.object(Processor, "_Processor__process_all", return_value=mock_lib) as __sync_all_mock:
+        with patch.object(Processor, "_Processor__process_all", return_value=mock_lib) as __sync_all_mock:
             # Then execute processor.
             __sync_all_mock.return_value = None
-            with mock.patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
+            with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
                 processor.collect()
             _records: List[TokenHolder] = db.query(TokenHolder).filter(TokenHolder.holder_list_id == _token_holders_list.id).all()
             assert len(_records) == 0

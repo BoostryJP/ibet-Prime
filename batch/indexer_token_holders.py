@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import os
 import sys
 import time
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Tuple
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -30,20 +30,24 @@ from web3.exceptions import ABIEventFunctionNotFound
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
+from config import (
+    DATABASE_URL,
+    ZERO_ADDRESS,
+    INDEXER_SYNC_INTERVAL,
+    TOKEN_LIST_CONTRACT_ADDRESS
+)
 from app.exceptions import ServiceUnavailableError
 from app.model.db import TokenType, TokenHolder, TokenHoldersList, TokenHolderBatchStatus, Token
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
-
 import batch_log
-from config import DATABASE_URL, ZERO_ADDRESS, INDEXER_SYNC_INTERVAL, TOKEN_LIST_CONTRACT_ADDRESS
 
 process_name = "INDEXER-Token-Holders"
 LOG = batch_log.get_logger(process_name=process_name)
 
-web3 = Web3Wrapper()
-
 db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
+
+web3 = Web3Wrapper()
 
 
 class Processor:
@@ -103,7 +107,7 @@ class Processor:
             return False
 
         list_contract = ContractUtils.get_contract(contract_name="TokenList", contract_address=TOKEN_LIST_CONTRACT_ADDRESS)
-        token_info: List[str, 3] = ContractUtils.call_function(
+        token_info: Tuple[str, str, str] = ContractUtils.call_function(
             contract=list_contract,
             function_name="getTokenByAddress",
             args=(self.target.token_address,),

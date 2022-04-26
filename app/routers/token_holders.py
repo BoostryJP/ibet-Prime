@@ -50,9 +50,6 @@ router = APIRouter(
     tags=["token"],
 )
 
-local_tz = pytz.timezone(config.TZ)
-utc_tz = pytz.timezone("UTC")
-
 # POST: /token/holders/{token_address}/collection
 
 
@@ -64,7 +61,7 @@ utc_tz = pytz.timezone("UTC")
 def create_collection(
     data: CreateTokenHoldersListRequest,
     token_address: str = Path(
-        None,
+        ...,
         example="0xABCdeF1234567890abcdEf123456789000000000",
         description="UUID v4 required",
     ),
@@ -146,9 +143,9 @@ def create_collection(
     responses=get_routers_responses(404, InvalidParameterError),
 )
 def get_token_holders(
-    token_address: str = Path(None),
+    token_address: str = Path(...),
     list_id: str = Path(
-        None,
+        ...,
         example="cfd83622-34dc-4efe-a68b-2cc275d3d824",
         description="UUID v4 required",
     ),

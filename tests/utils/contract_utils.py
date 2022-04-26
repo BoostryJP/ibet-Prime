@@ -162,7 +162,6 @@ class IbetSecurityTokenContractTestUtils:
             })
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
-
     @staticmethod
     def set_transfer_approve_required(contract_address: str, tx_from: str, private_key: str, args: list):
         security_token_contract = ContractUtils.get_contract(
@@ -178,7 +177,6 @@ class IbetSecurityTokenContractTestUtils:
                 "gasPrice": 0
             })
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
-
 
     @staticmethod
     def apply_for_transfer(contract_address: str, tx_from: str, private_key: str, args: list):
@@ -212,7 +210,6 @@ class IbetSecurityTokenContractTestUtils:
             })
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
-
     @staticmethod
     def approve_transfer(contract_address: str, tx_from: str, private_key: str, args: list):
         security_token_contract = ContractUtils.get_contract(
@@ -239,7 +236,6 @@ class IbetExchangeContractTestUtils:
             contract_address=contract_address
         )
         return exchange_contract.functions.balanceOf(account_address, token_address).call()
-
 
     @staticmethod
     def create_order(contract_address: str, tx_from: str, private_key: str, args: list):
