@@ -209,17 +209,13 @@ class Processor:
         """
         try:
             tmp_events = []
-            try:
-                # Get "HolderChanged" events from exchange contract
-                holder_changed_events = ContractUtils.get_event_logs(
-                    contract=self.exchange_contract,
-                    event="HolderChanged",
-                    block_from=block_from,
-                    block_to=block_to,
-                )
-            except ABIEventFunctionNotFound:
-                holder_changed_events = []
-
+            # Get "HolderChanged" events from exchange contract
+            holder_changed_events = ContractUtils.get_event_logs(
+                contract=self.exchange_contract,
+                event="HolderChanged",
+                block_from=block_from,
+                block_to=block_to,
+            )
             for _event in holder_changed_events:
                 if self.token_contract.address == _event["args"]["token"]:
                     tmp_events.append(
@@ -231,15 +227,14 @@ class Processor:
                             "log_index": _event["logIndex"],
                         }
                     )
-            try:
-                # Get "Transfer" events from token contract
-                token_transfer_events = self.token_contract.events.Transfer.getLogs(
-                    fromBlock=block_from,
-                    toBlock=block_to
-                )
-            except ABIEventFunctionNotFound:
-                token_transfer_events = []
 
+            # Get "Transfer" events from token contract
+            token_transfer_events = ContractUtils.get_event_logs(
+                contract=self.token_contract,
+                event="Transfer",
+                block_from=block_from,
+                block_to=block_to,
+            )
             for _event in token_transfer_events:
                 tmp_events.append(
                     {
