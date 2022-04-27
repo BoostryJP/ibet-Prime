@@ -36,7 +36,8 @@ from app.routers import (
     ledger,
     notification,
     position,
-    share
+    share,
+    token_holders
 )
 from app.utils.docs_utils import custom_openapi
 from app.exceptions import *
@@ -76,6 +77,7 @@ app.include_router(ledger.router)
 app.include_router(notification.router)
 app.include_router(position.router)
 app.include_router(share.router)
+app.include_router(token_holders.router)
 
 
 ###############################################################
