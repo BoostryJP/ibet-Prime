@@ -50,9 +50,8 @@ router = APIRouter(
     tags=["token"],
 )
 
+
 # POST: /token/holders/{token_address}/collection
-
-
 @router.post(
     "/holders/{token_address}/collection",
     response_model=CreateTokenHoldersListResponse,
@@ -63,7 +62,6 @@ def create_collection(
     token_address: str = Path(
         ...,
         example="0xABCdeF1234567890abcdEf123456789000000000",
-        description="UUID v4 required",
     ),
     issuer_address: str = Header(...),
     db: Session = Depends(db_session),
@@ -169,13 +167,6 @@ def get_token_holders(
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
         raise InvalidParameterError("wait for a while as the token is being processed")
-
-    # Validate list id
-    try:
-        _uuid = uuid.UUID(list_id, version=4)
-    except ValueError:
-        description = "list_id must be UUIDv4."
-        raise InvalidParameterError(description)
 
     # Check existing list
     _same_list_id_record: TokenHoldersList = (

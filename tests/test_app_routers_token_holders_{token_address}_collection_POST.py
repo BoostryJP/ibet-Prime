@@ -244,8 +244,8 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         }
 
     # Error_3
-    # 400: Invalid Parameter Error
-    # "list_id" is not UUID.
+    # 422: Invalid Parameter Error
+    # "list_id" is not UUIDv4.
     @mock.patch("web3.eth.Eth.blockNumber", 100)
     def test_error_3(self, client, db):
         # issue token
@@ -272,10 +272,10 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
             headers={"issuer-address": issuer_address},
         )
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {"code": 1, "title": "InvalidParameterError"},
-            "detail": "list_id must be UUIDv4.",
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [{"loc": ["body", "list_id"], "msg": "list_id is not UUIDv4.", "type": "value_error"}],
         }
 
     # Error_4

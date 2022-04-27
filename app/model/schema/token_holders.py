@@ -16,9 +16,9 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import uuid
 from typing import List, Dict, Union
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from app.model.db import TokenHolderBatchStatus
 
 
@@ -40,6 +40,14 @@ class CreateTokenHoldersListRequest(BaseModel):
                 "block_number": 765,
             }
         }
+
+    @validator("list_id")
+    def list_id_is_uuid_v4(cls, v):
+        try:
+            _uuid = uuid.UUID(v, version=4)
+        except ValueError:
+            raise ValueError("list_id is not UUIDv4.")
+        return v
 
 
 ############################

@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import os
 import sys
 import time
-from typing import Optional, Dict, List, Tuple
+from typing import Optional, Dict, List
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -30,12 +30,7 @@ from web3.exceptions import ABIEventFunctionNotFound
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
-from config import (
-    DATABASE_URL,
-    ZERO_ADDRESS,
-    INDEXER_SYNC_INTERVAL,
-    TOKEN_LIST_CONTRACT_ADDRESS
-)
+from config import DATABASE_URL, ZERO_ADDRESS, INDEXER_SYNC_INTERVAL
 from app.exceptions import ServiceUnavailableError
 from app.model.db import TokenType, TokenHolder, TokenHoldersList, TokenHolderBatchStatus, Token
 from app.utils.contract_utils import ContractUtils
@@ -105,19 +100,12 @@ class Processor:
         )
         if not issued_token:
             return False
-
-        list_contract = ContractUtils.get_contract(contract_name="TokenList", contract_address=TOKEN_LIST_CONTRACT_ADDRESS)
-        token_info: Tuple[str, str, str] = ContractUtils.call_function(
-            contract=list_contract,
-            function_name="getTokenByAddress",
-            args=(self.target.token_address,),
-            default_returns=(ZERO_ADDRESS, "", ZERO_ADDRESS),
-        )
-        self.token_owner_address = token_info[2]
+        self.token_owner_address = issued_token.issuer_address
+        token_type = issued_token.type
         # Store token contract.
-        if token_info[1] == TokenType.IBET_STRAIGHT_BOND.value:
+        if token_type == TokenType.IBET_STRAIGHT_BOND.value:
             self.token_contract = ContractUtils.get_contract("IbetStraightBond", self.target.token_address)
-        elif token_info[1] == TokenType.IBET_SHARE.value:
+        elif token_type == TokenType.IBET_SHARE.value:
             self.token_contract = ContractUtils.get_contract("IbetShare", self.target.token_address)
         else:
             return False
@@ -220,12 +208,18 @@ class Processor:
         :return: None
         """
         try:
-            # Get "HolderChanged" events from exchange contract
-            exchange_contract = ContractUtils.get_contract(contract_name="IbetExchangeInterface", contract_address=self.tradable_exchange_address)
-
-            holder_changed_events = exchange_contract.events.HolderChanged.getLogs(fromBlock=block_from, toBlock=block_to)
-
             tmp_events = []
+            try:
+                # Get "HolderChanged" events from exchange contract
+                holder_changed_events = ContractUtils.get_event_logs(
+                    contract=self.exchange_contract,
+                    event="HolderChanged",
+                    block_from=block_from,
+                    block_to=block_to,
+                )
+            except ABIEventFunctionNotFound:
+                holder_changed_events = []
+
             for _event in holder_changed_events:
                 if self.token_contract.address == _event["args"]["token"]:
                     tmp_events.append(
@@ -237,8 +231,14 @@ class Processor:
                             "log_index": _event["logIndex"],
                         }
                     )
-
-            token_transfer_events = self.token_contract.events.Transfer.getLogs(fromBlock=block_from, toBlock=block_to)
+            try:
+                # Get "Transfer" events from token contract
+                token_transfer_events = self.token_contract.events.Transfer.getLogs(
+                    fromBlock=block_from,
+                    toBlock=block_to
+                )
+            except ABIEventFunctionNotFound:
+                token_transfer_events = []
 
             for _event in token_transfer_events:
                 tmp_events.append(
@@ -270,8 +270,7 @@ class Processor:
 
                     # Update Balance（to account）
                     self.balance_book.store(account_address=to_account, amount=+amount)
-        except ABIEventFunctionNotFound:
-            return
+
         except Exception:
             LOG.exception("An exception occurred during event synchronization")
 
@@ -288,7 +287,6 @@ class Processor:
         try:
             # Get "Issue" events from token contract
             events = self.token_contract.events.Issue.getLogs(fromBlock=block_from, toBlock=block_to)
-
             for event in events:
                 args = event["args"]
                 account_address = args.get("targetAddress", ZERO_ADDRESS)

@@ -24,7 +24,7 @@ from .base import Base
 
 
 class TokenHoldersList(Base):
-    """Issued Token"""
+    """Token Holder List"""
 
     __tablename__ = "token_holders_list"
 
@@ -46,7 +46,7 @@ class TokenHolderBatchStatus(str, Enum):
 
 
 class TokenHolder(Base):
-    """Issued Token"""
+    """Token Holder"""
 
     __tablename__ = "token_holder"
 

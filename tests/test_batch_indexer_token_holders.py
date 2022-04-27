@@ -35,7 +35,6 @@ from app.model.db import (
 from app.model.blockchain import (
     IbetStraightBondContract,
     IbetShareContract,
-    TokenListContract,
 )
 from app.model.schema import IbetStraightBondUpdate, IbetShareUpdate
 from app.utils.web3_utils import Web3Wrapper
@@ -56,23 +55,6 @@ web3 = Web3Wrapper()
 @pytest.fixture(scope="function")
 def processor(db):
     return Processor()
-
-
-@pytest.fixture
-def contract_list():
-    test_account = config_eth_account("user1")
-    deployer_address = test_account.get("address")
-    private_key = decode_keyfile_json(
-        raw_keyfile_json=test_account.get("keyfile_json"),
-        password=test_account.get("password").encode("utf-8"),
-    )
-    contract_address, abi, tx_hash = ContractUtils.deploy_contract(
-        contract_name="TokenList",
-        args=[],
-        deployer=deployer_address,
-        private_key=private_key,
-    )
-    return contract_address
 
 
 def deploy_personal_info_contract(issuer_user):
@@ -201,10 +183,8 @@ class TestProcessor:
         self,
         processor,
         db,
-        contract_list,
         personal_info_contract,
-        ibet_exchange_contract,
-        block_number: None,
+        ibet_exchange_contract
     ):
         exchange_contract = ibet_exchange_contract
         user_1 = config_eth_account("user1")
@@ -233,14 +213,6 @@ class TestProcessor:
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         db.add(token_1)
-
-        TokenListContract.register(
-            token_list_address=contract_list,
-            token_address=token_contract.address,
-            token_template=TokenType.IBET_STRAIGHT_BOND.value,
-            account_address=issuer_address,
-            private_key=issuer_private_key,
-        )
 
         PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_1, user_pk_1, [issuer_address, ""])
         PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_2, user_pk_2, [issuer_address, ""])
@@ -325,8 +297,7 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
 
         # Then execute processor.
-        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
-            processor.collect()
+        processor.collect()
 
         user1_record: TokenHolder = (
             db.query(TokenHolder)
@@ -360,10 +331,8 @@ class TestProcessor:
         self,
         processor,
         db,
-        contract_list,
         personal_info_contract,
-        ibet_security_token_escrow_contract,
-        block_number: None,
+        ibet_security_token_escrow_contract
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -391,14 +360,6 @@ class TestProcessor:
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         db.add(token_1)
-
-        TokenListContract.register(
-            token_list_address=contract_list,
-            token_address=token_contract.address,
-            token_template=TokenType.IBET_STRAIGHT_BOND.value,
-            account_address=issuer_address,
-            private_key=issuer_private_key,
-        )
 
         PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_1, user_pk_1, [issuer_address, ""])
         PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_2, user_pk_2, [issuer_address, ""])
@@ -455,8 +416,7 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
 
         # Then execute processor.
-        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
-            processor.collect()
+        processor.collect()
 
         user1_record: TokenHolder = (
             db.query(TokenHolder)
@@ -485,10 +445,8 @@ class TestProcessor:
         self,
         processor,
         db,
-        contract_list,
         personal_info_contract,
-        ibet_security_token_escrow_contract,
-        block_number: None,
+        ibet_security_token_escrow_contract
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -516,14 +474,6 @@ class TestProcessor:
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         db.add(token_1)
-
-        TokenListContract.register(
-            token_list_address=contract_list,
-            token_address=token_contract.address,
-            token_template=TokenType.IBET_STRAIGHT_BOND.value,
-            account_address=issuer_address,
-            private_key=issuer_private_key,
-        )
 
         PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_1, user_pk_1, [issuer_address, ""])
         PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_2, user_pk_2, [issuer_address, ""])
@@ -572,8 +522,7 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
 
         # Then execute processor.
-        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
-            processor.collect()
+        processor.collect()
 
         user1_record: TokenHolder = (
             db.query(TokenHolder)
@@ -606,10 +555,8 @@ class TestProcessor:
         self,
         processor,
         db,
-        contract_list,
         personal_info_contract,
-        ibet_exchange_contract,
-        block_number: None,
+        ibet_exchange_contract
     ):
         exchange_contract = ibet_exchange_contract
         user_1 = config_eth_account("user1")
@@ -638,14 +585,6 @@ class TestProcessor:
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         db.add(token_1)
-
-        TokenListContract.register(
-            token_list_address=contract_list,
-            token_address=token_contract.address,
-            token_template=TokenType.IBET_SHARE.value,
-            account_address=issuer_address,
-            private_key=issuer_private_key,
-        )
 
         PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_1, user_pk_1, [issuer_address, ""])
         PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_2, user_pk_2, [issuer_address, ""])
@@ -730,8 +669,7 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
 
         # Then execute processor.
-        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
-            processor.collect()
+        processor.collect()
 
         user1_record: TokenHolder = (
             db.query(TokenHolder)
@@ -765,10 +703,8 @@ class TestProcessor:
         self,
         processor,
         db,
-        contract_list,
         personal_info_contract,
-        ibet_security_token_escrow_contract,
-        block_number: None,
+        ibet_security_token_escrow_contract
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -796,14 +732,6 @@ class TestProcessor:
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         db.add(token_1)
-
-        TokenListContract.register(
-            token_list_address=contract_list,
-            token_address=token_contract.address,
-            token_template=TokenType.IBET_SHARE.value,
-            account_address=issuer_address,
-            private_key=issuer_private_key,
-        )
 
         PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_1, user_pk_1, [issuer_address, ""])
         PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_2, user_pk_2, [issuer_address, ""])
@@ -860,8 +788,7 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
 
         # Then execute processor.
-        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
-            processor.collect()
+        processor.collect()
 
         user1_record: TokenHolder = (
             db.query(TokenHolder)
@@ -890,10 +817,8 @@ class TestProcessor:
         self,
         processor,
         db,
-        contract_list,
         personal_info_contract,
-        ibet_security_token_escrow_contract,
-        block_number: None,
+        ibet_security_token_escrow_contract
     ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -921,14 +846,6 @@ class TestProcessor:
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
         db.add(token_1)
-
-        TokenListContract.register(
-            token_list_address=contract_list,
-            token_address=token_contract.address,
-            token_template=TokenType.IBET_SHARE.value,
-            account_address=issuer_address,
-            private_key=issuer_private_key,
-        )
 
         PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_1, user_pk_1, [issuer_address, ""])
         PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_2, user_pk_2, [issuer_address, ""])
@@ -978,8 +895,7 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
 
         # Then execute processor.
-        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
-            processor.collect()
+        processor.collect()
 
         user1_record: TokenHolder = (
             db.query(TokenHolder)
@@ -1006,20 +922,16 @@ class TestProcessor:
         self,
         processor: Processor,
         db,
-        contract_list,
         personal_info_contract,
         ibet_exchange_contract,
-        block_number: None,
-        caplog: pytest.LogCaptureFixture,
+        caplog: pytest.LogCaptureFixture
     ):
         exchange_contract = ibet_exchange_contract
-        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
-            processor.collect()
+        processor.collect()
         LOG.setLevel(logging.DEBUG)
         LOG.addHandler(caplog.handler)
         with caplog.at_level(logging.DEBUG):
-            with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
-                processor.collect()
+            processor.collect()
         assert f"There are no pending collect batch" in caplog.text
         LOG.removeHandler(caplog.handler)
         LOG.setLevel(logging.INFO)
@@ -1051,14 +963,6 @@ class TestProcessor:
         token_1.tx_hash = "tx_hash"
         db.add(token_1)
 
-        TokenListContract.register(
-            token_list_address=contract_list,
-            token_address=token_contract.address,
-            token_template=TokenType.IBET_STRAIGHT_BOND.value,
-            account_address=issuer_address,
-            private_key=issuer_private_key,
-        )
-
         PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_1, user_pk_1, [issuer_address, ""])
         PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_2, user_pk_2, [issuer_address, ""])
         PersonalInfoContractTestUtils.register(personal_info_contract.address, issuer_address, issuer_private_key, [issuer_address, ""])
@@ -1082,14 +986,12 @@ class TestProcessor:
         db.commit()
 
         # Then execute processor.
-        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
-            processor.collect()
+        processor.collect()
 
         LOG.setLevel(logging.DEBUG)
         LOG.addHandler(caplog.handler)
-        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
-            with caplog.at_level(logging.INFO):
-                processor.collect()
+        with caplog.at_level(logging.INFO):
+            processor.collect()
         LOG.removeHandler(caplog.handler)
         LOG.setLevel(logging.INFO)
         assert f"Token holder list({_token_holders_list2.list_id}) status changes to be done." in caplog.text
@@ -1105,17 +1007,14 @@ class TestProcessor:
         self,
         processor: Processor,
         db,
-        contract_list,
         personal_info_contract,
         ibet_exchange_contract,
-        block_number: None,
-        caplog: pytest.LogCaptureFixture,
+        caplog: pytest.LogCaptureFixture
     ):
         LOG.setLevel(logging.DEBUG)
         LOG.addHandler(caplog.handler)
-        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
-            with caplog.at_level(logging.DEBUG):
-                processor.collect()
+        with caplog.at_level(logging.DEBUG):
+            processor.collect()
         LOG.removeHandler(caplog.handler)
         LOG.setLevel(logging.INFO)
         assert "There are no pending collect batch" in caplog.text
@@ -1128,11 +1027,9 @@ class TestProcessor:
         self,
         processor: Processor,
         db,
-        contract_list,
         personal_info_contract,
         ibet_exchange_contract,
-        block_number: None,
-        caplog: pytest.LogCaptureFixture,
+        caplog: pytest.LogCaptureFixture
     ):
         # Insert collection definition with token address Zero
         target_token_holders_list = TokenHoldersList()
@@ -1146,9 +1043,8 @@ class TestProcessor:
         # Debug message should be shown that points out token contract must be listed.
         LOG.setLevel(logging.DEBUG)
         LOG.addHandler(caplog.handler)
-        with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
-            with caplog.at_level(logging.DEBUG):
-                processor.collect()
+        with caplog.at_level(logging.DEBUG):
+            processor.collect()
         LOG.removeHandler(caplog.handler)
         LOG.setLevel(logging.INFO)
         assert "Token contract must be listed to TokenList contract." in caplog.text
@@ -1164,11 +1060,9 @@ class TestProcessor:
         self,
         processor: Processor,
         db,
-        contract_list,
         personal_info_contract,
         ibet_exchange_contract,
-        block_number: None,
-        caplog: pytest.LogCaptureFixture,
+        caplog: pytest.LogCaptureFixture
     ):
         exchange_contract = ibet_exchange_contract
         user_1 = config_eth_account("user1")
@@ -1198,14 +1092,6 @@ class TestProcessor:
         token_1.tx_hash = "tx_hash"
         db.add(token_1)
 
-        TokenListContract.register(
-            token_list_address=contract_list,
-            token_address=token_contract.address,
-            token_template=TokenType.IBET_STRAIGHT_BOND.value,
-            account_address=issuer_address,
-            private_key=issuer_private_key,
-        )
-
         PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_1, user_pk_1, [issuer_address, ""])
         PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_2, user_pk_2, [issuer_address, ""])
         PersonalInfoContractTestUtils.register(personal_info_contract.address, issuer_address, issuer_private_key, [issuer_address, ""])
@@ -1224,7 +1110,6 @@ class TestProcessor:
         with patch.object(Processor, "_Processor__process_all", return_value=mock_lib) as __sync_all_mock:
             # Then execute processor.
             __sync_all_mock.return_value = None
-            with patch("batch.indexer_token_holders.TOKEN_LIST_CONTRACT_ADDRESS", contract_list):
-                processor.collect()
+            processor.collect()
             _records: List[TokenHolder] = db.query(TokenHolder).filter(TokenHolder.holder_list_id == _token_holders_list.id).all()
             assert len(_records) == 0
