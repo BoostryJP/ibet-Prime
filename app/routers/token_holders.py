@@ -84,13 +84,6 @@ def create_collection(
     if _token.token_status == 0:
         raise InvalidParameterError("wait for a while as the token is being processed")
 
-    # Validate list id
-    try:
-        _uuid = uuid.UUID(data.list_id, version=4)
-    except ValueError:
-        description = "list_id must be UUIDv4."
-        raise InvalidParameterError(description)
-
     # Validate block number
     if data.block_number > web3.eth.blockNumber:
         raise InvalidParameterError("Block number must be current or past one.")
@@ -167,6 +160,13 @@ def get_token_holders(
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
         raise InvalidParameterError("wait for a while as the token is being processed")
+
+    # Validate list id
+    try:
+        _uuid = uuid.UUID(list_id, version=4)
+    except ValueError:
+        description = "list_id must be UUIDv4."
+        raise InvalidParameterError(description)
 
     # Check existing list
     _same_list_id_record: TokenHoldersList = (
