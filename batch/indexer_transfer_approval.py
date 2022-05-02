@@ -207,8 +207,8 @@ class Processor:
                             application_id=args.get("index"),
                             notice_code=0
                         )
-            except Exception as e:
-                LOG.exception(e)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     def __sync_token_cancel_transfer(self, db_session: Session, block_from, block_to):
         """Sync CancelTransfer Events of Tokens
@@ -245,8 +245,8 @@ class Processor:
                         application_id=args.get("index"),
                         notice_code=1
                     )
-            except Exception as e:
-                LOG.exception(e)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     def __sync_token_approve_transfer(self, db_session: Session, block_from, block_to):
         """Sync ApproveTransfer Events of Tokens
@@ -286,8 +286,8 @@ class Processor:
                         application_id=args.get("index"),
                         notice_code=2
                     )
-            except Exception as e:
-                LOG.exception(e)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     def __sync_exchange_apply_for_transfer(self, db_session: Session, block_from, block_to):
         """Sync ApplyForTransfer events of exchanges
@@ -332,8 +332,8 @@ class Processor:
                             application_id=args.get("escrowId"),
                             notice_code=0
                         )
-            except Exception as e:
-                LOG.exception(e)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     def __sync_exchange_cancel_transfer(self, db_session: Session, block_from, block_to):
         """Sync CancelTransfer events of exchanges
@@ -370,8 +370,8 @@ class Processor:
                         application_id=args.get("escrowId"),
                         notice_code=1
                     )
-            except Exception as e:
-                LOG.exception(e)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     def __sync_exchange_escrow_finished(self, db_session: Session, block_from: int, block_to: int):
         """Sync EscrowFinished events of exchanges
@@ -409,8 +409,8 @@ class Processor:
                         application_id=args.get("escrowId"),
                         notice_code=3
                     )
-            except Exception as e:
-                LOG.exception(e)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     def __sync_exchange_approve_transfer(self, db_session: Session, block_from: int, block_to: int):
         """Sync ApproveTransfer events of exchanges
@@ -448,8 +448,8 @@ class Processor:
                         application_id=args.get("escrowId"),
                         notice_code=2
                     )
-            except Exception as e:
-                LOG.exception(e)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     def __register_notification(self,
                                 db_session: Session,

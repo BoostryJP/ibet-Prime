@@ -165,8 +165,8 @@ class Processor:
                             timestamp=timestamp
                         )
                         db_session.commit()
-            except Exception as err:
-                LOG.error(err)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     def __sync_personal_info_modify(self, db_session: Session, block_from, block_to):
         for _personal_info_contract in self.personal_info_contract_list:
@@ -190,8 +190,8 @@ class Processor:
                             timestamp=timestamp
                         )
                         db_session.commit()
-            except Exception as err:
-                LOG.error(err)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     @staticmethod
     def __sink_on_personal_info(db_session: Session,
@@ -231,8 +231,8 @@ def main():
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:
             LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
-        except Exception as ex:
-            LOG.exception(ex)
+        except Exception:
+            LOG.exception("An exception occurred during event synchronization")
 
         time.sleep(INDEXER_SYNC_INTERVAL)
 

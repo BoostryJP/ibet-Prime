@@ -25,7 +25,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from web3.contract import Contract
-from web3.exceptions import ABIEventFunctionNotFound
 
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
@@ -281,7 +280,12 @@ class Processor:
         """
         try:
             # Get "Issue" events from token contract
-            events = self.token_contract.events.Issue.getLogs(fromBlock=block_from, toBlock=block_to)
+            events = ContractUtils.get_event_logs(
+                contract=self.token_contract,
+                event="Issue",
+                block_from=block_from,
+                block_to=block_to
+            )
             for event in events:
                 args = event["args"]
                 account_address = args.get("targetAddress", ZERO_ADDRESS)
@@ -292,8 +296,6 @@ class Processor:
                         # Update Balance
                         self.balance_book.store(account_address=account_address, amount=+amount)
 
-        except ABIEventFunctionNotFound:
-            return
         except Exception:
             LOG.exception("An exception occurred during event synchronization")
 
@@ -309,7 +311,12 @@ class Processor:
         """
         try:
             # Get "Redeem" events from token contract
-            events = self.token_contract.events.Redeem.getLogs(fromBlock=block_from, toBlock=block_to)
+            events = ContractUtils.get_event_logs(
+                contract=self.token_contract,
+                event="Redeem",
+                block_from=block_from,
+                block_to=block_to
+            )
 
             for event in events:
                 args = event["args"]
@@ -321,8 +328,6 @@ class Processor:
                         # Update Balance
                         self.balance_book.store(account_address=account_address, amount=-amount)
 
-        except ABIEventFunctionNotFound:
-            return
         except Exception:
             LOG.exception("An exception occurred during event synchronization")
 
