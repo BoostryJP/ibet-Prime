@@ -547,8 +547,11 @@ class TestProcessor:
         block_number = web3.eth.blockNumber
         processor.sync_new_logs()
 
+        # If we query in one session before and after update some record in another session,
+        # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
+        db.expire_all()
+
         # Assertion
-        db.rollback()
         _position_list = db.query(IDXPosition).all()
         assert len(_position_list) == 2
         _position = db.query(IDXPosition).filter(IDXPosition.account_address == issuer_address).first()
@@ -736,8 +739,11 @@ class TestProcessor:
         block_number = web3.eth.blockNumber
         processor.sync_new_logs()
 
+        # If we query in one session before and after update some record in another session,
+        # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
+        db.expire_all()
+
         # Assertion
-        db.rollback()
         _position_list = db.query(IDXPosition).all()
         assert len(_position_list) == 1
         _position = db.query(IDXPosition).filter(IDXPosition.account_address == issuer_address).first()
@@ -999,8 +1005,11 @@ class TestProcessor:
         block_number = web3.eth.blockNumber
         processor.sync_new_logs()
 
+        # If we query in one session before and after update some record in another session,
+        # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
+        db.expire_all()
+
         # Assertion
-        db.rollback()
         _position_list = db.query(IDXPosition).all()
         assert len(_position_list) == 1
         _position = db.query(IDXPosition).filter(IDXPosition.account_address == issuer_address).first()
@@ -1105,8 +1114,11 @@ class TestProcessor:
         block_number = web3.eth.blockNumber
         processor.sync_new_logs()
 
+        # If we query in one session before and after update some record in another session,
+        # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
+        db.expire_all()
+
         # Assertion
-        db.rollback()
         _position_list = db.query(IDXPosition).all()
         assert len(_position_list) == 2
         _position = db.query(IDXPosition).filter(IDXPosition.account_address == issuer_address).first()
@@ -1212,8 +1224,11 @@ class TestProcessor:
         block_number = web3.eth.blockNumber
         processor.sync_new_logs()
 
+        # If we query in one session before and after update some record in another session,
+        # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
+        db.expire_all()
+
         # Assertion
-        db.rollback()
         _position_list = db.query(IDXPosition).all()
         assert len(_position_list) == 1
         _position = db.query(IDXPosition).filter(IDXPosition.account_address == issuer_address).first()
@@ -1747,8 +1762,11 @@ class TestProcessor:
         block_number = web3.eth.blockNumber
         processor.sync_new_logs()
 
+        # If we query in one session before and after update some record in another session,
+        # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
+        db.expire_all()
+
         # Assertion
-        db.rollback()
         _position_list = db.query(IDXPosition).all()
         assert len(_position_list) == 1
         _position = db.query(IDXPosition).filter(IDXPosition.account_address == issuer_address).first()

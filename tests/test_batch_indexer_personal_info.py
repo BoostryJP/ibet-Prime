@@ -454,8 +454,11 @@ class TestProcessor:
         block_number = web3.eth.blockNumber
         processor.process()
 
+        # If we query in one session before and after update some record in another session,
+        # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
+        db.expire_all()
+
         # Assertion
-        db.rollback()
         _personal_info_list = db.query(IDXPersonalInfo).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
@@ -572,8 +575,11 @@ class TestProcessor:
         block_number = web3.eth.blockNumber
         processor.process()
 
+        # If we query in one session before and after update some record in another session,
+        # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
+        db.expire_all()
+
         # Assertion
-        db.rollback()
         _personal_info_list = db.query(IDXPersonalInfo).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
@@ -607,8 +613,11 @@ class TestProcessor:
         block_number = web3.eth.blockNumber
         processor.process()
 
+        # If we query in one session before and after update some record in another session,
+        # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
+        db.expire_all()
+
         # Assertion
-        db.rollback()
         _personal_info_list = db.query(IDXPersonalInfo).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
@@ -753,7 +762,6 @@ class TestProcessor:
         stored_address_order = [line["issuer_address"] for line in unique_list]
 
         # Assertion
-        db.rollback()
         _personal_info_list = db.query(IDXPersonalInfo).all()
         assert len(_personal_info_list) == 2
 
