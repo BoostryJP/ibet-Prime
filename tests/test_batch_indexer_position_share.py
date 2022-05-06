@@ -19,13 +19,13 @@ SPDX-License-Identifier: Apache-2.0
 from eth_keyfile import decode_keyfile_json
 import logging
 import pytest
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.orm import Session
 from unittest import mock
 from unittest.mock import patch
 
-from app.model.db import Token, TokenType, IDXPosition, IDXPositionShareBlockNumber
 from app.exceptions import ServiceUnavailableError
+from app.model.db import Token, TokenType, IDXPosition, IDXPositionShareBlockNumber
 from app.model.blockchain import IbetShareContract
 from app.model.schema import IbetShareUpdate
 from app.utils.web3_utils import Web3Wrapper
@@ -34,10 +34,10 @@ from batch.indexer_position_share import Processor, LOG, main
 from config import CHAIN_ID, TX_GAS_LIMIT, ZERO_ADDRESS
 from tests.account_config import config_eth_account
 from tests.utils.contract_utils import (
-    PersonalInfoContractTestUtils,
     IbetSecurityTokenContractTestUtils as STContractUtils,
-    IbetSecurityTokenEscrowContractTestUtils as STEscrowContractUtils,
     IbetExchangeContractTestUtils,
+    PersonalInfoContractTestUtils,
+    IbetSecurityTokenEscrowContractTestUtils as STEscrowContractUtils,
 )
 
 web3 = Web3Wrapper()
@@ -1357,7 +1357,7 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 30])
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_2, 10])
 
-        # NewOrder(Sell) & CancelOrder
+        # NewOrder(Sell) & ForceCancelOrder
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 10])
         IbetExchangeContractTestUtils.create_order(
             exchange_contract.address, user_address_1, user_pk_1, [token_contract.address, 10, 100, False, issuer_address]
@@ -1442,7 +1442,7 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 30])
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_2, 10])
 
-        # NewOrder(Sell) & CancelOrder
+        # NewOrder(Sell) & ExecuteOrder
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 10])
         IbetExchangeContractTestUtils.create_order(
             exchange_contract.address, user_address_1, user_pk_1, [token_contract.address, 10, 100, False, issuer_address]
@@ -1527,7 +1527,7 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 30])
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_2, 10])
 
-        # NewOrder(Sell) & CancelOrder
+        # NewOrder(Sell) & ExecuteOrder & ConfirmAgreement
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 10])
         IbetExchangeContractTestUtils.create_order(
             exchange_contract.address, user_address_1, user_pk_1, [token_contract.address, 10, 100, False, issuer_address]
@@ -1616,7 +1616,7 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 30])
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_2, 10])
 
-        # NewOrder(Sell) & CancelOrder
+        # NewOrder(Sell) & ExecuteOrder & CancelAgreement
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 10])
         IbetExchangeContractTestUtils.create_order(
             exchange_contract.address, user_address_1, user_pk_1, [token_contract.address, 10, 100, False, issuer_address]
@@ -2618,7 +2618,7 @@ class TestProcessor:
         assert 2 == caplog.record_tuples.count((LOG.name, logging.ERROR, "An exception occurred during event synchronization"))
 
     # <Error_1>
-    # If each error occurs, batch will output logs and continue next sync.
+    # If exception occures out of Processor except-catch, batch outputs logs in mainloop.
     def test_error_1(self, main_func, db :Session, personal_info_contract, caplog: pytest.LogCaptureFixture):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -2642,27 +2642,34 @@ class TestProcessor:
 
         db.commit()
 
+        # Run mainloop once successfully
         with patch("batch.indexer_position_share.INDEXER_SYNC_INTERVAL", None),\
             patch.object(Processor, "sync_new_logs", return_value=True),\
                 pytest.raises(TypeError):
             main_func()
         assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "Processed"))
+        caplog.clear()
 
+        # Run mainloop once and fail with web3 utils error
         with patch("batch.indexer_position_share.INDEXER_SYNC_INTERVAL", None),\
             patch.object(web3.eth, "contract", side_effect=ServiceUnavailableError()), \
                 pytest.raises(TypeError):
             main_func()
-        assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "Processed"))
+        assert 1 == caplog.record_tuples.count((LOG.name, logging.WARNING, "An external service was unavailable"))
+        caplog.clear()
 
+        # Run mainloop once and fail with sqlalchemy InvalidRequestError
         with patch("batch.indexer_position_share.INDEXER_SYNC_INTERVAL", None),\
-            patch.object(Session, "query", side_effect=SQLAlchemyError()), \
+            patch.object(Session, "query", side_effect=InvalidRequestError()), \
                 pytest.raises(TypeError):
             main_func()
         assert 1 == caplog.text.count("A database error has occurred")
+        caplog.clear()
 
+        # Run mainloop once and fail with connection to blockchain
         with patch("batch.indexer_position_share.INDEXER_SYNC_INTERVAL", None),\
-            patch.object(web3.eth, "contract", side_effect=ConnectionRefusedError()), \
-                pytest.raises(Exception):
+            patch.object(ContractUtils, "call_function", side_effect=ConnectionError()), \
+                pytest.raises(TypeError):
             main_func()
         assert 1 == caplog.record_tuples.count((LOG.name, logging.ERROR, "An exception occurred during event synchronization"))
-
+        caplog.clear()

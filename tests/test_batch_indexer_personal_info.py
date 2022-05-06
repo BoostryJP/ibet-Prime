@@ -26,9 +26,8 @@ import json
 from eth_keyfile import decode_keyfile_json
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.orm import Session
-from web3.exceptions import ABIFunctionNotFound
 from app.exceptions import ServiceUnavailableError
 
 from config import (
@@ -880,7 +879,7 @@ class TestProcessor:
 
     # <Error_1>
     # If DB session fails in phase sinking register/modify events, batch logs exception message.
-    def test_error_1(self, db:Session, personal_info_contract, caplog: pytest.LogCaptureFixture):
+    def test_error_1(self, main_func, db:Session, personal_info_contract, caplog: pytest.LogCaptureFixture):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -915,32 +914,34 @@ class TestProcessor:
 
         db.commit()
 
-        LOG.setLevel(logging.DEBUG)
-        LOG.addHandler(caplog.handler)
-
+        # Run mainloop once successfully
         with patch("batch.indexer_personal_info.INDEXER_SYNC_INTERVAL", None),\
             patch.object(Processor, "process", return_value=True), \
                 pytest.raises(TypeError):
-            main()
+            main_func()
         assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "Processed"))
+        caplog.clear()
 
+        # Run mainloop once and fail with web3 utils error
         with patch("batch.indexer_personal_info.INDEXER_SYNC_INTERVAL", None),\
             patch.object(web3.eth, "contract", side_effect=ServiceUnavailableError()), \
                 pytest.raises(TypeError):
-            main()
+            main_func()
         assert 1 == caplog.record_tuples.count((LOG.name, logging.WARNING, "An external service was unavailable"))
+        caplog.clear()
 
+        # Run mainloop once and fail with sqlalchemy InvalidRequestError
         with patch("batch.indexer_personal_info.INDEXER_SYNC_INTERVAL", None),\
-            patch.object(Session, "query", side_effect=SQLAlchemyError()), \
+            patch.object(Session, "query", side_effect=InvalidRequestError()), \
                 pytest.raises(TypeError):
-            main()
+            main_func()
         assert 1 == caplog.text.count("A database error has occurred")
+        caplog.clear()
 
+        # Run mainloop once and fail with connection to blockchain
         with patch("batch.indexer_personal_info.INDEXER_SYNC_INTERVAL", None), \
-            patch.object(ContractUtils, "call_function", ABIFunctionNotFound()), \
+            patch.object(ContractUtils, "call_function", ConnectionError()), \
                 pytest.raises(TypeError):
-            main()
+            main_func()
         assert 1 == caplog.record_tuples.count((LOG.name, logging.ERROR, "An exception occurred during event synchronization"))
-
-        LOG.removeHandler(caplog.handler)
-        LOG.setLevel(logging.INFO)
+        caplog.clear()

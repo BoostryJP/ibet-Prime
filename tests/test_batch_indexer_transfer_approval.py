@@ -1584,14 +1584,18 @@ class TestProcessor:
 
         db.commit()
 
+        # Run mainloop once and fail with web3 utils error
         with patch("batch.indexer_transfer_approval.INDEXER_SYNC_INTERVAL", None),\
             patch.object(web3.eth, "contract", side_effect=ServiceUnavailableError()), \
                 pytest.raises(TypeError):
             main_func()
         assert 1 == caplog.record_tuples.count((LOG.name, logging.WARNING, "An external service was unavailable"))
+        caplog.clear()
 
+        # Run mainloop once and fail with sqlalchemy Error
         with patch("batch.indexer_transfer_approval.INDEXER_SYNC_INTERVAL", None),\
             patch.object(Session, "commit", side_effect=SQLAlchemyError(code="dbapi")), \
                 pytest.raises(TypeError):
             main_func()
         assert 'A database error has occurred: code=dbapi' in caplog.text
+        caplog.clear()

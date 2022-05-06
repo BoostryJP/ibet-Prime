@@ -1192,8 +1192,8 @@ class TestProcessor:
             _records: List[TokenHolder] = db.query(TokenHolder).filter(TokenHolder.holder_list_id == _token_holders_list.id).all()
             assert len(_records) == 0
 
-    # <Error_1>
-    # If DB session fails in phase sinking register/modify events, batch logs exception message.
+    # <Error_4>
+    # If DB session fails in phase sinking events, batch logs exception message.
     def test_error_4(self, main_func, db: Session, ibet_security_token_escrow_contract, personal_info_contract, caplog: pytest.LogCaptureFixture):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -1239,17 +1239,13 @@ class TestProcessor:
         with patch("batch.indexer_token_holders.INDEXER_SYNC_INTERVAL", None),\
             patch.object(Processor, "collect", return_value=True),\
                 pytest.raises(TypeError):
-            main()
+            main_func()
         assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "Processed"))
+        caplog.clear()
 
         with patch("batch.indexer_token_holders.INDEXER_SYNC_INTERVAL", None),\
             patch.object(Session, "close", side_effect=SQLAlchemyError()), \
                 pytest.raises(TypeError):
-            main()
-        assert 1 == caplog.text.count("A database error has occurred")
-
-        with patch("batch.indexer_token_holders.INDEXER_SYNC_INTERVAL", None),\
-            patch.object(web3.eth, "contract", side_effect=ConnectionRefusedError()), \
-                pytest.raises(Exception):
             main_func()
-        assert 1 == caplog.record_tuples.count((LOG.name, logging.ERROR, "An exception occurred during event synchronization"))
+        assert 1 == caplog.text.count("A database error has occurred")
+        caplog.clear()

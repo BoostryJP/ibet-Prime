@@ -20,7 +20,7 @@ from datetime import datetime
 from eth_keyfile import decode_keyfile_json
 import logging
 import pytest
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.orm import Session
 from unittest import mock
 from unittest.mock import patch
@@ -683,27 +683,26 @@ class TestProcessor:
 
         db.commit()
 
+        # Run mainloop once successfully
         with patch("batch.indexer_transfer.INDEXER_SYNC_INTERVAL", None),\
             patch.object(Processor, "sync_new_logs", return_value=True),\
                 pytest.raises(TypeError):
             main_func()
         assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "Processed"))
+        caplog.clear()
 
+        # Run mainloop once and fail with web3 utils error
         with patch("batch.indexer_transfer.INDEXER_SYNC_INTERVAL", None),\
             patch.object(web3.eth, "contract", side_effect=ServiceUnavailableError()), \
                 pytest.raises(TypeError):
             main_func()
         assert 1 == caplog.record_tuples.count((LOG.name, logging.WARNING, "An external service was unavailable"))
+        caplog.clear()
 
+        # Run mainloop once and fail with sqlalchemy InvalidRequestError
         with patch("batch.indexer_transfer.INDEXER_SYNC_INTERVAL", None),\
-            patch.object(Session, "query", side_effect=SQLAlchemyError()), \
+            patch.object(Session, "query", side_effect=InvalidRequestError()), \
                 pytest.raises(TypeError):
             main_func()
         assert 1 == caplog.text.count("A database error has occurred")
-
-        with patch("batch.indexer_transfer.INDEXER_SYNC_INTERVAL", None),\
-            patch.object(web3.eth, "contract", side_effect=ConnectionRefusedError()), \
-                pytest.raises(Exception):
-            main_func()
-        assert 1 == caplog.record_tuples.count((LOG.name, logging.ERROR, "An exception occurred during event synchronization"))
-
+        caplog.clear()
