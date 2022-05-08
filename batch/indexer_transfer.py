@@ -144,8 +144,8 @@ class Processor:
                             amount=args["value"],
                             block_timestamp=block_timestamp
                         )
-            except Exception as e:
-                LOG.error(e)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     @staticmethod
     def __sink_on_transfer(db_session: Session,
@@ -178,8 +178,8 @@ def main():
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:
             LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
-        except Exception as ex:
-            LOG.exception(ex)
+        except Exception:
+            LOG.exception("An exception occurred during event synchronization")
 
         time.sleep(INDEXER_SYNC_INTERVAL)
 

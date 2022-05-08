@@ -164,8 +164,8 @@ class Processor:
                     balance=balance,
                     pending_transfer=pending_transfer
                 )
-            except Exception as e:
-                LOG.exception(e)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     def __sync_issue(self, db_session: Session, block_from: int, block_to: int):
         """Synchronize Issue events
@@ -194,8 +194,8 @@ class Processor:
                         balance=balance,
                         pending_transfer=pending_transfer
                     )
-            except Exception as e:
-                LOG.exception(e)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     def __sync_transfer(self, db_session: Session, block_from: int, block_to: int):
         """Synchronize Transfer events
@@ -229,8 +229,8 @@ class Processor:
                                 exchange_commitment=exchange_commitment,
                                 pending_transfer=pending_transfer
                             )
-            except Exception as e:
-                LOG.exception(e)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     def __sync_lock(self, db_session: Session, block_from: int, block_to: int):
         """Synchronize Lock events
@@ -259,8 +259,8 @@ class Processor:
                         balance=balance,
                         pending_transfer=pending_transfer
                     )
-            except Exception as e:
-                LOG.exception(e)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     def __sync_unlock(self, db_session: Session, block_from: int, block_to: int):
         """Synchronize Unlock events
@@ -289,8 +289,8 @@ class Processor:
                         balance=balance,
                         pending_transfer=pending_transfer
                     )
-            except Exception as e:
-                LOG.exception(e)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     def __sync_redeem(self, db_session: Session, block_from: int, block_to: int):
         """Synchronize Redeem events
@@ -319,8 +319,8 @@ class Processor:
                         balance=balance,
                         pending_transfer=pending_transfer
                     )
-            except Exception as e:
-                LOG.exception(e)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     def __sync_apply_for_transfer(self, db_session: Session, block_from: int, block_to: int):
         """Sync ApplyForTransfer Events
@@ -349,8 +349,8 @@ class Processor:
                         balance=balance,
                         pending_transfer=pending_transfer
                     )
-            except Exception as e:
-                LOG.exception(e)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     def __sync_cancel_transfer(self, db_session: Session, block_from: int, block_to: int):
         """Sync CancelTransfer Events
@@ -379,8 +379,8 @@ class Processor:
                         balance=balance,
                         pending_transfer=pending_transfer
                     )
-            except Exception as e:
-                LOG.exception(e)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     def __sync_approve_transfer(self, db_session: Session, block_from: int, block_to: int):
         """Sync ApproveTransfer Events
@@ -409,8 +409,8 @@ class Processor:
                             balance=balance,
                             pending_transfer=pending_transfer
                         )
-            except Exception as e:
-                LOG.exception(e)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     def __sync_exchange(self, db_session: Session, block_from: int, block_to: int):
         """Sync Events from IbetExchange
@@ -530,8 +530,8 @@ class Processor:
                         exchange_balance=exchange_balance,
                         exchange_commitment=exchange_commitment
                     )
-            except Exception as e:
-                LOG.exception(e)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     def __sync_escrow(self, db_session: Session, block_from: int, block_to: int):
         """Sync Events from IbetSecurityTokenEscrow
@@ -612,8 +612,8 @@ class Processor:
                         exchange_balance=exchange_balance,
                         exchange_commitment=exchange_commitment
                     )
-            except Exception as e:
-                LOG.exception(e)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     @staticmethod
     def __sink_on_position(db_session: Session,
@@ -737,8 +737,8 @@ def main():
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:
             LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
-        except Exception as ex:
-            LOG.exception(ex)
+        except Exception:
+            LOG.exception("An exception occurred during event synchronization")
 
         time.sleep(INDEXER_SYNC_INTERVAL)
 
