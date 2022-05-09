@@ -53,6 +53,8 @@ from app.model.db import (
     LedgerTemplate,
     LedgerDetailsTemplate,
     LedgerDetailsDataType,
+    Notification,
+    NotificationType,
 )
 from app.utils import ledger_utils
 from tests.account_config import config_eth_account
@@ -417,6 +419,21 @@ class TestCreateLedger:
         ledger_utils.create_ledger(token_address_1, db)
 
         # assertion
+        _notifications = db.query(Notification).all()
+        assert len(_notifications) == 1
+        _notification = db.query(Notification).first()
+        assert _notification.id == 1
+        assert _notification.notice_id is not None
+        assert _notification.issuer_address == issuer_address
+        assert _notification.priority == 0
+        assert _notification.type == NotificationType.CREATE_LEDGER_INFO
+        assert _notification.code == 0
+        assert _notification.metainfo == {
+            "token_address": token_address_1,
+            "token_type": TokenType.IBET_SHARE.value,
+            "ledger_id": 1
+        }
+
         _ledger = db.query(Ledger).first()
         assert _ledger.id == 1
         assert _ledger.token_address == token_address_1
@@ -863,6 +880,20 @@ class TestCreateLedger:
         ledger_utils.create_ledger(token_address_1, db)
 
         # assertion
+        _notifications = db.query(Notification).all()
+        assert len(_notifications) == 1
+        _notification = db.query(Notification).first()
+        assert _notification.id == 1
+        assert _notification.notice_id is not None
+        assert _notification.issuer_address == issuer_address
+        assert _notification.priority == 0
+        assert _notification.type == NotificationType.CREATE_LEDGER_INFO
+        assert _notification.code == 0
+        assert _notification.metainfo == {
+            "token_address": token_address_1,
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "ledger_id": 1
+        }
         _ledger = db.query(Ledger).first()
         assert _ledger.id == 1
         assert _ledger.token_address == token_address_1
@@ -1048,6 +1079,8 @@ class TestCreateLedger:
         ledger_utils.create_ledger(token_address_1, db)
 
         # assertion
+        _notifications = db.query(Notification).all()
+        assert len(_notifications) == 0
         _ledger = db.query(Ledger).first()
         assert _ledger is None
 
@@ -1076,6 +1109,8 @@ class TestCreateLedger:
         ledger_utils.create_ledger(token_address_1, db)
 
         # assertion
+        _notifications = db.query(Notification).all()
+        assert len(_notifications) == 0
         _ledger = db.query(Ledger).first()
         assert _ledger is None
 

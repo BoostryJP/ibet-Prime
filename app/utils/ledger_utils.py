@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import uuid
 from datetime import datetime
 
 import pytz
@@ -36,7 +37,9 @@ from app.model.db import (
     LedgerDetailsData,
     LedgerTemplate,
     LedgerDetailsTemplate,
-    LedgerDetailsDataType
+    LedgerDetailsDataType,
+    Notification,
+    NotificationType
 )
 
 local_tz = pytz.timezone(TZ)
@@ -95,6 +98,25 @@ def create_ledger(token_address: str, db: Session):
     _ledger.token_type = _token.type
     _ledger.ledger = ledger
     db.add(_ledger)
+
+    # Although autoflush is enabled, there is no operation invoking flush.
+    # Execute flush here to get ledger id which is auto incremented.
+    db.flush()
+    
+    # Register Notification to the DB
+    # NOTE: DB commit is executed by the caller
+    _notification = Notification()
+    _notification.notice_id = uuid.uuid4()
+    _notification.issuer_address = _token.issuer_address
+    _notification.priority = 0  # Low
+    _notification.type = NotificationType.CREATE_LEDGER_INFO
+    _notification.code = 0
+    _notification.metainfo = {
+        "token_address": token_address,
+        "token_type": _token.type,
+        "ledger_id": _ledger.id
+    }
+    db.add(_notification)
 
 
 def __get_details_data_list(token_address: str, token_type: str, data_type: str, data_source: str, db: Session):
