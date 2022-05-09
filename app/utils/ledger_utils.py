@@ -37,7 +37,9 @@ from app.model.db import (
     LedgerDetailsData,
     LedgerTemplate,
     LedgerDetailsTemplate,
-    LedgerDetailsDataType, Notification, NotificationType
+    LedgerDetailsDataType,
+    Notification,
+    NotificationType
 )
 
 local_tz = pytz.timezone(TZ)
