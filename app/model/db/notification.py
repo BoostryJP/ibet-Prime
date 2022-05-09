@@ -74,3 +74,4 @@ class NotificationType:
     BULK_TRANSFER_ERROR = "BulkTransferError"
     SCHEDULE_EVENT_ERROR = "ScheduleEventError"
     TRANSFER_APPROVAL_INFO = "TransferApprovalInfo"
+    CREATE_LEDGER_INFO = "CreateLedgerInfo"
