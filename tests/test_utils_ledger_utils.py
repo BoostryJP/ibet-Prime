@@ -52,7 +52,9 @@ from app.model.db import (
     LedgerDetailsData,
     LedgerTemplate,
     LedgerDetailsTemplate,
-    LedgerDetailsDataType, Notification, NotificationType,
+    LedgerDetailsDataType,
+    Notification,
+    NotificationType,
 )
 from app.utils import ledger_utils
 from tests.account_config import config_eth_account
