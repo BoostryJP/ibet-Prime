@@ -46,6 +46,9 @@ notice_type: TransferApprovalInfo
 - 1: Cancel transfer
 - 2: Approve transfer
 - 3: Escrow finished (Only occurs in security token escrow)
+
+notice_type: CreateLedgerInfo
+- 0: Created ledger info successfully
 """
 
 

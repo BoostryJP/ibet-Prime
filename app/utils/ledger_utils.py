@@ -97,6 +97,8 @@ def create_ledger(token_address: str, db: Session):
     _ledger.ledger = ledger
     db.add(_ledger)
 
+    # Although autoflush is enabled, there is no operation invoking flush.
+    # Execute flush here to get ledger id which is auto incremented.
     db.flush()
     
     # Register Notification to the DB
