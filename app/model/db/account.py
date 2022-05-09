@@ -76,3 +76,51 @@ class AccountRsaStatus(int, Enum):
     CREATING = 1
     CHANGING = 2
     SET = 3
+
+
+class InvestorAccountManagement(Base):
+    """Management for InvestorAccount"""
+    __tablename__ = "investor_account_management"
+
+    # manager address
+    account_address = Column(String(42), primary_key=True)
+
+    # investor address
+    investor_address = Column(String(42), primary_key=True)
+
+
+class InvestorAccount(Base):
+    """Investor Account"""
+    __tablename__ = "investor_account"
+
+    # investor address
+    investor_address = Column(String(42), primary_key=True)
+
+    # ethereum keyfile
+    keyfile = Column(JSON)
+    # ethereum account password(encrypted)
+    eoa_password = Column(String(2000))
+    # rsa private key
+    rsa_private_key = Column(String(8000))
+    # rsa public key
+    rsa_public_key = Column(String(2000))
+    # rsa passphrase(encrypted)
+    rsa_passphrase = Column(String(2000))
+    # rsa status
+    rsa_status = Column(Integer)
+    # delete flag
+    is_deleted = Column(Boolean, default=False)
+
+
+class InvestorAccountRsaKeyTemporary(Base):
+    """Issuer Account(RSA Key Temporary Table)"""
+    __tablename__ = "investor_account_rsa_key_temporary"
+
+    # investor address
+    investor_address = Column(String(42), primary_key=True)
+    # rsa private key
+    rsa_private_key = Column(String(8000))
+    # rsa public key
+    rsa_public_key = Column(String(2000))
+    # rsa passphrase(encrypted)
+    rsa_passphrase = Column(String(2000))

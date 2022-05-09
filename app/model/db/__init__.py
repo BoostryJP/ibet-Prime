@@ -20,7 +20,10 @@ from .base import Base
 from .account import (
     Account,
     AccountRsaKeyTemporary,
-    AccountRsaStatus
+    AccountRsaStatus,
+    InvestorAccountManagement,
+    InvestorAccount,
+    InvestorAccountRsaKeyTemporary
 )
 from .token import (
     Token,

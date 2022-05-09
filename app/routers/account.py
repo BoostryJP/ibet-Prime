@@ -16,13 +16,14 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import List
+from typing import List, Optional
 import secrets
 import re
 
 from fastapi import (
     APIRouter,
-    Depends
+    Depends,
+    Header
 )
 from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
@@ -49,7 +50,8 @@ from app.model.schema import (
     AccountResponse,
     AccountGenerateRsaKeyRequest,
     AccountChangeEOAPasswordRequest,
-    AccountChangeRSAPassphraseRequest
+    AccountChangeRSAPassphraseRequest,
+    InvestorAccountResponse
 )
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.docs_utils import get_routers_responses
@@ -129,7 +131,7 @@ def create_key(
 def list_all_accounts(db: Session = Depends(db_session)):
     """List all accounts"""
 
-    # Register key data to the DB
+    # Get key data from the DB
     _accounts = db.query(Account).order_by(Account.issuer_address).all()
 
     account_list = []
@@ -351,3 +353,106 @@ def change_rsa_passphrase(
     db.commit()
 
     return
+
+
+# POST: /accounts/investor
+@router.post(
+    "/accounts/investor",
+    response_model=InvestorAccountResponse,
+    responses=get_routers_responses(422, InvalidParameterError)
+)
+def create_key(
+        data: AccountCreateKeyRequest,
+        issuer_address: str = Header(...),
+        db: Session = Depends(db_session)):
+    # TODO:
+    raise Exception("not implemented")
+
+
+# GET: /accounts/investor
+@router.get(
+    "/accounts/investor",
+    response_model=List[InvestorAccountResponse]
+)
+def list_all_accounts(
+        issuer_address: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    # TODO:
+    raise Exception("not implemented")
+
+
+# GET: /accounts/investor/{investor_address}
+@router.get(
+    "/accounts/investor/{investor_address}",
+    response_model=InvestorAccountResponse,
+    responses=get_routers_responses(404)
+)
+def retrieve_account(
+        investor_address: str,
+        issuer_address: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Retrieve an account"""
+    # TODO:
+    raise Exception("not implemented")
+
+
+# DELETE: /accounts/investor/{investor_address}
+@router.delete(
+    "/accounts/investor/{investor_address}",
+    response_model=InvestorAccountResponse,
+    responses=get_routers_responses(404)
+)
+def delete_account(
+        investor_address: str,
+        issuer_address: str = Header(...),
+        db: Session = Depends(db_session)):
+    """Logically delete an account"""
+    # TODO:
+    raise Exception("not implemented")
+
+
+# POST: /accounts/investor/{investor_address}/rsakey
+@router.post(
+    "/accounts/investor/{investor_address}/rsakey",
+    response_model=InvestorAccountResponse,
+    responses=get_routers_responses(422, 404, InvalidParameterError)
+)
+def generate_rsa_key(
+        investor_address: str,
+        data: AccountGenerateRsaKeyRequest,
+        issuer_address: str = Header(...),
+        db: Session = Depends(db_session)):
+    """Generate RSA key"""
+    # TODO:
+    raise Exception("not implemented")
+
+
+# POST: /accounts/investor/{investor_address}/eoa_password
+@router.post(
+    "/accounts/investor/{investor_address}/eoa_password",
+    response_model=None,
+    responses=get_routers_responses(422, 404, InvalidParameterError))
+def change_eoa_password(
+        investor_address: str,
+        data: AccountChangeEOAPasswordRequest,
+        issuer_address: str = Header(...),
+        db: Session = Depends(db_session)):
+    """Change EOA Password"""
+    # TODO:
+    raise Exception("not implemented")
+
+
+# POST: /accounts/investor/{investor_address}/rsa_passphrase
+@router.post(
+    "/accounts/investor/{investor_address}/rsa_passphrase",
+    response_model=None,
+    responses=get_routers_responses(422, 404, InvalidParameterError))
+def change_rsa_passphrase(
+        investor_address: str,
+        data: AccountChangeRSAPassphraseRequest,
+        issuer_address: str = Header(...),
+        db: Session = Depends(db_session)):
+    """Change RSA Passphrase"""
+    # TODO:
+    raise Exception("not implemented")
+

@@ -98,3 +98,11 @@ class AccountResponse(BaseModel):
     rsa_public_key: Optional[str]
     rsa_status: AccountRsaStatus
     is_deleted: bool
+
+
+class InvestorAccountResponse(BaseModel):
+    """Account schema (Response)"""
+    investor_address: str
+    rsa_public_key: Optional[str]
+    rsa_status: AccountRsaStatus
+    is_deleted: bool

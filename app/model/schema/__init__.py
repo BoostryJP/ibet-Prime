@@ -24,7 +24,8 @@ from .account import (
     AccountGenerateRsaKeyRequest,
     AccountChangeEOAPasswordRequest,
     AccountChangeRSAPassphraseRequest,
-    AccountResponse
+    AccountResponse,
+    InvestorAccountResponse
 )
 from .e2e_messaging import (
     E2EMessagingAccountCreateRequest,
