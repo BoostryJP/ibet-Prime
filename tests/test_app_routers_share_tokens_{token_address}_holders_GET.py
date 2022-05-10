@@ -105,7 +105,9 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
             "postal_code": "postal_code_test1",
             "address": "address_test1",
             "email": "email_test1",
-            "birth": "birth_test1"
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10
         }
         db.add(idx_personal_info_1)
 
@@ -128,7 +130,9 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
                     "postal_code": "postal_code_test1",
                     "address": "address_test1",
                     "email": "email_test1",
-                    "birth": "birth_test1"
+                    "birth": "birth_test1",
+                    "is_corporate": False,
+                    "tax_category": 10
                 },
                 "balance": 10,
                 "exchange_balance": 11,
@@ -177,7 +181,9 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
             "postal_code": "postal_code_test1",
             "address": "address_test1",
             "email": "email_test1",
-            "birth": "birth_test1"
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10
         }
         db.add(idx_personal_info_1)
 
@@ -209,7 +215,9 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
                     "postal_code": "postal_code_test1",
                     "address": "address_test1",
                     "email": "email_test1",
-                    "birth": "birth_test1"
+                    "birth": "birth_test1",
+                    "is_corporate": False,
+                    "tax_category": 10
                 },
                 "balance": 10,
                 "exchange_balance": 11,
@@ -224,7 +232,9 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
                     "postal_code": None,
                     "address": None,
                     "email": None,
-                    "birth": None
+                    "birth": None,
+                    "is_corporate": None,
+                    "tax_category": None
                 },
                 "balance": 20,
                 "exchange_balance": 21,

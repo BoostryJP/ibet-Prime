@@ -87,7 +87,9 @@ class TestGetInfo:
             "postal_code": "1001000",
             "address": "テスト住所",
             "email": "sample@test.test",
-            "birth": "19801231"
+            "birth": "19801231",
+            "is_corporate": False,
+            "tax_category": 10
         }
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
@@ -142,7 +144,9 @@ class TestGetInfo:
             "postal_code": "test",
             "address": "test",
             "email": "test",
-            "birth": "test"
+            "birth": "test",
+            "is_corporate": "test",
+            "tax_category": "test"
         }
 
     ###########################################################################
@@ -166,7 +170,9 @@ class TestGetInfo:
             "postal_code": "1001000",
             "address": "テスト住所",
             "email": "sample@test.test",
-            "birth": "19801231"
+            "birth": "19801231",
+            "is_corporate": False,
+            "tax_category": 10
         }
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
@@ -196,7 +202,9 @@ class TestGetInfo:
             "postal_code": "test",
             "address": "test",
             "email": "test",
-            "birth": "test"
+            "birth": "test",
+            "is_corporate": "test",
+            "tax_category": "test"
         }
 
     # <Error_2>
@@ -232,7 +240,9 @@ class TestGetInfo:
             "postal_code": "test",
             "address": "test",
             "email": "test",
-            "birth": "test"
+            "birth": "test",
+            "is_corporate": "test",
+            "tax_category": "test"
         }
 
 
@@ -256,7 +266,9 @@ class TestRegisterInfo:
             "postal_code": "2002000",
             "address": "テスト住所2",
             "email": "sample@test.test2",
-            "birth": "19800101"
+            "birth": "19800101",
+            "is_corporate": False,
+            "tax_category": 10
         }
         personal_info_contract.register_info(setting_user["address"], register_data)
 
@@ -281,7 +293,9 @@ class TestRegisterInfo:
             "postal_code": "1001000",
             "address": "テスト住所",
             "email": "sample@test.test",
-            "birth": "19801231"
+            "birth": "19801231",
+            "is_corporate": False,
+            "tax_category": 10
         }
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
@@ -306,7 +320,9 @@ class TestRegisterInfo:
             "postal_code": "2002000",
             "address": "テスト住所2",
             "email": "sample@test.test2",
-            "birth": "19800101"
+            "birth": "19800101",
+            "is_corporate": False,
+            "tax_category": 10
         }
         personal_info_contract.register_info(setting_user["address"], update_data)
 
@@ -332,7 +348,9 @@ class TestRegisterInfo:
             "postal_code": "2002000",
             "address": "テスト住所2",
             "email": "sample@test.test2",
-            "birth": "19800101"
+            "birth": "19800101",
+            "is_corporate": False,
+            "tax_category": 10
         }
         with mock.patch("web3.eth.Eth.waitForTransactionReceipt", MagicMock(side_effect=TimeExhausted())):
             with pytest.raises(SendTransactionError):
@@ -352,7 +370,9 @@ class TestRegisterInfo:
             "postal_code": "2002000",
             "address": "テスト住所2",
             "email": "sample@test.test2",
-            "birth": "19800101"
+            "birth": "19800101",
+            "is_corporate": False,
+            "tax_category": 10
         }
         with mock.patch("web3.eth.Eth.waitForTransactionReceipt", MagicMock(side_effect=TypeError())):
             with pytest.raises(SendTransactionError):
@@ -381,7 +401,9 @@ class TestModifyInfo:
             "postal_code": "1001000",
             "address": "テスト住所",
             "email": "sample@test.test",
-            "birth": "19801231"
+            "birth": "19801231",
+            "is_corporate": False,
+            "tax_category": 10
         }
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
@@ -406,7 +428,9 @@ class TestModifyInfo:
             "postal_code": "2002000",
             "address": "テスト住所2",
             "email": "sample@test.test2",
-            "birth": "19800101"
+            "birth": "19800101",
+            "is_corporate": False,
+            "tax_category": 10
         }
         personal_info_contract.modify_info(setting_user["address"], update_data)
 
@@ -435,7 +459,9 @@ class TestModifyInfo:
             "postal_code": "1001000",
             "address": "テスト住所",
             "email": "sample@test.test",
-            "birth": "19801231"
+            "birth": "19801231",
+            "is_corporate": False,
+            "tax_category": 10
         }
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
@@ -460,7 +486,9 @@ class TestModifyInfo:
             "postal_code": "2002000",
             "address": "テスト住所2",
             "email": "sample@test.test2",
-            "birth": "19800101"
+            "birth": "19800101",
+            "is_corporate": False,
+            "tax_category": 10
         }
         with mock.patch("web3.eth.Eth.waitForTransactionReceipt", MagicMock(side_effect=TimeExhausted())):
             with pytest.raises(SendTransactionError):
@@ -483,7 +511,9 @@ class TestModifyInfo:
             "postal_code": "1001000",
             "address": "テスト住所",
             "email": "sample@test.test",
-            "birth": "19801231"
+            "birth": "19801231",
+            "is_corporate": False,
+            "tax_category": 10
         }
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
@@ -508,7 +538,9 @@ class TestModifyInfo:
             "postal_code": "2002000",
             "address": "テスト住所2",
             "email": "sample@test.test2",
-            "birth": "19800101"
+            "birth": "19800101",
+            "is_corporate": False,
+            "tax_category": 10
         }
         with mock.patch("web3.eth.Eth.waitForTransactionReceipt", MagicMock(side_effect=TypeError())):
             with pytest.raises(SendTransactionError):
@@ -539,7 +571,9 @@ class TestGetRegisterEvent:
             "postal_code": "1001000",
             "address": "テスト住所",
             "email": "sample@test.test",
-            "birth": "19801231"
+            "birth": "19801231",
+            "is_corporate": False,
+            "tax_category": 10
         }
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
@@ -588,7 +622,9 @@ class TestGetModifyEvent:
             "postal_code": "1001000",
             "address": "テスト住所",
             "email": "sample@test.test",
-            "birth": "19801231"
+            "birth": "19801231",
+            "is_corporate": False,
+            "tax_category": 10
         }
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
@@ -615,7 +651,9 @@ class TestGetModifyEvent:
             "postal_code": "2002000",
             "address": "テスト住所2",
             "email": "sample@test.test2",
-            "birth": "19800101"
+            "birth": "19800101",
+            "is_corporate": False,
+            "tax_category": 10
         }
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(update_data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract

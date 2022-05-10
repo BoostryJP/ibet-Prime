@@ -322,7 +322,9 @@ class TestProcessor:
             "postal_code": "postal_code_test1",
             "address": "address_test1",
             "email": "email_test1",
-            "birth": "birth_test1"
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10
         }
         ciphertext = encrypt_personal_info(personal_info_1, issuer_rsa_public_key, issuer_rsa_passphrase)
         tx = personal_info_contract.functions.register(issuer_address, ciphertext).buildTransaction({
@@ -411,7 +413,9 @@ class TestProcessor:
             "postal_code": "postal_code_test1",
             "address": "address_test1",
             "email": "email_test1",
-            "birth": "birth_test1"
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10
         }
         ciphertext = encrypt_personal_info(personal_info_1, issuer_rsa_public_key, issuer_rsa_passphrase)
         tx = personal_info_contract.functions.register(issuer_address, ciphertext).buildTransaction({
@@ -439,7 +443,9 @@ class TestProcessor:
             "postal_code": "postal_code_test2",
             "address": "address_test2",
             "email": "email_test2",
-            "birth": "birth_test2"
+            "birth": "birth_test2",
+            "is_corporate": True,
+            "tax_category": 20
         }
         ciphertext = encrypt_personal_info(personal_info_2, issuer_rsa_public_key, issuer_rsa_passphrase)
         tx = personal_info_contract.functions.modify(user_address_1, ciphertext).buildTransaction({
@@ -532,7 +538,9 @@ class TestProcessor:
             "postal_code": "postal_code_test1",
             "address": "address_test1",
             "email": "email_test1",
-            "birth": "birth_test1"
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10
         }
         ciphertext = encrypt_personal_info(personal_info_1, issuer_rsa_public_key, issuer_rsa_passphrase)
         tx = personal_info_contract.functions.register(issuer_address, ciphertext).buildTransaction({
@@ -560,7 +568,9 @@ class TestProcessor:
             "postal_code": "postal_code_test2",
             "address": "address_test2",
             "email": "email_test2",
-            "birth": "birth_test2"
+            "birth": "birth_test2",
+            "is_corporate": True,
+            "tax_category": 20
         }
         ciphertext = encrypt_personal_info(personal_info_2, issuer_rsa_public_key, issuer_rsa_passphrase)
         tx = personal_info_contract.functions.modify(user_address_1, ciphertext).buildTransaction({
@@ -598,7 +608,9 @@ class TestProcessor:
             "postal_code": "postal_code_test3",
             "address": "address_test3",
             "email": "email_test3",
-            "birth": "birth_test3"
+            "birth": "birth_test3",
+            "is_corporate": False,
+            "tax_category": 30
         }
         ciphertext = encrypt_personal_info(personal_info_3, issuer_rsa_public_key, issuer_rsa_passphrase)
         tx = personal_info_contract.functions.modify(user_address_1, ciphertext).buildTransaction({
@@ -717,7 +729,9 @@ class TestProcessor:
             "postal_code": "postal_code_test1",
             "address": "address_test1",
             "email": "email_test1",
-            "birth": "birth_test1"
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10
         }
         ciphertext = encrypt_personal_info(personal_info_1, issuer_rsa_public_key_1, issuer_rsa_passphrase_1)
         tx = personal_info_contract_1.functions.register(issuer_address_1, ciphertext).buildTransaction({
@@ -734,7 +748,9 @@ class TestProcessor:
             "postal_code": "postal_code_test2",
             "address": "address_test2",
             "email": "email_test2",
-            "birth": "birth_test2"
+            "birth": "birth_test2",
+            "is_corporate": True,
+            "tax_category": 20
         }
         ciphertext = encrypt_personal_info(personal_info_2, issuer_rsa_public_key_2, issuer_rsa_passphrase_2)
         tx = personal_info_contract_2.functions.register(issuer_address_2, ciphertext).buildTransaction({
@@ -850,7 +866,9 @@ class TestProcessor:
             "postal_code": "postal_code_test1",
             "address": "address_test1",
             "email": "email_test1",
-            "birth": "birth_test1"
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10
         }
         ciphertext = encrypt_personal_info(personal_info_1, issuer_rsa_public_key, issuer_rsa_passphrase)
         tx = personal_info_contract.functions.register(issuer_address, ciphertext).buildTransaction({
@@ -868,7 +886,9 @@ class TestProcessor:
             "postal_code": "postal_code_test2",
             "address": "address_test2",
             "email": "email_test2",
-            "birth": "birth_test2"
+            "birth": "birth_test2",
+            "is_corporate": True,
+            "tax_category": 20
         }
         ciphertext = encrypt_personal_info(personal_info_2, issuer_rsa_public_key, issuer_rsa_passphrase)
         tx = personal_info_contract.functions.modify(user_address_1, ciphertext).buildTransaction({
@@ -887,7 +907,7 @@ class TestProcessor:
 
     # <Error_1>
     # If DB session fails in phase sinking register/modify events, batch logs exception message.
-    def test_error_1(self, main_func, db:Session, personal_info_contract, caplog: pytest.LogCaptureFixture):
+    def test_error_1(self, main_func, db: Session, personal_info_contract, caplog: pytest.LogCaptureFixture):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(

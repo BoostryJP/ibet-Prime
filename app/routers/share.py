@@ -769,7 +769,9 @@ def list_all_holders(
         "postal_code": None,
         "address": None,
         "email": None,
-        "birth": None
+        "birth": None,
+        "is_corporate": None,
+        "tax_category": None
     }
 
     holders = []
@@ -848,7 +850,9 @@ def retrieve_holder(
         "postal_code": None,
         "address": None,
         "email": None,
-        "birth": None
+        "birth": None,
+        "is_corporate": None,
+        "tax_category": None
     }
     _personal_info_record = db.query(IDXPersonalInfo). \
         filter(IDXPersonalInfo.account_address == account_address). \

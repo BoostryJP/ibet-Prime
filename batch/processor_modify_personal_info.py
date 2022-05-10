@@ -184,7 +184,9 @@ class Processor:
             "postal_code": None,
             "address": None,
             "email": None,
-            "birth": None
+            "birth": None,
+            "is_corporate": None,
+            "tax_category": None
         }
         if info == default_info:
             return False

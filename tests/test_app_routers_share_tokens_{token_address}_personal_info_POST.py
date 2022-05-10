@@ -91,7 +91,9 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
                 "postal_code": "test_postal_code",
                 "address": "test_address",
                 "email": "test_email",
-                "birth": "test_birth"
+                "birth": "test_birth",
+                "is_corporate": False,
+                "tax_category": 10
             }
             resp = client.post(
                 self.test_url.format(_token_address),
@@ -179,7 +181,9 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "postal_code": None,
             "address": None,
             "email": None,
-            "birth": None
+            "birth": None,
+            "is_corporate": None,
+            "tax_category": None
         }
         resp = client.post(
             self.test_url.format(_token_address, _test_account_address),
@@ -226,6 +230,14 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
                     "loc": ["body", "birth"],
                     "msg": "none is not an allowed value",
                     "type": "type_error.none.not_allowed"
+                }, {
+                    "loc": ["body", "is_corporate"],
+                    "msg": "none is not an allowed value",
+                    "type": "type_error.none.not_allowed"
+                }, {
+                    "loc": ["body", "tax_category"],
+                    "msg": "none is not an allowed value",
+                    "type": "type_error.none.not_allowed"
                 }
             ]
         }
@@ -251,7 +263,9 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "postal_code": "test_postal_code",
             "address": "test_address",
             "email": "test_email",
-            "birth": "test_birth"
+            "birth": "test_birth",
+            "is_corporate": False,
+            "tax_category": 10
         }
         resp = client.post(
             self.test_url.format(_token_address, _test_account_address),
@@ -298,7 +312,9 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "postal_code": "test_postal_code",
             "address": "test_address",
             "email": "test_email",
-            "birth": "test_birth"
+            "birth": "test_birth",
+            "is_corporate": False,
+            "tax_category": 10
         }
         resp = client.post(
             self.test_url.format(_token_address),
@@ -346,7 +362,9 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "postal_code": "test_postal_code",
             "address": "test_address",
             "email": "test_email",
-            "birth": "test_birth"
+            "birth": "test_birth",
+            "is_corporate": False,
+            "tax_category": 10
         }
         resp = client.post(
             self.test_url.format(_token_address),
@@ -394,7 +412,9 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "postal_code": "test_postal_code",
             "address": "test_address",
             "email": "test_email",
-            "birth": "test_birth"
+            "birth": "test_birth",
+            "is_corporate": False,
+            "tax_category": 10
         }
         resp = client.post(
             self.test_url.format(_token_address),
@@ -442,7 +462,9 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "postal_code": "test_postal_code",
             "address": "test_address",
             "email": "test_email",
-            "birth": "test_birth"
+            "birth": "test_birth",
+            "is_corporate": False,
+            "tax_category": 10
         }
         resp = client.post(
             self.test_url.format(_token_address),
@@ -491,7 +513,9 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "postal_code": "test_postal_code",
             "address": "test_address",
             "email": "test_email",
-            "birth": "test_birth"
+            "birth": "test_birth",
+            "is_corporate": False,
+            "tax_category": 10
         }
         resp = client.post(
             self.test_url.format(_token_address),
@@ -540,7 +564,9 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "postal_code": "test_postal_code",
             "address": "test_address",
             "email": "test_email",
-            "birth": "test_birth"
+            "birth": "test_birth",
+            "is_corporate": False,
+            "tax_category": 10
         }
         resp = client.post(
             self.test_url.format(_token_address),
@@ -598,7 +624,9 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "postal_code": "test_postal_code",
             "address": "test_address",
             "email": "test_email",
-            "birth": "test_birth"
+            "birth": "test_birth",
+            "is_corporate": False,
+            "tax_category": 10
         }
         resp = client.post(
             self.test_url.format(_token_address),
@@ -671,7 +699,9 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
                 "postal_code": "test_postal_code",
                 "address": "test_address",
                 "email": "test_email",
-                "birth": "test_birth"
+                "birth": "test_birth",
+                "is_corporate": False,
+                "tax_category": 10
             }
             resp = client.post(
                 self.test_url.format(_token_address, _test_account_address),
