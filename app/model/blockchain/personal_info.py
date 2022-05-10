@@ -71,7 +71,9 @@ class PersonalInfoContract:
             "postal_code": default_value,
             "address": default_value,
             "email": default_value,
-            "birth": default_value
+            "birth": default_value,
+            "is_corporate": default_value,
+            "tax_category": default_value
         }
 
         # Get encrypted personal information
@@ -114,6 +116,8 @@ class PersonalInfoContract:
                     personal_info["postal_code"] = decrypted_info.get("postal_code", default_value)
                     personal_info["email"] = decrypted_info.get("email", default_value)
                     personal_info["birth"] = decrypted_info.get("birth", default_value)
+                    personal_info["is_corporate"] = decrypted_info.get("is_corporate", default_value)
+                    personal_info["tax_category"] = decrypted_info.get("tax_category", default_value)
                     return personal_info
                 except Exception as err:
                     logging.error(f"Failed to decrypt: {err}")
@@ -135,7 +139,9 @@ class PersonalInfoContract:
             "postal_code": data.get("postal_code", default_value),
             "address": data.get("address", default_value),
             "email": data.get("email", default_value),
-            "birth": data.get("birth", default_value)
+            "birth": data.get("birth", default_value),
+            "is_corporate": data.get("is_corporate", default_value),
+            "tax_category": data.get("tax_category", default_value)
         }
 
         # Encrypt personal info
@@ -180,7 +186,9 @@ class PersonalInfoContract:
             "postal_code": data.get("postal_code", default_value),
             "address": data.get("address", default_value),
             "email": data.get("email", default_value),
-            "birth": data.get("birth", default_value)
+            "birth": data.get("birth", default_value),
+            "is_corporate": data.get("is_corporate", default_value),
+            "tax_category": data.get("tax_category", default_value)
         }
 
         # Encrypt personal info

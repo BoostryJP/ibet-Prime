@@ -34,6 +34,8 @@ class ModifyPersonalInfoRequest(BaseModel):
     address: str
     email: str
     birth: str
+    is_corporate: bool
+    tax_category: int
 
 
 class RegisterPersonalInfoRequest(BaseModel):
@@ -45,6 +47,8 @@ class RegisterPersonalInfoRequest(BaseModel):
     address: str
     email: str
     birth: str
+    is_corporate: bool
+    tax_category: int
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):

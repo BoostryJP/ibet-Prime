@@ -42,7 +42,9 @@ class IDXPersonalInfo(Base):
     #       "postal_code": "string",
     #       "address": "string",
     #       "email": "string",
-    #       "birth": "string"
+    #       "birth": "string",
+    #       "is_corporate": "string",
+    #       "tax_category": "integer"
     #   }
     personal_info = Column(JSON, nullable=False)
 
