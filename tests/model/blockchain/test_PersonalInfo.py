@@ -203,8 +203,8 @@ class TestGetInfo:
             "address": "test",
             "email": "test",
             "birth": "test",
-            "is_corporate": False,
-            "tax_category": 10
+            "is_corporate": "test",
+            "tax_category": "test"
         }
 
     # <Error_2>
@@ -241,8 +241,8 @@ class TestGetInfo:
             "address": "test",
             "email": "test",
             "birth": "test",
-            "is_corporate": False,
-            "tax_category": 10
+            "is_corporate": "test",
+            "tax_category": "test"
         }
 
 
