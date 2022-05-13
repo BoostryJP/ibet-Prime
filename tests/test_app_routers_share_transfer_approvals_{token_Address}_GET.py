@@ -886,6 +886,115 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         }
         assert resp.json() == assumed_response
 
+    # <Normal_4_3_5>
+    # filter
+    # status
+    # multi specify
+    def test_normal_4_3_5(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_SHARE.value
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        # prepare data: IDXTransferApproval
+        for i in range(0, 5):
+            _idx_transfer_approval = IDXTransferApproval()
+            _idx_transfer_approval.token_address = self.test_token_address
+            _idx_transfer_approval.application_id = i
+            _idx_transfer_approval.from_address = self.test_from_address
+            _idx_transfer_approval.to_address = self.test_to_address
+            _idx_transfer_approval.amount = i
+            _idx_transfer_approval.application_datetime = self.test_application_datetime
+            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            if i == 0:  # unapproved
+                _idx_transfer_approval.exchange_address = None
+                _idx_transfer_approval.cancelled = None
+                _idx_transfer_approval.escrow_finished = None
+                _idx_transfer_approval.transfer_approved = None
+            elif i == 1:  # escrow_finished
+                _idx_transfer_approval.exchange_address = None
+                _idx_transfer_approval.cancelled = None
+                _idx_transfer_approval.escrow_finished = True
+                _idx_transfer_approval.transfer_approved = None
+            elif i == 2:  # transferred_1
+                _idx_transfer_approval.exchange_address = "test_exchange_address"
+                _idx_transfer_approval.cancelled = None
+                _idx_transfer_approval.escrow_finished = True
+                _idx_transfer_approval.transfer_approved = True
+            elif i == 3:  # transferred_2
+                _idx_transfer_approval.exchange_address = None
+                _idx_transfer_approval.cancelled = None
+                _idx_transfer_approval.escrow_finished = None
+                _idx_transfer_approval.transfer_approved = True
+            elif i == 4:  # canceled
+                _idx_transfer_approval.exchange_address = None
+                _idx_transfer_approval.cancelled = True
+                _idx_transfer_approval.escrow_finished = None
+                _idx_transfer_approval.transfer_approved = None
+            db.add(_idx_transfer_approval)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={
+                "status": [0, 1]
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = {
+            "result_set": {
+                "count": 2,
+                "offset": None,
+                "limit": None,
+                "total": 5
+            },
+            "transfer_approval_history": [
+                {
+                    "id": 2,
+                    "token_address": self.test_token_address,
+                    "exchange_address": None,
+                    "application_id": 1,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 1,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": None,
+                    "approval_blocktimestamp": None,
+                    "cancelled": False,
+                    "escrow_finished": False,
+                    "transfer_approved": False,
+                    "status": 1,
+                    "issuer_cancelable": True,
+                },
+                {
+                    "id": 1,
+                    "token_address": self.test_token_address,
+                    "exchange_address": None,
+                    "application_id": 0,
+                    "from_address": self.test_from_address,
+                    "to_address": self.test_to_address,
+                    "amount": 0,
+                    "application_datetime": self.test_application_datetime_str,
+                    "application_blocktimestamp": self.test_application_blocktimestamp_str,
+                    "approval_datetime": None,
+                    "approval_blocktimestamp": None,
+                    "cancelled": False,
+                    "escrow_finished": False,
+                    "transfer_approved": False,
+                    "status": 0,
+                    "issuer_cancelable": True,
+                },
+            ]
+        }
+        assert resp.json() == assumed_response
+
     # <Normal_5_1>
     # sort
     # id
@@ -2125,7 +2234,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             },
             "detail": [
                 {
-                    "loc": ["query", "status"],
+                    "loc": ["query", "status", 0],
                     "msg": "value is not a valid integer",
                     "type": "type_error.integer",
                 },
@@ -2164,7 +2273,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             },
             "detail": [
                 {
-                    "loc": ["query", "status"],
+                    "loc": ["query", "status", 0],
                     "ctx": {"limit_value": 0},
                     "msg": "ensure this value is greater than or equal to 0",
                     "type": "value_error.number.not_ge",
@@ -2194,7 +2303,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             },
             "detail": [
                 {
-                    "loc": ["query", "status"],
+                    "loc": ["query", "status", 0],
                     "ctx": {"limit_value": 3},
                     "msg": "ensure this value is less than or equal to 3",
                     "type": "value_error.number.not_le",
