@@ -1209,7 +1209,7 @@ def list_token_transfer_approval_history(
         token_address: str,
         from_address: Optional[str] = Query(None),
         to_address: Optional[str] = Query(None),
-        status: Optional[int] = Query(
+        status: Optional[List[int]] = Query(
             None,
             ge=0,
             le=3,
@@ -1268,7 +1268,7 @@ def list_token_transfer_approval_history(
     if to_address is not None:
         query = query.filter(subquery.to_address == to_address)
     if status is not None:
-        query = query.filter(literal_column("status") == status)
+        query = query.filter(literal_column("status").in_(status))
     count = query.count()
 
     # Sort
