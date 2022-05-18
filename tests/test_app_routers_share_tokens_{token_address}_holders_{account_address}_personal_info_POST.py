@@ -117,6 +117,84 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressPersonalInfoPOST
                 data=req_param
             )
 
+    # <Normal_2>
+    # Nullable items
+    def test_normal_2(self, client, db):
+        _issuer_account = config_eth_account("user1")
+        _issuer_address = _issuer_account["address"]
+        _issuer_keyfile = _issuer_account["keyfile_json"]
+
+        _test_account = config_eth_account("user2")
+        _test_account_address = _test_account["address"]
+
+        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _issuer_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_SHARE.value
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        db.add(token)
+
+        # mock
+        ibet_share_contract = IbetShareContract()
+        ibet_share_contract.personal_info_contract_address = "personal_info_contract_address"
+        IbetShareContract_get = patch(
+            target="app.model.blockchain.token.IbetShareContract.get",
+            return_value=ibet_share_contract
+        )
+        PersonalInfoContract_init = patch(
+            target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
+            return_value=None
+        )
+        PersonalInfoContract_modify_info = patch(
+            target="app.model.blockchain.personal_info.PersonalInfoContract.modify_info",
+            return_value=None
+        )
+
+        with IbetShareContract_get, PersonalInfoContract_init, PersonalInfoContract_modify_info:
+            # request target API
+            req_param = {
+                "key_manager": "test_key_manager",
+                "name": None,
+                "postal_code": None,
+                "address": None,
+                "email": None,
+                "birth": None,
+                "is_corporate": None,
+                "tax_category": None
+            }
+            resp = client.post(
+                self.test_url.format(_token_address, _test_account_address),
+                json=req_param,
+                headers={
+                    "issuer-address": _issuer_address,
+                    "eoa-password": E2EEUtils.encrypt("password")
+                }
+            )
+
+            # assertion
+            assert resp.status_code == 200
+            assert resp.json() is None
+            IbetShareContract.get.assert_called_with(_token_address)
+            PersonalInfoContract.__init__.assert_called_with(
+                db=db,
+                issuer_address=_issuer_address,
+                contract_address="personal_info_contract_address"
+            )
+            PersonalInfoContract.modify_info.assert_called_with(
+                account_address=_test_account_address,
+                data=req_param
+            )
+
     ###########################################################################
     # Error Case
     ###########################################################################
@@ -202,34 +280,6 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressPersonalInfoPOST
             "detail":  [
                 {
                     "loc": ["body", "key_manager"],
-                    "msg": "none is not an allowed value",
-                    "type": "type_error.none.not_allowed"
-                }, {
-                    "loc": ["body", "name"],
-                    "msg": "none is not an allowed value",
-                    "type": "type_error.none.not_allowed"
-                }, {
-                    "loc": ["body", "postal_code"],
-                    "msg": "none is not an allowed value",
-                    "type": "type_error.none.not_allowed"
-                }, {
-                    "loc": ["body", "address"],
-                    "msg": "none is not an allowed value",
-                    "type": "type_error.none.not_allowed"
-                }, {
-                    "loc": ["body", "email"],
-                    "msg": "none is not an allowed value",
-                    "type": "type_error.none.not_allowed"
-                }, {
-                    "loc": ["body", "birth"],
-                    "msg": "none is not an allowed value",
-                    "type": "type_error.none.not_allowed"
-                }, {
-                    "loc": ["body", "is_corporate"],
-                    "msg": "none is not an allowed value",
-                    "type": "type_error.none.not_allowed"
-                }, {
-                    "loc": ["body", "tax_category"],
                     "msg": "none is not an allowed value",
                     "type": "type_error.none.not_allowed"
                 }
