@@ -27,6 +27,12 @@ function start () {
     exit 1
   fi
 
+  # E2E_MESSAGING_CONTRACT_ADDRESS is HEX_ADDRESS
+  if [[ ! ${E2E_MESSAGING_CONTRACT_ADDRESS} =~ 0x[0-9a-fA-F]{40} ]]; then
+    echo 'Please set the "E2E_MESSAGING_CONTRACT_ADDRESS" environment variable and try again.' >&2
+    exit 1
+  fi
+
   # Use Shared Memory
   export SHARED_MEMORY_USE_LOCK=1
 
