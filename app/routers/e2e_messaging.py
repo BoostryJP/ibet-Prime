@@ -33,7 +33,10 @@ from fastapi import (
     Path
 )
 from fastapi.exceptions import HTTPException
-from sqlalchemy import desc
+from sqlalchemy import (
+    desc,
+    asc
+)
 from sqlalchemy.orm import (
     Session,
     aliased
@@ -455,7 +458,7 @@ def list_all_e2e_messages(
 
     # Get E2E Messaging
     query = db.query(IDXE2EMessaging). \
-        order_by(desc(IDXE2EMessaging.id))
+        order_by(asc(IDXE2EMessaging.id))
     total = query.count()
 
     # Search Filter
