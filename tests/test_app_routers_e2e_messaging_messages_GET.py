@@ -53,7 +53,6 @@ class TestAppRoutersE2EMessagingMessagesGET:
     # <Normal_1>
     # 0 record(not E2E account)
     def test_normal_1(self, client, db):
-
         # request target api
         resp = client.get(
             self.base_url,
@@ -171,6 +170,42 @@ class TestAppRoutersE2EMessagingMessagesGET:
             },
             "e2e_messages": [
                 {
+                    "id": 1,
+                    "from_address": "0x1234567890123456789012345678900000000010",
+                    "to_address": "0x1234567890123456789012345678900000000000",
+                    "type": "type_test1",
+                    "message": "message_test1",
+                    "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
+                },
+                {
+                    "id": 2,
+                    "from_address": "0x1234567890123456789012345678900000000011",
+                    "to_address": "0x1234567890123456789012345678900000000000",
+                    "type": "type_test2",
+                    "message": {
+                        "aaa": 1,
+                        "bbb": True,
+                        "ccc": "hoge"
+                    },
+                    "send_timestamp": "2022-01-02T00:20:31.000001+09:00",
+                },
+                {
+                    "id": 3,
+                    "from_address": "0x1234567890123456789012345678900000000010",
+                    "to_address": "0x1234567890123456789012345678900000000001",
+                    "type": "type_test3",
+                    "message": ["a", "b", "c"],
+                    "send_timestamp": "2022-01-02T00:20:32.000001+09:00",
+                },
+                {
+                    "id": 4,
+                    "from_address": "0x1234567890123456789012345678900000000011",
+                    "to_address": "0x1234567890123456789012345678900000000001",
+                    "type": "type_test4",
+                    "message": ["a", 1, True],
+                    "send_timestamp": "2022-01-02T00:20:33.000001+09:00",
+                },
+                {
                     "id": 5,
                     "from_address": "0x1234567890123456789012345678900000000010",
                     "to_address": "0x1234567890123456789012345678900000000000",
@@ -187,42 +222,6 @@ class TestAppRoutersE2EMessagingMessagesGET:
                             "ccc": "fuga"
                         },
                     ],
-                    "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
-                },
-                {
-                    "id": 4,
-                    "from_address": "0x1234567890123456789012345678900000000011",
-                    "to_address": "0x1234567890123456789012345678900000000001",
-                    "type": "type_test4",
-                    "message": ["a", 1, True],
-                    "send_timestamp": "2022-01-02T00:20:33.000001+09:00",
-                },
-                {
-                    "id": 3,
-                    "from_address": "0x1234567890123456789012345678900000000010",
-                    "to_address": "0x1234567890123456789012345678900000000001",
-                    "type": "type_test3",
-                    "message": ["a", "b", "c"],
-                    "send_timestamp": "2022-01-02T00:20:32.000001+09:00",
-                },
-                {
-                    "id": 2,
-                    "from_address": "0x1234567890123456789012345678900000000011",
-                    "to_address": "0x1234567890123456789012345678900000000000",
-                    "type": "type_test2",
-                    "message": {
-                        "aaa": 1,
-                        "bbb": True,
-                        "ccc": "hoge"
-                    },
-                    "send_timestamp": "2022-01-02T00:20:31.000001+09:00",
-                },
-                {
-                    "id": 1,
-                    "from_address": "0x1234567890123456789012345678900000000010",
-                    "to_address": "0x1234567890123456789012345678900000000000",
-                    "type": "type_test1",
-                    "message": "message_test1",
                     "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
                 },
             ]
@@ -277,19 +276,19 @@ class TestAppRoutersE2EMessagingMessagesGET:
             },
             "e2e_messages": [
                 {
-                    "id": 3,
-                    "from_address": "0x1234567890123456789012345678900000000010",
-                    "to_address": "0x1234567890123456789012345678900000000002",
-                    "type": "type_test3",
-                    "message": "message_test3",
-                    "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
-                },
-                {
                     "id": 1,
                     "from_address": "0x1234567890123456789012345678900000000010",
                     "to_address": "0x1234567890123456789012345678900000000000",
                     "type": "type_test1",
                     "message": "message_test1",
+                    "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
+                },
+                {
+                    "id": 3,
+                    "from_address": "0x1234567890123456789012345678900000000010",
+                    "to_address": "0x1234567890123456789012345678900000000002",
+                    "type": "type_test3",
+                    "message": "message_test3",
                     "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
                 },
             ]
@@ -344,19 +343,19 @@ class TestAppRoutersE2EMessagingMessagesGET:
             },
             "e2e_messages": [
                 {
-                    "id": 3,
-                    "from_address": "0x1234567890123456789012345678900000000012",
-                    "to_address": "0x1234567890123456789012345678900000000000",
-                    "type": "type_test3",
-                    "message": "message_test3",
-                    "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
-                },
-                {
                     "id": 1,
                     "from_address": "0x1234567890123456789012345678900000000010",
                     "to_address": "0x1234567890123456789012345678900000000000",
                     "type": "type_test1",
                     "message": "message_test1",
+                    "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
+                },
+                {
+                    "id": 3,
+                    "from_address": "0x1234567890123456789012345678900000000012",
+                    "to_address": "0x1234567890123456789012345678900000000000",
+                    "type": "type_test3",
+                    "message": "message_test3",
                     "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
                 },
             ]
@@ -411,19 +410,19 @@ class TestAppRoutersE2EMessagingMessagesGET:
             },
             "e2e_messages": [
                 {
-                    "id": 3,
-                    "from_address": "0x1234567890123456789012345678900000000012",
-                    "to_address": "0x1234567890123456789012345678900000000002",
-                    "type": "type_test1",
-                    "message": "message_test3",
-                    "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
-                },
-                {
                     "id": 1,
                     "from_address": "0x1234567890123456789012345678900000000010",
                     "to_address": "0x1234567890123456789012345678900000000000",
                     "type": "type_test1",
                     "message": "message_test1",
+                    "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
+                },
+                {
+                    "id": 3,
+                    "from_address": "0x1234567890123456789012345678900000000012",
+                    "to_address": "0x1234567890123456789012345678900000000002",
+                    "type": "type_test1",
+                    "message": "message_test3",
                     "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
                 },
             ]
@@ -494,19 +493,11 @@ class TestAppRoutersE2EMessagingMessagesGET:
             },
             "e2e_messages": [
                 {
-                    "id": 5,
-                    "from_address": "0x1234567890123456789012345678900000000014",
-                    "to_address": "0x1234567890123456789012345678900000000004",
-                    "type": "type_test5",
-                    "message": "word",
-                    "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
-                },
-                {
-                    "id": 4,
-                    "from_address": "0x1234567890123456789012345678900000000013",
-                    "to_address": "0x1234567890123456789012345678900000000003",
-                    "type": "type_test4",
-                    "message": "messageword_test4",
+                    "id": 1,
+                    "from_address": "0x1234567890123456789012345678900000000010",
+                    "to_address": "0x1234567890123456789012345678900000000000",
+                    "type": "type_test1",
+                    "message": "wordmessage_test1",
                     "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
                 },
                 {
@@ -518,11 +509,19 @@ class TestAppRoutersE2EMessagingMessagesGET:
                     "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
                 },
                 {
-                    "id": 1,
-                    "from_address": "0x1234567890123456789012345678900000000010",
-                    "to_address": "0x1234567890123456789012345678900000000000",
-                    "type": "type_test1",
-                    "message": "wordmessage_test1",
+                    "id": 4,
+                    "from_address": "0x1234567890123456789012345678900000000013",
+                    "to_address": "0x1234567890123456789012345678900000000003",
+                    "type": "type_test4",
+                    "message": "messageword_test4",
+                    "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
+                },
+                {
+                    "id": 5,
+                    "from_address": "0x1234567890123456789012345678900000000014",
+                    "to_address": "0x1234567890123456789012345678900000000004",
+                    "type": "type_test5",
+                    "message": "word",
                     "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
                 },
             ]
@@ -593,12 +592,16 @@ class TestAppRoutersE2EMessagingMessagesGET:
             },
             "e2e_messages": [
                 {
-                    "id": 4,
+                    "id": 2,
                     "from_address": "0x1234567890123456789012345678900000000011",
-                    "to_address": "0x1234567890123456789012345678900000000001",
-                    "type": "type_test4",
-                    "message": ["a", 1, True],
-                    "send_timestamp": "2022-01-02T00:20:33.000001+09:00",
+                    "to_address": "0x1234567890123456789012345678900000000000",
+                    "type": "type_test2",
+                    "message": {
+                        "aaa": 1,
+                        "bbb": True,
+                        "ccc": "hoge"
+                    },
+                    "send_timestamp": "2022-01-02T00:20:31.000001+09:00"
                 },
                 {
                     "id": 3,
@@ -606,8 +609,8 @@ class TestAppRoutersE2EMessagingMessagesGET:
                     "to_address": "0x1234567890123456789012345678900000000001",
                     "type": "type_test3",
                     "message": ["a", "b", "c"],
-                    "send_timestamp": "2022-01-02T00:20:32.000001+09:00",
-                },
+                    "send_timestamp": "2022-01-02T00:20:32.000001+09:00"
+                }
             ]
         }
 
