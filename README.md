@@ -22,7 +22,7 @@
 - [PostgreSQL](https://www.postgresql.org/) - Version 13
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - We support the official GoQuorum node of [ibet-Network](https://github.com/BoostryJP/ibet-Network).
-  - We use [ganache-cli](https://github.com/trufflesuite/ganache-cli) for local development and unit testing, and we use the latest version.
+  - We use [ganache](https://github.com/trufflesuite/ganache) for local development and unit testing, and we use the latest version.
 
 
 ## Supported ibet smart contract version
