@@ -339,8 +339,7 @@ class TestApproveTransfer:
             )
 
         cause = exc_info.value.args[0]
-        assert isinstance(cause, ValueError)
-        assert "revert Application does not exist." in str(cause)
+        assert isinstance(cause, SendTransactionError)
 
     # <Error_2>
     # Timeout Error
