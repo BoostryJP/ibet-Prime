@@ -39,7 +39,7 @@ from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
 from app.model.db import Account
 from app.utils.e2ee_utils import E2EEUtils
-from app.exceptions import SendTransactionError
+from app.exceptions import SendTransactionError, ContractRevertError
 
 web3 = Web3Wrapper()
 
@@ -164,6 +164,8 @@ class PersonalInfoContract:
                     "gasPrice": 0
                 })
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+        except ContractRevertError:
+            raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
@@ -211,6 +213,8 @@ class PersonalInfoContract:
                     "gasPrice": 0
                 })
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+        except ContractRevertError:
+            raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:

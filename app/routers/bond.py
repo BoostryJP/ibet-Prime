@@ -111,7 +111,8 @@ from app.model.blockchain import (
 )
 from app.exceptions import (
     InvalidParameterError,
-    SendTransactionError
+    SendTransactionError,
+    ContractRevertError
 )
 from config import TZ
 
@@ -127,7 +128,7 @@ local_tz = timezone(TZ)
 @router.post(
     "/tokens",
     response_model=TokenAddressResponse,
-    responses=get_routers_responses(422, 401, SendTransactionError)
+    responses=get_routers_responses(422, 401, SendTransactionError, ContractRevertError)
 )
 def issue_token(
         request: Request,
@@ -364,7 +365,7 @@ def retrieve_token(
 @router.post(
     "/tokens/{token_address}",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def update_token(
         request: Request,
@@ -431,7 +432,7 @@ def update_token(
 @router.post(
     "/tokens/{token_address}/additional_issue",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def additional_issue(
         request: Request,
@@ -486,7 +487,7 @@ def additional_issue(
 @router.post(
     "/tokens/{token_address}/redeem",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def redeem_token(
         request: Request,
@@ -893,7 +894,7 @@ def retrieve_holder(
 @router.post(
     "/tokens/{token_address}/holders/{account_address}/personal_info",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def modify_holder_personal_info(
         request: Request,
@@ -948,7 +949,7 @@ def modify_holder_personal_info(
 @router.post(
     "/tokens/{token_address}/personal_info",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def register_holder_personal_info(
         request: Request,
@@ -1002,7 +1003,7 @@ def register_holder_personal_info(
 @router.post(
     "/transfers",
     response_model=None,
-    responses=get_routers_responses(422, 401, InvalidParameterError, SendTransactionError)
+    responses=get_routers_responses(422, 401, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def transfer_ownership(
         request: Request,
@@ -1378,7 +1379,7 @@ def list_token_transfer_approval_history(
 # POST: /bond/transfer_approvals/{token_address}/{id}
 @router.post(
     "/transfer_approvals/{token_address}/{id}",
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError)
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def update_transfer_approval(
         request: Request,

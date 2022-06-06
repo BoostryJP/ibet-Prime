@@ -84,7 +84,8 @@ from app.model.db import (
 from app.model.blockchain import E2EMessaging
 from app.exceptions import (
     InvalidParameterError,
-    SendTransactionError
+    SendTransactionError,
+    ContractRevertError
 )
 from app import log
 
@@ -100,7 +101,7 @@ utc_tz = pytz.timezone("UTC")
 @router.post(
     "/accounts",
     response_model=E2EMessagingAccountResponse,
-    responses=get_routers_responses(422, InvalidParameterError, SendTransactionError)
+    responses=get_routers_responses(422, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def create_account(
         data: E2EMessagingAccountCreateRequest,

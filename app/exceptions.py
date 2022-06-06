@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from app.utils.contract_error_code import error_code_msg
 
 
 class InvalidParameterError(Exception):
@@ -24,6 +25,15 @@ class InvalidParameterError(Exception):
 
 class SendTransactionError(Exception):
     pass
+
+
+class ContractRevertError(Exception):
+
+    def __init__(self, code_msg: str):
+        code, message = error_code_msg(code_msg)
+        self.code = code
+        self.message = message
+        super().__init__(message)
 
 
 class AuthorizationError(Exception):

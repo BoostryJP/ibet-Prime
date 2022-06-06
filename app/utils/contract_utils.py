@@ -24,7 +24,8 @@ from web3.exceptions import (
     TimeExhausted,
     BadFunctionCallOutput,
     ABIFunctionNotFound,
-    ABIEventFunctionNotFound
+    ABIEventFunctionNotFound,
+    ContractLogicError
 )
 from eth_utils import to_checksum_address
 from sqlalchemy import create_engine
@@ -37,7 +38,7 @@ from config import (
     DATABASE_URL
 )
 from app.utils.web3_utils import Web3Wrapper
-from app.exceptions import SendTransactionError
+from app.exceptions import SendTransactionError, ContractRevertError
 from app.model.db import TransactionLock
 
 web3 = Web3Wrapper()
@@ -202,7 +203,9 @@ class ContractUtils:
                 timeout=10
             )
             if tx_receipt["status"] == 0:
-                raise SendTransactionError
+                # inspect reason of transaction fail
+                code_msg = ContractUtils.inspect_tx_failure(tx_hash.hex())
+                raise ContractRevertError(code_msg=code_msg)
         except:
             raise
         finally:
@@ -210,6 +213,33 @@ class ContractUtils:
             local_session.close()
 
         return tx_hash.hex(), tx_receipt
+
+    @staticmethod
+    def inspect_tx_failure(tx_hash: str) -> str:
+        tx = web3.eth.getTransaction(tx_hash)
+
+        # build a new transaction to replay:
+        replay_tx = {
+            'to': tx['to'],
+            'from': tx['from'],
+            'value': tx['value'],
+            'data': tx['input'],
+        }
+
+        # replay the transaction locally:
+        try:
+            web3.eth.call(replay_tx, tx.blockNumber - 1)
+        except ContractLogicError as e:
+            if len(e.args) == 0:
+                return str(e)
+            if len(e.args[0].split("execution reverted: ")) == 2:
+                msg = e.args[0].split("execution reverted: ")[1]
+            else:
+                msg = e.args[0]
+            return msg
+        except Exception as e:
+            raise e
+        raise Exception("Inspecting transaction revert is failed.")
 
     @staticmethod
     def get_block_by_transaction_hash(tx_hash: str):
