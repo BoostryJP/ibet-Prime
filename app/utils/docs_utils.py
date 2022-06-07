@@ -181,7 +181,7 @@ def get_routers_responses(*args):
     responses = {}
     for arg in args:
         if isinstance(arg, int):
-                responses[arg] = DEFAULT_RESPONSE.get(arg, {})
+            responses[arg] = DEFAULT_RESPONSE.get(arg, {})
         elif arg == InvalidParameterError:
             responses[400] = DEFAULT_RESPONSE[400]
         elif arg == SendTransactionError:

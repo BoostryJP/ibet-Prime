@@ -252,11 +252,11 @@ class Processor:
                 if tx_receipt["status"] == 1:  # Success
                     result = 1
             except ContractRevertError as e:
-                LOG.warning(f"Transaction reverted: "
-                            f"token_address={application.token_address} "
-                            f"exchange_address={application.exchange_address} "
-                            f"application_id={application.application_id} "
-                            f"error_code:<{e.code}> error_msg:<{e.message}>")
+                LOG.error(f"Transaction reverted: "
+                          f"token_address={application.token_address} "
+                          f"exchange_address={application.exchange_address} "
+                          f"application_id={application.application_id} "
+                          f"error_code:<{e.code}> error_msg:<{e.message}>")
                 result = 2
 
             self.__sink_on_transfer_approval_history(
