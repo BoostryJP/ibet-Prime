@@ -25,14 +25,14 @@ from Crypto.PublicKey import RSA
 from eth_keyfile import decode_keyfile_json
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
-from web3.exceptions import TimeExhausted
+from web3.exceptions import TimeExhausted, ContractLogicError
 from unittest.mock import MagicMock
 from unittest import mock
 
 from config import WEB3_HTTP_PROVIDER, TX_GAS_LIMIT, CHAIN_ID
 from app.model.blockchain import PersonalInfoContract
 from app.utils.contract_utils import ContractUtils
-from app.exceptions import SendTransactionError
+from app.exceptions import SendTransactionError, ContractRevertError
 from app.model.db import Account
 from app.utils.e2ee_utils import E2EEUtils
 
@@ -356,7 +356,7 @@ class TestRegisterInfo:
             with pytest.raises(SendTransactionError):
                 personal_info_contract.register_info(setting_user["address"], register_data)
 
-    # <Error_1>
+    # <Error_2>
     # SendTransactionError(Other Error)
     def test_error_2(self, db):
         issuer = config_eth_account("user1")
@@ -376,7 +376,13 @@ class TestRegisterInfo:
         }
         with mock.patch("web3.eth.Eth.waitForTransactionReceipt", MagicMock(side_effect=TypeError())):
             with pytest.raises(SendTransactionError):
-                personal_info_contract.modify_info(setting_user["address"], register_data)
+                personal_info_contract.register_info(setting_user["address"], register_data)
+
+    # <Error_3>
+    # Transaction REVERT
+    def test_error_3(self, db):
+        # Transaction REVERT would not occur in PersonalInfo_register
+        pass
 
 
 class TestModifyInfo:
@@ -494,7 +500,7 @@ class TestModifyInfo:
             with pytest.raises(SendTransactionError):
                 personal_info_contract.modify_info(setting_user["address"], update_data)
 
-    # <Error_1>
+    # <Error_2>
     # SendTransactionError(Other Error)
     def test_error_2(self, db):
         issuer = config_eth_account("user1")
@@ -545,6 +551,41 @@ class TestModifyInfo:
         with mock.patch("web3.eth.Eth.waitForTransactionReceipt", MagicMock(side_effect=TypeError())):
             with pytest.raises(SendTransactionError):
                 personal_info_contract.modify_info(setting_user["address"], update_data)
+
+    # <Error_3>
+    # Transaction REVERT(not registered)
+    def test_error_3(self, db):
+        issuer = config_eth_account("user1")
+        personal_info_contract = initialize(issuer, db)
+
+        # Set personal information data
+        setting_user = config_eth_account("user2")
+
+        # Run Test
+        update_data = {
+            "key_manager": "0987654321",
+            "name": "name_test2",
+            "postal_code": "2002000",
+            "address": "テスト住所2",
+            "email": "sample@test.test2",
+            "birth": "19800101",
+            "is_corporate": False,
+            "tax_category": 10
+        }
+
+        # mock
+        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
+        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
+        #         geth: ContractLogicError("execution reverted")
+        InspectionMock = mock.patch(
+            "web3.eth.Eth.call",
+            MagicMock(side_effect=ContractLogicError("execution reverted"))
+        )
+        # test IbetSecurityTokenEscrow.approve_transfer
+        with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
+            personal_info_contract.modify_info(setting_user["address"], update_data)
+
+        assert exc_info.value.args[0] == "execution reverted"
 
 
 class TestGetRegisterEvent:

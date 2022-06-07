@@ -59,7 +59,8 @@ from app.model.schema import (
 )
 from app.exceptions import (
     SendTransactionError,
-    ServiceUnavailableError
+    ServiceUnavailableError,
+    ContractRevertError
 )
 import batch_log
 
@@ -198,6 +199,21 @@ class Processor:
                         record_id=_update_token.id,
                         status=1
                     )
+                except ContractRevertError as e:
+                    LOG.warning(f"Transaction reverted: id=<{_update_token.id}> error_code:<{e.code}> error_msg:<{e.message}>")
+                    self.__sink_on_finish_update_process(
+                        db_session=db_session,
+                        record_id=_update_token.id,
+                        status=2
+                    )
+                    self.__sink_on_error_notification(
+                        db_session=db_session,
+                        issuer_address=_update_token.issuer_address,
+                        notice_type=notice_type,
+                        code=2,
+                        token_address=_update_token.token_address,
+                        token_type=_update_token.type,
+                        arguments=_update_token.arguments)
                 except SendTransactionError as tx_err:
                     LOG.warning(f"Failed to send transaction: id=<{_update_token.id}>")
                     LOG.exception(tx_err)

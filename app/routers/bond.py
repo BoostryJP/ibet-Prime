@@ -1457,45 +1457,63 @@ def update_transfer_approval(
                     "application_id": _transfer_approval.application_id,
                     "data": now
                 }
-                _, tx_receipt = IbetStraightBondContract.approve_transfer(
-                    contract_address=token_address,
-                    data=IbetSecurityTokenApproveTransfer(**_data),
-                    tx_from=issuer_address,
-                    private_key=private_key,
-                )
-                if tx_receipt["status"] != 1:  # Success
-                    IbetStraightBondContract.cancel_transfer(
+                try:
+                    _, tx_receipt = IbetStraightBondContract.approve_transfer(
                         contract_address=token_address,
-                        data=IbetSecurityTokenCancelTransfer(**_data),
+                        data=IbetSecurityTokenApproveTransfer(**_data),
                         tx_from=issuer_address,
                         private_key=private_key,
                     )
-                    raise SendTransactionError
+                except ContractRevertError as approve_transfer_err:
+                    # If approveTransfer end with revert,
+                    # cancelTransfer should be performed immediately.
+                    # After cancelTransfer, ContractRevertError is returned.
+                    try:
+                        IbetStraightBondContract.cancel_transfer(
+                            contract_address=token_address,
+                            data=IbetSecurityTokenCancelTransfer(**_data),
+                            tx_from=issuer_address,
+                            private_key=private_key,
+                        )
+                    except ContractRevertError as cancel_transfer_err:
+                        raise
+                    except Exception:
+                        raise SendTransactionError
+                    # If cancel transfer is successful, approve_transfer error is raised.
+                    raise
             else:
                 _data = {
                     "escrow_id": _transfer_approval.application_id,
                     "data": now
                 }
                 escrow = IbetSecurityTokenEscrow(_transfer_approval.exchange_address)
-                _, tx_receipt = escrow.approve_transfer(
-                    data=IbetSecurityTokenEscrowApproveTransfer(**_data),
-                    tx_from=issuer_address,
-                    private_key=private_key,
-                )
-                if tx_receipt["status"] != 1:  # Success
+                try:
+                    _, tx_receipt = escrow.approve_transfer(
+                        data=IbetSecurityTokenEscrowApproveTransfer(**_data),
+                        tx_from=issuer_address,
+                        private_key=private_key,
+                    )
+                except ContractRevertError:
+                    # If approveTransfer end with revert, error should be thrown immediately.
+                    raise
+                except Exception:
                     raise SendTransactionError
         else:  # CANCEL
             _data = {
                 "application_id": _transfer_approval.application_id,
                 "data": now
             }
-            _, tx_receipt = IbetStraightBondContract.cancel_transfer(
-                contract_address=token_address,
-                data=IbetSecurityTokenCancelTransfer(**_data),
-                tx_from=issuer_address,
-                private_key=private_key,
-            )
-            if tx_receipt["status"] != 1:  # Success
+            try:
+                _, tx_receipt = IbetStraightBondContract.cancel_transfer(
+                    contract_address=token_address,
+                    data=IbetSecurityTokenCancelTransfer(**_data),
+                    tx_from=issuer_address,
+                    private_key=private_key,
+                )
+            except ContractRevertError:
+                # If approveTransfer end with revert, error should be thrown immediately.
+                raise
+            except Exception:
                 raise SendTransactionError
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")

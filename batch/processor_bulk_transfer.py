@@ -57,7 +57,8 @@ from app.model.schema import (
 from app.utils.web3_utils import Web3Wrapper
 from app.exceptions import (
     SendTransactionError,
-    ServiceUnavailableError
+    ServiceUnavailableError,
+    ContractRevertError
 )
 import batch_log
 
@@ -165,6 +166,13 @@ class Processor:
                             db_session=db_session,
                             record_id=_transfer.id,
                             status=1
+                        )
+                    except ContractRevertError as e:
+                        LOG.warning(f"Transaction reverted: id=<{_transfer.id}> error_code:<{e.code}> error_msg:<{e.message}>")
+                        self.__sink_on_finish_transfer_process(
+                            db_session=db_session,
+                            record_id=_transfer.id,
+                            status=2
                         )
                     except SendTransactionError:
                         LOG.warning(f"Failed to send transaction: id=<{_transfer.id}>")

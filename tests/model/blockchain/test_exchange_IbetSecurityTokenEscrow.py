@@ -23,7 +23,7 @@ from unittest.mock import MagicMock
 from eth_keyfile import decode_keyfile_json
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
-from web3.exceptions import TimeExhausted
+from web3.exceptions import TimeExhausted, ContractLogicError
 
 from app.model.blockchain import (
     IbetStraightBondContract,
@@ -36,7 +36,7 @@ from config import (
     TX_GAS_LIMIT,
     WEB3_HTTP_PROVIDER
 )
-from app.exceptions import SendTransactionError
+from app.exceptions import SendTransactionError, ContractRevertError
 
 from tests.account_config import config_eth_account
 
@@ -313,33 +313,117 @@ class TestApproveTransfer:
     ###########################################################################
 
     # <Error_1>
-    # Transaction REVERT
-    # Not apply
+    # Send Transaction Failed with HTTP Connection Error
     def test_error_1(self, db):
         user1_account = config_eth_account("user1")
         user1_account_pk = decode_keyfile_json(
             raw_keyfile_json=user1_account["keyfile_json"],
             password=user1_account["password"].encode("utf-8")
         )
+        user2_account = config_eth_account("user2")
+        user2_account_pk = decode_keyfile_json(
+            raw_keyfile_json=user2_account["keyfile_json"],
+            password=user2_account["password"].encode("utf-8")
+        )
+        user3_account = config_eth_account("user3")
 
         # deploy contract
-        exchange_contract = deploy_security_token_escrow_contract()
-        _ = issue_bond_token(
+        escrow_contract = deploy_security_token_escrow_contract()
+        token_contract = issue_bond_token(
             issuer=user1_account,
-            exchange_address=exchange_contract.address
+            exchange_address=escrow_contract.address
         )
 
+        # Pre transfer
+        personal_info_contract_address = token_contract.functions.personalInfoAddress().call()
+        personal_info_contract = ContractUtils.get_contract("PersonalInfo", personal_info_contract_address)
+        tx = personal_info_contract.functions.register(
+            user1_account["address"], "test"
+        ).buildTransaction({
+            "chainId": CHAIN_ID,
+            "from": user2_account["address"],
+            "gas": TX_GAS_LIMIT,
+            "gasPrice": 0
+        })
+        ContractUtils.send_transaction(
+            transaction=tx,
+            private_key=user2_account_pk
+        )
+        tx = token_contract.functions.transferFrom(
+            user1_account["address"], user2_account["address"], 100
+        ).buildTransaction({
+            "chainId": CHAIN_ID,
+            "from": user1_account["address"],
+            "gas": TX_GAS_LIMIT,
+            "gasPrice": 0
+        })
+        ContractUtils.send_transaction(
+            transaction=tx,
+            private_key=user1_account_pk
+        )
+
+        # Deposit escrow
+        tx = token_contract.functions.transfer(
+            escrow_contract.address, 100
+        ).buildTransaction({
+            "chainId": CHAIN_ID,
+            "from": user2_account["address"],
+            "gas": TX_GAS_LIMIT,
+            "gasPrice": 0
+        })
+        ContractUtils.send_transaction(
+            transaction=tx,
+            private_key=user2_account_pk
+        )
+
+        # Apply for transfer
+        tx = escrow_contract.functions.createEscrow(
+            token_contract.address,
+            user3_account["address"],
+            10,
+            user2_account["address"],
+            "test",
+            "test"
+        ).buildTransaction({
+            "chainId": CHAIN_ID,
+            "from": user2_account["address"],
+            "gas": TX_GAS_LIMIT,
+            "gasPrice": 0
+        })
+        ContractUtils.send_transaction(
+            transaction=tx,
+            private_key=user2_account_pk
+        )
+
+        # Finish Escrow
+        latest_escrow_id = escrow_contract.functions.latestEscrowId().call()
+        tx = escrow_contract.functions.finishEscrow(latest_escrow_id).buildTransaction({
+            "chainId": CHAIN_ID,
+            "from": user2_account["address"],
+            "gas": TX_GAS_LIMIT,
+            "gasPrice": 0
+        })
+        ContractUtils.send_transaction(
+            transaction=tx,
+            private_key=user2_account_pk
+        )
+
+        # mock
+        InspectionMock = mock.patch(
+            "web3.eth.Eth.waitForTransactionReceipt",
+            MagicMock(side_effect=ConnectionError)
+        )
         # test IbetSecurityTokenEscrow.approve_transfer
-        with pytest.raises(SendTransactionError) as exc_info:
-            security_token_escrow = IbetSecurityTokenEscrow(exchange_contract.address)
+        with InspectionMock, pytest.raises(SendTransactionError) as exc_info:
+            security_token_escrow = IbetSecurityTokenEscrow(escrow_contract.address)
             security_token_escrow.approve_transfer(
-                data=IbetSecurityTokenEscrowApproveTransfer(escrow_id=0, data="test"),
+                data=IbetSecurityTokenEscrowApproveTransfer(escrow_id=1, data="test"),
                 tx_from=user1_account["address"],
                 private_key=user1_account_pk
             )
 
         cause = exc_info.value.args[0]
-        assert isinstance(cause, SendTransactionError)
+        assert isinstance(cause, ConnectionError)
 
     # <Error_2>
     # Timeout Error
@@ -371,3 +455,40 @@ class TestApproveTransfer:
         cause = exc_info.value.args[0]
         assert isinstance(cause, TimeExhausted)
         assert "Timeout Error test" in str(cause)
+
+    # <Error_3>
+    # Transaction REVERT
+    # Not apply
+    def test_error_3(self, db):
+        user1_account = config_eth_account("user1")
+        user1_account_pk = decode_keyfile_json(
+            raw_keyfile_json=user1_account["keyfile_json"],
+            password=user1_account["password"].encode("utf-8")
+        )
+
+        # deploy contract
+        exchange_contract = deploy_security_token_escrow_contract()
+        _ = issue_bond_token(
+            issuer=user1_account,
+            exchange_address=exchange_contract.address
+        )
+
+        # mock
+        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
+        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
+        #         geth: ContractLogicError("execution reverted")
+        InspectionMock = mock.patch(
+            "web3.eth.Eth.call",
+            MagicMock(side_effect=ContractLogicError("execution reverted"))
+        )
+
+        # test IbetSecurityTokenEscrow.approve_transfer
+        with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
+            security_token_escrow = IbetSecurityTokenEscrow(exchange_contract.address)
+            security_token_escrow.approve_transfer(
+                data=IbetSecurityTokenEscrowApproveTransfer(escrow_id=0, data="test"),
+                tx_from=user1_account["address"],
+                private_key=user1_account_pk
+            )
+
+        assert exc_info.value.args[0] == "execution reverted"

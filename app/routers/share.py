@@ -1450,9 +1450,10 @@ def update_transfer_approval(
                         tx_from=issuer_address,
                         private_key=private_key,
                     )
-                except ContractRevertError:
+                except ContractRevertError as approve_transfer_err:
                     # If approveTransfer end with revert,
                     # cancelTransfer should be performed immediately.
+                    # After cancelTransfer, ContractRevertError is returned.
                     try:
                         IbetShareContract.cancel_transfer(
                             contract_address=token_address,
@@ -1460,10 +1461,12 @@ def update_transfer_approval(
                             tx_from=issuer_address,
                             private_key=private_key,
                         )
-                    except ContractRevertError:
+                    except ContractRevertError as cancel_transfer_err:
                         raise
                     except Exception:
                         raise SendTransactionError
+                    # If cancel transfer is successful, approve_transfer error is raised.
+                    raise
             else:
                 _data = {
                     "escrow_id": _transfer_approval.application_id,
