@@ -54,7 +54,8 @@ from app.model.schema import (
 )
 from app.exceptions import (
     SendTransactionError,
-    ServiceUnavailableError
+    ServiceUnavailableError,
+    ContractRevertError
 )
 import batch_log
 
@@ -177,15 +178,25 @@ class Processor:
                 "application_id": application.application_id,
                 "data": now
             }
-            tx_hash, tx_receipt = IbetSecurityTokenInterface.approve_transfer(
-                contract_address=application.token_address,
-                data=IbetSecurityTokenApproveTransfer(**_data),
-                tx_from=issuer_address,
-                private_key=private_key
-            )
-            if tx_receipt["status"] == 1:  # Success
-                result = 1
-            else:
+            result = 2
+            try:
+                # If approveTransfer end with revert,
+                # cancelTransfer should be performed immediately.
+                # After cancelTransfer, result is saved as 2(failed).
+                tx_hash, tx_receipt = IbetSecurityTokenInterface.approve_transfer(
+                    contract_address=application.token_address,
+                    data=IbetSecurityTokenApproveTransfer(**_data),
+                    tx_from=issuer_address,
+                    private_key=private_key
+                )
+                if tx_receipt["status"] == 1:  # Success
+                    result = 1
+            except ContractRevertError as e:
+                LOG.warning(f"Transaction reverted: "
+                            f"token_address={application.token_address} "
+                            f"exchange_address={application.exchange_address} "
+                            f"application_id={application.application_id} "
+                            f"error_code:<{e.code}> error_msg:<{e.message}>")
                 IbetSecurityTokenInterface.cancel_transfer(
                     contract_address=application.token_address,
                     data=IbetSecurityTokenCancelTransfer(**_data),
@@ -205,6 +216,13 @@ class Processor:
                 application_id=application.application_id,
                 result=result
             )
+        except ContractRevertError as e:
+            # If cancelTransfer end with revert, then logs output.
+            LOG.warning(f"Transaction reverted: "
+                        f"token_address={application.token_address} "
+                        f"exchange_address={application.exchange_address} "
+                        f"application_id={application.application_id} "
+                        f"error_code:<{e.code}> error_msg:<{e.message}>")
         except SendTransactionError:
             LOG.warning(f"Failed to send transaction: "
                         f"token_address={application.token_address} "
@@ -223,19 +241,23 @@ class Processor:
                 "data": now
             }
             _escrow = IbetSecurityTokenEscrow(application.exchange_address)
-            tx_hash, tx_receipt = _escrow.approve_transfer(
-                data=IbetSecurityTokenEscrowApproveTransfer(**_data),
-                tx_from=issuer_address,
-                private_key=private_key
-            )
-            if tx_receipt["status"] == 1:  # Success
-                result = 1
-            else:
-                result = 2
-                LOG.error(f"Failed to send transaction: "
+            result = 2
+            try:
+                # If approveTransfer end with revert, result is saved as 2(failed).
+                tx_hash, tx_receipt = _escrow.approve_transfer(
+                    data=IbetSecurityTokenEscrowApproveTransfer(**_data),
+                    tx_from=issuer_address,
+                    private_key=private_key
+                )
+                if tx_receipt["status"] == 1:  # Success
+                    result = 1
+            except ContractRevertError as e:
+                LOG.error(f"Transaction reverted: "
                           f"token_address={application.token_address} "
                           f"exchange_address={application.exchange_address} "
-                          f"application_id={application.application_id}")
+                          f"application_id={application.application_id} "
+                          f"error_code:<{e.code}> error_msg:<{e.message}>")
+                result = 2
 
             self.__sink_on_transfer_approval_history(
                 db_session=db_session,

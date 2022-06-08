@@ -39,7 +39,7 @@ from app.model.schema import (
     IbetSecurityTokenEscrowApproveTransfer
 )
 from app.utils.e2ee_utils import E2EEUtils
-from app.exceptions import SendTransactionError
+from app.exceptions import SendTransactionError, ContractRevertError
 
 from tests.account_config import config_eth_account
 
@@ -1159,7 +1159,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
     # APPROVE
     # Send Transaction Error
     # IbetSecurityTokenInterface.approve_transfer
-    # return fail
+    # return fail with Revert
     def test_error_5_2(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -1203,7 +1203,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
-            return_value=("test_tx_hash", {"status": 0})
+            side_effect=ContractRevertError("110902")
         )
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
@@ -1227,10 +1227,10 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         assert resp.status_code == 400
         assert resp.json() == {
             "meta": {
-                "code": 2,
-                "title": "SendTransactionError"
+                "code": 110902,
+                "title": "ContractRevertError"
             },
-            "detail": "failed to send transaction"
+            "detail": "Application is invalid."
         }
 
     # <Error_5_3>
@@ -1308,7 +1308,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
     # APPROVE
     # Send Transaction Error
     # IbetSecurityTokenEscrow.approve_transfer
-    # return fail
+    # return fail with Revert
     def test_error_5_4(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -1353,7 +1353,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         # mock
         IbetSecurityTokenEscrow_approve_transfer = mock.patch(
             target="app.model.blockchain.exchange.IbetSecurityTokenEscrow.approve_transfer",
-            return_value=("test_tx_hash", {"status": 0})
+            side_effect=ContractRevertError("110902")
         )
 
         # request target API
@@ -1373,10 +1373,10 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         assert resp.status_code == 400
         assert resp.json() == {
             "meta": {
-                "code": 2,
-                "title": "SendTransactionError"
+                "code": 110902,
+                "title": "ContractRevertError"
             },
-            "detail": "failed to send transaction"
+            "detail": "Application is invalid."
         }
 
     # <Error_6_1>
@@ -1453,7 +1453,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
     # CANCEL
     # Send Transaction Error
     # IbetSecurityTokenInterface.cancel_transfer
-    # return fail
+    # return fail with Revert
     def test_error_6_2(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -1497,7 +1497,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         # mock
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
-            return_value=("test_tx_hash", {"status": 0})
+            side_effect=ContractRevertError("110802")
         )
 
         # request target API
@@ -1517,8 +1517,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         assert resp.status_code == 400
         assert resp.json() == {
             "meta": {
-                "code": 2,
-                "title": "SendTransactionError"
+                "code": 110802,
+                "title": "ContractRevertError"
             },
-            "detail": "failed to send transaction"
+            "detail": "Application is invalid."
         }

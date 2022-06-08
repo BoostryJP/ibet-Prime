@@ -111,7 +111,8 @@ from app.model.blockchain import (
 )
 from app.exceptions import (
     InvalidParameterError,
-    SendTransactionError
+    SendTransactionError,
+    ContractRevertError
 )
 from config import TZ
 
@@ -127,7 +128,7 @@ local_tz = timezone(TZ)
 @router.post(
     "/tokens",
     response_model=TokenAddressResponse,
-    responses=get_routers_responses(422, 401, SendTransactionError)
+    responses=get_routers_responses(422, 401, SendTransactionError, ContractRevertError)
 )
 def issue_token(
         request: Request,
@@ -364,7 +365,7 @@ def retrieve_token(
 @router.post(
     "/tokens/{token_address}",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def update_token(
         request: Request,
@@ -431,7 +432,7 @@ def update_token(
 @router.post(
     "/tokens/{token_address}/additional_issue",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def additional_issue(
         request: Request,
@@ -486,7 +487,7 @@ def additional_issue(
 @router.post(
     "/tokens/{token_address}/redeem",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def redeem_token(
         request: Request,
@@ -893,7 +894,7 @@ def retrieve_holder(
 @router.post(
     "/tokens/{token_address}/holders/{account_address}/personal_info",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def modify_holder_personal_info(
         request: Request,
@@ -948,7 +949,7 @@ def modify_holder_personal_info(
 @router.post(
     "/tokens/{token_address}/personal_info",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def register_holder_personal_info(
         request: Request,
@@ -1002,7 +1003,7 @@ def register_holder_personal_info(
 @router.post(
     "/transfers",
     response_model=None,
-    responses=get_routers_responses(422, 401, InvalidParameterError, SendTransactionError)
+    responses=get_routers_responses(422, 401, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def transfer_ownership(
         request: Request,
@@ -1378,7 +1379,7 @@ def list_token_transfer_approval_history(
 # POST: /bond/transfer_approvals/{token_address}/{id}
 @router.post(
     "/transfer_approvals/{token_address}/{id}",
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError)
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def update_transfer_approval(
         request: Request,
@@ -1456,45 +1457,63 @@ def update_transfer_approval(
                     "application_id": _transfer_approval.application_id,
                     "data": now
                 }
-                _, tx_receipt = IbetStraightBondContract.approve_transfer(
-                    contract_address=token_address,
-                    data=IbetSecurityTokenApproveTransfer(**_data),
-                    tx_from=issuer_address,
-                    private_key=private_key,
-                )
-                if tx_receipt["status"] != 1:  # Success
-                    IbetStraightBondContract.cancel_transfer(
+                try:
+                    _, tx_receipt = IbetStraightBondContract.approve_transfer(
                         contract_address=token_address,
-                        data=IbetSecurityTokenCancelTransfer(**_data),
+                        data=IbetSecurityTokenApproveTransfer(**_data),
                         tx_from=issuer_address,
                         private_key=private_key,
                     )
-                    raise SendTransactionError
+                except ContractRevertError as approve_transfer_err:
+                    # If approveTransfer end with revert,
+                    # cancelTransfer should be performed immediately.
+                    # After cancelTransfer, ContractRevertError is returned.
+                    try:
+                        IbetStraightBondContract.cancel_transfer(
+                            contract_address=token_address,
+                            data=IbetSecurityTokenCancelTransfer(**_data),
+                            tx_from=issuer_address,
+                            private_key=private_key,
+                        )
+                    except ContractRevertError as cancel_transfer_err:
+                        raise
+                    except Exception:
+                        raise SendTransactionError
+                    # If cancel transfer is successful, approve_transfer error is raised.
+                    raise
             else:
                 _data = {
                     "escrow_id": _transfer_approval.application_id,
                     "data": now
                 }
                 escrow = IbetSecurityTokenEscrow(_transfer_approval.exchange_address)
-                _, tx_receipt = escrow.approve_transfer(
-                    data=IbetSecurityTokenEscrowApproveTransfer(**_data),
-                    tx_from=issuer_address,
-                    private_key=private_key,
-                )
-                if tx_receipt["status"] != 1:  # Success
+                try:
+                    _, tx_receipt = escrow.approve_transfer(
+                        data=IbetSecurityTokenEscrowApproveTransfer(**_data),
+                        tx_from=issuer_address,
+                        private_key=private_key,
+                    )
+                except ContractRevertError:
+                    # If approveTransfer end with revert, error should be thrown immediately.
+                    raise
+                except Exception:
                     raise SendTransactionError
         else:  # CANCEL
             _data = {
                 "application_id": _transfer_approval.application_id,
                 "data": now
             }
-            _, tx_receipt = IbetStraightBondContract.cancel_transfer(
-                contract_address=token_address,
-                data=IbetSecurityTokenCancelTransfer(**_data),
-                tx_from=issuer_address,
-                private_key=private_key,
-            )
-            if tx_receipt["status"] != 1:  # Success
+            try:
+                _, tx_receipt = IbetStraightBondContract.cancel_transfer(
+                    contract_address=token_address,
+                    data=IbetSecurityTokenCancelTransfer(**_data),
+                    tx_from=issuer_address,
+                    private_key=private_key,
+                )
+            except ContractRevertError:
+                # If approveTransfer end with revert, error should be thrown immediately.
+                raise
+            except Exception:
                 raise SendTransactionError
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")

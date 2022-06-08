@@ -24,7 +24,7 @@ from config import (
 )
 from app.utils.contract_utils import ContractUtils
 from app.model.schema import IbetSecurityTokenEscrowApproveTransfer
-from app.exceptions import SendTransactionError
+from app.exceptions import SendTransactionError, ContractRevertError
 
 
 class IbetExchangeInterface:
@@ -84,6 +84,8 @@ class IbetSecurityTokenEscrow(IbetExchangeInterface):
             })
             tx_hash, tx_receipt = ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             return tx_hash, tx_receipt
+        except ContractRevertError:
+            raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:

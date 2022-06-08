@@ -38,7 +38,7 @@ from app.model.schema.token import (
     IbetSecurityTokenCancelTransfer,
     IbetSecurityTokenEscrowApproveTransfer
 )
-from app.exceptions import SendTransactionError
+from app.exceptions import SendTransactionError, ContractRevertError
 from batch.processor_auto_transfer_approval import Processor
 
 from tests.account_config import config_eth_account
@@ -597,7 +597,7 @@ class TestProcessor:
         # mock
         IbetSecurityTokenContract_approve_transfer = patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
-            return_value=("test_tx_hash", {"status": 0})
+            side_effect=ContractRevertError("110902")
         )
 
         IbetSecurityTokenContract_cancel_transfer = patch(

@@ -136,6 +136,19 @@ async def send_transaction_error_handler(request: Request, exc: SendTransactionE
     )
 
 
+# 400:ContractRevertError
+@app.exception_handler(ContractRevertError)
+async def contract_revert_error_handler(request: Request, exc: ContractRevertError):
+    meta = {
+        "code": exc.code,
+        "title": "ContractRevertError"
+    }
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=jsonable_encoder({"meta": meta, "detail": exc.message}),
+    )
+
+
 # 401:AuthorizationError
 @app.exception_handler(AuthorizationError)
 async def authorization_error_handler(request: Request, exc: AuthorizationError):
