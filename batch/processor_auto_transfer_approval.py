@@ -223,6 +223,14 @@ class Processor:
                         f"exchange_address={application.exchange_address} "
                         f"application_id={application.application_id} "
                         f"error_code:<{e.code}> error_msg:<{e.message}>")
+            result = 2
+            self.__sink_on_transfer_approval_history(
+                db_session=db_session,
+                token_address=application.token_address,
+                exchange_address=None,
+                application_id=application.application_id,
+                result=result
+            )
         except SendTransactionError:
             LOG.warning(f"Failed to send transaction: "
                         f"token_address={application.token_address} "
