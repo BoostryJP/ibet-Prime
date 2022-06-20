@@ -114,7 +114,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressPersonalInfoPOST
             )
             PersonalInfoContract.modify_info.assert_called_with(
                 account_address=_test_account_address,
-                data=req_param
+                data=req_param,
+                default_value=None
             )
 
     # <Normal_2>
@@ -192,7 +193,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressPersonalInfoPOST
             )
             PersonalInfoContract.modify_info.assert_called_with(
                 account_address=_test_account_address,
-                data=req_param
+                data=req_param,
+                default_value=None
             )
 
     ###########################################################################
