@@ -765,7 +765,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             # assertion
             token_get_mock_patch.assert_any_call(token_address)
             personal_get_info_mock_patch.assert_has_calls([
-                call(account_address=account_address_2, default_value="")
+                call(account_address=account_address_2, default_value=None)
             ])
 
         # assertion

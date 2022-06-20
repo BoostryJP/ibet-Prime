@@ -215,8 +215,8 @@ def retrieve_ledger_history(
                         db=db
                     )
                     if personal_info is not None:
-                        data["name"] = personal_info["name"]
-                        data["address"] = personal_info["address"]
+                        data["name"] = personal_info.get("name", "")
+                        data["address"] = personal_info.get("address", "")
 
     return resp
 
@@ -722,6 +722,6 @@ def __get_personal_info(token_address: str, token_type: str, account_address: st
             )
             personal_info = personal_info_contract.get_info(
                 account_address=account_address,
-                default_value=""
+                default_value=None
             )
         return personal_info

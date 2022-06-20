@@ -215,7 +215,7 @@ def __get_personal_info(account_address: str, issuer_address: str, personal_info
         first()
 
     if _idx_personal_info is None:  # Get PersonalInfo to Contract
-        personal_info = personal_info_contract.get_info(account_address, default_value="")
+        personal_info = personal_info_contract.get_info(account_address, default_value=None)
     else:
         personal_info = _idx_personal_info.personal_info
 
