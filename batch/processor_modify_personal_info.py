@@ -172,7 +172,10 @@ class Processor:
         # Modify
         LOG.info(
             f"Modify Start: issuer_address={temporary.issuer_address}, account_address={idx_personal_info.account_address}")
-        info = personal_info_contract_accessor.get_info(idx_personal_info.account_address)
+        info = personal_info_contract_accessor.get_info(
+            idx_personal_info.account_address,
+            default_value=None
+        )
         LOG.info(
             f"Modify End: issuer_address={temporary.issuer_address}, account_address={idx_personal_info.account_address}")
         # Back RSA
@@ -192,7 +195,11 @@ class Processor:
             return False
 
         # Modify personal information
-        personal_info_contract_accessor.modify_info(idx_personal_info.account_address, info)
+        personal_info_contract_accessor.modify_info(
+            account_address=idx_personal_info.account_address,
+            data=info,
+            default_value=None
+        )
         return True
 
     @staticmethod

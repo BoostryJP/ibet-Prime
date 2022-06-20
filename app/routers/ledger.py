@@ -215,8 +215,8 @@ def retrieve_ledger_history(
                         db=db
                     )
                     if personal_info is not None:
-                        data["name"] = personal_info.get("name", "")
-                        data["address"] = personal_info.get("address", "")
+                        data["name"] = personal_info.get("name", None) or ""
+                        data["address"] = personal_info.get("address", None) or ""
 
     return resp
 
@@ -534,8 +534,8 @@ def create_ledger_details_data(
         _details_data = LedgerDetailsData()
         _details_data.token_address = token_address
         _details_data.data_id = data_id
-        _details_data.name = data.name
-        _details_data.address = data.address
+        _details_data.name = getattr(data, "name") or ""
+        _details_data.address = getattr(data, "address") or ""
         _details_data.amount = data.amount
         _details_data.price = data.price
         _details_data.balance = data.balance
