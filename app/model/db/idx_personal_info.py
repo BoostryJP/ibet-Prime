@@ -16,12 +16,13 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import Column
 from sqlalchemy import (
+    Column,
     BigInteger,
     String,
     JSON
 )
+from sqlalchemy.ext.hybrid import hybrid_property
 
 from .base import Base
 
@@ -46,7 +47,35 @@ class IDXPersonalInfo(Base):
     #       "is_corporate": "boolean",
     #       "tax_category": "integer"
     #   }
-    personal_info = Column(JSON, nullable=False)
+    _personal_info = Column('personal_info', JSON, nullable=False)
+
+    @hybrid_property
+    def personal_info(self):
+        if self._personal_info:
+            return {
+                "key_manager": self._personal_info.get("key_manager", None),
+                "name": self._personal_info.get("name", None),
+                "address": self._personal_info.get("address", None),
+                "postal_code": self._personal_info.get("postal_code", None),
+                "email": self._personal_info.get("email", None),
+                "birth": self._personal_info.get("birth", None),
+                "is_corporate": self._personal_info.get("is_corporate", None),
+                "tax_category": self._personal_info.get("tax_category", None)
+            }
+        return self._personal_info
+
+    @personal_info.setter  # type: ignore
+    def personal_info(self, personal_info_dict):
+        self._personal_info = {
+            "key_manager": personal_info_dict.get("key_manager", None),
+            "name": personal_info_dict.get("name", None),
+            "address": personal_info_dict.get("address", None),
+            "postal_code": personal_info_dict.get("postal_code", None),
+            "email": personal_info_dict.get("email", None),
+            "birth": personal_info_dict.get("birth", None),
+            "is_corporate": personal_info_dict.get("is_corporate", None),
+            "tax_category": personal_info_dict.get("tax_category", None)
+        }
 
 
 class IDXPersonalInfoBlockNumber(Base):

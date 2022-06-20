@@ -106,9 +106,9 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
             "pending_transfer": 5
         }
 
-    # <Normal_2>
+    # <Normal_2_1>
     # PersonalInfo not registry
-    def test_normal_2(self, client, db):
+    def test_normal_2_1(self, client, db):
         user = config_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -155,6 +155,78 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
                 "address": None,
                 "email": None,
                 "birth": None,
+                "is_corporate": None,
+                "tax_category": None
+            },
+            "balance": 10,
+            "exchange_balance": 11,
+            "exchange_commitment": 12,
+            "pending_transfer": 5
+        }
+
+    # <Normal_2_2>
+    # PersonalInfo is partially registered
+    def test_normal_2_2(self, client, db):
+        user = config_eth_account("user1")
+        _issuer_address = user["address"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+        _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        db.add(token)
+
+        idx_position_1 = IDXPosition()
+        idx_position_1.token_address = _token_address
+        idx_position_1.account_address = _account_address_1
+        idx_position_1.balance = 10
+        idx_position_1.exchange_balance = 11
+        idx_position_1.exchange_commitment = 12
+        idx_position_1.pending_transfer = 5
+        db.add(idx_position_1)
+
+        idx_personal_info_1 = IDXPersonalInfo()
+        idx_personal_info_1.account_address = _account_address_1
+        idx_personal_info_1.issuer_address = _issuer_address
+        idx_personal_info_1.personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1"
+            # PersonalInfo is partially registered.
+        }
+        db.add(idx_personal_info_1)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(_token_address, _account_address_1),
+            headers={
+                "issuer-address": _issuer_address
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "account_address": _account_address_1,
+            "personal_information": {
+                "key_manager": "key_manager_test1",
+                "name": "name_test1",
+                "postal_code": "postal_code_test1",
+                "address": "address_test1",
+                "email": "email_test1",
+                "birth": "birth_test1",
                 "is_corporate": None,
                 "tax_category": None
             },

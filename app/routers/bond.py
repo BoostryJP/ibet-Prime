@@ -937,7 +937,8 @@ def modify_holder_personal_info(
         )
         personal_info_contract.modify_info(
             account_address=account_address,
-            data=personal_info.dict()
+            data=personal_info.dict(),
+            default_value=None
         )
     except SendTransactionError:
         raise SendTransactionError("failed to modify personal information")
@@ -991,7 +992,8 @@ def register_holder_personal_info(
         )
         personal_info_contract.register_info(
             account_address=personal_info.account_address,
-            data=personal_info.dict()
+            data=personal_info.dict(),
+            default_value=None
         )
     except SendTransactionError:
         raise SendTransactionError("failed to register personal information")

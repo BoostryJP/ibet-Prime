@@ -155,7 +155,8 @@ class Processor:
                         block = web3.eth.get_block(event["blockNumber"])
                         timestamp = datetime.utcfromtimestamp(block["timestamp"])
                         decrypted_personal_info = _personal_info_contract.get_info(
-                            account_address=account_address
+                            account_address=account_address,
+                            default_value=None
                         )
                         self.__sink_on_personal_info(
                             db_session=db_session,
@@ -180,7 +181,8 @@ class Processor:
                         block = web3.eth.get_block(event["blockNumber"])
                         timestamp = datetime.utcfromtimestamp(block["timestamp"])
                         decrypted_personal_info = _personal_info_contract.get_info(
-                            account_address=account_address
+                            account_address=account_address,
+                            default_value=None
                         )
                         self.__sink_on_personal_info(
                             db_session=db_session,
