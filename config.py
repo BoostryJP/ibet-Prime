@@ -49,7 +49,6 @@ else:
                    'postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb'
 DATABASE_SCHEMA = os.environ.get('DATABASE_SCHEMA')
 DB_ECHO = True if CONFIG['database']['echo'] == 'yes' else False
-DB_AUTOCOMMIT = True
 
 # Blockchain
 WEB3_HTTP_PROVIDER = os.environ.get('WEB3_HTTP_PROVIDER') or 'http://localhost:8545'
