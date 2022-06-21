@@ -215,8 +215,8 @@ def retrieve_ledger_history(
                         db=db
                     )
                     if personal_info is not None:
-                        data["name"] = personal_info.get("name", None) or ""
-                        data["address"] = personal_info.get("address", None) or ""
+                        data["name"] = personal_info.get("name", None)
+                        data["address"] = personal_info.get("address", None)
 
     return resp
 

@@ -189,8 +189,8 @@ def __get_details_data_list_from_ibetfin(token_address: str, token_type: str, db
         for date_ymd, amount in date_ymd_amount.items():
             details_data = {
                 "account_address": account_address,
-                "name": "",
-                "address": "",
+                "name": None,
+                "address": None,
                 "amount": amount,
                 "price": price,
                 "balance": price * amount,
@@ -199,8 +199,8 @@ def __get_details_data_list_from_ibetfin(token_address: str, token_type: str, db
 
             # Update PersonalInfo
             personal_info = __get_personal_info(account_address, issuer_address, personal_info_contract, db)
-            details_data["name"] = personal_info.get("name", "")
-            details_data["address"] = personal_info.get("address", "")
+            details_data["name"] = personal_info.get("name", None)
+            details_data["address"] = personal_info.get("address", None)
 
             data_list.append(details_data)
 

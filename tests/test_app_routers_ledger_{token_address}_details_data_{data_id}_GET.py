@@ -210,7 +210,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdGET:
         _details_1_data_1.token_address = token_address
         _details_1_data_1.data_id = data_id
         _details_1_data_1.name = "name_test_0"
-        _details_1_data_1.address = "address_test_0"
+        _details_1_data_1.address = None
         _details_1_data_1.amount = 0
         _details_1_data_1.price = 1
         _details_1_data_1.balance = 2
@@ -253,7 +253,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdGET:
         assert resp.json() == [
             {
                 "name": "name_test_0",
-                "address": "address_test_0",
+                "address": None,
                 "amount": 0,
                 "price": 1,
                 "balance": 2,
