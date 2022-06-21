@@ -106,8 +106,8 @@ class ListAllLedgerHistoryResponse(BaseModel):
 class RetrieveLedgerDetailsDataHistoryResponse(BaseModel):
     """Retrieve Ledger Details Data History schema (Response)"""
     account_address: Optional[str]
-    name: str
-    address: str
+    name: Optional[str]
+    address: Optional[str]
     amount: int
     price: int
     balance: int
@@ -173,8 +173,8 @@ class LedgerDetailsDataResponse(BaseModel):
 
 class RetrieveLedgerDetailsDataResponse(BaseModel):
     """Retrieve Ledger Details Data schema (Response)"""
-    name: str
-    address: str
+    name: Optional[str]
+    address: Optional[str]
     amount: int
     price: int
     balance: int
