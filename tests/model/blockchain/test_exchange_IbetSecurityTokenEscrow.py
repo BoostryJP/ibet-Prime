@@ -410,7 +410,7 @@ class TestApproveTransfer:
 
         # mock
         InspectionMock = mock.patch(
-            "web3.eth.Eth.waitForTransactionReceipt",
+            "web3.eth.Eth.wait_for_transaction_receipt",
             MagicMock(side_effect=ConnectionError)
         )
         # test IbetSecurityTokenEscrow.approve_transfer

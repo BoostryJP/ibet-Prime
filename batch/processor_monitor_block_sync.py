@@ -134,7 +134,7 @@ class Processor:
         try:
             # NOTE: Immediately after the processing, the monitoring data is not retained,
             #       so the past block number is acquired.
-            block = web3.eth.get_block(max(web3.eth.blockNumber - BLOCK_SYNC_STATUS_CALC_PERIOD, 0))
+            block = web3.eth.get_block(max(web3.eth.block_number - BLOCK_SYNC_STATUS_CALC_PERIOD, 0))
         except Web3WrapperException:
             self.__web3_errors(db_session=db_session, endpoint_uri=endpoint_uri)
             LOG.error(f"Node connection failed: {endpoint_uri}")
@@ -170,7 +170,7 @@ class Processor:
         # Check increased block number
         data = {
             "time": time.time(),
-            "block_number": web3.eth.blockNumber
+            "block_number": web3.eth.block_number
         }
         old_data = history.peek_oldest()
         elapsed_time = data["time"] - old_data["time"]

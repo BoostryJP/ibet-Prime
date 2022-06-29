@@ -299,7 +299,7 @@ class TestProcessor:
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         _token_holders_list = token_holders_list(token_contract.address, block_number, list_id)
         db.add(_token_holders_list)
         db.commit()
@@ -417,7 +417,7 @@ class TestProcessor:
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         _token_holders_list = token_holders_list(token_contract.address, block_number, list_id)
         db.add(_token_holders_list)
         db.commit()
@@ -523,7 +523,7 @@ class TestProcessor:
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         _token_holders_list = token_holders_list(token_contract.address, block_number, list_id)
         db.add(_token_holders_list)
         db.commit()
@@ -671,7 +671,7 @@ class TestProcessor:
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         _token_holders_list = token_holders_list(token_contract.address, block_number, list_id)
         db.add(_token_holders_list)
         db.commit()
@@ -789,7 +789,7 @@ class TestProcessor:
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         _token_holders_list = token_holders_list(token_contract.address, block_number, list_id)
         db.add(_token_holders_list)
         db.commit()
@@ -896,7 +896,7 @@ class TestProcessor:
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         _token_holders_list = token_holders_list(token_contract.address, block_number, list_id)
         db.add(_token_holders_list)
         db.commit()
@@ -974,7 +974,7 @@ class TestProcessor:
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         _token_holders_list1 = token_holders_list(token_contract.address, block_number, list_id)
         db.add(_token_holders_list1)
         db.commit()
@@ -985,7 +985,7 @@ class TestProcessor:
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         _token_holders_list2 = token_holders_list(token_contract.address, block_number, list_id)
         db.add(_token_holders_list2)
         db.commit()
@@ -1045,7 +1045,7 @@ class TestProcessor:
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         _token_holders_list1 = token_holders_list(token_contract.address, block_number, list_id)
         db.add(_token_holders_list1)
         db.commit()
@@ -1057,7 +1057,7 @@ class TestProcessor:
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         _token_holders_list2 = token_holders_list(token_contract.address, block_number, list_id)
         db.add(_token_holders_list2)
         db.commit()
@@ -1179,7 +1179,7 @@ class TestProcessor:
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         _token_holders_list = token_holders_list(token_contract.address, block_number, list_id)
         db.add(_token_holders_list)
         db.commit()
@@ -1231,7 +1231,7 @@ class TestProcessor:
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         _token_holders_list = token_holders_list(token_contract.address, block_number, list_id)
         db.add(_token_holders_list)
         db.commit()

@@ -161,7 +161,7 @@ class TestProcessor:
 
         # Execute batch(Run 1st)
         # Assume: Skip processing
-        latest_block = web3.eth.blockNumber
+        latest_block = web3.eth.block_number
         processor.process()
 
         # assertion
@@ -285,7 +285,7 @@ class TestProcessor:
         _token_1.abi = {}
         db.add(_token_1)
 
-        latest_block_number = web3.eth.blockNumber
+        latest_block_number = web3.eth.block_number
         _utxo_block_number = UTXOBlockNumber()
         _utxo_block_number.latest_block_number = latest_block_number
         db.add(_utxo_block_number)
@@ -562,7 +562,7 @@ class TestProcessor:
         time.sleep(1)
 
         # Execute batch
-        latest_block = web3.eth.blockNumber
+        latest_block = web3.eth.block_number
         processor.process()
 
         # assertion
@@ -690,7 +690,7 @@ class TestProcessor:
         time.sleep(1)
 
         # Execute batch
-        latest_block = web3.eth.blockNumber
+        latest_block = web3.eth.block_number
         processor.process()
 
         # assertion
@@ -744,7 +744,7 @@ class TestProcessor:
         db.commit()
 
         # Execute batch
-        latest_block = web3.eth.blockNumber
+        latest_block = web3.eth.block_number
         with mock.patch("web3.eth.Eth.uninstallFilter", MagicMock(side_effect=Exception("mock test"))) as web3_mock:
             processor.process()
 

@@ -897,8 +897,8 @@ class TestUpdate:
         )
 
         # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.waitForTransactionReceipt",
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
             side_effect=TimeExhausted
         )
 
@@ -907,7 +907,7 @@ class TestUpdate:
             "face_value": 20001
         }
         _add_data = IbetStraightBondUpdate(**_data)
-        with Web3_sendRawTransaction:
+        with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetStraightBondContract.update(
                     contract_address=contract_address,
@@ -941,8 +941,8 @@ class TestUpdate:
         )
 
         # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.waitForTransactionReceipt",
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
             side_effect=TransactionNotFound
         )
 
@@ -951,7 +951,7 @@ class TestUpdate:
             "face_value": 20001
         }
         _add_data = IbetStraightBondUpdate(**_data)
-        with Web3_sendRawTransaction:
+        with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetStraightBondContract.update(
                     contract_address=contract_address,
@@ -1284,8 +1284,8 @@ class TestTransfer:
         )
 
         # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.waitForTransactionReceipt",
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
             side_effect=TimeExhausted
         )
 
@@ -1297,7 +1297,7 @@ class TestTransfer:
             "amount": 10
         }
         _transfer_data = IbetStraightBondTransfer(**_data)
-        with Web3_sendRawTransaction:
+        with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetStraightBondContract.transfer(
                     data=_transfer_data,
@@ -1333,8 +1333,8 @@ class TestTransfer:
         )
 
         # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.waitForTransactionReceipt",
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
             side_effect=TransactionNotFound
         )
 
@@ -1346,7 +1346,7 @@ class TestTransfer:
             "amount": 10
         }
         _transfer_data = IbetStraightBondTransfer(**_data)
-        with Web3_sendRawTransaction:
+        with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetStraightBondContract.transfer(
                     data=_transfer_data,
@@ -1676,8 +1676,8 @@ class TestAdditionalIssue:
         )
 
         # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.waitForTransactionReceipt",
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
             side_effect=TimeExhausted
         )
 
@@ -1687,7 +1687,7 @@ class TestAdditionalIssue:
             "amount": 10
         }
         _add_data = IbetStraightBondAdditionalIssue(**_data)
-        with Web3_sendRawTransaction:
+        with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetStraightBondContract.additional_issue(
                     contract_address=contract_address,
@@ -1721,8 +1721,8 @@ class TestAdditionalIssue:
         )
 
         # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.waitForTransactionReceipt",
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
             side_effect=TransactionNotFound
         )
 
@@ -1732,7 +1732,7 @@ class TestAdditionalIssue:
             "amount": 10
         }
         _add_data = IbetStraightBondAdditionalIssue(**_data)
-        with Web3_sendRawTransaction:
+        with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetStraightBondContract.additional_issue(
                     contract_address=contract_address,
@@ -2066,8 +2066,8 @@ class TestRedeem:
         )
 
         # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.waitForTransactionReceipt",
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
             side_effect=TimeExhausted
         )
 
@@ -2077,7 +2077,7 @@ class TestRedeem:
             "amount": 10
         }
         _add_data = IbetStraightBondRedeem(**_data)
-        with Web3_sendRawTransaction:
+        with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetStraightBondContract.redeem(
                     contract_address=contract_address,
@@ -2111,8 +2111,8 @@ class TestRedeem:
         )
 
         # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.waitForTransactionReceipt",
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
             side_effect=TransactionNotFound
         )
 
@@ -2122,7 +2122,7 @@ class TestRedeem:
             "amount": 10
         }
         _add_data = IbetStraightBondRedeem(**_data)
-        with Web3_sendRawTransaction:
+        with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetStraightBondContract.redeem(
                     contract_address=contract_address,

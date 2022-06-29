@@ -162,7 +162,7 @@ class TestProcessor:
         db.commit()
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -219,7 +219,7 @@ class TestProcessor:
         db.commit()
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -310,7 +310,7 @@ class TestProcessor:
         _, tx_receipt_1 = ContractUtils.send_transaction(tx, user_private_key_1)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -424,7 +424,7 @@ class TestProcessor:
         _, tx_receipt_1 = ContractUtils.send_transaction(tx, user_private_key_1)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -535,7 +535,7 @@ class TestProcessor:
         _, tx_receipt_1 = ContractUtils.send_transaction(tx, user_private_key_1)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -654,7 +654,7 @@ class TestProcessor:
         _, tx_receipt_3 = ContractUtils.send_transaction(tx_3, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
         db.commit()
 
@@ -764,7 +764,7 @@ class TestProcessor:
         _, tx_receipt_3 = ContractUtils.send_transaction(tx_3, user_private_key_1)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
         db.commit()
 
@@ -886,7 +886,7 @@ class TestProcessor:
         _, tx_receipt_2 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -1017,7 +1017,7 @@ class TestProcessor:
         _, tx_receipt_1 = ContractUtils.send_transaction(tx, user_private_key_1)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -1160,7 +1160,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, user_private_key_1)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -1293,7 +1293,7 @@ class TestProcessor:
         _, tx_receipt_2 = ContractUtils.send_transaction(tx, user_private_key_1)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -1438,7 +1438,7 @@ class TestProcessor:
         block_2 = web3.eth.get_block(tx_receipt_2["blockNumber"])
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -1480,7 +1480,7 @@ class TestProcessor:
     # <Normal_6>
     # If block number processed in batch is equal or greater than current block number,
     # batch will output a log "skip process".
-    @mock.patch("web3.eth.Eth.blockNumber", 100)
+    @mock.patch("web3.eth.Eth.block_number", 100)
     def test_normal_6(self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture):
         _idx_transfer_approval_block_number = IDXTransferApprovalBlockNumber()
         _idx_transfer_approval_block_number.id = 1

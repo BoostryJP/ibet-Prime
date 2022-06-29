@@ -76,7 +76,7 @@ def set_personal_info_contract(db, contract_address, issuer_address, sender_list
 
     for sender in sender_list:
         tx = contract.functions.register(issuer_address, "").buildTransaction({
-            "nonce": web3.eth.getTransactionCount(sender["user"]["address"]),
+            "nonce": web3.eth.get_transaction_count(sender["user"]["address"]),
             "chainId": CHAIN_ID,
             "from": sender["user"]["address"],
             "gas": TX_GAS_LIMIT,

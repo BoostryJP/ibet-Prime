@@ -151,7 +151,7 @@ class TestProcessor:
         db.commit()
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -204,7 +204,7 @@ class TestProcessor:
         db.commit()
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -263,7 +263,7 @@ class TestProcessor:
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -340,7 +340,7 @@ class TestProcessor:
         tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -439,7 +439,7 @@ class TestProcessor:
         tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -548,7 +548,7 @@ class TestProcessor:
         tx_hash_4, tx_receipt_4 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -648,7 +648,7 @@ class TestProcessor:
     # <Normal_6>
     # If block number processed in batch is equal or greater than current block number,
     # batch logs "skip process".
-    @mock.patch("web3.eth.Eth.blockNumber", 100)
+    @mock.patch("web3.eth.Eth.block_number", 100)
     def test_normal_6(self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture):
         _idx_position_bond_block_number = IDXTransferBlockNumber()
         _idx_position_bond_block_number.id = 1

@@ -57,7 +57,7 @@ db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 class Processor:
     def __init__(self):
-        self.latest_block = web3.eth.blockNumber
+        self.latest_block = web3.eth.block_number
         self.token_list = []
         self.exchange_address_list = []
 
@@ -68,7 +68,7 @@ class Processor:
 
             # Get from_block_number and to_block_number for contract event filter
             idx_position_block_number = self.__get_idx_position_block_number(db_session=db_session)
-            latest_block = web3.eth.blockNumber
+            latest_block = web3.eth.block_number
 
             if idx_position_block_number >= latest_block:
                 LOG.debug("skip process")
@@ -217,7 +217,7 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     for account in [args.get("from", ZERO_ADDRESS), args.get("to", ZERO_ADDRESS)]:
-                        if web3.eth.getCode(account).hex() == "0x":
+                        if web3.eth.get_code(account).hex() == "0x":
                             balance, pending_transfer, exchange_balance, exchange_commitment = \
                                 self.__get_account_balance_all(token, account)
                             self.__sink_on_position(

@@ -55,7 +55,7 @@ db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 class Processor:
     def __init__(self):
-        self.latest_block = web3.eth.blockNumber
+        self.latest_block = web3.eth.block_number
         self.personal_info_contract_list = []
 
     def process(self):
@@ -64,7 +64,7 @@ class Processor:
             self.__refresh_personal_info_list(db_session=db_session)
             # most recent blockNumber that has been synchronized with DB
             block_number = self.__get_block_number(db_session=db_session)
-            latest_block = web3.eth.blockNumber  # latest blockNumber
+            latest_block = web3.eth.block_number  # latest blockNumber
 
             if block_number >= latest_block:
                 LOG.debug("skip Process")

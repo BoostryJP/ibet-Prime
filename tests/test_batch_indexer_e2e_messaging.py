@@ -140,7 +140,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         db.commit()
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
@@ -201,7 +201,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         sending_block_timestamp = datetime.utcfromtimestamp(sending_block["timestamp"])
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
@@ -311,7 +311,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         db.commit()
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
@@ -444,7 +444,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         sending_block_timestamp_4 = datetime.utcfromtimestamp(sending_block["timestamp"])
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
@@ -540,7 +540,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         )
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
@@ -594,7 +594,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                                   user_private_key_2)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
@@ -657,7 +657,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                                   user_private_key_2)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
@@ -709,7 +709,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                                   user_private_key_2)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
@@ -773,7 +773,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                                   user_private_key_2)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
@@ -833,7 +833,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                                   user_private_key_2)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
@@ -892,7 +892,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                                   user_private_key_2)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
@@ -956,7 +956,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                                   user_private_key_2)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
@@ -1014,7 +1014,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         db.commit()
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
@@ -1075,7 +1075,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                                   user_private_key_2)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
@@ -1137,7 +1137,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                                   user_private_key_2)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
@@ -1204,7 +1204,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                                   user_private_key_2)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
@@ -1264,7 +1264,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                                   user_private_key_2)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
@@ -1329,7 +1329,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                                   user_private_key_2)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
