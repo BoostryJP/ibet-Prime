@@ -39,7 +39,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
 
     # Normal_1
     # POST collection request.
-    @mock.patch("web3.eth.Eth.blockNumber", 100)
+    @mock.patch("web3.eth.Eth.block_number", 100)
     def test_normal_1(self, client, db):
         # issue token
         user = config_eth_account("user1")
@@ -81,7 +81,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
 
     # Normal_2
     # POST collection request twice.
-    @mock.patch("web3.eth.Eth.blockNumber", 101)
+    @mock.patch("web3.eth.Eth.block_number", 101)
     def test_normal_2(self, client, db):
         # issue token
         user = config_eth_account("user1")
@@ -118,7 +118,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
 
     # Normal_3
     # POST collection request with already existing contract_address and block_number.
-    @mock.patch("web3.eth.Eth.blockNumber", 100)
+    @mock.patch("web3.eth.Eth.block_number", 100)
     def test_normal_3(self, client, db):
         # issue token
         user = config_eth_account("user1")
@@ -171,7 +171,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
     # Error_1
     # 422: Validation Error
     # List id in request body is empty.
-    @mock.patch("web3.eth.Eth.blockNumber", 100)
+    @mock.patch("web3.eth.Eth.block_number", 100)
     def test_error_1(self, client, db):
         # issue token
         user = config_eth_account("user1")
@@ -211,7 +211,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
     # Error_2
     # 404: Not Found Error
     # Invalid contract address
-    @mock.patch("web3.eth.Eth.blockNumber", 100)
+    @mock.patch("web3.eth.Eth.block_number", 100)
     def test_error_2(self, client, db):
         # issue token
         user = config_eth_account("user1")
@@ -246,7 +246,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
     # Error_3
     # 422: Invalid Parameter Error
     # "list_id" is not UUIDv4.
-    @mock.patch("web3.eth.Eth.blockNumber", 100)
+    @mock.patch("web3.eth.Eth.block_number", 100)
     def test_error_3(self, client, db):
         # issue token
         user = config_eth_account("user1")
@@ -281,7 +281,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
     # Error_4
     # 400: Invalid Parameter Error
     # Block number is future one or negative.
-    @mock.patch("web3.eth.Eth.blockNumber", 100)
+    @mock.patch("web3.eth.Eth.block_number", 100)
     def test_error_4(self, client, db):
         # issue token
         user = config_eth_account("user1")
@@ -316,7 +316,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
     # Error_5
     # 400: Invalid Parameter Error
     # Duplicate list_id is posted.
-    @mock.patch("web3.eth.Eth.blockNumber", 100)
+    @mock.patch("web3.eth.Eth.block_number", 100)
     def test_error_5(self, client, db):
         # issue token
         user = config_eth_account("user1")
@@ -378,7 +378,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
     # Error_6
     # 400: Invalid Parameter Errori
     # Not listed token
-    @mock.patch("web3.eth.Eth.blockNumber", 100)
+    @mock.patch("web3.eth.Eth.block_number", 100)
     def test_error_6(self, client, db):
         # issue token
         user = config_eth_account("user1")
@@ -417,7 +417,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
     # Error_7
     # 422: Validation Error
     # Issuer-address in request header is not set.
-    @mock.patch("web3.eth.Eth.blockNumber", 100)
+    @mock.patch("web3.eth.Eth.block_number", 100)
     def test_error_7(self, client, db):
         # issue token
         user = config_eth_account("user1")

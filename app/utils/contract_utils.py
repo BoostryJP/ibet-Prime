@@ -190,15 +190,15 @@ class ContractUtils:
 
         try:
             # Get nonce
-            nonce = web3.eth.getTransactionCount(_tx_from)
+            nonce = web3.eth.get_transaction_count(_tx_from)
             transaction["nonce"] = nonce
             signed_tx = web3.eth.account.sign_transaction(
                 transaction_dict=transaction,
                 private_key=private_key
             )
             # Send Transaction
-            tx_hash = web3.eth.sendRawTransaction(signed_tx.rawTransaction.hex())
-            tx_receipt = web3.eth.waitForTransactionReceipt(
+            tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction.hex())
+            tx_receipt = web3.eth.wait_for_transaction_receipt(
                 transaction_hash=tx_hash,
                 timeout=10
             )
@@ -216,7 +216,7 @@ class ContractUtils:
 
     @staticmethod
     def inspect_tx_failure(tx_hash: str) -> str:
-        tx = web3.eth.getTransaction(tx_hash)
+        tx = web3.eth.get_transaction(tx_hash)
 
         # build a new transaction to replay:
         replay_tx = {
@@ -248,7 +248,7 @@ class ContractUtils:
         :param tx_hash: transaction hash
         :return: block
         """
-        tx = web3.eth.getTransaction(tx_hash)
+        tx = web3.eth.get_transaction(tx_hash)
         block = web3.eth.get_block(tx["blockNumber"])
         return block
 

@@ -185,7 +185,7 @@ class TestProcessor:
         db.commit()
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
@@ -250,7 +250,7 @@ class TestProcessor:
         db.commit()
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
@@ -336,7 +336,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, user_private_key_1)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
@@ -457,7 +457,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # If we query in one session before and after update some record in another session,
@@ -582,7 +582,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # If we query in one session before and after update some record in another session,
@@ -622,7 +622,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # If we query in one session before and after update some record in another session,
@@ -762,7 +762,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key_2)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.process()
 
         # Prepare data for assertion
@@ -795,7 +795,7 @@ class TestProcessor:
     # <Normal_5>
     # If block number processed in batch is equal or greater than current block number,
     # batch logs "skip Process".
-    @mock.patch("web3.eth.Eth.blockNumber", 100)
+    @mock.patch("web3.eth.Eth.block_number", 100)
     def test_normal_5(self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture):
         _idx_personal_info_block_number = IDXPersonalInfoBlockNumber()
         _idx_personal_info_block_number.id = 1

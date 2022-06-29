@@ -77,7 +77,7 @@ ibetSecurityTokenEscrow
 
 class Processor:
     def __init__(self):
-        self.latest_block = web3.eth.blockNumber
+        self.latest_block = web3.eth.block_number
         self.token_list = []
 
     def sync_new_logs(self):
@@ -87,7 +87,7 @@ class Processor:
 
             # Get from_block_number and to_block_number for contract event filter
             idx_transfer_approval_block_number = self.__get_idx_transfer_approval_block_number(db_session=db_session)
-            latest_block = web3.eth.blockNumber
+            latest_block = web3.eth.block_number
 
             if idx_transfer_approval_block_number >= latest_block:
                 LOG.debug("skip process")
@@ -470,7 +470,7 @@ class Processor:
             token = db_session.query(Token). \
                 filter(Token.token_address == token_address). \
                 first()
-            sender = web3.eth.getTransaction(transaction_hash)["from"]
+            sender = web3.eth.get_transaction(transaction_hash)["from"]
             if token is not None:
                 if token.issuer_address != sender:  # Operate from other than issuer
                     if notice_code == 0:  # ApplyForTransfer

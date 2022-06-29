@@ -18,7 +18,6 @@ SPDX-License-Identifier: Apache-2.0
 """
 import uuid
 from typing import List
-import pytz
 
 from fastapi import APIRouter, Depends, Header, Path
 from fastapi.exceptions import HTTPException
@@ -85,7 +84,7 @@ def create_collection(
         raise InvalidParameterError("wait for a while as the token is being processed")
 
     # Validate block number
-    if data.block_number > web3.eth.blockNumber:
+    if data.block_number > web3.eth.block_number:
         raise InvalidParameterError("Block number must be current or past one.")
 
     # Check list id conflict

@@ -94,7 +94,7 @@ class TestGetInfo:
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
         tx = contract.functions.register(issuer["address"], ciphertext).buildTransaction({
-            "nonce": web3.eth.getTransactionCount(setting_user["address"]),
+            "nonce": web3.eth.get_transaction_count(setting_user["address"]),
             "from": setting_user["address"],
             "gas": TX_GAS_LIMIT,
             "gasPrice": 0,
@@ -122,7 +122,7 @@ class TestGetInfo:
         setting_user = config_eth_account("user2")
         contract = personal_info_contract.personal_info_contract
         tx = contract.functions.register(issuer["address"], "").buildTransaction({
-            "nonce": web3.eth.getTransactionCount(setting_user["address"]),
+            "nonce": web3.eth.get_transaction_count(setting_user["address"]),
             "from": setting_user["address"],
             "gas": TX_GAS_LIMIT,
             "gasPrice": 0,
@@ -177,7 +177,7 @@ class TestGetInfo:
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
         tx = contract.functions.register(issuer["address"], ciphertext).buildTransaction({
-            "nonce": web3.eth.getTransactionCount(setting_user["address"]),
+            "nonce": web3.eth.get_transaction_count(setting_user["address"]),
             "from": setting_user["address"],
             "gas": TX_GAS_LIMIT,
             "gasPrice": 0,
@@ -217,7 +217,7 @@ class TestGetInfo:
         setting_user = config_eth_account("user2")
         contract = personal_info_contract.personal_info_contract
         tx = contract.functions.register(issuer["address"], "testtest").buildTransaction({
-            "nonce": web3.eth.getTransactionCount(setting_user["address"]),
+            "nonce": web3.eth.get_transaction_count(setting_user["address"]),
             "from": setting_user["address"],
             "gas": TX_GAS_LIMIT,
             "gasPrice": 0,
@@ -300,7 +300,7 @@ class TestRegisterInfo:
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
         tx = contract.functions.register(issuer["address"], ciphertext).buildTransaction({
-            "nonce": web3.eth.getTransactionCount(setting_user["address"]),
+            "nonce": web3.eth.get_transaction_count(setting_user["address"]),
             "from": setting_user["address"],
             "gas": TX_GAS_LIMIT,
             "gasPrice": 0,
@@ -352,7 +352,7 @@ class TestRegisterInfo:
             "is_corporate": False,
             "tax_category": 10
         }
-        with mock.patch("web3.eth.Eth.waitForTransactionReceipt", MagicMock(side_effect=TimeExhausted())):
+        with mock.patch("web3.eth.Eth.wait_for_transaction_receipt", MagicMock(side_effect=TimeExhausted())):
             with pytest.raises(SendTransactionError):
                 personal_info_contract.register_info(setting_user["address"], register_data)
 
@@ -374,7 +374,7 @@ class TestRegisterInfo:
             "is_corporate": False,
             "tax_category": 10
         }
-        with mock.patch("web3.eth.Eth.waitForTransactionReceipt", MagicMock(side_effect=TypeError())):
+        with mock.patch("web3.eth.Eth.wait_for_transaction_receipt", MagicMock(side_effect=TypeError())):
             with pytest.raises(SendTransactionError):
                 personal_info_contract.register_info(setting_user["address"], register_data)
 
@@ -414,7 +414,7 @@ class TestModifyInfo:
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
         tx = contract.functions.register(issuer["address"], ciphertext).buildTransaction({
-            "nonce": web3.eth.getTransactionCount(setting_user["address"]),
+            "nonce": web3.eth.get_transaction_count(setting_user["address"]),
             "from": setting_user["address"],
             "gas": TX_GAS_LIMIT,
             "gasPrice": 0,
@@ -472,7 +472,7 @@ class TestModifyInfo:
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
         tx = contract.functions.register(issuer["address"], ciphertext).buildTransaction({
-            "nonce": web3.eth.getTransactionCount(setting_user["address"]),
+            "nonce": web3.eth.get_transaction_count(setting_user["address"]),
             "from": setting_user["address"],
             "gas": TX_GAS_LIMIT,
             "gasPrice": 0,
@@ -496,7 +496,7 @@ class TestModifyInfo:
             "is_corporate": False,
             "tax_category": 10
         }
-        with mock.patch("web3.eth.Eth.waitForTransactionReceipt", MagicMock(side_effect=TimeExhausted())):
+        with mock.patch("web3.eth.Eth.wait_for_transaction_receipt", MagicMock(side_effect=TimeExhausted())):
             with pytest.raises(SendTransactionError):
                 personal_info_contract.modify_info(setting_user["address"], update_data)
 
@@ -524,7 +524,7 @@ class TestModifyInfo:
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
         tx = contract.functions.register(issuer["address"], ciphertext).buildTransaction({
-            "nonce": web3.eth.getTransactionCount(setting_user["address"]),
+            "nonce": web3.eth.get_transaction_count(setting_user["address"]),
             "from": setting_user["address"],
             "gas": TX_GAS_LIMIT,
             "gasPrice": 0,
@@ -548,7 +548,7 @@ class TestModifyInfo:
             "is_corporate": False,
             "tax_category": 10
         }
-        with mock.patch("web3.eth.Eth.waitForTransactionReceipt", MagicMock(side_effect=TypeError())):
+        with mock.patch("web3.eth.Eth.wait_for_transaction_receipt", MagicMock(side_effect=TypeError())):
             with pytest.raises(SendTransactionError):
                 personal_info_contract.modify_info(setting_user["address"], update_data)
 
@@ -599,7 +599,7 @@ class TestGetRegisterEvent:
         issuer = config_eth_account("user1")
         personal_info_contract = initialize(issuer, db)
 
-        block_number_before = web3.eth.blockNumber
+        block_number_before = web3.eth.block_number
 
         # Set personal information data(Register)
         setting_user = config_eth_account("user2")
@@ -619,7 +619,7 @@ class TestGetRegisterEvent:
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
         tx = contract.functions.register(issuer["address"], ciphertext).buildTransaction({
-            "nonce": web3.eth.getTransactionCount(setting_user["address"]),
+            "nonce": web3.eth.get_transaction_count(setting_user["address"]),
             "from": setting_user["address"],
             "gas": TX_GAS_LIMIT,
             "gasPrice": 0,
@@ -632,7 +632,7 @@ class TestGetRegisterEvent:
         )
         ContractUtils.send_transaction(tx, private_key)
 
-        block_number_after = web3.eth.blockNumber
+        block_number_after = web3.eth.block_number
 
         events = personal_info_contract.get_register_event(block_number_before, block_number_after)
 
@@ -670,7 +670,7 @@ class TestGetModifyEvent:
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
         tx = contract.functions.register(issuer["address"], ciphertext).buildTransaction({
-            "nonce": web3.eth.getTransactionCount(setting_user["address"]),
+            "nonce": web3.eth.get_transaction_count(setting_user["address"]),
             "from": setting_user["address"],
             "gas": TX_GAS_LIMIT,
             "gasPrice": 0,
@@ -683,7 +683,7 @@ class TestGetModifyEvent:
         )
         ContractUtils.send_transaction(tx, private_key)
 
-        block_number_before = web3.eth.blockNumber
+        block_number_before = web3.eth.block_number
 
         # Modify
         update_data = {
@@ -699,7 +699,7 @@ class TestGetModifyEvent:
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(update_data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
         tx = contract.functions.modify(setting_user["address"], ciphertext).buildTransaction({
-            "nonce": web3.eth.getTransactionCount(issuer["address"]),
+            "nonce": web3.eth.get_transaction_count(issuer["address"]),
             "from": issuer["address"],
             "gas": TX_GAS_LIMIT,
             "gasPrice": 0,
@@ -711,7 +711,7 @@ class TestGetModifyEvent:
         )
         ContractUtils.send_transaction(tx, private_key)
 
-        block_number_after = web3.eth.blockNumber
+        block_number_after = web3.eth.block_number
 
         events = personal_info_contract.get_modify_event(block_number_before, block_number_after)
 

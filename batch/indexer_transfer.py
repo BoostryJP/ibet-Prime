@@ -52,7 +52,7 @@ db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 class Processor:
     def __init__(self):
-        self.latest_block = web3.eth.blockNumber
+        self.latest_block = web3.eth.block_number
         self.token_list = []
 
     def sync_new_logs(self):
@@ -62,7 +62,7 @@ class Processor:
 
             # Get from_block_number and to_block_number for contract event filter
             idx_transfer_block_number = self.__get_idx_transfer_block_number(db_session=db_session)
-            latest_block = web3.eth.blockNumber
+            latest_block = web3.eth.block_number
 
             if idx_transfer_block_number >= latest_block:
                 LOG.debug("skip process")

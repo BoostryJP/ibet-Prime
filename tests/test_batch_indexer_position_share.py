@@ -132,7 +132,7 @@ class TestProcessor:
         db.commit()
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -194,7 +194,7 @@ class TestProcessor:
         db.commit()
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -269,7 +269,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -351,7 +351,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -434,7 +434,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -544,7 +544,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # If we query in one session before and after update some record in another session,
@@ -635,7 +635,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -736,7 +736,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # If we query in one session before and after update some record in another session,
@@ -813,7 +813,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -897,7 +897,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -1002,7 +1002,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # If we query in one session before and after update some record in another session,
@@ -1111,7 +1111,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # If we query in one session before and after update some record in another session,
@@ -1221,7 +1221,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # If we query in one session before and after update some record in another session,
@@ -1296,7 +1296,7 @@ class TestProcessor:
         IbetExchangeContractTestUtils.cancel_order(exchange_contract.address, user_address_1, user_pk_1, [latest_order_id])
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -1381,7 +1381,7 @@ class TestProcessor:
         IbetExchangeContractTestUtils.force_cancel_order(exchange_contract.address, issuer_address, issuer_private_key, [latest_order_id])
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -1466,7 +1466,7 @@ class TestProcessor:
         IbetExchangeContractTestUtils.execute_order(exchange_contract.address, user_address_2, user_pk_2, [latest_order_id, 10, True])
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -1555,7 +1555,7 @@ class TestProcessor:
         )
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -1644,7 +1644,7 @@ class TestProcessor:
         )
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -1759,7 +1759,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # If we query in one session before and after update some record in another session,
@@ -1835,7 +1835,7 @@ class TestProcessor:
         STEscrowContractUtils.cancel_escrow(escrow_contract.address, user_address_1, user_pk_1, [latest_escrow_id])
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -1922,7 +1922,7 @@ class TestProcessor:
             ibet_security_token_escrow_contract.address, issuer_address, issuer_private_key, [latest_escrow_id]
         )
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -2041,7 +2041,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, user_private_key_1)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -2152,7 +2152,7 @@ class TestProcessor:
         _, _ = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         _position_list = db.query(IDXPosition).all()
@@ -2262,7 +2262,7 @@ class TestProcessor:
         IbetExchangeContractTestUtils.cancel_order(exchange_contract.address, user_address_1, user_pk_1, [latest_order_id])
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -2349,7 +2349,7 @@ class TestProcessor:
             STEscrowContractUtils.cancel_escrow(escrow_contract.address, user_address_1, user_pk_1, [latest_escrow_id])
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -2444,7 +2444,7 @@ class TestProcessor:
         STContractUtils.transfer(token_contract2.address, issuer_address, issuer_private_key, [user_address_2, 60])
 
         # Run target process
-        block_number = web3.eth.blockNumber
+        block_number = web3.eth.block_number
         processor.sync_new_logs()
 
         # Assertion
@@ -2499,7 +2499,7 @@ class TestProcessor:
     # <Normal_5>
     # If block number processed in batch is equal or greater than current block number,
     # batch logs "skip process".
-    @mock.patch("web3.eth.Eth.blockNumber", 100)
+    @mock.patch("web3.eth.Eth.block_number", 100)
     def test_normal_5(self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture):
         _idx_position_share_block_number = IDXPositionShareBlockNumber()
         _idx_position_share_block_number.id = 1

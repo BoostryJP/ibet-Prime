@@ -302,8 +302,8 @@ class TestSendTransaction:
         )
 
         # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.waitForTransactionReceipt",
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
             return_value={
                 "dummy": "hoge",
                 "status": 0
@@ -314,7 +314,7 @@ class TestSendTransaction:
             side_effect=ContractLogicError("execution reverted")
         )
 
-        with Web3_sendRawTransaction, InspectionMock:
+        with Web3_send_raw_transaction, InspectionMock:
             with pytest.raises(ContractRevertError):
                 ContractUtils.send_transaction(
                     transaction=tx,
@@ -342,12 +342,12 @@ class TestSendTransaction:
         )
 
         # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.waitForTransactionReceipt",
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
             side_effect=ValueError
         )
 
-        with Web3_sendRawTransaction:
+        with Web3_send_raw_transaction:
             with pytest.raises(ValueError):
                 ContractUtils.send_transaction(
                     transaction=tx,
@@ -443,7 +443,7 @@ class TestGetBlockByTransactionHash:
                 "gasPrice": 0,
             }
         )
-        nonce = web3.eth.getTransactionCount(self.test_account["address"])
+        nonce = web3.eth.get_transaction_count(self.test_account["address"])
         tx["nonce"] = nonce
         signed_tx = web3.eth.account.sign_transaction(
             transaction_dict=tx,
@@ -451,8 +451,8 @@ class TestGetBlockByTransactionHash:
         )
 
         # Send Transaction
-        tx_hash = web3.eth.sendRawTransaction(signed_tx.rawTransaction.hex())
-        tx_receipt = web3.eth.waitForTransactionReceipt(
+        tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction.hex())
+        tx_receipt = web3.eth.wait_for_transaction_receipt(
             transaction_hash=tx_hash,
             timeout=10
         )

@@ -64,7 +64,7 @@ class Processor:
 
             # Get from_block_number and to_block_number for contract event filter
             utxo_block_number = self.__get_utxo_block_number(db_session=db_session)
-            latest_block = web3.eth.blockNumber
+            latest_block = web3.eth.block_number
 
             if utxo_block_number >= latest_block:
                 LOG.debug("skip process")
@@ -209,7 +209,7 @@ class Processor:
                 amount = args.get("value")
 
                 # Skip sinking in case of deposit to exchange or withdrawal from exchange
-                if web3.eth.getCode(from_account).hex() != "0x" or web3.eth.getCode(to_account).hex() != "0x":
+                if web3.eth.get_code(from_account).hex() != "0x" or web3.eth.get_code(to_account).hex() != "0x":
                     continue
 
                 transaction_hash = event["transaction_hash"]

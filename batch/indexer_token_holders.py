@@ -255,7 +255,7 @@ class Processor:
                 amount = args.get("value")
 
                 # Skip sinking in case of deposit to exchange or withdrawal from exchange
-                if web3.eth.getCode(from_account).hex() != "0x" or web3.eth.getCode(to_account).hex() != "0x":
+                if web3.eth.get_code(from_account).hex() != "0x" or web3.eth.get_code(to_account).hex() != "0x":
                     continue
 
                 if amount is not None and amount <= sys.maxsize:

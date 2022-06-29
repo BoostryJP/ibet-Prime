@@ -46,7 +46,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # Normal_1
     # GET
     # Holders in response is empty.
-    @mock.patch("web3.eth.Eth.blockNumber", 100)
+    @mock.patch("web3.eth.Eth.block_number", 100)
     def test_normal_1(self, client, db):
         # Issue Token
         user = config_eth_account("user1")
@@ -323,7 +323,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # Error_6
     # 422: Request Validation Error
     # Issuer-address in request header is not set.
-    @mock.patch("web3.eth.Eth.blockNumber", 100)
+    @mock.patch("web3.eth.Eth.block_number", 100)
     def test_error_6(self, client, db):
         # Issue Token
         user = config_eth_account("user1")
