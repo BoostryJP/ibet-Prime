@@ -63,7 +63,7 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
-            bulk_transfer_upload.token_type = TokenType.IBET_SHARE
+            bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
             bulk_transfer_upload.status = i
             db.add(bulk_transfer_upload)
 
@@ -71,7 +71,7 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer.upload_id = self.upload_id_list[i]
-            bulk_transfer.token_type = TokenType.IBET_SHARE
+            bulk_transfer.token_type = TokenType.IBET_SHARE.value
             bulk_transfer.token_address = self.bulk_transfer_token
             bulk_transfer.from_address = self.upload_issuer_list[1]["address"]
             bulk_transfer.to_address = self.upload_issuer_list[2]["address"]
@@ -90,7 +90,7 @@ class TestAppRoutersShareBulkTransferGET:
         assumed_response = [
             {
                 "issuer_address": self.upload_issuer_list[1]["address"],
-                "token_type": TokenType.IBET_SHARE,
+                "token_type": TokenType.IBET_SHARE.value,
                 "upload_id": self.upload_id_list[1],
                 "token_address": self.bulk_transfer_token,
                 "from_address": self.upload_issuer_list[1]["address"],
@@ -109,7 +109,7 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
-            bulk_transfer_upload.token_type = TokenType.IBET_SHARE
+            bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
             bulk_transfer_upload.status = i
             db.add(bulk_transfer_upload)
 
@@ -117,7 +117,7 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer.upload_id = self.upload_id_list[i]
-            bulk_transfer.token_type = TokenType.IBET_SHARE
+            bulk_transfer.token_type = TokenType.IBET_SHARE.value
             bulk_transfer.token_address = self.bulk_transfer_token
             bulk_transfer.from_address = self.upload_issuer_list[1]["address"]
             bulk_transfer.to_address = self.upload_issuer_list[2]["address"]
@@ -135,7 +135,7 @@ class TestAppRoutersShareBulkTransferGET:
         assumed_response = [
             {
                 "issuer_address": self.upload_issuer_list[0]["address"],
-                "token_type": TokenType.IBET_SHARE,
+                "token_type": TokenType.IBET_SHARE.value,
                 "upload_id": self.upload_id_list[0],
                 "token_address": self.bulk_transfer_token,
                 "from_address": self.upload_issuer_list[1]["address"],
@@ -209,7 +209,7 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
-            bulk_transfer_upload.token_type = TokenType.IBET_SHARE
+            bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
             bulk_transfer_upload.status = i
             db.add(bulk_transfer_upload)
 
@@ -217,7 +217,7 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer.upload_id = self.upload_id_list[i]
-            bulk_transfer.token_type = TokenType.IBET_SHARE
+            bulk_transfer.token_type = TokenType.IBET_SHARE.value
             bulk_transfer.token_address = self.bulk_transfer_token
             bulk_transfer.from_address = self.upload_issuer_list[1]["address"]
             bulk_transfer.to_address = self.upload_issuer_list[2]["address"]

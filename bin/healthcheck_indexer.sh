@@ -20,6 +20,7 @@
 PROC_LIST="${PROC_LIST} batch/indexer_personal_info.py"
 PROC_LIST="${PROC_LIST} batch/indexer_position_bond.py"
 PROC_LIST="${PROC_LIST} batch/indexer_position_share.py"
+PROC_LIST="${PROC_LIST} batch/indexer_token_holders.py"
 PROC_LIST="${PROC_LIST} batch/indexer_transfer.py"
 PROC_LIST="${PROC_LIST} batch/indexer_transfer_approval.py"
 

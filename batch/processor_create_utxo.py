@@ -64,7 +64,7 @@ class Processor:
 
             # Get from_block_number and to_block_number for contract event filter
             utxo_block_number = self.__get_utxo_block_number(db_session=db_session)
-            latest_block = web3.eth.blockNumber
+            latest_block = web3.eth.block_number
 
             if utxo_block_number >= latest_block:
                 LOG.debug("skip process")
@@ -83,6 +83,12 @@ class Processor:
                         block_from=block_from,
                         block_to=block_to)
                     event_triggered = event_triggered | self.__process_issue(
+                        db_session=db_session,
+                        token_contract=token_contract,
+                        block_from=block_from,
+                        block_to=block_to
+                    )
+                    event_triggered = event_triggered | self.__process_redeem(
                         db_session=db_session,
                         token_contract=token_contract,
                         block_from=block_from,
@@ -203,7 +209,7 @@ class Processor:
                 amount = args.get("value")
 
                 # Skip sinking in case of deposit to exchange or withdrawal from exchange
-                if web3.eth.getCode(from_account).hex() != "0x" or web3.eth.getCode(to_account).hex() != "0x":
+                if web3.eth.get_code(from_account).hex() != "0x" or web3.eth.get_code(to_account).hex() != "0x":
                     continue
 
                 transaction_hash = event["transaction_hash"]
@@ -281,6 +287,58 @@ class Processor:
                     self.__sink_on_utxo(
                         db_session=db_session,
                         spent=False,
+                        transaction_hash=transaction_hash,
+                        token_address=token_contract.address,
+                        account_address=account,
+                        amount=amount,
+                        block_number=block_number,
+                        block_timestamp=block_timestamp
+                    )
+
+            return event_triggered
+        except Exception as e:
+            LOG.exception(e)
+            return False
+
+    def __process_redeem(self, db_session: Session, token_contract: Contract, block_from: int, block_to: int):
+        """Process Redeem Event
+
+        - The process of updating UTXO data by capturing the following events
+        - `Redeem` event on Token contracts
+
+        :param db_session: database session
+        :param token_contract: Token contract
+        :param block_from: Block from
+        :param block_to: Block to
+        :return: Whether events have occurred or not
+        """
+        try:
+            # Get "Redeem" events from token contract
+            events = ContractUtils.get_event_logs(
+                contract=token_contract,
+                event="Redeem",
+                block_from=block_from,
+                block_to=block_to
+            )
+
+            # Sink
+            event_triggered = False
+            for event in events:
+                args = event["args"]
+                account = args.get("targetAddress", ZERO_ADDRESS)
+                amount = args.get("amount")
+
+                transaction_hash = event["transactionHash"].hex()
+                block_number = event["blockNumber"]
+                block_timestamp = datetime.utcfromtimestamp(web3.eth.get_block(block_number)["timestamp"])  # UTC
+
+                if amount is not None and amount <= sys.maxsize:
+                    event_triggered = True
+
+                    # Update UTXO
+                    self.__sink_on_utxo(
+                        db_session=db_session,
+                        spent=True,
                         transaction_hash=transaction_hash,
                         token_address=token_contract.address,
                         account_address=account,

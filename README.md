@@ -1,7 +1,7 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-22.3-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-22.6-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
@@ -22,12 +22,12 @@
 - [PostgreSQL](https://www.postgresql.org/) - Version 13
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - We support the official GoQuorum node of [ibet-Network](https://github.com/BoostryJP/ibet-Network).
-  - We use [ganache-cli](https://github.com/trufflesuite/ganache-cli) for local development and unit testing, and we use the latest version.
+  - We use [ganache](https://github.com/trufflesuite/ganache) for local development and unit testing, and we use the latest version.
 
 
 ## Supported ibet smart contract version
 
-* ibet-SmartContract: version 21.12.0
+* ibet-SmartContract: version 22.3.0
 
 
 ## Setup

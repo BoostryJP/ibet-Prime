@@ -24,6 +24,7 @@ from pydantic import (
 
 from config import E2EE_REQUEST_ENABLED
 from app.utils.check_utils import check_value_is_encrypted
+from app.model.db import AccountRsaStatus
 
 
 ############################
@@ -95,5 +96,5 @@ class AccountResponse(BaseModel):
     """Account schema (Response)"""
     issuer_address: str
     rsa_public_key: Optional[str]
-    rsa_status: int
+    rsa_status: AccountRsaStatus
     is_deleted: bool

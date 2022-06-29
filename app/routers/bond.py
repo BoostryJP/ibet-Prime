@@ -65,6 +65,7 @@ from app.model.schema import (
     ScheduledEventIdResponse,
     ScheduledEventResponse,
     ModifyPersonalInfoRequest,
+    RegisterPersonalInfoRequest,
     TransferApprovalsResponse,
     TransferApprovalHistoryResponse,
     TransferApprovalTokenResponse,
@@ -110,7 +111,8 @@ from app.model.blockchain import (
 )
 from app.exceptions import (
     InvalidParameterError,
-    SendTransactionError
+    SendTransactionError,
+    ContractRevertError
 )
 from config import TZ
 
@@ -126,7 +128,7 @@ local_tz = timezone(TZ)
 @router.post(
     "/tokens",
     response_model=TokenAddressResponse,
-    responses=get_routers_responses(422, 401, SendTransactionError)
+    responses=get_routers_responses(422, 401, SendTransactionError, ContractRevertError)
 )
 def issue_token(
         request: Request,
@@ -203,7 +205,7 @@ def issue_token(
         _update_token = UpdateToken()
         _update_token.token_address = contract_address
         _update_token.issuer_address = issuer_address
-        _update_token.type = TokenType.IBET_STRAIGHT_BOND
+        _update_token.type = TokenType.IBET_STRAIGHT_BOND.value
         _update_token.arguments = token_dict
         _update_token.status = 0  # pending
         _update_token.trigger = "Issue"
@@ -216,7 +218,7 @@ def issue_token(
             TokenListContract.register(
                 token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                 token_address=contract_address,
-                token_template=TokenType.IBET_STRAIGHT_BOND,
+                token_template=TokenType.IBET_STRAIGHT_BOND.value,
                 account_address=issuer_address,
                 private_key=private_key
             )
@@ -248,7 +250,7 @@ def issue_token(
 
     # Register token data
     _token = Token()
-    _token.type = TokenType.IBET_STRAIGHT_BOND
+    _token.type = TokenType.IBET_STRAIGHT_BOND.value
     _token.tx_hash = tx_hash
     _token.issuer_address = issuer_address
     _token.token_address = contract_address
@@ -288,12 +290,12 @@ def list_all_tokens(
     # Get issued token list
     if issuer_address is None:
         tokens = db.query(Token). \
-            filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+            filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
             order_by(Token.id). \
             all()
     else:
         tokens = db.query(Token). \
-            filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+            filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
             filter(Token.issuer_address == issuer_address). \
             order_by(Token.id). \
             all()
@@ -332,7 +334,7 @@ def retrieve_token(
     """Retrieve token"""
     # Get Token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
         first()
@@ -363,7 +365,7 @@ def retrieve_token(
 @router.post(
     "/tokens/{token_address}",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def update_token(
         request: Request,
@@ -390,7 +392,7 @@ def update_token(
 
     # Get Token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -430,7 +432,7 @@ def update_token(
 @router.post(
     "/tokens/{token_address}/additional_issue",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def additional_issue(
         request: Request,
@@ -457,7 +459,7 @@ def additional_issue(
 
     # Get Token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -485,7 +487,7 @@ def additional_issue(
 @router.post(
     "/tokens/{token_address}/redeem",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def redeem_token(
         request: Request,
@@ -512,7 +514,7 @@ def redeem_token(
 
     # Get Token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -549,13 +551,13 @@ def list_all_scheduled_events(
 
     if issuer_address is None:
         _token_events = db.query(ScheduledEvents). \
-            filter(ScheduledEvents.token_type == TokenType.IBET_STRAIGHT_BOND). \
+            filter(ScheduledEvents.token_type == TokenType.IBET_STRAIGHT_BOND.value). \
             filter(ScheduledEvents.token_address == token_address). \
             order_by(ScheduledEvents.id). \
             all()
     else:
         _token_events = db.query(ScheduledEvents). \
-            filter(ScheduledEvents.token_type == TokenType.IBET_STRAIGHT_BOND). \
+            filter(ScheduledEvents.token_type == TokenType.IBET_STRAIGHT_BOND.value). \
             filter(ScheduledEvents.issuer_address == issuer_address). \
             filter(ScheduledEvents.token_address == token_address). \
             order_by(ScheduledEvents.id). \
@@ -569,7 +571,7 @@ def list_all_scheduled_events(
             {
                 "scheduled_event_id": _token_event.event_id,
                 "token_address": token_address,
-                "token_type": TokenType.IBET_STRAIGHT_BOND,
+                "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                 "scheduled_datetime": scheduled_datetime_utc.astimezone(local_tz).isoformat(),
                 "event_type": _token_event.event_type,
                 "status": _token_event.status,
@@ -606,7 +608,7 @@ def schedule_new_update_event(
 
     # Verify that the token is issued by the issuer
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -621,7 +623,7 @@ def schedule_new_update_event(
     _scheduled_event.event_id = str(uuid.uuid4())
     _scheduled_event.issuer_address = issuer_address
     _scheduled_event.token_address = token_address
-    _scheduled_event.token_type = TokenType.IBET_STRAIGHT_BOND
+    _scheduled_event.token_type = TokenType.IBET_STRAIGHT_BOND.value
     _scheduled_event.scheduled_datetime = event_data.scheduled_datetime
     _scheduled_event.event_type = event_data.event_type
     _scheduled_event.data = event_data.data.dict()
@@ -647,13 +649,13 @@ def retrieve_token_event(
 
     if issuer_address is None:
         _token_event = db.query(ScheduledEvents). \
-            filter(ScheduledEvents.token_type == TokenType.IBET_STRAIGHT_BOND). \
+            filter(ScheduledEvents.token_type == TokenType.IBET_STRAIGHT_BOND.value). \
             filter(ScheduledEvents.event_id == scheduled_event_id). \
             filter(ScheduledEvents.token_address == token_address). \
             first()
     else:
         _token_event = db.query(ScheduledEvents). \
-            filter(ScheduledEvents.token_type == TokenType.IBET_STRAIGHT_BOND). \
+            filter(ScheduledEvents.token_type == TokenType.IBET_STRAIGHT_BOND.value). \
             filter(ScheduledEvents.event_id == scheduled_event_id). \
             filter(ScheduledEvents.issuer_address == issuer_address). \
             filter(ScheduledEvents.token_address == token_address). \
@@ -666,7 +668,7 @@ def retrieve_token_event(
     return {
         "scheduled_event_id": _token_event.event_id,
         "token_address": token_address,
-        "token_type": TokenType.IBET_STRAIGHT_BOND,
+        "token_type": TokenType.IBET_STRAIGHT_BOND.value,
         "scheduled_datetime": scheduled_datetime_utc.astimezone(local_tz).isoformat(),
         "event_type": _token_event.event_type,
         "status": _token_event.status,
@@ -701,7 +703,7 @@ def delete_scheduled_event(
 
     # Delete an event
     _token_event = db.query(ScheduledEvents). \
-        filter(ScheduledEvents.token_type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(ScheduledEvents.token_type == TokenType.IBET_STRAIGHT_BOND.value). \
         filter(ScheduledEvents.event_id == scheduled_event_id). \
         filter(ScheduledEvents.issuer_address == issuer_address). \
         filter(ScheduledEvents.token_address == token_address). \
@@ -714,7 +716,7 @@ def delete_scheduled_event(
     rtn = {
         "scheduled_event_id": _token_event.event_id,
         "token_address": token_address,
-        "token_type": TokenType.IBET_STRAIGHT_BOND,
+        "token_type": TokenType.IBET_STRAIGHT_BOND.value,
         "scheduled_datetime": scheduled_datetime_utc.astimezone(local_tz).isoformat(),
         "event_type": _token_event.event_type,
         "status": _token_event.status,
@@ -751,7 +753,7 @@ def list_all_holders(
 
     # Get Token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -782,7 +784,9 @@ def list_all_holders(
         "postal_code": None,
         "address": None,
         "email": None,
-        "birth": None
+        "birth": None,
+        "is_corporate": None,
+        "tax_category": None
     }
 
     holders = []
@@ -828,7 +832,7 @@ def retrieve_holder(
 
     # Get Token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -861,7 +865,9 @@ def retrieve_holder(
         "postal_code": None,
         "address": None,
         "email": None,
-        "birth": None
+        "birth": None,
+        "is_corporate": None,
+        "tax_category": None
     }
     _personal_info_record = db.query(IDXPersonalInfo). \
         filter(IDXPersonalInfo.account_address == account_address). \
@@ -888,7 +894,7 @@ def retrieve_holder(
 @router.post(
     "/tokens/{token_address}/holders/{account_address}/personal_info",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError)
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def modify_holder_personal_info(
         request: Request,
@@ -911,7 +917,7 @@ def modify_holder_personal_info(
 
     # Verify that the token is issued by the issuer_address
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -931,10 +937,66 @@ def modify_holder_personal_info(
         )
         personal_info_contract.modify_info(
             account_address=account_address,
-            data=personal_info.dict()
+            data=personal_info.dict(),
+            default_value=None
         )
     except SendTransactionError:
         raise SendTransactionError("failed to modify personal information")
+
+    return
+
+
+# POST: /bond/tokens/{token_address}/personal_info
+@router.post(
+    "/tokens/{token_address}/personal_info",
+    response_model=None,
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
+)
+def register_holder_personal_info(
+        request: Request,
+        token_address: str,
+        personal_info: RegisterPersonalInfoRequest,
+        issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Register the holder's personal information"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value])
+    )
+
+    # Authentication
+    check_auth(issuer_address, eoa_password, db, request)
+
+    # Verify that the token is issued by the issuer_address
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("wait for a while as the token is being processed")
+
+    # Register Personal Info
+    token_contract = IbetStraightBondContract.get(token_address)
+    try:
+        personal_info_contract = PersonalInfoContract(
+            db=db,
+            issuer_address=issuer_address,
+            contract_address=token_contract.personal_info_contract_address
+        )
+        personal_info_contract.register_info(
+            account_address=personal_info.account_address,
+            data=personal_info.dict(),
+            default_value=None
+        )
+    except SendTransactionError:
+        raise SendTransactionError("failed to register personal information")
 
     return
 
@@ -943,7 +1005,7 @@ def modify_holder_personal_info(
 @router.post(
     "/transfers",
     response_model=None,
-    responses=get_routers_responses(422, 401, InvalidParameterError, SendTransactionError)
+    responses=get_routers_responses(422, 401, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def transfer_ownership(
         request: Request,
@@ -969,7 +1031,7 @@ def transfer_ownership(
 
     # Verify that the token is issued by the issuer_address
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token.token_address). \
         filter(Token.token_status != 2). \
@@ -1008,7 +1070,7 @@ def list_transfer_history(
     """List token transfer history"""
     # Get token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
         first()
@@ -1080,17 +1142,27 @@ def list_transfer_approval_history(
     """List transfer approval history"""
     # Create a subquery for 'status' added IDXTransferApproval
     case_status = case(
-        [(and_(IDXTransferApproval.transfer_approved == True,
-               IDXTransferApproval.approval_blocktimestamp == None),
-          1),  # approved
-         (and_(IDXTransferApproval.transfer_approved == True,
-               IDXTransferApproval.approval_blocktimestamp != None),
-          2),  # transferred
-         (IDXTransferApproval.cancelled == True,
-          3)],  # canceled
-        else_=0).label("status")  # unapproved
-    subquery = aliased(IDXTransferApproval,
-                       db.query(IDXTransferApproval, case_status).subquery())
+        [
+            (
+                and_(IDXTransferApproval.escrow_finished == True,
+                     IDXTransferApproval.transfer_approved == None),
+                1
+            ),  # EscrowFinish(escrow_finished)
+            (
+                IDXTransferApproval.transfer_approved == True,
+                2
+            ),  # Approve(transferred)
+            (
+                IDXTransferApproval.cancelled == True,
+                3
+            )  # Cancel(canceled)
+        ],
+        else_=0  # ApplyFor(unapproved)
+    ).label("status")
+    subquery = aliased(
+        IDXTransferApproval,
+        db.query(IDXTransferApproval, case_status).subquery()
+    )
 
     # Get transfer approval history
     query = db.query(Token.issuer_address,
@@ -1101,7 +1173,7 @@ def list_transfer_approval_history(
                      func.count(or_(literal_column("status") == 2, None)),
                      func.count(or_(literal_column("status") == 3, None))). \
         join(Token, subquery.token_address == Token.token_address). \
-        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
         filter(Token.token_status != 2)
     if issuer_address is not None:
         query = query.filter(Token.issuer_address == issuer_address)
@@ -1121,13 +1193,14 @@ def list_transfer_approval_history(
 
     transfer_approvals = []
     for issuer_address, token_address, application_count, \
-            unapproved_count, approved_count, transferred_count, canceled_count in _transfer_approvals:
+        unapproved_count, escrow_finished_count, transferred_count, canceled_count \
+            in _transfer_approvals:
         transfer_approvals.append({
             "issuer_address": issuer_address,
             "token_address": token_address,
             "application_count": application_count,
             "unapproved_count": unapproved_count,
-            "approved_count": approved_count,
+            "escrow_finished_count": escrow_finished_count,
             "transferred_count": transferred_count,
             "canceled_count": canceled_count,
         })
@@ -1153,8 +1226,12 @@ def list_token_transfer_approval_history(
         token_address: str,
         from_address: Optional[str] = Query(None),
         to_address: Optional[str] = Query(None),
-        status: Optional[int] = Query(None, ge=0, le=3,
-                                      description="0:unapproved, 1:approved, 2:transferred, 3:canceled"),
+        status: Optional[List[int]] = Query(
+            None,
+            ge=0,
+            le=3,
+            description="0:unapproved, 1:escrow_finished, 2:transferred, 3:canceled"
+        ),
         sort_item: Optional[TransferApprovalsSortItem] = Query(TransferApprovalsSortItem.ID),
         sort_order: Optional[int] = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
         offset: Optional[int] = Query(None),
@@ -1164,7 +1241,7 @@ def list_token_transfer_approval_history(
     """List token transfer approval history"""
     # Get token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
         first()
@@ -1175,16 +1252,27 @@ def list_token_transfer_approval_history(
 
     # Create a subquery for 'status' added IDXTransferApproval
     case_status = case(
-        [(and_(IDXTransferApproval.transfer_approved == True,
-               IDXTransferApproval.approval_blocktimestamp == None),
-          1),  # approved
-         (and_(IDXTransferApproval.transfer_approved == True,
-               IDXTransferApproval.approval_blocktimestamp != None),
-          2),  # transferred
-         (IDXTransferApproval.cancelled == True,
-          3)],  # canceled
-        else_=0).label("status")  # unapproved
-    subquery = aliased(IDXTransferApproval, db.query(IDXTransferApproval, case_status).subquery())
+        [
+            (
+                and_(IDXTransferApproval.escrow_finished == True,
+                     IDXTransferApproval.transfer_approved == None),
+                1
+            ),  # EscrowFinish(escrow_finished)
+            (
+                IDXTransferApproval.transfer_approved == True,
+                2
+            ),  # Approve(transferred)
+            (
+                IDXTransferApproval.cancelled == True,
+                3
+            )  # Cancel(canceled)
+        ],
+        else_=0  # ApplyFor(unapproved)
+    ).label("status")
+    subquery = aliased(
+        IDXTransferApproval,
+        db.query(IDXTransferApproval, case_status).subquery()
+    )
 
     # Get transfer approval history
     query = db.query(subquery, literal_column("status")). \
@@ -1197,7 +1285,7 @@ def list_token_transfer_approval_history(
     if to_address is not None:
         query = query.filter(subquery.to_address == to_address)
     if status is not None:
-        query = query.filter(literal_column("status") == status)
+        query = query.filter(literal_column("status").in_(status))
     count = query.count()
 
     # Sort
@@ -1222,14 +1310,21 @@ def list_token_transfer_approval_history(
 
     transfer_approval_history = []
     for _transfer_approval, status in _transfer_approvals:
-        if _transfer_approval.cancelled is None:
+        if _transfer_approval.cancelled is True:
+            cancelled = True
+        else:
             cancelled = False
+
+        if _transfer_approval.transfer_approved is True:
+            transfer_approved = True
         else:
-            cancelled = _transfer_approval.cancelled
-        if _transfer_approval.transfer_approved is None:
             transfer_approved = False
-        else:
-            transfer_approved = _transfer_approval.transfer_approved
+
+        escrow_finished = False
+        if _transfer_approval.exchange_address is not None:
+            if _transfer_approval.escrow_finished is True:
+                escrow_finished = True
+
         if _transfer_approval.exchange_address is not None:
             issuer_cancelable = False
         else:
@@ -1266,6 +1361,7 @@ def list_token_transfer_approval_history(
             "approval_datetime": approval_datetime,
             "approval_blocktimestamp": approval_blocktimestamp,
             "cancelled": cancelled,
+            "escrow_finished": escrow_finished,
             "transfer_approved": transfer_approved,
             "status": status,
             "issuer_cancelable": issuer_cancelable
@@ -1285,7 +1381,7 @@ def list_token_transfer_approval_history(
 # POST: /bond/transfer_approvals/{token_address}/{id}
 @router.post(
     "/transfer_approvals/{token_address}/{id}",
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError)
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def update_transfer_approval(
         request: Request,
@@ -1314,7 +1410,7 @@ def update_transfer_approval(
 
     # Get token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
         first()
@@ -1330,10 +1426,14 @@ def update_transfer_approval(
         first()
     if _transfer_approval is None:
         raise HTTPException(status_code=404, detail="transfer approval not found")
-    if _transfer_approval.approval_blocktimestamp is not None:
+
+    if _transfer_approval.transfer_approved is True:
         raise InvalidParameterError("already approved")
     if _transfer_approval.cancelled is True:
         raise InvalidParameterError("canceled application")
+    if _transfer_approval.exchange_address is not None and \
+            _transfer_approval.escrow_finished is not True:
+        raise InvalidParameterError("escrow has not been finished yet")
     if data.operation_type == UpdateTransferApprovalOperationType.CANCEL and \
             _transfer_approval.exchange_address is not None:
         # Cancellation is possible only against approval of the transfer of a token contract.
@@ -1359,45 +1459,63 @@ def update_transfer_approval(
                     "application_id": _transfer_approval.application_id,
                     "data": now
                 }
-                _, tx_receipt = IbetStraightBondContract.approve_transfer(
-                    contract_address=token_address,
-                    data=IbetSecurityTokenApproveTransfer(**_data),
-                    tx_from=issuer_address,
-                    private_key=private_key,
-                )
-                if tx_receipt["status"] != 1:  # Success
-                    IbetStraightBondContract.cancel_transfer(
+                try:
+                    _, tx_receipt = IbetStraightBondContract.approve_transfer(
                         contract_address=token_address,
-                        data=IbetSecurityTokenCancelTransfer(**_data),
+                        data=IbetSecurityTokenApproveTransfer(**_data),
                         tx_from=issuer_address,
                         private_key=private_key,
                     )
-                    raise SendTransactionError
+                except ContractRevertError as approve_transfer_err:
+                    # If approveTransfer end with revert,
+                    # cancelTransfer should be performed immediately.
+                    # After cancelTransfer, ContractRevertError is returned.
+                    try:
+                        IbetStraightBondContract.cancel_transfer(
+                            contract_address=token_address,
+                            data=IbetSecurityTokenCancelTransfer(**_data),
+                            tx_from=issuer_address,
+                            private_key=private_key,
+                        )
+                    except ContractRevertError as cancel_transfer_err:
+                        raise
+                    except Exception:
+                        raise SendTransactionError
+                    # If cancel transfer is successful, approve_transfer error is raised.
+                    raise
             else:
                 _data = {
                     "escrow_id": _transfer_approval.application_id,
                     "data": now
                 }
                 escrow = IbetSecurityTokenEscrow(_transfer_approval.exchange_address)
-                _, tx_receipt = escrow.approve_transfer(
-                    data=IbetSecurityTokenEscrowApproveTransfer(**_data),
-                    tx_from=issuer_address,
-                    private_key=private_key,
-                )
-                if tx_receipt["status"] != 1:  # Success
+                try:
+                    _, tx_receipt = escrow.approve_transfer(
+                        data=IbetSecurityTokenEscrowApproveTransfer(**_data),
+                        tx_from=issuer_address,
+                        private_key=private_key,
+                    )
+                except ContractRevertError:
+                    # If approveTransfer end with revert, error should be thrown immediately.
+                    raise
+                except Exception:
                     raise SendTransactionError
         else:  # CANCEL
             _data = {
                 "application_id": _transfer_approval.application_id,
                 "data": now
             }
-            _, tx_receipt = IbetStraightBondContract.cancel_transfer(
-                contract_address=token_address,
-                data=IbetSecurityTokenCancelTransfer(**_data),
-                tx_from=issuer_address,
-                private_key=private_key,
-            )
-            if tx_receipt["status"] != 1:  # Success
+            try:
+                _, tx_receipt = IbetStraightBondContract.cancel_transfer(
+                    contract_address=token_address,
+                    data=IbetSecurityTokenCancelTransfer(**_data),
+                    tx_from=issuer_address,
+                    private_key=private_key,
+                )
+            except ContractRevertError:
+                # If approveTransfer end with revert, error should be thrown immediately.
+                raise
+            except Exception:
                 raise SendTransactionError
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
@@ -1417,7 +1535,7 @@ def retrieve_transfer_approval_history(
     """Retrieve bond token transfer approval history"""
     # Get token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
         first()
@@ -1434,14 +1552,21 @@ def retrieve_transfer_approval_history(
     if _transfer_approval is None:
         raise HTTPException(status_code=404, detail="transfer approval not found")
 
-    if _transfer_approval.cancelled is None:
+    if _transfer_approval.cancelled is True:
+        cancelled = True
+    else:
         cancelled = False
+
+    if _transfer_approval.transfer_approved is True:
+        transfer_approved = True
     else:
-        cancelled = _transfer_approval.cancelled
-    if _transfer_approval.transfer_approved is None:
         transfer_approved = False
-    else:
-        transfer_approved = _transfer_approval.transfer_approved
+
+    escrow_finished = False
+    if _transfer_approval.exchange_address is not None:
+        if _transfer_approval.escrow_finished is True:
+            escrow_finished = True
+
     if _transfer_approval.exchange_address is not None:
         issuer_cancelable = False
     else:
@@ -1466,13 +1591,12 @@ def retrieve_transfer_approval_history(
         approval_blocktimestamp = None
 
     status = 0
-    if _transfer_approval.transfer_approved is True:
-        if _transfer_approval.approval_blocktimestamp is None:
-            status = 1
-        else:
-            status = 2
-    if _transfer_approval.cancelled is True:
-        status = 3
+    if _transfer_approval.escrow_finished is True and _transfer_approval.transfer_approved is not True:
+        status = 1  # EscrowFinish(escrow_finished)
+    elif _transfer_approval.transfer_approved is True:
+        status = 2  # Approve(transferred)
+    elif _transfer_approval.cancelled is True:
+        status = 3  # Cancel(canceled)
 
     history = {
         "id": _transfer_approval.id,
@@ -1487,6 +1611,7 @@ def retrieve_transfer_approval_history(
         "approval_datetime": approval_datetime,
         "approval_blocktimestamp": approval_blocktimestamp,
         "cancelled": cancelled,
+        "escrow_finished": escrow_finished,
         "transfer_approved": transfer_approved,
         "status": status,
         "issuer_cancelable": issuer_cancelable
@@ -1522,7 +1647,7 @@ def bulk_transfer_ownership(
     # Verify that the tokens are issued by the issuer_address
     for _token in tokens:
         _issued_token = db.query(Token). \
-            filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+            filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
             filter(Token.issuer_address == issuer_address). \
             filter(Token.token_address == _token.token_address). \
             filter(Token.token_status != 2). \
@@ -1539,7 +1664,7 @@ def bulk_transfer_ownership(
     _bulk_transfer_upload = BulkTransferUpload()
     _bulk_transfer_upload.upload_id = upload_id
     _bulk_transfer_upload.issuer_address = issuer_address
-    _bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+    _bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
     _bulk_transfer_upload.status = 0
     db.add(_bulk_transfer_upload)
 
@@ -1549,7 +1674,7 @@ def bulk_transfer_ownership(
         _bulk_transfer.issuer_address = issuer_address
         _bulk_transfer.upload_id = upload_id
         _bulk_transfer.token_address = _token.token_address
-        _bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND
+        _bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
         _bulk_transfer.from_address = _token.from_address
         _bulk_transfer.to_address = _token.to_address
         _bulk_transfer.amount = _token.amount
@@ -1578,13 +1703,13 @@ def list_bulk_transfer_upload(
     # Get bulk transfer upload list
     if issuer_address is None:
         _uploads = db.query(BulkTransferUpload). \
-            filter(BulkTransferUpload.token_type == TokenType.IBET_STRAIGHT_BOND). \
+            filter(BulkTransferUpload.token_type == TokenType.IBET_STRAIGHT_BOND.value). \
             order_by(BulkTransferUpload.issuer_address). \
             all()
     else:
         _uploads = db.query(BulkTransferUpload). \
             filter(BulkTransferUpload.issuer_address == issuer_address). \
-            filter(BulkTransferUpload.token_type == TokenType.IBET_STRAIGHT_BOND). \
+            filter(BulkTransferUpload.token_type == TokenType.IBET_STRAIGHT_BOND.value). \
             all()
 
     uploads = []
@@ -1620,14 +1745,14 @@ def retrieve_bulk_transfer(
     if issuer_address is None:
         _bulk_transfers = db.query(BulkTransfer). \
             filter(BulkTransfer.upload_id == upload_id). \
-            filter(BulkTransfer.token_type == TokenType.IBET_STRAIGHT_BOND). \
+            filter(BulkTransfer.token_type == TokenType.IBET_STRAIGHT_BOND.value). \
             order_by(BulkTransfer.issuer_address). \
             all()
     else:
         _bulk_transfers = db.query(BulkTransfer). \
             filter(BulkTransfer.issuer_address == issuer_address). \
             filter(BulkTransfer.upload_id == upload_id). \
-            filter(BulkTransfer.token_type == TokenType.IBET_STRAIGHT_BOND). \
+            filter(BulkTransfer.token_type == TokenType.IBET_STRAIGHT_BOND.value). \
             all()
 
     bulk_transfers = []

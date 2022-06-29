@@ -81,7 +81,7 @@ decoded message's max length is 5000.
 
 class Processor:
     def __init__(self):
-        self.latest_block = web3.eth.blockNumber
+        self.latest_block = web3.eth.block_number
         self.e2e_messaging_contract = ContractUtils.get_contract(
             contract_name="E2EMessaging",
             contract_address=E2E_MESSAGING_CONTRACT_ADDRESS)
@@ -91,7 +91,7 @@ class Processor:
         try:
             # Get from_block_number and to_block_number for contract event filter
             idx_e2e_messaging_block_number = self.__get_idx_e2e_messaging_block_number(db_session=db_session)
-            latest_block = web3.eth.blockNumber
+            latest_block = web3.eth.block_number
 
             if idx_e2e_messaging_block_number >= latest_block:
                 LOG.debug("skip process")

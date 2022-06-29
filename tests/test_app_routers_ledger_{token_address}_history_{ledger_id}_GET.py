@@ -41,8 +41,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
     ###########################################################################
 
     # <Normal_1_1>
-    # Not Most Recent
-    # set issuer-address
+    # Set issue-address in the header
     def test_normal_1_1(self, client, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -52,7 +51,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -61,7 +60,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
         _ledger_1.ledger = {
             "created": "2022/12/01",
             "token_name": "テスト原簿",
@@ -304,8 +303,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         }
 
     # <Normal_1_2>
-    # Not Most Recent
-    # unset issuer-address
+    # Do not set issue-address in the header
     def test_normal_1_2(self, client, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -315,7 +313,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -324,7 +322,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
         _ledger_1.ledger = {
             "created": "2022/12/01",
             "token_name": "テスト原簿",
@@ -563,9 +561,11 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             ],
         }
 
-    # <Normal_2>
-    # Most Recent
-    def test_normal_2(self, client, db):
+    # <Normal_2_1>
+    # latest_flg = 1 (Get the latest personal info)
+    #  address_1 has personal info in the DB
+    #  address_2 has no personal info in the DB
+    def test_normal_2_1(self, client, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -575,7 +575,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -584,7 +584,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
         _ledger_1.ledger = {
             "created": "2022/12/01",
             "token_name": "テスト原簿",
@@ -700,8 +700,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
         db.add(_ledger_1)
 
-        # Note: account_address_1 only
-        _idx_personal_info_1 = IDXPersonalInfo()
+        _idx_personal_info_1 = IDXPersonalInfo()  # Note: account_address_1 has personal information in DB
         _idx_personal_info_1.account_address = account_address_1
         _idx_personal_info_1.issuer_address = issuer_address
         _idx_personal_info_1.personal_info = {
@@ -746,11 +745,14 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
 
         # request target API
         with token_get_mock as token_get_mock_patch, personal_get_info_mock as personal_get_info_mock_patch:
-            # Note: account_address_2 only
+            # Note:
+            # account_address_2 has no personal information in the DB
+            # and gets information from the contract
             personal_get_info_mock_patch.side_effect = [{
                 "name": "name_contract_2",
                 "address": "address_contract_2",
             }]
+
             resp = client.get(
                 self.base_url.format(token_address=token_address, ledger_id=1),
                 params={
@@ -760,11 +762,10 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                     "issuer-address": issuer_address,
                 }
             )
-
             # assertion
             token_get_mock_patch.assert_any_call(token_address)
             personal_get_info_mock_patch.assert_has_calls([
-                call(account_address_2, default_value="")
+                call(account_address=account_address_2, default_value=None)
             ])
 
         # assertion
@@ -800,6 +801,329 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "account_address": account_address_1,
                             "name": "name_db_1",
                             "address": "address_db_1",
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 30,
+                            "acquisition_date": "2022/12/02"
+                        },
+                        {
+                            "account_address": account_address_2,
+                            "name": "name_contract_2",
+                            "address": "address_contract_2",
+                            "amount": 100,
+                            "price": 200,
+                            "balance": 300,
+                            "acquisition_date": "2022/12/03"
+                        }
+                    ],
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "f-test1": "a",
+                            "f-test2": "b"
+                        }
+                    ],
+                },
+                {
+                    "token_detail_type": "権利_test_2",
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "test1-1": "a",
+                            "test2-1": "b"
+                        }
+                    ],
+                    "data": [
+                        {
+                            "account_address": None,
+                            "name": "name_test_1",
+                            "address": "address_test_1",
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 200,
+                            "acquisition_date": "2020/01/01",
+                        },
+                        {
+                            "account_address": None,
+                            "name": "name_test_2",
+                            "address": "address_test_2",
+                            "amount": 20,
+                            "price": 30,
+                            "balance": 600,
+                            "acquisition_date": "2020/01/02",
+                        }
+                    ],
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "f-test1-1": "a",
+                            "f-test2-1": "b"
+                        }
+                    ],
+                },
+            ],
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "f-hoge": "aaaa",
+                    "f-fuga": "bbbb",
+                }
+            ],
+        }
+
+    # <Normal_2_2>
+    # latest_flg = 1 (Get the latest personal info)
+    #  address_1 has partial personal info in the DB
+    #  address_2 has no personal info in the DB
+    def test_normal_2_2(self, client, db):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+        account_address_1 = "0xABCdeF1234567890abCDeF123456789000000001"
+        account_address_2 = "0xaBcdEF1234567890aBCDEF123456789000000002"
+        personal_info_contract_address = "0xabcDEF1234567890AbcDEf123456789000000003"
+
+        # prepare data
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        db.add(_token)
+
+        _ledger_1 = Ledger()
+        _ledger_1.token_address = token_address
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _ledger_1.ledger = {
+            "created": "2022/12/01",
+            "token_name": "テスト原簿",
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "hoge": "aaaa",
+                    "fuga": "bbbb",
+                }
+            ],
+            "details": [
+                {
+                    "token_detail_type": "権利_test_1",
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "test1": "a",
+                            "test2": "b"
+                        }
+                    ],
+                    "data": [
+                        {
+                            "account_address": account_address_1,
+                            "name": "name_test_1",
+                            "address": "address_test_1",
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 30,
+                            "acquisition_date": "2022/12/02"
+                        },
+                        {
+                            "account_address": account_address_2,
+                            "name": "name_test_2",
+                            "address": "address_test_2",
+                            "amount": 100,
+                            "price": 200,
+                            "balance": 300,
+                            "acquisition_date": "2022/12/03"
+                        }
+                    ],
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "f-test1": "a",
+                            "f-test2": "b"
+                        }
+                    ],
+                },
+                {
+                    "token_detail_type": "権利_test_2",
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "test1-1": "a",
+                            "test2-1": "b"
+                        }
+                    ],
+                    "data": [
+                        {
+                            "account_address": None,
+                            "name": "name_test_1",
+                            "address": "address_test_1",
+                            "amount": 10,
+                            "price": 20,
+                            "balance": 200,
+                            "acquisition_date": "2020/01/01",
+                        },
+                        {
+                            "account_address": None,
+                            "name": "name_test_2",
+                            "address": "address_test_2",
+                            "amount": 20,
+                            "price": 30,
+                            "balance": 600,
+                            "acquisition_date": "2020/01/02",
+                        }
+                    ],
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "f-test1-1": "a",
+                            "f-test2-1": "b"
+                        }
+                    ],
+                },
+            ],
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "f-hoge": "aaaa",
+                    "f-fuga": "bbbb",
+                }
+            ],
+        }
+        _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        db.add(_ledger_1)
+
+        _idx_personal_info_1 = IDXPersonalInfo()  # Note: account_address_1 has partial personal information in DB
+        _idx_personal_info_1.account_address = account_address_1
+        _idx_personal_info_1.issuer_address = issuer_address
+        _idx_personal_info_1.personal_info = {
+            "name": None,
+            "address": None
+        }
+        db.add(_idx_personal_info_1)
+
+        _details_1 = LedgerDetailsTemplate()
+        _details_1.token_address = token_address
+        _details_1.token_detail_type = "権利_test_1"
+        _details_1.headers = [
+            {
+                "key": "aaa",
+                "value": "aaa",
+            },
+            {
+                "test1": "a",
+                "test2": "b"
+            }
+        ]
+        _details_1.footers = [
+            {
+                "key": "aaa",
+                "value": "aaa",
+            },
+            {
+                "f-test1": "a",
+                "f-test2": "b"
+            }
+        ]
+        _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
+        _details_1.data_source = token_address
+        db.add(_details_1)
+
+        # Mock
+        token = IbetStraightBondContract()
+        token.personal_info_contract_address = personal_info_contract_address
+        token.issuer_address = issuer_address
+        token_get_mock = mock.patch("app.model.blockchain.IbetStraightBondContract.get", return_value=token)
+        personal_get_info_mock = mock.patch("app.model.blockchain.PersonalInfoContract.get_info")
+
+        # request target API
+        with token_get_mock as token_get_mock_patch, personal_get_info_mock as personal_get_info_mock_patch:
+            # Note:
+            # account_address_2 has no personal information in the DB
+            # and gets information from the contract
+            personal_get_info_mock_patch.side_effect = [{
+                "name": "name_contract_2",
+                "address": "address_contract_2",
+            }]
+
+            resp = client.get(
+                self.base_url.format(token_address=token_address, ledger_id=1),
+                params={
+                    "latest_flg": 1,
+                },
+                headers={
+                    "issuer-address": issuer_address,
+                }
+            )
+            # assertion
+            token_get_mock_patch.assert_any_call(token_address)
+            personal_get_info_mock_patch.assert_has_calls([
+                call(account_address=account_address_2, default_value=None)
+            ])
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "created": "2022/12/01",
+            "token_name": "テスト原簿",
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "hoge": "aaaa",
+                    "fuga": "bbbb",
+                }
+            ],
+            "details": [
+                {
+                    "token_detail_type": "権利_test_1",
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "test1": "a",
+                            "test2": "b"
+                        }
+                    ],
+                    "data": [
+                        {
+                            "account_address": account_address_1,
+                            # Value stored with None should be converted to empty string.
+                            "name": None,
+                            "address": None,
                             "amount": 10,
                             "price": 20,
                             "balance": 30,
@@ -883,7 +1207,8 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         }
 
     # <Normal_3>
-    # All optional items are None
+    # latest_flg = 0 (Get the latest personal info)
+    #  ledger detail contains None value in "name" and "value"
     def test_normal_3(self, client, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -894,7 +1219,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -903,20 +1228,38 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
 
         _ledger_1 = Ledger()
         _ledger_1.token_address = token_address
-        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND
+        _ledger_1.token_type = TokenType.IBET_STRAIGHT_BOND.value
         _ledger_1.ledger = {
             "created": "2022/12/01",
             "token_name": "テスト原簿",
-            "headers": None,
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "hoge": "aaaa",
+                    "fuga": "bbbb",
+                }
+            ],
             "details": [
                 {
                     "token_detail_type": "権利_test_1",
-                    "headers": None,
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "test1": "a",
+                            "test2": "b"
+                        }
+                    ],
                     "data": [
                         {
                             "account_address": account_address_1,
-                            "name": "name_test_1",
-                            "address": "address_test_1",
+                            "name": None,
+                            "address": None,
                             "amount": 10,
                             "price": 20,
                             "balance": 30,
@@ -932,11 +1275,29 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "acquisition_date": "2022/12/03"
                         }
                     ],
-                    "footers": None,
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "f-test1": "a",
+                            "f-test2": "b"
+                        }
+                    ],
                 },
                 {
                     "token_detail_type": "権利_test_2",
-                    "headers": None,
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "test1-1": "a",
+                            "test2-1": "b"
+                        }
+                    ],
                     "data": [
                         {
                             "account_address": None,
@@ -957,29 +1318,55 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "acquisition_date": "2020/01/02",
                         }
                     ],
-                    "footers": None,
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "f-test1-1": "a",
+                            "f-test2-1": "b"
+                        }
+                    ],
                 },
             ],
-            "footers": None,
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "f-hoge": "aaaa",
+                    "f-fuga": "bbbb",
+                }
+            ],
         }
         _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
         db.add(_ledger_1)
 
-        # Note: account_address_1 only
-        _idx_personal_info_1 = IDXPersonalInfo()
-        _idx_personal_info_1.account_address = account_address_1
-        _idx_personal_info_1.issuer_address = issuer_address
-        _idx_personal_info_1.personal_info = {
-            "name": "name_db_1",
-            "address": "address_db_1"
-        }
-        db.add(_idx_personal_info_1)
-
         _details_1 = LedgerDetailsTemplate()
         _details_1.token_address = token_address
         _details_1.token_detail_type = "権利_test_1"
-        _details_1.headers = None
-        _details_1.footers = None
+        _details_1.headers = [
+            {
+                "key": "aaa",
+                "value": "aaa",
+            },
+            {
+                "test1": "a",
+                "test2": "b"
+            }
+        ]
+        _details_1.footers = [
+            {
+                "key": "aaa",
+                "value": "aaa",
+            },
+            {
+                "f-test1": "a",
+                "f-test2": "b"
+            }
+        ]
         _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
         _details_1.data_source = token_address
         db.add(_details_1)
@@ -988,47 +1375,52 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         token = IbetStraightBondContract()
         token.personal_info_contract_address = personal_info_contract_address
         token.issuer_address = issuer_address
-        token_get_mock = mock.patch("app.model.blockchain.IbetStraightBondContract.get", return_value=token)
-        personal_get_info_mock = mock.patch("app.model.blockchain.PersonalInfoContract.get_info")
 
         # request target API
-        with token_get_mock as token_get_mock_patch, personal_get_info_mock as personal_get_info_mock_patch:
-            # Note: account_address_2 only
-            personal_get_info_mock_patch.side_effect = [{
-                "name": "name_contract_2",
-                "address": "address_contract_2",
-            }]
-            resp = client.get(
-                self.base_url.format(token_address=token_address, ledger_id=1),
-                params={
-                    "latest_flg": 1,
-                },
-                headers={
-                    "issuer-address": issuer_address,
-                }
-            )
-
-            # assertion
-            token_get_mock_patch.assert_any_call(token_address)
-            personal_get_info_mock_patch.assert_has_calls([
-                call(account_address_2, default_value="")
-            ])
+        resp = client.get(
+            self.base_url.format(token_address=token_address, ledger_id=1),
+            params={
+                "latest_flg": 0,
+            },
+            headers={
+                "issuer-address": issuer_address,
+            }
+        )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
             "created": "2022/12/01",
             "token_name": "テスト原簿",
-            "headers": None,
+            "headers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "hoge": "aaaa",
+                    "fuga": "bbbb",
+                }
+            ],
             "details": [
                 {
                     "token_detail_type": "権利_test_1",
-                    "headers": None,
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "test1": "a",
+                            "test2": "b"
+                        }
+                    ],
                     "data": [
                         {
                             "account_address": account_address_1,
-                            "name": "name_db_1",
-                            "address": "address_db_1",
+                            # Value stored with None should be converted to empty string.
+                            "name": None,
+                            "address": None,
                             "amount": 10,
                             "price": 20,
                             "balance": 30,
@@ -1036,19 +1428,37 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                         },
                         {
                             "account_address": account_address_2,
-                            "name": "name_contract_2",
-                            "address": "address_contract_2",
+                            "name": "name_test_2",
+                            "address": "address_test_2",
                             "amount": 100,
                             "price": 200,
                             "balance": 300,
                             "acquisition_date": "2022/12/03"
                         }
                     ],
-                    "footers": None,
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "f-test1": "a",
+                            "f-test2": "b"
+                        }
+                    ],
                 },
                 {
                     "token_detail_type": "権利_test_2",
-                    "headers": None,
+                    "headers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "test1-1": "a",
+                            "test2-1": "b"
+                        }
+                    ],
                     "data": [
                         {
                             "account_address": None,
@@ -1069,10 +1479,28 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "acquisition_date": "2020/01/02",
                         }
                     ],
-                    "footers": None,
+                    "footers": [
+                        {
+                            "key": "aaa",
+                            "value": "aaa",
+                        },
+                        {
+                            "f-test1-1": "a",
+                            "f-test2-1": "b"
+                        }
+                    ],
                 },
             ],
-            "footers": None,
+            "footers": [
+                {
+                    "key": "aaa",
+                    "value": "aaa",
+                },
+                {
+                    "f-hoge": "aaaa",
+                    "f-fuga": "bbbb",
+                }
+            ],
         }
 
     ###########################################################################
@@ -1195,7 +1623,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.issuer_address = "0x1234567890123456789012345678901234567899"  # not target
         _token.token_address = token_address
@@ -1257,7 +1685,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address
@@ -1295,7 +1723,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
 
         # prepare data
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.issuer_address = issuer_address
         _token.token_address = token_address

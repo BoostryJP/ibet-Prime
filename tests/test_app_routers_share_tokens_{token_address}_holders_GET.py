@@ -47,7 +47,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
@@ -80,7 +80,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
@@ -105,7 +105,9 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
             "postal_code": "postal_code_test1",
             "address": "address_test1",
             "email": "email_test1",
-            "birth": "birth_test1"
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10
         }
         db.add(idx_personal_info_1)
 
@@ -128,7 +130,9 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
                     "postal_code": "postal_code_test1",
                     "address": "address_test1",
                     "email": "email_test1",
-                    "birth": "birth_test1"
+                    "birth": "birth_test1",
+                    "is_corporate": False,
+                    "tax_category": 10
                 },
                 "balance": 10,
                 "exchange_balance": 11,
@@ -145,6 +149,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
         _account_address_2 = "0x3F198534Bbe3B2a197d3B317d41392F348EAC707"
+        _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         # prepare data
         account = Account()
@@ -152,7 +157,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address
@@ -177,7 +182,9 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
             "postal_code": "postal_code_test1",
             "address": "address_test1",
             "email": "email_test1",
-            "birth": "birth_test1"
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10
         }
         db.add(idx_personal_info_1)
 
@@ -189,6 +196,29 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         idx_position_2.exchange_commitment = 22
         idx_position_2.pending_transfer = 10
         db.add(idx_position_2)
+
+        idx_position_3 = IDXPosition()
+        idx_position_3.token_address = _token_address
+        idx_position_3.account_address = _account_address_3
+        idx_position_3.balance = 99
+        idx_position_3.exchange_balance = 99
+        idx_position_3.exchange_commitment = 99
+        idx_position_3.pending_transfer = 99
+        db.add(idx_position_3)
+
+        idx_personal_info_3 = IDXPersonalInfo()
+        idx_personal_info_3.account_address = _account_address_3
+        idx_personal_info_3.issuer_address = _issuer_address
+        idx_personal_info_3.personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test3",
+            "postal_code": "postal_code_test3",
+            "address": "address_test3",
+            "email": "email_test3",
+            "birth": "birth_test3"
+            # PersonalInfo is partially registered.
+        }
+        db.add(idx_personal_info_3)
 
         # request target API
         resp = client.get(
@@ -209,7 +239,9 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
                     "postal_code": "postal_code_test1",
                     "address": "address_test1",
                     "email": "email_test1",
-                    "birth": "birth_test1"
+                    "birth": "birth_test1",
+                    "is_corporate": False,
+                    "tax_category": 10
                 },
                 "balance": 10,
                 "exchange_balance": 11,
@@ -224,12 +256,31 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
                     "postal_code": None,
                     "address": None,
                     "email": None,
-                    "birth": None
+                    "birth": None,
+                    "is_corporate": None,
+                    "tax_category": None
                 },
                 "balance": 20,
                 "exchange_balance": 21,
                 "exchange_commitment": 22,
                 "pending_transfer": 10
+            },
+            {
+                "account_address": _account_address_3,
+                "personal_information": {
+                    "key_manager": "key_manager_test1",
+                    "name": "name_test3",
+                    "postal_code": "postal_code_test3",
+                    "address": "address_test3",
+                    "email": "email_test3",
+                    "birth": "birth_test3",
+                    "is_corporate": None,
+                    "tax_category": None
+                },
+                "balance": 99,
+                "exchange_balance": 99,
+                "exchange_commitment": 99,
+                "pending_transfer": 99
             }
         ]
 
@@ -327,7 +378,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = _issuer_address
         token.token_address = _token_address

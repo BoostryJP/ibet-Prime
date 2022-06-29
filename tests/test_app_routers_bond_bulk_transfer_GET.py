@@ -76,7 +76,7 @@ class TestAppRoutersBondBulkTransferGET:
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
-            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
             bulk_transfer_upload.status = i
             bulk_transfer_upload.created = utc_now
             db.add(bulk_transfer_upload)
@@ -92,7 +92,7 @@ class TestAppRoutersBondBulkTransferGET:
         assumed_response = [
             {
                 "issuer_address": self.upload_issuer_list[1]["address"],
-                "token_type": TokenType.IBET_STRAIGHT_BOND,
+                "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                 "upload_id": self.upload_id_list[1],
                 "status": 1,
                 "created": pytz.timezone("UTC").localize(utc_now).astimezone(local_tz).isoformat()
@@ -110,7 +110,7 @@ class TestAppRoutersBondBulkTransferGET:
             bulk_transfer_upload = BulkTransferUpload()
             bulk_transfer_upload.issuer_address = self.upload_issuer_list[i]["address"]
             bulk_transfer_upload.upload_id = self.upload_id_list[i]
-            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND
+            bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
             bulk_transfer_upload.status = i
             bulk_transfer_upload.created = utc_now
             db.add(bulk_transfer_upload)
@@ -126,7 +126,7 @@ class TestAppRoutersBondBulkTransferGET:
         for i in range(0, 3):
             assumed_response.append({
                 "issuer_address": self.upload_issuer_list[i]["address"],
-                "token_type": TokenType.IBET_STRAIGHT_BOND,
+                "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                 "upload_id": self.upload_id_list[i],
                 "status": i,
                 "created": pytz.timezone("UTC").localize(utc_now).astimezone(local_tz).isoformat()

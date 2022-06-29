@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 from typing import (
     List,
     Dict,
+    Union,
     Any
 )
 
@@ -30,7 +31,8 @@ from app.exceptions import (
     InvalidParameterError,
     SendTransactionError,
     AuthorizationError,
-    ServiceUnavailableError
+    ServiceUnavailableError,
+    ContractRevertError
 )
 
 
@@ -44,13 +46,23 @@ class Error400MetaModel(MetaModel):
         @staticmethod
         def schema_extra(schema: Dict[str, Any], _) -> None:
             properties = schema["properties"]
-            properties["code"]["example"] = 1
-            properties["title"]["example"] = "InvalidParameterError"
+            properties["code"]["examples"] = [0, 1, 2, 100001]
+            properties["title"]["examples"] = ["InvalidParameterError", "SendTransactionError", "ContractRevertError"]
 
 
 class Error400Model(BaseModel):
     meta: Error400MetaModel
     detail: str
+
+    class Config:
+        @staticmethod
+        def schema_extra(schema: Dict[str, Any], _) -> None:
+            properties = schema["properties"]
+            properties["detail"]["examples"] = [
+                "wait for a while as the token is being processed",
+                "failed to register token address token list",
+                "The address has already been registered."
+            ]
 
 
 class Error401MetaModel(MetaModel):
@@ -139,7 +151,7 @@ class Error503Model(BaseModel):
 
 DEFAULT_RESPONSE = {
     400: {
-        "description": "Invalid Parameter Error / Send Transaction Error",
+        "description": "Invalid Parameter Error / Send Transaction Error / Contract Revert Error",
         "model": Error400Model
     },
     401: {
@@ -173,6 +185,8 @@ def get_routers_responses(*args):
         elif arg == InvalidParameterError:
             responses[400] = DEFAULT_RESPONSE[400]
         elif arg == SendTransactionError:
+            responses[400] = DEFAULT_RESPONSE[400]
+        elif arg == ContractRevertError:
             responses[400] = DEFAULT_RESPONSE[400]
         elif arg == AuthorizationError:
             responses[401] = DEFAULT_RESPONSE[401]

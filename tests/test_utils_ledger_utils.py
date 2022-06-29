@@ -53,6 +53,8 @@ from app.model.db import (
     LedgerTemplate,
     LedgerDetailsTemplate,
     LedgerDetailsDataType,
+    Notification,
+    NotificationType,
 )
 from app.utils import ledger_utils
 from tests.account_config import config_eth_account
@@ -115,7 +117,7 @@ def set_personal_info_contract(db, contract_address, issuer_address, sender_list
 
     for sender in sender_list:
         tx = contract.functions.register(issuer_address, "").buildTransaction({
-            "nonce": web3.eth.getTransactionCount(sender["address"]),
+            "nonce": web3.eth.get_transaction_count(sender["address"]),
             "chainId": CHAIN_ID,
             "from": sender["address"],
             "gas": TX_GAS_LIMIT,
@@ -191,7 +193,7 @@ class TestCreateLedger:
         token_address_1 = deploy_share_token_contract(issuer_address, issuer_private_key,
                                                       personal_info_contract_address)
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_SHARE
+        _token_1.type = TokenType.IBET_SHARE.value
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
@@ -417,10 +419,25 @@ class TestCreateLedger:
         ledger_utils.create_ledger(token_address_1, db)
 
         # assertion
+        _notifications = db.query(Notification).all()
+        assert len(_notifications) == 1
+        _notification = db.query(Notification).first()
+        assert _notification.id == 1
+        assert _notification.notice_id is not None
+        assert _notification.issuer_address == issuer_address
+        assert _notification.priority == 0
+        assert _notification.type == NotificationType.CREATE_LEDGER_INFO
+        assert _notification.code == 0
+        assert _notification.metainfo == {
+            "token_address": token_address_1,
+            "token_type": TokenType.IBET_SHARE.value,
+            "ledger_id": 1
+        }
+
         _ledger = db.query(Ledger).first()
         assert _ledger.id == 1
         assert _ledger.token_address == token_address_1
-        assert _ledger.token_type == TokenType.IBET_SHARE
+        assert _ledger.token_type == TokenType.IBET_SHARE.value
         now_ymd = datetime.now(pytz.timezone(TZ)).strftime("%Y/%m/%d")
         assert _ledger.ledger == {
             "created": now_ymd,
@@ -635,7 +652,7 @@ class TestCreateLedger:
         token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key,
                                                      personal_info_contract_address)
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
@@ -863,10 +880,24 @@ class TestCreateLedger:
         ledger_utils.create_ledger(token_address_1, db)
 
         # assertion
+        _notifications = db.query(Notification).all()
+        assert len(_notifications) == 1
+        _notification = db.query(Notification).first()
+        assert _notification.id == 1
+        assert _notification.notice_id is not None
+        assert _notification.issuer_address == issuer_address
+        assert _notification.priority == 0
+        assert _notification.type == NotificationType.CREATE_LEDGER_INFO
+        assert _notification.code == 0
+        assert _notification.metainfo == {
+            "token_address": token_address_1,
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "ledger_id": 1
+        }
         _ledger = db.query(Ledger).first()
         assert _ledger.id == 1
         assert _ledger.token_address == token_address_1
-        assert _ledger.token_type == TokenType.IBET_STRAIGHT_BOND
+        assert _ledger.token_type == TokenType.IBET_STRAIGHT_BOND.value
         now_ymd = datetime.now(pytz.timezone(TZ)).strftime("%Y/%m/%d")
         assert _ledger.ledger == {
             "created": now_ymd,
@@ -1037,7 +1068,7 @@ class TestCreateLedger:
         # Token
         token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key, ZERO_ADDRESS)
         _token_1 = Token()
-        _token_1.type = TokenType.IBET_STRAIGHT_BOND
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
@@ -1048,6 +1079,8 @@ class TestCreateLedger:
         ledger_utils.create_ledger(token_address_1, db)
 
         # assertion
+        _notifications = db.query(Notification).all()
+        assert len(_notifications) == 0
         _ledger = db.query(Ledger).first()
         assert _ledger is None
 
@@ -1076,6 +1109,8 @@ class TestCreateLedger:
         ledger_utils.create_ledger(token_address_1, db)
 
         # assertion
+        _notifications = db.query(Notification).all()
+        assert len(_notifications) == 0
         _ledger = db.query(Ledger).first()
         assert _ledger is None
 

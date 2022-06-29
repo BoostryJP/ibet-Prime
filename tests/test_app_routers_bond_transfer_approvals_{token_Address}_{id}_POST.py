@@ -39,7 +39,7 @@ from app.model.schema import (
     IbetSecurityTokenEscrowApproveTransfer
 )
 from app.utils.e2ee_utils import E2EEUtils
-from app.exceptions import SendTransactionError
+from app.exceptions import SendTransactionError, ContractRevertError
 
 from tests.account_config import config_eth_account
 
@@ -84,7 +84,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -163,7 +163,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -184,6 +184,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
+        _idx_transfer_approval.escrow_finished = True
         db.add(_idx_transfer_approval)
 
         additional_info = AdditionalTokenInfo()
@@ -241,7 +242,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -606,7 +607,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -652,7 +653,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -699,7 +700,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -720,6 +721,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.approval_datetime = self.test_approval_datetime
         _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
         _idx_transfer_approval.cancelled = None
+        _idx_transfer_approval.escrow_finished = None
+        _idx_transfer_approval.transfer_approved = True
         db.add(_idx_transfer_approval)
 
         additional_info = AdditionalTokenInfo()
@@ -764,7 +767,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -785,6 +788,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = True
+        _idx_transfer_approval.escrow_finished = None
+        _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
         additional_info = AdditionalTokenInfo()
@@ -816,7 +821,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
 
     # <Error_4_4>
     # Invalid Parameter Error
-    # application that cannot be canceled
+    # escrow has not been finished yet
     def test_error_4_4(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -829,7 +834,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -850,6 +855,75 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = False
+        _idx_transfer_approval.escrow_finished = False
+        _idx_transfer_approval.transfer_approved = None
+        db.add(_idx_transfer_approval)
+
+        additional_info = AdditionalTokenInfo()
+        additional_info.token_address = self.test_token_address
+        additional_info.is_manual_transfer_approval = True
+        db.add(additional_info)
+
+        # request target api
+        resp = client.post(
+            self.base_url.format(self.test_token_address, id),
+            headers={
+                "issuer-address": issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            },
+            json={
+                "operation_type": "cancel"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "InvalidParameterError"
+            },
+            "detail": "escrow has not been finished yet"
+        }
+
+    # <Error_4_5>
+    # Invalid Parameter Error
+    # application that cannot be canceled
+    def test_error_4_5(self, client, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer["address"]
+
+        # prepare data
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = issuer["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        id = 10
+        _idx_transfer_approval = IDXTransferApproval()
+        _idx_transfer_approval.id = id
+        _idx_transfer_approval.token_address = self.test_token_address
+        _idx_transfer_approval.exchange_address = self.test_exchange_address
+        _idx_transfer_approval.application_id = 100
+        _idx_transfer_approval.from_address = self.test_from_address
+        _idx_transfer_approval.to_address = self.test_to_address
+        _idx_transfer_approval.amount = 200
+        _idx_transfer_approval.application_datetime = self.test_application_datetime
+        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.approval_datetime = None
+        _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancelled = False
+        _idx_transfer_approval.escrow_finished = True
+        _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
         additional_info = AdditionalTokenInfo()
@@ -879,11 +953,11 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             "detail": "application that cannot be canceled"
         }
 
-    # <Error_4_5>
+    # <Error_4_6>
     # Invalid Parameter Error
     # token is automatic approval
     # unset is_manual_transfer_approval
-    def test_error_4_5(self, client, db):
+    def test_error_4_6(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -895,7 +969,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -945,11 +1019,11 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             "detail": "token is automatic approval"
         }
 
-    # <Error_4_6>
+    # <Error_4_7>
     # Invalid Parameter Error
     # token is automatic approval
     # is_manual_transfer_approval is automatic
-    def test_error_4_6(self, client, db):
+    def test_error_4_7(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
 
@@ -961,7 +1035,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -1031,7 +1105,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -1085,7 +1159,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
     # APPROVE
     # Send Transaction Error
     # IbetSecurityTokenInterface.approve_transfer
-    # return fail
+    # return fail with Revert
     def test_error_5_2(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -1098,7 +1172,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -1129,7 +1203,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
-            return_value=("test_tx_hash", {"status": 0})
+            side_effect=ContractRevertError("120902")
         )
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
@@ -1153,10 +1227,10 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         assert resp.status_code == 400
         assert resp.json() == {
             "meta": {
-                "code": 2,
-                "title": "SendTransactionError"
+                "code": 120902,
+                "title": "ContractRevertError"
             },
-            "detail": "failed to send transaction"
+            "detail": "Application is invalid."
         }
 
     # <Error_5_3>
@@ -1179,7 +1253,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -1200,6 +1274,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
+        _idx_transfer_approval.escrow_finished = True
         db.add(_idx_transfer_approval)
 
         additional_info = AdditionalTokenInfo()
@@ -1233,7 +1308,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
     # APPROVE
     # Send Transaction Error
     # IbetSecurityTokenEscrow.approve_transfer
-    # return fail
+    # return fail with Revert
     def test_error_5_4(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -1246,7 +1321,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -1267,6 +1342,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
+        _idx_transfer_approval.escrow_finished = True
         db.add(_idx_transfer_approval)
 
         additional_info = AdditionalTokenInfo()
@@ -1277,7 +1353,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # mock
         IbetSecurityTokenEscrow_approve_transfer = mock.patch(
             target="app.model.blockchain.exchange.IbetSecurityTokenEscrow.approve_transfer",
-            return_value=("test_tx_hash", {"status": 0})
+            side_effect=ContractRevertError("120902")
         )
 
         # request target API
@@ -1297,10 +1373,10 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         assert resp.status_code == 400
         assert resp.json() == {
             "meta": {
-                "code": 2,
-                "title": "SendTransactionError"
+                "code": 120902,
+                "title": "ContractRevertError"
             },
-            "detail": "failed to send transaction"
+            "detail": "Application is invalid."
         }
 
     # <Error_6_1>
@@ -1323,7 +1399,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -1377,7 +1453,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
     # CANCEL
     # Send Transaction Error
     # IbetSecurityTokenInterface.cancel_transfer
-    # return fail
+    # return fail with Revert
     def test_error_6_2(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -1390,7 +1466,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         db.add(account)
 
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = issuer_address
         _token.token_address = self.test_token_address
@@ -1421,7 +1497,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # mock
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
-            return_value=("test_tx_hash", {"status": 0})
+            side_effect=ContractRevertError("120802")
         )
 
         # request target API
@@ -1441,8 +1517,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         assert resp.status_code == 400
         assert resp.json() == {
             "meta": {
-                "code": 2,
-                "title": "SendTransactionError"
+                "code": 120802,
+                "title": "ContractRevertError"
             },
-            "detail": "failed to send transaction"
+            "detail": "Application is invalid."
         }

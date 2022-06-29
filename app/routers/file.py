@@ -36,6 +36,7 @@ from app.database import db_session
 from app.model.db import UploadFile
 from app.model.schema import (
     UploadFileRequest,
+    FileResponse,
     ListAllFilesResponse,
     DownloadFileResponse
 )
@@ -126,7 +127,7 @@ def list_all_upload_files(
 # POST: /files
 @router.post(
     "/files",
-    response_model=None,
+    response_model=FileResponse,
     responses=get_routers_responses(422)
 )
 def upload_file(
@@ -152,9 +153,20 @@ def upload_file(
     _upload_file.description = data.description
     _upload_file.label = data.label
     db.add(_upload_file)
-
     db.commit()
-    return
+
+    resp = {
+        "file_id": _upload_file.file_id,
+        "issuer_address": _upload_file.issuer_address,
+        "relation": _upload_file.relation,
+        "file_name": _upload_file.file_name,
+        "content_size": _upload_file.content_size,
+        "description": _upload_file.description,
+        "label": _upload_file.label,
+        "created": utc_tz.localize(_upload_file.created).astimezone(local_tz).isoformat()
+    }
+
+    return resp
 
 
 # GET: /files/{file_id}

@@ -18,16 +18,17 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from binascii import Error
+from unittest import mock
 
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from eth_keyfile import decode_keyfile_json
 from web3 import Web3
-from web3.exceptions import InvalidAddress, ValidationError
+from web3.exceptions import InvalidAddress, ValidationError, ContractLogicError
 from web3.middleware import geth_poa_middleware
 
 import config
-from app.exceptions import SendTransactionError
+from app.exceptions import SendTransactionError, ContractRevertError
 from app.model.blockchain import (
     IbetStraightBondContract,
     IbetShareContract
@@ -92,7 +93,7 @@ class TestRegisterTokenList:
 
         TokenListContract.register(
             token_address=share_token_address,
-            token_template=TokenType.IBET_SHARE,
+            token_template=TokenType.IBET_SHARE.value,
             token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
             account_address=issuer_address,
             private_key=private_key
@@ -125,7 +126,7 @@ class TestRegisterTokenList:
 
         TokenListContract.register(
             token_address=bond_token_address,
-            token_template=TokenType.IBET_STRAIGHT_BOND,
+            token_template=TokenType.IBET_STRAIGHT_BOND.value,
             token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
             account_address=issuer_address,
             private_key=private_key
@@ -139,11 +140,11 @@ class TestRegisterTokenList:
         assert token_list_contract.functions.getListLength().call() == 2
         _share_token = token_list_contract.functions.getTokenByAddress(share_token_address).call()
         assert _share_token[0] == share_token_address
-        assert _share_token[1] == TokenType.IBET_SHARE
+        assert _share_token[1] == TokenType.IBET_SHARE.value
         assert _share_token[2] == issuer_address
         _bond_token = token_list_contract.functions.getTokenByAddress(bond_token_address).call()
         assert _bond_token[0] == bond_token_address
-        assert _bond_token[1] == TokenType.IBET_STRAIGHT_BOND
+        assert _bond_token[1] == TokenType.IBET_STRAIGHT_BOND.value
         assert _bond_token[2] == issuer_address
 
     ###########################################################################
@@ -161,7 +162,7 @@ class TestRegisterTokenList:
         with pytest.raises(SendTransactionError) as exc_info:
             TokenListContract.register(
                 token_address="dummy_token_address",
-                token_template=TokenType.IBET_SHARE,
+                token_template=TokenType.IBET_SHARE.value,
                 token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                 account_address=issuer_address,
                 private_key=private_key
@@ -180,7 +181,7 @@ class TestRegisterTokenList:
         with pytest.raises(SendTransactionError) as exc_info:
             TokenListContract.register(
                 token_address=ZERO_ADDRESS,
-                token_template=TokenType.IBET_STRAIGHT_BOND,
+                token_template=TokenType.IBET_STRAIGHT_BOND.value,
                 token_list_address="dummy_token_list_address",
                 account_address=issuer_address,
                 private_key=private_key
@@ -199,7 +200,7 @@ class TestRegisterTokenList:
         with pytest.raises(SendTransactionError) as exc_info:
             TokenListContract.register(
                 token_address=ZERO_ADDRESS,
-                token_template=TokenType.IBET_SHARE,
+                token_template=TokenType.IBET_SHARE.value,
                 token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                 account_address=issuer_address[:-1],
                 private_key=private_key
@@ -214,7 +215,7 @@ class TestRegisterTokenList:
         with pytest.raises(SendTransactionError) as exc_info:
             TokenListContract.register(
                 token_address=ZERO_ADDRESS,
-                token_template=TokenType.IBET_SHARE,
+                token_template=TokenType.IBET_SHARE.value,
                 token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                 account_address=issuer_address,
                 private_key="not private key"
@@ -241,8 +242,39 @@ class TestRegisterTokenList:
             with pytest.raises(SendTransactionError):
                 TokenListContract.register(
                     token_address=ZERO_ADDRESS,
-                    token_template=TokenType.IBET_SHARE,
+                    token_template=TokenType.IBET_SHARE.value,
                     token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                     account_address=issuer_address,
                     private_key=private_key
                 )
+
+    # <Error_6> Transaction REVERT(token address is zero)
+    def test_error_6(self, db, contract_list):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # mock
+        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
+        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
+        #         geth: ContractLogicError("execution reverted")
+        InspectionMock = mock.patch(
+            "web3.eth.Eth.call",
+            MagicMock(side_effect=ContractLogicError("execution reverted: 100001"))
+        )
+
+        # execute the function
+        with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
+            TokenListContract.register(
+                token_address=ZERO_ADDRESS,
+                token_template=TokenType.IBET_SHARE.value,
+                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
+                account_address=issuer_address,
+                private_key=private_key
+            )
+
+        # assertion
+        assert exc_info.value.args[0] == "The address has already been registered."

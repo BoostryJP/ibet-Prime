@@ -39,7 +39,7 @@ from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
 from app.model.db import Account
 from app.utils.e2ee_utils import E2EEUtils
-from app.exceptions import SendTransactionError
+from app.exceptions import SendTransactionError, ContractRevertError
 
 web3 = Web3Wrapper()
 
@@ -71,7 +71,9 @@ class PersonalInfoContract:
             "postal_code": default_value,
             "address": default_value,
             "email": default_value,
-            "birth": default_value
+            "birth": default_value,
+            "is_corporate": default_value,
+            "tax_category": default_value
         }
 
         # Get encrypted personal information
@@ -114,10 +116,61 @@ class PersonalInfoContract:
                     personal_info["postal_code"] = decrypted_info.get("postal_code", default_value)
                     personal_info["email"] = decrypted_info.get("email", default_value)
                     personal_info["birth"] = decrypted_info.get("birth", default_value)
+                    personal_info["is_corporate"] = decrypted_info.get("is_corporate", default_value)
+                    personal_info["tax_category"] = decrypted_info.get("tax_category", default_value)
                     return personal_info
                 except Exception as err:
                     logging.error(f"Failed to decrypt: {err}")
                     return personal_info  # default
+
+    def register_info(self, account_address: str, data: dict, default_value=None):
+        """Register personal information
+
+        :param account_address: Token holder account address
+        :param data: Register data
+        :param default_value: Default value for items for which no value is set. (If not specified: None)
+        :return: None
+        """
+
+        # Set default value
+        personal_info = {
+            "key_manager": data.get("key_manager", default_value),
+            "name": data.get("name", default_value),
+            "postal_code": data.get("postal_code", default_value),
+            "address": data.get("address", default_value),
+            "email": data.get("email", default_value),
+            "birth": data.get("birth", default_value),
+            "is_corporate": data.get("is_corporate", default_value),
+            "tax_category": data.get("tax_category", default_value)
+        }
+
+        # Encrypt personal info
+        passphrase = E2EEUtils.decrypt(self.issuer.rsa_passphrase)
+        rsa_key = RSA.importKey(self.issuer.rsa_public_key, passphrase=passphrase)
+        cipher = PKCS1_OAEP.new(rsa_key)
+        ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(personal_info).encode('utf-8')))
+
+        try:
+            password = E2EEUtils.decrypt(self.issuer.eoa_password)
+            private_key = decode_keyfile_json(
+                raw_keyfile_json=self.issuer.keyfile,
+                password=password.encode("utf-8")
+            )
+            tx = self.personal_info_contract.functions.forceRegister(account_address, ciphertext). \
+                buildTransaction({
+                    "chainId": CHAIN_ID,
+                    "from": self.issuer.issuer_address,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0
+                })
+            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+        except ContractRevertError:
+            raise
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            logging.exception(f"{err}")
+            raise SendTransactionError(err)
 
     def modify_info(self, account_address: str, data: dict, default_value=None):
         """Modify personal information
@@ -135,7 +188,9 @@ class PersonalInfoContract:
             "postal_code": data.get("postal_code", default_value),
             "address": data.get("address", default_value),
             "email": data.get("email", default_value),
-            "birth": data.get("birth", default_value)
+            "birth": data.get("birth", default_value),
+            "is_corporate": data.get("is_corporate", default_value),
+            "tax_category": data.get("tax_category", default_value)
         }
 
         # Encrypt personal info
@@ -158,6 +213,8 @@ class PersonalInfoContract:
                     "gasPrice": 0
                 })
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+        except ContractRevertError:
+            raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:

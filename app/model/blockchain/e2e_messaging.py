@@ -36,7 +36,7 @@ from config import (
     AWS_REGION_NAME
 )
 from app.utils.contract_utils import ContractUtils
-from app.exceptions import SendTransactionError
+from app.exceptions import SendTransactionError, ContractRevertError
 
 
 class E2EMessaging:
@@ -64,6 +64,8 @@ class E2EMessaging:
             })
             tx_hash, tx_receipt = ContractUtils.send_transaction(tx, private_key)
             return tx_hash, tx_receipt
+        except ContractRevertError:
+            raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
@@ -140,6 +142,8 @@ class E2EMessaging:
             })
             tx_hash, tx_receipt = ContractUtils.send_transaction(tx, private_key)
             return tx_hash, tx_receipt
+        except ContractRevertError:
+            raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:

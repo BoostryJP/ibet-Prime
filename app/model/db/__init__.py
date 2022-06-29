@@ -28,6 +28,11 @@ from .token import (
     TokenAttrUpdate,
     TokenType
 )
+from .token_holders import (
+    TokenHolder,
+    TokenHolderBatchStatus,
+    TokenHoldersList
+)
 from .bulk_transfer_upload import BulkTransferUpload
 from .bulk_transfer import BulkTransfer
 from .e2e_messaging_account import (

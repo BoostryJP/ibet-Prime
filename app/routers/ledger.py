@@ -195,23 +195,28 @@ def retrieve_ledger_history(
         raise HTTPException(status_code=404, detail="ledger does not exist")
 
     resp = _ledger.ledger
-    if latest_flg == 1:  # most recent
 
-        # Get ibetfin Details token_detail_type
+    if latest_flg == 1:  # Get the latest personal info
+        # Get ibet fin token_detail_type
         _ibet_fin_details_list = db.query(LedgerDetailsTemplate). \
             filter(LedgerDetailsTemplate.token_address == token_address). \
             filter(LedgerDetailsTemplate.data_type == LedgerDetailsDataType.IBET_FIN.value). \
             order_by(LedgerDetailsTemplate.id). \
             all()
         _ibet_fin_token_detail_type_list = [_details.token_detail_type for _details in _ibet_fin_details_list]
-
         # Update PersonalInfo
         for details in resp["details"]:
             if details["token_detail_type"] in _ibet_fin_token_detail_type_list:
                 for data in details["data"]:
-                    personal_info = __get_personal_info(token_address, _token.type, data["account_address"], db)
-                    data["name"] = personal_info["name"]
-                    data["address"] = personal_info["address"]
+                    personal_info = __get_personal_info(
+                        token_address=token_address,
+                        token_type=_token.type,
+                        account_address=data["account_address"],
+                        db=db
+                    )
+                    if personal_info is not None:
+                        data["name"] = personal_info.get("name", None)
+                        data["address"] = personal_info.get("address", None)
 
     return resp
 
@@ -529,8 +534,8 @@ def create_ledger_details_data(
         _details_data = LedgerDetailsData()
         _details_data.token_address = token_address
         _details_data.data_id = data_id
-        _details_data.name = data.name
-        _details_data.address = data.address
+        _details_data.name = getattr(data, "name") or ""
+        _details_data.address = getattr(data, "address") or ""
         _details_data.amount = data.amount
         _details_data.price = data.price
         _details_data.balance = data.balance
@@ -689,23 +694,34 @@ def delete_ledger_details_data(
 
 
 def __get_personal_info(token_address: str, token_type: str, account_address: str, db: Session):
-    if token_type == TokenType.IBET_SHARE:
-        token_contract = IbetShareContract.get(token_address)
-    elif token_type == TokenType.IBET_STRAIGHT_BOND:
-        token_contract = IbetStraightBondContract.get(token_address)
-
-    issuer_address = token_contract.issuer_address
-    personal_info_contract = PersonalInfoContract(
-        db, issuer_address, contract_address=token_contract.personal_info_contract_address)
-
-    _idx_personal_info = db.query(IDXPersonalInfo). \
-        filter(IDXPersonalInfo.account_address == account_address). \
-        filter(IDXPersonalInfo.issuer_address == issuer_address). \
+    token = db.query(Token). \
+        filter(Token.token_address == token_address). \
         first()
-
-    if _idx_personal_info is None:  # Get PersonalInfo to Contract
-        personal_info = personal_info_contract.get_info(account_address, default_value="")
+    if token is None:
+        return None
     else:
-        personal_info = _idx_personal_info.personal_info
-
-    return personal_info
+        issuer_address = token.issuer_address
+        _idx_personal_info = db.query(IDXPersonalInfo). \
+            filter(IDXPersonalInfo.account_address == account_address). \
+            filter(IDXPersonalInfo.issuer_address == issuer_address). \
+            first()
+        if _idx_personal_info is not None:
+            # Get personal info from DB
+            personal_info = _idx_personal_info.personal_info
+        else:
+            # Get personal info from contract
+            token_contract = None
+            if token_type == TokenType.IBET_SHARE.value:
+                token_contract = IbetShareContract.get(token_address)
+            elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
+                token_contract = IbetStraightBondContract.get(token_address)
+            personal_info_contract = PersonalInfoContract(
+                db=db,
+                issuer_address=issuer_address,
+                contract_address=token_contract.personal_info_contract_address
+            )
+            personal_info = personal_info_contract.get_info(
+                account_address=account_address,
+                default_value=None
+            )
+        return personal_info

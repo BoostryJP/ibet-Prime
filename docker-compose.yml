@@ -2,7 +2,7 @@ version: "3"
 
 services:
   postgres:
-    image: postgres:13.3
+    image: postgres:13.4
     environment:
       - POSTGRES_USER=apluser
       - POSTGRES_PASSWORD=apluserpass
@@ -17,12 +17,17 @@ services:
       - MYSQL_ROOT_PASSWORD=password
     ports:
       - 3306:3306
-  ganache-cli:
-    image: "trufflesuite/ganache-cli:latest"
+  ganache:
+    image: "trufflesuite/ganache:latest"
     ports:
       - "8545:8545"
     command:
-      - -g 0
+      - -k
+      - 'byzantium'
+      - -g
+      - '0'
+      - --chain.chainId
+      - '2017'
   ibet-prime-postgres:
     build:
       context: ./
@@ -32,10 +37,10 @@ services:
       - WEB3_HTTP_PROVIDER=http://quorum:8545
     links:
       - postgres:postgres
-      - ganache-cli:quorum
+      - ganache:quorum
     depends_on:
       - postgres
-      - ganache-cli
+      - ganache
   ibet-prime-mysql:
     build:
       context: ./
@@ -45,7 +50,7 @@ services:
       - WEB3_HTTP_PROVIDER=http://quorum:8545
     links:
       - mysql:mysql
-      - ganache-cli:quorum
+      - ganache:quorum
     depends_on:
       - mysql
-      - ganache-cli
+      - ganache

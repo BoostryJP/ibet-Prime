@@ -20,7 +20,7 @@ import pytest
 import time
 from unittest import mock
 from binascii import Error
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from datetime import datetime
 
 from pydantic.error_wrappers import ValidationError
@@ -29,7 +29,7 @@ from web3.exceptions import (
     InvalidAddress,
     TimeExhausted,
     TransactionNotFound,
-    ValidationError as Web3ValidationError
+    ValidationError as Web3ValidationError, ContractLogicError
 )
 from config import ZERO_ADDRESS
 from app.model.db import TokenAttrUpdate
@@ -43,7 +43,7 @@ from app.model.schema import (
     IbetSecurityTokenApproveTransfer,
     IbetSecurityTokenCancelTransfer
 )
-from app.exceptions import SendTransactionError
+from app.exceptions import SendTransactionError, ContractRevertError
 
 from tests.account_config import config_eth_account
 from tests.utils.contract_utils import (
@@ -491,9 +491,9 @@ class TestGet:
     # Error Case
     ###########################################################################
 
-    # <Error_2>
+    # <Error_1>
     # Invalid argument type (contract_address is not address)
-    def test_error_2(self, db):
+    def test_error_1(self, db):
         # get token data
         with pytest.raises(ValueError) as exc_info:
             IbetStraightBondContract.get(contract_address=ZERO_ADDRESS[:-1])
@@ -897,8 +897,8 @@ class TestUpdate:
         )
 
         # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.waitForTransactionReceipt",
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
             side_effect=TimeExhausted
         )
 
@@ -907,7 +907,7 @@ class TestUpdate:
             "face_value": 20001
         }
         _add_data = IbetStraightBondUpdate(**_data)
-        with Web3_sendRawTransaction:
+        with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetStraightBondContract.update(
                     contract_address=contract_address,
@@ -941,8 +941,8 @@ class TestUpdate:
         )
 
         # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.waitForTransactionReceipt",
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
             side_effect=TransactionNotFound
         )
 
@@ -951,7 +951,7 @@ class TestUpdate:
             "face_value": 20001
         }
         _add_data = IbetStraightBondUpdate(**_data)
-        with Web3_sendRawTransaction:
+        with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetStraightBondContract.update(
                     contract_address=contract_address,
@@ -960,6 +960,61 @@ class TestUpdate:
                     private_key=private_key
                 )
         assert isinstance(exc_info.value.args[0], TransactionNotFound)
+
+    # <Error_5>
+    # Transaction REVERT(not owner)
+    def test_error_9(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        user_account = config_eth_account("user2")
+        user_address = user_account.get("address")
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+        user_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_account.get("keyfile_json"),
+            password=user_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト債券", "TEST", 10000, 20000,
+            "20211231", 30000,
+            "20211231", "リターン内容",
+            "発行目的"
+        ]
+        contract_address, abi, tx_hash = IbetStraightBondContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=issuer_private_key
+        )
+
+        # update
+        _data = {
+            "face_value": 20001
+        }
+        _add_data = IbetStraightBondUpdate(**_data)
+
+        # mock
+        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
+        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
+        #         geth: ContractLogicError("execution reverted")
+        InspectionMock = mock.patch(
+            "web3.eth.Eth.call",
+            MagicMock(side_effect=ContractLogicError("execution reverted: 500001"))
+        )
+
+        with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
+            IbetStraightBondContract.update(
+                contract_address=contract_address,
+                data=_add_data,
+                tx_from=user_address,
+                private_key=user_private_key
+            )
+
+        # assertion
+        assert exc_info.value.args[0] == "Message sender is not contract owner."
 
 
 class TestTransfer:
@@ -1229,8 +1284,8 @@ class TestTransfer:
         )
 
         # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.waitForTransactionReceipt",
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
             side_effect=TimeExhausted
         )
 
@@ -1242,7 +1297,7 @@ class TestTransfer:
             "amount": 10
         }
         _transfer_data = IbetStraightBondTransfer(**_data)
-        with Web3_sendRawTransaction:
+        with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetStraightBondContract.transfer(
                     data=_transfer_data,
@@ -1278,8 +1333,8 @@ class TestTransfer:
         )
 
         # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.waitForTransactionReceipt",
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
             side_effect=TransactionNotFound
         )
 
@@ -1291,7 +1346,7 @@ class TestTransfer:
             "amount": 10
         }
         _transfer_data = IbetStraightBondTransfer(**_data)
-        with Web3_sendRawTransaction:
+        with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetStraightBondContract.transfer(
                     data=_transfer_data,
@@ -1299,6 +1354,60 @@ class TestTransfer:
                     private_key=private_key
                 )
         assert isinstance(exc_info.value.args[0], TransactionNotFound)
+
+    # <Error_8>
+    # Transaction REVERT(insufficient balance)
+    def test_error_8(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        to_account = config_eth_account("user2")
+        to_address = to_account.get("address")
+
+        # deploy token
+        arguments = [
+            "テスト債券", "TEST", 10000, 20000,
+            "20211231", 30000,
+            "20211231", "リターン内容",
+            "発行目的"
+        ]
+        contract_address, abi, tx_hash = IbetStraightBondContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # transfer with insufficient balance
+        _data = {
+            "token_address": contract_address,
+            "from_address": issuer_address,
+            "to_address": to_address,
+            "amount": 10000000
+        }
+        _transfer_data = IbetStraightBondTransfer(**_data)
+
+        # mock
+        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
+        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
+        #         geth: ContractLogicError("execution reverted: ")
+        InspectionMock = mock.patch(
+            "web3.eth.Eth.call",
+            MagicMock(side_effect=ContractLogicError("execution reverted: 120401"))
+        )
+
+        with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
+            IbetStraightBondContract.transfer(
+                data=_transfer_data,
+                tx_from=issuer_address,
+                private_key=private_key
+            )
+
+        # assertion
+        assert exc_info.value.args[0] == "Message sender balance is insufficient."
 
 
 class TestAdditionalIssue:
@@ -1567,8 +1676,8 @@ class TestAdditionalIssue:
         )
 
         # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.waitForTransactionReceipt",
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
             side_effect=TimeExhausted
         )
 
@@ -1578,7 +1687,7 @@ class TestAdditionalIssue:
             "amount": 10
         }
         _add_data = IbetStraightBondAdditionalIssue(**_data)
-        with Web3_sendRawTransaction:
+        with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetStraightBondContract.additional_issue(
                     contract_address=contract_address,
@@ -1612,8 +1721,8 @@ class TestAdditionalIssue:
         )
 
         # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.waitForTransactionReceipt",
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
             side_effect=TransactionNotFound
         )
 
@@ -1623,7 +1732,7 @@ class TestAdditionalIssue:
             "amount": 10
         }
         _add_data = IbetStraightBondAdditionalIssue(**_data)
-        with Web3_sendRawTransaction:
+        with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetStraightBondContract.additional_issue(
                     contract_address=contract_address,
@@ -1632,6 +1741,63 @@ class TestAdditionalIssue:
                     private_key=private_key
                 )
         assert isinstance(exc_info.value.args[0], TransactionNotFound)
+
+    # <Error_9>
+    # Transaction REVERT(not owner)
+    def test_error_9(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        user_account = config_eth_account("user2")
+        user_address = user_account.get("address")
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+        user_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_account.get("keyfile_json"),
+            password=user_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト債券", "TEST", 10000, 20000,
+            "20211231", 30000,
+            "20211231", "リターン内容",
+            "発行目的"
+        ]
+        contract_address, abi, tx_hash = IbetStraightBondContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=issuer_private_key
+        )
+
+        # additional issue
+        _data = {
+            "account_address": issuer_address,
+            "amount": 10
+        }
+        _add_data = IbetStraightBondAdditionalIssue(**_data)
+        pre_datetime = datetime.utcnow()
+
+        # mock
+        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
+        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
+        #         geth: ContractLogicError("execution reverted")
+        InspectionMock = mock.patch(
+            "web3.eth.Eth.call",
+            MagicMock(side_effect=ContractLogicError("execution reverted: 500001"))
+        )
+
+        with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
+            IbetStraightBondContract.additional_issue(
+                contract_address=contract_address,
+                data=_add_data,
+                tx_from=user_address,
+                private_key=user_private_key
+            )
+
+        # assertion
+        assert exc_info.value.args[0] == "Message sender is not contract owner."
 
 
 class TestRedeem:
@@ -1900,8 +2066,8 @@ class TestRedeem:
         )
 
         # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.waitForTransactionReceipt",
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
             side_effect=TimeExhausted
         )
 
@@ -1911,7 +2077,7 @@ class TestRedeem:
             "amount": 10
         }
         _add_data = IbetStraightBondRedeem(**_data)
-        with Web3_sendRawTransaction:
+        with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetStraightBondContract.redeem(
                     contract_address=contract_address,
@@ -1945,8 +2111,8 @@ class TestRedeem:
         )
 
         # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.waitForTransactionReceipt",
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
             side_effect=TransactionNotFound
         )
 
@@ -1956,7 +2122,7 @@ class TestRedeem:
             "amount": 10
         }
         _add_data = IbetStraightBondRedeem(**_data)
-        with Web3_sendRawTransaction:
+        with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetStraightBondContract.redeem(
                     contract_address=contract_address,
@@ -1965,6 +2131,57 @@ class TestRedeem:
                     private_key=private_key
                 )
         assert isinstance(exc_info.value.args[0], TransactionNotFound)
+
+    # <Error_9>
+    # Transaction REVERT(lack balance)
+    def test_error_9(self, db):
+        test_account = config_eth_account("user1")
+        issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
+
+        # deploy token
+        arguments = [
+            "テスト債券", "TEST", 10000, 20000,
+            "20211231", 30000,
+            "20211231", "リターン内容",
+            "発行目的"
+        ]
+        contract_address, abi, tx_hash = IbetStraightBondContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # redeem
+        _data = {
+            "account_address": issuer_address,
+            "amount": 100_000_000
+        }
+        _add_data = IbetStraightBondRedeem(**_data)
+        pre_datetime = datetime.utcnow()
+
+        # mock
+        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
+        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
+        #         geth: ContractLogicError("execution reverted")
+        InspectionMock = mock.patch(
+            "web3.eth.Eth.call",
+            MagicMock(side_effect=ContractLogicError("execution reverted: 121102"))
+        )
+
+        with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
+            IbetStraightBondContract.redeem(
+                contract_address=contract_address,
+                data=_add_data,
+                tx_from=issuer_address,
+                private_key=private_key
+            )
+
+        # assertion
+        assert exc_info.value.args[0] == "Redeem amount is less than target address balance."
 
 
 class TestGetAccountBalance:
@@ -2465,6 +2682,120 @@ class TestApproveTransfer:
             )
         assert ex_info.match("Non-hexadecimal digit found")
 
+    # <Error_5>
+    # Transaction REVERT(application invalid)
+    def test_error_5(self, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8")
+        )
+
+        to_account = config_eth_account("user2")
+        to_address = to_account.get("address")
+        to_pk = decode_keyfile_json(
+            raw_keyfile_json=to_account.get("keyfile_json"),
+            password=to_account.get("password").encode("utf-8")
+        )
+
+        deployer = config_eth_account("user3")
+        deployer_address = deployer.get("address")
+        deployer_pk = decode_keyfile_json(
+            raw_keyfile_json=deployer.get("keyfile_json"),
+            password=deployer.get("password").encode("utf-8")
+        )
+
+        # deploy new personal info contract (from deployer)
+        personal_info_contract_address, _, _ = ContractUtils.deploy_contract(
+            contract_name="PersonalInfo",
+            args=[],
+            deployer=deployer_address,
+            private_key=deployer_pk
+        )
+
+        # deploy ibet bond token (from issuer)
+        arguments = [
+            "テスト債券",
+            "TEST",
+            10000,
+            20000,
+            "20211231",
+            30000,
+            "20211231",
+            "リターン内容",
+            "発行目的"
+        ]
+        token_address, _, _ = IbetStraightBondContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # update token (from issuer)
+        update_data = {
+            "personal_info_contract_address": personal_info_contract_address,
+            "transfer_approval_required": True,
+            "transferable": True
+        }
+        IbetStraightBondContract.update(
+            contract_address=token_address,
+            data=IbetStraightBondUpdate(**update_data),
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # register personal info (to_account)
+        PersonalInfoContractTestUtils.register(
+            contract_address=personal_info_contract_address,
+            tx_from=to_address,
+            private_key=to_pk,
+            args=[issuer_address, "test_personal_info"]
+        )
+
+        # apply transfer (from issuer)
+        IbetSecurityTokenContractTestUtils.apply_for_transfer(
+            contract_address=token_address,
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+            args=[to_address, 10, "test_data"]
+        )
+
+        # approve transfer (from issuer)
+        approve_data = {
+            "application_id": 0,
+            "data": "approve transfer test"
+        }
+        IbetStraightBondContract.approve_transfer(
+            contract_address=token_address,
+            data=IbetSecurityTokenApproveTransfer(**approve_data),
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # Then send approveTransfer transaction again.
+        # This would be failed.
+
+        # mock
+        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
+        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
+        #         geth: ContractLogicError("execution reverted")
+        InspectionMock = mock.patch(
+            "web3.eth.Eth.call",
+            MagicMock(side_effect=ContractLogicError("execution reverted: 120902"))
+        )
+
+        with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
+            IbetStraightBondContract.approve_transfer(
+                contract_address=token_address,
+                data=IbetSecurityTokenApproveTransfer(**approve_data),
+                tx_from=issuer_address,
+                private_key=issuer_pk
+            )
+
+        # assertion
+        assert exc_info.value.args[0] == "Application is invalid."
+
 
 class TestCancelTransfer:
 
@@ -2721,3 +3052,118 @@ class TestCancelTransfer:
                 private_key="dummy-private"
             )
         assert ex_info.match("Non-hexadecimal digit found")
+
+    # <Error_5>
+    # Transaction REVERT(application invalid)
+    def test_error_5(self, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8")
+        )
+
+        to_account = config_eth_account("user2")
+        to_address = to_account.get("address")
+        to_pk = decode_keyfile_json(
+            raw_keyfile_json=to_account.get("keyfile_json"),
+            password=to_account.get("password").encode("utf-8")
+        )
+
+        deployer = config_eth_account("user3")
+        deployer_address = deployer.get("address")
+        deployer_pk = decode_keyfile_json(
+            raw_keyfile_json=deployer.get("keyfile_json"),
+            password=deployer.get("password").encode("utf-8")
+        )
+
+        # deploy new personal info contract (from deployer)
+        personal_info_contract_address, _, _ = ContractUtils.deploy_contract(
+            contract_name="PersonalInfo",
+            args=[],
+            deployer=deployer_address,
+            private_key=deployer_pk
+        )
+
+        # deploy ibet bond token (from issuer)
+        arguments = [
+            "テスト債券",
+            "TEST",
+            10000,
+            20000,
+            "20211231",
+            30000,
+            "20211231",
+            "リターン内容",
+            "発行目的"
+        ]
+        token_address, _, _ = IbetStraightBondContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # update token (from issuer)
+        update_data = {
+            "personal_info_contract_address": personal_info_contract_address,
+            "transfer_approval_required": True,
+            "transferable": True
+        }
+        IbetStraightBondContract.update(
+            contract_address=token_address,
+            data=IbetStraightBondUpdate(**update_data),
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # register personal info (to_account)
+        PersonalInfoContractTestUtils.register(
+            contract_address=personal_info_contract_address,
+            tx_from=to_address,
+            private_key=to_pk,
+            args=[issuer_address, "test_personal_info"]
+        )
+
+        # apply transfer (from issuer)
+        IbetSecurityTokenContractTestUtils.apply_for_transfer(
+            contract_address=token_address,
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+            args=[to_address, 10, "test_data"]
+        )
+
+        # approve transfer (from issuer)
+        approve_data = {
+            "application_id": 0,
+            "data": "approve transfer test"
+        }
+        IbetStraightBondContract.approve_transfer(
+            contract_address=token_address,
+            data=IbetSecurityTokenApproveTransfer(**approve_data),
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # Then send cancelTransfer transaction. This would be failed.
+
+        cancel_data = approve_data
+
+        # mock
+        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
+        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
+        #         geth: ContractLogicError("execution reverted")
+        InspectionMock = mock.patch(
+            "web3.eth.Eth.call",
+            MagicMock(side_effect=ContractLogicError("execution reverted: 120802"))
+        )
+
+        with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
+            IbetStraightBondContract.cancel_transfer(
+                contract_address=token_address,
+                data=IbetSecurityTokenCancelTransfer(**cancel_data),
+                tx_from=issuer_address,
+                private_key=issuer_pk
+            )
+
+        # assertion
+        assert exc_info.value.args[0] == "Application is invalid."

@@ -71,7 +71,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdGET:
         token_event.event_id = event_id
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
-        token_event.token_type = TokenType.IBET_STRAIGHT_BOND
+        token_event.token_type = TokenType.IBET_STRAIGHT_BOND.value
         token_event.event_type = ScheduledEventType.UPDATE.value
         token_event.scheduled_datetime = datetime_now_utc
         token_event.status = 0
@@ -92,7 +92,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdGET:
         assert resp.json() == {
             "scheduled_event_id": event_id,
             "token_address": _token_address,
-            "token_type": TokenType.IBET_STRAIGHT_BOND,
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
             "scheduled_datetime": datetime_now_str,
             "event_type": ScheduledEventType.UPDATE.value,
             "status": 0,
@@ -132,7 +132,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdGET:
         token_event.event_id = event_id
         token_event.issuer_address = _issuer_address
         token_event.token_address = _token_address
-        token_event.token_type = TokenType.IBET_STRAIGHT_BOND
+        token_event.token_type = TokenType.IBET_STRAIGHT_BOND.value
         token_event.event_type = ScheduledEventType.UPDATE.value
         token_event.scheduled_datetime = datetime_now_utc
         token_event.status = 0
@@ -150,7 +150,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdGET:
         assert resp.json() == {
             "scheduled_event_id": event_id,
             "token_address": _token_address,
-            "token_type": TokenType.IBET_STRAIGHT_BOND,
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
             "scheduled_datetime": datetime_now_str,
             "event_type": ScheduledEventType.UPDATE.value,
             "status": 0,

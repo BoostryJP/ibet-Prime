@@ -23,28 +23,28 @@ from web3.middleware import geth_poa_middleware
 from eth_keyfile import decode_keyfile_json
 
 from config import (
-WEB3_HTTP_PROVIDER,
-CHAIN_ID,
-TX_GAS_LIMIT
+    WEB3_HTTP_PROVIDER,
+    CHAIN_ID,
+    TX_GAS_LIMIT
 )
 from app.model.blockchain import (
-IbetStraightBondContract,
-IbetShareContract,
-PersonalInfoContract
+    IbetStraightBondContract,
+    IbetShareContract,
+    PersonalInfoContract
 )
 from app.utils.contract_utils import ContractUtils
 from app.model.db import (
-Account,
-AccountRsaKeyTemporary,
-AccountRsaStatus,
-Token,
-TokenType,
-IDXPersonalInfo
+    Account,
+    AccountRsaKeyTemporary,
+    AccountRsaStatus,
+    Token,
+    TokenType,
+    IDXPersonalInfo
 )
 from app.utils.e2ee_utils import E2EEUtils
 from app.model.schema import (
-IbetStraightBondUpdate,
-IbetShareUpdate
+    IbetStraightBondUpdate,
+    IbetShareUpdate
 )
 from batch.processor_modify_personal_info import Processor
 from tests.account_config import config_eth_account
@@ -76,7 +76,7 @@ def set_personal_info_contract(db, contract_address, issuer_address, sender_list
 
     for sender in sender_list:
         tx = contract.functions.register(issuer_address, "").buildTransaction({
-            "nonce": web3.eth.getTransactionCount(sender["user"]["address"]),
+            "nonce": web3.eth.get_transaction_count(sender["user"]["address"]),
             "chainId": CHAIN_ID,
             "from": sender["user"]["address"],
             "gas": TX_GAS_LIMIT,
@@ -196,7 +196,7 @@ class TestProcessor:
         personal_info_contract_address_1 = deploy_personal_info_contract(user_1)
         token_contract_address_1 = deploy_bond_token_contract(user_1, personal_info_contract_address_1)
         token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         token_1.tx_hash = "tx_hash"
         token_1.issuer_address = issuer_address_1
         token_1.token_address = token_contract_address_1
@@ -206,7 +206,7 @@ class TestProcessor:
         personal_info_contract_address_2 = deploy_personal_info_contract(user_1)
         token_contract_address_2 = deploy_share_token_contract(user_1, personal_info_contract_address_2)
         token_2 = Token()
-        token_2.type = TokenType.IBET_SHARE
+        token_2.type = TokenType.IBET_SHARE.value
         token_2.tx_hash = "tx_hash"
         token_2.issuer_address = issuer_address_1
         token_2.token_address = token_contract_address_2
@@ -215,7 +215,7 @@ class TestProcessor:
 
         token_contract_address_3 = deploy_bond_token_contract(user_1, None)
         token_3 = Token()
-        token_3.type = TokenType.IBET_STRAIGHT_BOND
+        token_3.type = TokenType.IBET_STRAIGHT_BOND.value
         token_3.tx_hash = "tx_hash"
         token_3.issuer_address = issuer_address_1
         token_3.token_address = token_contract_address_3
@@ -224,7 +224,7 @@ class TestProcessor:
 
         token_contract_address_4 = deploy_share_token_contract(user_1, None)
         token_4 = Token()
-        token_4.type = TokenType.IBET_SHARE
+        token_4.type = TokenType.IBET_SHARE.value
         token_4.tx_hash = "tx_hash"
         token_4.issuer_address = issuer_address_1
         token_4.token_address = token_contract_address_4
@@ -249,24 +249,30 @@ class TestProcessor:
         idx_2.personal_info = {}
         db.add(idx_2)
 
-        set_personal_info_contract(db, personal_info_contract_address_1, user_1["address"],
-                                   [
-                                       {
-                                           "user": personal_user_1,
-                                           "data": {
-                                               "key_manager": "key_manager_user1",
-                                               "name": "name_user1",
-                                               "postal_code": "postal_code_user1",
-                                               "address": "address_user1",
-                                               "email": "email_user1",
-                                               "birth": "birth_user1"
-                                           }
-                                       },
-                                       {
-                                           "user": personal_user_2,
-                                           "data": ""
-                                       }
-                                   ])
+        set_personal_info_contract(
+            db,
+            personal_info_contract_address_1,
+            user_1["address"],
+            [
+                {
+                    "user": personal_user_1,
+                    "data": {
+                        "key_manager": "key_manager_user1",
+                        "name": "name_user1",
+                        "postal_code": "postal_code_user1",
+                        "address": "address_user1",
+                        "email": "email_user1",
+                        "birth": "birth_user1",
+                        "is_corporate": False,
+                        "tax_category": 10
+                    }
+                },
+                {
+                    "user": personal_user_2,
+                    "data": ""
+                }
+            ]
+        )
 
         idx_3 = IDXPersonalInfo()
         idx_3.issuer_address = user_1["address"]
@@ -280,24 +286,29 @@ class TestProcessor:
         idx_4.personal_info = {}
         db.add(idx_4)
 
-        set_personal_info_contract(db, personal_info_contract_address_2, user_1["address"],
-                                   [
-                                       {
-                                           "user": personal_user_3,
-                                           "data": ""
-                                       },
-                                       {
-                                           "user": personal_user_4,
-                                           "data": {
-                                               "key_manager": "key_manager_user4",
-                                               "name": "name_user4",
-                                               "postal_code": "postal_code_user4",
-                                               "address": "address_user4",
-                                               "email": "email_user4",
-                                               "birth": "birth_user4"
-                                           }
-                                       }
-                                   ])
+        set_personal_info_contract(
+            db,
+            personal_info_contract_address_2, user_1["address"],
+            [
+                {
+                    "user": personal_user_3,
+                    "data": ""
+                },
+                {
+                    "user": personal_user_4,
+                    "data": {
+                        "key_manager": "key_manager_user4",
+                        "name": "name_user4",
+                        "postal_code": "postal_code_user4",
+                        "address": "address_user4",
+                        "email": "email_user4",
+                        "birth": "birth_user4",
+                        "is_corporate": True,
+                        "tax_category": 20
+                    }
+                }
+            ]
+        )
 
         db.commit()
 
@@ -326,7 +337,9 @@ class TestProcessor:
             "postal_code": "postal_code_user1",
             "address": "address_user1",
             "email": "email_user1",
-            "birth": "birth_user1"
+            "birth": "birth_user1",
+            "is_corporate": False,
+            "tax_category": 10
         }
         assert _personal_info_1.get_info(personal_user_2["address"]) == {
             "key_manager": None,
@@ -334,7 +347,9 @@ class TestProcessor:
             "postal_code": None,
             "address": None,
             "email": None,
-            "birth": None
+            "birth": None,
+            "is_corporate": None,
+            "tax_category": None
         }
         _personal_info_2 = PersonalInfoContract(db, user_1["address"], personal_info_contract_address_2)
         assert _personal_info_2.get_info(personal_user_3["address"]) == {
@@ -343,7 +358,9 @@ class TestProcessor:
             "postal_code": None,
             "address": None,
             "email": None,
-            "birth": None
+            "birth": None,
+            "is_corporate": None,
+            "tax_category": None
         }
         assert _personal_info_2.get_info(personal_user_4["address"]) == {  # Previous RSA Decrypt
             "key_manager": "key_manager_user4",
@@ -351,7 +368,9 @@ class TestProcessor:
             "postal_code": "postal_code_user4",
             "address": "address_user4",
             "email": "email_user4",
-            "birth": "birth_user4"
+            "birth": "birth_user4",
+            "is_corporate": True,
+            "tax_category": 20
         }
 
         # RSA Key Change Completed
@@ -388,7 +407,9 @@ class TestProcessor:
             "postal_code": "postal_code_user1",
             "address": "address_user1",
             "email": "email_user1",
-            "birth": "birth_user1"
+            "birth": "birth_user1",
+            "is_corporate": False,
+            "tax_category": 10
         }
         assert _personal_info_1.get_info(personal_user_2["address"]) == {
             "key_manager": None,
@@ -396,7 +417,10 @@ class TestProcessor:
             "postal_code": None,
             "address": None,
             "email": None,
-            "birth": None
+            "birth": None,
+            "is_corporate": None,
+            "tax_category": None
+
         }
         _personal_info_2 = PersonalInfoContract(db, user_1["address"], personal_info_contract_address_2)
         assert _personal_info_2.get_info(personal_user_3["address"]) == {
@@ -405,7 +429,9 @@ class TestProcessor:
             "postal_code": None,
             "address": None,
             "email": None,
-            "birth": None
+            "birth": None,
+            "is_corporate": None,
+            "tax_category": None
         }
         assert _personal_info_2.get_info(personal_user_4["address"]) == {  # New RSA Decrypt
             "key_manager": "key_manager_user4",
@@ -413,7 +439,9 @@ class TestProcessor:
             "postal_code": "postal_code_user4",
             "address": "address_user4",
             "email": "email_user4",
-            "birth": "birth_user4"
+            "birth": "birth_user4",
+            "is_corporate": True,
+            "tax_category": 20
         }
 
         # Execute batch(Run 3rd)
@@ -439,7 +467,9 @@ class TestProcessor:
             "postal_code": "postal_code_user1",
             "address": "address_user1",
             "email": "email_user1",
-            "birth": "birth_user1"
+            "birth": "birth_user1",
+            "is_corporate": False,
+            "tax_category": 10
         }
         assert _personal_info_1.get_info(personal_user_2["address"]) == {
             "key_manager": None,
@@ -447,7 +477,9 @@ class TestProcessor:
             "postal_code": None,
             "address": None,
             "email": None,
-            "birth": None
+            "birth": None,
+            "is_corporate": None,
+            "tax_category": None
         }
         _personal_info_2 = PersonalInfoContract(db, user_1["address"], personal_info_contract_address_2)
         assert _personal_info_2.get_info(personal_user_3["address"]) == {
@@ -456,7 +488,9 @@ class TestProcessor:
             "postal_code": None,
             "address": None,
             "email": None,
-            "birth": None
+            "birth": None,
+            "is_corporate": None,
+            "tax_category": None
         }
         assert _personal_info_2.get_info(personal_user_4["address"]) == {  # New RSA Decrypt
             "key_manager": "key_manager_user4",
@@ -464,7 +498,9 @@ class TestProcessor:
             "postal_code": "postal_code_user4",
             "address": "address_user4",
             "email": "email_user4",
-            "birth": "birth_user4"
+            "birth": "birth_user4",
+            "is_corporate": True,
+            "tax_category": 20
         }
 
     ###########################################################################

@@ -18,6 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 from pydantic import BaseModel
 
+from app.model.db import TokenType
+
 
 ############################
 # RESPONSE
@@ -32,7 +34,7 @@ class BulkTransferUploadResponse(BaseModel):
     """bulk transfer upload"""
     upload_id: str
     issuer_address: str
-    token_type: str
+    token_type: TokenType
     status: int
     created: str
 
@@ -42,7 +44,7 @@ class BulkTransferResponse(BaseModel):
     upload_id: str
     issuer_address: str
     token_address: str
-    token_type: str
+    token_type: TokenType
     from_address: str
     to_address: str
     amount: int

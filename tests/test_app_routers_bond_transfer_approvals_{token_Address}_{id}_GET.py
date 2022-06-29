@@ -44,13 +44,11 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
     test_application_datetime = datetime(year=2019, month=9, day=1)
     test_application_datetime_str = timezone("UTC").localize(test_application_datetime).astimezone(local_tz).isoformat()
     test_application_blocktimestamp = datetime(year=2019, month=9, day=2)
-    test_application_blocktimestamp_str = timezone("UTC").localize(test_application_blocktimestamp).astimezone(
-        local_tz).isoformat()
+    test_application_blocktimestamp_str = timezone("UTC").localize(test_application_blocktimestamp).astimezone(local_tz).isoformat()
     test_approval_datetime = datetime(year=2019, month=9, day=3)
     test_approval_datetime_str = timezone("UTC").localize(test_approval_datetime).astimezone(local_tz).isoformat()
     test_approval_blocktimestamp = datetime(year=2019, month=9, day=4)
-    test_approval_blocktimestamp_str = timezone("UTC").localize(test_approval_blocktimestamp).astimezone(
-        local_tz).isoformat()
+    test_approval_blocktimestamp_str = timezone("UTC").localize(test_approval_blocktimestamp).astimezone(local_tz).isoformat()
 
     ###########################################################################
     # Normal Case
@@ -61,7 +59,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
     def test_normal_1(self, client, db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
@@ -82,6 +80,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
+        _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
@@ -105,6 +104,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
             "approval_datetime": None,
             "approval_blocktimestamp": None,
             "cancelled": False,
+            "escrow_finished": False,
             "transfer_approved": False,
             "status": 0,
             "issuer_cancelable": True,
@@ -115,7 +115,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
     def test_normal_2(self, client, db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
@@ -136,6 +136,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = True
+        _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
@@ -159,17 +160,18 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
             "approval_datetime": None,
             "approval_blocktimestamp": None,
             "cancelled": True,
+            "escrow_finished": False,
             "transfer_approved": False,
             "status": 3,
             "issuer_cancelable": False,
         }
 
     # <Normal_3>
-    # approved data(no ownership vesting)
+    # escrow finished data
     def test_normal_3(self, client, db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
@@ -190,7 +192,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp =  None
         _idx_transfer_approval.cancelled = None
-        _idx_transfer_approval.transfer_approved = True
+        _idx_transfer_approval.escrow_finished = True
+        _idx_transfer_approval.transfer_approved = False
         db.add(_idx_transfer_approval)
 
         # request target API
@@ -213,17 +216,18 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
             "approval_datetime": None,
             "approval_blocktimestamp": None,
             "cancelled": False,
-            "transfer_approved": True,
+            "escrow_finished": True,
+            "transfer_approved": False,
             "status": 1,
             "issuer_cancelable": False,
         }
 
     # <Normal_4>
-    # approved data
+    # transferred data
     def test_normal_4(self, client, db):
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
@@ -244,6 +248,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
         _idx_transfer_approval.approval_datetime = self.test_approval_datetime
         _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
         _idx_transfer_approval.cancelled = None
+        _idx_transfer_approval.escrow_finished = True
         _idx_transfer_approval.transfer_approved = True
         db.add(_idx_transfer_approval)
 
@@ -267,6 +272,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
             "approval_datetime": self.test_approval_datetime_str,
             "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
             "cancelled": False,
+            "escrow_finished": True,
             "transfer_approved": True,
             "status": 2,
             "issuer_cancelable": False,
@@ -303,7 +309,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
 
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
@@ -333,7 +339,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
 
         # prepare data: Token
         _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address

@@ -38,7 +38,7 @@ from app.model.schema.token import (
     IbetSecurityTokenCancelTransfer,
     IbetSecurityTokenEscrowApproveTransfer
 )
-from app.exceptions import SendTransactionError
+from app.exceptions import SendTransactionError, ContractRevertError
 from batch.processor_auto_transfer_approval import Processor
 
 from tests.account_config import config_eth_account
@@ -72,7 +72,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
         token.token_address = "token_address"
         token.issuer_address = _account
         token.abi = "abi"
@@ -81,7 +81,7 @@ class TestProcessor:
 
         # Prepare data : Token (issuer does not exist)
         dummy_issuer_token = Token()
-        dummy_issuer_token.type = TokenType.IBET_STRAIGHT_BOND
+        dummy_issuer_token.type = TokenType.IBET_STRAIGHT_BOND.value
         dummy_issuer_token.token_address = "dummy_issuer_token_address"
         dummy_issuer_token.issuer_address = "ISSUER_DUMMY_ADDRESS"
         dummy_issuer_token.abi = "abi"
@@ -90,7 +90,7 @@ class TestProcessor:
 
         # Prepare data : Token (manually approval)
         manual_token = Token()
-        manual_token.type = TokenType.IBET_STRAIGHT_BOND
+        manual_token.type = TokenType.IBET_STRAIGHT_BOND.value
         manual_token.token_address = "manual_token_address"
         manual_token.issuer_address = _account
         manual_token.abi = "abi"
@@ -234,7 +234,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.token_address = "token_address"
         token.issuer_address = _account
         token.abi = "abi"
@@ -243,7 +243,7 @@ class TestProcessor:
 
         # Prepare data : Token (issuer does not exist)
         dummy_issuer_token = Token()
-        dummy_issuer_token.type = TokenType.IBET_SHARE
+        dummy_issuer_token.type = TokenType.IBET_SHARE.value
         dummy_issuer_token.token_address = "dummy_issuer_token_address"
         dummy_issuer_token.issuer_address = "ISSUER_DUMMY_ADDRESS"
         dummy_issuer_token.abi = "abi"
@@ -252,7 +252,7 @@ class TestProcessor:
 
         # Prepare data : Token (manually approval)
         manual_token = Token()
-        manual_token.type = TokenType.IBET_STRAIGHT_BOND
+        manual_token.type = TokenType.IBET_STRAIGHT_BOND.value
         manual_token.token_address = "manual_token_address"
         manual_token.issuer_address = _account
         manual_token.abi = "abi"
@@ -398,7 +398,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.token_address = "token_address"
         token.issuer_address = _account
         token.abi = "abi"
@@ -407,7 +407,7 @@ class TestProcessor:
 
         # Prepare data : Token (issuer does not exist)
         dummy_issuer_token = Token()
-        dummy_issuer_token.type = TokenType.IBET_SHARE
+        dummy_issuer_token.type = TokenType.IBET_SHARE.value
         dummy_issuer_token.token_address = "dummy_issuer_token_address"
         dummy_issuer_token.issuer_address = "ISSUER_DUMMY_ADDRESS"
         dummy_issuer_token.abi = "abi"
@@ -416,7 +416,7 @@ class TestProcessor:
 
         # Prepare data : Token (manually approval)
         manual_token = Token()
-        manual_token.type = TokenType.IBET_STRAIGHT_BOND
+        manual_token.type = TokenType.IBET_STRAIGHT_BOND.value
         manual_token.token_address = "manual_token_address"
         manual_token.issuer_address = _account
         manual_token.abi = "abi"
@@ -429,6 +429,7 @@ class TestProcessor:
         idx_transfer_approval_0.exchange_address = "0x1234567890123456789012345678901234567890"
         idx_transfer_approval_0.application_id = 0
         idx_transfer_approval_0.application_blocktimestamp = datetime.datetime.utcnow()
+        idx_transfer_approval_0.escrow_finished = True
         db.add(idx_transfer_approval_0)
 
         # Prepare data : IDXTransferApproval, TransferApprovalHistory(approved)
@@ -437,6 +438,7 @@ class TestProcessor:
         idx_transfer_approval_1.exchange_address = "0x1234567890123456789012345678901234567890"
         idx_transfer_approval_1.application_id = 1
         idx_transfer_approval_1.application_blocktimestamp = datetime.datetime.utcnow()
+        idx_transfer_approval_1.escrow_finished = True
         db.add(idx_transfer_approval_1)
 
         transfer_approval_history = TransferApprovalHistory()
@@ -453,6 +455,7 @@ class TestProcessor:
         idx_transfer_approval_2.application_id = 2
         idx_transfer_approval_2.application_blocktimestamp = datetime.datetime.utcnow()
         idx_transfer_approval_2.cancelled = True
+        idx_transfer_approval_2.escrow_finished = None
         db.add(idx_transfer_approval_2)
 
         # Prepare data : IDXTransferApproval(Token does not exists)
@@ -461,6 +464,7 @@ class TestProcessor:
         idx_transfer_approval_4.exchange_address = "0x1234567890123456789012345678901234567890"
         idx_transfer_approval_4.application_id = 0
         idx_transfer_approval_4.application_blocktimestamp = datetime.datetime.utcnow()
+        idx_transfer_approval_4.escrow_finished = None
         db.add(idx_transfer_approval_4)
 
         # Prepare data : IDXTransferApproval(manually approval)
@@ -469,6 +473,7 @@ class TestProcessor:
         idx_transfer_approval_5.exchange_address = "0x1234567890123456789012345678901234567890"
         idx_transfer_approval_5.application_id = 0
         idx_transfer_approval_5.application_blocktimestamp = datetime.datetime(2020, 1, 1, 12, 59, 59)
+        idx_transfer_approval_5.escrow_finished = None
         db.add(idx_transfer_approval_5)
 
         # Prepare data : AdditionalTokenInfo(manually approval)
@@ -565,7 +570,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.token_address = "token_address"
         token.issuer_address = _account
         token.abi = "abi"
@@ -592,7 +597,7 @@ class TestProcessor:
         # mock
         IbetSecurityTokenContract_approve_transfer = patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
-            return_value=("test_tx_hash", {"status": 0})
+            side_effect=ContractRevertError("110902")
         )
 
         IbetSecurityTokenContract_cancel_transfer = patch(
@@ -654,7 +659,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.token_address = "token_address"
         token.issuer_address = _account
         token.abi = "abi"
@@ -667,6 +672,7 @@ class TestProcessor:
         idx_transfer_approval_0.exchange_address = "0x1234567890123456789012345678901234567890"
         idx_transfer_approval_0.application_id = 0
         idx_transfer_approval_0.application_blocktimestamp = datetime.datetime.utcnow()
+        idx_transfer_approval_0.escrow_finished = True
         db.add(idx_transfer_approval_0)
 
         # Prepare data : IDXTransferApproval(cancelled)
@@ -750,7 +756,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.token_address = "token_address"
         token.issuer_address = _account
         token.abi = "abi"
@@ -806,7 +812,7 @@ class TestProcessor:
 
         # Prepare data : Token
         token = Token()
-        token.type = TokenType.IBET_SHARE
+        token.type = TokenType.IBET_SHARE.value
         token.token_address = "token_address"
         token.issuer_address = _account
         token.abi = "abi"

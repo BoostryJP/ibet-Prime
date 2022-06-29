@@ -33,7 +33,10 @@ from fastapi import (
     Path
 )
 from fastapi.exceptions import HTTPException
-from sqlalchemy import desc
+from sqlalchemy import (
+    desc,
+    asc
+)
 from sqlalchemy.orm import (
     Session,
     aliased
@@ -43,7 +46,6 @@ from sha3 import keccak_256
 from coincurve import PublicKey
 from Crypto import Random
 from Crypto.PublicKey import RSA
-from eth_keyfile import decode_keyfile_json
 from eth_utils import to_checksum_address
 import eth_keyfile
 import boto3
@@ -82,7 +84,8 @@ from app.model.db import (
 from app.model.blockchain import E2EMessaging
 from app.exceptions import (
     InvalidParameterError,
-    SendTransactionError
+    SendTransactionError,
+    ContractRevertError
 )
 from app import log
 
@@ -98,7 +101,7 @@ utc_tz = pytz.timezone("UTC")
 @router.post(
     "/accounts",
     response_model=E2EMessagingAccountResponse,
-    responses=get_routers_responses(422, InvalidParameterError, SendTransactionError)
+    responses=get_routers_responses(422, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def create_account(
         data: E2EMessagingAccountCreateRequest,
@@ -456,7 +459,7 @@ def list_all_e2e_messages(
 
     # Get E2E Messaging
     query = db.query(IDXE2EMessaging). \
-        order_by(desc(IDXE2EMessaging.id))
+        order_by(asc(IDXE2EMessaging.id))
     total = query.count()
 
     # Search Filter

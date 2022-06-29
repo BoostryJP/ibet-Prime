@@ -35,7 +35,9 @@ from app.routers import (
     file,
     ledger,
     notification,
-    share
+    position,
+    share,
+    token_holders
 )
 from app.utils.docs_utils import custom_openapi
 from app.exceptions import *
@@ -43,7 +45,7 @@ from app.log import output_access_log
 
 app = FastAPI(
     title="ibet Prime",
-    version="22.3.0"
+    version="22.6.0"
 )
 
 
@@ -73,7 +75,9 @@ app.include_router(e2e_messaging.router)
 app.include_router(file.router)
 app.include_router(ledger.router)
 app.include_router(notification.router)
+app.include_router(position.router)
 app.include_router(share.router)
+app.include_router(token_holders.router)
 
 
 ###############################################################
@@ -129,6 +133,19 @@ async def send_transaction_error_handler(request: Request, exc: SendTransactionE
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
+    )
+
+
+# 400:ContractRevertError
+@app.exception_handler(ContractRevertError)
+async def contract_revert_error_handler(request: Request, exc: ContractRevertError):
+    meta = {
+        "code": exc.code,
+        "title": "ContractRevertError"
+    }
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=jsonable_encoder({"meta": meta, "detail": exc.message}),
     )
 
 

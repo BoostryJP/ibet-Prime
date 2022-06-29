@@ -22,12 +22,13 @@ import pytest
 import json
 
 from web3 import Web3
+from web3.exceptions import ContractLogicError
 from web3.middleware import geth_poa_middleware
 from eth_keyfile import decode_keyfile_json
 
 from sqlalchemy.orm import Session
 
-from app.exceptions import SendTransactionError
+from app.exceptions import SendTransactionError, ContractRevertError
 from config import WEB3_HTTP_PROVIDER, CHAIN_ID, TX_GAS_LIMIT
 from app.utils.contract_utils import ContractUtils
 from app.model.db import TransactionLock
@@ -280,12 +281,13 @@ class TestSendTransaction:
     # Error Case
     ###########################################################################
     # <Error_1>
-    # Transaction Error
+    # Transaction REVERT(Deploying invalid bytecode)
     def test_error_1(self, db: Session):
         # Contract
         contract = web3.eth.contract(
             abi=self.contract_json["abi"],
-            bytecode=self.contract_json["bytecode"],
+            # add "0000" to make invalid bytecode
+            bytecode=self.contract_json["bytecode"]+"0000",
             bytecode_runtime=self.contract_json["deployedBytecode"],
         )
 
@@ -300,16 +302,20 @@ class TestSendTransaction:
         )
 
         # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.waitForTransactionReceipt",
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
             return_value={
                 "dummy": "hoge",
                 "status": 0
             }
         )
+        InspectionMock = patch(
+            target="web3.eth.Eth.call",
+            side_effect=ContractLogicError("execution reverted")
+        )
 
-        with Web3_sendRawTransaction:
-            with pytest.raises(SendTransactionError):
+        with Web3_send_raw_transaction, InspectionMock:
+            with pytest.raises(ContractRevertError):
                 ContractUtils.send_transaction(
                     transaction=tx,
                     private_key=self.private_key
@@ -336,12 +342,12 @@ class TestSendTransaction:
         )
 
         # mock
-        Web3_sendRawTransaction = patch(
-            target="web3.eth.Eth.waitForTransactionReceipt",
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
             side_effect=ValueError
         )
 
-        with Web3_sendRawTransaction:
+        with Web3_send_raw_transaction:
             with pytest.raises(ValueError):
                 ContractUtils.send_transaction(
                     transaction=tx,
@@ -437,7 +443,7 @@ class TestGetBlockByTransactionHash:
                 "gasPrice": 0,
             }
         )
-        nonce = web3.eth.getTransactionCount(self.test_account["address"])
+        nonce = web3.eth.get_transaction_count(self.test_account["address"])
         tx["nonce"] = nonce
         signed_tx = web3.eth.account.sign_transaction(
             transaction_dict=tx,
@@ -445,8 +451,8 @@ class TestGetBlockByTransactionHash:
         )
 
         # Send Transaction
-        tx_hash = web3.eth.sendRawTransaction(signed_tx.rawTransaction.hex())
-        tx_receipt = web3.eth.waitForTransactionReceipt(
+        tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction.hex())
+        tx_receipt = web3.eth.wait_for_transaction_receipt(
             transaction_hash=tx_hash,
             timeout=10
         )

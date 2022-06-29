@@ -28,7 +28,10 @@ from pydantic import (
 from datetime import datetime
 
 from .types import ResultSet
-from app.model.db.ledger_template import LedgerDetailsDataType
+from app.model.db import (
+    LedgerDetailsDataType,
+    TokenType
+)
 
 
 ############################
@@ -90,7 +93,7 @@ class LedgerResponse(BaseModel):
     """Ledger schema (Response)"""
     id: int
     token_address: str
-    token_type: str
+    token_type: TokenType
     created: datetime
 
 
@@ -103,8 +106,8 @@ class ListAllLedgerHistoryResponse(BaseModel):
 class RetrieveLedgerDetailsDataHistoryResponse(BaseModel):
     """Retrieve Ledger Details Data History schema (Response)"""
     account_address: Optional[str]
-    name: str
-    address: str
+    name: Optional[str]
+    address: Optional[str]
     amount: int
     price: int
     balance: int
@@ -130,7 +133,7 @@ class RetrieveLedgerHistoryResponse(BaseModel):
 
 class LedgerDetailsDataTemplateResponse(BaseModel):
     """Ledger Details Data Template schema (Response)"""
-    type: str
+    type: LedgerDetailsDataType
     source: Optional[str]
 
 
@@ -170,8 +173,8 @@ class LedgerDetailsDataResponse(BaseModel):
 
 class RetrieveLedgerDetailsDataResponse(BaseModel):
     """Retrieve Ledger Details Data schema (Response)"""
-    name: str
-    address: str
+    name: Optional[str]
+    address: Optional[str]
     amount: int
     price: int
     balance: int

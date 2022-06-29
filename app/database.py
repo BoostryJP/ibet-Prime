@@ -22,8 +22,7 @@ from sqlalchemy.orm import sessionmaker
 from config import (
     DATABASE_URL,
     DATABASE_SCHEMA,
-    DB_ECHO,
-    DB_AUTOCOMMIT
+    DB_ECHO
 )
 
 options = {
@@ -32,10 +31,7 @@ options = {
     "pool_timeout": 30,
     "pool_pre_ping": True,
     "max_overflow": 30,
-    "echo": DB_ECHO,
-    "execution_options": {
-        "autocommit": DB_AUTOCOMMIT
-    }
+    "echo": DB_ECHO
 }
 engine = create_engine(DATABASE_URL, **options)
 SessionLocal = sessionmaker(autocommit=False, autoflush=True, bind=engine)

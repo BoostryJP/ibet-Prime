@@ -56,7 +56,7 @@ class TestAppRoutersBondTransfersPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
         token.tx_hash = ""
         token.issuer_address = _admin_address
         token.token_address = _token_address
@@ -477,7 +477,7 @@ class TestAppRoutersBondTransfersPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
         token.tx_hash = ""
         token.issuer_address = _admin_address
         token.token_address = _token_address
@@ -536,7 +536,7 @@ class TestAppRoutersBondTransfersPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
         token.tx_hash = ""
         token.issuer_address = _admin_address
         token.token_address = _token_address

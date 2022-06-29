@@ -50,7 +50,7 @@ from app.model.schema import (
     IbetSecurityTokenCancelTransfer
 )
 from app.model.blockchain import IbetExchangeInterface
-from app.exceptions import SendTransactionError
+from app.exceptions import SendTransactionError, ContractRevertError
 from app import log
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
@@ -162,6 +162,8 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             })
             tx_hash, tx_receipt = ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             return tx_hash, tx_receipt
+        except ContractRevertError:
+            raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
@@ -188,6 +190,8 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             })
             tx_hash, tx_receipt = ContractUtils.send_transaction(transaction=tx, private_key=private_key)
             return tx_hash, tx_receipt
+        except ContractRevertError:
+            raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
@@ -380,6 +384,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -397,6 +403,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -417,6 +425,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -449,6 +459,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -465,6 +477,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -481,6 +495,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -495,6 +511,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -511,6 +529,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -527,6 +547,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -543,6 +565,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -559,6 +583,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -575,6 +601,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -591,6 +619,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -622,6 +652,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 "gasPrice": 0
             })
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+        except ContractRevertError:
+            raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
@@ -653,6 +685,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             # Delete Cache
             IbetStraightBondContract.set_token_attr_update(contract_address)
             IbetStraightBondContract.cache.pop(contract_address)
+        except ContractRevertError:
+            raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
@@ -684,6 +718,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             # Delete Cache
             IbetStraightBondContract.set_token_attr_update(contract_address)
             IbetStraightBondContract.cache.pop(contract_address)
+        except ContractRevertError:
+            raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
@@ -850,6 +886,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -866,6 +904,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -885,6 +925,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -901,6 +943,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -917,6 +961,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -933,6 +979,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -949,6 +997,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -965,6 +1015,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -981,6 +1033,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -997,6 +1051,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -1013,6 +1069,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -1027,6 +1085,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -1043,6 +1103,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
             })
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:
@@ -1074,6 +1136,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 "gasPrice": 0
             })
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+        except ContractRevertError:
+            raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
@@ -1105,6 +1169,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
             # Delete Cache
             IbetShareContract.set_token_attr_update(contract_address)
             IbetShareContract.cache.pop(contract_address)
+        except ContractRevertError:
+            raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
@@ -1136,6 +1202,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
             # Delete Cache
             IbetShareContract.set_token_attr_update(contract_address)
             IbetShareContract.cache.pop(contract_address)
+        except ContractRevertError:
+            raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:

@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import uuid
 from datetime import datetime
 
 import pytz
@@ -36,7 +37,9 @@ from app.model.db import (
     LedgerDetailsData,
     LedgerTemplate,
     LedgerDetailsTemplate,
-    LedgerDetailsDataType
+    LedgerDetailsDataType,
+    Notification,
+    NotificationType
 )
 
 local_tz = pytz.timezone(TZ)
@@ -48,7 +51,7 @@ def create_ledger(token_address: str, db: Session):
         filter(Token.token_address == token_address). \
         filter(Token.token_status == 1). \
         first()
-    if _token.type != TokenType.IBET_SHARE and _token.type != TokenType.IBET_STRAIGHT_BOND:
+    if _token.type != TokenType.IBET_SHARE.value and _token.type != TokenType.IBET_STRAIGHT_BOND.value:
         return
 
     _template = db.query(LedgerTemplate). \
@@ -96,6 +99,25 @@ def create_ledger(token_address: str, db: Session):
     _ledger.ledger = ledger
     db.add(_ledger)
 
+    # Although autoflush is enabled, there is no operation invoking flush.
+    # Execute flush here to get ledger id which is auto incremented.
+    db.flush()
+    
+    # Register Notification to the DB
+    # NOTE: DB commit is executed by the caller
+    _notification = Notification()
+    _notification.notice_id = uuid.uuid4()
+    _notification.issuer_address = _token.issuer_address
+    _notification.priority = 0  # Low
+    _notification.type = NotificationType.CREATE_LEDGER_INFO
+    _notification.code = 0
+    _notification.metainfo = {
+        "token_address": token_address,
+        "token_type": _token.type,
+        "ledger_id": _ledger.id
+    }
+    db.add(_notification)
+
 
 def __get_details_data_list(token_address: str, token_type: str, data_type: str, data_source: str, db: Session):
     data_list = []
@@ -124,10 +146,10 @@ def __get_details_data_list(token_address: str, token_type: str, data_type: str,
 
 
 def __get_details_data_list_from_ibetfin(token_address: str, token_type: str, db: Session):
-    if token_type == TokenType.IBET_SHARE:
+    if token_type == TokenType.IBET_SHARE.value:
         token_contract = IbetShareContract.get(token_address)
         price = token_contract.principal_value
-    elif token_type == TokenType.IBET_STRAIGHT_BOND:
+    elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
         token_contract = IbetStraightBondContract.get(token_address)
         price = token_contract.face_value
 
@@ -167,8 +189,8 @@ def __get_details_data_list_from_ibetfin(token_address: str, token_type: str, db
         for date_ymd, amount in date_ymd_amount.items():
             details_data = {
                 "account_address": account_address,
-                "name": "",
-                "address": "",
+                "name": None,
+                "address": None,
                 "amount": amount,
                 "price": price,
                 "balance": price * amount,
@@ -177,8 +199,8 @@ def __get_details_data_list_from_ibetfin(token_address: str, token_type: str, db
 
             # Update PersonalInfo
             personal_info = __get_personal_info(account_address, issuer_address, personal_info_contract, db)
-            details_data["name"] = personal_info.get("name", "")
-            details_data["address"] = personal_info.get("address", "")
+            details_data["name"] = personal_info.get("name", None)
+            details_data["address"] = personal_info.get("address", None)
 
             data_list.append(details_data)
 
@@ -193,7 +215,7 @@ def __get_personal_info(account_address: str, issuer_address: str, personal_info
         first()
 
     if _idx_personal_info is None:  # Get PersonalInfo to Contract
-        personal_info = personal_info_contract.get_info(account_address, default_value="")
+        personal_info = personal_info_contract.get_info(account_address, default_value=None)
     else:
         personal_info = _idx_personal_info.personal_info
 

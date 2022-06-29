@@ -52,7 +52,7 @@ db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 class Processor:
     def __init__(self):
-        self.latest_block = web3.eth.blockNumber
+        self.latest_block = web3.eth.block_number
         self.token_list = []
 
     def sync_new_logs(self):
@@ -62,7 +62,7 @@ class Processor:
 
             # Get from_block_number and to_block_number for contract event filter
             idx_transfer_block_number = self.__get_idx_transfer_block_number(db_session=db_session)
-            latest_block = web3.eth.blockNumber
+            latest_block = web3.eth.block_number
 
             if idx_transfer_block_number >= latest_block:
                 LOG.debug("skip process")
@@ -144,8 +144,8 @@ class Processor:
                             amount=args["value"],
                             block_timestamp=block_timestamp
                         )
-            except Exception as e:
-                LOG.error(e)
+            except Exception:
+                LOG.exception("An exception occurred during event synchronization")
 
     @staticmethod
     def __sink_on_transfer(db_session: Session,
@@ -178,8 +178,8 @@ def main():
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:
             LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
-        except Exception as ex:
-            LOG.exception(ex)
+        except Exception:
+            LOG.exception("An exception occurred during event synchronization")
 
         time.sleep(INDEXER_SYNC_INTERVAL)
 

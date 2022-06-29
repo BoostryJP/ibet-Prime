@@ -129,9 +129,9 @@ class Processor:
             all()
         personal_info_contract_list = set()
         for token in token_list:
-            if token.type == TokenType.IBET_SHARE:
+            if token.type == TokenType.IBET_SHARE.value:
                 token_contract = IbetShareContract.get(token.token_address)
-            elif token.type == TokenType.IBET_STRAIGHT_BOND:
+            elif token.type == TokenType.IBET_STRAIGHT_BOND.value:
                 token_contract = IbetStraightBondContract.get(token.token_address)
             else:
                 continue
@@ -172,7 +172,10 @@ class Processor:
         # Modify
         LOG.info(
             f"Modify Start: issuer_address={temporary.issuer_address}, account_address={idx_personal_info.account_address}")
-        info = personal_info_contract_accessor.get_info(idx_personal_info.account_address)
+        info = personal_info_contract_accessor.get_info(
+            idx_personal_info.account_address,
+            default_value=None
+        )
         LOG.info(
             f"Modify End: issuer_address={temporary.issuer_address}, account_address={idx_personal_info.account_address}")
         # Back RSA
@@ -184,13 +187,19 @@ class Processor:
             "postal_code": None,
             "address": None,
             "email": None,
-            "birth": None
+            "birth": None,
+            "is_corporate": None,
+            "tax_category": None
         }
         if info == default_info:
             return False
 
         # Modify personal information
-        personal_info_contract_accessor.modify_info(idx_personal_info.account_address, info)
+        personal_info_contract_accessor.modify_info(
+            account_address=idx_personal_info.account_address,
+            data=info,
+            default_value=None
+        )
         return True
 
     @staticmethod

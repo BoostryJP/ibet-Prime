@@ -16,7 +16,12 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from pydantic import BaseModel
+from typing import Optional
+from pydantic import (
+    BaseModel,
+    validator
+)
+from web3 import Web3
 
 
 ############################
@@ -25,8 +30,29 @@ from pydantic import BaseModel
 class ModifyPersonalInfoRequest(BaseModel):
     """Modify Personal Information schema (REQUEST)"""
     key_manager: str
-    name: str
-    postal_code: str
-    address: str
-    email: str
-    birth: str
+    name: Optional[str]
+    postal_code: Optional[str]
+    address: Optional[str]
+    email: Optional[str]
+    birth: Optional[str]
+    is_corporate: Optional[bool]
+    tax_category: Optional[int]
+
+
+class RegisterPersonalInfoRequest(BaseModel):
+    """Register Personal Information schema (REQUEST)"""
+    account_address: str
+    key_manager: str
+    name: Optional[str]
+    postal_code: Optional[str]
+    address: Optional[str]
+    email: Optional[str]
+    birth: Optional[str]
+    is_corporate: Optional[bool]
+    tax_category: Optional[int]
+
+    @validator("account_address")
+    def account_address_is_valid_address(cls, v):
+        if not Web3.isAddress(v):
+            raise ValueError("account_address is not a valid address")
+        return v
