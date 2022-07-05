@@ -1082,6 +1082,87 @@ class TestProcessor:
         assert len(list(db.query(TokenHolder).filter(TokenHolder.holder_list_id == _token_holders_list1.id))) == 2
         assert len(list(db.query(TokenHolder).filter(TokenHolder.holder_list_id == _token_holders_list2.id))) == 2
 
+    # <Normal_9>
+    # StraightBond
+    # Batch does not index former holder who has no balance at the target block number.
+    def test_normal_9(
+        self,
+        processor,
+        db,
+        personal_info_contract,
+        ibet_exchange_contract
+    ):
+        exchange_contract = ibet_exchange_contract
+        _user_1 = config_eth_account("user1")
+        issuer_address = _user_1["address"]
+        issuer_private_key = decode_keyfile_json(raw_keyfile_json=_user_1["keyfile_json"], password="password".encode("utf-8"))
+        _user_2 = config_eth_account("user2")
+        user_address_1 = _user_2["address"]
+        user_pk_1 = decode_keyfile_json(raw_keyfile_json=_user_2["keyfile_json"], password="password".encode("utf-8"))
+        _user_3 = config_eth_account("user3")
+        user_address_2 = _user_3["address"]
+        user_pk_2 = decode_keyfile_json(raw_keyfile_json=_user_3["keyfile_json"], password="password".encode("utf-8"))
+
+        # Issuer issues bond token.
+        token_contract = deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=exchange_contract.address,
+            transfer_approval_required=False,
+        )
+        token_address_1 = token_contract.address
+        token_1 = Token()
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.token_address = token_address_1
+        token_1.issuer_address = issuer_address
+        token_1.abi = token_contract.abi
+        token_1.tx_hash = "tx_hash"
+        db.add(token_1)
+
+        PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_1, user_pk_1, [issuer_address, ""])
+        PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_2, user_pk_2, [issuer_address, ""])
+        PersonalInfoContractTestUtils.register(personal_info_contract.address, issuer_address, issuer_private_key, [issuer_address, ""])
+
+        STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 30000])
+        STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [issuer_address, 30000])
+
+        STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_2, 30000])
+        STContractUtils.transfer(token_contract.address, user_address_2, user_pk_2, [issuer_address, 30000])
+        # user1: 0 user2: 0
+
+        # Insert collection record with above token and current block number
+        list_id = str(uuid.uuid4())
+        block_number = web3.eth.block_number
+        _token_holders_list = token_holders_list(token_contract.address, block_number, list_id)
+        db.add(_token_holders_list)
+        db.commit()
+
+        # Issuer transfers issued token to user1 again to proceed block_number on chain.
+        STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20000])
+        STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_2, 20000])
+
+        # Then execute processor.
+        processor.collect()
+
+        user1_record: TokenHolder = (
+            db.query(TokenHolder)
+            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
+            .filter(TokenHolder.account_address == user_address_1)
+            .first()
+        )
+        user2_record: TokenHolder = (
+            db.query(TokenHolder)
+            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
+            .filter(TokenHolder.account_address == user_address_2)
+            .first()
+        )
+
+        assert user1_record is None
+        assert user2_record is None
+
+        assert len(list(db.query(TokenHolder).filter(TokenHolder.holder_list_id == _token_holders_list.id))) == 0
+
     ###########################################################################
     # Error Case
     ###########################################################################

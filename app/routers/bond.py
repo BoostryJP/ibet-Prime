@@ -766,8 +766,12 @@ def list_all_holders(
     # Get Holders
     _holders = db.query(IDXPosition). \
         filter(IDXPosition.token_address == token_address). \
-        order_by(IDXPosition.id). \
-        all()
+        filter(or_(
+            IDXPosition.balance != 0,
+            IDXPosition.exchange_balance != 0,
+            IDXPosition.pending_transfer != 0,
+            IDXPosition.exchange_commitment != 0
+        )).order_by(IDXPosition.id).all()
 
     # Get personal information
     _personal_info_list = db.query(IDXPersonalInfo). \
