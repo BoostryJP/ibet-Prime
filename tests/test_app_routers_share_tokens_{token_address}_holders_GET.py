@@ -310,8 +310,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         idx_position_1 = IDXPosition()
         idx_position_1.token_address = _token_address
         idx_position_1.account_address = _account_address_1
-        idx_position_1.balance = 10
-        idx_position_1.exchange_balance = 11
+        idx_position_1.balance = 0
+        idx_position_1.exchange_balance = 0
         idx_position_1.exchange_commitment = 12
         idx_position_1.pending_transfer = 5
         db.add(idx_position_1)
@@ -336,8 +336,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         idx_position_2.account_address = _account_address_2
         idx_position_2.balance = 20
         idx_position_2.exchange_balance = 21
-        idx_position_2.exchange_commitment = 22
-        idx_position_2.pending_transfer = 10
+        idx_position_2.exchange_commitment = 0
+        idx_position_2.pending_transfer = 0
         db.add(idx_position_2)
 
         idx_position_3 = IDXPosition()
@@ -387,8 +387,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
                     "is_corporate": False,
                     "tax_category": 10
                 },
-                "balance": 10,
-                "exchange_balance": 11,
+                "balance": 0,
+                "exchange_balance": 0,
                 "exchange_commitment": 12,
                 "pending_transfer": 5
             },
@@ -406,8 +406,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
                 },
                 "balance": 20,
                 "exchange_balance": 21,
-                "exchange_commitment": 22,
-                "pending_transfer": 10
+                "exchange_commitment": 0,
+                "pending_transfer": 0
             }
         ]
 

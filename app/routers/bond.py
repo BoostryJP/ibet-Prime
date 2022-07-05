@@ -766,7 +766,7 @@ def list_all_holders(
     # Get Holders
     _holders = db.query(IDXPosition). \
         filter(IDXPosition.token_address == token_address). \
-        filter(and_(
+        filter(or_(
             IDXPosition.balance != 0,
             IDXPosition.exchange_balance != 0,
             IDXPosition.pending_transfer != 0,
