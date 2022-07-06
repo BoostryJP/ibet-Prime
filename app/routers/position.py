@@ -25,6 +25,7 @@ from fastapi import (
     Query
 )
 from fastapi.exceptions import HTTPException
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.database import db_session
@@ -77,6 +78,12 @@ def list_all_position(
         join(Token, IDXPosition.token_address == Token.token_address). \
         filter(IDXPosition.account_address == account_address). \
         filter(Token.token_status != 2). \
+        filter(or_(
+            IDXPosition.balance != 0,
+            IDXPosition.exchange_balance != 0,
+            IDXPosition.pending_transfer != 0,
+            IDXPosition.exchange_commitment != 0
+        )). \
         order_by(IDXPosition.token_address, IDXPosition.account_address)
     if issuer_address is not None:
         query = query.filter(Token.issuer_address == issuer_address)
