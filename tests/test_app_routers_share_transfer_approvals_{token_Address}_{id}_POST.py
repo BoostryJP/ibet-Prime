@@ -31,7 +31,6 @@ from app.model.db import (
     Account,
     Token,
     TokenType,
-    AdditionalTokenInfo,
     IDXTransferApproval
 )
 from app.model.schema import (
@@ -106,11 +105,6 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
-
-        additional_info = AdditionalTokenInfo()
-        additional_info.token_address = self.test_token_address
-        additional_info.is_manual_transfer_approval = True
-        db.add(additional_info)
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
@@ -187,11 +181,6 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.escrow_finished = True
         db.add(_idx_transfer_approval)
 
-        additional_info = AdditionalTokenInfo()
-        additional_info.token_address = self.test_token_address
-        additional_info.is_manual_transfer_approval = True
-        db.add(additional_info)
-
         # mock
         IbetSecurityTokenEscrow_approve_transfer = mock.patch(
             target="app.model.blockchain.exchange.IbetSecurityTokenEscrow.approve_transfer",
@@ -264,11 +253,6 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
-
-        additional_info = AdditionalTokenInfo()
-        additional_info.token_address = self.test_token_address
-        additional_info.is_manual_transfer_approval = True
-        db.add(additional_info)
 
         # mock
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
@@ -725,11 +709,6 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.transfer_approved = True
         db.add(_idx_transfer_approval)
 
-        additional_info = AdditionalTokenInfo()
-        additional_info.token_address = self.test_token_address
-        additional_info.is_manual_transfer_approval = True
-        db.add(additional_info)
-
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
@@ -791,11 +770,6 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
-
-        additional_info = AdditionalTokenInfo()
-        additional_info.token_address = self.test_token_address
-        additional_info.is_manual_transfer_approval = True
-        db.add(additional_info)
 
         # request target api
         resp = client.post(
@@ -859,11 +833,6 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
-        additional_info = AdditionalTokenInfo()
-        additional_info.token_address = self.test_token_address
-        additional_info.is_manual_transfer_approval = True
-        db.add(additional_info)
-
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
@@ -926,11 +895,6 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
-        additional_info = AdditionalTokenInfo()
-        additional_info.token_address = self.test_token_address
-        additional_info.is_manual_transfer_approval = True
-        db.add(additional_info)
-
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
@@ -951,138 +915,6 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
                 "title": "InvalidParameterError"
             },
             "detail": "application that cannot be canceled"
-        }
-
-    # <Error_4_6>
-    # Invalid Parameter Error
-    # token is automatic approval
-    # unset is_manual_transfer_approval
-    def test_error_4_6(self, client, db):
-        issuer = config_eth_account("user1")
-        issuer_address = issuer["address"]
-
-        # prepare data
-        account = Account()
-        account.issuer_address = issuer_address
-        account.keyfile = issuer["keyfile_json"]
-        account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
-
-        _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
-        _token.tx_hash = self.test_transaction_hash
-        _token.issuer_address = issuer_address
-        _token.token_address = self.test_token_address
-        _token.abi = {}
-        db.add(_token)
-
-        id = 10
-        _idx_transfer_approval = IDXTransferApproval()
-        _idx_transfer_approval.id = id
-        _idx_transfer_approval.token_address = self.test_token_address
-        _idx_transfer_approval.exchange_address = None
-        _idx_transfer_approval.application_id = 100
-        _idx_transfer_approval.from_address = self.test_from_address
-        _idx_transfer_approval.to_address = self.test_to_address
-        _idx_transfer_approval.amount = 200
-        _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
-        _idx_transfer_approval.approval_datetime = None
-        _idx_transfer_approval.approval_blocktimestamp = None
-        _idx_transfer_approval.cancelled = None
-        db.add(_idx_transfer_approval)
-
-        additional_info = AdditionalTokenInfo()
-        additional_info.token_address = self.test_token_address
-        additional_info.is_manual_transfer_approval = None  # not target
-        db.add(additional_info)
-
-        # request target api
-        resp = client.post(
-            self.base_url.format(self.test_token_address, id),
-            json={
-                "operation_type": "approve"
-            },
-            headers={
-                "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
-        )
-
-        # assertion
-        assert resp.status_code == 400
-        assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "token is automatic approval"
-        }
-
-    # <Error_4_7>
-    # Invalid Parameter Error
-    # token is automatic approval
-    # is_manual_transfer_approval is automatic
-    def test_error_4_7(self, client, db):
-        issuer = config_eth_account("user1")
-        issuer_address = issuer["address"]
-
-        # prepare data
-        account = Account()
-        account.issuer_address = issuer_address
-        account.keyfile = issuer["keyfile_json"]
-        account.eoa_password = E2EEUtils.encrypt("password")
-        db.add(account)
-
-        _token = Token()
-        _token.type = TokenType.IBET_SHARE.value
-        _token.tx_hash = self.test_transaction_hash
-        _token.issuer_address = issuer_address
-        _token.token_address = self.test_token_address
-        _token.abi = {}
-        db.add(_token)
-
-        id = 10
-        _idx_transfer_approval = IDXTransferApproval()
-        _idx_transfer_approval.id = id
-        _idx_transfer_approval.token_address = self.test_token_address
-        _idx_transfer_approval.exchange_address = None
-        _idx_transfer_approval.application_id = 100
-        _idx_transfer_approval.from_address = self.test_from_address
-        _idx_transfer_approval.to_address = self.test_to_address
-        _idx_transfer_approval.amount = 200
-        _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
-        _idx_transfer_approval.approval_datetime = None
-        _idx_transfer_approval.approval_blocktimestamp = None
-        _idx_transfer_approval.cancelled = None
-        db.add(_idx_transfer_approval)
-
-        additional_info = AdditionalTokenInfo()
-        additional_info.token_address = self.test_token_address
-        additional_info.is_manual_transfer_approval = False
-        db.add(additional_info)
-
-        # request target api
-        resp = client.post(
-            self.base_url.format(self.test_token_address, id),
-            json={
-                "operation_type": "approve"
-            },
-            headers={
-                "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
-        )
-
-        # assertion
-        assert resp.status_code == 400
-        assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "token is automatic approval"
         }
 
     # <Error_5_1>
@@ -1127,11 +959,6 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
-
-        additional_info = AdditionalTokenInfo()
-        additional_info.token_address = self.test_token_address
-        additional_info.is_manual_transfer_approval = True
-        db.add(additional_info)
 
         # request target API
         resp = client.post(
@@ -1194,11 +1021,6 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
-
-        additional_info = AdditionalTokenInfo()
-        additional_info.token_address = self.test_token_address
-        additional_info.is_manual_transfer_approval = True
-        db.add(additional_info)
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
@@ -1277,11 +1099,6 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.escrow_finished = True
         db.add(_idx_transfer_approval)
 
-        additional_info = AdditionalTokenInfo()
-        additional_info.token_address = self.test_token_address
-        additional_info.is_manual_transfer_approval = True
-        db.add(additional_info)
-
         # request target API
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
@@ -1344,11 +1161,6 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True
         db.add(_idx_transfer_approval)
-
-        additional_info = AdditionalTokenInfo()
-        additional_info.token_address = self.test_token_address
-        additional_info.is_manual_transfer_approval = True
-        db.add(additional_info)
 
         # mock
         IbetSecurityTokenEscrow_approve_transfer = mock.patch(
@@ -1422,11 +1234,6 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
 
-        additional_info = AdditionalTokenInfo()
-        additional_info.token_address = self.test_token_address
-        additional_info.is_manual_transfer_approval = True
-        db.add(additional_info)
-
         # request target API
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
@@ -1488,11 +1295,6 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
-
-        additional_info = AdditionalTokenInfo()
-        additional_info.token_address = self.test_token_address
-        additional_info.is_manual_transfer_approval = True
-        db.add(additional_info)
 
         # mock
         IbetSecurityTokenContract_cancel_transfer = mock.patch(

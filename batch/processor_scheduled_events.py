@@ -48,7 +48,6 @@ from app.model.db import (
     ScheduledEvents,
     ScheduledEventType,
     TokenType,
-    AdditionalTokenInfo,
     Notification,
     NotificationType
 )
@@ -182,14 +181,6 @@ class Processor:
                             tx_from=_event.issuer_address,
                             private_key=private_key
                         )
-
-                        # Update or Register additional token info data
-                        if "is_manual_transfer_approval" in _event.data:
-                            self.__sink_on_additional_token_info(
-                                db_session=db_session,
-                                token_address=_event.token_address,
-                                is_manual_transfer_approval=_event.data["is_manual_transfer_approval"]
-                            )
                 elif _event.token_type == TokenType.IBET_STRAIGHT_BOND.value:
                     # Update
                     if _event.event_type == ScheduledEventType.UPDATE.value:
@@ -200,14 +191,6 @@ class Processor:
                             tx_from=_event.issuer_address,
                             private_key=private_key
                         )
-
-                        # Update or Register additional token info data
-                        if "is_manual_transfer_approval" in _event.data:
-                            self.__sink_on_additional_token_info(
-                                db_session=db_session,
-                                token_address=_event.token_address,
-                                is_manual_transfer_approval=_event.data["is_manual_transfer_approval"]
-                            )
 
                 self.__sink_on_finish_event_process(
                     db_session=db_session,
@@ -257,18 +240,6 @@ class Processor:
         }
         db_session.add(notification)
 
-    @staticmethod
-    def __sink_on_additional_token_info(db_session: Session, token_address: str, **kwargs: dict):
-        _additional_info = db_session.query(AdditionalTokenInfo). \
-            filter(AdditionalTokenInfo.token_address == token_address). \
-            first()
-        if _additional_info is None:
-            _additional_info = AdditionalTokenInfo()
-            _additional_info.token_address = token_address
-        if "is_manual_transfer_approval" in kwargs:
-            setattr(_additional_info, "is_manual_transfer_approval", kwargs["is_manual_transfer_approval"])
-        db_session.merge(_additional_info)
-
 
 class Worker:
 
@@ -297,8 +268,7 @@ def main():
 
     for i in range(SCHEDULED_EVENTS_WORKER_COUNT):
         worker = Worker(i)
-        thread = threading.Thread(target=worker.run)
-        thread.setDaemon(True)
+        thread = threading.Thread(target=worker.run, daemon=True)
         thread.start()
         LOG.info(f"thread {i} started")
 

@@ -30,8 +30,7 @@ from app.exceptions import SendTransactionError
 from app.model.db import (
     Account,
     Token,
-    TokenType,
-    AdditionalTokenInfo
+    TokenType
 )
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
@@ -111,9 +110,6 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         )
         assert resp.status_code == 200
         assert resp.json() is None
-        _additional_info = db.query(AdditionalTokenInfo).first()
-        assert _additional_info.token_address == _token_address
-        assert _additional_info.is_manual_transfer_approval is True
 
     # <Normal_2>
     # No request parameters
@@ -156,8 +152,6 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
-        _additional_info = db.query(AdditionalTokenInfo).first()
-        assert _additional_info is None
 
     ###########################################################################
     # Error Case
