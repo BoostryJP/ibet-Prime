@@ -136,11 +136,11 @@ class TestAppRoutersPositionsAccountAddressGET:
             ]
         }
 
-    # <Normal_3>
+    # <Normal_3_1>
     # multi record
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_3(self, mock_IbetStraightBondContract_get, mock_IbetShareContract_get, client, db):
+    def test_normal_3_1(self, mock_IbetStraightBondContract_get, mock_IbetShareContract_get, client, db):
         account_address = "0x1234567890123456789012345678900000000000"
 
         # prepare data: Token
@@ -255,6 +255,118 @@ class TestAppRoutersPositionsAccountAddressGET:
                     "exchange_commitment": 32,
                     "pending_transfer": 33,
                 },
+            ]
+        }
+
+    # <Normal_3_2>
+    # multi record (Including former holder)
+    @mock.patch("app.model.blockchain.token.IbetShareContract.get")
+    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    def test_normal_3_2(self, mock_IbetStraightBondContract_get, mock_IbetShareContract_get, client, db):
+        account_address = "0x1234567890123456789012345678900000000000"
+
+        # prepare data: Token
+        _token = Token()
+        _token.token_address = "0x1234567890123456789012345678900000000010"
+        _token.issuer_address = "0x1234567890123456789012345678900000000100"
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.abi = ""
+        db.add(_token)
+
+        # prepare data: Position
+        _position = IDXPosition()
+        _position.token_address = "0x1234567890123456789012345678900000000010"
+        _position.account_address = account_address
+        _position.balance = 10
+        _position.exchange_balance = 11
+        _position.exchange_commitment = 12
+        _position.pending_transfer = 13
+        db.add(_position)
+
+        # prepare data: Token
+        _token = Token()
+        _token.token_address = "0x1234567890123456789012345678900000000011"
+        _token.issuer_address = "0x1234567890123456789012345678900000000101"
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.abi = ""
+        db.add(_token)
+
+        # prepare data: Position
+        _position = IDXPosition()
+        _position.token_address = "0x1234567890123456789012345678900000000011"
+        _position.account_address = account_address
+        _position.balance = 0
+        _position.exchange_balance = 0
+        _position.exchange_commitment = 22
+        _position.pending_transfer = 23
+        db.add(_position)
+
+        # prepare data: Token
+        _token = Token()
+        _token.token_address = "0x1234567890123456789012345678900000000012"
+        _token.issuer_address = "0x1234567890123456789012345678900000000100"
+        _token.type = TokenType.IBET_SHARE.value
+        _token.tx_hash = ""
+        _token.abi = ""
+        db.add(_token)
+
+        # prepare data: Position
+        _position = IDXPosition()
+        _position.token_address = "0x1234567890123456789012345678900000000012"
+        _position.account_address = account_address
+        _position.balance = 0
+        _position.exchange_balance = 0
+        _position.exchange_commitment = 0
+        _position.pending_transfer = 0
+        db.add(_position)
+
+        # mock
+        bond_1 = IbetStraightBondContract()
+        bond_1.name = "test_bond_1"
+        bond_2 = IbetStraightBondContract()
+        bond_2.name = "test_bond_2"
+        mock_IbetStraightBondContract_get.side_effect = [bond_1, bond_2]
+        share_1 = IbetShareContract()
+        share_1.name = "test_share_1"
+        mock_IbetShareContract_get.side_effect = [share_1]
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(account_address=account_address),
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {
+                "count": 2,
+                "offset": None,
+                "limit": None,
+                "total": 2,
+            },
+            "positions": [
+                {
+                    "issuer_address": "0x1234567890123456789012345678900000000100",
+                    "token_address": "0x1234567890123456789012345678900000000010",
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_name": "test_bond_1",
+                    "balance": 10,
+                    "exchange_balance": 11,
+                    "exchange_commitment": 12,
+                    "pending_transfer": 13,
+                },
+                {
+                    "issuer_address": "0x1234567890123456789012345678900000000101",
+                    "token_address": "0x1234567890123456789012345678900000000011",
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_name": "test_bond_2",
+                    "balance": 0,
+                    "exchange_balance": 0,
+                    "exchange_commitment": 22,
+                    "pending_transfer": 23,
+                }
             ]
         }
 
