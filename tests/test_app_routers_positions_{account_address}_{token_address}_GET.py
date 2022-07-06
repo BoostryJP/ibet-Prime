@@ -162,8 +162,8 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _position = IDXPosition()
         _position.token_address = token_address
         _position.account_address = account_address
-        _position.balance = 10
-        _position.exchange_balance = 11
+        _position.balance = 0
+        _position.exchange_balance = 0
         _position.exchange_commitment = 12
         _position.pending_transfer = 13
         db.add(_position)
@@ -185,8 +185,8 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
             "token_address": token_address,
             "token_type": TokenType.IBET_STRAIGHT_BOND.value,
             "token_name": "test_bond_1",
-            "balance": 10,
-            "exchange_balance": 11,
+            "balance": 0,
+            "exchange_balance": 0,
             "exchange_commitment": 12,
             "pending_transfer": 13,
         }
@@ -332,9 +332,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
             "detail": "wait for a while as the token is being processed"
         }
 
-    # <Error_4>
+    # <Error_4_1>
     # NotFound: Position
-    def test_error_4(self, client, db):
+    def test_error_4_1(self, client, db):
         account_address = "0x1234567890123456789012345678900000000000"
         token_address = "0x1234567890123456789012345678900000000010"
         issuer_address = "0x1234567890123456789012345678900000000100"
@@ -356,6 +356,48 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _position.exchange_balance = 11
         _position.exchange_commitment = 12
         _position.pending_transfer = 13
+        db.add(_position)
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(account_address=account_address, token_address=token_address),
+            headers={"issuer-address": issuer_address}
+        )
+
+        # assertion
+        assert resp.status_code == 404
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "NotFound"
+            },
+            "detail": "position not found"
+        }
+
+    # <Error_4_2>
+    # NotFound: Position
+    def test_error_4_2(self, client, db):
+        account_address = "0x1234567890123456789012345678900000000000"
+        token_address = "0x1234567890123456789012345678900000000010"
+        issuer_address = "0x1234567890123456789012345678900000000100"
+
+        # prepare data: Token
+        _token = Token()
+        _token.token_address = token_address
+        _token.issuer_address = issuer_address
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.abi = ""
+        db.add(_token)
+
+        # prepare data: Position
+        _position = IDXPosition()
+        _position.token_address = token_address
+        _position.account_address = account_address
+        _position.balance = 0
+        _position.exchange_balance = 0
+        _position.exchange_commitment = 0
+        _position.pending_transfer = 0
         db.add(_position)
 
         # request target api
