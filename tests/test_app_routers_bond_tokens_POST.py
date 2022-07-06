@@ -36,7 +36,6 @@ from app.model.db import (
     Account,
     Token,
     TokenType,
-    AdditionalTokenInfo,
     UpdateToken,
     IDXPosition,
     UTXO
@@ -163,9 +162,6 @@ class TestAppRoutersBondTokensPOST:
             update_token = db.query(UpdateToken).first()
             assert update_token is None
 
-            additional_info = db.query(AdditionalTokenInfo).first()
-            assert additional_info is None
-
     # <Normal_2>
     # include updates
     def test_normal_2(self, client, db):
@@ -223,7 +219,7 @@ class TestAppRoutersBondTokensPOST:
                 "contact_information": "contact info test",  # update
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
-                "is_manual_transfer_approval": True  # update
+                "is_manual_transfer_approval": True
             }
             resp = client.post(
                 self.apiurl,
@@ -284,10 +280,6 @@ class TestAppRoutersBondTokensPOST:
             assert update_token.arguments == req_param
             assert update_token.status == 0
             assert update_token.trigger == "Issue"
-
-            additional_info = db.query(AdditionalTokenInfo).first()
-            assert additional_info.token_address == "contract_address_test1"
-            assert additional_info.is_manual_transfer_approval is True
 
     ###########################################################################
     # Error Case
@@ -570,7 +562,7 @@ class TestAppRoutersBondTokensPOST:
             "contact_information": "contact info test",  # update
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
-            "is_manual_transfer_approval": True,  # update
+            "is_manual_transfer_approval": True,
         }
         resp = client.post(
             self.apiurl,
@@ -664,7 +656,7 @@ class TestAppRoutersBondTokensPOST:
             "contact_information": GetRandomStr(2001),  # update
             "privacy_policy": GetRandomStr(5001),  # update
             "transfer_approval_required": True,  # update
-            "is_manual_transfer_approval": True,  # update
+            "is_manual_transfer_approval": True,
         }
         resp = client.post(
             self.apiurl,

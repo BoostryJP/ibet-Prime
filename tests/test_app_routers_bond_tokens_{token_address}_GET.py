@@ -23,8 +23,7 @@ from config import TZ
 from app.model.blockchain import IbetStraightBondContract
 from app.model.db import (
     Token,
-    TokenType,
-    AdditionalTokenInfo
+    TokenType
 )
 
 
@@ -51,12 +50,6 @@ class TestAppRoutersBondTokensTokenAddressGET:
         db.add(token)
         db.commit()
         _issue_datetime = pytz.timezone("UTC").localize(token.created).astimezone(self.local_tz).isoformat()
-
-        additional_info = AdditionalTokenInfo()
-        additional_info.token_address = "token_address_test1"
-        additional_info.is_manual_transfer_approval = None  # not target
-        db.add(additional_info)
-        db.commit()
 
         # request target API
         mock_token = IbetStraightBondContract()
@@ -130,7 +123,7 @@ class TestAppRoutersBondTokensTokenAddressGET:
             "issue_datetime": _issue_datetime,
             "token_status": 1,
             "transfer_approval_required": True,
-            "is_manual_transfer_approval": False,
+            "is_manual_transfer_approval": True,
             "memo": "memo_test1",
         }
 
@@ -151,12 +144,6 @@ class TestAppRoutersBondTokensTokenAddressGET:
         db.add(token)
         db.commit()
         _issue_datetime = pytz.timezone("UTC").localize(token.created).astimezone(self.local_tz).isoformat()
-
-        additional_info = AdditionalTokenInfo()
-        additional_info.token_address = "token_address_test1"
-        additional_info.is_manual_transfer_approval = True
-        db.add(additional_info)
-        db.commit()
 
         # request target API
         mock_token = IbetStraightBondContract()

@@ -28,7 +28,6 @@ from app.model.db import (
     ScheduledEvents,
     ScheduledEventType,
     TokenType,
-    AdditionalTokenInfo,
     Notification,
     NotificationType
 )
@@ -154,8 +153,6 @@ class TestProcessor:
             filter(ScheduledEvents.token_address == _token_address_3). \
             first()
         assert _scheduled_event.status == 0
-        _additional_info = db.query(AdditionalTokenInfo).first()
-        assert _additional_info is None
 
     # <Normal_1_2>
     # IbetStraightBond
@@ -262,9 +259,6 @@ class TestProcessor:
             filter(ScheduledEvents.token_address == _token_address_3). \
             first()
         assert _scheduled_event.status == 0
-        _additional_info = db.query(AdditionalTokenInfo).first()
-        assert _additional_info.token_address == _token_address_2
-        assert _additional_info.is_manual_transfer_approval is True
 
     # <Normal_2_1>
     # IbetShare
@@ -370,8 +364,6 @@ class TestProcessor:
             filter(ScheduledEvents.token_address == _token_address_3). \
             first()
         assert _scheduled_event.status == 0
-        _additional_info = db.query(AdditionalTokenInfo).first()
-        assert _additional_info is None
 
     # <Normal_2_2>
     # IbetShare
@@ -478,9 +470,6 @@ class TestProcessor:
             filter(ScheduledEvents.token_address == _token_address_3). \
             first()
         assert _scheduled_event.status == 0
-        _additional_info = db.query(AdditionalTokenInfo).first()
-        assert _additional_info.token_address == _token_address_2
-        assert _additional_info.is_manual_transfer_approval is False
 
     ###########################################################################
     # Error Case

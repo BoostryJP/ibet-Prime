@@ -40,7 +40,6 @@ from config import (
 from app.model.db import (
     Token,
     TokenType,
-    AdditionalTokenInfo,
     IDXTransferApproval,
     IDXTransferApprovalBlockNumber,
     Notification,
@@ -474,18 +473,13 @@ class Processor:
             if token is not None:
                 if token.issuer_address != sender:  # Operate from other than issuer
                     if notice_code == 0:  # ApplyForTransfer
-                        _additional_info = db_session.query(AdditionalTokenInfo). \
-                            filter(AdditionalTokenInfo.token_address == token_address). \
-                            first()
-                        if _additional_info is not None and _additional_info.is_manual_transfer_approval is True:
-                            # In case of automatic approval, notification registration is skipped.
-                            self.__sink_on_info_notification(
-                                db_session=db_session,
-                                issuer_address=token.issuer_address,
-                                code=notice_code,
-                                token_address=token_address,
-                                id=transfer_approval.id
-                            )
+                        self.__sink_on_info_notification(
+                            db_session=db_session,
+                            issuer_address=token.issuer_address,
+                            code=notice_code,
+                            token_address=token_address,
+                            id=transfer_approval.id
+                        )
                     elif notice_code == 1 or notice_code == 3:  # CancelTransfer or EscrowFinished
                         self.__sink_on_info_notification(
                             db_session=db_session,

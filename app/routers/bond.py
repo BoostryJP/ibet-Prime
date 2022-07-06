@@ -92,7 +92,6 @@ from app.model.db import (
     Account,
     Token,
     TokenType,
-    AdditionalTokenInfo,
     UpdateToken,
     IDXPosition,
     IDXPersonalInfo,
@@ -258,13 +257,6 @@ def issue_token(
     _token.token_status = token_status
     db.add(_token)
 
-    # Register additional token info data
-    if token.is_manual_transfer_approval is not None:
-        _additional_info = AdditionalTokenInfo()
-        _additional_info.token_address = contract_address
-        _additional_info.is_manual_transfer_approval = token.is_manual_transfer_approval
-        db.add(_additional_info)
-
     db.commit()
 
     return {
@@ -307,16 +299,7 @@ def list_all_tokens(
         issue_datetime_utc = timezone("UTC").localize(token.created)
         bond_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
         bond_token["token_status"] = token.token_status
-
-        # Set additional info
-        _additional_info = db.query(AdditionalTokenInfo). \
-            filter(AdditionalTokenInfo.token_address == token.token_address). \
-            first()
-        is_manual_transfer_approval = False
-        if _additional_info is not None and _additional_info.is_manual_transfer_approval is not None:
-            is_manual_transfer_approval = _additional_info.is_manual_transfer_approval
-        bond_token["is_manual_transfer_approval"] = is_manual_transfer_approval
-
+        bond_token["is_manual_transfer_approval"] = True
         bond_tokens.append(bond_token)
 
     return bond_tokens
@@ -348,15 +331,7 @@ def retrieve_token(
     issue_datetime_utc = timezone("UTC").localize(_token.created)
     bond_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
     bond_token["token_status"] = _token.token_status
-
-    # Set additional info
-    _additional_info = db.query(AdditionalTokenInfo). \
-        filter(AdditionalTokenInfo.token_address == token_address). \
-        first()
-    is_manual_transfer_approval = False
-    if _additional_info is not None and _additional_info.is_manual_transfer_approval is not None:
-        is_manual_transfer_approval = _additional_info.is_manual_transfer_approval
-    bond_token["is_manual_transfer_approval"] = is_manual_transfer_approval
+    bond_token["is_manual_transfer_approval"] = True
 
     return bond_token
 
@@ -412,17 +387,6 @@ def update_token(
         )
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
-
-    # Update or Register additional token info data
-    if token.is_manual_transfer_approval is not None:
-        _additional_info = db.query(AdditionalTokenInfo). \
-            filter(AdditionalTokenInfo.token_address == token_address). \
-            first()
-        if _additional_info is None:
-            _additional_info = AdditionalTokenInfo()
-            _additional_info.token_address = token_address
-        _additional_info.is_manual_transfer_approval = token.is_manual_transfer_approval
-        db.merge(_additional_info)
 
     db.commit()
     return
@@ -1442,13 +1406,6 @@ def update_transfer_approval(
             _transfer_approval.exchange_address is not None:
         # Cancellation is possible only against approval of the transfer of a token contract.
         raise InvalidParameterError("application that cannot be canceled")
-
-    # Check manually approval
-    _additional_info = db.query(AdditionalTokenInfo). \
-        filter(AdditionalTokenInfo.token_address == token_address). \
-        first()
-    if _additional_info is None or _additional_info.is_manual_transfer_approval is not True:
-        raise InvalidParameterError("token is automatic approval")
 
     # Send transaction
     #  - APPROVE -> approveTransfer
