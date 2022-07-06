@@ -23,7 +23,6 @@ PROC_LIST="${PROC_LIST} batch/processor_bulk_transfer.py"
 PROC_LIST="${PROC_LIST} batch/processor_create_utxo.py"
 PROC_LIST="${PROC_LIST} batch/processor_scheduled_events.py"
 PROC_LIST="${PROC_LIST} batch/processor_monitor_block_sync.py"
-PROC_LIST="${PROC_LIST} batch/processor_auto_transfer_approval.py"
 PROC_LIST="${PROC_LIST} batch/processor_update_token.py"
 
 if [ -n "${E2E_MESSAGING_CONTRACT_ADDRESS}" ]; then
