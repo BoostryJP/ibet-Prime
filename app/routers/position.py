@@ -168,15 +168,10 @@ def retrieve_position(
     _position = db.query(IDXPosition). \
         filter(IDXPosition.token_address == token_address). \
         filter(IDXPosition.account_address == account_address). \
-        filter(or_(
-            IDXPosition.balance != 0,
-            IDXPosition.exchange_balance != 0,
-            IDXPosition.pending_transfer != 0,
-            IDXPosition.exchange_commitment != 0
-        )). \
         first()
     if _position is None:
-        raise HTTPException(status_code=404, detail="position not found")
+        # If there is no position, set default value(0) to each balance.
+        _position = IDXPosition(balance=0, exchange_balance=0, exchange_commitment=0, pending_transfer=0)
 
     # Get Token Name
     token_name = None
