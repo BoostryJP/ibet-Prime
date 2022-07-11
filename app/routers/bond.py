@@ -303,7 +303,6 @@ def list_all_tokens(
         issue_datetime_utc = timezone("UTC").localize(token.created)
         bond_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
         bond_token["token_status"] = token.token_status
-        bond_token["is_manual_transfer_approval"] = True
         bond_tokens.append(bond_token)
 
     return bond_tokens
@@ -335,7 +334,6 @@ def retrieve_token(
     issue_datetime_utc = timezone("UTC").localize(_token.created)
     bond_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
     bond_token["token_status"] = _token.token_status
-    bond_token["is_manual_transfer_approval"] = True
 
     return bond_token
 

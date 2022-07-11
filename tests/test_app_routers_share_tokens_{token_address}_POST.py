@@ -87,7 +87,6 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": False,
-            "is_manual_transfer_approval": True,
             "principal_value": 1000,
             "is_canceled": True,
             "memo": "memo_test1"
@@ -423,7 +422,6 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": False,
-            "is_manual_transfer_approval": True,
             "principal_value": -1,
             "is_canceled": True,
             "memo": "memo_test1"
@@ -491,7 +489,6 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": False,
-            "is_manual_transfer_approval": True,
             "principal_value": 5_000_000_001,
             "is_canceled": True,
             "memo": "memo_test1"

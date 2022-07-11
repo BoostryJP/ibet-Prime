@@ -219,7 +219,6 @@ class TestAppRoutersBondTokensPOST:
                 "contact_information": "contact info test",  # update
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
-                "is_manual_transfer_approval": True
             }
             resp = client.post(
                 self.apiurl,
@@ -562,7 +561,6 @@ class TestAppRoutersBondTokensPOST:
             "contact_information": "contact info test",  # update
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
-            "is_manual_transfer_approval": True,
         }
         resp = client.post(
             self.apiurl,
@@ -656,7 +654,6 @@ class TestAppRoutersBondTokensPOST:
             "contact_information": GetRandomStr(2001),  # update
             "privacy_policy": GetRandomStr(5001),  # update
             "transfer_approval_required": True,  # update
-            "is_manual_transfer_approval": True,
         }
         resp = client.post(
             self.apiurl,

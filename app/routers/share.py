@@ -289,7 +289,6 @@ def list_all_tokens(
         issue_datetime_utc = timezone("UTC").localize(token.created)
         share_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
         share_token["token_status"] = token.token_status
-        share_token["is_manual_transfer_approval"] = True
         share_tokens.append(share_token)
 
     return share_tokens
@@ -321,7 +320,6 @@ def retrieve_token(
     issue_datetime_utc = timezone("UTC").localize(_token.created)
     share_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
     share_token["token_status"] = _token.token_status
-    share_token["is_manual_transfer_approval"] = True
 
     return share_token
 

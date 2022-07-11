@@ -123,7 +123,6 @@ class TestAppRoutersBondTokensTokenAddressGET:
             "issue_datetime": _issue_datetime,
             "token_status": 1,
             "transfer_approval_required": True,
-            "is_manual_transfer_approval": True,
             "memo": "memo_test1",
         }
 
@@ -217,7 +216,6 @@ class TestAppRoutersBondTokensTokenAddressGET:
             "issue_datetime": _issue_datetime,
             "token_status": 1,
             "transfer_approval_required": True,
-            "is_manual_transfer_approval": True,
             "memo": "memo_test1",
         }
 
