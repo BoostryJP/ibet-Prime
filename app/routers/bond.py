@@ -72,7 +72,8 @@ from app.model.schema import (
     IbetSecurityTokenApproveTransfer,
     IbetSecurityTokenCancelTransfer,
     IbetSecurityTokenEscrowApproveTransfer,
-    UpdateTransferApprovalRequest, BatchIssueRedeemUploadIdResponse
+    UpdateTransferApprovalRequest,
+    BatchIssueRedeemUploadIdResponse
 )
 from app.model.schema.types import (
     TransfersSortItem,
