@@ -516,7 +516,7 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssueBatchPOST:
 
     # Error_1_6
     # InvalidParameterError: list length must be at least one
-    def test_error_1_(self, client, db):
+    def test_error_1_6(self, client, db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
