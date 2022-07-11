@@ -25,6 +25,20 @@ from sqlalchemy import (
 from .base import Base
 
 
+class BulkTransferUpload(Base):
+    """Bulk Transfer Upload"""
+    __tablename__ = 'bulk_transfer_upload'
+
+    # upload id (UUID)
+    upload_id = Column(String(36), primary_key=True)
+    # issuer address
+    issuer_address = Column(String(42), nullable=False, index=True)
+    # token type
+    token_type = Column(String(40), nullable=False)
+    # processing status (pending:0, succeeded:1, failed:2)
+    status = Column(Integer, nullable=False, index=True)
+
+
 class BulkTransfer(Base):
     """Bulk Transfer"""
     __tablename__ = "bulk_transfer"

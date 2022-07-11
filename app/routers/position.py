@@ -162,7 +162,7 @@ def retrieve_position(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Position
     _position = db.query(IDXPosition). \

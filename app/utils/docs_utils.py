@@ -59,7 +59,7 @@ class Error400Model(BaseModel):
         def schema_extra(schema: Dict[str, Any], _) -> None:
             properties = schema["properties"]
             properties["detail"]["examples"] = [
-                "wait for a while as the token is being processed",
+                "this token is temporarily unavailable",
                 "failed to register token address token list",
                 "The address has already been registered."
             ]

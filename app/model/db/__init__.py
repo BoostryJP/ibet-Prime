@@ -32,8 +32,15 @@ from .token_holders import (
     TokenHolderBatchStatus,
     TokenHoldersList
 )
-from .bulk_transfer_upload import BulkTransferUpload
-from .bulk_transfer import BulkTransfer
+from .batch_issue_redeem import (
+    BatchIssueRedeemUpload,
+    BatchIssueRedeem,
+    BatchIssueRedeemProcessingCategory
+)
+from .bulk_transfer import (
+    BulkTransferUpload,
+    BulkTransfer
+)
 from .e2e_messaging_account import (
     E2EMessagingAccount,
     E2EMessagingAccountRsaKey
