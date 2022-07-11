@@ -550,7 +550,7 @@ class TestAppRoutersBondTransfersGET:
                 "code": 1,
                 "title": "InvalidParameterError"
             },
-            "detail": "wait for a while as the token is being processed"
+            "detail": "this token is temporarily unavailable"
         }
 
     # <Error_3>

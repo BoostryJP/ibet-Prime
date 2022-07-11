@@ -73,6 +73,9 @@ from .transfer import (
     TransferApprovalTokenResponse,
     TransferApprovalHistoryResponse
 )
+from .batch_issue_redeem import (
+    BatchIssueRedeemUploadIdResponse
+)
 from .bulk_transfer import (
     BulkTransferUploadIdResponse,
     BulkTransferUploadResponse,

@@ -24,6 +24,7 @@ PROC_LIST="${PROC_LIST} batch/processor_create_utxo.py"
 PROC_LIST="${PROC_LIST} batch/processor_scheduled_events.py"
 PROC_LIST="${PROC_LIST} batch/processor_monitor_block_sync.py"
 PROC_LIST="${PROC_LIST} batch/processor_update_token.py"
+PROC_LIST="${PROC_LIST} batch/processor_batch_issue_redeem.py"
 
 if [ -n "${E2E_MESSAGING_CONTRACT_ADDRESS}" ]; then
   PROC_LIST="${PROC_LIST} batch/processor_rotate_e2e_messaging_rsa_key.py"

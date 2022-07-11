@@ -358,7 +358,7 @@ class TestAppRoutersBondBulkTransferPOST:
                 "code": 1,
                 "title": "InvalidParameterError"
             },
-            "detail": "list length is zero"
+            "detail": "list length must be at least one"
         }
 
     # <Error_7>
@@ -519,5 +519,5 @@ class TestAppRoutersBondBulkTransferPOST:
                 "code": 1,
                 "title": "InvalidParameterError"
             },
-            "detail": f"wait for a while as the token is being processed: {self.req_tokens[0]}"
+            "detail": f"this token is temporarily unavailable: {self.req_tokens[0]}"
         }

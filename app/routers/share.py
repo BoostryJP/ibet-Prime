@@ -72,7 +72,8 @@ from app.model.schema import (
     IbetSecurityTokenApproveTransfer,
     IbetSecurityTokenCancelTransfer,
     IbetSecurityTokenEscrowApproveTransfer,
-    UpdateTransferApprovalRequest
+    UpdateTransferApprovalRequest,
+    BatchIssueRedeemUploadIdResponse
 )
 from app.model.schema.types import (
     TransfersSortItem,
@@ -100,7 +101,10 @@ from app.model.db import (
     IDXTransfer,
     IDXTransferApproval,
     ScheduledEvents,
-    UTXO
+    UTXO,
+    BatchIssueRedeemUpload,
+    BatchIssueRedeem,
+    BatchIssueRedeemProcessingCategory
 )
 from app.model.blockchain import (
     IbetShareContract,
@@ -310,7 +314,7 @@ def retrieve_token(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get contract data
     share_token = IbetShareContract.get(contract_address=token_address).__dict__
@@ -361,7 +365,7 @@ def update_token(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Send transaction
     try:
@@ -418,7 +422,7 @@ def additional_issue(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Send transaction
     try:
@@ -432,6 +436,78 @@ def additional_issue(
         raise SendTransactionError("failed to send transaction")
 
     return
+
+
+# POST: /share/tokens/{token_address}/additional_issue/batch
+@router.post(
+    "/tokens/{token_address}/additional_issue/batch",
+    response_model=BatchIssueRedeemUploadIdResponse,
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError)
+)
+def additional_issue_in_batch(
+        request: Request,
+        token_address: str,
+        data: List[IbetShareAdditionalIssue],
+        issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Additional issue (Batch)"""
+
+    # Validate headers
+    validate_headers(
+        issuer_address=(
+            issuer_address,
+            address_is_valid_address
+        ),
+        eoa_password=(
+            eoa_password,
+            [eoa_password_is_required, eoa_password_is_encrypted_value]
+        )
+    )
+
+    # Validate params
+    if len(data) < 1:
+        raise InvalidParameterError("list length must be at least one")
+
+    # Authentication
+    check_auth(issuer_address, eoa_password, db, request)
+
+    # Check token status
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Generate upload_id
+    upload_id = uuid.uuid4()
+
+    # Add batch data
+    _batch_upload = BatchIssueRedeemUpload()
+    _batch_upload.upload_id = upload_id
+    _batch_upload.issuer_address = issuer_address
+    _batch_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+    _batch_upload.token_address = token_address
+    _batch_upload.category = BatchIssueRedeemProcessingCategory.ISSUE.value
+    _batch_upload.status = 0
+    db.add(_batch_upload)
+
+    for _item in data:
+        _batch_issue = BatchIssueRedeem()
+        _batch_issue.upload_id = upload_id
+        _batch_issue.account_address = _item.account_address
+        _batch_issue.amount = _item.amount
+        _batch_issue.status = 0
+        db.add(_batch_issue)
+
+    db.commit()
+
+    return {"upload_id": str(upload_id)}
 
 
 # POST: /share/tokens/{token_address}/redeem
@@ -473,7 +549,7 @@ def redeem_token(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Send transaction
     try:
@@ -487,6 +563,78 @@ def redeem_token(
         raise SendTransactionError("failed to send transaction")
 
     return
+
+
+# POST: /share/tokens/{token_address}/redeem/batch
+@router.post(
+    "/tokens/{token_address}/redeem/batch",
+    response_model=BatchIssueRedeemUploadIdResponse,
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError)
+)
+def redeem_token_in_batch(
+        request: Request,
+        token_address: str,
+        data: List[IbetShareRedeem],
+        issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Redeem a token (Batch)"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(
+            issuer_address,
+            address_is_valid_address
+        ),
+        eoa_password=(
+            eoa_password,
+            [eoa_password_is_required, eoa_password_is_encrypted_value]
+        )
+    )
+
+    # Validate params
+    if len(data) < 1:
+        raise InvalidParameterError("list length must be at least one")
+
+    # Authentication
+    check_auth(issuer_address, eoa_password, db, request)
+
+    # Check token status
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Generate upload_id
+    upload_id = uuid.uuid4()
+
+    # Add batch data
+    _batch_upload = BatchIssueRedeemUpload()
+    _batch_upload.upload_id = upload_id
+    _batch_upload.issuer_address = issuer_address
+    _batch_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+    _batch_upload.token_address = token_address
+    _batch_upload.category = BatchIssueRedeemProcessingCategory.REDEEM.value
+    _batch_upload.status = 0
+    db.add(_batch_upload)
+
+    for _item in data:
+        _batch_issue = BatchIssueRedeem()
+        _batch_issue.upload_id = upload_id
+        _batch_issue.account_address = _item.account_address
+        _batch_issue.amount = _item.amount
+        _batch_issue.status = 0
+        db.add(_batch_issue)
+
+    db.commit()
+
+    return {"upload_id": str(upload_id)}
 
 
 # GET: /share/tokens/{token_address}/scheduled_events
@@ -567,7 +715,7 @@ def schedule_new_update_event(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Register an event
     _scheduled_event = ScheduledEvents()
@@ -713,7 +861,7 @@ def list_all_holders(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Holders
     _holders = db.query(IDXPosition). \
@@ -795,7 +943,7 @@ def retrieve_holder(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Holders
     _holder = db.query(IDXPosition). \
@@ -880,7 +1028,7 @@ def modify_holder_personal_info(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Modify Personal Info
     token_contract = IbetShareContract.get(token_address)
@@ -935,7 +1083,7 @@ def register_holder_personal_info(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Register Personal Info
     token_contract = IbetShareContract.get(token_address)
@@ -994,7 +1142,7 @@ def transfer_ownership(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     try:
         IbetShareContract.transfer(
@@ -1032,7 +1180,7 @@ def list_transfer_history(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get transfer history
     query = db.query(IDXTransfer). \
@@ -1203,7 +1351,7 @@ def list_token_transfer_approval_history(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Create a subquery for 'status' added IDXTransferApproval
     case_status = case(
@@ -1372,7 +1520,7 @@ def update_transfer_approval(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get transfer approval history
     _transfer_approval = db.query(IDXTransferApproval). \
@@ -1490,7 +1638,7 @@ def retrieve_transfer_approval_history(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get transfer approval history
     _transfer_approval = db.query(IDXTransferApproval). \
@@ -1587,7 +1735,7 @@ def bulk_transfer_ownership(
                      eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
 
     if len(tokens) < 1:
-        raise InvalidParameterError("list length is zero")
+        raise InvalidParameterError("list length must be at least one")
 
     # Authentication
     check_auth(issuer_address, eoa_password, db, request)
@@ -1603,7 +1751,7 @@ def bulk_transfer_ownership(
         if _issued_token is None:
             raise InvalidParameterError(f"token not found: {_token.token_address}")
         if _issued_token.token_status == 0:
-            raise InvalidParameterError(f"wait for a while as the token is being processed: {_token.token_address}")
+            raise InvalidParameterError(f"this token is temporarily unavailable: {_token.token_address}")
 
     # generate upload_id
     upload_id = uuid.uuid4()
@@ -1643,7 +1791,7 @@ def bulk_transfer_ownership(
 def list_bulk_transfer_upload(
         issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
-    """List bulk transfer upload"""
+    """List bulk transfer uploads"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -1684,7 +1832,7 @@ def retrieve_bulk_transfer(
         upload_id: str,
         issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
-    """Retrieve bulk transfer"""
+    """Retrieve a bulk transfer upload"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))

@@ -112,7 +112,7 @@ def list_all_ledger_history(
     if _token is None:
         raise HTTPException(status_code=404, detail="token does not exist")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     query = db.query(Ledger). \
         filter(Ledger.token_address == token_address). \
@@ -184,7 +184,7 @@ def retrieve_ledger_history(
     if _token is None:
         raise HTTPException(status_code=404, detail="token does not exist")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Ledger Exist Check
     _ledger = db.query(Ledger). \
@@ -251,7 +251,7 @@ def retrieve_ledger_template(
     if _token is None:
         raise HTTPException(status_code=404, detail="token does not exist")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Ledger Template Exist Check
     _template = db.query(LedgerTemplate). \
@@ -312,7 +312,7 @@ def create_update_ledger_template(
     if _token is None:
         raise HTTPException(status_code=404, detail="token does not exist")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Ledger Template
     _template = db.query(LedgerTemplate). \
@@ -406,7 +406,7 @@ def delete_ledger_template(
     if _token is None:
         raise HTTPException(status_code=404, detail="token does not exist")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Delete Ledger Template
     _template = db.query(LedgerTemplate). \
@@ -459,7 +459,7 @@ def list_all_ledger_details_data(
     if _token is None:
         raise HTTPException(status_code=404, detail="token does not exist")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Ledger Details Data(summary data_id)
     query = db.query(LedgerDetailsData.data_id,
@@ -527,7 +527,7 @@ def create_ledger_details_data(
     if _token is None:
         raise HTTPException(status_code=404, detail="token does not exist")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     data_id = str(uuid.uuid4())
     for data in data_list:
@@ -577,7 +577,7 @@ def retrieve_ledger_details_data(
     if _token is None:
         raise HTTPException(status_code=404, detail="token does not exist")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Ledger Details Data
     _details_data_list = db.query(LedgerDetailsData). \
@@ -625,7 +625,7 @@ def update_ledger_details_data(
     if _token is None:
         raise HTTPException(status_code=404, detail="token does not exist")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Delete + Insert Ledger Details Data
     _details_data_list = db.query(LedgerDetailsData). \
@@ -678,7 +678,7 @@ def delete_ledger_details_data(
     if _token is None:
         raise HTTPException(status_code=404, detail="token does not exist")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Delete Ledger Details Data
     _details_data_list = db.query(LedgerDetailsData). \
