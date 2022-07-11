@@ -137,7 +137,6 @@ class TestAppRoutersBondTokensGET:
                 "issue_datetime": _issue_datetime,
                 "token_status": 1,
                 "transfer_approval_required": True,
-                "is_manual_transfer_approval": True,
                 "memo": "memo_test1",
             },
         ]
@@ -284,7 +283,6 @@ class TestAppRoutersBondTokensGET:
                 "issue_datetime": _issue_datetime_1,
                 "token_status": 1,
                 "transfer_approval_required": True,
-                "is_manual_transfer_approval": True,
                 "memo": "memo_test1",
             },
             {
@@ -319,7 +317,6 @@ class TestAppRoutersBondTokensGET:
                 "issue_datetime": _issue_datetime_2,
                 "token_status": 0,
                 "transfer_approval_required": False,
-                "is_manual_transfer_approval": True,
                 "memo": "memo_test2",
             },
         ]
@@ -451,7 +448,6 @@ class TestAppRoutersBondTokensGET:
                 "issue_datetime": _issue_datetime,
                 "token_status": 1,
                 "transfer_approval_required": True,
-                "is_manual_transfer_approval": True,
                 "memo": "memo_test1",
             },
         ]
@@ -607,7 +603,6 @@ class TestAppRoutersBondTokensGET:
                 "issue_datetime": _issue_datetime_1,
                 "token_status": 1,
                 "transfer_approval_required": True,
-                "is_manual_transfer_approval": True,
                 "memo": "memo_test1",
             },
             {
@@ -642,7 +637,6 @@ class TestAppRoutersBondTokensGET:
                 "issue_datetime": _issue_datetime_2,
                 "token_status": 0,
                 "transfer_approval_required": False,
-                "is_manual_transfer_approval": True,
                 "memo": "memo_test2",
             },
         ]

@@ -198,7 +198,6 @@ class TestProcessor:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "is_canceled": False,
-            "is_manual_transfer_approval": True
         }
 
         # TokenType: STRAIGHT_BOND, status is 2, will not change
@@ -409,7 +408,6 @@ class TestProcessor:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "is_canceled": False,
-            "is_manual_transfer_approval": False
         }
 
         # TokenType: STRAIGHT_BOND, status is 2, will not change

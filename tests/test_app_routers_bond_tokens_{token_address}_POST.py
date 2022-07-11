@@ -88,7 +88,6 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": True,
-            "is_manual_transfer_approval": True,
             "memo": "memo_test1"
         }
         resp = client.post(
@@ -423,7 +422,6 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": True,
-            "is_manual_transfer_approval": True,
             "memo": "memo_test1"
         }
         resp = client.post(
@@ -472,7 +470,6 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": True,
-            "is_manual_transfer_approval": True,
             "memo": "memo_test1",
         }
         resp = client.post(
@@ -551,7 +548,6 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": True,
-            "is_manual_transfer_approval": True,
             "memo": "memo_test1",
         }
         resp = client.post(

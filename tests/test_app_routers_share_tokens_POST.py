@@ -326,7 +326,6 @@ class TestAppRoutersShareTokensPOST:
                 "contact_information": "contact info test",  # update
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
-                "is_manual_transfer_approval": True,
                 "principal_value": 1000,
                 "is_canceled": True
             }
