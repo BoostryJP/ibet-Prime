@@ -75,6 +75,7 @@ from app.model.schema import (
     UpdateTransferApprovalRequest,
     BatchIssueRedeemUploadIdResponse
 )
+from app.model.schema.personal_info import BatchRegisterPersonalInfoUploadResponse, BatchRegisterPersonalInfoResult
 from app.model.schema.types import (
     TransfersSortItem,
     TransferApprovalsSortItem,
@@ -104,7 +105,10 @@ from app.model.db import (
     UTXO,
     BatchIssueRedeemUpload,
     BatchIssueRedeem,
-    BatchIssueRedeemProcessingCategory
+    BatchIssueRedeemProcessingCategory,
+    BatchRegisterPersonalInfoUpload,
+    BatchRegisterPersonalInfoUploadStatus,
+    BatchRegisterPersonalInfo
 )
 from app.model.blockchain import (
     IbetShareContract,
@@ -1100,6 +1104,109 @@ def register_holder_personal_info(
         raise SendTransactionError("failed to register personal information")
 
     return
+
+
+# POST: /share/tokens/{token_address}/personal_info/batch
+@router.post(
+    "/tokens/{token_address}/personal_info/batch",
+    response_model=BatchRegisterPersonalInfoUploadResponse,
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError)
+)
+def batch_register_personal_info(
+        request: Request,
+        token_address: str,
+        personal_info_list: List[RegisterPersonalInfoRequest],
+        issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Create Batch for register personal information"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value])
+    )
+
+    # Authentication
+    check_auth(issuer_address, eoa_password, db, request)
+
+    # Verify that the token is issued by the issuer_address
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+    if len(personal_info_list) == 0:
+        raise InvalidParameterError("personal information list must not be empty")
+
+    batch_id = str(uuid.uuid4())
+    batch = BatchRegisterPersonalInfoUpload()
+    batch.upload_id = batch_id
+    batch.issuer_address = issuer_address
+    batch.status = BatchRegisterPersonalInfoUploadStatus.PENDING.value
+    db.add(batch)
+
+    for personal_info in personal_info_list:
+        bulk_register_record = BatchRegisterPersonalInfo()
+        bulk_register_record.upload_id = batch_id
+        bulk_register_record.token_address = token_address
+        bulk_register_record.account_address = personal_info.account_address
+        bulk_register_record.personal_info = personal_info.dict()
+        bulk_register_record.status = 0
+        db.add(bulk_register_record)
+
+    db.commit()
+
+    return {
+        "batch_id": batch_id,
+        "status": batch.status
+    }
+
+
+# GET: /share/tokens/{token_address}/personal_info/batch/{batch_id}
+@router.get(
+    "/tokens/{token_address}/personal_info/batch/{batch_id}",
+    response_model=None,
+    responses=get_routers_responses(422, 401, 404, InvalidParameterError)
+)
+def retrieve_batch_register_personal_info(
+        batch_id: str,
+        issuer_address: str = Header(...),
+        db: Session = Depends(db_session)):
+    """Get Batch status for register personal information"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+    )
+
+    batch: Optional[BatchRegisterPersonalInfoUpload] = db.query(BatchRegisterPersonalInfoUpload).\
+        filter(BatchRegisterPersonalInfoUpload.upload_id == batch_id).first()
+    if batch is None:
+        raise HTTPException(status_code=404, detail="batch not found")
+
+    record_list = db.query(BatchRegisterPersonalInfo).filter(BatchRegisterPersonalInfo.upload_id == batch_id).all()
+
+    return {
+        "status": batch.status,
+        "results": [BatchRegisterPersonalInfoResult(
+            status=record.status,
+            account_address=record.account_address,
+            key_manager=record.personal_info.get("key_manager"),
+            name=record.personal_info.get("name"),
+            postal_code=record.personal_info.get("postal_code"),
+            address=record.personal_info.get("address"),
+            email=record.personal_info.get("email"),
+            birth=record.personal_info.get("birth"),
+            is_corporate=record.personal_info.get("is_corporate"),
+            tax_category=record.personal_info.get("tax_category")
+        ) for record in record_list]
+    }
 
 
 # POST: /share/transfers

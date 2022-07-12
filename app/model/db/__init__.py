@@ -37,6 +37,11 @@ from .batch_issue_redeem import (
     BatchIssueRedeem,
     BatchIssueRedeemProcessingCategory
 )
+from .batch_register_personal_info import (
+    BatchRegisterPersonalInfoUpload,
+    BatchRegisterPersonalInfoUploadStatus,
+    BatchRegisterPersonalInfo,
+)
 from .bulk_transfer import (
     BulkTransferUpload,
     BulkTransfer

@@ -352,8 +352,7 @@ def main():
 
     for i in range(BULK_TRANSFER_WORKER_COUNT):
         worker = Worker(i)
-        thread = threading.Thread(target=worker.run)
-        thread.setDaemon(True)
+        thread = threading.Thread(target=worker.run, daemon=True)
         thread.start()
         LOG.info(f"thread {i} started")
 

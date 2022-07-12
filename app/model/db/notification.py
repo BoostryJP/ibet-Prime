@@ -36,6 +36,10 @@ notice_type: BulkTransferError
 - 1: Could not get the private key of the issuer
 - 2: Failed to send transaction
 
+notice_type: BatchRegisterPersonalInfoError
+- 0: Issuer does not exist
+- 1: Failed to send transaction
+
 notice_type: ScheduleEventError
 - 0: Issuer does not exist
 - 1: Could not get the private key of the issuer
@@ -75,6 +79,7 @@ class Notification(Base):
 class NotificationType:
     ISSUE_ERROR = "IssueError"
     BULK_TRANSFER_ERROR = "BulkTransferError"
+    BATCH_REGISTER_PERSONAL_INFO_ERROR = "BatchRegisterPersonalInfoError"
     SCHEDULE_EVENT_ERROR = "ScheduleEventError"
     TRANSFER_APPROVAL_INFO = "TransferApprovalInfo"
     CREATE_LEDGER_INFO = "CreateLedgerInfo"
