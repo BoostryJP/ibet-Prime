@@ -130,7 +130,6 @@ class PersonalInfoContract:
         :param data: Register data
         :param default_value: Default value for items for which no value is set. (If not specified: None)
         :return: None
-        @rtype: object
         """
 
         # Set default value

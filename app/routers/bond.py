@@ -105,7 +105,10 @@ from app.model.db import (
     UTXO,
     BatchIssueRedeemUpload,
     BatchIssueRedeem,
-    BatchIssueRedeemProcessingCategory, BatchRegisterPersonalInfoUpload, BatchRegisterPersonalInfoUploadStatus, BatchRegisterPersonalInfo
+    BatchIssueRedeemProcessingCategory,
+    BatchRegisterPersonalInfoUpload,
+    BatchRegisterPersonalInfoUploadStatus,
+    BatchRegisterPersonalInfo
 )
 from app.model.blockchain import (
     IbetStraightBondContract,
