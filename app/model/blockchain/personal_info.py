@@ -123,13 +123,14 @@ class PersonalInfoContract:
                     logging.error(f"Failed to decrypt: {err}")
                     return personal_info  # default
 
-    def register_info(self, account_address: str, data: dict, default_value=None):
+    def register_info(self, account_address: str, data: dict, default_value=None) -> str:
         """Register personal information
 
         :param account_address: Token holder account address
         :param data: Register data
         :param default_value: Default value for items for which no value is set. (If not specified: None)
         :return: None
+        @rtype: object
         """
 
         # Set default value
@@ -163,7 +164,7 @@ class PersonalInfoContract:
                     "gas": TX_GAS_LIMIT,
                     "gasPrice": 0
                 })
-            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            tx_hash, _ = ContractUtils.send_transaction(transaction=tx, private_key=private_key)
         except ContractRevertError:
             raise
         except TimeExhausted as timeout_error:
@@ -171,6 +172,7 @@ class PersonalInfoContract:
         except Exception as err:
             logging.exception(f"{err}")
             raise SendTransactionError(err)
+        return tx_hash
 
     def modify_info(self, account_address: str, data: dict, default_value=None):
         """Modify personal information
