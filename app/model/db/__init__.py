@@ -86,6 +86,7 @@ from .notification import (
     Notification,
     NotificationType
 )
+from .temporary_access_token import TemporaryAccessToken
 from .transfer_appoval_history import TransferApprovalHistory
 from .tx_management import TransactionLock
 from .utxo import UTXO, UTXOBlockNumber

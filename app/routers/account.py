@@ -16,13 +16,14 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import List
+from typing import List, Optional
 import secrets
 import re
 
 from fastapi import (
     APIRouter,
-    Depends
+    Depends,
+    Header
 )
 from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
@@ -49,7 +50,11 @@ from app.model.schema import (
     AccountResponse,
     AccountGenerateRsaKeyRequest,
     AccountChangeEOAPasswordRequest,
-    AccountChangeRSAPassphraseRequest
+    AccountChangeRSAPassphraseRequest,
+    AccountGenerateTemporaryAccessTokenRequest,
+    AccountGenerateTemporaryAccessTokenResponse,
+    AccountGetTemporaryAccessToken,
+    AccountRevokeTemporaryAccessTokenRequest
 )
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.docs_utils import get_routers_responses
@@ -351,3 +356,48 @@ def change_rsa_passphrase(
     db.commit()
 
     return
+
+
+# POST: /accounts/{issuer_address}/temporary_access_token
+@router.post(
+    "/accounts/{issuer_address}/temporary_access_token",
+    response_model=AccountGenerateTemporaryAccessTokenResponse,
+    responses=get_routers_responses(422, 404, InvalidParameterError))
+def generate_temporary_access_token(
+        issuer_address: str,
+        data: AccountGenerateTemporaryAccessTokenRequest,
+        eoa_password: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Generate Temporary Access Token"""
+    raise Exception("not implemented")
+
+
+# GET: /accounts/{issuer_address}/temporary_access_token
+@router.get(
+    "/accounts/{issuer_address}/temporary_access_token",
+    response_model=list[AccountGetTemporaryAccessToken],
+    responses=get_routers_responses(422, 404, InvalidParameterError))
+def list_temporary_access_token(
+        issuer_address: str,
+        data: AccountGenerateTemporaryAccessTokenRequest,
+        eoa_password: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """List Temporary Access Token"""
+    raise Exception("not implemented")
+
+
+# DELETE: /accounts/{issuer_address}/temporary_access_token/{temporary_access_token}
+@router.delete(
+    "/accounts/{issuer_address}/temporary_access_token/{temporary_access_token}",
+    response_model=None,
+    responses=get_routers_responses(422, 404, InvalidParameterError))
+def revoke_temporary_access_token(
+        issuer_address: str,
+        temporary_access_token: str,
+        data: AccountRevokeTemporaryAccessTokenRequest,
+        eoa_password: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Revoke Temporary Access Token"""
+    raise Exception("not implemented")
+
+

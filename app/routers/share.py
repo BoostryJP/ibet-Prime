@@ -87,7 +87,7 @@ from app.utils.check_utils import (
     address_is_valid_address,
     eoa_password_is_required,
     eoa_password_is_encrypted_value,
-    check_auth
+    check_auth, check_temporary_access_auth
 )
 from app.utils.docs_utils import get_routers_responses
 from app.model.db import (
@@ -1063,6 +1063,7 @@ def register_holder_personal_info(
         personal_info: RegisterPersonalInfoRequest,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        temporary_access_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Register the holder's personal information"""
 
@@ -1072,8 +1073,12 @@ def register_holder_personal_info(
         eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value])
     )
 
-    # Authentication
-    check_auth(issuer_address, eoa_password, db, request)
+    if temporary_access_token is not None:
+        # Temporary Access Authentication
+        check_temporary_access_auth(issuer_address, temporary_access_token, db, request)
+    else:
+        # Authentication
+        check_auth(issuer_address, eoa_password, db, request)
 
     # Verify that the token is issued by the issuer_address
     _token = db.query(Token). \
@@ -1220,6 +1225,7 @@ def transfer_ownership(
         token: IbetShareTransfer,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        temporary_access_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Transfer token ownership"""
 
@@ -1227,8 +1233,14 @@ def transfer_ownership(
     validate_headers(issuer_address=(issuer_address, address_is_valid_address),
                      eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
 
-    # Authentication
-    _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
+    _account: Account
+    decrypt_password: str
+    if temporary_access_token is not None:
+        # Temporary Access Authentication
+        _account, decrypt_password = check_temporary_access_auth(issuer_address, temporary_access_token, db, request)
+    else:
+        # Authentication
+        _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
 
     # Get private key
     keyfile_json = _account.keyfile

@@ -16,9 +16,11 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from pydantic import MissingError
 from pydantic.error_wrappers import ErrorWrapper
+from sqlalchemy.orm import Session
 from web3 import Web3
 
 from config import (
@@ -31,7 +33,7 @@ from app.log import (
     auth_error
 )
 from app.utils.e2ee_utils import E2EEUtils
-from app.model.db import Account
+from app.model.db import Account, TemporaryAccessToken
 
 
 def validate_headers(**kwargs):
@@ -93,6 +95,13 @@ def check_value_is_encrypted(name, value):
             E2EEUtils.decrypt(value)
         except ValueError:
             raise ValueError(f"{name} is not a Base64-encoded encrypted data")
+
+
+def check_temporary_access_auth(issuer_address: str, temporary_access_token: str, db: Session, request: Request) -> set[Account, str]:
+    # TODO: verify given temporary access token is valid
+    # TODO: verify given temporary access token is not expired
+    # TODO: verify authorized scope includes accessed resource
+    raise Exception("not implemented")
 
 
 def check_auth(issuer_address, checked_eoa_password, db, request):

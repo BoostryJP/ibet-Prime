@@ -24,7 +24,11 @@ from .account import (
     AccountGenerateRsaKeyRequest,
     AccountChangeEOAPasswordRequest,
     AccountChangeRSAPassphraseRequest,
-    AccountResponse
+    AccountGenerateTemporaryAccessTokenRequest,
+    AccountResponse,
+    AccountGenerateTemporaryAccessTokenResponse,
+    AccountGetTemporaryAccessToken,
+    AccountRevokeTemporaryAccessTokenRequest
 )
 from .e2e_messaging import (
     E2EMessagingAccountCreateRequest,

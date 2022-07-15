@@ -16,10 +16,12 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from datetime import datetime
 from typing import Optional
 from pydantic import (
     BaseModel,
-    validator
+    validator,
+    Field
 )
 
 from config import E2EE_REQUEST_ENABLED
@@ -88,6 +90,34 @@ class AccountChangeRSAPassphraseRequest(BaseModel):
         return v
 
 
+class AccountGenerateTemporaryAccessTokenRequest(BaseModel):
+    """Account Generate Temporary Access Token schema (REQUEST)"""
+    eoa_password: str
+
+    name: str = Field(..., min_length=1)
+    scope: list[str]
+    expiration_datetime: Optional[datetime]
+
+    @validator("eoa_password")
+    def eoa_password_is_encrypted_value(cls, v):
+        if E2EE_REQUEST_ENABLED:
+            check_value_is_encrypted("eoa_password", v)
+        return v
+
+
+class AccountRevokeTemporaryAccessTokenRequest(BaseModel):
+    """Account Revoke Temporary Access Token schema (REQUEST)"""
+    eoa_password: str
+
+    name: str = Field(..., min_length=1)
+
+    @validator("eoa_password")
+    def eoa_password_is_encrypted_value(cls, v):
+        if E2EE_REQUEST_ENABLED:
+            check_value_is_encrypted("eoa_password", v)
+        return v
+
+
 ############################
 # RESPONSE
 ############################
@@ -98,3 +128,22 @@ class AccountResponse(BaseModel):
     rsa_public_key: Optional[str]
     rsa_status: AccountRsaStatus
     is_deleted: bool
+
+
+class AccountGenerateTemporaryAccessTokenResponse(BaseModel):
+    """Account Generate Temporary Access Token schema (Response)"""
+
+    temporary_access_token: str
+    name: str
+    scope: list[str]
+    expiration_datetime: Optional[datetime]
+    created: datetime
+
+
+class AccountGetTemporaryAccessToken(BaseModel):
+    """Account Get Temporary Access Token schema (Response)"""
+
+    name: str
+    scope: list[str]
+    expiration_datetime: Optional[datetime]
+    created: datetime
