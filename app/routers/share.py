@@ -75,7 +75,10 @@ from app.model.schema import (
     UpdateTransferApprovalRequest,
     BatchIssueRedeemUploadIdResponse
 )
-from app.model.schema.personal_info import BatchRegisterPersonalInfoUploadResponse, BatchRegisterPersonalInfoResult
+from app.model.schema.personal_info import (
+    BatchRegisterPersonalInfoUploadResponse,
+    BatchRegisterPersonalInfoResult
+)
 from app.model.schema.types import (
     TransfersSortItem,
     TransferApprovalsSortItem,
@@ -85,7 +88,6 @@ from app.utils.contract_utils import ContractUtils
 from app.utils.check_utils import (
     validate_headers,
     address_is_valid_address,
-    eoa_password_is_required,
     eoa_password_is_encrypted_value,
     check_auth
 )
@@ -119,7 +121,8 @@ from app.model.blockchain import (
 from app.exceptions import (
     InvalidParameterError,
     SendTransactionError,
-    ContractRevertError
+    ContractRevertError,
+    AuthorizationError
 )
 
 router = APIRouter(
@@ -134,22 +137,31 @@ local_tz = timezone(config.TZ)
 @router.post(
     "/tokens",
     response_model=TokenAddressResponse,
-    responses=get_routers_responses(422, 401, SendTransactionError, ContractRevertError)
+    responses=get_routers_responses(422, 401, AuthorizationError, SendTransactionError, ContractRevertError)
 )
 def issue_token(
         request: Request,
         token: IbetShareCreate,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Issue ibetShare token"""
 
     # Validate Headers
-    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
-                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
+    )
 
     # Authentication
-    _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
+    _account, decrypt_password = check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -332,7 +344,7 @@ def retrieve_token(
 @router.post(
     "/tokens/{token_address}",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def update_token(
         request: Request,
@@ -340,15 +352,24 @@ def update_token(
         token: IbetShareUpdate,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Update a token"""
 
     # Validate Headers
-    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
-                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
+    )
 
     # Authentication
-    _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
+    _account, decrypt_password = check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -389,7 +410,7 @@ def update_token(
 @router.post(
     "/tokens/{token_address}/additional_issue",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def additional_issue(
         request: Request,
@@ -397,15 +418,24 @@ def additional_issue(
         data: IbetShareAdditionalIssue,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Additional issue"""
 
     # Validate Headers
-    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
-                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
+    )
 
     # Authentication
-    _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
+    _account, decrypt_password = check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -444,7 +474,7 @@ def additional_issue(
 @router.post(
     "/tokens/{token_address}/additional_issue/batch",
     response_model=BatchIssueRedeemUploadIdResponse,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError)
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError)
 )
 def additional_issue_in_batch(
         request: Request,
@@ -452,19 +482,14 @@ def additional_issue_in_batch(
         data: List[IbetShareAdditionalIssue],
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Additional issue (Batch)"""
 
     # Validate headers
     validate_headers(
-        issuer_address=(
-            issuer_address,
-            address_is_valid_address
-        ),
-        eoa_password=(
-            eoa_password,
-            [eoa_password_is_required, eoa_password_is_encrypted_value]
-        )
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
     )
 
     # Validate params
@@ -472,7 +497,13 @@ def additional_issue_in_batch(
         raise InvalidParameterError("list length must be at least one")
 
     # Authentication
-    check_auth(issuer_address, eoa_password, db, request)
+    check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Check token status
     _token = db.query(Token). \
@@ -516,7 +547,7 @@ def additional_issue_in_batch(
 @router.post(
     "/tokens/{token_address}/redeem",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def redeem_token(
         request: Request,
@@ -524,15 +555,24 @@ def redeem_token(
         data: IbetShareRedeem,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Redeem a token"""
 
     # Validate Headers
-    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
-                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
+    )
 
     # Authentication
-    _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
+    _account, decrypt_password = check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -571,7 +611,7 @@ def redeem_token(
 @router.post(
     "/tokens/{token_address}/redeem/batch",
     response_model=BatchIssueRedeemUploadIdResponse,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError)
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError)
 )
 def redeem_token_in_batch(
         request: Request,
@@ -579,19 +619,14 @@ def redeem_token_in_batch(
         data: List[IbetShareRedeem],
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Redeem a token (Batch)"""
 
     # Validate Headers
     validate_headers(
-        issuer_address=(
-            issuer_address,
-            address_is_valid_address
-        ),
-        eoa_password=(
-            eoa_password,
-            [eoa_password_is_required, eoa_password_is_encrypted_value]
-        )
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
     )
 
     # Validate params
@@ -599,7 +634,13 @@ def redeem_token_in_batch(
         raise InvalidParameterError("list length must be at least one")
 
     # Authentication
-    check_auth(issuer_address, eoa_password, db, request)
+    check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Check token status
     _token = db.query(Token). \
@@ -687,7 +728,7 @@ def list_all_scheduled_events(
 @router.post(
     "/tokens/{token_address}/scheduled_events",
     response_model=ScheduledEventIdResponse,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError)
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError)
 )
 def schedule_new_update_event(
         request: Request,
@@ -695,17 +736,24 @@ def schedule_new_update_event(
         event_data: IbetShareScheduledUpdate,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Register a new update event"""
 
     # Validate Headers
     validate_headers(
         issuer_address=(issuer_address, address_is_valid_address),
-        eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value])
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
     )
 
     # Authentication
-    check_auth(issuer_address, eoa_password, db, request)
+    check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Verify that the token is issued by the issuer
     _token = db.query(Token). \
@@ -782,7 +830,7 @@ def retrieve_token_event(
 @router.delete(
     "/tokens/{token_address}/scheduled_events/{scheduled_event_id}",
     response_model=ScheduledEventResponse,
-    responses=get_routers_responses(422, 401, 404)
+    responses=get_routers_responses(422, 401, 404, AuthorizationError)
 )
 def delete_scheduled_event(
         request: Request,
@@ -790,17 +838,24 @@ def delete_scheduled_event(
         scheduled_event_id: str,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Delete a scheduled event"""
 
     # Validate Headers
     validate_headers(
         issuer_address=(issuer_address, address_is_valid_address),
-        eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value])
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
     )
 
     # Authentication
-    check_auth(issuer_address, eoa_password, db, request)
+    check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Delete an event
     _token_event = db.query(ScheduledEvents). \
@@ -999,7 +1054,7 @@ def retrieve_holder(
 @router.post(
     "/tokens/{token_address}/holders/{account_address}/personal_info",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def modify_holder_personal_info(
         request: Request,
@@ -1008,17 +1063,24 @@ def modify_holder_personal_info(
         personal_info: ModifyPersonalInfoRequest,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Modify the holder's personal information"""
 
     # Validate Headers
     validate_headers(
         issuer_address=(issuer_address, address_is_valid_address),
-        eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value])
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
     )
 
     # Authentication
-    check_auth(issuer_address, eoa_password, db, request)
+    check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Verify that the token is issued by the issuer_address
     _token = db.query(Token). \
@@ -1055,7 +1117,7 @@ def modify_holder_personal_info(
 @router.post(
     "/tokens/{token_address}/personal_info",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def register_holder_personal_info(
         request: Request,
@@ -1063,17 +1125,24 @@ def register_holder_personal_info(
         personal_info: RegisterPersonalInfoRequest,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Register the holder's personal information"""
 
     # Validate Headers
     validate_headers(
         issuer_address=(issuer_address, address_is_valid_address),
-        eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value])
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
     )
 
     # Authentication
-    check_auth(issuer_address, eoa_password, db, request)
+    check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Verify that the token is issued by the issuer_address
     _token = db.query(Token). \
@@ -1110,7 +1179,7 @@ def register_holder_personal_info(
 @router.post(
     "/tokens/{token_address}/personal_info/batch",
     response_model=BatchRegisterPersonalInfoUploadResponse,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError)
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError)
 )
 def batch_register_personal_info(
         request: Request,
@@ -1118,17 +1187,24 @@ def batch_register_personal_info(
         personal_info_list: List[RegisterPersonalInfoRequest],
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Create Batch for register personal information"""
 
     # Validate Headers
     validate_headers(
         issuer_address=(issuer_address, address_is_valid_address),
-        eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value])
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
     )
 
     # Authentication
-    check_auth(issuer_address, eoa_password, db, request)
+    check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Verify that the token is issued by the issuer_address
     _token = db.query(Token). \
@@ -1213,22 +1289,31 @@ def retrieve_batch_register_personal_info(
 @router.post(
     "/transfers",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def transfer_ownership(
         request: Request,
         token: IbetShareTransfer,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Transfer token ownership"""
 
     # Validate Headers
-    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
-                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
+    )
 
     # Authentication
-    _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
+    _account, decrypt_password = check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -1589,7 +1674,7 @@ def list_token_transfer_approval_history(
 # POST: /share/transfer_approvals/{token_address}/{id}
 @router.post(
     "/transfer_approvals/{token_address}/{id}",
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def update_transfer_approval(
         request: Request,
@@ -1598,16 +1683,25 @@ def update_transfer_approval(
         data: UpdateTransferApprovalRequest,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)
 ):
     """Update on the status of a share transfer approval"""
 
     # Validate Headers
-    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
-                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
+    )
 
     # Authentication
-    _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
+    _account, decrypt_password = check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -1825,25 +1919,34 @@ def retrieve_transfer_approval_history(
 @router.post(
     "/bulk_transfer",
     response_model=BulkTransferUploadIdResponse,
-    responses=get_routers_responses(422, InvalidParameterError, 401)
+    responses=get_routers_responses(422, AuthorizationError, InvalidParameterError, 401)
 )
 def bulk_transfer_ownership(
         request: Request,
         tokens: List[IbetShareTransfer],
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Bulk transfer token ownership"""
 
     # Validate Headers
-    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
-                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
+    )
 
     if len(tokens) < 1:
         raise InvalidParameterError("list length must be at least one")
 
     # Authentication
-    check_auth(issuer_address, eoa_password, db, request)
+    check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Verify that the tokens are issued by the issuer_address
     for _token in tokens:

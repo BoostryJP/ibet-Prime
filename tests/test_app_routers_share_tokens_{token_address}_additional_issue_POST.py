@@ -16,10 +16,16 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import hashlib
 from unittest import mock
 from unittest.mock import ANY, MagicMock
 
-from app.model.db import Account, Token, TokenType
+from app.model.db import (
+    Account,
+    AuthToken,
+    Token,
+    TokenType
+)
 from app.utils.e2ee_utils import E2EEUtils
 from app.exceptions import SendTransactionError
 from tests.account_config import config_eth_account
@@ -34,6 +40,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssuePOST:
     ###########################################################################
 
     # <Normal_1>
+    # Authorization by eoa-password
     @mock.patch("app.model.blockchain.token.IbetShareContract.additional_issue")
     def test_normal_1(self, IbetShareContract_mock, client, db):
         test_account = config_eth_account("user1")
@@ -70,6 +77,64 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssuePOST:
             headers={
                 "issuer-address": _issuer_address,
                 "eoa-password": E2EEUtils.encrypt("password")
+            }
+        )
+
+        # assertion
+        IbetShareContract_mock.assert_any_call(
+            contract_address=_token_address,
+            data=req_param,
+            tx_from=_issuer_address,
+            private_key=ANY
+        )
+
+        assert resp.status_code == 200
+        assert resp.json() is None
+
+    # <Normal_2>
+    # Authorization by auth-token
+    @mock.patch("app.model.blockchain.token.IbetShareContract.additional_issue")
+    def test_normal_2(self, IbetShareContract_mock, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "token_address_test"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        auth_token = AuthToken()
+        auth_token.issuer_address = _issuer_address
+        auth_token.auth_token = hashlib.sha256("test_auth_token".encode()).hexdigest()
+        auth_token.valid_duration = 0
+        db.add(auth_token)
+
+        token = Token()
+        token.type = TokenType.IBET_SHARE.value
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        db.add(token)
+
+        # mock
+        IbetShareContract_mock.side_effect = [None]
+
+        # request target API
+        req_param = {
+            "account_address": _issuer_address,
+            "amount": 10
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "auth-token": "test_auth_token"
             }
         )
 
@@ -209,7 +274,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssuePOST:
         }
 
     # <Error_4>
-    # RequestValidationError: issuer-address, eoa-password(required)
+    # RequestValidationError: issuer-address
     def test_error_4(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -235,15 +300,13 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssuePOST:
                 "code": 1,
                 "title": "RequestValidationError"
             },
-            "detail": [{
-                "loc": ["header", "issuer-address"],
-                "msg": "issuer-address is not a valid address",
-                "type": "value_error"
-            }, {
-                "loc": ["header", "eoa-password"],
-                "msg": "field required",
-                "type": "value_error.missing"
-            }]
+            "detail": [
+                {
+                    "loc": ["header", "issuer-address"],
+                    "msg": "issuer-address is not a valid address",
+                    "type": "value_error"
+                }
+            ]
         }
 
     # <Error_5>

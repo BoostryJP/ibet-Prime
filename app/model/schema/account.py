@@ -16,10 +16,12 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from datetime import datetime
 from typing import Optional
 from pydantic import (
     BaseModel,
-    validator
+    validator,
+    Field
 )
 
 from config import E2EE_REQUEST_ENABLED
@@ -88,6 +90,11 @@ class AccountChangeRSAPassphraseRequest(BaseModel):
         return v
 
 
+class AccountAuthTokenRequest(BaseModel):
+    """Account Create Auth Token schema (REQUEST)"""
+    valid_duration: int = Field(None, ge=0, le=259200)  # The maximum valid duration shall be 3 days.
+
+
 ############################
 # RESPONSE
 ############################
@@ -98,3 +105,10 @@ class AccountResponse(BaseModel):
     rsa_public_key: Optional[str]
     rsa_status: AccountRsaStatus
     is_deleted: bool
+
+
+class AccountAuthTokenResponse(BaseModel):
+    """Account Auth Token schema (RESPONSE)"""
+    auth_token: str
+    usage_start: datetime
+    valid_duration: int

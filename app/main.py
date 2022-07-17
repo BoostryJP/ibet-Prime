@@ -136,6 +136,19 @@ async def send_transaction_error_handler(request: Request, exc: SendTransactionE
     )
 
 
+# 400:AuthTokenAlreadyExistsError
+@app.exception_handler(AuthTokenAlreadyExistsError)
+async def auth_token_already_exists_error_handler(request: Request, exc: AuthTokenAlreadyExistsError):
+    meta = {
+        "code": 3,
+        "title": "AuthTokenAlreadyExistsError"
+    }
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=jsonable_encoder({"meta": meta}),
+    )
+
+
 # 400:ContractRevertError
 @app.exception_handler(ContractRevertError)
 async def contract_revert_error_handler(request: Request, exc: ContractRevertError):

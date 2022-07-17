@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import hashlib
 from unittest.mock import (
     ANY,
     patch
@@ -34,6 +35,7 @@ import random
 from app.exceptions import SendTransactionError
 from app.model.db import (
     Account,
+    AuthToken,
     Token,
     TokenType,
     UpdateToken,
@@ -57,6 +59,7 @@ class TestAppRoutersBondTokensPOST:
     ###########################################################################
     # Normal Case
     ###########################################################################
+
     # <Normal_1>
     # create only
     def test_normal_1(self, client, db):
@@ -280,6 +283,117 @@ class TestAppRoutersBondTokensPOST:
             assert update_token.status == 0
             assert update_token.trigger == "Issue"
 
+    # <Normal_3>
+    # Authorization by auth token
+    def test_normal_3(self, client, db):
+        test_account = config_eth_account("user1")
+
+        # prepare data
+        account = Account()
+        account.issuer_address = test_account["address"]
+        account.keyfile = test_account["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        auth_token = AuthToken()
+        auth_token.issuer_address = test_account["address"]
+        auth_token.auth_token = hashlib.sha256("test_auth_token".encode()).hexdigest()
+        auth_token.valid_duration = 0
+        db.add(auth_token)
+
+        token_before = db.query(Token).all()
+
+        # mock
+        IbetStraightBondContract_create = patch(
+            target="app.model.blockchain.token.IbetStraightBondContract.create",
+            return_value=("contract_address_test1", "abi_test1", "tx_hash_test1")
+        )
+        TokenListContract_register = patch(
+            target="app.model.blockchain.token_list.TokenListContract.register",
+            return_value=None
+        )
+        ContractUtils_get_block_by_transaction_hash = patch(
+            target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
+            return_value={
+                "number": 12345,
+                "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=timezone.utc).timestamp()
+            }
+        )
+
+        with IbetStraightBondContract_create, \
+                TokenListContract_register, \
+                ContractUtils_get_block_by_transaction_hash:
+            # request target api
+            req_param = {
+                "name": "name_test1",
+                "total_supply": 10000,
+                "face_value": 200,
+                "purpose": "purpose_test1",
+            }
+            resp = client.post(
+                self.apiurl,
+                json=req_param,
+                headers={
+                    "issuer-address": test_account["address"],
+                    "auth-token": "test_auth_token"
+                }
+            )
+
+            # assertion
+            IbetStraightBondContract.create.assert_called_with(
+                args=[
+                    "name_test1", "", 10000, 200, "", 0,
+                    "", "", "purpose_test1"
+                ],
+                tx_from=test_account["address"],
+                private_key=ANY
+            )
+            TokenListContract.register.assert_called_with(
+                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
+                token_address="contract_address_test1",
+                token_template=TokenType.IBET_STRAIGHT_BOND.value,
+                account_address=test_account["address"],
+                private_key=ANY
+            )
+            ContractUtils.get_block_by_transaction_hash(
+                tx_hash="tx_hash_test1"
+            )
+
+            assert resp.status_code == 200
+            assert resp.json()["token_address"] == "contract_address_test1"
+            assert resp.json()["token_status"] == 1
+
+            token_after = db.query(Token).all()
+            assert 0 == len(token_before)
+            assert 1 == len(token_after)
+            token_1 = token_after[0]
+            assert token_1.id == 1
+            assert token_1.type == TokenType.IBET_STRAIGHT_BOND.value
+            assert token_1.tx_hash == "tx_hash_test1"
+            assert token_1.issuer_address == test_account["address"]
+            assert token_1.token_address == "contract_address_test1"
+            assert token_1.abi == "abi_test1"
+            assert token_1.token_status == 1
+
+            position = db.query(IDXPosition).first()
+            assert position.token_address == "contract_address_test1"
+            assert position.account_address == test_account["address"]
+            assert position.balance == req_param["total_supply"]
+            assert position.exchange_balance == 0
+            assert position.exchange_commitment == 0
+            assert position.pending_transfer == 0
+
+            utxo = db.query(UTXO).first()
+            assert utxo.transaction_hash == "tx_hash_test1"
+            assert utxo.account_address == test_account["address"]
+            assert utxo.token_address == "contract_address_test1"
+            assert utxo.amount == req_param["total_supply"]
+            assert utxo.block_number == 12345
+            assert utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
+
+            update_token = db.query(UpdateToken).first()
+            assert update_token is None
+
     ###########################################################################
     # Error Case
     ###########################################################################
@@ -432,15 +546,13 @@ class TestAppRoutersBondTokensPOST:
                 "code": 1,
                 "title": "RequestValidationError"
             },
-            "detail": [{
-                "loc": ["header", "issuer-address"],
-                "msg": "issuer-address is not a valid address",
-                "type": "value_error"
-            }, {
-                "loc": ["header", "eoa-password"],
-                "msg": "field required",
-                "type": "value_error.missing"
-            }]
+            "detail": [
+                {
+                    "loc": ["header", "issuer-address"],
+                    "msg": "issuer-address is not a valid address",
+                    "type": "value_error"
+                }
+            ]
         }
 
     # <Error_2_3>

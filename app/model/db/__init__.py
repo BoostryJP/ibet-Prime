@@ -22,6 +22,7 @@ from .account import (
     AccountRsaKeyTemporary,
     AccountRsaStatus
 )
+from .auth_token import AuthToken
 from .token import (
     Token,
     TokenAttrUpdate,

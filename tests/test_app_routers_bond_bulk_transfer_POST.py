@@ -16,8 +16,11 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import hashlib
+
 from app.model.db import (
     Account,
+    AuthToken,
     Token,
     TokenType,
     BulkTransfer,
@@ -131,6 +134,86 @@ class TestAppRoutersBondBulkTransferPOST:
         assert bulk_transfer[1].amount == 10
         assert bulk_transfer[1].status == 0
 
+    # <Normal_2>
+    # Authorization by auth token
+    def test_normal_2(self, client, db):
+        # prepare data : Account(Issuer)
+        account = Account()
+        account.issuer_address = self.admin_address
+        account.keyfile = self.admin_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        # prepare data : AuthToken
+        auth_token = AuthToken()
+        auth_token.issuer_address = self.admin_address
+        auth_token.auth_token = hashlib.sha256("test_auth_token".encode()).hexdigest()
+        auth_token.valid_duration = 0
+        db.add(auth_token)
+
+        # prepare data : Tokens
+        for _t in self.req_tokens:
+            _token = Token()
+            _token.type = TokenType.IBET_STRAIGHT_BOND.value
+            _token.tx_hash = ""
+            _token.issuer_address = self.admin_address
+            _token.token_address = _t
+            _token.abi = ""
+            db.add(_token)
+
+        # request target API
+        req_param = [
+            {
+                "token_address": self.req_tokens[0],
+                "from_address": self.from_address,
+                "to_address": self.to_address,
+                "amount": 5
+            }, {
+                "token_address": self.req_tokens[1],
+                "from_address": self.from_address,
+                "to_address": self.to_address,
+                "amount": 10
+            }
+        ]
+        resp = client.post(
+            self.test_url,
+            json=req_param,
+            headers={
+                "issuer-address": self.admin_address,
+                "auth-token": "test_auth_token"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+
+        bulk_transfer_upload = db.query(BulkTransferUpload). \
+            filter(BulkTransferUpload.upload_id == resp.json()["upload_id"]). \
+            all()
+        assert len(bulk_transfer_upload) == 1
+        assert bulk_transfer_upload[0].issuer_address == self.admin_address
+        assert bulk_transfer_upload[0].status == 0
+
+        bulk_transfer = db.query(BulkTransfer). \
+            filter(BulkTransfer.upload_id == resp.json()["upload_id"]). \
+            order_by(BulkTransfer.id). \
+            all()
+        assert len(bulk_transfer) == 2
+        assert bulk_transfer[0].issuer_address == self.admin_address
+        assert bulk_transfer[0].token_address == self.req_tokens[0]
+        assert bulk_transfer[0].token_type == TokenType.IBET_STRAIGHT_BOND.value
+        assert bulk_transfer[0].from_address == self.from_address
+        assert bulk_transfer[0].to_address == self.to_address
+        assert bulk_transfer[0].amount == 5
+        assert bulk_transfer[0].status == 0
+        assert bulk_transfer[1].issuer_address == self.admin_address
+        assert bulk_transfer[1].token_address == self.req_tokens[1]
+        assert bulk_transfer[1].token_type == TokenType.IBET_STRAIGHT_BOND.value
+        assert bulk_transfer[1].from_address == self.from_address
+        assert bulk_transfer[1].to_address == self.to_address
+        assert bulk_transfer[1].amount == 10
+        assert bulk_transfer[1].status == 0
+
     ###########################################################################
     # Error Case
     ###########################################################################
@@ -196,7 +279,7 @@ class TestAppRoutersBondBulkTransferPOST:
     # <Error_2>
     # RequestValidationError
     # invalid type(max values)
-    def test_error_7(self, client, db):
+    def test_error_2(self, client, db):
 
         # request target API
         req_param = [
@@ -270,7 +353,7 @@ class TestAppRoutersBondBulkTransferPOST:
 
     # <Error_4>
     # RequestValidationError
-    # issuer-address, eoa-password(required)
+    # issuer-address
     def test_error_4(self, client, db):
         # request target API
         req_param = []
@@ -289,15 +372,13 @@ class TestAppRoutersBondBulkTransferPOST:
                 "code": 1,
                 "title": "RequestValidationError"
             },
-            "detail": [{
-                "loc": ["header", "issuer-address"],
-                "msg": "issuer-address is not a valid address",
-                "type": "value_error"
-            }, {
-                "loc": ["header", "eoa-password"],
-                "msg": "field required",
-                "type": "value_error.missing"
-            }]
+            "detail": [
+                {
+                    "loc": ["header", "issuer-address"],
+                    "msg": "issuer-address is not a valid address",
+                    "type": "value_error"
+                }
+            ]
         }
 
     # <Error_5>

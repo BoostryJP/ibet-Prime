@@ -16,6 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import hashlib
+
 import pytest
 from unittest import mock
 from unittest.mock import (
@@ -29,6 +31,7 @@ from pytz import timezone
 import config
 from app.model.db import (
     Account,
+    AuthToken,
     Token,
     TokenType,
     IDXTransferApproval
@@ -289,6 +292,85 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             private_key=ANY
         )
 
+    # <Normal_3>
+    # Authorization by auth-token
+    @pytest.mark.freeze_time('2021-04-27 12:34:56')
+    def test_normal_3(self, client, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer["address"]
+
+        # prepare data
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = issuer["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        auth_token = AuthToken()
+        auth_token.issuer_address = issuer_address
+        auth_token.auth_token = hashlib.sha256("test_auth_token".encode()).hexdigest()
+        auth_token.valid_duration = 0
+        db.add(auth_token)
+
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        id = 10
+        _idx_transfer_approval = IDXTransferApproval()
+        _idx_transfer_approval.id = id
+        _idx_transfer_approval.token_address = self.test_token_address
+        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.application_id = 100
+        _idx_transfer_approval.from_address = self.test_from_address
+        _idx_transfer_approval.to_address = self.test_to_address
+        _idx_transfer_approval.amount = 200
+        _idx_transfer_approval.application_datetime = self.test_application_datetime
+        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.approval_datetime = None
+        _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancelled = None
+        db.add(_idx_transfer_approval)
+
+        # mock
+        IbetSecurityTokenContract_approve_transfer = mock.patch(
+            target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
+            return_value=("test_tx_hash", {"status": 1})
+        )
+
+        # request target API
+        with IbetSecurityTokenContract_approve_transfer as mock_transfer:
+            resp = client.post(
+                self.base_url.format(self.test_token_address, id),
+                json={
+                    "operation_type": "approve"
+                },
+                headers={
+                    "issuer-address": issuer_address,
+                    "auth-token": "test_auth_token"
+                }
+            )
+
+        # Assertion
+        assert resp.status_code == 200
+        assert resp.json() is None
+
+        _expected = {
+            "application_id": 100,
+            "data": str(datetime.utcnow().timestamp())
+        }
+
+        mock_transfer.assert_called_once_with(
+            contract_address=self.test_token_address,
+            data=IbetSecurityTokenApproveTransfer(**_expected),
+            tx_from=issuer_address,
+            private_key=ANY
+        )
+
     ###########################################################################
     # Error Case
     ###########################################################################
@@ -360,43 +442,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
 
     # <Error_1_3>
     # Validation Error
-    # missing headers: eoa-password
-    def test_error_1_3(self, client, db):
-        issuer = config_eth_account("user1")
-        issuer_address = issuer["address"]
-        id = 10
-
-        # request target api
-        resp = client.post(
-            self.base_url.format(self.test_token_address, id),
-            json={
-                "operation_type": "approve"
-            },
-            headers={
-                "issuer-address": issuer_address,
-            }
-        )
-
-        # assertion
-        assert resp.status_code == 422
-        assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
-            "detail": [
-                {
-                    "loc": ["header", "eoa-password"],
-                    "msg": "field required",
-                    "type": "value_error.missing"
-                },
-            ]
-        }
-
-    # <Error_1_4>
-    # Validation Error
     # invalid value: body
-    def test_error_1_4(self, client, db):
+    def test_error_1_3(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
         id = 10
@@ -430,10 +477,10 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             ]
         }
 
-    # <Error_1_5>
+    # <Error_1_4>
     # Validation Error
     # invalid value: header
-    def test_error_1_5(self, client, db):
+    def test_error_1_4(self, client, db):
         id = 10
 
         # request target api

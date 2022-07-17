@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import hashlib
 from unittest import mock
 from unittest.mock import (
     MagicMock,
@@ -29,6 +30,7 @@ import config
 from app.exceptions import SendTransactionError
 from app.model.db import (
     Account,
+    AuthToken,
     Token,
     TokenType
 )
@@ -148,6 +150,75 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         )
 
         # assertion
+        assert resp.status_code == 200
+        assert resp.json() is None
+
+    # <Normal_3>
+    # Authorization by auth token
+    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.update")
+    def test_normal_3(self, IbetStraightBondContract_mock, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        auth_token = AuthToken()
+        auth_token.issuer_address = _issuer_address
+        auth_token.auth_token = hashlib.sha256("test_auth_token".encode()).hexdigest()
+        auth_token.valid_duration = 0
+        db.add(auth_token)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        db.add(token)
+
+        # mock
+        IbetStraightBondContract_mock.side_effect = [None]
+
+        # request target API
+        req_param = {
+            "face_value": 10000,
+            "interest_rate": 0.5,
+            "interest_payment_date": ["0101", "0701"],
+            "redemption_value": 11000,
+            "transferable": False,
+            "status": False,
+            "is_offering": False,
+            "is_redeemed": True,
+            "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
+            "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "contact_information": "問い合わせ先test",
+            "privacy_policy": "プライバシーポリシーtest",
+            "transfer_approval_required": True,
+            "memo": "memo_test1"
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "auth-token": "test_auth_token"
+            }
+        )
+
+        # assertion
+        IbetStraightBondContract_mock.assert_any_call(
+            contract_address=_token_address,
+            data=req_param,
+            tx_from=_issuer_address,
+            private_key=ANY
+        )
         assert resp.status_code == 200
         assert resp.json() is None
 
@@ -365,7 +436,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         }
 
     # <Error_7>
-    # RequestValidationError: issuer-address,eoa-password(required)
+    # RequestValidationError: issuer-address
     def test_error_7(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -388,15 +459,13 @@ class TestAppRoutersBondTokensTokenAddressPOST:
                 "code": 1,
                 "title": "RequestValidationError"
             },
-            "detail": [{
-                "loc": ["header", "issuer-address"],
-                "msg": "issuer-address is not a valid address",
-                "type": "value_error"
-            }, {
-                "loc": ["header", "eoa-password"],
-                "msg": "field required",
-                "type": "value_error.missing"
-            }]
+            "detail": [
+                {
+                    "loc": ["header", "issuer-address"],
+                    "msg": "issuer-address is not a valid address",
+                    "type": "value_error"
+                }
+            ]
         }
 
     # <Error_8>
