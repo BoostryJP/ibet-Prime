@@ -16,16 +16,22 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import List
+import hashlib
+from datetime import timedelta, datetime
+from typing import List, Optional
 import secrets
 import re
 
 from fastapi import (
     APIRouter,
-    Depends
+    Depends,
+    Header,
+    Request
 )
 from fastapi.exceptions import HTTPException
+from pytz import timezone
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError as SAIntegrityError
 from sha3 import keccak_256
 from coincurve import PublicKey
 from Crypto.PublicKey import RSA
@@ -41,7 +47,8 @@ from config import (
     PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG,
     E2EE_REQUEST_ENABLED,
     AWS_REGION_NAME,
-    AWS_KMS_GENERATE_RANDOM_ENABLED
+    AWS_KMS_GENERATE_RANDOM_ENABLED,
+    TZ
 )
 from app.database import db_session
 from app.model.schema import (
@@ -49,22 +56,38 @@ from app.model.schema import (
     AccountResponse,
     AccountGenerateRsaKeyRequest,
     AccountChangeEOAPasswordRequest,
-    AccountChangeRSAPassphraseRequest
+    AccountChangeRSAPassphraseRequest,
+    AccountAuthTokenRequest,
+    AccountAuthTokenResponse
 )
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.check_utils import (
+    validate_headers,
+    address_is_valid_address,
+    eoa_password_is_required,
+    eoa_password_is_encrypted_value,
+    check_auth
+)
 from app.utils.docs_utils import get_routers_responses
 from app.model.db import (
     Account,
     AccountRsaKeyTemporary,
     AccountRsaStatus,
+    AuthToken,
     TransactionLock
 )
-from app.exceptions import InvalidParameterError
+from app.exceptions import (
+    InvalidParameterError,
+    AuthTokenAlreadyExistsError,
+    AuthorizationError
+)
 from app import log
 
 LOG = log.get_logger()
 
 router = APIRouter(tags=["account"])
+
+local_tz = timezone(TZ)
 
 
 # POST: /accounts
@@ -157,7 +180,7 @@ def retrieve_account(issuer_address: str, db: Session = Depends(db_session)):
         filter(Account.issuer_address == issuer_address). \
         first()
     if _account is None:
-        raise HTTPException(status_code=404, detail="issuer is not exists")
+        raise HTTPException(status_code=404, detail="issuer does not exist")
 
     return {
         "issuer_address": _account.issuer_address,
@@ -180,7 +203,7 @@ def delete_account(issuer_address: str, db: Session = Depends(db_session)):
         filter(Account.issuer_address == issuer_address). \
         first()
     if _account is None:
-        raise HTTPException(status_code=404, detail="issuer is not exists")
+        raise HTTPException(status_code=404, detail="issuer does not exist")
 
     _account.is_deleted = True
     db.merge(_account)
@@ -211,7 +234,7 @@ def generate_rsa_key(
         filter(Account.issuer_address == issuer_address). \
         first()
     if _account is None:
-        raise HTTPException(status_code=404, detail="issuer is not exists")
+        raise HTTPException(status_code=404, detail="issuer does not exist")
 
     # Check now Generating RSA
     if _account.rsa_status == AccountRsaStatus.CREATING.value or \
@@ -272,7 +295,7 @@ def change_eoa_password(
         filter(Account.issuer_address == issuer_address). \
         first()
     if _account is None:
-        raise HTTPException(status_code=404, detail="issuer is not exists")
+        raise HTTPException(status_code=404, detail="issuer does not exist")
 
     # Check Password Policy
     eoa_password = E2EEUtils.decrypt(data.eoa_password) if E2EE_REQUEST_ENABLED else data.eoa_password
@@ -325,7 +348,7 @@ def change_rsa_passphrase(
         filter(Account.issuer_address == issuer_address). \
         first()
     if _account is None:
-        raise HTTPException(status_code=404, detail="issuer is not exists")
+        raise HTTPException(status_code=404, detail="issuer does not exist")
 
     # Check Old Passphrase
     old_rsa_passphrase = E2EEUtils.decrypt(data.old_rsa_passphrase) if E2EE_REQUEST_ENABLED else data.old_rsa_passphrase
@@ -350,4 +373,118 @@ def change_rsa_passphrase(
 
     db.commit()
 
+    return
+
+
+# POST: /accounts/{issuer_address}/auth_token
+@router.post(
+    "/accounts/{issuer_address}/auth_token",
+    response_model=AccountAuthTokenResponse,
+    responses=get_routers_responses(422, 404, InvalidParameterError, AuthTokenAlreadyExistsError))
+def create_auth_token(
+        request: Request,
+        data: AccountAuthTokenRequest,
+        issuer_address: str,
+        eoa_password: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Create Auth Token"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value])
+    )
+
+    # Authentication
+    issuer_account, _ = check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+    )
+
+    # Generate new auth token
+    new_token = secrets.token_hex()
+    hashed_token = hashlib.sha256(new_token.encode()).hexdigest()
+
+    # Get current datetime
+    current_datetime_utc = timezone("UTC").localize(datetime.utcnow())
+    current_datetime_local = current_datetime_utc.astimezone(local_tz).isoformat()
+
+    # Register auth token
+    auth_token: Optional[AuthToken] = db.query(AuthToken). \
+        filter(AuthToken.issuer_address == issuer_address). \
+        first()
+    if auth_token is not None:
+        # If a valid auth token already exists, return an error.
+        if auth_token.valid_duration == 0:
+            raise AuthTokenAlreadyExistsError()
+        else:
+            expiration_datetime = auth_token.usage_start + timedelta(seconds=auth_token.valid_duration)
+            if datetime.utcnow() <= expiration_datetime:
+                raise AuthTokenAlreadyExistsError()
+        # Update auth token
+        auth_token.auth_token = hashed_token
+        auth_token.usage_start = current_datetime_utc
+        auth_token.valid_duration = data.valid_duration
+        db.merge(auth_token)
+        db.commit()
+    else:
+        try:
+            auth_token = AuthToken()
+            auth_token.issuer_address = issuer_address
+            auth_token.auth_token = hashed_token
+            auth_token.usage_start = current_datetime_utc
+            auth_token.valid_duration = data.valid_duration
+            db.add(auth_token)
+            db.commit()
+        except SAIntegrityError:
+            # NOTE: Registration can be conflicting.
+            raise AuthTokenAlreadyExistsError()
+
+    return AccountAuthTokenResponse(
+        auth_token=new_token,
+        usage_start=current_datetime_local,
+        valid_duration=data.valid_duration
+    )
+
+
+# DELETE: /accounts/{issuer_address}/auth_token
+@router.delete(
+    "/accounts/{issuer_address}/auth_token",
+    response_model=None,
+    responses=get_routers_responses(422, 404, AuthorizationError)
+)
+def delete_auth_token(
+        request: Request,
+        issuer_address: str,
+        eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Delete auth token"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
+    )
+
+    # Authentication
+    issuer_account, _ = check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
+
+    # Delete auto token
+    _auth_token = db.query(AuthToken). \
+        filter(AuthToken.issuer_address == issuer_address). \
+        first()
+    if _auth_token is None:
+        raise HTTPException(status_code=404, detail="auth token does not exist")
+
+    db.delete(_auth_token)
+    db.commit()
     return

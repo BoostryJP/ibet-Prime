@@ -221,7 +221,7 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
             "meta": {
                 "code": 1, "title": "NotFound"
             },
-            "detail": "issuer is not exists"
+            "detail": "issuer does not exist"
         }
 
     # <Error_5>

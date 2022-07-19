@@ -16,33 +16,28 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from app.utils.contract_error_code import error_code_msg
+from datetime import datetime
+
+from sqlalchemy import (
+    Column,
+    String,
+    Integer,
+    DateTime
+)
+
+from .base import Base
 
 
-class InvalidParameterError(Exception):
-    pass
+class AuthToken(Base):
+    """Authentication Token"""
+    __tablename__ = "auth_token"
 
-
-class SendTransactionError(Exception):
-    pass
-
-
-class ContractRevertError(Exception):
-
-    def __init__(self, code_msg: str):
-        code, message = error_code_msg(code_msg)
-        self.code = code
-        self.message = message
-        super().__init__(message)
-
-
-class AuthorizationError(Exception):
-    pass
-
-
-class ServiceUnavailableError(Exception):
-    pass
-
-
-class AuthTokenAlreadyExistsError(Exception):
-    pass
+    # issuer address
+    issuer_address = Column(String(42), primary_key=True)
+    # authentication token (sha256 hashed)
+    auth_token = Column(String(64))
+    # usage start
+    usage_start = Column(DateTime, default=datetime.utcnow)
+    # valid duration (sec)
+    # - 0: endless
+    valid_duration = Column(Integer, nullable=False)

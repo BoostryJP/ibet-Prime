@@ -24,7 +24,9 @@ from .account import (
     AccountGenerateRsaKeyRequest,
     AccountChangeEOAPasswordRequest,
     AccountChangeRSAPassphraseRequest,
-    AccountResponse
+    AccountAuthTokenRequest,
+    AccountResponse,
+    AccountAuthTokenResponse
 )
 from .e2e_messaging import (
     E2EMessagingAccountCreateRequest,
