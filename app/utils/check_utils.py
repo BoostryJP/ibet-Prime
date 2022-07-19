@@ -114,12 +114,12 @@ def check_auth(request: Request,
         account, decrypted_eoa_password = check_account_for_auth(db, issuer_address)
     except AuthorizationError:
         auth_error(request, issuer_address, "issuer does not exist")
-        raise AuthorizationError("issuer does not exist, or password mismatch")
+        raise AuthorizationError("issuer does not exist, or password mismatch") from None
 
     if EOA_PASSWORD_CHECK_ENABLED:
         if eoa_password is None and auth_token is None:
             auth_error(request, issuer_address, "password mismatch")
-            raise AuthorizationError("issuer does not exist, or password mismatch")
+            raise AuthorizationError("issuer does not exist, or password mismatch") from None
         elif eoa_password is not None:
             # Check EOA password
             try:
@@ -129,7 +129,7 @@ def check_auth(request: Request,
                 )
             except AuthorizationError:
                 auth_error(request, issuer_address, "password mismatch")
-                raise AuthorizationError("issuer does not exist, or password mismatch")
+                raise AuthorizationError("issuer does not exist, or password mismatch") from None
         elif auth_token is not None:
             # Check auth token
             try:
@@ -140,7 +140,7 @@ def check_auth(request: Request,
                 )
             except AuthorizationError:
                 auth_error(request, issuer_address, "password mismatch")
-                raise AuthorizationError("issuer does not exist, or password mismatch")
+                raise AuthorizationError("issuer does not exist, or password mismatch") from None
 
     auth_info(request, issuer_address, "authentication succeed")
     return account, decrypted_eoa_password
