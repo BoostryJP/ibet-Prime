@@ -287,7 +287,7 @@ class TestAppRoutersShareBulkTransferPOST:
                 "token_address": self.req_tokens[0],
                 "from_address": self.from_address,
                 "to_address": self.to_address,
-                "amount": 100_000_001
+                "amount": 100_000_000_001
             }
         ]
         resp = client.post(
@@ -309,14 +309,14 @@ class TestAppRoutersShareBulkTransferPOST:
             "detail": [
                 {
                     "ctx": {
-                        "limit_value": 100_000_000
+                        "limit_value": 100_000_000_000
                     },
                     "loc": [
                         "body",
                         0,
                         "amount"
                     ],
-                    "msg": "ensure this value is less than or equal to 100000000",
+                    "msg": "ensure this value is less than or equal to 100000000000",
                     "type": "value_error.number.not_le"
                 },
             ]
