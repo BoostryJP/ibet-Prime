@@ -37,12 +37,9 @@ from app.utils.docs_utils import get_routers_responses
 from app.utils.check_utils import validate_headers, address_is_valid_address
 from app.model.db import Token, TokenHoldersList, TokenHolderBatchStatus, TokenHolder
 from app.exceptions import InvalidParameterError
-from app import log
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
-
-LOG = log.get_logger()
 
 router = APIRouter(
     prefix="/token",

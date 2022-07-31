@@ -87,9 +87,6 @@ from app.exceptions import (
     SendTransactionError,
     ContractRevertError
 )
-from app import log
-
-LOG = log.get_logger()
 
 router = APIRouter(prefix="/e2e_messaging", tags=["e2e_messaging"])
 

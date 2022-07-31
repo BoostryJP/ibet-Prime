@@ -45,9 +45,6 @@ from app.utils.check_utils import (
     address_is_valid_address
 )
 from app.utils.docs_utils import get_routers_responses
-from app import log
-
-LOG = log.get_logger()
 
 router = APIRouter(tags=["file"])
 
