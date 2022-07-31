@@ -48,9 +48,6 @@ from app.model.blockchain import (
     IbetShareContract
 )
 from app.exceptions import InvalidParameterError
-from app import log
-
-LOG = log.get_logger()
 
 router = APIRouter(tags=["position"])
 

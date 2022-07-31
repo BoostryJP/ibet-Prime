@@ -81,9 +81,6 @@ from app.exceptions import (
     AuthTokenAlreadyExistsError,
     AuthorizationError
 )
-from app import log
-
-LOG = log.get_logger()
 
 router = APIRouter(tags=["account"])
 

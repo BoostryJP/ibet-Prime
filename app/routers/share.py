@@ -47,6 +47,7 @@ from eth_keyfile import decode_keyfile_json
 from pytz import timezone
 
 import config
+from app import log
 from app.database import db_session
 from app.model.schema import (
     IbetShareCreate,
@@ -130,6 +131,7 @@ router = APIRouter(
     tags=["share"],
 )
 
+LOG = log.get_logger()
 local_tz = timezone(config.TZ)
 
 
@@ -1066,6 +1068,7 @@ def modify_holder_personal_info(
         auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Modify the holder's personal information"""
+    LOG.warning(DeprecationWarning("Deprecated API: /share/tokens/{token_address}/holders/{account_address}/personal_info"))
 
     # Validate Headers
     validate_headers(
