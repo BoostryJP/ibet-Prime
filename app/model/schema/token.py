@@ -42,7 +42,7 @@ from .types import (
 class IbetStraightBondCreate(BaseModel):
     """ibet Straight Bond schema (Create)"""
     name: str = Field(max_length=100)
-    total_supply: int = Field(..., ge=0, le=100_000_000)
+    total_supply: int = Field(..., ge=0, le=100_000_000_000)
     face_value: int = Field(..., ge=0, le=5_000_000_000)
     purpose: str = Field(max_length=2000)
     symbol: Optional[str] = Field(max_length=100)
@@ -139,7 +139,7 @@ class IbetStraightBondUpdate(BaseModel):
 class IbetStraightBondAdditionalIssue(BaseModel):
     """ibet Straight Bond schema (Additional Issue)"""
     account_address: str
-    amount: int = Field(..., ge=1, le=100_000_000)
+    amount: int = Field(..., ge=1, le=100_000_000_000)
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):
@@ -151,7 +151,7 @@ class IbetStraightBondAdditionalIssue(BaseModel):
 class IbetStraightBondRedeem(BaseModel):
     """ibet Straight Bond schema (Redeem)"""
     account_address: str
-    amount: int = Field(..., ge=1, le=100_000_000)
+    amount: int = Field(..., ge=1, le=100_000_000_000)
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):
@@ -165,7 +165,7 @@ class IbetStraightBondTransfer(BaseModel):
     token_address: str
     from_address: str
     to_address: str
-    amount: int = Field(..., ge=1, le=100_000_000)
+    amount: int = Field(..., ge=1, le=100_000_000_000)
 
     @validator("token_address")
     def token_address_is_valid_address(cls, v):
@@ -191,7 +191,7 @@ class IbetShareCreate(BaseModel):
     name: str = Field(max_length=100)
     issue_price: int = Field(..., ge=0, le=5_000_000_000)
     principal_value: int = Field(..., ge=0, le=5_000_000_000)
-    total_supply: int = Field(..., ge=0, le=100_000_000)
+    total_supply: int = Field(..., ge=0, le=100_000_000_000)
     symbol: Optional[str] = Field(max_length=100)
     dividends: Optional[float] = Field(None, ge=0.00, le=5_000_000_000.00)
     dividend_record_date: Optional[YYYYMMDD_constr]
@@ -281,7 +281,7 @@ class IbetShareTransfer(BaseModel):
     token_address: str
     from_address: str
     to_address: str
-    amount: int = Field(..., ge=1, le=100_000_000)
+    amount: int = Field(..., ge=1, le=100_000_000_000)
 
     @validator("token_address")
     def token_address_is_valid_address(cls, v):
@@ -305,7 +305,7 @@ class IbetShareTransfer(BaseModel):
 class IbetShareAdditionalIssue(BaseModel):
     """ibet Share schema (Additional Issue)"""
     account_address: str
-    amount: int = Field(..., ge=1, le=100_000_000)
+    amount: int = Field(..., ge=1, le=100_000_000_000)
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):
@@ -317,7 +317,7 @@ class IbetShareAdditionalIssue(BaseModel):
 class IbetShareRedeem(BaseModel):
     """ibet Share schema (Redeem)"""
     account_address: str
-    amount: int = Field(..., ge=1, le=100_000_000)
+    amount: int = Field(..., ge=1, le=100_000_000_000)
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):

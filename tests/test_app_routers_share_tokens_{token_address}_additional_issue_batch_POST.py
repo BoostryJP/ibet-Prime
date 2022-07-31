@@ -372,7 +372,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchPOST:
         req_param = [
             {
                 "account_address": test_account_1,
-                "amount": 100_000_001
+                "amount": 100_000_000_001
             }
         ]
         resp = client.post(
@@ -394,9 +394,9 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchPOST:
             'detail': [
                 {
                     'loc': ['body', 0, 'amount'],
-                    'msg': 'ensure this value is less than or equal to 100000000',
+                    'msg': 'ensure this value is less than or equal to 100000000000',
                     'type': 'value_error.number.not_le',
-                    'ctx': {'limit_value': 100000000}
+                    'ctx': {'limit_value': 100000000000}
                 }
             ]
         }

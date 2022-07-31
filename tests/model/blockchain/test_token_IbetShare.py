@@ -1179,17 +1179,17 @@ class TestTransfer:
             "token_address": "0x1234567890123456789012345678901234567890",
             "from_address": "0x1234567890123456789012345678901234567890",
             "to_address": "0x1234567890123456789012345678901234567890",
-            "amount": 100_000_001
+            "amount": 100_000_000_001
         }
         with pytest.raises(ValidationError) as exc_info:
             IbetShareTransfer(**_data)
         assert exc_info.value.errors() == [
             {
                 "ctx": {
-                    "limit_value": 100_000_000
+                    "limit_value": 100_000_000_000
                 },
                 "loc": ("amount",),
-                "msg": "ensure this value is less than or equal to 100000000",
+                "msg": "ensure this value is less than or equal to 100000000000",
                 "type": "value_error.number.not_le"
             }
         ]
@@ -1617,7 +1617,7 @@ class TestAdditionalIssue:
 
         _data = {
             "account_address": issuer_address,
-            "amount": 100_000_001
+            "amount": 100_000_000_001
         }
 
         with pytest.raises(ValidationError) as exc_info:
@@ -1625,10 +1625,10 @@ class TestAdditionalIssue:
         assert exc_info.value.errors() == [
             {
                 "ctx": {
-                    "limit_value": 100_000_000
+                    "limit_value": 100_000_000_000
                 },
                 "loc": ("amount",),
-                "msg": "ensure this value is less than or equal to 100000000",
+                "msg": "ensure this value is less than or equal to 100000000000",
                 "type": "value_error.number.not_le"
             }
         ]
@@ -2045,7 +2045,7 @@ class TestRedeem:
 
         _data = {
             "account_address": issuer_address,
-            "amount": 100_000_001
+            "amount": 100_000_000_001
         }
 
         with pytest.raises(ValidationError) as exc_info:
@@ -2053,10 +2053,10 @@ class TestRedeem:
         assert exc_info.value.errors() == [
             {
                 "ctx": {
-                    "limit_value": 100_000_000
+                    "limit_value": 100_000_000_000
                 },
                 "loc": ("amount",),
-                "msg": "ensure this value is less than or equal to 100000000",
+                "msg": "ensure this value is less than or equal to 100000000000",
                 "type": "value_error.number.not_le"
             }
         ]

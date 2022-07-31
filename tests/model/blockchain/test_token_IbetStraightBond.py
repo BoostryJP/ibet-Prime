@@ -1156,17 +1156,17 @@ class TestTransfer:
             "token_address": token_address,
             "from_address": issuer_address,
             "to_address": to_address,
-            "amount": 100_000_001
+            "amount": 100_000_000_001
         }
         with pytest.raises(ValidationError) as exc_info:
             IbetStraightBondTransfer(**_data)
         assert exc_info.value.errors() == [
             {
                 "ctx": {
-                    "limit_value": 100_000_000
+                    "limit_value": 100_000_000_000
                 },
                 "loc": ("amount",),
-                "msg": "ensure this value is less than or equal to 100000000",
+                "msg": "ensure this value is less than or equal to 100000000000",
                 "type": "value_error.number.not_le"
             }
         ]
@@ -1559,17 +1559,17 @@ class TestAdditionalIssue:
         issuer_address = test_account.get("address")
         _data = {
             "account_address": issuer_address,
-            "amount": 100_000_001
+            "amount": 100_000_000_001
         }
         with pytest.raises(ValidationError) as exc_info:
             IbetStraightBondAdditionalIssue(**_data)
         assert exc_info.value.errors() == [
             {
                 "ctx": {
-                    "limit_value": 100_000_000
+                    "limit_value": 100_000_000_000
                 },
                 "loc": ("amount",),
-                "msg": "ensure this value is less than or equal to 100000000",
+                "msg": "ensure this value is less than or equal to 100000000000",
                 "type": "value_error.number.not_le"
             }
         ]
@@ -1949,17 +1949,17 @@ class TestRedeem:
         issuer_address = test_account.get("address")
         _data = {
             "account_address": issuer_address,
-            "amount": 100_000_001
+            "amount": 100_000_000_001
         }
         with pytest.raises(ValidationError) as exc_info:
             IbetStraightBondRedeem(**_data)
         assert exc_info.value.errors() == [
             {
                 "ctx": {
-                    "limit_value": 100_000_000
+                    "limit_value": 100_000_000_000
                 },
                 "loc": ("amount",),
-                "msg": "ensure this value is less than or equal to 100000000",
+                "msg": "ensure this value is less than or equal to 100000000000",
                 "type": "value_error.number.not_le"
             }
         ]
