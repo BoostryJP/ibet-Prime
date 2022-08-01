@@ -58,6 +58,7 @@ from app.model.schema import (
     IbetStraightBondResponse,
     TokenAddressResponse,
     HolderResponse,
+    HolderCountResponse,
     TransferHistoryResponse,
     BulkTransferUploadIdResponse,
     BulkTransferUploadResponse,
@@ -980,6 +981,54 @@ def list_all_holders(
         })
 
     return holders
+
+
+# GET: /bond/tokens/{token_address}/holders/count
+@router.get(
+    "/tokens/{token_address}/holders/count",
+    response_model=HolderCountResponse,
+    responses=get_routers_responses(422, InvalidParameterError, 404)
+)
+def count_number_of_holders(
+        token_address: str,
+        issuer_address: str = Header(...),
+        db: Session = Depends(db_session)):
+    """Count the number of holders"""
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
+
+    # Get Account
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
+        first()
+    if _account is None:
+        raise InvalidParameterError("issuer does not exist")
+
+    # Get Token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Get Holders
+    _count: int = db.query(IDXPosition). \
+        filter(IDXPosition.token_address == token_address). \
+        filter(
+            or_(IDXPosition.balance != 0,
+                IDXPosition.exchange_balance != 0,
+                IDXPosition.pending_transfer != 0,
+                IDXPosition.exchange_commitment != 0)
+        ). \
+        count()
+
+    return HolderCountResponse(count=_count)
 
 
 # GET: /bond/tokens/{token_address}/holders/{account_address}

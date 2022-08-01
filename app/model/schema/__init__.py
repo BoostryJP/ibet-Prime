@@ -67,7 +67,10 @@ from .token import (
     IbetStraightBondResponse,
     IbetShareResponse
 )
-from .holder import HolderResponse
+from .holder import (
+    HolderResponse,
+    HolderCountResponse
+)
 from .transfer import (
     UpdateTransferApprovalRequest,
     TransferResponse,
