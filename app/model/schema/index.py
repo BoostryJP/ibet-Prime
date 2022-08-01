@@ -26,3 +26,8 @@ from pydantic import BaseModel
 class E2EEResponse(BaseModel):
     """E2EE schema (Response)"""
     public_key: Optional[str]
+
+
+class BlockNumberResponse(BaseModel):
+    """Block Number schema (Response)"""
+    block_number: int
