@@ -22,9 +22,15 @@ from app.database import db_session
 from app.model.db import Node
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.docs_utils import get_routers_responses
-from app.model.schema import E2EEResponse
+from app.utils.web3_utils import Web3Wrapper
+from app.model.schema import (
+    E2EEResponse,
+    BlockNumberResponse
+)
 from app.exceptions import ServiceUnavailableError
 from app import log
+
+web3 = Web3Wrapper()
 
 LOG = log.get_logger()
 
@@ -88,3 +94,16 @@ def __check_ethereum(errors: list, db: Session):
         msg = "Ethereum node's block synchronization is down"
         LOG.error(msg)
         errors.append(msg)
+
+
+# GET: /block_number
+@router.get(
+    "/block_number",
+    response_model=BlockNumberResponse,
+    responses=get_routers_responses(ServiceUnavailableError)
+)
+def get_block_number():
+    """Get Block Number in current"""
+    block_number = web3.eth.block_number
+
+    return {"block_number": block_number}
