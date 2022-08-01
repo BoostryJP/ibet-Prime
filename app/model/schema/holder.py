@@ -35,3 +35,8 @@ class HolderResponse(BaseModel):
     exchange_balance: int
     exchange_commitment: int
     pending_transfer: int
+
+
+class HolderCountResponse(BaseModel):
+    """Holder count schema (Response)"""
+    count: int
