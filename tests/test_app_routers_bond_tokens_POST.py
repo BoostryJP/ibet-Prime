@@ -747,7 +747,7 @@ class TestAppRoutersBondTokensPOST:
         req_param = {
             "name": GetRandomStr(101),
             "symbol": GetRandomStr(101),
-            "total_supply": 100_000_000_001,
+            "total_supply": 1_000_000_000_001,
             "face_value": 5_000_000_001,
             "redemption_date": "20211231",
             "redemption_value": 5_000_000_001,
@@ -791,9 +791,9 @@ class TestAppRoutersBondTokensPOST:
                 },
                 {
                     "loc": ["body", "total_supply"], 
-                    "msg": "ensure this value is less than or equal to 100000000000",
+                    "msg": "ensure this value is less than or equal to 1000000000000",
                     "type": "value_error.number.not_le", 
-                    "ctx": {"limit_value": 100000000000}
+                    "ctx": {"limit_value": 1000000000000}
                 },
                 {
                     "loc": ["body", "face_value"], 
