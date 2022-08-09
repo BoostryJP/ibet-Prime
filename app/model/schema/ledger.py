@@ -70,9 +70,9 @@ class CreateUpdateLedgerDetailsDataRequest(BaseModel):
     """Create or Update Ledger Details Data Structure schema (Request)"""
     name: Optional[str] = Field(None, max_length=200)
     address: Optional[str] = Field(None, max_length=200)
-    amount: Optional[int] = Field(None, ge=0, le=2 ** 31 - 1)
-    price: Optional[int] = Field(None, ge=0, le=2 ** 31 - 1)
-    balance: Optional[int] = Field(None, ge=0, le=2 ** 31 - 1)
+    amount: Optional[int] = Field(None, ge=0, le=1_000_000_000_000)
+    price: Optional[int] = Field(None, ge=0, le=5_000_000_000)
+    balance: Optional[int] = Field(None, ge=0, le=1_000_000_000_000 * 5_000_000_000)
     acquisition_date: Optional[str] = Field(None, min_length=10, max_length=10, description="YYYY/MM/DD")
 
     @validator("acquisition_date")

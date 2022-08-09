@@ -22,7 +22,8 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
-    Boolean
+    Boolean,
+    BigInteger
 )
 
 from .base import Base
@@ -63,6 +64,6 @@ class BatchIssueRedeem(Base):
     # target account
     account_address = Column(String(42), nullable=False)
     # amount
-    amount = Column(Integer, nullable=False)
+    amount = Column(BigInteger, nullable=False)
     # processing status (pending:0, succeeded:1, failed:2)
     status = Column(Integer, nullable=False, index=True)

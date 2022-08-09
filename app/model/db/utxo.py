@@ -40,7 +40,7 @@ class UTXO(Base):
     # token address
     token_address = Column(String(42), index=True)
     # transfer amount
-    amount = Column(Integer)
+    amount = Column(BigInteger)
     # block number
     block_number = Column(BigInteger)
     # block timestamp(UTC)

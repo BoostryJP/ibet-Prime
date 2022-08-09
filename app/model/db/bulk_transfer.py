@@ -19,7 +19,8 @@ SPDX-License-Identifier: Apache-2.0
 from sqlalchemy import (
     Column,
     Integer,
-    String
+    String,
+    BigInteger
 )
 
 from .base import Base
@@ -58,6 +59,6 @@ class BulkTransfer(Base):
     # transfer to
     to_address = Column(String(42), nullable=False)
     # transfer amount
-    amount = Column(Integer, nullable=False)
+    amount = Column(BigInteger, nullable=False)
     # processing status (pending:0, succeeded:1, failed:2)
     status = Column(Integer, nullable=False, index=True)
