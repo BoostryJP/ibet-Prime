@@ -21,6 +21,7 @@ from datetime import datetime
 from sqlalchemy import (
     Column,
     Integer,
+    BigInteger,
     String,
     JSON,
     DateTime
@@ -91,11 +92,11 @@ class LedgerDetailsData(Base):
     # address
     address = Column(String(200))
     # amount
-    amount = Column(Integer)
+    amount = Column(BigInteger)
     # price
-    price = Column(Integer)
+    price = Column(BigInteger)
     # balance
-    balance = Column(Integer)
+    balance = Column(BigInteger)
     # acquisition date(format: YYYY/MM/DD)
     acquisition_date = Column(String(10))
     # created datetime(UTC)

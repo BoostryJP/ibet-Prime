@@ -217,9 +217,9 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
                         "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
                         "1",
                 "address": "address_test_1",
-                "amount": 2 ** 31,
+                "amount": 1_000_000_000_001,
                 "price": -1,
-                "balance": 2 ** 31,
+                "balance": 1_000_000_000_001 * 5_000_000_001,
                 "acquisition_date": "2020/01/01a",
             },
             {
@@ -228,7 +228,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
                            "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
                            "1",
                 "amount": -1,
-                "price": 2 ** 31,
+                "price": 5_000_000_001,
                 "balance": -1,
                 "acquisition_date": "2020/02/31",
             },
@@ -256,9 +256,9 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
                     "type": "value_error.any_str.max_length"
                 },
                 {
-                    "ctx": {"limit_value": 2 ** 31 - 1},
+                    "ctx": {"limit_value": 1_000_000_000_000},
                     "loc": ["body", 0, "amount"],
-                    "msg": "ensure this value is less than or equal to 2147483647",
+                    "msg": "ensure this value is less than or equal to 1000000000000",
                     "type": "value_error.number.not_le"
                 },
                 {
@@ -268,9 +268,9 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
                     "type": "value_error.number.not_ge"
                 },
                 {
-                    "ctx": {"limit_value": 2 ** 31 - 1},
+                    "ctx": {"limit_value": 5_000_000_000_000_000_000_000},
                     "loc": ["body", 0, "balance"],
-                    "msg": "ensure this value is less than or equal to 2147483647",
+                    "msg": "ensure this value is less than or equal to 5000000000000000000000",
                     "type": "value_error.number.not_le"
                 },
                 {
@@ -292,9 +292,9 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
                     "type": "value_error.number.not_ge"
                 },
                 {
-                    "ctx": {"limit_value": 2 ** 31 - 1},
+                    "ctx": {"limit_value": 5000000000},
                     "loc": ["body", 1, "price"],
-                    "msg": "ensure this value is less than or equal to 2147483647",
+                    "msg": "ensure this value is less than or equal to 5000000000",
                     "type": "value_error.number.not_le"
                 },
                 {
