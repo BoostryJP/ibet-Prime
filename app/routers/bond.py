@@ -909,7 +909,6 @@ def delete_scheduled_event(
 )
 def list_all_holders(
         token_address: str,
-        include_former_holder: bool = False,
         issuer_address: str = Header(...),
         db: Session = Depends(db_session)):
     """List all bond token holders"""
@@ -936,17 +935,15 @@ def list_all_holders(
     if _token.token_status == 0:
         raise InvalidParameterError("this token is temporarily unavailable")
 
-    query = db.query(IDXPosition). \
-        filter(IDXPosition.token_address == token_address)
-    if not include_former_holder:
-        # Get Holders
-        query = query.filter(or_(
+    # Get Holders
+    _holders = db.query(IDXPosition). \
+        filter(IDXPosition.token_address == token_address). \
+        filter(or_(
             IDXPosition.balance != 0,
             IDXPosition.exchange_balance != 0,
             IDXPosition.pending_transfer != 0,
             IDXPosition.exchange_commitment != 0
-        ))
-    _holders = query.order_by(IDXPosition.id).all()
+        )).order_by(IDXPosition.id).all()
 
     # Get personal information
     _personal_info_list = db.query(IDXPersonalInfo). \
