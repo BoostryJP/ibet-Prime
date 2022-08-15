@@ -61,6 +61,7 @@ router = APIRouter(tags=["position"])
 def list_all_position(
         account_address: str,
         issuer_address: Optional[str] = Header(None),
+        include_former_position: bool = False,
         token_type: Optional[TokenType] = Query(None),
         offset: Optional[int] = Query(None),
         limit: Optional[int] = Query(None),
@@ -74,14 +75,18 @@ def list_all_position(
     query = db.query(IDXPosition, Token). \
         join(Token, IDXPosition.token_address == Token.token_address). \
         filter(IDXPosition.account_address == account_address). \
-        filter(Token.token_status != 2). \
-        filter(or_(
+        filter(Token.token_status != 2)
+
+    if not include_former_position:
+        query = query.filter(or_(
             IDXPosition.balance != 0,
             IDXPosition.exchange_balance != 0,
             IDXPosition.pending_transfer != 0,
             IDXPosition.exchange_commitment != 0
-        )). \
-        order_by(IDXPosition.token_address, IDXPosition.account_address)
+        ))
+
+    query = query.order_by(IDXPosition.token_address, IDXPosition.account_address)
+
     if issuer_address is not None:
         query = query.filter(Token.issuer_address == issuer_address)
     total = query.count()
