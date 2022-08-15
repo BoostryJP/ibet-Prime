@@ -220,10 +220,10 @@ class ContractUtils:
 
         # build a new transaction to replay:
         replay_tx = {
-            'to': tx['to'],
-            'from': tx['from'],
-            'value': tx['value'],
-            'data': tx['input'],
+            "to": tx.get("to"),
+            "from": tx.get("from"),
+            "value": tx.get("value"),
+            "data": tx.get("input"),
         }
 
         # replay the transaction locally:
