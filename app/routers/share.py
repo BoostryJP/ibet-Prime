@@ -510,7 +510,7 @@ def additional_issue_in_batch(
 
     # Check token status
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
+        filter(Token.type == TokenType.IBET_SHARE.value). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -527,7 +527,7 @@ def additional_issue_in_batch(
     _batch_upload = BatchIssueRedeemUpload()
     _batch_upload.upload_id = upload_id
     _batch_upload.issuer_address = issuer_address
-    _batch_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+    _batch_upload.token_type = TokenType.IBET_SHARE.value
     _batch_upload.token_address = token_address
     _batch_upload.category = BatchIssueRedeemProcessingCategory.ISSUE.value
     _batch_upload.status = 0
@@ -647,7 +647,7 @@ def redeem_token_in_batch(
 
     # Check token status
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
+        filter(Token.type == TokenType.IBET_SHARE.value). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -664,7 +664,7 @@ def redeem_token_in_batch(
     _batch_upload = BatchIssueRedeemUpload()
     _batch_upload.upload_id = upload_id
     _batch_upload.issuer_address = issuer_address
-    _batch_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+    _batch_upload.token_type = TokenType.IBET_SHARE.value
     _batch_upload.token_address = token_address
     _batch_upload.category = BatchIssueRedeemProcessingCategory.REDEEM.value
     _batch_upload.status = 0
