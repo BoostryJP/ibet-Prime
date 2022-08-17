@@ -56,7 +56,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_address
@@ -82,7 +82,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         # assertion
         upload: Optional[BatchIssueRedeemUpload] = db.query(BatchIssueRedeemUpload).first()
         assert upload.issuer_address == issuer_address
-        assert upload.token_type == TokenType.IBET_STRAIGHT_BOND.value
+        assert upload.token_type == TokenType.IBET_SHARE.value
         assert upload.token_address == token_address
         assert upload.category == BatchIssueRedeemProcessingCategory.REDEEM.value
         assert upload.processed is False
@@ -119,7 +119,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_address
@@ -149,7 +149,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         # assertion
         upload: Optional[BatchIssueRedeemUpload] = db.query(BatchIssueRedeemUpload).first()
         assert upload.issuer_address == issuer_address
-        assert upload.token_type == TokenType.IBET_STRAIGHT_BOND.value
+        assert upload.token_type == TokenType.IBET_SHARE.value
         assert upload.token_address == token_address
         assert upload.category == BatchIssueRedeemProcessingCategory.REDEEM.value
         assert upload.processed is False
@@ -193,7 +193,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_address
@@ -244,7 +244,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_address
@@ -302,7 +302,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_address
@@ -361,7 +361,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_address
@@ -420,7 +420,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_address
@@ -475,7 +475,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_address
@@ -531,7 +531,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_address
@@ -578,7 +578,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_address
@@ -630,7 +630,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_address
@@ -728,7 +728,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchPOST:
         db.add(account)
 
         token = Token()
-        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.type = TokenType.IBET_SHARE.value
         token.tx_hash = ""
         token.issuer_address = issuer_address
         token.token_address = token_address

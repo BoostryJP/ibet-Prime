@@ -71,7 +71,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         _token.token_status = 2
         db.add(_token)
 
-        # prepare data: Token(share)
+        # prepare data: Token(bond)
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = self.test_transaction_hash
@@ -781,4 +781,3 @@ class TestAppRoutersShareTransferApprovalsGET:
             ]
         }
         assert resp.json() == assumed_response
-
