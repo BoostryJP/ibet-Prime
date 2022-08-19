@@ -97,7 +97,7 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssueBatchPOST:
         assert batch_data_1.status == 0
 
         assert resp.status_code == 200
-        assert resp.json() == {"upload_id": upload.upload_id}
+        assert resp.json() == {"batch_id": upload.upload_id}
 
     # Normal_2
     # Multiple data
@@ -170,7 +170,7 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssueBatchPOST:
         assert batch_data_2.status == 0
 
         assert resp.status_code == 200
-        assert resp.json() == {"upload_id": upload.upload_id}
+        assert resp.json() == {"batch_id": upload.upload_id}
 
     ###########################################################################
     # Error Case
