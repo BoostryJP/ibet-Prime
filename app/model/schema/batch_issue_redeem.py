@@ -16,6 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from typing import List
+
 from pydantic import BaseModel
 
 
@@ -24,5 +26,18 @@ from pydantic import BaseModel
 ############################
 
 class BatchIssueRedeemUploadIdResponse(BaseModel):
-    """Batch issue/redeem upload id"""
-    upload_id: str
+    """Batch issue/redeem upload id (RESPONSE)"""
+    batch_id: str
+
+
+class GetBatchIssueRedeemResult(BaseModel):
+    """Result of Creating Batch issue/redeem schema (RESPONSE)"""
+    account_address: str
+    amount: int
+    status: int
+
+
+class GetBatchIssueRedeemResponse(BaseModel):
+    """Get Batch Register PersonalInfo schema (RESPONSE)"""
+    processed: bool
+    results: List[GetBatchIssueRedeemResult]

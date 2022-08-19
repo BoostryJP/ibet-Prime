@@ -77,8 +77,13 @@ from app.model.schema import (
     UpdateTransferApprovalRequest,
     BatchIssueRedeemUploadIdResponse
 )
+from app.model.schema.batch_issue_redeem import (
+    GetBatchIssueRedeemResponse,
+    GetBatchIssueRedeemResult
+)
 from app.model.schema.personal_info import (
     BatchRegisterPersonalInfoUploadResponse,
+    GetBatchRegisterPersonalInfoResponse,
     BatchRegisterPersonalInfoResult
 )
 from app.model.schema.types import (
@@ -556,7 +561,53 @@ def additional_issue_in_batch(
 
     db.commit()
 
-    return {"upload_id": str(upload_id)}
+    return BatchIssueRedeemUploadIdResponse(batch_id=str(upload_id))
+
+
+# GET: /bond/tokens/{token_address}/additional_issue/batch/{batch_id}
+@router.get(
+    "/tokens/{token_address}/additional_issue/batch/{batch_id}",
+    response_model=GetBatchIssueRedeemResponse,
+    responses=get_routers_responses(422, 404)
+)
+def retrieve_batch_additional_issue(
+        token_address: str,
+        batch_id: str,
+        issuer_address: str = Header(...),
+        db: Session = Depends(db_session)):
+    """Get Batch status for additional issue"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address)
+    )
+
+    # Upload Existence Check
+    batch: Optional[BatchIssueRedeemUpload] = db.query(BatchIssueRedeemUpload). \
+        filter(BatchIssueRedeemUpload.upload_id == batch_id). \
+        filter(BatchIssueRedeemUpload.issuer_address == issuer_address). \
+        filter(BatchIssueRedeemUpload.token_type == TokenType.IBET_STRAIGHT_BOND.value). \
+        filter(BatchIssueRedeemUpload.token_address == token_address). \
+        filter(BatchIssueRedeemUpload.category == BatchIssueRedeemProcessingCategory.ISSUE.value). \
+        first()
+    if batch is None:
+        raise HTTPException(status_code=404, detail="batch not found")
+
+    # Get Batch Records
+    record_list: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
+        filter(BatchIssueRedeem.upload_id == batch_id). \
+        all()
+
+    return GetBatchIssueRedeemResponse(
+        processed=batch.processed,
+        results=[
+            GetBatchIssueRedeemResult(
+                account_address=record.account_address,
+                amount=record.amount,
+                status=record.status
+            ) for record in record_list
+        ]
+    )
 
 
 # POST: /bond/tokens/{token_address}/redeem
@@ -693,7 +744,53 @@ def redeem_token_in_batch(
 
     db.commit()
 
-    return {"upload_id": str(upload_id)}
+    return BatchIssueRedeemUploadIdResponse(batch_id=str(upload_id))
+
+
+# GET: /bond/tokens/{token_address}/redeem/batch/{batch_id}
+@router.get(
+    "/tokens/{token_address}/redeem/batch/{batch_id}",
+    response_model=GetBatchIssueRedeemResponse,
+    responses=get_routers_responses(422, 404)
+)
+def retrieve_batch_additional_issue(
+        token_address: str,
+        batch_id: str,
+        issuer_address: str = Header(...),
+        db: Session = Depends(db_session)):
+    """Get Batch status for additional issue"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address)
+    )
+
+    # Upload Existence Check
+    batch: Optional[BatchIssueRedeemUpload] = db.query(BatchIssueRedeemUpload). \
+        filter(BatchIssueRedeemUpload.upload_id == batch_id). \
+        filter(BatchIssueRedeemUpload.issuer_address == issuer_address). \
+        filter(BatchIssueRedeemUpload.token_type == TokenType.IBET_STRAIGHT_BOND.value). \
+        filter(BatchIssueRedeemUpload.token_address == token_address). \
+        filter(BatchIssueRedeemUpload.category == BatchIssueRedeemProcessingCategory.REDEEM.value). \
+        first()
+    if batch is None:
+        raise HTTPException(status_code=404, detail="batch not found")
+
+    # Get Batch Records
+    record_list: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
+        filter(BatchIssueRedeem.upload_id == batch_id). \
+        all()
+
+    return GetBatchIssueRedeemResponse(
+        processed=batch.processed,
+        results=[
+            GetBatchIssueRedeemResult(
+                account_address=record.account_address,
+                amount=record.amount,
+                status=record.status
+            ) for record in record_list
+        ]
+    )
 
 
 # GET: /bond/tokens/{token_address}/scheduled_events
@@ -1315,10 +1412,11 @@ def batch_register_personal_info(
 # GET: /bond/tokens/{token_address}/personal_info/batch/{batch_id}
 @router.get(
     "/tokens/{token_address}/personal_info/batch/{batch_id}",
-    response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError)
+    response_model=GetBatchRegisterPersonalInfoResponse,
+    responses=get_routers_responses(422, 401, 404)
 )
 def retrieve_batch_register_personal_info(
+        token_address: str,
         batch_id: str,
         issuer_address: str = Header(...),
         db: Session = Depends(db_session)):
@@ -1329,28 +1427,37 @@ def retrieve_batch_register_personal_info(
         issuer_address=(issuer_address, address_is_valid_address)
     )
 
-    batch: Optional[BatchRegisterPersonalInfoUpload] = db.query(BatchRegisterPersonalInfoUpload).\
-        filter(BatchRegisterPersonalInfoUpload.upload_id == batch_id).first()
+    # Upload Existence Check
+    batch: Optional[BatchRegisterPersonalInfoUpload] = db.query(BatchRegisterPersonalInfoUpload). \
+        filter(BatchRegisterPersonalInfoUpload.upload_id == batch_id). \
+        filter(BatchRegisterPersonalInfoUpload.issuer_address == issuer_address). \
+        first()
     if batch is None:
         raise HTTPException(status_code=404, detail="batch not found")
 
-    record_list = db.query(BatchRegisterPersonalInfo).filter(BatchRegisterPersonalInfo.upload_id == batch_id).all()
+    # Get Batch Records
+    record_list = db.query(BatchRegisterPersonalInfo). \
+        filter(BatchRegisterPersonalInfo.upload_id == batch_id). \
+        filter(BatchRegisterPersonalInfo.token_address == token_address). \
+        all()
 
-    return {
-        "status": batch.status,
-        "results": [BatchRegisterPersonalInfoResult(
-            status=record.status,
-            account_address=record.account_address,
-            key_manager=record.personal_info.get("key_manager"),
-            name=record.personal_info.get("name"),
-            postal_code=record.personal_info.get("postal_code"),
-            address=record.personal_info.get("address"),
-            email=record.personal_info.get("email"),
-            birth=record.personal_info.get("birth"),
-            is_corporate=record.personal_info.get("is_corporate"),
-            tax_category=record.personal_info.get("tax_category")
-        ) for record in record_list]
-    }
+    return GetBatchRegisterPersonalInfoResponse(
+        status=batch.status,
+        results=[
+            BatchRegisterPersonalInfoResult(
+                status=record.status,
+                account_address=record.account_address,
+                key_manager=record.personal_info.get("key_manager"),
+                name=record.personal_info.get("name"),
+                postal_code=record.personal_info.get("postal_code"),
+                address=record.personal_info.get("address"),
+                email=record.personal_info.get("email"),
+                birth=record.personal_info.get("birth"),
+                is_corporate=record.personal_info.get("is_corporate"),
+                tax_category=record.personal_info.get("tax_category")
+            ) for record in record_list
+        ]
+    )
 
 
 # POST: /bond/transfers
