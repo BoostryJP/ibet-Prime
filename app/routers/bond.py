@@ -79,6 +79,7 @@ from app.model.schema import (
 )
 from app.model.schema.personal_info import (
     BatchRegisterPersonalInfoUploadResponse,
+    GetBatchRegisterPersonalInfoResponse,
     BatchRegisterPersonalInfoResult
 )
 from app.model.schema.types import (
@@ -1315,7 +1316,7 @@ def batch_register_personal_info(
 # GET: /bond/tokens/{token_address}/personal_info/batch/{batch_id}
 @router.get(
     "/tokens/{token_address}/personal_info/batch/{batch_id}",
-    response_model=None,
+    response_model=GetBatchRegisterPersonalInfoResponse,
     responses=get_routers_responses(422, 401, 404, InvalidParameterError)
 )
 def retrieve_batch_register_personal_info(
