@@ -85,14 +85,7 @@ from .ledger_template import (
 from .node import Node
 from .notification import (
     Notification,
-    NotificationType,
-    IssueErrorMetainfo,
-    BulkTransferErrorMetainfo,
-    ScheduleEventErrorMetainfo,
-    TransferApprovalInfoMetaInfo,
-    CreateLedgerInfoMetaInfo,
-    BatchRegisterPersonalInfoErrorMetainfo,
-    BatchIssueRedeemProcessedMetainfo
+    NotificationType
 )
 from .transfer_appoval_history import TransferApprovalHistory
 from .tx_management import TransactionLock

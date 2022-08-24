@@ -29,14 +29,48 @@ from pydantic import BaseModel, conint
 from .types import ResultSet
 from app.model.db import (
     NotificationType,
-    IssueErrorMetainfo,
-    BulkTransferErrorMetainfo,
-    ScheduleEventErrorMetainfo,
-    TransferApprovalInfoMetaInfo,
-    CreateLedgerInfoMetaInfo,
-    BatchRegisterPersonalInfoErrorMetainfo,
-    BatchIssueRedeemProcessedMetainfo
+    BatchIssueRedeemProcessingCategory,
+    TokenType
 )
+
+
+class IssueErrorMetainfo(BaseModel):
+    token_address: str
+    token_type: TokenType
+    arguments: dict
+
+
+class BulkTransferErrorMetainfo(BaseModel):
+    upload_id: str
+    token_type: TokenType
+    error_transfer_id: list[int]
+
+
+class ScheduleEventErrorMetainfo(BaseModel):
+    scheduled_event_id: int
+    token_type: TokenType
+
+
+class TransferApprovalInfoMetaInfo(BaseModel):
+    id: int
+    token_address: str
+
+
+class CreateLedgerInfoMetaInfo(BaseModel):
+    token_address: str
+    token_type: TokenType
+    ledger_id: int
+
+
+class BatchRegisterPersonalInfoErrorMetainfo(BaseModel):
+    upload_id: str
+    error_registration_id: list[int]
+
+
+class BatchIssueRedeemProcessedMetainfo(BaseModel):
+    category: BatchIssueRedeemProcessingCategory
+    upload_id: str
+    error_data_id: list[int]
 
 
 class Notification(BaseModel):
