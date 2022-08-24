@@ -79,7 +79,8 @@ from app.model.schema import (
 )
 from app.model.schema.batch_issue_redeem import (
     GetBatchIssueRedeemResponse,
-    GetBatchIssueRedeemResult
+    GetBatchIssueRedeemResult,
+    ListBatchIssueRedeemUploadResponse
 )
 from app.model.schema.personal_info import (
     BatchRegisterPersonalInfoUploadResponse,
@@ -491,6 +492,75 @@ def additional_issue(
     return
 
 
+# GET: /bond/tokens/{token_address}/additional_issue/batch
+@router.get(
+    "/tokens/{token_address}/additional_issue/batch",
+    response_model=ListBatchIssueRedeemUploadResponse,
+    responses=get_routers_responses()
+)
+def list_all_additional_issue_upload(
+    token_address: str,
+    processed: Optional[bool] = Query(None),
+    sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc (created)"),
+    offset: Optional[int] = Query(None),
+    limit: Optional[int] = Query(None),
+    issuer_address: Optional[str] = Header(None),
+    db: Session = Depends(db_session)
+):
+    # Get a list of uploads
+    query = db.query(BatchIssueRedeemUpload). \
+        filter(BatchIssueRedeemUpload.token_address == token_address). \
+        filter(BatchIssueRedeemUpload.token_type == TokenType.IBET_STRAIGHT_BOND.value). \
+        filter(BatchIssueRedeemUpload.category == BatchIssueRedeemProcessingCategory.ISSUE.value)
+
+    if issuer_address is not None:
+        query = query.filter(BatchIssueRedeemUpload.issuer_address == issuer_address)
+
+    total = query.count()
+
+    if processed is not None:
+        query = query.filter(BatchIssueRedeemUpload.processed == processed)
+
+    count = query.count()
+
+    # Sort
+    if sort_order == 0:  # ASC
+        query = query.order_by(BatchIssueRedeemUpload.created)
+    else:  # DESC
+        query = query.order_by(desc(BatchIssueRedeemUpload.created))
+
+    # Pagination
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+
+    _upload_list: list[BatchIssueRedeemUpload] = query.all()
+
+    uploads = []
+    for _upload in _upload_list:
+        created_utc = timezone("UTC").localize(_upload.created)
+        uploads.append({
+            "upload_id": _upload.upload_id,
+            "issuer_address": _upload.issuer_address,
+            "token_type": _upload.token_type,
+            "token_address": _upload.token_address,
+            "processed": _upload.processed,
+            "created": created_utc.astimezone(local_tz).isoformat()
+        })
+
+    resp = {
+        "result_set": {
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": total
+        },
+        "uploads": uploads
+    }
+    return resp
+
+
 # POST: /bond/tokens/{token_address}/additional_issue/batch
 @router.post(
     "/tokens/{token_address}/additional_issue/batch",
@@ -672,6 +742,75 @@ def redeem_token(
         raise SendTransactionError("failed to send transaction")
 
     return
+
+
+# GET: /bond/tokens/{token_address}/redeem/batch
+@router.get(
+    "/tokens/{token_address}/redeem/batch",
+    response_model=ListBatchIssueRedeemUploadResponse,
+    responses=get_routers_responses()
+)
+def list_all_redeem_upload(
+    token_address: str,
+    processed: Optional[bool] = Query(None),
+    sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc (created)"),
+    offset: Optional[int] = Query(None),
+    limit: Optional[int] = Query(None),
+    issuer_address: Optional[str] = Header(None),
+    db: Session = Depends(db_session)
+):
+    # Get a list of uploads
+    query = db.query(BatchIssueRedeemUpload). \
+        filter(BatchIssueRedeemUpload.token_address == token_address). \
+        filter(BatchIssueRedeemUpload.token_type == TokenType.IBET_STRAIGHT_BOND.value). \
+        filter(BatchIssueRedeemUpload.category == BatchIssueRedeemProcessingCategory.REDEEM.value)
+
+    if issuer_address is not None:
+        query = query.filter(BatchIssueRedeemUpload.issuer_address == issuer_address)
+
+    total = query.count()
+
+    if processed is not None:
+        query = query.filter(BatchIssueRedeemUpload.processed == processed)
+
+    count = query.count()
+
+    # Sort
+    if sort_order == 0:  # ASC
+        query = query.order_by(BatchIssueRedeemUpload.created)
+    else:  # DESC
+        query = query.order_by(desc(BatchIssueRedeemUpload.created))
+
+    # Pagination
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+
+    _upload_list: list[BatchIssueRedeemUpload] = query.all()
+
+    uploads = []
+    for _upload in _upload_list:
+        created_utc = timezone("UTC").localize(_upload.created)
+        uploads.append({
+            "upload_id": _upload.upload_id,
+            "issuer_address": _upload.issuer_address,
+            "token_type": _upload.token_type,
+            "token_address": _upload.token_address,
+            "processed": _upload.processed,
+            "created": created_utc.astimezone(local_tz).isoformat()
+        })
+
+    resp = {
+        "result_set": {
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": total
+        },
+        "uploads": uploads
+    }
+    return resp
 
 
 # POST: /bond/tokens/{token_address}/redeem/batch
@@ -1405,7 +1544,8 @@ def batch_register_personal_info(
 
     return {
         "batch_id": batch_id,
-        "status": batch.status
+        "status": batch.status,
+        "created": timezone("UTC").localize(batch.created).astimezone(local_tz).isoformat()
     }
 
 

@@ -47,7 +47,7 @@ class BatchIssueRedeemUpload(Base):
     processed = Column(Boolean, default=False, index=True)
 
 
-class BatchIssueRedeemProcessingCategory(Enum):
+class BatchIssueRedeemProcessingCategory(str, Enum):
     """Batch Issue/Redeem Category"""
     ISSUE = "Issue"
     REDEEM = "Redeem"

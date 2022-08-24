@@ -94,7 +94,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         assert resp.status_code == 200
         assert resp.json() == {
             "batch_id": ANY,
-            "status": BatchRegisterPersonalInfoUploadStatus.PENDING.value
+            "status": BatchRegisterPersonalInfoUploadStatus.PENDING.value,
+            "created": ANY
         }
 
         _upload: Optional[BatchRegisterPersonalInfoUpload] = db.query(BatchRegisterPersonalInfoUpload).first()
@@ -163,7 +164,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         assert resp.status_code == 200
         assert resp.json() == {
             "batch_id": ANY,
-            "status": BatchRegisterPersonalInfoUploadStatus.PENDING.value
+            "status": BatchRegisterPersonalInfoUploadStatus.PENDING.value,
+            "created": ANY
         }
 
         _upload: Optional[BatchRegisterPersonalInfoUpload] = db.query(BatchRegisterPersonalInfoUpload).first()

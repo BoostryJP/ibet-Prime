@@ -23,6 +23,7 @@ from pydantic import (
 )
 from web3 import Web3
 from app.model.db import BatchRegisterPersonalInfoUploadStatus
+from app.model.schema.types import ResultSet
 
 
 class PersonalInfo(BaseModel):
@@ -66,6 +67,7 @@ class BatchRegisterPersonalInfoUploadResponse(BaseModel):
 
     batch_id: str = Field(description="UUID v4 required")
     status: BatchRegisterPersonalInfoUploadStatus
+    created: str
 
     class Config:
         schema_extra = {
@@ -74,6 +76,12 @@ class BatchRegisterPersonalInfoUploadResponse(BaseModel):
                 "status": "pending",
             }
         }
+
+
+class ListBatchRegisterPersonalInfoUploadResponse(BaseModel):
+    """List All Batch Register PersonalInfo Upload (Response)"""
+    result_set: ResultSet
+    uploads: List[BatchRegisterPersonalInfoUploadResponse]
 
 
 class BatchRegisterPersonalInfoResult(BaseModel):
