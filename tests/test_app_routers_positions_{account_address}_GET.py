@@ -1017,7 +1017,7 @@ class TestAppRoutersPositionsAccountAddressGET:
             ]
         }
 
-    # <Error_1_1>
+    # <Error_1_2>
     # RequestValidationError
     # query(invalid value)
     def test_error_1_2(self, client, db):

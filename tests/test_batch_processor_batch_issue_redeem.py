@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import logging
 import uuid
 from typing import List
-from unittest.mock import patch
+from unittest.mock import patch, ANY
 
 import pytest
 
@@ -31,7 +31,9 @@ from app.model.db import (
     BatchIssueRedeemUpload,
     BatchIssueRedeemProcessingCategory,
     BatchIssueRedeem,
-    TokenType
+    TokenType,
+    Notification,
+    NotificationType
 )
 from app.model.schema import (
     IbetStraightBondAdditionalIssue,
@@ -126,24 +128,37 @@ class TestProcessor:
                 private_key=issuer_pk
             )
 
-            # Assertion: DB
-            _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
-                filter(BatchIssueRedeemUpload.upload_id == upload_id). \
-                first()
-            assert _upload_after.processed == True
+        # Assertion: DB
+        _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
+            filter(BatchIssueRedeemUpload.upload_id == upload_id). \
+            first()
+        assert _upload_after.processed == True
 
-            _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
-                filter(BatchIssueRedeem.upload_id == upload_id). \
-                all()
-            assert len(_upload_data_after) == 1
-            assert _upload_data_after[0].status == 1
+        _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
+            filter(BatchIssueRedeem.upload_id == upload_id). \
+            all()
+        assert len(_upload_data_after) == 1
+        assert _upload_data_after[0].status == 1
 
-            # Assertion: Log
-            assert caplog.record_tuples.count((
-                LOG.name,
-                logging.DEBUG,
-                "Transaction sent successfully: mock_tx_hash"
-            )) == 1
+        # Assertion: Log
+        assert caplog.record_tuples.count((
+            LOG.name,
+            logging.DEBUG,
+            "Transaction sent successfully: mock_tx_hash"
+        )) == 1
+
+        _notification_list = db.query(Notification).all()
+        for _notification in _notification_list:
+            assert _notification.notice_id is not None
+            assert _notification.issuer_address == issuer_address
+            assert _notification.priority == 1
+            assert _notification.type == NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
+            assert _notification.code == 0  # Successful
+            assert _notification.metainfo == {
+                "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
+                "upload_id": upload_id,
+                "error_data_id": []
+            }
 
     # Normal_2
     # token type: IBET_STRAIGHT_BOND
@@ -199,35 +214,48 @@ class TestProcessor:
                 return_value="mock_tx_hash") as IbetStraightBondContract_redeem:
             processor.process()
 
-            # Assertion: contract
-            IbetStraightBondContract_redeem.assert_called_with(
-                contract_address=token_address,
-                data=IbetStraightBondRedeem(
-                    account_address=target_address,
-                    amount=target_amount
-                ),
-                tx_from=issuer_address,
-                private_key=issuer_pk
-            )
+        # Assertion: contract
+        IbetStraightBondContract_redeem.assert_called_with(
+            contract_address=token_address,
+            data=IbetStraightBondRedeem(
+                account_address=target_address,
+                amount=target_amount
+            ),
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
 
-            # Assertion: DB
-            _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
-                filter(BatchIssueRedeemUpload.upload_id == upload_id). \
-                first()
-            assert _upload_after.processed == True
+        # Assertion: DB
+        _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
+            filter(BatchIssueRedeemUpload.upload_id == upload_id). \
+            first()
+        assert _upload_after.processed == True
 
-            _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
-                filter(BatchIssueRedeem.upload_id == upload_id). \
-                all()
-            assert len(_upload_data_after) == 1
-            assert _upload_data_after[0].status == 1
+        _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
+            filter(BatchIssueRedeem.upload_id == upload_id). \
+            all()
+        assert len(_upload_data_after) == 1
+        assert _upload_data_after[0].status == 1
 
-            # Assertion: Log
-            assert caplog.record_tuples.count((
-                LOG.name,
-                logging.DEBUG,
-                "Transaction sent successfully: mock_tx_hash"
-            )) == 1
+        # Assertion: Log
+        assert caplog.record_tuples.count((
+            LOG.name,
+            logging.DEBUG,
+            "Transaction sent successfully: mock_tx_hash"
+        )) == 1
+
+        _notification_list = db.query(Notification).all()
+        for _notification in _notification_list:
+            assert _notification.notice_id is not None
+            assert _notification.issuer_address == issuer_address
+            assert _notification.priority == 1
+            assert _notification.type == NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
+            assert _notification.code == 0  # Successful
+            assert _notification.metainfo == {
+                "category": BatchIssueRedeemProcessingCategory.REDEEM.value,
+                "upload_id": upload_id,
+                "error_data_id": []
+            }
 
     # Normal_3
     # token type: IBET_SHARE
@@ -283,35 +311,48 @@ class TestProcessor:
                 return_value="mock_tx_hash") as IbetShareContract_additional_issue:
             processor.process()
 
-            # Assertion: contract
-            IbetShareContract_additional_issue.assert_called_with(
-                contract_address=token_address,
-                data=IbetShareAdditionalIssue(
-                    account_address=target_address,
-                    amount=target_amount
-                ),
-                tx_from=issuer_address,
-                private_key=issuer_pk
-            )
+        # Assertion: contract
+        IbetShareContract_additional_issue.assert_called_with(
+            contract_address=token_address,
+            data=IbetShareAdditionalIssue(
+                account_address=target_address,
+                amount=target_amount
+            ),
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
 
-            # Assertion: DB
-            _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
-                filter(BatchIssueRedeemUpload.upload_id == upload_id). \
-                first()
-            assert _upload_after.processed == True
+        # Assertion: DB
+        _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
+            filter(BatchIssueRedeemUpload.upload_id == upload_id). \
+            first()
+        assert _upload_after.processed == True
 
-            _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
-                filter(BatchIssueRedeem.upload_id == upload_id). \
-                all()
-            assert len(_upload_data_after) == 1
-            assert _upload_data_after[0].status == 1
+        _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
+            filter(BatchIssueRedeem.upload_id == upload_id). \
+            all()
+        assert len(_upload_data_after) == 1
+        assert _upload_data_after[0].status == 1
 
-            # Assertion: Log
-            assert caplog.record_tuples.count((
-                LOG.name,
-                logging.DEBUG,
-                "Transaction sent successfully: mock_tx_hash"
-            )) == 1
+        # Assertion: Log
+        assert caplog.record_tuples.count((
+            LOG.name,
+            logging.DEBUG,
+            "Transaction sent successfully: mock_tx_hash"
+        )) == 1
+
+        _notification_list = db.query(Notification).all()
+        for _notification in _notification_list:
+            assert _notification.notice_id is not None
+            assert _notification.issuer_address == issuer_address
+            assert _notification.priority == 1
+            assert _notification.type == NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
+            assert _notification.code == 0  # Successful
+            assert _notification.metainfo == {
+                "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
+                "upload_id": upload_id,
+                "error_data_id": []
+            }
 
     # Normal_4
     # token type: IBET_SHARE
@@ -367,35 +408,48 @@ class TestProcessor:
                 return_value="mock_tx_hash") as IbetShareContract_redeem:
             processor.process()
 
-            # Assertion: contract
-            IbetShareContract_redeem.assert_called_with(
-                contract_address=token_address,
-                data=IbetShareRedeem(
-                    account_address=target_address,
-                    amount=target_amount
-                ),
-                tx_from=issuer_address,
-                private_key=issuer_pk
-            )
+        # Assertion: contract
+        IbetShareContract_redeem.assert_called_with(
+            contract_address=token_address,
+            data=IbetShareRedeem(
+                account_address=target_address,
+                amount=target_amount
+            ),
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
 
-            # Assertion: DB
-            _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
-                filter(BatchIssueRedeemUpload.upload_id == upload_id). \
-                first()
-            assert _upload_after.processed == True
+        # Assertion: DB
+        _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
+            filter(BatchIssueRedeemUpload.upload_id == upload_id). \
+            first()
+        assert _upload_after.processed == True
 
-            _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
-                filter(BatchIssueRedeem.upload_id == upload_id). \
-                all()
-            assert len(_upload_data_after) == 1
-            assert _upload_data_after[0].status == 1
+        _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
+            filter(BatchIssueRedeem.upload_id == upload_id). \
+            all()
+        assert len(_upload_data_after) == 1
+        assert _upload_data_after[0].status == 1
 
-            # Assertion: Log
-            assert caplog.record_tuples.count((
-                LOG.name,
-                logging.DEBUG,
-                "Transaction sent successfully: mock_tx_hash"
-            )) == 1
+        # Assertion: Log
+        assert caplog.record_tuples.count((
+            LOG.name,
+            logging.DEBUG,
+            "Transaction sent successfully: mock_tx_hash"
+        )) == 1
+
+        _notification_list = db.query(Notification).all()
+        for _notification in _notification_list:
+            assert _notification.notice_id is not None
+            assert _notification.issuer_address == issuer_address
+            assert _notification.priority == 1
+            assert _notification.type == NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
+            assert _notification.code == 0  # Successful
+            assert _notification.metainfo == {
+                "category": BatchIssueRedeemProcessingCategory.REDEEM.value,
+                "upload_id": upload_id,
+                "error_data_id": []
+            }
 
     ###########################################################################
     # Error Case
@@ -441,27 +495,40 @@ class TestProcessor:
                 return_value="mock_tx_hash") as IbetStraightBondContract_additional_issue:
             processor.process()
 
-            # Assertion: contract
-            IbetStraightBondContract_additional_issue.assert_not_called()
+        # Assertion: contract
+        IbetStraightBondContract_additional_issue.assert_not_called()
 
-            # Assertion: DB
-            _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
-                filter(BatchIssueRedeemUpload.upload_id == upload_id). \
-                first()
-            assert _upload_after.processed == True
+        # Assertion: DB
+        _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
+            filter(BatchIssueRedeemUpload.upload_id == upload_id). \
+            first()
+        assert _upload_after.processed == True
 
-            _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
-                filter(BatchIssueRedeem.upload_id == upload_id). \
-                all()
-            assert len(_upload_data_after) == 1
-            assert _upload_data_after[0].status == 0
+        _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
+            filter(BatchIssueRedeem.upload_id == upload_id). \
+            all()
+        assert len(_upload_data_after) == 1
+        assert _upload_data_after[0].status == 0
 
-            # Assertion: Log
-            assert caplog.record_tuples.count((
-                LOG.name,
-                logging.ERROR,
-                "Issuer account does not exist"
-            )) == 1
+        # Assertion: Log
+        assert caplog.record_tuples.count((
+            LOG.name,
+            logging.ERROR,
+            "Issuer account does not exist"
+        )) == 1
+
+        _notification_list = db.query(Notification).all()
+        for _notification in _notification_list:
+            assert _notification.notice_id is not None
+            assert _notification.issuer_address == issuer_address
+            assert _notification.priority == 1
+            assert _notification.type == NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
+            assert _notification.code == 1  # Failed
+            assert _notification.metainfo == {
+                "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
+                "upload_id": upload_id,
+                "error_data_id": []
+            }
 
     # Error_2
     # Failed to decode keyfile
@@ -512,27 +579,40 @@ class TestProcessor:
                 return_value="mock_tx_hash") as IbetStraightBondContract_additional_issue:
             processor.process()
 
-            # Assertion: contract
-            IbetStraightBondContract_additional_issue.assert_not_called()
+        # Assertion: contract
+        IbetStraightBondContract_additional_issue.assert_not_called()
 
-            # Assertion: DB
-            _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
-                filter(BatchIssueRedeemUpload.upload_id == upload_id). \
-                first()
-            assert _upload_after.processed == True
+        # Assertion: DB
+        _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
+            filter(BatchIssueRedeemUpload.upload_id == upload_id). \
+            first()
+        assert _upload_after.processed == True
 
-            _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
-                filter(BatchIssueRedeem.upload_id == upload_id). \
-                all()
-            assert len(_upload_data_after) == 1
-            assert _upload_data_after[0].status == 0
+        _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
+            filter(BatchIssueRedeem.upload_id == upload_id). \
+            all()
+        assert len(_upload_data_after) == 1
+        assert _upload_data_after[0].status == 0
 
-            # Assertion: Log
-            assert caplog.record_tuples.count((
-                LOG.name,
-                logging.ERROR,
-                "Failed to decode keyfile"
-            )) == 1
+        # Assertion: Log
+        assert caplog.record_tuples.count((
+            LOG.name,
+            logging.ERROR,
+            "Failed to decode keyfile"
+        )) == 1
+
+        _notification_list = db.query(Notification).all()
+        for _notification in _notification_list:
+            assert _notification.notice_id is not None
+            assert _notification.issuer_address == issuer_address
+            assert _notification.priority == 1
+            assert _notification.type == NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
+            assert _notification.code == 2  # Failed
+            assert _notification.metainfo == {
+                "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
+                "upload_id": upload_id,
+                "error_data_id": []
+            }
 
     # Error_3
     # Failed to send transaction
@@ -568,12 +648,19 @@ class TestProcessor:
         _upload.processed = 0
         db.add(_upload)
 
-        _upload_data = BatchIssueRedeem()
-        _upload_data.upload_id = upload_id
-        _upload_data.account_address = target_address
-        _upload_data.amount = target_amount
-        _upload_data.status = 0
-        db.add(_upload_data)
+        _upload_data_1 = BatchIssueRedeem()
+        _upload_data_1.upload_id = upload_id
+        _upload_data_1.account_address = target_address
+        _upload_data_1.amount = target_amount
+        _upload_data_1.status = 0
+        db.add(_upload_data_1)
+
+        _upload_data_2 = BatchIssueRedeem()
+        _upload_data_2.upload_id = upload_id
+        _upload_data_2.account_address = target_address
+        _upload_data_2.amount = target_amount
+        _upload_data_2.status = 0
+        db.add(_upload_data_2)
 
         db.commit()
 
@@ -583,21 +670,36 @@ class TestProcessor:
                 side_effect=SendTransactionError()) as IbetStraightBondContract_additional_issue:
             processor.process()
 
-            # Assertion: DB
-            _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
-                filter(BatchIssueRedeemUpload.upload_id == upload_id). \
-                first()
-            assert _upload_after.processed == True
+        # Assertion: DB
+        _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
+            filter(BatchIssueRedeemUpload.upload_id == upload_id). \
+            first()
+        assert _upload_after.processed == True
 
-            _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
-                filter(BatchIssueRedeem.upload_id == upload_id). \
-                all()
-            assert len(_upload_data_after) == 1
-            assert _upload_data_after[0].status == 2
+        _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
+            filter(BatchIssueRedeem.upload_id == upload_id). \
+            all()
+        assert len(_upload_data_after) == 2
+        assert _upload_data_after[0].status == 2
+        assert _upload_data_after[1].status == 2
 
-            # Assertion: Log
-            assert caplog.record_tuples.count((
-                LOG.name,
-                logging.WARNING,
-                "Failed to send transaction: -"
-            )) == 1
+        # Assertion: Log
+        assert caplog.record_tuples.count((
+            LOG.name,
+            logging.WARNING,
+            "Failed to send transaction: -"
+        )) == 2
+
+        _notification_list = db.query(Notification).all()
+        for _notification in _notification_list:
+            assert _notification.notice_id is not None
+            assert _notification.issuer_address == issuer_address
+            assert _notification.priority == 1
+            assert _notification.type == NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
+            assert _notification.code == 3  # Failed
+            assert _notification.metainfo == {
+                "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
+                "upload_id": upload_id,
+                "error_data_id": ANY
+            }
+            assert len(_notification.metainfo["error_data_id"]) == 2

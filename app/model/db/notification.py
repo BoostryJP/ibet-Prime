@@ -16,12 +16,15 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from pydantic import BaseModel
 from sqlalchemy import (
     Column,
     Integer,
     String,
     JSON
 )
+from .token import TokenType
+from .batch_issue_redeem import BatchIssueRedeemProcessingCategory
 
 from .base import Base
 
@@ -39,6 +42,12 @@ notice_type: BulkTransferError
 notice_type: BatchRegisterPersonalInfoError
 - 0: Issuer does not exist
 - 1: Failed to send transaction
+
+notice_type: BatchIssueRedeemProcessed
+- 0: All records successfully processed
+- 1: Issuer does not exist
+- 2: Failed to decode keyfile
+- 3: Some records are failed to send transaction
 
 notice_type: ScheduleEventError
 - 0: Issuer does not exist
@@ -83,3 +92,44 @@ class NotificationType:
     SCHEDULE_EVENT_ERROR = "ScheduleEventError"
     TRANSFER_APPROVAL_INFO = "TransferApprovalInfo"
     CREATE_LEDGER_INFO = "CreateLedgerInfo"
+    BATCH_ISSUE_REDEEM_PROCESSED = "BatchIssueProcessed"
+
+
+class IssueErrorMetainfo(BaseModel):
+    token_address: str
+    token_type: TokenType
+    arguments: dict
+
+
+class BulkTransferErrorMetainfo(BaseModel):
+    upload_id: str
+    token_type: TokenType
+    error_transfer_id: list[int]
+
+
+class ScheduleEventErrorMetainfo(BaseModel):
+    scheduled_event_id: int
+    token_type: TokenType
+
+
+class TransferApprovalInfoMetaInfo(BaseModel):
+    id: int
+    token_address: str
+
+
+class CreateLedgerInfoMetaInfo(BaseModel):
+    token_address: str
+    token_type: TokenType
+    ledger_id: int
+
+
+class BatchRegisterPersonalInfoErrorMetainfo(BaseModel):
+    upload_id: str
+    error_registration_id: list[int]
+
+
+class BatchIssueRedeemProcessedMetainfo(BaseModel):
+    category: BatchIssueRedeemProcessingCategory
+    upload_id: str
+    error_data_id: list[int]
+

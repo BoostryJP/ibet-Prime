@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import os
 import sys
 import time
+import uuid
 from typing import List
 
 from eth_keyfile import decode_keyfile_json
@@ -38,7 +39,10 @@ from app.model.db import (
     BatchIssueRedeemUpload,
     BatchIssueRedeem,
     BatchIssueRedeemProcessingCategory,
-    TokenType, Account
+    TokenType,
+    Account,
+    Notification,
+    NotificationType
 )
 from app.model.schema import (
     IbetStraightBondAdditionalIssue,
@@ -59,8 +63,7 @@ db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 class Processor:
 
-    @staticmethod
-    def process():
+    def process(self):
         db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
         try:
             upload_list: List[BatchIssueRedeemUpload] = db_session.query(BatchIssueRedeemUpload). \
@@ -73,6 +76,14 @@ class Processor:
                     first()
                 if issuer_account is None:
                     LOG.exception("Issuer account does not exist")
+                    self.__sink_on_notification(
+                        db_session=db_session,
+                        issuer_address=upload.issuer_address,
+                        code=1,
+                        upload_category=upload.category,
+                        upload_id=upload.upload_id,
+                        error_data_id_list=[]
+                    )
                     upload.processed = True
                     db_session.commit()
                     continue
@@ -84,6 +95,14 @@ class Processor:
                     )
                 except (ValueError, TypeError):
                     LOG.exception("Failed to decode keyfile")
+                    self.__sink_on_notification(
+                        db_session=db_session,
+                        issuer_address=upload.issuer_address,
+                        code=2,
+                        upload_category=upload.category,
+                        upload_id=upload.upload_id,
+                        error_data_id_list=[]
+                    )
                     upload.processed = True
                     db_session.commit()
                     continue
@@ -146,11 +165,48 @@ class Processor:
                     finally:
                         db_session.commit()  # commit for each data
 
+                # Process failed data
+                failed_batch_data_list: List[BatchIssueRedeem] = db_session.query(BatchIssueRedeem). \
+                    filter(BatchIssueRedeem.upload_id == upload.upload_id). \
+                    filter(BatchIssueRedeem.status == 2). \
+                    all()
+
+                error_data_id_list = [data.id for data in failed_batch_data_list]
+                # 0: Success, 3: failed
+                code = 3 if len(error_data_id_list) > 0 else 0
+                self.__sink_on_notification(
+                    db_session=db_session,
+                    issuer_address=upload.issuer_address,
+                    code=code,
+                    upload_category=upload.category,
+                    upload_id=upload.upload_id,
+                    error_data_id_list=error_data_id_list
+                )
                 # Update to processed
                 upload.processed = True
                 db_session.commit()
         finally:
             db_session.close()
+
+    @staticmethod
+    def __sink_on_notification(db_session: Session,
+                               issuer_address: str,
+                               upload_category: str,
+                               code: int,
+                               upload_id: str,
+                               error_data_id_list: list[int]):
+        notification = Notification()
+        notification.notice_id = uuid.uuid4()
+        notification.issuer_address = issuer_address
+        notification.priority = 1  # Medium
+        notification.code = code
+        notification.type = NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
+        notification.metainfo = {
+            "category": upload_category,
+            "upload_id": upload_id,
+            "error_data_id": error_data_id_list
+        }
+        db_session.add(notification)
 
 
 def main():
