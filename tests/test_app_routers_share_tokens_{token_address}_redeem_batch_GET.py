@@ -17,20 +17,18 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import uuid
-import pytz
 from unittest import mock
-from unittest.mock import call
 
-from app.model.blockchain import IbetShareContract
 from app.model.db import (
     Token,
-    TokenType, BatchIssueRedeem, BatchIssueRedeemUpload, BatchIssueRedeemProcessingCategory
+    TokenType,
+    BatchIssueRedeemUpload,
+    BatchIssueRedeemProcessingCategory
 )
-from config import TZ
 from tests.account_config import config_eth_account
 
 
-class TestAppRoutersShareTokensTokenAddressRedeemGET:
+class TestAppRoutersShareTokensTokenAddressRedeemBatchGET:
     # target API endpoint
     base_url = "/share/tokens/{}/redeem/batch"
 
@@ -117,7 +115,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
                     "processed": False,
                     "token_address": "token_address_test",
                     "token_type": "IbetShare",
-                    "upload_id": mock.ANY,
+                    "batch_id": mock.ANY,
                     "created": mock.ANY
                 }
             ]
@@ -205,7 +203,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
                     "processed": False,
                     "token_address": "token_address_test",
                     "token_type": "IbetShare",
-                    "upload_id": mock.ANY,
+                    "batch_id": mock.ANY,
                     "created": mock.ANY
                 },
                 {
@@ -213,7 +211,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
                     "processed": False,
                     "token_address": "token_address_test",
                     "token_type": "IbetShare",
-                    "upload_id": mock.ANY,
+                    "batch_id": mock.ANY,
                     "created": mock.ANY
                 },
                 {
@@ -221,7 +219,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
                     "processed": False,
                     "token_address": "token_address_test",
                     "token_type": "IbetShare",
-                    "upload_id": mock.ANY,
+                    "batch_id": mock.ANY,
                     "created": mock.ANY
                 },
                 {
@@ -229,7 +227,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
                     "processed": True,
                     "token_address": "token_address_test",
                     "token_type": "IbetShare",
-                    "upload_id": mock.ANY,
+                    "batch_id": mock.ANY,
                     "created": mock.ANY
                 }
             ]
@@ -319,7 +317,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
                     "processed": False,
                     "token_address": "token_address_test",
                     "token_type": "IbetShare",
-                    "upload_id": mock.ANY,
+                    "batch_id": mock.ANY,
                     "created": mock.ANY
                 },
                 {
@@ -327,7 +325,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
                     "processed": True,
                     "token_address": "token_address_test",
                     "token_type": "IbetShare",
-                    "upload_id": mock.ANY,
+                    "batch_id": mock.ANY,
                     "created": mock.ANY
                 }
             ]
@@ -419,7 +417,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
                     "processed": False,
                     "token_address": "token_address_test",
                     "token_type": "IbetShare",
-                    "upload_id": mock.ANY,
+                    "batch_id": mock.ANY,
                     "created": mock.ANY
                 },
                 {
@@ -427,7 +425,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
                     "processed": False,
                     "token_address": "token_address_test",
                     "token_type": "IbetShare",
-                    "upload_id": mock.ANY,
+                    "batch_id": mock.ANY,
                     "created": mock.ANY
                 },
                 {
@@ -435,7 +433,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
                     "processed": False,
                     "token_address": "token_address_test",
                     "token_type": "IbetShare",
-                    "upload_id": mock.ANY,
+                    "batch_id": mock.ANY,
                     "created": mock.ANY
                 }
             ]
@@ -527,7 +525,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
                     "processed": False,
                     "token_address": "token_address_test",
                     "token_type": "IbetShare",
-                    "upload_id": mock.ANY,
+                    "batch_id": mock.ANY,
                     "created": mock.ANY
                 },
                 {
@@ -535,7 +533,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
                     "processed": True,
                     "token_address": "token_address_test",
                     "token_type": "IbetShare",
-                    "upload_id": mock.ANY,
+                    "batch_id": mock.ANY,
                     "created": mock.ANY
                 }
             ]
@@ -626,7 +624,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
                     "processed": True,
                     "token_address": "token_address_test",
                     "token_type": "IbetShare",
-                    "upload_id": mock.ANY,
+                    "batch_id": mock.ANY,
                     "created": mock.ANY
                 },
                 {
@@ -634,7 +632,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
                     "processed": False,
                     "token_address": "token_address_test",
                     "token_type": "IbetShare",
-                    "upload_id": mock.ANY,
+                    "batch_id": mock.ANY,
                     "created": mock.ANY
                 },
                 {
@@ -642,7 +640,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
                     "processed": True,
                     "token_address": "token_address_test",
                     "token_type": "IbetShare",
-                    "upload_id": mock.ANY,
+                    "batch_id": mock.ANY,
                     "created": mock.ANY
                 },
                 {
@@ -650,7 +648,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
                     "processed": False,
                     "token_address": "token_address_test",
                     "token_type": "IbetShare",
-                    "upload_id": mock.ANY,
+                    "batch_id": mock.ANY,
                     "created": mock.ANY
                 }
             ]

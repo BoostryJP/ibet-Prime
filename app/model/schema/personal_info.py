@@ -19,9 +19,11 @@ SPDX-License-Identifier: Apache-2.0
 from typing import Optional, List
 from pydantic import (
     BaseModel,
-    validator, Field
+    validator,
+    Field
 )
 from web3 import Web3
+
 from app.model.db import BatchRegisterPersonalInfoUploadStatus
 from app.model.schema.types import ResultSet
 

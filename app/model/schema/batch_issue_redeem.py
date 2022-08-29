@@ -17,7 +17,10 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from typing import List
-from pydantic import BaseModel
+from pydantic import (
+    BaseModel,
+    Field
+)
 
 from .types import ResultSet
 from app.model.db import TokenType
@@ -29,12 +32,19 @@ from app.model.db import TokenType
 
 class BatchIssueRedeemUpload(BaseModel):
     """Batch issue/redeem Upload"""
-    upload_id: str
+    batch_id: str = Field(description="UUID v4 required")
     issuer_address: str
     token_type: TokenType
     token_address: str
     processed: bool
     created: str
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "batch_id": "cfd83622-34dc-4efe-a68b-2cc275d3d824"
+            }
+        }
 
 
 class ListBatchIssueRedeemUploadResponse(BaseModel):

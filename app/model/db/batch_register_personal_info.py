@@ -36,7 +36,7 @@ class BatchRegisterPersonalInfoUpload(Base):
     upload_id = Column(String(36), primary_key=True)
     # issuer address
     issuer_address = Column(String(42), nullable=False, index=True)
-    # processing status (pending:0, succeeded:1, failed:2)
+    # processing status (BatchRegisterPersonalInfoUploadStatus)
     status = Column(String, nullable=False, index=True)
 
 

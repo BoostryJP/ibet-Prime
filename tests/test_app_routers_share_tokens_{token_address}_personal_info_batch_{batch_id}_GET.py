@@ -66,7 +66,6 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchBatchIdGET:
     ###########################################################################
 
     # <Normal_1>
-    # With issuer_address(header)
     def test_normal_1(self, client, db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
@@ -171,7 +170,7 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchBatchIdGET:
     ###########################################################################
 
     # <Error_1>
-    # Batch not found
+    # RequestValidationError: issuer_address
     def test_error_1(self, client, db):
         test_account = config_eth_account("user2")
         _issuer_address = test_account["address"]
@@ -179,7 +178,37 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchBatchIdGET:
 
         # request target API
         resp = client.get(
-            self.base_url.format(_token_address, "test_event_id"),
+            self.base_url.format(_token_address, "test_batch_id"),
+            headers={
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            'meta': {
+                'code': 1,
+                'title': 'RequestValidationError'
+            },
+            'detail': [
+                {
+                    'loc': ['header', 'issuer-address'],
+                    'msg': 'field required',
+                    'type': 'value_error.missing'
+                }
+            ]
+        }
+
+    # <Error_2>
+    # Batch not found
+    def test_error_2(self, client, db):
+        test_account = config_eth_account("user2")
+        _issuer_address = test_account["address"]
+        _token_address = "token_address_test"
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(_token_address, "test_batch_id"),
             headers={
                 "issuer-address": _issuer_address,
             }
