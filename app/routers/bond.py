@@ -84,6 +84,7 @@ from app.model.schema.batch_issue_redeem import (
 )
 from app.model.schema.personal_info import (
     BatchRegisterPersonalInfoUploadResponse,
+    ListBatchRegisterPersonalInfoUploadResponse,
     GetBatchRegisterPersonalInfoResponse,
     BatchRegisterPersonalInfoResult
 )
@@ -496,7 +497,7 @@ def additional_issue(
 @router.get(
     "/tokens/{token_address}/additional_issue/batch",
     response_model=ListBatchIssueRedeemUploadResponse,
-    responses=get_routers_responses()
+    responses=get_routers_responses(422)
 )
 def list_all_additional_issue_upload(
     token_address: str,
@@ -541,7 +542,7 @@ def list_all_additional_issue_upload(
     for _upload in _upload_list:
         created_utc = timezone("UTC").localize(_upload.created)
         uploads.append({
-            "upload_id": _upload.upload_id,
+            "batch_id": _upload.upload_id,
             "issuer_address": _upload.issuer_address,
             "token_type": _upload.token_type,
             "token_address": _upload.token_address,
@@ -748,7 +749,7 @@ def redeem_token(
 @router.get(
     "/tokens/{token_address}/redeem/batch",
     response_model=ListBatchIssueRedeemUploadResponse,
-    responses=get_routers_responses()
+    responses=get_routers_responses(422)
 )
 def list_all_redeem_upload(
     token_address: str,
@@ -793,7 +794,7 @@ def list_all_redeem_upload(
     for _upload in _upload_list:
         created_utc = timezone("UTC").localize(_upload.created)
         uploads.append({
-            "upload_id": _upload.upload_id,
+            "batch_id": _upload.upload_id,
             "issuer_address": _upload.issuer_address,
             "token_type": _upload.token_type,
             "token_address": _upload.token_address,
@@ -1477,6 +1478,80 @@ def register_holder_personal_info(
         raise SendTransactionError("failed to register personal information")
 
     return
+
+
+# GET: /bond/tokens/{token_address}/personal_info/batch
+@router.get(
+    "/tokens/{token_address}/personal_info/batch",
+    response_model=ListBatchRegisterPersonalInfoUploadResponse,
+    responses=get_routers_responses(422, 404, InvalidParameterError)
+)
+def list_all_personal_info_batch_registration_uploads(
+        token_address: str,
+        issuer_address: str = Header(...),
+        status: Optional[str] = Query(None),
+        sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc (created)"),
+        offset: Optional[int] = Query(None),
+        limit: Optional[int] = Query(None),
+        db: Session = Depends(db_session)):
+    """List all personal information batch registration uploads"""
+
+    # Verify that the token is issued by the issuer_address
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Get a list of uploads
+    query = db.query(BatchRegisterPersonalInfoUpload). \
+        filter(BatchRegisterPersonalInfoUpload.issuer_address == issuer_address)
+
+    total = query.count()
+
+    if status is not None:
+        query = query.filter(BatchRegisterPersonalInfoUpload.status == status)
+
+    count = query.count()
+
+    # Sort
+    if sort_order == 0:  # ASC
+        query = query.order_by(BatchRegisterPersonalInfoUpload.created)
+    else:  # DESC
+        query = query.order_by(desc(BatchRegisterPersonalInfoUpload.created))
+
+    # Pagination
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+
+    _upload_list: list[BatchRegisterPersonalInfoUpload] = query.all()
+
+    uploads = []
+    for _upload in _upload_list:
+        created_utc = timezone("UTC").localize(_upload.created)
+        uploads.append({
+            "batch_id": _upload.upload_id,
+            "issuer_address": _upload.issuer_address,
+            "status": _upload.status,
+            "created": created_utc.astimezone(local_tz).isoformat()
+        })
+
+    return ListBatchRegisterPersonalInfoUploadResponse(
+        result_set={
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": total
+        },
+        uploads=uploads
+    )
 
 
 # POST: /bond/tokens/{token_address}/personal_info/batch
