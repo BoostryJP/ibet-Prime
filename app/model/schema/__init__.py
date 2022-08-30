@@ -16,10 +16,6 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from .index import (
-    E2EEResponse,
-    BlockNumberResponse
-)
 from .account import (
     AccountCreateKeyRequest,
     AccountGenerateRsaKeyRequest,
@@ -29,6 +25,17 @@ from .account import (
     AccountResponse,
     AccountAuthTokenResponse
 )
+from .batch_issue_redeem import (
+    BatchIssueRedeemUploadIdResponse,
+    GetBatchIssueRedeemResponse,
+    GetBatchIssueRedeemResult,
+    ListBatchIssueRedeemUploadResponse
+)
+from .bulk_transfer import (
+    BulkTransferUploadIdResponse,
+    BulkTransferUploadResponse,
+    BulkTransferResponse
+)
 from .e2e_messaging import (
     E2EMessagingAccountCreateRequest,
     E2EMessagingAccountUpdateRsaKeyRequest,
@@ -37,6 +44,24 @@ from .e2e_messaging import (
     E2EMessagingAccountResponse,
     E2EMessagingResponse,
     ListAllE2EMessagingResponse
+)
+from .file import (
+    UploadFileRequest,
+    FileResponse,
+    ListAllFilesResponse,
+    DownloadFileResponse
+)
+from .holder import (
+    HolderResponse,
+    HolderCountResponse
+)
+from .index import (
+    E2EEResponse,
+    BlockNumberResponse
+)
+from .issue_redeem import (
+    IssueRedeemEvent,
+    IssueRedeemHistoryResponse
 )
 from .ledger import (
     CreateUpdateLedgerTemplateRequest,
@@ -49,6 +74,24 @@ from .ledger import (
     RetrieveLedgerDetailsDataResponse
 )
 from .notification import ListAllNotificationsResponse
+from .personal_info import (
+    ModifyPersonalInfoRequest,
+    RegisterPersonalInfoRequest,
+    BatchRegisterPersonalInfoUploadResponse,
+    ListBatchRegisterPersonalInfoUploadResponse,
+    GetBatchRegisterPersonalInfoResponse,
+    BatchRegisterPersonalInfoResult
+)
+from .position import (
+    PositionResponse,
+    ListAllPositionResponse
+)
+from .scheduled_events import (
+    IbetStraightBondScheduledUpdate,
+    IbetShareScheduledUpdate,
+    ScheduledEventIdResponse,
+    ScheduledEventResponse
+)
 from .token import (
     IbetStraightBondCreate,
     IbetStraightBondUpdate,
@@ -67,43 +110,18 @@ from .token import (
     IbetStraightBondResponse,
     IbetShareResponse
 )
-from .holder import (
-    HolderResponse,
-    HolderCountResponse
+from .token_holders import (
+    CreateTokenHoldersListRequest,
+    CreateTokenHoldersListResponse,
+    GetTokenHoldersListResponse
 )
 from .transfer import (
     UpdateTransferApprovalRequest,
+    UpdateTransferApprovalOperationType,
     TransferResponse,
     TransferHistoryResponse,
     TransferApprovalsResponse,
     TransferApprovalTokenResponse,
     TransferApprovalHistoryResponse
 )
-from .batch_issue_redeem import (
-    BatchIssueRedeemUploadIdResponse
-)
-from .bulk_transfer import (
-    BulkTransferUploadIdResponse,
-    BulkTransferUploadResponse,
-    BulkTransferResponse
-)
-from .scheduled_events import (
-    IbetStraightBondScheduledUpdate,
-    IbetShareScheduledUpdate,
-    ScheduledEventIdResponse,
-    ScheduledEventResponse
-)
-from .personal_info import (
-    ModifyPersonalInfoRequest,
-    RegisterPersonalInfoRequest
-)
-from .position import (
-    PositionResponse,
-    ListAllPositionResponse
-)
-from .file import (
-    UploadFileRequest,
-    FileResponse,
-    ListAllFilesResponse,
-    DownloadFileResponse
-)
+from .types import ResultSet

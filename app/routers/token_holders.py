@@ -28,7 +28,7 @@ from web3.middleware import geth_poa_middleware
 import config
 
 from app.database import db_session
-from app.model.schema.token_holders import (
+from app.model.schema import (
     CreateTokenHoldersListRequest,
     CreateTokenHoldersListResponse,
     GetTokenHoldersListResponse,

@@ -28,35 +28,44 @@ from sqlalchemy import (
 from .base import Base
 
 
-class IDXTransfer(Base):
-    """INDEX Transfer"""
-    __tablename__ = "idx_transfer"
+class IDXIssueRedeem(Base):
+    """INDEX Issue/Redeem"""
+    __tablename__ = "idx_issue_redeem"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
+    # event type
+    event_type = Column(String(10), index=True)
     # transaction hash
     transaction_hash = Column(String(66), index=True)
     # token address
     token_address = Column(String(42), index=True)
-    # transfer from address
-    from_address = Column(String(42), index=True)
-    # transfer to address
-    to_address = Column(String(42), index=True)
-    # transfer amount
+    # locked address
+    locked_address = Column(String(42), index=True)
+    # target (account) address
+    target_address = Column(String(42), index=True)
+    # amount
     amount = Column(BigInteger)
     # block timestamp
     block_timestamp = Column(DateTime)
 
 
-class IDXTransfersSortItem(str, Enum):
+class IDXIssueRedeemEventType(str, Enum):
+    """Issue/Redeem event type"""
+    ISSUE = "Issue"
+    REDEEM = "Redeem"
+
+
+class IDXIssueRedeemSortItem(str, Enum):
+    """Issue/Redeem sort item"""
     BLOCK_TIMESTAMP = "block_timestamp"
-    FROM_ADDRESS = "from_address"
-    TO_ADDRESS = "to_address"
+    LOCKED_ADDRESS = "locked_address"
+    TARGET_ADDRESS = "target_address"
     AMOUNT = "amount"
 
 
-class IDXTransferBlockNumber(Base):
-    """Synchronized blockNumber of IDXTransfer"""
-    __tablename__ = "idx_transfer_block_number"
+class IDXIssueRedeemBlockNumber(Base):
+    """Synchronized blockNumber of IDXIssueRedeem"""
+    __tablename__ = "idx_issue_redeem_block_number"
 
     # sequence id
     id = Column(BigInteger, primary_key=True, autoincrement=True)

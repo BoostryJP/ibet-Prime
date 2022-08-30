@@ -16,6 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from enum import Enum
+
 from sqlalchemy import (
     Boolean,
     Column,
@@ -76,6 +78,18 @@ class IDXTransferApproval(Base):
             "escrow_finished": self.escrow_finished,
             "transfer_approved": self.transfer_approved
         }
+
+
+class IDXTransferApprovalsSortItem(str, Enum):
+    ID = "id"
+    EXCHANGE_ADDRESS = "exchange_address"
+    APPLICATION_ID = "application_id"
+    FROM_ADDRESS = "from_address"
+    TO_ADDRESS = "to_address"
+    AMOUNT = "amount"
+    APPLICATION_DATETIME = "application_datetime"
+    APPROVAL_DATETIME = "approval_datetime"
+    STATUS = "status"
 
 
 class IDXTransferApprovalBlockNumber(Base):

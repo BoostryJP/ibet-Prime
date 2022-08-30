@@ -16,21 +16,32 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from enum import Enum
-from typing import Optional
+from typing import List
+from pydantic import BaseModel
 
-from pydantic import (
-    BaseModel,
-    constr
-)
-
-MMDD_constr = constr(regex="^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$")
-YYYYMMDD_constr = constr(regex="^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$")
+from .types import ResultSet
 
 
-class ResultSet(BaseModel):
-    """result set for pagination"""
-    count: Optional[int]
-    offset: Optional[int]
-    limit: Optional[int]
-    total: Optional[int]
+############################
+# REQUEST
+############################
+
+
+############################
+# RESPONSE
+############################
+
+class IssueRedeemEvent(BaseModel):
+    """Issue/Redeem event"""
+    transaction_hash: str
+    token_address: str
+    locked_address: str
+    target_address: str
+    amount: int
+    block_timestamp: str
+
+
+class IssueRedeemHistoryResponse(BaseModel):
+    """Issue/Redeem history"""
+    result_set: ResultSet
+    history: List[IssueRedeemEvent]
