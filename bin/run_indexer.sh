@@ -27,6 +27,7 @@ python batch/indexer_position_share.py &
 python batch/indexer_token_holders.py &
 python batch/indexer_transfer.py &
 python batch/indexer_transfer_approval.py &
+python batch/indexer_issue_redeem.py &
 
 if [ -n "${E2E_MESSAGING_CONTRACT_ADDRESS}" ]; then
   python batch/indexer_e2e_messaging.py &

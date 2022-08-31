@@ -43,7 +43,7 @@ from app.utils.web3_utils import Web3Wrapper
 from app.exceptions import ServiceUnavailableError
 import batch_log
 
-process_name = "INDEXER-Transfer"
+process_name = "INDEXER-Issue-Redeem"
 LOG = batch_log.get_logger(process_name=process_name)
 
 web3 = Web3Wrapper()
