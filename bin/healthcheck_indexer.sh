@@ -23,6 +23,7 @@ PROC_LIST="${PROC_LIST} batch/indexer_position_share.py"
 PROC_LIST="${PROC_LIST} batch/indexer_token_holders.py"
 PROC_LIST="${PROC_LIST} batch/indexer_transfer.py"
 PROC_LIST="${PROC_LIST} batch/indexer_transfer_approval.py"
+PROC_LIST="${PROC_LIST} batch/indexer_issue_redeem.py"
 
 if [ -n "${E2E_MESSAGING_CONTRACT_ADDRESS}" ]; then
   PROC_LIST="${PROC_LIST} batch/indexer_e2e_messaging.py"

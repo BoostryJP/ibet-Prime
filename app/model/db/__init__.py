@@ -55,12 +55,20 @@ from .idx_e2e_messaging import (
     IDXE2EMessaging,
     IDXE2EMessagingBlockNumber
 )
+from .idx_issue_redeem import (
+    IDXIssueRedeem,
+    IDXIssueRedeemEventType,
+    IDXIssueRedeemSortItem,
+    IDXIssueRedeemBlockNumber
+)
 from .idx_transfer import (
     IDXTransfer,
+    IDXTransfersSortItem,
     IDXTransferBlockNumber
 )
 from .idx_transfer_approval import (
     IDXTransferApproval,
+    IDXTransferApprovalsSortItem,
     IDXTransferApprovalBlockNumber
 )
 from .idx_position import (

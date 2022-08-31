@@ -75,32 +75,17 @@ from app.model.schema import (
     IbetSecurityTokenCancelTransfer,
     IbetSecurityTokenEscrowApproveTransfer,
     UpdateTransferApprovalRequest,
-    BatchIssueRedeemUploadIdResponse
-)
-from app.model.schema.batch_issue_redeem import (
+    BatchIssueRedeemUploadIdResponse,
     GetBatchIssueRedeemResponse,
     GetBatchIssueRedeemResult,
-    ListBatchIssueRedeemUploadResponse
-)
-from app.model.schema.personal_info import (
+    ListBatchIssueRedeemUploadResponse,
     BatchRegisterPersonalInfoUploadResponse,
     ListBatchRegisterPersonalInfoUploadResponse,
     GetBatchRegisterPersonalInfoResponse,
-    BatchRegisterPersonalInfoResult
+    BatchRegisterPersonalInfoResult,
+    UpdateTransferApprovalOperationType,
+    IssueRedeemHistoryResponse
 )
-from app.model.schema.types import (
-    TransfersSortItem,
-    TransferApprovalsSortItem,
-    UpdateTransferApprovalOperationType
-)
-from app.utils.contract_utils import ContractUtils
-from app.utils.check_utils import (
-    validate_headers,
-    address_is_valid_address,
-    eoa_password_is_encrypted_value,
-    check_auth
-)
-from app.utils.docs_utils import get_routers_responses
 from app.model.db import (
     Account,
     Token,
@@ -111,7 +96,9 @@ from app.model.db import (
     BulkTransfer,
     BulkTransferUpload,
     IDXTransfer,
+    IDXTransfersSortItem,
     IDXTransferApproval,
+    IDXTransferApprovalsSortItem,
     ScheduledEvents,
     UTXO,
     BatchIssueRedeemUpload,
@@ -119,7 +106,10 @@ from app.model.db import (
     BatchIssueRedeemProcessingCategory,
     BatchRegisterPersonalInfoUpload,
     BatchRegisterPersonalInfoUploadStatus,
-    BatchRegisterPersonalInfo
+    BatchRegisterPersonalInfo,
+    IDXIssueRedeemSortItem,
+    IDXIssueRedeem,
+    IDXIssueRedeemEventType
 )
 from app.model.blockchain import (
     IbetShareContract,
@@ -127,6 +117,14 @@ from app.model.blockchain import (
     PersonalInfoContract,
     IbetSecurityTokenEscrow
 )
+from app.utils.contract_utils import ContractUtils
+from app.utils.check_utils import (
+    validate_headers,
+    address_is_valid_address,
+    eoa_password_is_encrypted_value,
+    check_auth
+)
+from app.utils.docs_utils import get_routers_responses
 from app.exceptions import (
     InvalidParameterError,
     SendTransactionError,
@@ -416,6 +414,79 @@ def update_token(
     return
 
 
+# GET: /share/tokens/{token_address}/additional_issue
+@router.get(
+    "/tokens/{token_address}/additional_issue",
+    response_model=IssueRedeemHistoryResponse,
+    responses=get_routers_responses(422, 404, InvalidParameterError)
+)
+def list_additional_issuance_history(
+        token_address: str,
+        sort_item: IDXIssueRedeemSortItem = Query(IDXIssueRedeemSortItem.BLOCK_TIMESTAMP),
+        sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
+        offset: Optional[int] = Query(None),
+        limit: Optional[int] = Query(None),
+        db: Session = Depends(db_session)):
+    """List additional issuance history"""
+
+    # Get token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Get history record
+    query = db.query(IDXIssueRedeem). \
+        filter(IDXIssueRedeem.event_type == IDXIssueRedeemEventType.ISSUE). \
+        filter(IDXIssueRedeem.token_address == token_address)
+    total = query.count()
+    count = total
+
+    # Sort
+    sort_attr = getattr(IDXIssueRedeem, sort_item.value, None)
+    if sort_order == 0:  # ASC
+        query = query.order_by(sort_attr)
+    else:  # DESC
+        query = query.order_by(desc(sort_attr))
+    if sort_item != IDXIssueRedeemSortItem.BLOCK_TIMESTAMP:
+        # NOTE: Set secondary sort for consistent results
+        query = query.order_by(desc(IDXIssueRedeem.block_timestamp))
+
+    # Pagination
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+    _events: List[IDXIssueRedeem] = query.all()
+
+    history = []
+    for _event in _events:
+        block_timestamp_utc = timezone("UTC").localize(_event.block_timestamp)
+        history.append({
+            "transaction_hash": _event.transaction_hash,
+            "token_address": token_address,
+            "locked_address": _event.locked_address,
+            "target_address": _event.target_address,
+            "amount": _event.amount,
+            "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat()
+        })
+
+    return IssueRedeemHistoryResponse(
+        result_set={
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": total
+        },
+        history=history
+    )
+
+
 # POST: /share/tokens/{token_address}/additional_issue
 @router.post(
     "/tokens/{token_address}/additional_issue",
@@ -665,6 +736,79 @@ def retrieve_batch_additional_issue(
                 status=record.status
             ) for record in record_list
         ]
+    )
+
+
+# GET: /share/tokens/{token_address}/redeem
+@router.get(
+    "/tokens/{token_address}/redeem",
+    response_model=IssueRedeemHistoryResponse,
+    responses=get_routers_responses(422, 404, InvalidParameterError)
+)
+def list_redeem_history(
+        token_address: str,
+        sort_item: IDXIssueRedeemSortItem = Query(IDXIssueRedeemSortItem.BLOCK_TIMESTAMP),
+        sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
+        offset: Optional[int] = Query(None),
+        limit: Optional[int] = Query(None),
+        db: Session = Depends(db_session)):
+    """List redemption history"""
+
+    # Get token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_SHARE). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Get history record
+    query = db.query(IDXIssueRedeem). \
+        filter(IDXIssueRedeem.event_type == IDXIssueRedeemEventType.REDEEM). \
+        filter(IDXIssueRedeem.token_address == token_address)
+    total = query.count()
+    count = total
+
+    # Sort
+    sort_attr = getattr(IDXIssueRedeem, sort_item.value, None)
+    if sort_order == 0:  # ASC
+        query = query.order_by(sort_attr)
+    else:  # DESC
+        query = query.order_by(desc(sort_attr))
+    if sort_item != IDXIssueRedeemSortItem.BLOCK_TIMESTAMP:
+        # NOTE: Set secondary sort for consistent results
+        query = query.order_by(desc(IDXIssueRedeem.block_timestamp))
+
+    # Pagination
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+    _events: List[IDXIssueRedeem] = query.all()
+
+    history = []
+    for _event in _events:
+        block_timestamp_utc = timezone("UTC").localize(_event.block_timestamp)
+        history.append({
+            "transaction_hash": _event.transaction_hash,
+            "token_address": token_address,
+            "locked_address": _event.locked_address,
+            "target_address": _event.target_address,
+            "amount": _event.amount,
+            "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat()
+        })
+
+    return IssueRedeemHistoryResponse(
+        result_set={
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": total
+        },
+        history=history
     )
 
 
@@ -1732,7 +1876,7 @@ def transfer_ownership(
 )
 def list_transfer_history(
         token_address: str,
-        sort_item: TransfersSortItem = Query(TransfersSortItem.BLOCK_TIMESTAMP),
+        sort_item: IDXTransfersSortItem = Query(IDXTransfersSortItem.BLOCK_TIMESTAMP),
         sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
         offset: Optional[int] = Query(None),
         limit: Optional[int] = Query(None),
@@ -1764,7 +1908,7 @@ def list_transfer_history(
         query = query.order_by(sort_attr)
     else:  # DESC
         query = query.order_by(desc(sort_attr))
-    if sort_item != TransfersSortItem.BLOCK_TIMESTAMP:
+    if sort_item != IDXTransfersSortItem.BLOCK_TIMESTAMP:
         # NOTE: Set secondary sort for consistent results
         query = query.order_by(desc(IDXTransfer.block_timestamp))
 
@@ -1903,7 +2047,7 @@ def list_token_transfer_approval_history(
             le=3,
             description="0:unapproved, 1:escrow_finished, 2:transferred, 3:canceled"
         ),
-        sort_item: Optional[TransferApprovalsSortItem] = Query(TransferApprovalsSortItem.ID),
+        sort_item: Optional[IDXTransferApprovalsSortItem] = Query(IDXTransferApprovalsSortItem.ID),
         sort_order: Optional[int] = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
         offset: Optional[int] = Query(None),
         limit: Optional[int] = Query(None),
@@ -1960,7 +2104,7 @@ def list_token_transfer_approval_history(
     count = query.count()
 
     # Sort
-    if sort_item != TransferApprovalsSortItem.STATUS:
+    if sort_item != IDXTransferApprovalsSortItem.STATUS:
         sort_attr = getattr(subquery, sort_item, None)
     else:
         sort_attr = literal_column("status")
@@ -1968,7 +2112,7 @@ def list_token_transfer_approval_history(
         query = query.order_by(sort_attr)
     else:  # DESC
         query = query.order_by(desc(sort_attr))
-    if sort_item != TransferApprovalsSortItem.ID:
+    if sort_item != IDXTransferApprovalsSortItem.ID:
         # NOTE: Set secondary sort for consistent results
         query = query.order_by(desc(subquery.id))
 
