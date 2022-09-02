@@ -61,7 +61,8 @@ from app.model.schema import (
 )
 from app.exceptions import (
     SendTransactionError,
-    ServiceUnavailableError
+    ServiceUnavailableError,
+    ContractRevertError
 )
 import batch_log
 
@@ -155,8 +156,8 @@ class Processor:
                     raw_keyfile_json=keyfile_json,
                     password=decrypt_password.encode("utf-8")
                 )
-            except Exception as err:
-                LOG.exception(f"Could not get the private key of the issuer of id:{_event.id}", err)
+            except Exception:
+                LOG.exception(f"Could not get the private key of the issuer of id:{_event.id}")
                 self.__sink_on_finish_event_process(
                     db_session=db_session,
                     record_id=_event.id,
@@ -196,6 +197,20 @@ class Processor:
                     db_session=db_session,
                     record_id=_event.id,
                     status=1
+                )
+            except ContractRevertError as e:
+                LOG.warning(f"Transaction reverted: id=<{_event.id}> error_code:<{e.code}> error_msg:<{e.message}>")
+                self.__sink_on_finish_event_process(
+                    db_session=db_session,
+                    record_id=_event.id,
+                    status=2
+                )
+                self.__sink_on_error_notification(
+                    db_session=db_session,
+                    issuer_address=_event.issuer_address,
+                    code=2,
+                    scheduled_event_id=_event.event_id,
+                    token_type=_event.token_type
                 )
             except SendTransactionError:
                 LOG.warning(f"Failed to send transaction: id=<{_event.id}>")

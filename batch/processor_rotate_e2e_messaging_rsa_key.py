@@ -49,7 +49,8 @@ from app.utils.e2ee_utils import E2EEUtils
 from app.utils.web3_utils import Web3Wrapper
 from app.exceptions import (
     SendTransactionError,
-    ServiceUnavailableError
+    ServiceUnavailableError,
+    ContractRevertError
 )
 import batch_log
 
@@ -122,9 +123,9 @@ class Processor:
                     raw_keyfile_json=e2e_messaging_account.keyfile,
                     password=eoa_password.encode("utf-8")
                 )
-            except Exception as err:
+            except Exception:
                 LOG.exception(f"Could not get the EOA private key: "
-                              f"account_address={e2e_messaging_account.account_address}", err)
+                              f"account_address={e2e_messaging_account.account_address}")
                 return
             try:
                 tx_hash, _ = E2EMessaging.set_public_key(
@@ -134,6 +135,9 @@ class Processor:
                     tx_from=e2e_messaging_account.account_address,
                     private_key=private_key
                 )
+            except ContractRevertError as e:
+                LOG.warning(f"Transaction reverted: account_address=<{e2e_messaging_account.account_address}> error_code:<{e.code}> error_msg:<{e.message}>")
+                return
             except SendTransactionError:
                 LOG.warning(f"Failed to send transaction: account_address={e2e_messaging_account.account_address}")
                 return

@@ -51,8 +51,10 @@ from app.model.schema import (
     IbetShareRedeem
 )
 from app.utils.e2ee_utils import E2EEUtils
-from app.exceptions import SendTransactionError
-
+from app.exceptions import (
+    SendTransactionError,
+    ContractRevertError
+)
 import batch_log
 
 process_name = "PROCESSOR-Batch-Issue-Redeem"
@@ -159,6 +161,9 @@ class Processor:
                                 )
                         LOG.debug(f"Transaction sent successfully: {tx_hash}")
                         batch_data.status = 1
+                    except ContractRevertError as e:
+                        LOG.warning(f"Transaction reverted: upload_id=<{batch_data.upload_id}> error_code:<{e.code}> error_msg:<{e.message}>")
+                        batch_data.status = 2
                     except SendTransactionError:
                         LOG.warning(f"Failed to send transaction: {tx_hash}")
                         batch_data.status = 2
