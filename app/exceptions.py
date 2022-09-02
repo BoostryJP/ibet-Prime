@@ -35,6 +35,9 @@ class ContractRevertError(Exception):
         self.message = message
         super().__init__(message)
 
+    def __repr__(self):
+        return f"<ContractRevertError(code={self.code}, message={self.message})>"
+
 
 class AuthorizationError(Exception):
     pass

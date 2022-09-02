@@ -50,7 +50,10 @@ from app.model.schema import (
     IbetSecurityTokenCancelTransfer
 )
 from app.model.blockchain import IbetExchangeInterface
-from app.exceptions import SendTransactionError, ContractRevertError
+from app.exceptions import (
+    SendTransactionError,
+    ContractRevertError
+)
 from app import log
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper

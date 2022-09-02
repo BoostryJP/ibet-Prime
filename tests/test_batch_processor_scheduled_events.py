@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import logging
 import pytest
 from unittest.mock import patch
 from datetime import (
@@ -32,15 +33,24 @@ from app.model.db import (
     NotificationType
 )
 from app.utils.e2ee_utils import E2EEUtils
-from app.exceptions import SendTransactionError
-from batch.processor_scheduled_events import Processor
+from app.exceptions import (
+    SendTransactionError,
+    ContractRevertError
+)
+from batch.processor_scheduled_events import Processor, LOG
 
 from tests.account_config import config_eth_account
 
 
 @pytest.fixture(scope="function")
 def processor(db):
-    return Processor(thread_num=0)
+    log = logging.getLogger("background")
+    default_log_level = LOG.level
+    log.setLevel(logging.DEBUG)
+    log.propagate = True
+    yield Processor(thread_num=0)
+    log.propagate = False
+    log.setLevel(default_log_level)
 
 
 class TestProcessor:
@@ -695,3 +705,139 @@ class TestProcessor:
             "scheduled_event_id": "event_id_1",
             "token_type": TokenType.IBET_SHARE.value,
         }
+
+    # <Error_5>
+    # IbetStraightBond : ContractRevertError
+    def test_error_5(self, processor, db, caplog):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "token_address_test"
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.keyfile = _keyfile
+        db.add(account)
+
+        # prepare data : ScheduledEvents
+        datetime_now_utc = datetime.now(timezone.utc)
+        datetime_now_str = datetime_now_utc.isoformat()
+        update_data = {
+        }
+
+        # TokenType: STRAIGHT_BOND, status will be "2: Failed"
+        token_event = ScheduledEvents()
+        token_event.event_id = "event_id_1"
+        token_event.issuer_address = _issuer_address
+        token_event.token_address = _token_address
+        token_event.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        token_event.event_type = ScheduledEventType.UPDATE.value
+        token_event.scheduled_datetime = datetime_now_str
+        token_event.status = 0
+        token_event.data = update_data
+        db.add(token_event)
+
+        db.commit()
+
+        # mock
+        IbetStraightBondContract_update = patch(
+            target="app.model.blockchain.token.IbetStraightBondContract.update",
+            side_effect=ContractRevertError("999999")
+        )
+
+        with IbetStraightBondContract_update:
+            # Execute batch
+            processor.process()
+
+        # Assertion
+        _scheduled_event = db.query(ScheduledEvents). \
+            filter(ScheduledEvents.token_address == _token_address). \
+            first()
+        assert _scheduled_event.status == 2
+        _notification = db.query(Notification).first()
+        assert _notification.id == 1
+        assert _notification.notice_id is not None
+        assert _notification.issuer_address == _issuer_address
+        assert _notification.priority == 1
+        assert _notification.type == NotificationType.SCHEDULE_EVENT_ERROR
+        assert _notification.code == 2
+        assert _notification.metainfo == {
+            "scheduled_event_id": "event_id_1",
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+        }
+        assert caplog.record_tuples.count((
+            LOG.name,
+            logging.WARNING,
+            f"Transaction reverted: id=<{token_event.id}> error_code:<999999> error_msg:<>"
+        )) == 1
+
+    # <Error_6>
+    # IbetShare : ContractRevertError
+    def test_error_6(self, processor, db, caplog):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "token_address_test"
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.keyfile = _keyfile
+        db.add(account)
+
+        # prepare data : ScheduledEvents
+        datetime_now_jtc = datetime.now(timezone.utc)
+        datetime_now_str = datetime_now_jtc.isoformat()
+
+        update_data = {
+        }
+
+        # TokenType: STRAIGHT_BOND, status will be "2: Failed"
+        token_event = ScheduledEvents()
+        token_event.event_id = "event_id_1"
+        token_event.issuer_address = _issuer_address
+        token_event.token_address = _token_address
+        token_event.token_type = TokenType.IBET_SHARE.value
+        token_event.event_type = ScheduledEventType.UPDATE.value
+        token_event.scheduled_datetime = datetime_now_str
+        token_event.status = 0
+        token_event.data = update_data
+        db.add(token_event)
+
+        db.commit()
+
+        # mock
+        IbetShareContract_update = patch(
+            target="app.model.blockchain.token.IbetShareContract.update",
+            side_effect=ContractRevertError("999999")
+        )
+
+        with IbetShareContract_update:
+            # Execute batch
+            processor.process()
+
+        # Assertion
+        _scheduled_event = db.query(ScheduledEvents). \
+            filter(ScheduledEvents.token_address == _token_address). \
+            first()
+        assert _scheduled_event.status == 2
+        _notification = db.query(Notification).first()
+        assert _notification.id == 1
+        assert _notification.notice_id is not None
+        assert _notification.issuer_address == _issuer_address
+        assert _notification.priority == 1
+        assert _notification.type == NotificationType.SCHEDULE_EVENT_ERROR
+        assert _notification.code == 2
+        assert _notification.metainfo == {
+            "scheduled_event_id": "event_id_1",
+            "token_type": TokenType.IBET_SHARE.value,
+        }
+
+        assert caplog.record_tuples.count((
+            LOG.name,
+            logging.WARNING,
+            f"Transaction reverted: id=<{token_event.id}> error_code:<999999> error_msg:<>"
+        )) == 1

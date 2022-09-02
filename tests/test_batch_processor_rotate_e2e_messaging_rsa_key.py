@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import logging
 import pytest
 from unittest import mock
 from unittest.mock import (
@@ -30,6 +31,7 @@ from datetime import (
 )
 
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy.orm import Session
 
 from app.model.blockchain import E2EMessaging
 from app.model.db import (
@@ -38,16 +40,22 @@ from app.model.db import (
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-from app.exceptions import SendTransactionError
+from app.exceptions import SendTransactionError, ContractRevertError
 import batch.processor_rotate_e2e_messaging_rsa_key as processor_rotate_e2e_messaging_rsa_key
-from batch.processor_rotate_e2e_messaging_rsa_key import Processor
+from batch.processor_rotate_e2e_messaging_rsa_key import Processor, LOG
 from tests.account_config import config_eth_account
 
 
 @pytest.fixture(scope="function")
 def processor(db, e2e_messaging_contract):
     processor_rotate_e2e_messaging_rsa_key.E2E_MESSAGING_CONTRACT_ADDRESS = e2e_messaging_contract.address
-    return Processor()
+    log = logging.getLogger("background")
+    default_log_level = LOG.level
+    log.setLevel(logging.DEBUG)
+    log.propagate = True
+    yield Processor()
+    log.propagate = False
+    log.setLevel(default_log_level)
 
 
 class TestProcessor:
@@ -426,3 +434,65 @@ class TestProcessor:
 
         _rsa_key_list = db.query(E2EMessagingAccountRsaKey).order_by(E2EMessagingAccountRsaKey.block_timestamp).all()
         assert len(_rsa_key_list) == 1
+
+    # <Error_3>
+    # ContractRevertError
+    def test_error_3(self, processor: Processor, db: Session, e2e_messaging_contract, caplog: pytest.LogCaptureFixture):
+        user_1 = config_eth_account("user1")
+        user_address_1 = user_1["address"]
+        user_keyfile_1 = user_1["keyfile_json"]
+        user_private_key_1 = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"],
+            password="password".encode("utf-8")
+        )
+
+        # Prepare data : E2EMessagingAccount
+        _account = E2EMessagingAccount()
+        _account.account_address = user_address_1
+        _account.keyfile = user_keyfile_1
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_key_generate_interval = 1
+        _account.rsa_generation = 2
+        db.add(_account)
+
+        datetime_now = datetime.utcnow()
+
+        # Prepare data : E2EMessagingAccountRsaKey
+        _rsa_key = E2EMessagingAccountRsaKey()
+        _rsa_key.transaction_hash = "tx_3"
+        _rsa_key.account_address = user_address_1
+        _rsa_key.rsa_private_key = "rsa_private_key_1_3"
+        _rsa_key.rsa_public_key = "rsa_public_key_1_3"
+        _rsa_key.rsa_passphrase = E2EEUtils.encrypt("latest_passphrase_1")
+        _rsa_key.block_timestamp = datetime_now + timedelta(hours=-1, seconds=-1)
+        db.add(_rsa_key)
+        time.sleep(1)
+
+        db.commit()
+
+        # mock
+        mock_E2EMessaging_set_public_key = mock.patch(
+            target="app.model.blockchain.e2e_messaging.E2EMessaging.set_public_key",
+            side_effect=ContractRevertError("999999")
+        )
+
+        # Run target process
+        with mock_E2EMessaging_set_public_key:
+            processor.process()
+
+            # Assertion
+            E2EMessaging.set_public_key.assert_called_with(
+                contract_address=e2e_messaging_contract.address,
+                public_key=ANY,
+                key_type="RSA4096",
+                tx_from=user_address_1,
+                private_key=user_private_key_1
+            )
+
+        _rsa_key_list = db.query(E2EMessagingAccountRsaKey).order_by(E2EMessagingAccountRsaKey.block_timestamp).all()
+        assert len(_rsa_key_list) == 1
+        assert caplog.record_tuples.count((
+            LOG.name,
+            logging.WARNING,
+            f"Transaction reverted: account_address=<{user_address_1}> error_code:<999999> error_msg:<>"
+        )) == 1
