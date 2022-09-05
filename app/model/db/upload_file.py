@@ -45,4 +45,4 @@ class UploadFile(Base):
     # description
     description = Column(String(1000))
     # label
-    label = Column(String(200))
+    label = Column(String(200), default="", nullable=False)

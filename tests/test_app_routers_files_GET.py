@@ -354,10 +354,96 @@ abc def"""
             ]
         }
 
-    # <Normal_4_4>
+    # <Normal_4_4_1>
+    # Search Filter
+    # label: default value
+    def test_normal_4_4_1(self, client, db):
+        file_content_bin = self.file_content.encode()
+
+        # prepare data
+        _upload_file = UploadFile()
+        _upload_file.file_id = "file_id_1"
+        _upload_file.issuer_address = self.issuer_address
+        _upload_file.relation = self.token_address
+        _upload_file.file_name = "file_name_1"
+        _upload_file.content = file_content_bin
+        _upload_file.content_size = len(file_content_bin)
+        _upload_file.description = "description_1"
+        _upload_file.label = ""
+        _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        db.add(_upload_file)
+
+        _upload_file = UploadFile()
+        _upload_file.file_id = "file_id_2"
+        _upload_file.issuer_address = self.issuer_address
+        _upload_file.relation = self.token_address
+        _upload_file.file_name = "file_name_2"
+        _upload_file.content = file_content_bin
+        _upload_file.content_size = len(file_content_bin)
+        _upload_file.description = "description_2"
+        _upload_file.label = "label_2"  # not null
+        _upload_file.created = datetime.strptime("2022/01/02 00:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        db.add(_upload_file)
+
+        _upload_file = UploadFile()
+        _upload_file.file_id = "file_id_3"
+        _upload_file.issuer_address = self.issuer_address
+        _upload_file.relation = self.token_address
+        _upload_file.file_name = "file_name_3"
+        _upload_file.content = file_content_bin
+        _upload_file.content_size = len(file_content_bin)
+        _upload_file.description = "description_3"
+        _upload_file.label = " "  # half-width space
+        _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        db.add(_upload_file)
+
+        _upload_file = UploadFile()
+        _upload_file.file_id = "file_id_4"
+        _upload_file.issuer_address = self.issuer_address
+        _upload_file.relation = self.token_address
+        _upload_file.file_name = "file_name_4"
+        _upload_file.content = file_content_bin
+        _upload_file.content_size = len(file_content_bin)
+        _upload_file.description = "description_4"
+        _upload_file.label = "　"  # full-width space
+        _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        db.add(_upload_file)
+
+        # request target api
+        resp = client.get(
+            self.base_url,
+            params={
+                "label": "",
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {
+                "count": 1,
+                "offset": None,
+                "limit": None,
+                "total": 4
+            },
+            "files": [
+                {
+                    "file_id": "file_id_1",
+                    "issuer_address": self.issuer_address,
+                    "relation": self.token_address,
+                    "file_name": "file_name_1",
+                    "content_size": len(file_content_bin),
+                    "description": "description_1",
+                    "label": "",
+                    "created": "2022-01-02T00:20:30.000001+09:00",
+                },
+            ]
+        }
+
+    # <Normal_4_4_2>
     # Search Filter
     # label
-    def test_normal_4_4(self, client, db):
+    def test_normal_4_4_2(self, client, db):
         file_content_bin = self.file_content.encode()
 
         # prepare data
