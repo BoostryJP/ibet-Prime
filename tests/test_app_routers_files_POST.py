@@ -133,6 +133,51 @@ abc def"""
             "created": utc_tz.localize(_upload_file.created).astimezone(local_tz).isoformat()
         }
 
+    # <Normal_3>
+    # default label
+    def test_normal_3(self, client, db):
+        file_content = """test_content"""
+        file_content_bin = file_content.encode()
+
+        # request target api
+        req_param = {
+            "relation": self.token_address,
+            "file_name": "file_name_1",
+            "content": base64.b64encode(file_content_bin).decode(),
+            "description": "description_1"
+        }
+        resp = client.post(
+            self.base_url,
+            json=req_param,
+            headers={
+                "issuer-address": self.issuer_address,
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 200
+
+        _upload_file = db.query(UploadFile).first()
+        assert _upload_file.file_id is not None
+        assert _upload_file.issuer_address == self.issuer_address
+        assert _upload_file.relation == self.token_address
+        assert _upload_file.file_name == req_param["file_name"]
+        assert _upload_file.content == file_content_bin
+        assert _upload_file.content_size == len(file_content_bin)
+        assert _upload_file.description == req_param["description"]
+        assert _upload_file.label == ""
+
+        assert resp.json() == {
+            "file_id": _upload_file.file_id,
+            "issuer_address": self.issuer_address,
+            "relation": req_param["relation"],
+            "file_name": req_param["file_name"],
+            "content_size": len(file_content_bin),
+            "description": req_param["description"],
+            "label": "",
+            "created": utc_tz.localize(_upload_file.created).astimezone(local_tz).isoformat()
+        }
+
     ###########################################################################
     # Error Case
     ###########################################################################

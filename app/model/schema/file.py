@@ -78,7 +78,7 @@ class FileResponse(BaseModel):
     file_name: str
     content_size: int
     description: Optional[str]
-    label: Optional[str]
+    label: str
     created: datetime
 
 
@@ -97,7 +97,7 @@ class DownloadFileResponse(BaseModel):
     content: str
     content_size: int
     description: Optional[str]
-    label: Optional[str]
+    label: str
 
     class Config:
         @staticmethod
