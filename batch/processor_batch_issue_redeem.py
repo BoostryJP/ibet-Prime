@@ -81,6 +81,8 @@ class Processor:
                     self.__sink_on_notification(
                         db_session=db_session,
                         issuer_address=upload.issuer_address,
+                        token_address=upload.token_address,
+                        token_type=upload.token_type,
                         code=1,
                         upload_category=upload.category,
                         upload_id=upload.upload_id,
@@ -100,6 +102,8 @@ class Processor:
                     self.__sink_on_notification(
                         db_session=db_session,
                         issuer_address=upload.issuer_address,
+                        token_address=upload.token_address,
+                        token_type=upload.token_type,
                         code=2,
                         upload_category=upload.category,
                         upload_id=upload.upload_id,
@@ -182,6 +186,8 @@ class Processor:
                 self.__sink_on_notification(
                     db_session=db_session,
                     issuer_address=upload.issuer_address,
+                    token_address=upload.token_address,
+                    token_type=upload.token_type,
                     code=code,
                     upload_category=upload.category,
                     upload_id=upload.upload_id,
@@ -196,6 +202,8 @@ class Processor:
     @staticmethod
     def __sink_on_notification(db_session: Session,
                                issuer_address: str,
+                               token_address: str,
+                               token_type: str,
                                upload_category: str,
                                code: int,
                                upload_id: str,
@@ -209,7 +217,9 @@ class Processor:
         notification.metainfo = {
             "category": upload_category,
             "upload_id": upload_id,
-            "error_data_id": error_data_id_list
+            "error_data_id": error_data_id_list,
+            "token_address": token_address,
+            "token_type": token_type
         }
         db_session.add(notification)
 

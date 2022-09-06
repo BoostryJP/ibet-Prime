@@ -527,6 +527,7 @@ class TestProcessor:
         assert _notification.metainfo == {
             "scheduled_event_id": "event_id_1",
             "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_address": _token_address
         }
 
     # <Error_2>
@@ -579,6 +580,7 @@ class TestProcessor:
         assert _notification.metainfo == {
             "scheduled_event_id": "event_id_1",
             "token_type": TokenType.IBET_SHARE.value,
+            "token_address": _token_address
         }
 
     # <Error_3>
@@ -641,6 +643,7 @@ class TestProcessor:
         assert _notification.metainfo == {
             "scheduled_event_id": "event_id_1",
             "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_address": _token_address
         }
 
     # <Error_4>
@@ -704,6 +707,7 @@ class TestProcessor:
         assert _notification.metainfo == {
             "scheduled_event_id": "event_id_1",
             "token_type": TokenType.IBET_SHARE.value,
+            "token_address": _token_address
         }
 
     # <Error_5>
@@ -766,6 +770,7 @@ class TestProcessor:
         assert _notification.metainfo == {
             "scheduled_event_id": "event_id_1",
             "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_address": _token_address
         }
         assert caplog.record_tuples.count((
             LOG.name,
@@ -834,6 +839,7 @@ class TestProcessor:
         assert _notification.metainfo == {
             "scheduled_event_id": "event_id_1",
             "token_type": TokenType.IBET_SHARE.value,
+            "token_address": _token_address
         }
 
         assert caplog.record_tuples.count((
