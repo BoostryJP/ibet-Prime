@@ -147,7 +147,10 @@ class Processor:
                     self.__sink_on_error_notification(
                         db_session=db_session,
                         issuer_address=_event.issuer_address, code=0,
-                        scheduled_event_id=_event.event_id, token_type=_event.token_type)
+                        scheduled_event_id=_event.event_id,
+                        token_type=_event.token_type,
+                        token_address=_event.token_address
+                    )
                     db_session.commit()
                     continue
                 keyfile_json = _account.keyfile
@@ -166,7 +169,10 @@ class Processor:
                 self.__sink_on_error_notification(
                     db_session=db_session,
                     issuer_address=_event.issuer_address, code=1,
-                    scheduled_event_id=_event.event_id, token_type=_event.token_type)
+                    scheduled_event_id=_event.event_id,
+                    token_type=_event.token_type,
+                    token_address=_event.token_address
+                )
                 db_session.commit()
                 continue
 
@@ -210,7 +216,8 @@ class Processor:
                     issuer_address=_event.issuer_address,
                     code=2,
                     scheduled_event_id=_event.event_id,
-                    token_type=_event.token_type
+                    token_type=_event.token_type,
+                    token_address=_event.token_address
                 )
             except SendTransactionError:
                 LOG.warning(f"Failed to send transaction: id=<{_event.id}>")
@@ -224,7 +231,8 @@ class Processor:
                     issuer_address=_event.issuer_address,
                     code=2,
                     scheduled_event_id=_event.event_id,
-                    token_type=_event.token_type
+                    token_type=_event.token_type,
+                    token_address=_event.token_address
                 )
             db_session.commit()
 
@@ -241,8 +249,9 @@ class Processor:
     def __sink_on_error_notification(db_session: Session,
                                      issuer_address: str,
                                      code: int,
-                                     scheduled_event_id: int,
-                                     token_type: str):
+                                     scheduled_event_id: str,
+                                     token_type: str,
+                                     token_address: str):
         notification = Notification()
         notification.notice_id = uuid.uuid4()
         notification.issuer_address = issuer_address
@@ -251,7 +260,8 @@ class Processor:
         notification.code = code
         notification.metainfo = {
             "scheduled_event_id": scheduled_event_id,
-            "token_type": token_type
+            "token_type": token_type,
+            "token_address": token_address
         }
         db_session.add(notification)
 

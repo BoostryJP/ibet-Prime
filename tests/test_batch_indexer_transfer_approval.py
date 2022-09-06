@@ -340,6 +340,7 @@ class TestProcessor:
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 0
         assert _notification.metainfo == {
+            "token_type": token_1.type,
             "token_address": token_address_1,
             "id": 1
         }
@@ -461,6 +462,7 @@ class TestProcessor:
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 0
         assert _notification.metainfo == {
+            "token_type": token_1.type,
             "token_address": token_address_1,
             "id": 1
         }
@@ -582,6 +584,7 @@ class TestProcessor:
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 1
         assert _notification.metainfo == {
+            "token_type": token_1.type,
             "token_address": token_address_1,
             "id": 1
         }
@@ -703,6 +706,7 @@ class TestProcessor:
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 2
         assert _notification.metainfo == {
+            "token_type": token_1.type,
             "token_address": token_address_1,
             "id": 1
         }
@@ -827,6 +831,7 @@ class TestProcessor:
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 0
         assert _notification.metainfo == {
+            "token_type": token_1.type,
             "token_address": token_address_1,
             "id": 1
         }
@@ -969,6 +974,7 @@ class TestProcessor:
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 1
         assert _notification.metainfo == {
+            "token_type": token_1.type,
             "token_address": token_address_1,
             "id": 1
         }
@@ -1102,6 +1108,7 @@ class TestProcessor:
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 3
         assert _notification.metainfo == {
+            "token_type": token_1.type,
             "token_address": token_address_1,
             "id": 1
         }
@@ -1247,6 +1254,7 @@ class TestProcessor:
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 2
         assert _notification.metainfo == {
+            "token_type": token_1.type,
             "token_address": token_address_1,
             "id": 1
         }
@@ -1255,11 +1263,11 @@ class TestProcessor:
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
 
-    # <Normal_6>
+    # <Normal_3>
     # If block number processed in batch is equal or greater than current block number,
     # batch will output a log "skip process".
     @mock.patch("web3.eth.Eth.block_number", 100)
-    def test_normal_6(self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture):
+    def test_normal_3(self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture):
         _idx_transfer_approval_block_number = IDXTransferApprovalBlockNumber()
         _idx_transfer_approval_block_number.id = 1
         _idx_transfer_approval_block_number.latest_block_number = 1000
@@ -1269,9 +1277,9 @@ class TestProcessor:
         processor.sync_new_logs()
         assert caplog.record_tuples.count((LOG.name, logging.DEBUG, "skip process")) == 1
 
-    # <Normal_7>
+    # <Normal_4>
     # If DB session fails in sinking phase each event, batch outputs a log "exception occurred".
-    def test_normal_7(self, processor, db, personal_info_contract, ibet_security_token_escrow_contract, caplog: pytest.LogCaptureFixture):
+    def test_normal_4(self, processor, db, personal_info_contract, ibet_security_token_escrow_contract, caplog: pytest.LogCaptureFixture):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8"))

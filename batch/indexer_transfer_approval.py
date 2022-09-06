@@ -466,7 +466,7 @@ class Processor:
             first()
         if transfer_approval is not None:
             # Get issuer address
-            token = db_session.query(Token). \
+            token: Token | None = db_session.query(Token). \
                 filter(Token.token_address == token_address). \
                 first()
             sender = web3.eth.get_transaction(transaction_hash)["from"]
@@ -478,6 +478,7 @@ class Processor:
                             issuer_address=token.issuer_address,
                             code=notice_code,
                             token_address=token_address,
+                            token_type=token.type,
                             id=transfer_approval.id
                         )
                     elif notice_code == 1 or notice_code == 3:  # CancelTransfer or EscrowFinished
@@ -486,6 +487,7 @@ class Processor:
                             issuer_address=token.issuer_address,
                             code=notice_code,
                             token_address=token_address,
+                            token_type=token.type,
                             id=transfer_approval.id
                         )
                 else:  # Operate from issuer
@@ -495,6 +497,7 @@ class Processor:
                             issuer_address=token.issuer_address,
                             code=notice_code,
                             token_address=token_address,
+                            token_type=token.type,
                             id=transfer_approval.id
                         )
 
@@ -582,6 +585,7 @@ class Processor:
                                     issuer_address: str,
                                     code: int,
                                     token_address: str,
+                                    token_type: str,
                                     id: int):
         notification = Notification()
         notification.notice_id = uuid.uuid4()
@@ -591,6 +595,7 @@ class Processor:
         notification.code = code
         notification.metainfo = {
             "token_address": token_address,
+            "token_type": token_type,
             "id": id
         }
         db_session.add(notification)

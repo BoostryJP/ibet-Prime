@@ -158,7 +158,9 @@ class TestProcessor:
             assert _notification.metainfo == {
                 "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
                 "upload_id": upload_id,
-                "error_data_id": []
+                "error_data_id": [],
+                "token_address": token_address,
+                "token_type": TokenType.IBET_STRAIGHT_BOND
             }
 
     # Normal_2
@@ -255,7 +257,9 @@ class TestProcessor:
             assert _notification.metainfo == {
                 "category": BatchIssueRedeemProcessingCategory.REDEEM.value,
                 "upload_id": upload_id,
-                "error_data_id": []
+                "error_data_id": [],
+                "token_address": token_address,
+                "token_type": TokenType.IBET_STRAIGHT_BOND
             }
 
     # Normal_3
@@ -352,7 +356,9 @@ class TestProcessor:
             assert _notification.metainfo == {
                 "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
                 "upload_id": upload_id,
-                "error_data_id": []
+                "error_data_id": [],
+                "token_address": token_address,
+                "token_type": TokenType.IBET_SHARE
             }
 
     # Normal_4
@@ -449,7 +455,9 @@ class TestProcessor:
             assert _notification.metainfo == {
                 "category": BatchIssueRedeemProcessingCategory.REDEEM.value,
                 "upload_id": upload_id,
-                "error_data_id": []
+                "error_data_id": [],
+                "token_address": token_address,
+                "token_type": TokenType.IBET_SHARE
             }
 
     ###########################################################################
@@ -528,7 +536,9 @@ class TestProcessor:
             assert _notification.metainfo == {
                 "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
                 "upload_id": upload_id,
-                "error_data_id": []
+                "error_data_id": [],
+                "token_address": token_address,
+                "token_type": TokenType.IBET_STRAIGHT_BOND
             }
 
     # Error_2
@@ -612,7 +622,9 @@ class TestProcessor:
             assert _notification.metainfo == {
                 "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
                 "upload_id": upload_id,
-                "error_data_id": []
+                "error_data_id": [],
+                "token_address": token_address,
+                "token_type": TokenType.IBET_STRAIGHT_BOND
             }
 
     # Error_3
@@ -701,7 +713,9 @@ class TestProcessor:
             assert _notification.metainfo == {
                 "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
                 "upload_id": upload_id,
-                "error_data_id": ANY
+                "error_data_id": ANY,
+                "token_address": token_address,
+                "token_type": TokenType.IBET_STRAIGHT_BOND
             }
             assert len(_notification.metainfo["error_data_id"]) == 2
 
@@ -823,7 +837,9 @@ class TestProcessor:
         assert _notification_list[0].metainfo == {
             "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
             "upload_id": upload_1_id,
-            "error_data_id": ANY
+            "error_data_id": ANY,
+            "token_address": token_address,
+            "token_type": TokenType.IBET_STRAIGHT_BOND
         }
         assert len(_notification_list[0].metainfo["error_data_id"]) == 1
 
@@ -835,6 +851,8 @@ class TestProcessor:
         assert _notification_list[1].metainfo == {
             "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
             "upload_id": upload_2_id,
-            "error_data_id": ANY
+            "error_data_id": ANY,
+            "token_address": token_address,
+            "token_type": TokenType.IBET_SHARE
         }
         assert len(_notification_list[1].metainfo["error_data_id"]) == 1

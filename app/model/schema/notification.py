@@ -21,7 +21,8 @@ from typing import (
     List,
     Dict,
     Any,
-    Union
+    Union,
+    Optional
 )
 
 from pydantic import BaseModel, conint
@@ -34,26 +35,28 @@ from app.model.db import (
 )
 
 
-class IssueErrorMetainfo(BaseModel):
+class IssueErrorMetaInfo(BaseModel):
     token_address: str
     token_type: TokenType
     arguments: dict
 
 
-class BulkTransferErrorMetainfo(BaseModel):
+class BulkTransferErrorMetaInfo(BaseModel):
     upload_id: str
     token_type: TokenType
     error_transfer_id: list[int]
 
 
-class ScheduleEventErrorMetainfo(BaseModel):
-    scheduled_event_id: int
+class ScheduleEventErrorMetaInfo(BaseModel):
+    scheduled_event_id: str
+    token_address: Optional[str]
     token_type: TokenType
 
 
 class TransferApprovalInfoMetaInfo(BaseModel):
     id: int
     token_address: str
+    token_type: Optional[TokenType]
 
 
 class CreateLedgerInfoMetaInfo(BaseModel):
@@ -62,15 +65,17 @@ class CreateLedgerInfoMetaInfo(BaseModel):
     ledger_id: int
 
 
-class BatchRegisterPersonalInfoErrorMetainfo(BaseModel):
+class BatchRegisterPersonalInfoErrorMetaInfo(BaseModel):
     upload_id: str
     error_registration_id: list[int]
 
 
-class BatchIssueRedeemProcessedMetainfo(BaseModel):
+class BatchIssueRedeemProcessedMetaInfo(BaseModel):
     category: BatchIssueRedeemProcessingCategory
     upload_id: str
     error_data_id: list[int]
+    token_address: str
+    token_type: TokenType
 
 
 class Notification(BaseModel):
@@ -84,7 +89,7 @@ class Notification(BaseModel):
 class IssueErrorNotification(Notification):
     notice_type: str = NotificationType.ISSUE_ERROR
     notice_code: conint(ge=0, le=2)
-    metainfo: IssueErrorMetainfo
+    metainfo: IssueErrorMetaInfo
 
     class Config:
         @staticmethod
@@ -98,7 +103,7 @@ class IssueErrorNotification(Notification):
 class BulkTransferErrorNotification(Notification):
     notice_type: str = NotificationType.BULK_TRANSFER_ERROR
     notice_code: conint(ge=0, le=2)
-    metainfo: BulkTransferErrorMetainfo
+    metainfo: BulkTransferErrorMetaInfo
 
     class Config:
         @staticmethod
@@ -113,7 +118,7 @@ class BulkTransferErrorNotification(Notification):
 class ScheduleEventErrorNotification(Notification):
     notice_type: str = NotificationType.SCHEDULE_EVENT_ERROR
     notice_code: conint(ge=0, le=2)
-    metainfo: ScheduleEventErrorMetainfo
+    metainfo: ScheduleEventErrorMetaInfo
 
     class Config:
         @staticmethod
@@ -155,28 +160,26 @@ class CreateLedgerInfoNotification(Notification):
 class BatchRegisterPersonalInfoErrorNotification(Notification):
     notice_type: str = NotificationType.BATCH_REGISTER_PERSONAL_INFO_ERROR
     notice_code: conint(ge=0, le=1)
-    metainfo: BatchRegisterPersonalInfoErrorMetainfo
+    metainfo: BatchRegisterPersonalInfoErrorMetaInfo
 
     class Config:
         @staticmethod
         def schema_extra(schema: Dict[str, Any], _) -> None:
             notice_code_schema = schema["properties"]["notice_code"]
-            notice_code_schema["description"] = "notice_type: BatchRegisterPersonalInfoError\n" \
-                                                " - 0: Issuer does not exist\n" \
+            notice_code_schema["description"] = " - 0: Issuer does not exist\n" \
                                                 " - 1: Failed to send transaction\n"
 
 
 class BatchIssueRedeemProcessedNotification(Notification):
     notice_type: str = NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
     notice_code: conint(ge=0, le=3)
-    metainfo: BatchIssueRedeemProcessedMetainfo
+    metainfo: BatchIssueRedeemProcessedMetaInfo
 
     class Config:
         @staticmethod
         def schema_extra(schema: Dict[str, Any], _) -> None:
             notice_code_schema = schema["properties"]["notice_code"]
-            notice_code_schema["description"] = "notice_type: BatchIssueRedeemProcessed\n" \
-                                                " - 0: All records successfully processed\n" \
+            notice_code_schema["description"] = " - 0: All records successfully processed\n" \
                                                 " - 1: Issuer does not exist\n" \
                                                 " - 2: Failed to decode keyfile\n" \
                                                 " - 3: Some records are failed to send transaction"
