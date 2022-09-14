@@ -42,7 +42,12 @@ class BatchIssueRedeemUpload(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "batch_id": "cfd83622-34dc-4efe-a68b-2cc275d3d824"
+                "batch_id": "cfd83622-34dc-4efe-a68b-2cc275d3d824",
+                "issuer_address": "0x0000000000000000000000000000000000000000",
+                "token_type": "Bond",
+                "token_address": "0x0000000000000000000000000000000000000000",
+                "processed": True,
+                "created": "2022-09-02T19:49:33.370874+09:00"
             }
         }
 

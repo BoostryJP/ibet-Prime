@@ -76,6 +76,7 @@ class BatchRegisterPersonalInfoUploadResponse(BaseModel):
             "example": {
                 "batch_id": "cfd83622-34dc-4efe-a68b-2cc275d3d824",
                 "status": "pending",
+                "created": "2022-09-02T19:49:33.370874+09:00"
             }
         }
 
