@@ -45,7 +45,7 @@ from app.log import output_access_log
 
 app = FastAPI(
     title="ibet Prime",
-    version="22.6.0"
+    version="22.9.0"
 )
 
 
@@ -133,6 +133,19 @@ async def send_transaction_error_handler(request: Request, exc: SendTransactionE
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
+    )
+
+
+# 400:AuthTokenAlreadyExistsError
+@app.exception_handler(AuthTokenAlreadyExistsError)
+async def auth_token_already_exists_error_handler(request: Request, exc: AuthTokenAlreadyExistsError):
+    meta = {
+        "code": 3,
+        "title": "AuthTokenAlreadyExistsError"
+    }
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=jsonable_encoder({"meta": meta}),
     )
 
 

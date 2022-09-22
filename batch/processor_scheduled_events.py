@@ -48,7 +48,6 @@ from app.model.db import (
     ScheduledEvents,
     ScheduledEventType,
     TokenType,
-    AdditionalTokenInfo,
     Notification,
     NotificationType
 )
@@ -62,7 +61,8 @@ from app.model.schema import (
 )
 from app.exceptions import (
     SendTransactionError,
-    ServiceUnavailableError
+    ServiceUnavailableError,
+    ContractRevertError
 )
 import batch_log
 
@@ -147,7 +147,10 @@ class Processor:
                     self.__sink_on_error_notification(
                         db_session=db_session,
                         issuer_address=_event.issuer_address, code=0,
-                        scheduled_event_id=_event.event_id, token_type=_event.token_type)
+                        scheduled_event_id=_event.event_id,
+                        token_type=_event.token_type,
+                        token_address=_event.token_address
+                    )
                     db_session.commit()
                     continue
                 keyfile_json = _account.keyfile
@@ -156,8 +159,8 @@ class Processor:
                     raw_keyfile_json=keyfile_json,
                     password=decrypt_password.encode("utf-8")
                 )
-            except Exception as err:
-                LOG.exception(f"Could not get the private key of the issuer of id:{_event.id}", err)
+            except Exception:
+                LOG.exception(f"Could not get the private key of the issuer of id:{_event.id}")
                 self.__sink_on_finish_event_process(
                     db_session=db_session,
                     record_id=_event.id,
@@ -166,7 +169,10 @@ class Processor:
                 self.__sink_on_error_notification(
                     db_session=db_session,
                     issuer_address=_event.issuer_address, code=1,
-                    scheduled_event_id=_event.event_id, token_type=_event.token_type)
+                    scheduled_event_id=_event.event_id,
+                    token_type=_event.token_type,
+                    token_address=_event.token_address
+                )
                 db_session.commit()
                 continue
 
@@ -182,14 +188,6 @@ class Processor:
                             tx_from=_event.issuer_address,
                             private_key=private_key
                         )
-
-                        # Update or Register additional token info data
-                        if "is_manual_transfer_approval" in _event.data:
-                            self.__sink_on_additional_token_info(
-                                db_session=db_session,
-                                token_address=_event.token_address,
-                                is_manual_transfer_approval=_event.data["is_manual_transfer_approval"]
-                            )
                 elif _event.token_type == TokenType.IBET_STRAIGHT_BOND.value:
                     # Update
                     if _event.event_type == ScheduledEventType.UPDATE.value:
@@ -201,18 +199,25 @@ class Processor:
                             private_key=private_key
                         )
 
-                        # Update or Register additional token info data
-                        if "is_manual_transfer_approval" in _event.data:
-                            self.__sink_on_additional_token_info(
-                                db_session=db_session,
-                                token_address=_event.token_address,
-                                is_manual_transfer_approval=_event.data["is_manual_transfer_approval"]
-                            )
-
                 self.__sink_on_finish_event_process(
                     db_session=db_session,
                     record_id=_event.id,
                     status=1
+                )
+            except ContractRevertError as e:
+                LOG.warning(f"Transaction reverted: id=<{_event.id}> error_code:<{e.code}> error_msg:<{e.message}>")
+                self.__sink_on_finish_event_process(
+                    db_session=db_session,
+                    record_id=_event.id,
+                    status=2
+                )
+                self.__sink_on_error_notification(
+                    db_session=db_session,
+                    issuer_address=_event.issuer_address,
+                    code=2,
+                    scheduled_event_id=_event.event_id,
+                    token_type=_event.token_type,
+                    token_address=_event.token_address
                 )
             except SendTransactionError:
                 LOG.warning(f"Failed to send transaction: id=<{_event.id}>")
@@ -226,7 +231,8 @@ class Processor:
                     issuer_address=_event.issuer_address,
                     code=2,
                     scheduled_event_id=_event.event_id,
-                    token_type=_event.token_type
+                    token_type=_event.token_type,
+                    token_address=_event.token_address
                 )
             db_session.commit()
 
@@ -243,8 +249,9 @@ class Processor:
     def __sink_on_error_notification(db_session: Session,
                                      issuer_address: str,
                                      code: int,
-                                     scheduled_event_id: int,
-                                     token_type: str):
+                                     scheduled_event_id: str,
+                                     token_type: str,
+                                     token_address: str):
         notification = Notification()
         notification.notice_id = uuid.uuid4()
         notification.issuer_address = issuer_address
@@ -253,21 +260,10 @@ class Processor:
         notification.code = code
         notification.metainfo = {
             "scheduled_event_id": scheduled_event_id,
-            "token_type": token_type
+            "token_type": token_type,
+            "token_address": token_address
         }
         db_session.add(notification)
-
-    @staticmethod
-    def __sink_on_additional_token_info(db_session: Session, token_address: str, **kwargs: dict):
-        _additional_info = db_session.query(AdditionalTokenInfo). \
-            filter(AdditionalTokenInfo.token_address == token_address). \
-            first()
-        if _additional_info is None:
-            _additional_info = AdditionalTokenInfo()
-            _additional_info.token_address = token_address
-        if "is_manual_transfer_approval" in kwargs:
-            setattr(_additional_info, "is_manual_transfer_approval", kwargs["is_manual_transfer_approval"])
-        db_session.merge(_additional_info)
 
 
 class Worker:
@@ -297,8 +293,7 @@ def main():
 
     for i in range(SCHEDULED_EVENTS_WORKER_COUNT):
         worker = Worker(i)
-        thread = threading.Thread(target=worker.run)
-        thread.setDaemon(True)
+        thread = threading.Thread(target=worker.run, daemon=True)
         thread.start()
         LOG.info(f"thread {i} started")
 

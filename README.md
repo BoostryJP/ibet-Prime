@@ -1,9 +1,11 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-22.6-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-22.9-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
+
+English | <a href='./README_JA.md'>日本語</a>
 
 <img width="33%" align="right" src="https://user-images.githubusercontent.com/963333/71672471-6383c080-2db9-11ea-85b6-8815519652ec.png"/>
 
@@ -12,13 +14,13 @@
 ## Features
 
 - ibet-Prime is an API service that enables the issuance and management of security tokens on the [ibet network](https://github.com/BoostryJP/ibet-Network).
-- It supports tokens developed by the [ibet-SmartContract](https://github.com/BoostryJP/ibet-SmartContract) project and various smart contracts.
+- It supports tokens and various smart contracts developed by the [ibet-SmartContract](https://github.com/BoostryJP/ibet-SmartContract) project.
 - As a security token ledger management system, ibet-Prime provides a variety of functions required under Japanese regulations.
 - By calling the ibet-Prime API from your own front-end application, you can easily build a security token management service.
 
 ## Dependencies
 
-- [python3](https://www.python.org/downloads/release/python-3811/) version 3.8 or greater
+- [python3](https://www.python.org/downloads/release/python-3811/) version 3.10 or later
 - [PostgreSQL](https://www.postgresql.org/) - Version 13
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - We support the official GoQuorum node of [ibet-Network](https://github.com/BoostryJP/ibet-Network).

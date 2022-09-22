@@ -16,12 +16,15 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from pydantic import BaseModel
 from sqlalchemy import (
     Column,
     Integer,
     String,
     JSON
 )
+from .token import TokenType
+from .batch_issue_redeem import BatchIssueRedeemProcessingCategory
 
 from .base import Base
 
@@ -35,6 +38,16 @@ notice_type: BulkTransferError
 - 0: Issuer does not exist
 - 1: Could not get the private key of the issuer
 - 2: Failed to send transaction
+
+notice_type: BatchRegisterPersonalInfoError
+- 0: Issuer does not exist
+- 1: Failed to send transaction
+
+notice_type: BatchIssueRedeemProcessed
+- 0: All records successfully processed
+- 1: Issuer does not exist
+- 2: Failed to decode keyfile
+- 3: Some records are failed to send transaction
 
 notice_type: ScheduleEventError
 - 0: Issuer does not exist
@@ -75,6 +88,8 @@ class Notification(Base):
 class NotificationType:
     ISSUE_ERROR = "IssueError"
     BULK_TRANSFER_ERROR = "BulkTransferError"
+    BATCH_REGISTER_PERSONAL_INFO_ERROR = "BatchRegisterPersonalInfoError"
     SCHEDULE_EVENT_ERROR = "ScheduleEventError"
     TRANSFER_APPROVAL_INFO = "TransferApprovalInfo"
     CREATE_LEDGER_INFO = "CreateLedgerInfo"
+    BATCH_ISSUE_REDEEM_PROCESSED = "BatchIssueProcessed"

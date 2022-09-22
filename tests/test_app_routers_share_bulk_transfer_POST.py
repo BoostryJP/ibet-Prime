@@ -16,8 +16,11 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import hashlib
+
 from app.model.db import (
     Account,
+    AuthToken,
     Token,
     TokenType,
     BulkTransfer,
@@ -60,6 +63,7 @@ class TestAppRoutersShareBulkTransferPOST:
     ]
 
     # <Normal_1>
+    # Authorization by eoa-password
     def test_normal_1(self, client, db):
         # prepare data : Account(Issuer)
         account = Account()
@@ -98,6 +102,86 @@ class TestAppRoutersShareBulkTransferPOST:
             headers={
                 "issuer-address": self.admin_address,
                 "eoa-password": E2EEUtils.encrypt("password")
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+
+        bulk_transfer_upload = db.query(BulkTransferUpload). \
+            filter(BulkTransferUpload.upload_id == resp.json()["upload_id"]). \
+            all()
+        assert len(bulk_transfer_upload) == 1
+        assert bulk_transfer_upload[0].issuer_address == self.admin_address
+        assert bulk_transfer_upload[0].status == 0
+
+        bulk_transfer = db.query(BulkTransfer). \
+            filter(BulkTransfer.upload_id == resp.json()["upload_id"]). \
+            order_by(BulkTransfer.id). \
+            all()
+        assert len(bulk_transfer) == 2
+        assert bulk_transfer[0].issuer_address == self.admin_address
+        assert bulk_transfer[0].token_address == self.req_tokens[0]
+        assert bulk_transfer[0].token_type == TokenType.IBET_SHARE.value
+        assert bulk_transfer[0].from_address == self.from_address
+        assert bulk_transfer[0].to_address == self.to_address
+        assert bulk_transfer[0].amount == 5
+        assert bulk_transfer[0].status == 0
+        assert bulk_transfer[1].issuer_address == self.admin_address
+        assert bulk_transfer[1].token_address == self.req_tokens[1]
+        assert bulk_transfer[1].token_type == TokenType.IBET_SHARE.value
+        assert bulk_transfer[1].from_address == self.from_address
+        assert bulk_transfer[1].to_address == self.to_address
+        assert bulk_transfer[1].amount == 10
+        assert bulk_transfer[1].status == 0
+
+    # <Normal_2>
+    # Authorization by auth-token
+    def test_normal_2(self, client, db):
+        # prepare data : Account(Issuer)
+        account = Account()
+        account.issuer_address = self.admin_address
+        account.keyfile = self.admin_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        # prepare data : AuthToken
+        auth_token = AuthToken()
+        auth_token.issuer_address = self.admin_address
+        auth_token.auth_token = hashlib.sha256("test_auth_token".encode()).hexdigest()
+        auth_token.valid_duration = 0
+        db.add(auth_token)
+
+        # prepare data : Tokens
+        for _t in self.req_tokens:
+            _token = Token()
+            _token.type = TokenType.IBET_SHARE.value
+            _token.tx_hash = ""
+            _token.issuer_address = self.admin_address
+            _token.token_address = _t
+            _token.abi = ""
+            db.add(_token)
+
+        # request target API
+        req_param = [
+            {
+                "token_address": self.req_tokens[0],
+                "from_address": self.from_address,
+                "to_address": self.to_address,
+                "amount": 5
+            }, {
+                "token_address": self.req_tokens[1],
+                "from_address": self.from_address,
+                "to_address": self.to_address,
+                "amount": 10
+            }
+        ]
+        resp = client.post(
+            self.test_url,
+            json=req_param,
+            headers={
+                "issuer-address": self.admin_address,
+                "auth-token": "test_auth_token"
             }
         )
 
@@ -203,7 +287,7 @@ class TestAppRoutersShareBulkTransferPOST:
                 "token_address": self.req_tokens[0],
                 "from_address": self.from_address,
                 "to_address": self.to_address,
-                "amount": 100_000_001
+                "amount": 1_000_000_000_001
             }
         ]
         resp = client.post(
@@ -225,14 +309,14 @@ class TestAppRoutersShareBulkTransferPOST:
             "detail": [
                 {
                     "ctx": {
-                        "limit_value": 100_000_000
+                        "limit_value": 1_000_000_000_000
                     },
                     "loc": [
                         "body",
                         0,
                         "amount"
                     ],
-                    "msg": "ensure this value is less than or equal to 100000000",
+                    "msg": "ensure this value is less than or equal to 1000000000000",
                     "type": "value_error.number.not_le"
                 },
             ]
@@ -270,7 +354,7 @@ class TestAppRoutersShareBulkTransferPOST:
 
     # <Error_4>
     # RequestValidationError
-    # issuer-address, eoa-password(required)
+    # issuer-address
     def test_error_4(self, client, db):
         # request target API
         req_param = []
@@ -289,15 +373,13 @@ class TestAppRoutersShareBulkTransferPOST:
                 "code": 1,
                 "title": "RequestValidationError"
             },
-            "detail": [{
-                "loc": ["header", "issuer-address"],
-                "msg": "issuer-address is not a valid address",
-                "type": "value_error"
-            }, {
-                "loc": ["header", "eoa-password"],
-                "msg": "field required",
-                "type": "value_error.missing"
-            }]
+            "detail": [
+                {
+                    "loc": ["header", "issuer-address"],
+                    "msg": "issuer-address is not a valid address",
+                    "type": "value_error"
+                }
+            ]
         }
 
     # <Error_5>
@@ -358,7 +440,7 @@ class TestAppRoutersShareBulkTransferPOST:
                 "code": 1,
                 "title": "InvalidParameterError"
             },
-            "detail": "list length is zero"
+            "detail": "list length must be at least one"
         }
 
     # <Error_7>
@@ -519,5 +601,5 @@ class TestAppRoutersShareBulkTransferPOST:
                 "code": 1,
                 "title": "InvalidParameterError"
             },
-            "detail": f"wait for a while as the token is being processed: {self.req_tokens[0]}"
+            "detail": f"this token is temporarily unavailable: {self.req_tokens[0]}"
         }

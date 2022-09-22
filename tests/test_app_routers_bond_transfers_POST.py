@@ -16,10 +16,16 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import hashlib
 from unittest import mock
 from unittest.mock import ANY, MagicMock
 
-from app.model.db import Account, Token, TokenType
+from app.model.db import (
+    Account,
+    AuthToken,
+    Token,
+    TokenType
+)
 from app.utils.e2ee_utils import E2EEUtils
 from app.exceptions import SendTransactionError
 from tests.account_config import config_eth_account
@@ -34,6 +40,7 @@ class TestAppRoutersBondTransfersPOST:
     ###########################################################################
 
     # <Normal_1>
+    # Authorization by eoa-password
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.transfer")
     def test_normal_1(self, IbetStraightBondContract_mock, client, db):
         _admin_account = config_eth_account("user1")
@@ -79,6 +86,72 @@ class TestAppRoutersBondTransfersPOST:
             headers={
                 "issuer-address": _admin_address,
                 "eoa-password": E2EEUtils.encrypt("password")
+            }
+        )
+
+        # assertion
+        IbetStraightBondContract_mock.assert_any_call(
+            data=req_param,
+            tx_from=_admin_address,
+            private_key=ANY
+        )
+
+        assert resp.status_code == 200
+        assert resp.json() is None
+
+    # <Normal_2>
+    # Authorization by auth-token
+    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.transfer")
+    def test_normal_2(self, IbetStraightBondContract_mock, client, db):
+        _admin_account = config_eth_account("user1")
+        _admin_address = _admin_account["address"]
+        _admin_keyfile = _admin_account["keyfile_json"]
+
+        _from_address_account = config_eth_account("user2")
+        _from_address = _from_address_account["address"]
+
+        _to_address_account = config_eth_account("user3")
+        _to_address = _to_address_account["address"]
+
+        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _admin_address
+        account.keyfile = _admin_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        auth_token = AuthToken()
+        auth_token.issuer_address = _admin_address
+        auth_token.auth_token = hashlib.sha256("test_auth_token".encode()).hexdigest()
+        auth_token.valid_duration = 0
+        db.add(auth_token)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.tx_hash = ""
+        token.issuer_address = _admin_address
+        token.token_address = _token_address
+        token.abi = ""
+        db.add(token)
+
+        # mock
+        IbetStraightBondContract_mock.side_effect = [None]
+
+        # request target API
+        req_param = {
+            "token_address": _token_address,
+            "from_address": _from_address,
+            "to_address": _to_address,
+            "amount": 10
+        }
+        resp = client.post(
+            self.test_url,
+            json=req_param,
+            headers={
+                "issuer-address": _admin_address,
+                "auth-token": "test_auth_token"
             }
         )
 
@@ -169,7 +242,7 @@ class TestAppRoutersBondTransfersPOST:
             "token_address": _token_address,
             "from_address": _from_address,
             "to_address": _to_address,
-            "amount": 100_000_001
+            "amount": 1_000_000_000_001
         }
         resp = client.post(
             self.test_url,
@@ -189,13 +262,13 @@ class TestAppRoutersBondTransfersPOST:
             "detail": [
                 {
                     "ctx": {
-                        "limit_value": 100_000_000
+                        "limit_value": 1_000_000_000_000
                     },
                     "loc": [
                         "body",
                         "amount"
                     ],
-                    "msg": "ensure this value is less than or equal to 100000000",
+                    "msg": "ensure this value is less than or equal to 1000000000000",
                     "type": "value_error.number.not_le"
                 },
             ]
@@ -231,7 +304,7 @@ class TestAppRoutersBondTransfersPOST:
         }
 
     # <Error_4>
-    # RequestValidationError: issuer-address, eoa-password(required)
+    # RequestValidationError: issuer-address
     def test_normal_4(self, client, db):
         _from_address_account = config_eth_account("user2")
         _from_address = _from_address_account["address"]
@@ -263,15 +336,13 @@ class TestAppRoutersBondTransfersPOST:
                 "code": 1,
                 "title": "RequestValidationError"
             },
-            "detail": [{
-                "loc": ["header", "issuer-address"],
-                "msg": "issuer-address is not a valid address",
-                "type": "value_error"
-            }, {
-                "loc": ["header", "eoa-password"],
-                "msg": "field required",
-                "type": "value_error.missing"
-            }]
+            "detail": [
+                {
+                    "loc": ["header", "issuer-address"],
+                    "msg": "issuer-address is not a valid address",
+                    "type": "value_error"
+                }
+            ]
         }
 
     # <Error_5>
@@ -508,7 +579,7 @@ class TestAppRoutersBondTransfersPOST:
                 "code": 1,
                 "title": "InvalidParameterError"
             },
-            "detail": "wait for a while as the token is being processed"
+            "detail": "this token is temporarily unavailable"
         }
 
     # <Error_10>

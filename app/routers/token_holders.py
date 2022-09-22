@@ -28,7 +28,7 @@ from web3.middleware import geth_poa_middleware
 import config
 
 from app.database import db_session
-from app.model.schema.token_holders import (
+from app.model.schema import (
     CreateTokenHoldersListRequest,
     CreateTokenHoldersListResponse,
     GetTokenHoldersListResponse,
@@ -37,12 +37,9 @@ from app.utils.docs_utils import get_routers_responses
 from app.utils.check_utils import validate_headers, address_is_valid_address
 from app.model.db import Token, TokenHoldersList, TokenHolderBatchStatus, TokenHolder
 from app.exceptions import InvalidParameterError
-from app import log
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
-
-LOG = log.get_logger()
 
 router = APIRouter(
     prefix="/token",
@@ -81,7 +78,7 @@ def create_collection(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Validate block number
     if data.block_number > web3.eth.block_number:
@@ -158,7 +155,7 @@ def get_token_holders(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Validate list id
     try:

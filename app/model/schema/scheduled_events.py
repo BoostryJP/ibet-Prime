@@ -28,7 +28,7 @@ from pydantic import (
 
 from datetime import datetime
 from app.model.db import TokenType
-from app.model.schema import (
+from .token import (
     IbetStraightBondUpdate,
     IbetShareUpdate
 )

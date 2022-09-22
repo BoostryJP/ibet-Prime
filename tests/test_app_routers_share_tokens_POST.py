@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import hashlib
 from unittest.mock import (
     ANY,
     patch
@@ -34,9 +35,9 @@ import string
 from app.exceptions import SendTransactionError
 from app.model.db import (
     Account,
+    AuthToken,
     Token,
     TokenType,
-    AdditionalTokenInfo,
     UpdateToken,
     IDXPosition,
     UTXO
@@ -169,9 +170,6 @@ class TestAppRoutersShareTokensPOST:
             update_token = db.query(UpdateToken).first()
             assert update_token is None
 
-            additional_info = db.query(AdditionalTokenInfo).first()
-            assert additional_info is None
-
     # <Normal_1_2>
     # create only
     # No input for symbol, dividends and cancellation_date.
@@ -278,9 +276,6 @@ class TestAppRoutersShareTokensPOST:
             update_token = db.query(UpdateToken).first()
             assert update_token is None
 
-            additional_info = db.query(AdditionalTokenInfo).first()
-            assert additional_info is None
-
     # <Normal_2>
     # include updates
     def test_normal_2(self, client, db):
@@ -333,7 +328,6 @@ class TestAppRoutersShareTokensPOST:
                 "contact_information": "contact info test",  # update
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
-                "is_manual_transfer_approval": True,  # update
                 "principal_value": 1000,
                 "is_canceled": True
             }
@@ -389,9 +383,121 @@ class TestAppRoutersShareTokensPOST:
             assert update_token.status == 0
             assert update_token.trigger == "Issue"
 
-            additional_info = db.query(AdditionalTokenInfo).first()
-            assert additional_info.token_address == "contract_address_test1"
-            assert additional_info.is_manual_transfer_approval is True
+    # <Normal_3>
+    # Authorization by auth-token
+    def test_normal_3(self, client, db):
+        test_account = config_eth_account("user1")
+
+        # prepare data
+        account = Account()
+        account.issuer_address = test_account["address"]
+        account.keyfile = test_account["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        auth_token = AuthToken()
+        auth_token.issuer_address = test_account["address"]
+        auth_token.auth_token = hashlib.sha256("test_auth_token".encode()).hexdigest()
+        auth_token.valid_duration = 0
+        db.add(auth_token)
+
+        token_before = db.query(Token).all()
+
+        # mock
+        IbetShareContract_create = patch(
+            target="app.model.blockchain.token.IbetShareContract.create",
+            return_value=("contract_address_test1", "abi_test1", "tx_hash_test1")
+        )
+        TokenListContract_register = patch(
+            target="app.model.blockchain.token_list.TokenListContract.register",
+            return_value=None
+        )
+        ContractUtils_get_block_by_transaction_hash = patch(
+            target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
+            return_value={
+                "number": 12345,
+                "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=timezone.utc).timestamp()
+            }
+        )
+
+        with IbetShareContract_create, \
+                TokenListContract_register, \
+                ContractUtils_get_block_by_transaction_hash:
+            # request target api
+            req_param = {
+                "name": "name_test1",
+                "symbol": "symbol_test1",
+                "issue_price": 1000,
+                "total_supply": 10000,
+                "dividends": 123.45,
+                "dividend_record_date": "20211231",
+                "dividend_payment_date": "20211231",
+                "cancellation_date": "20221231",
+                "principal_value": 1000
+            }
+            resp = client.post(
+                self.apiurl,
+                json=req_param,
+                headers={
+                    "issuer-address": test_account["address"],
+                    "auth-token": "test_auth_token"
+                }
+            )
+
+            # assertion
+            IbetShareContract.create.assert_called_with(
+                args=[
+                    "name_test1", "symbol_test1", 1000, 10000, 12345,
+                    "20211231", "20211231", "20221231", 1000
+                ],
+                tx_from=test_account["address"],
+                private_key=ANY
+            )
+            TokenListContract.register.assert_called_with(
+                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
+                token_address="contract_address_test1",
+                token_template=TokenType.IBET_SHARE.value,
+                account_address=test_account["address"],
+                private_key=ANY
+            )
+            ContractUtils.get_block_by_transaction_hash(
+                tx_hash="tx_hash_test1"
+            )
+
+            assert resp.status_code == 200
+            assert resp.json()["token_address"] == "contract_address_test1"
+            assert resp.json()["token_status"] == 1
+
+            token_after = db.query(Token).all()
+            assert 0 == len(token_before)
+            assert 1 == len(token_after)
+            token_1 = token_after[0]
+            assert token_1.id == 1
+            assert token_1.type == TokenType.IBET_SHARE.value
+            assert token_1.tx_hash == "tx_hash_test1"
+            assert token_1.issuer_address == test_account["address"]
+            assert token_1.token_address == "contract_address_test1"
+            assert token_1.abi == "abi_test1"
+            assert token_1.token_status == 1
+
+            position = db.query(IDXPosition).first()
+            assert position.token_address == "contract_address_test1"
+            assert position.account_address == test_account["address"]
+            assert position.balance == req_param["total_supply"]
+            assert position.exchange_balance == 0
+            assert position.exchange_commitment == 0
+            assert position.pending_transfer == 0
+
+            utxo = db.query(UTXO).first()
+            assert utxo.transaction_hash == "tx_hash_test1"
+            assert utxo.account_address == test_account["address"]
+            assert utxo.token_address == "contract_address_test1"
+            assert utxo.amount == req_param["total_supply"]
+            assert utxo.block_number == 12345
+            assert utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
+
+            update_token = db.query(UpdateToken).first()
+            assert update_token is None
 
     ###########################################################################
     # Error Case
@@ -523,15 +629,13 @@ class TestAppRoutersShareTokensPOST:
                 "code": 1,
                 "title": "RequestValidationError"
             },
-            "detail": [{
-                "loc": ["header", "issuer-address"],
-                "msg": "issuer-address is not a valid address",
-                "type": "value_error"
-            }, {
-                "loc": ["header", "eoa-password"],
-                "msg": "field required",
-                "type": "value_error.missing"
-            }]
+            "detail": [
+                {
+                    "loc": ["header", "issuer-address"],
+                    "msg": "issuer-address is not a valid address",
+                    "type": "value_error"
+                }
+            ]
         }
 
     # <Error_2_3>
@@ -683,7 +787,7 @@ class TestAppRoutersShareTokensPOST:
             "name": GetRandomStr(101),
             "symbol": GetRandomStr(101),
             "issue_price": 5_000_000_001,
-            "total_supply": 100_000_001,
+            "total_supply": 1_000_000_000_001,
             "dividends": 5_000_000_000.01,
             "dividend_record_date": "20211231",
             "dividend_payment_date": "20211231",
@@ -735,9 +839,9 @@ class TestAppRoutersShareTokensPOST:
                 },
                 {
                     "loc": ["body", "total_supply"],
-                    "msg": "ensure this value is less than or equal to 100000000",
+                    "msg": "ensure this value is less than or equal to 1000000000000",
                     "type": "value_error.number.not_le",
-                    "ctx": {"limit_value": 100000000}
+                    "ctx": {"limit_value": 1000000000000}
                 },
                 {
                     "loc": ["body", "symbol"],

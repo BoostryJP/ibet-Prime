@@ -45,9 +45,6 @@ from app.utils.check_utils import (
     address_is_valid_address
 )
 from app.utils.docs_utils import get_routers_responses
-from app import log
-
-LOG = log.get_logger()
 
 router = APIRouter(tags=["file"])
 
@@ -86,7 +83,10 @@ def list_all_upload_files(
     if file_name is not None:
         query = query.filter(UploadFile.file_name.like("%" + file_name + "%"))
     if label is not None:
-        query = query.filter(UploadFile.label.like("%" + label + "%"))
+        if label == "":
+            query = query.filter(UploadFile.label == "")
+        else:
+            query = query.filter(UploadFile.label.like("%" + label + "%"))
     count = query.count()
 
     # Pagination

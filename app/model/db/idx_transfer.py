@@ -16,6 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from enum import Enum
+
 from sqlalchemy import (
     Column,
     BigInteger,
@@ -43,6 +45,13 @@ class IDXTransfer(Base):
     amount = Column(BigInteger)
     # block timestamp
     block_timestamp = Column(DateTime)
+
+
+class IDXTransfersSortItem(str, Enum):
+    BLOCK_TIMESTAMP = "block_timestamp"
+    FROM_ADDRESS = "from_address"
+    TO_ADDRESS = "to_address"
+    AMOUNT = "amount"
 
 
 class IDXTransferBlockNumber(Base):

@@ -33,8 +33,7 @@ from app.model.db import (
     IDXTransferApproval,
     IDXTransferApprovalBlockNumber,
     Notification,
-    NotificationType,
-    AdditionalTokenInfo,
+    NotificationType
 )
 from app.model.blockchain import IbetStraightBondContract, IbetShareContract
 from app.model.schema import IbetStraightBondUpdate, IbetShareUpdate
@@ -233,12 +232,11 @@ class TestProcessor:
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
 
-    # <Normal_2_1_1>
+    # <Normal_2_1>
     # Event log
     #   - ibetSecurityToken: ApplyForTransfer
-    # Token with automatic transfer approval
-    #   - not exists AdditionalTokenInfo
-    def test_normal_2_1_1(self, processor, db, personal_info_contract):
+    # -> One notification
+    def test_normal_2_1(self, processor, db, personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -265,231 +263,6 @@ class TestProcessor:
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
         db.add(token_1)
-
-        # Prepare data : Token(processing token)
-        token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
-        token_2.token_address = "test1"
-        token_2.issuer_address = issuer_address
-        token_2.abi = "abi"
-        token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
-        db.add(token_2)
-
-        # Prepare data : BlockNumber
-        _idx_transfer_approval_block_number = IDXTransferApprovalBlockNumber()
-        _idx_transfer_approval_block_number.latest_block_number = 0
-        db.add(_idx_transfer_approval_block_number)
-
-        db.commit()
-
-        # Transfer
-        tx = token_contract_1.functions.transferFrom(
-            issuer_address,
-            user_address_1,
-            40
-        ).buildTransaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
-        ContractUtils.send_transaction(tx, issuer_private_key)
-
-        # ApplyForTransfer
-        tx = token_contract_1.functions.applyForTransfer(
-            issuer_address,
-            30,
-            ""
-        ).buildTransaction({
-            "chainId": CHAIN_ID,
-            "from": user_address_1,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
-        _, tx_receipt_1 = ContractUtils.send_transaction(tx, user_private_key_1)
-
-        # Run target process
-        block_number = web3.eth.block_number
-        processor.sync_new_logs()
-
-        # Assertion
-        _transfer_approval_list = db.query(IDXTransferApproval).all()
-        assert len(_transfer_approval_list) == 1
-        _transfer_approval = _transfer_approval_list[0]
-        assert _transfer_approval.id == 1
-        assert _transfer_approval.token_address == token_address_1
-        assert _transfer_approval.exchange_address is None
-        assert _transfer_approval.application_id == 0
-        assert _transfer_approval.from_address == user_address_1
-        assert _transfer_approval.to_address == issuer_address
-        assert _transfer_approval.amount == 30
-        assert _transfer_approval.application_datetime is None
-        block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _transfer_approval.application_blocktimestamp == datetime.utcfromtimestamp(block["timestamp"])
-        assert _transfer_approval.approval_datetime is None
-        assert _transfer_approval.approval_blocktimestamp is None
-        assert _transfer_approval.cancelled is None
-        assert _transfer_approval.transfer_approved is None
-
-        _notification_list = db.query(Notification).all()
-        assert len(_notification_list) == 0
-
-        _idx_transfer_approval_block_number = db.query(IDXTransferApprovalBlockNumber).first()
-        assert _idx_transfer_approval_block_number.id == 1
-        assert _idx_transfer_approval_block_number.latest_block_number == block_number
-
-    # <Normal_2_1_2>
-    # Event log
-    #   - ibetSecurityToken: ApplyForTransfer
-    # Token with automatic transfer approval
-    #   - AdditionalTokenInfo.is_manual_transfer_approval = false
-    @pytest.mark.freeze_time('2021-04-27 12:34:56')
-    def test_normal_2_1_2(self, processor, db, personal_info_contract):
-        user_1 = config_eth_account("user1")
-        issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
-        )
-        user_2 = config_eth_account("user2")
-        user_address_1 = user_2["address"]
-        user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
-        )
-
-        # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address,
-                                                      transfer_approval_required=True)
-        token_address_1 = token_contract_1.address
-        token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
-        token_1.token_address = token_address_1
-        token_1.issuer_address = issuer_address
-        token_1.abi = token_contract_1.abi
-        token_1.tx_hash = "tx_hash"
-        db.add(token_1)
-
-        # Prepare data : AdditionalTokenInfo
-        additional_token_info_1 = AdditionalTokenInfo()
-        additional_token_info_1.token_address = token_address_1
-        additional_token_info_1.is_manual_transfer_approval = False
-        db.add(additional_token_info_1)
-
-        # Prepare data : Token(processing token)
-        token_2 = Token()
-        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
-        token_2.token_address = "test1"
-        token_2.issuer_address = issuer_address
-        token_2.abi = "abi"
-        token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
-        db.add(token_2)
-
-        # Prepare data : BlockNumber
-        _idx_transfer_approval_block_number = IDXTransferApprovalBlockNumber()
-        _idx_transfer_approval_block_number.latest_block_number = 0
-        db.add(_idx_transfer_approval_block_number)
-
-        db.commit()
-
-        # Transfer
-        tx = token_contract_1.functions.transferFrom(
-            issuer_address,
-            user_address_1,
-            40
-        ).buildTransaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
-        ContractUtils.send_transaction(tx, issuer_private_key)
-
-        # ApplyForTransfer
-        now = datetime.utcnow()
-        tx = token_contract_1.functions.applyForTransfer(
-            issuer_address,
-            30,
-            str(now.timestamp())
-        ).buildTransaction({
-            "chainId": CHAIN_ID,
-            "from": user_address_1,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
-        _, tx_receipt_1 = ContractUtils.send_transaction(tx, user_private_key_1)
-
-        # Run target process
-        block_number = web3.eth.block_number
-        processor.sync_new_logs()
-
-        # Assertion
-        _transfer_approval_list = db.query(IDXTransferApproval).all()
-        assert len(_transfer_approval_list) == 1
-        _transfer_approval = _transfer_approval_list[0]
-        assert _transfer_approval.id == 1
-        assert _transfer_approval.token_address == token_address_1
-        assert _transfer_approval.exchange_address is None
-        assert _transfer_approval.application_id == 0
-        assert _transfer_approval.from_address == user_address_1
-        assert _transfer_approval.to_address == issuer_address
-        assert _transfer_approval.amount == 30
-        assert _transfer_approval.application_datetime == now
-        block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _transfer_approval.application_blocktimestamp == datetime.utcfromtimestamp(block["timestamp"])
-        assert _transfer_approval.approval_datetime is None
-        assert _transfer_approval.approval_blocktimestamp is None
-        assert _transfer_approval.cancelled is None
-        assert _transfer_approval.transfer_approved is None
-
-        _notification_list = db.query(Notification).all()
-        assert len(_notification_list) == 0
-
-        _idx_transfer_approval_block_number = db.query(IDXTransferApprovalBlockNumber).first()
-        assert _idx_transfer_approval_block_number.id == 1
-        assert _idx_transfer_approval_block_number.latest_block_number == block_number
-
-    # <Normal_2_1_3>
-    # Event log
-    #   - ibetSecurityToken: ApplyForTransfer
-    # Token with manual transfer approval
-    def test_normal_2_1_3(self, processor, db, personal_info_contract):
-        user_1 = config_eth_account("user1")
-        issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
-        )
-        user_2 = config_eth_account("user2")
-        user_address_1 = user_2["address"]
-        user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
-        )
-
-        # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address,
-                                                      transfer_approval_required=True)
-        token_address_1 = token_contract_1.address
-        token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
-        token_1.token_address = token_address_1
-        token_1.issuer_address = issuer_address
-        token_1.abi = token_contract_1.abi
-        token_1.tx_hash = "tx_hash"
-        db.add(token_1)
-
-        # Prepare data : AdditionalTokenInfo
-        additional_token_info_1 = AdditionalTokenInfo()
-        additional_token_info_1.token_address = token_address_1
-        additional_token_info_1.is_manual_transfer_approval = True
-        db.add(additional_token_info_1)
 
         # Prepare data : Token(processing token)
         token_2 = Token()
@@ -567,6 +340,7 @@ class TestProcessor:
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 0
         assert _notification.metainfo == {
+            "token_type": token_1.type,
             "token_address": token_address_1,
             "id": 1
         }
@@ -679,7 +453,19 @@ class TestProcessor:
         assert _transfer_approval.transfer_approved is None
 
         _notification_list = db.query(Notification).all()
-        assert len(_notification_list) == 0
+        assert len(_notification_list) == 1
+        _notification = _notification_list[0]
+        assert _notification.id == 1
+        assert UUID(_notification.notice_id).version == 4
+        assert _notification.issuer_address == issuer_address
+        assert _notification.priority == 0
+        assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
+        assert _notification.code == 0
+        assert _notification.metainfo == {
+            "token_type": token_1.type,
+            "token_address": token_address_1,
+            "id": 1
+        }
 
         _idx_transfer_approval_block_number = db.query(IDXTransferApprovalBlockNumber).first()
         assert _idx_transfer_approval_block_number.id == 1
@@ -789,15 +575,16 @@ class TestProcessor:
         assert _transfer_approval.transfer_approved is None
 
         _notification_list = db.query(Notification).all()
-        assert len(_notification_list) == 1
-        _notification = _notification_list[0]
-        assert _notification.id == 1
+        assert len(_notification_list) == 2
+        _notification = _notification_list[1]
+        assert _notification.id == 2
         assert UUID(_notification.notice_id).version == 4
         assert _notification.issuer_address == issuer_address
         assert _notification.priority == 0
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 1
         assert _notification.metainfo == {
+            "token_type": token_1.type,
             "token_address": token_address_1,
             "id": 1
         }
@@ -910,15 +697,16 @@ class TestProcessor:
         assert _transfer_approval.transfer_approved is True
 
         _notification_list = db.query(Notification).all()
-        assert len(_notification_list) == 1
-        _notification = _notification_list[0]
-        assert _notification.id == 1
+        assert len(_notification_list) == 2
+        _notification = _notification_list[1]
+        assert _notification.id == 2
         assert UUID(_notification.notice_id).version == 4
         assert _notification.issuer_address == issuer_address
         assert _notification.priority == 0
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 2
         assert _notification.metainfo == {
+            "token_type": token_1.type,
             "token_address": token_address_1,
             "id": 1
         }
@@ -966,12 +754,6 @@ class TestProcessor:
         _idx_transfer_approval_block_number = IDXTransferApprovalBlockNumber()
         _idx_transfer_approval_block_number.latest_block_number = 0
         db.add(_idx_transfer_approval_block_number)
-
-        # Prepare data : AdditionalTokenInfo
-        additional_token_info_1 = AdditionalTokenInfo()
-        additional_token_info_1.token_address = token_address_1
-        additional_token_info_1.is_manual_transfer_approval = True
-        db.add(additional_token_info_1)
 
         db.commit()
 
@@ -1049,6 +831,7 @@ class TestProcessor:
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 0
         assert _notification.metainfo == {
+            "token_type": token_1.type,
             "token_address": token_address_1,
             "id": 1
         }
@@ -1182,15 +965,16 @@ class TestProcessor:
         assert _transfer_approval.transfer_approved is None
 
         _notification_list = db.query(Notification).all()
-        assert len(_notification_list) == 1
-        _notification = _notification_list[0]
-        assert _notification.id == 1
+        assert len(_notification_list) == 2
+        _notification = _notification_list[1]
+        assert _notification.id == 2
         assert UUID(_notification.notice_id).version == 4
         assert _notification.issuer_address == issuer_address
         assert _notification.priority == 0
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 1
         assert _notification.metainfo == {
+            "token_type": token_1.type,
             "token_address": token_address_1,
             "id": 1
         }
@@ -1315,15 +1099,16 @@ class TestProcessor:
         assert _transfer_approval.transfer_approved is None
 
         _notification_list = db.query(Notification).all()
-        assert len(_notification_list) == 1
-        _notification = _notification_list[0]
-        assert _notification.id == 1
+        assert len(_notification_list) == 2
+        _notification = _notification_list[1]
+        assert _notification.id == 2
         assert UUID(_notification.notice_id).version == 4
         assert _notification.issuer_address == issuer_address
         assert _notification.priority == 0
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 3
         assert _notification.metainfo == {
+            "token_type": token_1.type,
             "token_address": token_address_1,
             "id": 1
         }
@@ -1460,15 +1245,16 @@ class TestProcessor:
         assert _transfer_approval.transfer_approved is True
 
         _notification_list = db.query(Notification).all()
-        assert len(_notification_list) == 2
-        _notification = _notification_list[1]
-        assert _notification.id == 2
+        assert len(_notification_list) == 3
+        _notification = _notification_list[2]
+        assert _notification.id == 3
         assert UUID(_notification.notice_id).version == 4
         assert _notification.issuer_address == issuer_address
         assert _notification.priority == 0
         assert _notification.type == NotificationType.TRANSFER_APPROVAL_INFO
         assert _notification.code == 2
         assert _notification.metainfo == {
+            "token_type": token_1.type,
             "token_address": token_address_1,
             "id": 1
         }
@@ -1477,11 +1263,11 @@ class TestProcessor:
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
 
-    # <Normal_6>
+    # <Normal_3>
     # If block number processed in batch is equal or greater than current block number,
     # batch will output a log "skip process".
     @mock.patch("web3.eth.Eth.block_number", 100)
-    def test_normal_6(self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture):
+    def test_normal_3(self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture):
         _idx_transfer_approval_block_number = IDXTransferApprovalBlockNumber()
         _idx_transfer_approval_block_number.id = 1
         _idx_transfer_approval_block_number.latest_block_number = 1000
@@ -1491,9 +1277,9 @@ class TestProcessor:
         processor.sync_new_logs()
         assert caplog.record_tuples.count((LOG.name, logging.DEBUG, "skip process")) == 1
 
-    # <Normal_7>
-    # If DB session fails in sinking phase each event, batch outputs a log "exception occured".
-    def test_normal_7(self, processor, db, personal_info_contract, ibet_security_token_escrow_contract, caplog: pytest.LogCaptureFixture):
+    # <Normal_4>
+    # If DB session fails in sinking phase each event, batch outputs a log "exception occurred".
+    def test_normal_4(self, processor, db, personal_info_contract, ibet_security_token_escrow_contract, caplog: pytest.LogCaptureFixture):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8"))
@@ -1558,7 +1344,11 @@ class TestProcessor:
             processor.sync_new_logs()
 
         # Error occurs in events with exception of Escrow.
-        assert caplog.record_tuples.count((LOG.name, logging.ERROR, "An exception occurred during event synchronization")) == 2
+        assert caplog.record_tuples.count((LOG.name, logging.ERROR, "An exception occurred during event synchronization")) == 3
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
 
     # <Error_1>
     # If each error occurs, batch will output logs and continue next sync.

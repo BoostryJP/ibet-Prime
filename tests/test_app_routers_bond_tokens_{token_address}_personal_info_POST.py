@@ -16,10 +16,12 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import hashlib
 from unittest.mock import patch
 
 from app.model.db import (
     Account,
+    AuthToken,
     Token,
     TokenType
 )
@@ -181,6 +183,92 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoPOST:
                 headers={
                     "issuer-address": _issuer_address,
                     "eoa-password": E2EEUtils.encrypt("password")
+                }
+            )
+
+            # assertion
+            assert resp.status_code == 200
+            assert resp.json() is None
+            IbetStraightBondContract.get.assert_called_with(_token_address)
+            PersonalInfoContract.__init__.assert_called_with(
+                db=db,
+                issuer_address=_issuer_address,
+                contract_address="personal_info_contract_address"
+            )
+            PersonalInfoContract.register_info.assert_called_with(
+                account_address=_test_account_address,
+                data=req_param,
+                default_value=None
+            )
+
+    # <Normal_3>
+    # Authorization by auth token
+    def test_normal_3(self, client, db):
+        _issuer_account = config_eth_account("user1")
+        _issuer_address = _issuer_account["address"]
+        _issuer_keyfile = _issuer_account["keyfile_json"]
+
+        _test_account = config_eth_account("user2")
+        _test_account_address = _test_account["address"]
+
+        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _issuer_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        auth_token = AuthToken()
+        auth_token.issuer_address = _issuer_address
+        auth_token.auth_token = hashlib.sha256("test_auth_token".encode()).hexdigest()
+        auth_token.valid_duration = 0
+        db.add(auth_token)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        db.add(token)
+
+        # mock
+        ibet_bond_contract = IbetStraightBondContract()
+        ibet_bond_contract.personal_info_contract_address = "personal_info_contract_address"
+        IbetStraightBondContract_get = patch(
+            target="app.model.blockchain.token.IbetStraightBondContract.get",
+            return_value=ibet_bond_contract
+        )
+        PersonalInfoContract_init = patch(
+            target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
+            return_value=None
+        )
+        PersonalInfoContract_register_info = patch(
+            target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
+            return_value=None
+        )
+
+        with IbetStraightBondContract_get, PersonalInfoContract_init, PersonalInfoContract_register_info:
+            # request target API
+            req_param = {
+                "account_address": _test_account_address,
+                "key_manager": "test_key_manager",
+                "name": "test_name",
+                "postal_code": "test_postal_code",
+                "address": "test_address",
+                "email": "test_email",
+                "birth": "test_birth",
+                "is_corporate": False,
+                "tax_category": 10
+            }
+            resp = client.post(
+                self.test_url.format(_token_address),
+                json=req_param,
+                headers={
+                    "issuer-address": _issuer_address,
+                    "auth-token": "test_auth_token"
                 }
             )
 
@@ -396,58 +484,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoPOST:
 
     # <Error_1_5>
     # RequestValidationError
-    # eoa-password required
-    def test_error_1_5(self, client, db):
-        _issuer_account = config_eth_account("user1")
-        _issuer_address = _issuer_account["address"]
-        _issuer_keyfile = _issuer_account["keyfile_json"]
-
-        _test_account = config_eth_account("user2")
-        _test_account_address = _test_account["address"]
-
-        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
-
-        # request target API
-        req_param = {
-            "account_address": _test_account_address,
-            "key_manager": "test_key_manager",
-            "name": "test_name",
-            "postal_code": "test_postal_code",
-            "address": "test_address",
-            "email": "test_email",
-            "birth": "test_birth",
-            "is_corporate": False,
-            "tax_category": 10
-        }
-        resp = client.post(
-            self.test_url.format(_token_address),
-            json=req_param,
-            headers={
-                "issuer-address": _issuer_address,
-                "eoa-password": None
-            }
-        )
-
-        # assertion
-        assert resp.status_code == 422
-        assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
-            "detail": [
-                {
-                    "loc": ["header", "eoa-password"],
-                    "msg": "field required",
-                    "type": "value_error.missing"
-                }
-            ]
-        }
-
-    # <Error_1_6>
-    # RequestValidationError
     # eoa-password not encrypted
-    def test_error_1_6(self, client, db):
+    def test_error_1_5(self, client, db):
         _issuer_account = config_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -697,7 +735,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoPOST:
                 "code": 1,
                 "title": "InvalidParameterError"
             },
-            "detail": "wait for a while as the token is being processed"
+            "detail": "this token is temporarily unavailable"
         }
 
     # <Error_5>

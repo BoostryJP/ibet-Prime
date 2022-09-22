@@ -25,6 +25,7 @@ from fastapi import (
     Query
 )
 from fastapi.exceptions import HTTPException
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.database import db_session
@@ -47,9 +48,6 @@ from app.model.blockchain import (
     IbetShareContract
 )
 from app.exceptions import InvalidParameterError
-from app import log
-
-LOG = log.get_logger()
 
 router = APIRouter(tags=["position"])
 
@@ -63,6 +61,7 @@ router = APIRouter(tags=["position"])
 def list_all_position(
         account_address: str,
         issuer_address: Optional[str] = Header(None),
+        include_former_position: bool = False,
         token_type: Optional[TokenType] = Query(None),
         offset: Optional[int] = Query(None),
         limit: Optional[int] = Query(None),
@@ -76,8 +75,18 @@ def list_all_position(
     query = db.query(IDXPosition, Token). \
         join(Token, IDXPosition.token_address == Token.token_address). \
         filter(IDXPosition.account_address == account_address). \
-        filter(Token.token_status != 2). \
-        order_by(IDXPosition.token_address, IDXPosition.account_address)
+        filter(Token.token_status != 2)
+
+    if not include_former_position:
+        query = query.filter(or_(
+            IDXPosition.balance != 0,
+            IDXPosition.exchange_balance != 0,
+            IDXPosition.pending_transfer != 0,
+            IDXPosition.exchange_commitment != 0
+        ))
+
+    query = query.order_by(IDXPosition.token_address, IDXPosition.account_address)
+
     if issuer_address is not None:
         query = query.filter(Token.issuer_address == issuer_address)
     total = query.count()
@@ -155,7 +164,7 @@ def retrieve_position(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Position
     _position = db.query(IDXPosition). \
@@ -163,7 +172,8 @@ def retrieve_position(
         filter(IDXPosition.account_address == account_address). \
         first()
     if _position is None:
-        raise HTTPException(status_code=404, detail="position not found")
+        # If there is no position, set default value(0) to each balance.
+        _position = IDXPosition(balance=0, exchange_balance=0, exchange_commitment=0, pending_transfer=0)
 
     # Get Token Name
     token_name = None

@@ -16,24 +16,32 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import (
-    Column,
-    Integer,
-    String
-)
+from typing import List
+from pydantic import BaseModel
 
-from .base import Base
+from .types import ResultSet
 
 
-class BulkTransferUpload(Base):
-    """Bulk Transfer Upload"""
-    __tablename__ = 'bulk_transfer_upload'
+############################
+# REQUEST
+############################
 
-    # upload id (UUID)
-    upload_id = Column(String(36), primary_key=True)
-    # issuer address
-    issuer_address = Column(String(42), nullable=False, index=True)
-    # token type
-    token_type = Column(String(40), nullable=False)
-    # processing status (pending:0, succeeded:1, failed:2)
-    status = Column(Integer, nullable=False, index=True)
+
+############################
+# RESPONSE
+############################
+
+class IssueRedeemEvent(BaseModel):
+    """Issue/Redeem event"""
+    transaction_hash: str
+    token_address: str
+    locked_address: str
+    target_address: str
+    amount: int
+    block_timestamp: str
+
+
+class IssueRedeemHistoryResponse(BaseModel):
+    """Issue/Redeem history"""
+    result_set: ResultSet
+    history: List[IssueRedeemEvent]

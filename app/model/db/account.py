@@ -37,32 +37,18 @@ class Account(Base):
     issuer_address = Column(String(42), primary_key=True)
     # ethereum keyfile
     keyfile = Column(JSON)
-    # ethereum account password(encrypted)
+    # ethereum account password (encrypted)
     eoa_password = Column(String(2000))
     # rsa private key
     rsa_private_key = Column(String(8000))
     # rsa public key
     rsa_public_key = Column(String(2000))
-    # rsa passphrase(encrypted)
+    # rsa passphrase (encrypted)
     rsa_passphrase = Column(String(2000))
-    # rsa status
+    # rsa status (AccountRsaStatus)
     rsa_status = Column(Integer)
     # delete flag
     is_deleted = Column(Boolean, default=False)
-
-
-class AccountRsaKeyTemporary(Base):
-    """Issuer Account(RSA Key Temporary Table)"""
-    __tablename__ = "account_rsa_key_temporary"
-
-    # issuer address
-    issuer_address = Column(String(42), primary_key=True)
-    # rsa private key
-    rsa_private_key = Column(String(8000))
-    # rsa public key
-    rsa_public_key = Column(String(2000))
-    # rsa passphrase(encrypted)
-    rsa_passphrase = Column(String(2000))
 
 
 class AccountRsaStatus(int, Enum):
@@ -76,3 +62,17 @@ class AccountRsaStatus(int, Enum):
     CREATING = 1
     CHANGING = 2
     SET = 3
+
+
+class AccountRsaKeyTemporary(Base):
+    """Issuer Account (RSA Key Temporary Table)"""
+    __tablename__ = "account_rsa_key_temporary"
+
+    # issuer address
+    issuer_address = Column(String(42), primary_key=True)
+    # rsa private key
+    rsa_private_key = Column(String(8000))
+    # rsa public key
+    rsa_public_key = Column(String(2000))
+    # rsa passphrase (encrypted)
+    rsa_passphrase = Column(String(2000))

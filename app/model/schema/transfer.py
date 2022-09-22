@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from enum import Enum
 from typing import (
     List,
     Optional
@@ -25,15 +26,18 @@ from pydantic import (
     Field
 )
 
-from .types import (
-    ResultSet,
-    UpdateTransferApprovalOperationType
-)
+from .types import ResultSet
 
 
 ############################
 # REQUEST
 ############################
+
+class UpdateTransferApprovalOperationType(str, Enum):
+    APPROVE = "approve"
+    CANCEL = "cancel"
+
+
 class UpdateTransferApprovalRequest(BaseModel):
     """Update Transfer Approval schema (Request)"""
     operation_type: UpdateTransferApprovalOperationType = Field(...)

@@ -411,7 +411,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         assert resp.status_code == 400
         assert resp.json() == {
             "meta": {"code": 1, "title": "InvalidParameterError"},
-            "detail": "wait for a while as the token is being processed",
+            "detail": "this token is temporarily unavailable",
         }
 
     # Error_7

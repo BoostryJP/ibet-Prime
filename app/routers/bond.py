@@ -47,6 +47,7 @@ from eth_keyfile import decode_keyfile_json
 from pytz import timezone
 
 import config
+from app import log
 from app.database import db_session
 from app.model.schema import (
     IbetStraightBondCreate,
@@ -57,6 +58,7 @@ from app.model.schema import (
     IbetStraightBondResponse,
     TokenAddressResponse,
     HolderResponse,
+    HolderCountResponse,
     TransferHistoryResponse,
     BulkTransferUploadIdResponse,
     BulkTransferUploadResponse,
@@ -72,36 +74,42 @@ from app.model.schema import (
     IbetSecurityTokenApproveTransfer,
     IbetSecurityTokenCancelTransfer,
     IbetSecurityTokenEscrowApproveTransfer,
-    UpdateTransferApprovalRequest
+    UpdateTransferApprovalRequest,
+    UpdateTransferApprovalOperationType,
+    BatchIssueRedeemUploadIdResponse,
+    GetBatchIssueRedeemResponse,
+    GetBatchIssueRedeemResult,
+    ListBatchIssueRedeemUploadResponse,
+    IssueRedeemHistoryResponse,
+    BatchRegisterPersonalInfoUploadResponse,
+    ListBatchRegisterPersonalInfoUploadResponse,
+    GetBatchRegisterPersonalInfoResponse,
+    BatchRegisterPersonalInfoResult
 )
-from app.model.schema.types import (
-    TransfersSortItem,
-    TransferApprovalsSortItem,
-    UpdateTransferApprovalOperationType
-)
-from app.utils.contract_utils import ContractUtils
-from app.utils.check_utils import (
-    validate_headers,
-    address_is_valid_address,
-    eoa_password_is_required,
-    eoa_password_is_encrypted_value,
-    check_auth
-)
-from app.utils.docs_utils import get_routers_responses
 from app.model.db import (
     Account,
     Token,
     TokenType,
-    AdditionalTokenInfo,
     UpdateToken,
     IDXPosition,
     IDXPersonalInfo,
     BulkTransfer,
     BulkTransferUpload,
     IDXTransfer,
-    ScheduledEvents,
+    IDXTransfersSortItem,
     IDXTransferApproval,
-    UTXO
+    IDXTransferApprovalsSortItem,
+    IDXIssueRedeem,
+    IDXIssueRedeemEventType,
+    IDXIssueRedeemSortItem,
+    ScheduledEvents,
+    UTXO,
+    BatchIssueRedeemUpload,
+    BatchIssueRedeem,
+    BatchIssueRedeemProcessingCategory,
+    BatchRegisterPersonalInfoUpload,
+    BatchRegisterPersonalInfoUploadStatus,
+    BatchRegisterPersonalInfo
 )
 from app.model.blockchain import (
     IbetStraightBondContract,
@@ -109,10 +117,19 @@ from app.model.blockchain import (
     PersonalInfoContract,
     IbetSecurityTokenEscrow
 )
+from app.utils.contract_utils import ContractUtils
+from app.utils.check_utils import (
+    validate_headers,
+    address_is_valid_address,
+    eoa_password_is_encrypted_value,
+    check_auth
+)
+from app.utils.docs_utils import get_routers_responses
 from app.exceptions import (
     InvalidParameterError,
     SendTransactionError,
-    ContractRevertError
+    ContractRevertError,
+    AuthorizationError
 )
 from config import TZ
 
@@ -121,6 +138,7 @@ router = APIRouter(
     tags=["bond"],
 )
 
+LOG = log.get_logger()
 local_tz = timezone(TZ)
 
 
@@ -128,22 +146,31 @@ local_tz = timezone(TZ)
 @router.post(
     "/tokens",
     response_model=TokenAddressResponse,
-    responses=get_routers_responses(422, 401, SendTransactionError, ContractRevertError)
+    responses=get_routers_responses(422, 401, AuthorizationError, SendTransactionError, ContractRevertError)
 )
 def issue_token(
         request: Request,
         token: IbetStraightBondCreate,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Issue ibetStraightBond token"""
 
     # Validate Headers
-    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
-                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
+    )
 
     # Authentication
-    _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
+    _account, decrypt_password = check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -258,13 +285,6 @@ def issue_token(
     _token.token_status = token_status
     db.add(_token)
 
-    # Register additional token info data
-    if token.is_manual_transfer_approval is not None:
-        _additional_info = AdditionalTokenInfo()
-        _additional_info.token_address = contract_address
-        _additional_info.is_manual_transfer_approval = token.is_manual_transfer_approval
-        db.add(_additional_info)
-
     db.commit()
 
     return {
@@ -307,16 +327,6 @@ def list_all_tokens(
         issue_datetime_utc = timezone("UTC").localize(token.created)
         bond_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
         bond_token["token_status"] = token.token_status
-
-        # Set additional info
-        _additional_info = db.query(AdditionalTokenInfo). \
-            filter(AdditionalTokenInfo.token_address == token.token_address). \
-            first()
-        is_manual_transfer_approval = False
-        if _additional_info is not None and _additional_info.is_manual_transfer_approval is not None:
-            is_manual_transfer_approval = _additional_info.is_manual_transfer_approval
-        bond_token["is_manual_transfer_approval"] = is_manual_transfer_approval
-
         bond_tokens.append(bond_token)
 
     return bond_tokens
@@ -341,22 +351,13 @@ def retrieve_token(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get contract data
     bond_token = IbetStraightBondContract.get(contract_address=token_address).__dict__
     issue_datetime_utc = timezone("UTC").localize(_token.created)
     bond_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
     bond_token["token_status"] = _token.token_status
-
-    # Set additional info
-    _additional_info = db.query(AdditionalTokenInfo). \
-        filter(AdditionalTokenInfo.token_address == token_address). \
-        first()
-    is_manual_transfer_approval = False
-    if _additional_info is not None and _additional_info.is_manual_transfer_approval is not None:
-        is_manual_transfer_approval = _additional_info.is_manual_transfer_approval
-    bond_token["is_manual_transfer_approval"] = is_manual_transfer_approval
 
     return bond_token
 
@@ -365,7 +366,7 @@ def retrieve_token(
 @router.post(
     "/tokens/{token_address}",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def update_token(
         request: Request,
@@ -373,15 +374,24 @@ def update_token(
         token: IbetStraightBondUpdate,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Update a token"""
 
     # Validate Headers
-    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
-                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
+    )
 
     # Authentication
-    _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
+    _account, decrypt_password = check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -400,7 +410,7 @@ def update_token(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Send transaction
     try:
@@ -413,26 +423,88 @@ def update_token(
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
 
-    # Update or Register additional token info data
-    if token.is_manual_transfer_approval is not None:
-        _additional_info = db.query(AdditionalTokenInfo). \
-            filter(AdditionalTokenInfo.token_address == token_address). \
-            first()
-        if _additional_info is None:
-            _additional_info = AdditionalTokenInfo()
-            _additional_info.token_address = token_address
-        _additional_info.is_manual_transfer_approval = token.is_manual_transfer_approval
-        db.merge(_additional_info)
-
     db.commit()
     return
+
+
+# GET: /bond/tokens/{token_address}/additional_issue
+@router.get(
+    "/tokens/{token_address}/additional_issue",
+    response_model=IssueRedeemHistoryResponse,
+    responses=get_routers_responses(422, 404, InvalidParameterError)
+)
+def list_additional_issuance_history(
+        token_address: str,
+        sort_item: IDXIssueRedeemSortItem = Query(IDXIssueRedeemSortItem.BLOCK_TIMESTAMP),
+        sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
+        offset: Optional[int] = Query(None),
+        limit: Optional[int] = Query(None),
+        db: Session = Depends(db_session)):
+    """List additional issuance history"""
+
+    # Get token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Get history record
+    query = db.query(IDXIssueRedeem). \
+        filter(IDXIssueRedeem.event_type == IDXIssueRedeemEventType.ISSUE). \
+        filter(IDXIssueRedeem.token_address == token_address)
+    total = query.count()
+    count = total
+
+    # Sort
+    sort_attr = getattr(IDXIssueRedeem, sort_item.value, None)
+    if sort_order == 0:  # ASC
+        query = query.order_by(sort_attr)
+    else:  # DESC
+        query = query.order_by(desc(sort_attr))
+    if sort_item != IDXIssueRedeemSortItem.BLOCK_TIMESTAMP:
+        # NOTE: Set secondary sort for consistent results
+        query = query.order_by(desc(IDXIssueRedeem.block_timestamp))
+
+    # Pagination
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+    _events: List[IDXIssueRedeem] = query.all()
+
+    history = []
+    for _event in _events:
+        block_timestamp_utc = timezone("UTC").localize(_event.block_timestamp)
+        history.append({
+            "transaction_hash": _event.transaction_hash,
+            "token_address": token_address,
+            "locked_address": _event.locked_address,
+            "target_address": _event.target_address,
+            "amount": _event.amount,
+            "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat()
+        })
+
+    return IssueRedeemHistoryResponse(
+        result_set={
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": total
+        },
+        history=history
+    )
 
 
 # POST: /bond/tokens/{token_address}/additional_issue
 @router.post(
     "/tokens/{token_address}/additional_issue",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def additional_issue(
         request: Request,
@@ -440,15 +512,24 @@ def additional_issue(
         data: IbetStraightBondAdditionalIssue,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Additional issue"""
 
     # Validate Headers
-    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
-                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
+    )
 
     # Authentication
-    _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
+    _account, decrypt_password = check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -467,7 +548,7 @@ def additional_issue(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Send transaction
     try:
@@ -483,11 +564,272 @@ def additional_issue(
     return
 
 
+# GET: /bond/tokens/{token_address}/additional_issue/batch
+@router.get(
+    "/tokens/{token_address}/additional_issue/batch",
+    response_model=ListBatchIssueRedeemUploadResponse,
+    responses=get_routers_responses(422)
+)
+def list_all_additional_issue_upload(
+    token_address: str,
+    processed: Optional[bool] = Query(None),
+    sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc (created)"),
+    offset: Optional[int] = Query(None),
+    limit: Optional[int] = Query(None),
+    issuer_address: Optional[str] = Header(None),
+    db: Session = Depends(db_session)
+):
+    # Get a list of uploads
+    query = db.query(BatchIssueRedeemUpload). \
+        filter(BatchIssueRedeemUpload.token_address == token_address). \
+        filter(BatchIssueRedeemUpload.token_type == TokenType.IBET_STRAIGHT_BOND.value). \
+        filter(BatchIssueRedeemUpload.category == BatchIssueRedeemProcessingCategory.ISSUE.value)
+
+    if issuer_address is not None:
+        query = query.filter(BatchIssueRedeemUpload.issuer_address == issuer_address)
+
+    total = query.count()
+
+    if processed is not None:
+        query = query.filter(BatchIssueRedeemUpload.processed == processed)
+
+    count = query.count()
+
+    # Sort
+    if sort_order == 0:  # ASC
+        query = query.order_by(BatchIssueRedeemUpload.created)
+    else:  # DESC
+        query = query.order_by(desc(BatchIssueRedeemUpload.created))
+
+    # Pagination
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+
+    _upload_list: list[BatchIssueRedeemUpload] = query.all()
+
+    uploads = []
+    for _upload in _upload_list:
+        created_utc = timezone("UTC").localize(_upload.created)
+        uploads.append({
+            "batch_id": _upload.upload_id,
+            "issuer_address": _upload.issuer_address,
+            "token_type": _upload.token_type,
+            "token_address": _upload.token_address,
+            "processed": _upload.processed,
+            "created": created_utc.astimezone(local_tz).isoformat()
+        })
+
+    resp = {
+        "result_set": {
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": total
+        },
+        "uploads": uploads
+    }
+    return resp
+
+
+# POST: /bond/tokens/{token_address}/additional_issue/batch
+@router.post(
+    "/tokens/{token_address}/additional_issue/batch",
+    response_model=BatchIssueRedeemUploadIdResponse,
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError)
+)
+def additional_issue_in_batch(
+        request: Request,
+        token_address: str,
+        data: List[IbetStraightBondAdditionalIssue],
+        issuer_address: str = Header(...),
+        auth_token: Optional[str] = Header(None),
+        eoa_password: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Additional issue (Batch)"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
+    )
+
+    # Validate params
+    if len(data) < 1:
+        raise InvalidParameterError("list length must be at least one")
+
+    # Authentication
+    check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
+
+    # Check token status
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Generate upload_id
+    upload_id = uuid.uuid4()
+
+    # Add batch data
+    _batch_upload = BatchIssueRedeemUpload()
+    _batch_upload.upload_id = upload_id
+    _batch_upload.issuer_address = issuer_address
+    _batch_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+    _batch_upload.token_address = token_address
+    _batch_upload.category = BatchIssueRedeemProcessingCategory.ISSUE.value
+    _batch_upload.processed = False
+    db.add(_batch_upload)
+
+    for _item in data:
+        _batch_issue = BatchIssueRedeem()
+        _batch_issue.upload_id = upload_id
+        _batch_issue.account_address = _item.account_address
+        _batch_issue.amount = _item.amount
+        _batch_issue.status = 0
+        db.add(_batch_issue)
+
+    db.commit()
+
+    return BatchIssueRedeemUploadIdResponse(batch_id=str(upload_id))
+
+
+# GET: /bond/tokens/{token_address}/additional_issue/batch/{batch_id}
+@router.get(
+    "/tokens/{token_address}/additional_issue/batch/{batch_id}",
+    response_model=GetBatchIssueRedeemResponse,
+    responses=get_routers_responses(422, 404)
+)
+def retrieve_batch_additional_issue(
+        token_address: str,
+        batch_id: str,
+        issuer_address: str = Header(...),
+        db: Session = Depends(db_session)):
+    """Get Batch status for additional issue"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address)
+    )
+
+    # Upload Existence Check
+    batch: Optional[BatchIssueRedeemUpload] = db.query(BatchIssueRedeemUpload). \
+        filter(BatchIssueRedeemUpload.upload_id == batch_id). \
+        filter(BatchIssueRedeemUpload.issuer_address == issuer_address). \
+        filter(BatchIssueRedeemUpload.token_type == TokenType.IBET_STRAIGHT_BOND.value). \
+        filter(BatchIssueRedeemUpload.token_address == token_address). \
+        filter(BatchIssueRedeemUpload.category == BatchIssueRedeemProcessingCategory.ISSUE.value). \
+        first()
+    if batch is None:
+        raise HTTPException(status_code=404, detail="batch not found")
+
+    # Get Batch Records
+    record_list: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
+        filter(BatchIssueRedeem.upload_id == batch_id). \
+        all()
+
+    return GetBatchIssueRedeemResponse(
+        processed=batch.processed,
+        results=[
+            GetBatchIssueRedeemResult(
+                account_address=record.account_address,
+                amount=record.amount,
+                status=record.status
+            ) for record in record_list
+        ]
+    )
+
+
+# GET: /bond/tokens/{token_address}/redeem
+@router.get(
+    "/tokens/{token_address}/redeem",
+    response_model=IssueRedeemHistoryResponse,
+    responses=get_routers_responses(422, 404, InvalidParameterError)
+)
+def list_redeem_history(
+        token_address: str,
+        sort_item: IDXIssueRedeemSortItem = Query(IDXIssueRedeemSortItem.BLOCK_TIMESTAMP),
+        sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
+        offset: Optional[int] = Query(None),
+        limit: Optional[int] = Query(None),
+        db: Session = Depends(db_session)):
+    """List redemption history"""
+
+    # Get token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Get history record
+    query = db.query(IDXIssueRedeem). \
+        filter(IDXIssueRedeem.event_type == IDXIssueRedeemEventType.REDEEM). \
+        filter(IDXIssueRedeem.token_address == token_address)
+    total = query.count()
+    count = total
+
+    # Sort
+    sort_attr = getattr(IDXIssueRedeem, sort_item.value, None)
+    if sort_order == 0:  # ASC
+        query = query.order_by(sort_attr)
+    else:  # DESC
+        query = query.order_by(desc(sort_attr))
+    if sort_item != IDXIssueRedeemSortItem.BLOCK_TIMESTAMP:
+        # NOTE: Set secondary sort for consistent results
+        query = query.order_by(desc(IDXIssueRedeem.block_timestamp))
+
+    # Pagination
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+    _events: List[IDXIssueRedeem] = query.all()
+
+    history = []
+    for _event in _events:
+        block_timestamp_utc = timezone("UTC").localize(_event.block_timestamp)
+        history.append({
+            "transaction_hash": _event.transaction_hash,
+            "token_address": token_address,
+            "locked_address": _event.locked_address,
+            "target_address": _event.target_address,
+            "amount": _event.amount,
+            "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat()
+        })
+
+    return IssueRedeemHistoryResponse(
+        result_set={
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": total
+        },
+        history=history
+    )
+
+
 # POST: /bond/tokens/{token_address}/redeem
 @router.post(
     "/tokens/{token_address}/redeem",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def redeem_token(
         request: Request,
@@ -495,15 +837,24 @@ def redeem_token(
         data: IbetStraightBondRedeem,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Redeem a token"""
 
     # Validate Headers
-    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
-                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
+    )
 
     # Authentication
-    _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
+    _account, decrypt_password = check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -522,7 +873,7 @@ def redeem_token(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Send transaction
     try:
@@ -536,6 +887,194 @@ def redeem_token(
         raise SendTransactionError("failed to send transaction")
 
     return
+
+
+# GET: /bond/tokens/{token_address}/redeem/batch
+@router.get(
+    "/tokens/{token_address}/redeem/batch",
+    response_model=ListBatchIssueRedeemUploadResponse,
+    responses=get_routers_responses(422)
+)
+def list_all_redeem_upload(
+    token_address: str,
+    processed: Optional[bool] = Query(None),
+    sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc (created)"),
+    offset: Optional[int] = Query(None),
+    limit: Optional[int] = Query(None),
+    issuer_address: Optional[str] = Header(None),
+    db: Session = Depends(db_session)
+):
+    # Get a list of uploads
+    query = db.query(BatchIssueRedeemUpload). \
+        filter(BatchIssueRedeemUpload.token_address == token_address). \
+        filter(BatchIssueRedeemUpload.token_type == TokenType.IBET_STRAIGHT_BOND.value). \
+        filter(BatchIssueRedeemUpload.category == BatchIssueRedeemProcessingCategory.REDEEM.value)
+
+    if issuer_address is not None:
+        query = query.filter(BatchIssueRedeemUpload.issuer_address == issuer_address)
+
+    total = query.count()
+
+    if processed is not None:
+        query = query.filter(BatchIssueRedeemUpload.processed == processed)
+
+    count = query.count()
+
+    # Sort
+    if sort_order == 0:  # ASC
+        query = query.order_by(BatchIssueRedeemUpload.created)
+    else:  # DESC
+        query = query.order_by(desc(BatchIssueRedeemUpload.created))
+
+    # Pagination
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+
+    _upload_list: list[BatchIssueRedeemUpload] = query.all()
+
+    uploads = []
+    for _upload in _upload_list:
+        created_utc = timezone("UTC").localize(_upload.created)
+        uploads.append({
+            "batch_id": _upload.upload_id,
+            "issuer_address": _upload.issuer_address,
+            "token_type": _upload.token_type,
+            "token_address": _upload.token_address,
+            "processed": _upload.processed,
+            "created": created_utc.astimezone(local_tz).isoformat()
+        })
+
+    resp = {
+        "result_set": {
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": total
+        },
+        "uploads": uploads
+    }
+    return resp
+
+
+# POST: /bond/tokens/{token_address}/redeem/batch
+@router.post(
+    "/tokens/{token_address}/redeem/batch",
+    response_model=BatchIssueRedeemUploadIdResponse,
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError)
+)
+def redeem_token_in_batch(
+        request: Request,
+        token_address: str,
+        data: List[IbetStraightBondRedeem],
+        issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Redeem a token (Batch)"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
+    )
+
+    # Validate params
+    if len(data) < 1:
+        raise InvalidParameterError("list length must be at least one")
+
+    # Authentication
+    check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
+
+    # Check token status
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Generate upload_id
+    upload_id = uuid.uuid4()
+
+    # Add batch data
+    _batch_upload = BatchIssueRedeemUpload()
+    _batch_upload.upload_id = upload_id
+    _batch_upload.issuer_address = issuer_address
+    _batch_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+    _batch_upload.token_address = token_address
+    _batch_upload.category = BatchIssueRedeemProcessingCategory.REDEEM.value
+    _batch_upload.processed = False
+    db.add(_batch_upload)
+
+    for _item in data:
+        _batch_issue = BatchIssueRedeem()
+        _batch_issue.upload_id = upload_id
+        _batch_issue.account_address = _item.account_address
+        _batch_issue.amount = _item.amount
+        _batch_issue.status = 0
+        db.add(_batch_issue)
+
+    db.commit()
+
+    return BatchIssueRedeemUploadIdResponse(batch_id=str(upload_id))
+
+
+# GET: /bond/tokens/{token_address}/redeem/batch/{batch_id}
+@router.get(
+    "/tokens/{token_address}/redeem/batch/{batch_id}",
+    response_model=GetBatchIssueRedeemResponse,
+    responses=get_routers_responses(422, 404)
+)
+def retrieve_batch_additional_issue(
+        token_address: str,
+        batch_id: str,
+        issuer_address: str = Header(...),
+        db: Session = Depends(db_session)):
+    """Get Batch status for additional issue"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address)
+    )
+
+    # Upload Existence Check
+    batch: Optional[BatchIssueRedeemUpload] = db.query(BatchIssueRedeemUpload). \
+        filter(BatchIssueRedeemUpload.upload_id == batch_id). \
+        filter(BatchIssueRedeemUpload.issuer_address == issuer_address). \
+        filter(BatchIssueRedeemUpload.token_type == TokenType.IBET_STRAIGHT_BOND.value). \
+        filter(BatchIssueRedeemUpload.token_address == token_address). \
+        filter(BatchIssueRedeemUpload.category == BatchIssueRedeemProcessingCategory.REDEEM.value). \
+        first()
+    if batch is None:
+        raise HTTPException(status_code=404, detail="batch not found")
+
+    # Get Batch Records
+    record_list: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
+        filter(BatchIssueRedeem.upload_id == batch_id). \
+        all()
+
+    return GetBatchIssueRedeemResponse(
+        processed=batch.processed,
+        results=[
+            GetBatchIssueRedeemResult(
+                account_address=record.account_address,
+                amount=record.amount,
+                status=record.status
+            ) for record in record_list
+        ]
+    )
 
 
 # GET: /bond/tokens/{token_address}/scheduled_events
@@ -586,7 +1125,7 @@ def list_all_scheduled_events(
 @router.post(
     "/tokens/{token_address}/scheduled_events",
     response_model=ScheduledEventIdResponse,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError)
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError)
 )
 def schedule_new_update_event(
         request: Request,
@@ -594,17 +1133,24 @@ def schedule_new_update_event(
         event_data: IbetStraightBondScheduledUpdate,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Register a new update event"""
 
     # Validate Headers
     validate_headers(
         issuer_address=(issuer_address, address_is_valid_address),
-        eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value])
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
     )
 
     # Authentication
-    check_auth(issuer_address, eoa_password, db, request)
+    check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Verify that the token is issued by the issuer
     _token = db.query(Token). \
@@ -616,7 +1162,7 @@ def schedule_new_update_event(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Register an event
     _scheduled_event = ScheduledEvents()
@@ -681,7 +1227,7 @@ def retrieve_token_event(
 @router.delete(
     "/tokens/{token_address}/scheduled_events/{scheduled_event_id}",
     response_model=ScheduledEventResponse,
-    responses=get_routers_responses(422, 401, 404)
+    responses=get_routers_responses(422, 401, 404, AuthorizationError)
 )
 def delete_scheduled_event(
         request: Request,
@@ -689,17 +1235,24 @@ def delete_scheduled_event(
         scheduled_event_id: str,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Delete a scheduled event"""
 
     # Validate Headers
     validate_headers(
         issuer_address=(issuer_address, address_is_valid_address),
-        eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value])
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
     )
 
     # Authorization
-    check_auth(issuer_address, eoa_password, db, request)
+    check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Delete an event
     _token_event = db.query(ScheduledEvents). \
@@ -737,6 +1290,7 @@ def delete_scheduled_event(
 )
 def list_all_holders(
         token_address: str,
+        include_former_holder: bool = False,
         issuer_address: str = Header(...),
         db: Session = Depends(db_session)):
     """List all bond token holders"""
@@ -761,13 +1315,19 @@ def list_all_holders(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
-    # Get Holders
-    _holders = db.query(IDXPosition). \
-        filter(IDXPosition.token_address == token_address). \
-        order_by(IDXPosition.id). \
-        all()
+    query = db.query(IDXPosition). \
+        filter(IDXPosition.token_address == token_address)
+    if not include_former_holder:
+        # Get Holders
+        query = query.filter(or_(
+            IDXPosition.balance != 0,
+            IDXPosition.exchange_balance != 0,
+            IDXPosition.pending_transfer != 0,
+            IDXPosition.exchange_commitment != 0
+        ))
+    _holders = query.order_by(IDXPosition.id).all()
 
     # Get personal information
     _personal_info_list = db.query(IDXPersonalInfo). \
@@ -807,6 +1367,54 @@ def list_all_holders(
     return holders
 
 
+# GET: /bond/tokens/{token_address}/holders/count
+@router.get(
+    "/tokens/{token_address}/holders/count",
+    response_model=HolderCountResponse,
+    responses=get_routers_responses(422, InvalidParameterError, 404)
+)
+def count_number_of_holders(
+        token_address: str,
+        issuer_address: str = Header(...),
+        db: Session = Depends(db_session)):
+    """Count the number of holders"""
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
+
+    # Get Account
+    _account = db.query(Account). \
+        filter(Account.issuer_address == issuer_address). \
+        first()
+    if _account is None:
+        raise InvalidParameterError("issuer does not exist")
+
+    # Get Token
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Get Holders
+    _count: int = db.query(IDXPosition). \
+        filter(IDXPosition.token_address == token_address). \
+        filter(
+            or_(IDXPosition.balance != 0,
+                IDXPosition.exchange_balance != 0,
+                IDXPosition.pending_transfer != 0,
+                IDXPosition.exchange_commitment != 0)
+        ). \
+        count()
+
+    return HolderCountResponse(count=_count)
+
+
 # GET: /bond/tokens/{token_address}/holders/{account_address}
 @router.get(
     "/tokens/{token_address}/holders/{account_address}",
@@ -840,7 +1448,7 @@ def retrieve_holder(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Holders
     _holder = db.query(IDXPosition). \
@@ -894,7 +1502,8 @@ def retrieve_holder(
 @router.post(
     "/tokens/{token_address}/holders/{account_address}/personal_info",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError, SendTransactionError, ContractRevertError),
+    deprecated=True
 )
 def modify_holder_personal_info(
         request: Request,
@@ -903,17 +1512,25 @@ def modify_holder_personal_info(
         personal_info: ModifyPersonalInfoRequest,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Modify the holder's personal information"""
+    LOG.warning(DeprecationWarning("Deprecated API: /bond/tokens/{token_address}/holders/{account_address}/personal_info"))
 
     # Validate Headers
     validate_headers(
         issuer_address=(issuer_address, address_is_valid_address),
-        eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value])
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
     )
 
     # Authentication
-    check_auth(issuer_address, eoa_password, db, request)
+    check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Verify that the token is issued by the issuer_address
     _token = db.query(Token). \
@@ -925,7 +1542,7 @@ def modify_holder_personal_info(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Modify Personal Info
     token_contract = IbetStraightBondContract.get(token_address)
@@ -958,17 +1575,24 @@ def register_holder_personal_info(
         personal_info: RegisterPersonalInfoRequest,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Register the holder's personal information"""
 
     # Validate Headers
     validate_headers(
         issuer_address=(issuer_address, address_is_valid_address),
-        eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value])
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
     )
 
     # Authentication
-    check_auth(issuer_address, eoa_password, db, request)
+    check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Verify that the token is issued by the issuer_address
     _token = db.query(Token). \
@@ -980,7 +1604,7 @@ def register_holder_personal_info(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Register Personal Info
     token_contract = IbetStraightBondContract.get(token_address)
@@ -1001,26 +1625,230 @@ def register_holder_personal_info(
     return
 
 
+# GET: /bond/tokens/{token_address}/personal_info/batch
+@router.get(
+    "/tokens/{token_address}/personal_info/batch",
+    response_model=ListBatchRegisterPersonalInfoUploadResponse,
+    responses=get_routers_responses(422, 404, InvalidParameterError)
+)
+def list_all_personal_info_batch_registration_uploads(
+        token_address: str,
+        issuer_address: str = Header(...),
+        status: Optional[str] = Query(None),
+        sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc (created)"),
+        offset: Optional[int] = Query(None),
+        limit: Optional[int] = Query(None),
+        db: Session = Depends(db_session)):
+    """List all personal information batch registration uploads"""
+
+    # Verify that the token is issued by the issuer_address
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Get a list of uploads
+    query = db.query(BatchRegisterPersonalInfoUpload). \
+        filter(BatchRegisterPersonalInfoUpload.issuer_address == issuer_address)
+
+    total = query.count()
+
+    if status is not None:
+        query = query.filter(BatchRegisterPersonalInfoUpload.status == status)
+
+    count = query.count()
+
+    # Sort
+    if sort_order == 0:  # ASC
+        query = query.order_by(BatchRegisterPersonalInfoUpload.created)
+    else:  # DESC
+        query = query.order_by(desc(BatchRegisterPersonalInfoUpload.created))
+
+    # Pagination
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+
+    _upload_list: list[BatchRegisterPersonalInfoUpload] = query.all()
+
+    uploads = []
+    for _upload in _upload_list:
+        created_utc = timezone("UTC").localize(_upload.created)
+        uploads.append({
+            "batch_id": _upload.upload_id,
+            "issuer_address": _upload.issuer_address,
+            "status": _upload.status,
+            "created": created_utc.astimezone(local_tz).isoformat()
+        })
+
+    return ListBatchRegisterPersonalInfoUploadResponse(
+        result_set={
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": total
+        },
+        uploads=uploads
+    )
+
+
+# POST: /bond/tokens/{token_address}/personal_info/batch
+@router.post(
+    "/tokens/{token_address}/personal_info/batch",
+    response_model=BatchRegisterPersonalInfoUploadResponse,
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError)
+)
+def batch_register_personal_info(
+        request: Request,
+        token_address: str,
+        personal_info_list: List[RegisterPersonalInfoRequest],
+        issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Create Batch for register personal information"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
+    )
+
+    # Authentication
+    check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
+
+    # Verify that the token is issued by the issuer_address
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_STRAIGHT_BOND.value). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+    if len(personal_info_list) == 0:
+        raise InvalidParameterError("personal information list must not be empty")
+
+    batch_id = str(uuid.uuid4())
+    batch = BatchRegisterPersonalInfoUpload()
+    batch.upload_id = batch_id
+    batch.issuer_address = issuer_address
+    batch.status = BatchRegisterPersonalInfoUploadStatus.PENDING.value
+    db.add(batch)
+
+    for personal_info in personal_info_list:
+        bulk_register_record = BatchRegisterPersonalInfo()
+        bulk_register_record.upload_id = batch_id
+        bulk_register_record.token_address = token_address
+        bulk_register_record.account_address = personal_info.account_address
+        bulk_register_record.personal_info = personal_info.dict()
+        bulk_register_record.status = 0
+        db.add(bulk_register_record)
+
+    db.commit()
+
+    return {
+        "batch_id": batch_id,
+        "status": batch.status,
+        "created": timezone("UTC").localize(batch.created).astimezone(local_tz).isoformat()
+    }
+
+
+# GET: /bond/tokens/{token_address}/personal_info/batch/{batch_id}
+@router.get(
+    "/tokens/{token_address}/personal_info/batch/{batch_id}",
+    response_model=GetBatchRegisterPersonalInfoResponse,
+    responses=get_routers_responses(422, 401, 404)
+)
+def retrieve_batch_register_personal_info(
+        token_address: str,
+        batch_id: str,
+        issuer_address: str = Header(...),
+        db: Session = Depends(db_session)):
+    """Get Batch status for register personal information"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address)
+    )
+
+    # Upload Existence Check
+    batch: Optional[BatchRegisterPersonalInfoUpload] = db.query(BatchRegisterPersonalInfoUpload). \
+        filter(BatchRegisterPersonalInfoUpload.upload_id == batch_id). \
+        filter(BatchRegisterPersonalInfoUpload.issuer_address == issuer_address). \
+        first()
+    if batch is None:
+        raise HTTPException(status_code=404, detail="batch not found")
+
+    # Get Batch Records
+    record_list = db.query(BatchRegisterPersonalInfo). \
+        filter(BatchRegisterPersonalInfo.upload_id == batch_id). \
+        filter(BatchRegisterPersonalInfo.token_address == token_address). \
+        all()
+
+    return GetBatchRegisterPersonalInfoResponse(
+        status=batch.status,
+        results=[
+            BatchRegisterPersonalInfoResult(
+                status=record.status,
+                account_address=record.account_address,
+                key_manager=record.personal_info.get("key_manager"),
+                name=record.personal_info.get("name"),
+                postal_code=record.personal_info.get("postal_code"),
+                address=record.personal_info.get("address"),
+                email=record.personal_info.get("email"),
+                birth=record.personal_info.get("birth"),
+                is_corporate=record.personal_info.get("is_corporate"),
+                tax_category=record.personal_info.get("tax_category")
+            ) for record in record_list
+        ]
+    )
+
+
 # POST: /bond/transfers
 @router.post(
     "/transfers",
     response_model=None,
-    responses=get_routers_responses(422, 401, InvalidParameterError, SendTransactionError, ContractRevertError)
+    responses=get_routers_responses(422, 401, AuthorizationError, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def transfer_ownership(
         request: Request,
         token: IbetStraightBondTransfer,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Transfer token ownership"""
 
     # Validate Headers
-    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
-                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
+    )
 
     # Authentication
-    _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
+    _account, decrypt_password = check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -1039,7 +1867,7 @@ def transfer_ownership(
     if _token is None:
         raise InvalidParameterError("token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     try:
         IbetStraightBondContract.transfer(
@@ -1061,7 +1889,7 @@ def transfer_ownership(
 )
 def list_transfer_history(
         token_address: str,
-        sort_item: TransfersSortItem = Query(TransfersSortItem.BLOCK_TIMESTAMP),
+        sort_item: IDXTransfersSortItem = Query(IDXTransfersSortItem.BLOCK_TIMESTAMP),
         sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
         offset: Optional[int] = Query(None),
         limit: Optional[int] = Query(None),
@@ -1077,7 +1905,7 @@ def list_transfer_history(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get transfer history
     query = db.query(IDXTransfer). \
@@ -1093,7 +1921,7 @@ def list_transfer_history(
         query = query.order_by(sort_attr)
     else:  # DESC
         query = query.order_by(desc(sort_attr))
-    if sort_item != TransfersSortItem.BLOCK_TIMESTAMP:
+    if sort_item != IDXTransfersSortItem.BLOCK_TIMESTAMP:
         # NOTE: Set secondary sort for consistent results
         query = query.order_by(desc(IDXTransfer.block_timestamp))
 
@@ -1232,7 +2060,7 @@ def list_token_transfer_approval_history(
             le=3,
             description="0:unapproved, 1:escrow_finished, 2:transferred, 3:canceled"
         ),
-        sort_item: Optional[TransferApprovalsSortItem] = Query(TransferApprovalsSortItem.ID),
+        sort_item: Optional[IDXTransferApprovalsSortItem] = Query(IDXTransferApprovalsSortItem.ID),
         sort_order: Optional[int] = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
         offset: Optional[int] = Query(None),
         limit: Optional[int] = Query(None),
@@ -1248,7 +2076,7 @@ def list_token_transfer_approval_history(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Create a subquery for 'status' added IDXTransferApproval
     case_status = case(
@@ -1289,7 +2117,7 @@ def list_token_transfer_approval_history(
     count = query.count()
 
     # Sort
-    if sort_item != TransferApprovalsSortItem.STATUS:
+    if sort_item != IDXTransferApprovalsSortItem.STATUS:
         sort_attr = getattr(subquery, sort_item, None)
     else:
         sort_attr = literal_column("status")
@@ -1297,7 +2125,7 @@ def list_token_transfer_approval_history(
         query = query.order_by(sort_attr)
     else:  # DESC
         query = query.order_by(desc(sort_attr))
-    if sort_item != TransferApprovalsSortItem.ID:
+    if sort_item != IDXTransferApprovalsSortItem.ID:
         # NOTE: Set secondary sort for consistent results
         query = query.order_by(desc(subquery.id))
 
@@ -1381,7 +2209,7 @@ def list_token_transfer_approval_history(
 # POST: /bond/transfer_approvals/{token_address}/{id}
 @router.post(
     "/transfer_approvals/{token_address}/{id}",
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def update_transfer_approval(
         request: Request,
@@ -1390,16 +2218,25 @@ def update_transfer_approval(
         data: UpdateTransferApprovalRequest,
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)
 ):
     """Update on the status of a bond transfer approval"""
 
     # Validate Headers
-    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
-                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
+    )
 
     # Authentication
-    _account, decrypt_password = check_auth(issuer_address, eoa_password, db, request)
+    _account, decrypt_password = check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -1417,7 +2254,7 @@ def update_transfer_approval(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get transfer approval history
     _transfer_approval = db.query(IDXTransferApproval). \
@@ -1438,13 +2275,6 @@ def update_transfer_approval(
             _transfer_approval.exchange_address is not None:
         # Cancellation is possible only against approval of the transfer of a token contract.
         raise InvalidParameterError("application that cannot be canceled")
-
-    # Check manually approval
-    _additional_info = db.query(AdditionalTokenInfo). \
-        filter(AdditionalTokenInfo.token_address == token_address). \
-        first()
-    if _additional_info is None or _additional_info.is_manual_transfer_approval is not True:
-        raise InvalidParameterError("token is automatic approval")
 
     # Send transaction
     #  - APPROVE -> approveTransfer
@@ -1542,7 +2372,7 @@ def retrieve_transfer_approval_history(
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
-        raise InvalidParameterError("wait for a while as the token is being processed")
+        raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get transfer approval history
     _transfer_approval = db.query(IDXTransferApproval). \
@@ -1624,25 +2454,34 @@ def retrieve_transfer_approval_history(
 @router.post(
     "/bulk_transfer",
     response_model=BulkTransferUploadIdResponse,
-    responses=get_routers_responses(422, InvalidParameterError, 401)
+    responses=get_routers_responses(422, AuthorizationError, InvalidParameterError, 401)
 )
 def bulk_transfer_ownership(
         request: Request,
         tokens: List[IbetStraightBondTransfer],
         issuer_address: str = Header(...),
         eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
     """Bulk transfer token ownership"""
 
     # Validate Headers
-    validate_headers(issuer_address=(issuer_address, address_is_valid_address),
-                     eoa_password=(eoa_password, [eoa_password_is_required, eoa_password_is_encrypted_value]))
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
+    )
 
     if len(tokens) < 1:
-        raise InvalidParameterError("list length is zero")
+        raise InvalidParameterError("list length must be at least one")
 
     # Authentication
-    check_auth(issuer_address, eoa_password, db, request)
+    check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
 
     # Verify that the tokens are issued by the issuer_address
     for _token in tokens:
@@ -1655,7 +2494,7 @@ def bulk_transfer_ownership(
         if _issued_token is None:
             raise InvalidParameterError(f"token not found: {_token.token_address}")
         if _issued_token.token_status == 0:
-            raise InvalidParameterError(f"wait for a while as the token is being processed: {_token.token_address}")
+            raise InvalidParameterError(f"this token is temporarily unavailable: {_token.token_address}")
 
     # generate upload_id
     upload_id = uuid.uuid4()
@@ -1695,7 +2534,7 @@ def bulk_transfer_ownership(
 def list_bulk_transfer_upload(
         issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
-    """List bulk transfer upload"""
+    """List bulk transfer uploads"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -1736,7 +2575,7 @@ def retrieve_bulk_transfer(
         upload_id: str,
         issuer_address: Optional[str] = Header(None),
         db: Session = Depends(db_session)):
-    """Retrieve bulk transfer"""
+    """Retrieve a bulk transfer upload"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))

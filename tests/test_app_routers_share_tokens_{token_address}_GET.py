@@ -23,8 +23,7 @@ from config import TZ
 from app.model.blockchain import IbetShareContract
 from app.model.db import (
     Token,
-    TokenType,
-    AdditionalTokenInfo
+    TokenType
 )
 
 
@@ -52,12 +51,6 @@ class TestAppRoutersShareTokensTokenAddressGET:
         db.commit()
         _issue_time = timezone("UTC").localize(token.created).astimezone(self.local_tz).isoformat()
 
-        additional_info = AdditionalTokenInfo()
-        additional_info.token_address = "token_address_test1"
-        additional_info.is_manual_transfer_approval = None  # not target
-        db.add(additional_info)
-        db.commit()
-
         # request target API
         mock_token = IbetShareContract()
         mock_token.issuer_address = "issuer_address_test1"
@@ -106,7 +99,6 @@ class TestAppRoutersShareTokensTokenAddressGET:
             "cancellation_date": "20221231",
             "transferable": True,
             "transfer_approval_required": False,
-            "is_manual_transfer_approval": False,
             "is_offering": True,
             "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
             "is_canceled": False,
@@ -133,12 +125,6 @@ class TestAppRoutersShareTokensTokenAddressGET:
         db.commit()
         _issue_time = timezone("UTC").localize(token.created).astimezone(self.local_tz).isoformat()
 
-        additional_info = AdditionalTokenInfo()
-        additional_info.token_address = "token_address_test1"
-        additional_info.is_manual_transfer_approval = True
-        db.add(additional_info)
-        db.commit()
-
         # request target API
         mock_token = IbetShareContract()
         mock_token.issuer_address = "issuer_address_test1"
@@ -187,7 +173,6 @@ class TestAppRoutersShareTokensTokenAddressGET:
             "cancellation_date": "20221231",
             "transferable": True,
             "transfer_approval_required": False,
-            "is_manual_transfer_approval": True,
             "is_offering": True,
             "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
             "is_canceled": False,
@@ -238,5 +223,5 @@ class TestAppRoutersShareTokensTokenAddressGET:
                 "code": 1,
                 "title": "InvalidParameterError"
             },
-            "detail": "wait for a while as the token is being processed"
+            "detail": "this token is temporarily unavailable"
         }

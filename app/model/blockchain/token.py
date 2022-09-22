@@ -50,7 +50,10 @@ from app.model.schema import (
     IbetSecurityTokenCancelTransfer
 )
 from app.model.blockchain import IbetExchangeInterface
-from app.exceptions import SendTransactionError, ContractRevertError
+from app.exceptions import (
+    SendTransactionError,
+    ContractRevertError
+)
 from app import log
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
@@ -651,13 +654,18 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0
             })
-            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            tx_hash, _ = ContractUtils.send_transaction(
+                transaction=tx,
+                private_key=private_key
+            )
         except ContractRevertError:
             raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
             raise SendTransactionError(err)
+
+        return tx_hash
 
     @staticmethod
     def additional_issue(contract_address: str,
@@ -680,8 +688,10 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0
             })
-            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
-
+            tx_hash, _ = ContractUtils.send_transaction(
+                transaction=tx,
+                private_key=private_key
+            )
             # Delete Cache
             IbetStraightBondContract.set_token_attr_update(contract_address)
             IbetStraightBondContract.cache.pop(contract_address)
@@ -691,6 +701,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             raise SendTransactionError(timeout_error)
         except Exception as err:
             raise SendTransactionError(err)
+
+        return tx_hash
 
     @staticmethod
     def redeem(contract_address: str,
@@ -713,8 +725,10 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0
             })
-            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
-
+            tx_hash, _ = ContractUtils.send_transaction(
+                transaction=tx,
+                private_key=private_key
+            )
             # Delete Cache
             IbetStraightBondContract.set_token_attr_update(contract_address)
             IbetStraightBondContract.cache.pop(contract_address)
@@ -724,6 +738,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             raise SendTransactionError(timeout_error)
         except Exception as err:
             raise SendTransactionError(err)
+
+        return tx_hash
 
 
 class IbetShareContract(IbetSecurityTokenInterface):
@@ -1135,13 +1151,18 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0
             })
-            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            tx_hash, _ = ContractUtils.send_transaction(
+                transaction=tx,
+                private_key=private_key
+            )
         except ContractRevertError:
             raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
             raise SendTransactionError(err)
+
+        return tx_hash
 
     @staticmethod
     def additional_issue(contract_address: str,
@@ -1164,8 +1185,10 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0
             })
-            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
-
+            tx_hash, _ = ContractUtils.send_transaction(
+                transaction=tx,
+                private_key=private_key
+            )
             # Delete Cache
             IbetShareContract.set_token_attr_update(contract_address)
             IbetShareContract.cache.pop(contract_address)
@@ -1175,6 +1198,8 @@ class IbetShareContract(IbetSecurityTokenInterface):
             raise SendTransactionError(timeout_error)
         except Exception as err:
             raise SendTransactionError(err)
+
+        return tx_hash
 
     @staticmethod
     def redeem(contract_address: str,
@@ -1197,8 +1222,10 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0
             })
-            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
-
+            tx_hash, _ = ContractUtils.send_transaction(
+                transaction=tx,
+                private_key=private_key
+            )
             # Delete Cache
             IbetShareContract.set_token_attr_update(contract_address)
             IbetShareContract.cache.pop(contract_address)
@@ -1208,3 +1235,5 @@ class IbetShareContract(IbetSecurityTokenInterface):
             raise SendTransactionError(timeout_error)
         except Exception as err:
             raise SendTransactionError(err)
+
+        return tx_hash

@@ -22,9 +22,9 @@ from .account import (
     AccountRsaKeyTemporary,
     AccountRsaStatus
 )
+from .auth_token import AuthToken
 from .token import (
     Token,
-    AdditionalTokenInfo,
     TokenAttrUpdate,
     TokenType
 )
@@ -33,8 +33,20 @@ from .token_holders import (
     TokenHolderBatchStatus,
     TokenHoldersList
 )
-from .bulk_transfer_upload import BulkTransferUpload
-from .bulk_transfer import BulkTransfer
+from .batch_issue_redeem import (
+    BatchIssueRedeemUpload,
+    BatchIssueRedeem,
+    BatchIssueRedeemProcessingCategory
+)
+from .batch_register_personal_info import (
+    BatchRegisterPersonalInfoUpload,
+    BatchRegisterPersonalInfoUploadStatus,
+    BatchRegisterPersonalInfo,
+)
+from .bulk_transfer import (
+    BulkTransferUpload,
+    BulkTransfer
+)
 from .e2e_messaging_account import (
     E2EMessagingAccount,
     E2EMessagingAccountRsaKey
@@ -43,12 +55,20 @@ from .idx_e2e_messaging import (
     IDXE2EMessaging,
     IDXE2EMessagingBlockNumber
 )
+from .idx_issue_redeem import (
+    IDXIssueRedeem,
+    IDXIssueRedeemEventType,
+    IDXIssueRedeemSortItem,
+    IDXIssueRedeemBlockNumber
+)
 from .idx_transfer import (
     IDXTransfer,
+    IDXTransfersSortItem,
     IDXTransferBlockNumber
 )
 from .idx_transfer_approval import (
     IDXTransferApproval,
+    IDXTransferApprovalsSortItem,
     IDXTransferApprovalBlockNumber
 )
 from .idx_position import (

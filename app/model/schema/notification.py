@@ -16,17 +16,173 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from datetime import datetime
+
 from typing import (
     List,
     Dict,
-    Any
+    Any,
+    Union,
+    Optional
 )
 
-from pydantic import BaseModel
+from pydantic import BaseModel, conint
 
 from .types import ResultSet
+from app.model.db import (
+    NotificationType,
+    BatchIssueRedeemProcessingCategory,
+    TokenType
+)
 
+
+class IssueErrorMetaInfo(BaseModel):
+    token_address: str
+    token_type: TokenType
+    arguments: dict
+
+
+class BulkTransferErrorMetaInfo(BaseModel):
+    upload_id: str
+    token_type: TokenType
+    error_transfer_id: list[int]
+
+
+class ScheduleEventErrorMetaInfo(BaseModel):
+    scheduled_event_id: str
+    token_address: Optional[str]
+    token_type: TokenType
+
+
+class TransferApprovalInfoMetaInfo(BaseModel):
+    id: int
+    token_address: str
+    token_type: Optional[TokenType]
+
+
+class CreateLedgerInfoMetaInfo(BaseModel):
+    token_address: str
+    token_type: TokenType
+    ledger_id: int
+
+
+class BatchRegisterPersonalInfoErrorMetaInfo(BaseModel):
+    upload_id: str
+    error_registration_id: list[int]
+
+
+class BatchIssueRedeemProcessedMetaInfo(BaseModel):
+    category: BatchIssueRedeemProcessingCategory
+    upload_id: str
+    error_data_id: list[int]
+    token_address: str
+    token_type: TokenType
+
+
+class Notification(BaseModel):
+    notice_id: str
+    issuer_address: str
+    priority: int
+    notice_code: int
+    created: str
+
+
+class IssueErrorNotification(Notification):
+    notice_type: str = NotificationType.ISSUE_ERROR
+    notice_code: conint(ge=0, le=2)
+    metainfo: IssueErrorMetaInfo
+
+    class Config:
+        @staticmethod
+        def schema_extra(schema: Dict[str, Any], _) -> None:
+            notice_code_schema = schema["properties"]["notice_code"]
+            notice_code_schema["description"] = " - 0: Issuer does not exist\n" \
+                                                " - 1: Could not get the private key of the issuer\n" \
+                                                " - 2: Failed to send transaction\n"
+
+
+class BulkTransferErrorNotification(Notification):
+    notice_type: str = NotificationType.BULK_TRANSFER_ERROR
+    notice_code: conint(ge=0, le=2)
+    metainfo: BulkTransferErrorMetaInfo
+
+    class Config:
+        @staticmethod
+        def schema_extra(schema: Dict[str, Any], _) -> None:
+            notice_code_schema = schema["properties"]["notice_code"]
+            notice_code_schema["description"] = " - 0: Issuer does not exist\n" \
+                                                " - 1: Could not get the private key of the issuer\n" \
+                                                " - 2: Failed to send transaction\n" \
+
+
+
+class ScheduleEventErrorNotification(Notification):
+    notice_type: str = NotificationType.SCHEDULE_EVENT_ERROR
+    notice_code: conint(ge=0, le=2)
+    metainfo: ScheduleEventErrorMetaInfo
+
+    class Config:
+        @staticmethod
+        def schema_extra(schema: Dict[str, Any], _) -> None:
+            notice_code_schema = schema["properties"]["notice_code"]
+            notice_code_schema["description"] = " - 0: Issuer does not exist\n" \
+                                                " - 1: Could not get the private key of the issuer\n" \
+                                                " - 2: Failed to send transaction\n" \
+
+
+
+class TransferApprovalInfoNotification(Notification):
+    notice_type: str = NotificationType.TRANSFER_APPROVAL_INFO
+    notice_code: conint(ge=0, le=3)
+    metainfo: TransferApprovalInfoMetaInfo
+
+    class Config:
+        @staticmethod
+        def schema_extra(schema: Dict[str, Any], _) -> None:
+            notice_code_schema = schema["properties"]["notice_code"]
+            notice_code_schema["description"] = " - 0: Apply for transfer\n" \
+                                                " - 1: Cancel transfer\n" \
+                                                " - 2: Approve transfer\n" \
+                                                " - 3: Escrow finished (Only occurs in security token escrow)\n"
+
+
+class CreateLedgerInfoNotification(Notification):
+    notice_type: str = NotificationType.CREATE_LEDGER_INFO
+    notice_code: conint(ge=0, le=0)
+    metainfo: CreateLedgerInfoMetaInfo
+
+    class Config:
+        @staticmethod
+        def schema_extra(schema: Dict[str, Any], _) -> None:
+            notice_code_schema = schema["properties"]["notice_code"]
+            notice_code_schema["description"] = " - 0: Created ledger info successfully\n"
+
+
+class BatchRegisterPersonalInfoErrorNotification(Notification):
+    notice_type: str = NotificationType.BATCH_REGISTER_PERSONAL_INFO_ERROR
+    notice_code: conint(ge=0, le=1)
+    metainfo: BatchRegisterPersonalInfoErrorMetaInfo
+
+    class Config:
+        @staticmethod
+        def schema_extra(schema: Dict[str, Any], _) -> None:
+            notice_code_schema = schema["properties"]["notice_code"]
+            notice_code_schema["description"] = " - 0: Issuer does not exist\n" \
+                                                " - 1: Failed to send transaction\n"
+
+
+class BatchIssueRedeemProcessedNotification(Notification):
+    notice_type: str = NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
+    notice_code: conint(ge=0, le=3)
+    metainfo: BatchIssueRedeemProcessedMetaInfo
+
+    class Config:
+        @staticmethod
+        def schema_extra(schema: Dict[str, Any], _) -> None:
+            notice_code_schema = schema["properties"]["notice_code"]
+            notice_code_schema["description"] = " - 0: All records successfully processed\n" \
+                                                " - 1: Issuer does not exist\n" \
+                                                " - 2: Failed to decode keyfile\n" \
+                                                " - 3: Some records are failed to send transaction"
 
 ############################
 # REQUEST
@@ -39,42 +195,15 @@ from .types import ResultSet
 
 class NotificationsListResponse(BaseModel):
     """Notifications List schema (Response)"""
-    notice_id: str
-    issuer_address: str
-    priority: int
-    notice_type: str
-    notice_code: int
-    metainfo: dict
-    created: datetime
-
-    class Config:
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], _) -> None:
-            notice_code_schema = schema["properties"]["notice_code"]
-            notice_code_schema["description"] = "notice_type: IssueError\n" \
-                                                " - 0: Issuer does not exist\n" \
-                                                " - 1: Could not get the private key of the issuer\n" \
-                                                " - 2: Failed to send transaction\n" \
-                                                "\n" \
-                                                "notice_type: BulkTransferError\n" \
-                                                " - 0: Issuer does not exist\n" \
-                                                " - 1: Could not get the private key of the issuer\n" \
-                                                " - 2: Failed to send transaction\n" \
-                                                "\n" \
-                                                "notice_type: ScheduleEventError\n" \
-                                                " - 0: Issuer does not exist\n" \
-                                                " - 1: Could not get the private key of the issuer\n" \
-                                                " - 2: Failed to send transaction\n" \
-                                                "\n" \
-                                                "notice_type: TransferApprovalInfo\n" \
-                                                " - 0: Apply for transfer\n" \
-                                                " - 1: Cancel transfer\n" \
-                                                " - 2: Approve transfer\n" \
-                                                " - 3: Escrow finished (Only occurs in security token escrow)\n" \
-                                                "\n" \
-                                                "notice_type: CreateLedgerInfo\n" \
-                                                " - 0: Created ledger info successfully\n" \
-
+    __root__: Union[
+        IssueErrorNotification,
+        BulkTransferErrorNotification,
+        ScheduleEventErrorNotification,
+        TransferApprovalInfoNotification,
+        CreateLedgerInfoNotification,
+        BatchRegisterPersonalInfoErrorNotification,
+        BatchIssueRedeemProcessedNotification
+    ]
 
 
 class ListAllNotificationsResponse(BaseModel):

@@ -42,7 +42,7 @@ from .types import (
 class IbetStraightBondCreate(BaseModel):
     """ibet Straight Bond schema (Create)"""
     name: str = Field(max_length=100)
-    total_supply: int = Field(..., ge=0, le=100_000_000)
+    total_supply: int = Field(..., ge=0, le=1_000_000_000_000)
     face_value: int = Field(..., ge=0, le=5_000_000_000)
     purpose: str = Field(max_length=2000)
     symbol: Optional[str] = Field(max_length=100)
@@ -62,7 +62,6 @@ class IbetStraightBondCreate(BaseModel):
     contact_information: Optional[str] = Field(max_length=2000)
     privacy_policy: Optional[str] = Field(max_length=5000)
     transfer_approval_required: Optional[bool]
-    is_manual_transfer_approval: Optional[bool]
 
     @validator("interest_rate")
     def interest_rate_4_decimal_places(cls, v):
@@ -107,7 +106,6 @@ class IbetStraightBondUpdate(BaseModel):
     contact_information: Optional[str] = Field(max_length=2000)
     privacy_policy: Optional[str] = Field(max_length=5000)
     transfer_approval_required: Optional[bool]
-    is_manual_transfer_approval: Optional[bool]
     memo: Optional[str] = Field(max_length=2000)
 
     @validator("interest_rate")
@@ -141,7 +139,7 @@ class IbetStraightBondUpdate(BaseModel):
 class IbetStraightBondAdditionalIssue(BaseModel):
     """ibet Straight Bond schema (Additional Issue)"""
     account_address: str
-    amount: int = Field(..., ge=1, le=100_000_000)
+    amount: int = Field(..., ge=1, le=1_000_000_000_000)
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):
@@ -153,7 +151,7 @@ class IbetStraightBondAdditionalIssue(BaseModel):
 class IbetStraightBondRedeem(BaseModel):
     """ibet Straight Bond schema (Redeem)"""
     account_address: str
-    amount: int = Field(..., ge=1, le=100_000_000)
+    amount: int = Field(..., ge=1, le=1_000_000_000_000)
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):
@@ -167,7 +165,7 @@ class IbetStraightBondTransfer(BaseModel):
     token_address: str
     from_address: str
     to_address: str
-    amount: int = Field(..., ge=1, le=100_000_000)
+    amount: int = Field(..., ge=1, le=1_000_000_000_000)
 
     @validator("token_address")
     def token_address_is_valid_address(cls, v):
@@ -193,7 +191,7 @@ class IbetShareCreate(BaseModel):
     name: str = Field(max_length=100)
     issue_price: int = Field(..., ge=0, le=5_000_000_000)
     principal_value: int = Field(..., ge=0, le=5_000_000_000)
-    total_supply: int = Field(..., ge=0, le=100_000_000)
+    total_supply: int = Field(..., ge=0, le=1_000_000_000_000)
     symbol: Optional[str] = Field(max_length=100)
     dividends: Optional[float] = Field(None, ge=0.00, le=5_000_000_000.00)
     dividend_record_date: Optional[YYYYMMDD_constr]
@@ -207,7 +205,6 @@ class IbetShareCreate(BaseModel):
     contact_information: Optional[str] = Field(max_length=2000)
     privacy_policy: Optional[str] = Field(max_length=5000)
     transfer_approval_required: Optional[bool]
-    is_manual_transfer_approval: Optional[bool]
     is_canceled: Optional[bool]
 
     @validator("dividends")
@@ -246,7 +243,6 @@ class IbetShareUpdate(BaseModel):
     contact_information: Optional[str] = Field(max_length=2000)
     privacy_policy: Optional[str] = Field(max_length=5000)
     transfer_approval_required: Optional[bool]
-    is_manual_transfer_approval: Optional[bool]
     principal_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
     is_canceled: Optional[bool]
     memo: Optional[str] = Field(max_length=2000)
@@ -285,7 +281,7 @@ class IbetShareTransfer(BaseModel):
     token_address: str
     from_address: str
     to_address: str
-    amount: int = Field(..., ge=1, le=100_000_000)
+    amount: int = Field(..., ge=1, le=1_000_000_000_000)
 
     @validator("token_address")
     def token_address_is_valid_address(cls, v):
@@ -309,7 +305,7 @@ class IbetShareTransfer(BaseModel):
 class IbetShareAdditionalIssue(BaseModel):
     """ibet Share schema (Additional Issue)"""
     account_address: str
-    amount: int = Field(..., ge=1, le=100_000_000)
+    amount: int = Field(..., ge=1, le=1_000_000_000_000)
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):
@@ -321,7 +317,7 @@ class IbetShareAdditionalIssue(BaseModel):
 class IbetShareRedeem(BaseModel):
     """ibet Share schema (Redeem)"""
     account_address: str
-    amount: int = Field(..., ge=1, le=100_000_000)
+    amount: int = Field(..., ge=1, le=1_000_000_000_000)
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):
@@ -384,7 +380,6 @@ class IbetStraightBondResponse(BaseModel):
     issue_datetime: str
     token_status: int
     transfer_approval_required: bool
-    is_manual_transfer_approval: bool
     memo: str
 
 
@@ -403,7 +398,6 @@ class IbetShareResponse(BaseModel):
     cancellation_date: str
     transferable: bool
     transfer_approval_required: bool
-    is_manual_transfer_approval: bool
     status: bool
     is_offering: bool
     tradable_exchange_contract_address: str
