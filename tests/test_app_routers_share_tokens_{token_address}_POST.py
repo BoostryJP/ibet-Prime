@@ -237,7 +237,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
 
         # request target API
         req_param = {
-            "dividends": 0.001,
+            "dividends": 0.00000000000001,
         }
         resp = client.post(
             self.base_url.format(_token_address),
@@ -259,7 +259,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
                         "body",
                         "dividends"
                     ],
-                    "msg": "dividends must be rounded to 2 decimal places",
+                    "msg": "dividends must be rounded to 13 decimal places",
                     "type": "value_error"
                 }
             ]

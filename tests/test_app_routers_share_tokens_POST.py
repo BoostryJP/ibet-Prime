@@ -118,7 +118,7 @@ class TestAppRoutersShareTokensPOST:
             # assertion
             IbetShareContract.create.assert_called_with(
                 args=[
-                    "name_test1", "symbol_test1", 1000, 10000, 12345,
+                    "name_test1", "symbol_test1", 1000, 10000, 1234500000000000,
                     "20211231", "20211231", "20221231", 1000
                 ],
                 tx_from=test_account["address"],
@@ -343,7 +343,7 @@ class TestAppRoutersShareTokensPOST:
             # assertion
             IbetShareContract.create.assert_called_with(
                 args=[
-                    "name_test1", "symbol_test1", 1000, 10000, 12345,
+                    "name_test1", "symbol_test1", 1000, 10000, 1234500000000000,
                     "20211231", "20211231", "20221231", 1000
                 ],
                 tx_from=test_account["address"],
@@ -447,7 +447,7 @@ class TestAppRoutersShareTokensPOST:
             # assertion
             IbetShareContract.create.assert_called_with(
                 args=[
-                    "name_test1", "symbol_test1", 1000, 10000, 12345,
+                    "name_test1", "symbol_test1", 1000, 10000, 1234500000000000,
                     "20211231", "20211231", "20221231", 1000
                 ],
                 tx_from=test_account["address"],
@@ -545,7 +545,7 @@ class TestAppRoutersShareTokensPOST:
             "symbol": "symbol_test1",
             "issue_price": 1000,
             "total_supply": 10000,
-            "dividends": 123.456,
+            "dividends": 0.00000000000001,
             "dividend_record_date": "20211231",
             "dividend_payment_date": "20211231",
             "cancellation_date": "20221231",
@@ -574,7 +574,7 @@ class TestAppRoutersShareTokensPOST:
                         "body",
                         "dividends"
                     ],
-                    "msg": "dividends must be rounded to 2 decimal places",
+                    "msg": "dividends must be rounded to 13 decimal places",
                     "type": "value_error"
                 },
                 {

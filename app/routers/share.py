@@ -189,7 +189,7 @@ def issue_token(
         _symbol,
         token.issue_price,
         token.total_supply,
-        int(_dividends * 100),
+        int(_dividends * 10000000000000),
         _dividend_record_date,
         _dividend_payment_date,
         _cancellation_date,
