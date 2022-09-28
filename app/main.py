@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from datetime import datetime
 from fastapi import (
     FastAPI,
     Request,
@@ -51,8 +52,9 @@ app = FastAPI(
 
 @app.middleware("http")
 async def api_call_handler(request: Request, call_next):
+    request_start_time = datetime.utcnow()
     response = await call_next(request)
-    output_access_log(request, response)
+    output_access_log(request, response, request_start_time)
     return response
 
 
