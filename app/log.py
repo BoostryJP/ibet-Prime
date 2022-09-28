@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import sys
 import logging
 import urllib
-
+from datetime import datetime
 from fastapi import (
     Request,
     Response
@@ -47,7 +47,7 @@ TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S %z"
 # If 'X-Forwarded-For' is set for headers, that will be set prioritized to client ip.
 # [client ip] [account address] message
 AUTH_FORMAT = "[%s] [%s] %s"
-ACCESS_FORMAT = '"%s %s HTTP/%s" %d'
+ACCESS_FORMAT = '"%s %s HTTP/%s" %d (%.6fsec)'
 
 if APP_ENV == "live":
     # App Log
@@ -100,13 +100,14 @@ def auth_error(req: Request, address: str, msg: str):
     AUTH_LOG.warning(__auth_format(req, address, msg))
 
 
-def output_access_log(req: Request, res: Response):
+def output_access_log(req: Request, res: Response, request_start_time: datetime):
     url = __get_url(req)
     if url != "/":
         method = req.scope.get("method", "")
         http_version = req.scope.get("http_version", "")
         status_code = res.status_code
-        access_msg = ACCESS_FORMAT % (method, url, http_version, status_code)
+        response_time = (datetime.utcnow() - request_start_time).total_seconds()
+        access_msg = ACCESS_FORMAT % (method, url, http_version, status_code, response_time)
 
         address = "None"  # Initial value
         headers = req.scope.get("headers", [])
