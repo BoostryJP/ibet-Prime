@@ -91,7 +91,7 @@ def deploy_share_token_contract(address, private_key, personal_info_contract_add
         "token.symbol",
         100,
         20,
-        int(0.03 * 100),
+        3,
         "token.dividend_record_date",
         "token.dividend_payment_date",
         "token.cancellation_date",

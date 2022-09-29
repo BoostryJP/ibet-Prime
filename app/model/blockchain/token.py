@@ -928,7 +928,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.dividends is not None:
-            _dividends = int(data.dividends * 10_000_000_000_000)
+            _dividends = int(Decimal(str(data.dividends)) * Decimal("10000000000000"))
             tx = share_contract.functions.setDividendInformation(
                 _dividends,
                 data.dividend_record_date,

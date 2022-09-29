@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from typing import (
     List,
     Optional
@@ -189,7 +190,7 @@ def issue_token(
         _symbol,
         token.issue_price,
         token.total_supply,
-        int(_dividends * 10000000000000),
+        int(Decimal(str(_dividends)) * Decimal("10000000000000")),
         _dividend_record_date,
         _dividend_payment_date,
         _cancellation_date,
