@@ -395,7 +395,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.interest_rate is not None:
-            _interest_rate = int(data.interest_rate * 10000)
+            _interest_rate = int(Decimal(str(data.interest_rate)) * Decimal("10000"))
             tx = bond_contract.functions.setInterestRate(
                 _interest_rate
             ).buildTransaction({
