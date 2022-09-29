@@ -284,7 +284,7 @@ class TestGet:
         assert share_contract.cancellation_date == "20221231"
         assert share_contract.principal_value == 10001
         assert share_contract.is_canceled is False
-        assert share_contract.dividends == 0.01  # dividends
+        assert share_contract.dividends == 0.0000000000001  # dividends
         assert share_contract.dividend_record_date == "20211229"  # dividendRecordDate
         assert share_contract.dividend_payment_date == "20211230"  # dividendPaymentDate
 
@@ -455,7 +455,7 @@ class TestGet:
         assert share_contract.memo == ""
         assert share_contract.principal_value == 10001
         assert share_contract.is_canceled is False
-        assert share_contract.dividends == 0.01  # dividends
+        assert share_contract.dividends == 0.0000000000001  # dividends
         assert share_contract.dividend_record_date == "20211229"  # dividendRecordDate
         assert share_contract.dividend_payment_date == "20211230"  # dividendPaymentDate
 
@@ -552,7 +552,7 @@ class TestUpdate:
         assert share_contract.cancellation_date == "20221231"
         assert share_contract.dividend_record_date == "20211231"
         assert share_contract.dividend_payment_date == "20211231"
-        assert share_contract.dividends == 0.01
+        assert share_contract.dividends == 0.0000000000001
         assert share_contract.tradable_exchange_contract_address == ZERO_ADDRESS
         assert share_contract.personal_info_contract_address == ZERO_ADDRESS
         assert share_contract.transferable is False
@@ -700,7 +700,7 @@ class TestUpdate:
     def test_error_2(self, db):
         # update
         _data = {
-            "dividends": 0.001,
+            "dividends": 0.00000000000001,
             "tradable_exchange_contract_address": "invalid contract address",
             "personal_info_contract_address": "invalid contract address",
         }
@@ -709,7 +709,7 @@ class TestUpdate:
         assert exc_info.value.errors() == [
             {
                 "loc": ("dividends",),
-                "msg": "dividends must be rounded to 2 decimal places",
+                "msg": "dividends must be rounded to 13 decimal places",
                 "type": "value_error"
             }, {
                 "loc": ("tradable_exchange_contract_address",),

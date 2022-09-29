@@ -208,12 +208,12 @@ class IbetShareCreate(BaseModel):
     is_canceled: Optional[bool]
 
     @validator("dividends")
-    def dividends_2_decimal_places(cls, v):
+    def dividends_13_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10 ** 2)
-            int_data = int(v * 10 ** 2)
+            float_data = float(v * 10 ** 13)
+            int_data = int(v * 10 ** 13)
             if not math.isclose(int_data, float_data):
-                raise ValueError("dividends must be rounded to 2 decimal places")
+                raise ValueError("dividends must be rounded to 13 decimal places")
         return v
 
     @validator("tradable_exchange_contract_address")
@@ -248,12 +248,12 @@ class IbetShareUpdate(BaseModel):
     memo: Optional[str] = Field(max_length=2000)
 
     @validator("dividends")
-    def dividends_2_decimal_places(cls, v):
+    def dividends_13_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10 ** 2)
-            int_data = int(v * 10 ** 2)
+            float_data = float(v * 10 ** 13)
+            int_data = int(v * 10 ** 13)
             if not math.isclose(int_data, float_data):
-                raise ValueError("dividends must be rounded to 2 decimal places")
+                raise ValueError("dividends must be rounded to 13 decimal places")
         return v
 
     @validator("dividends")
