@@ -24,7 +24,9 @@ import config
 from app.model.db import (
     Token,
     TokenType,
-    IDXTransferApproval
+    IDXTransferApproval,
+    TransferApprovalHistory,
+    TransferApprovalOperationType
 )
 
 local_tz = timezone(config.TZ)
@@ -83,7 +85,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         # prepare data: IDXTransferApproval(failed token)
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 1
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -99,7 +101,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         # prepare data: IDXTransferApproval(share token)
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_2
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 1
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -115,7 +117,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         # prepare data: IDXTransferApproval(no token)
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_3
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 1
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -158,10 +160,10 @@ class TestAppRoutersShareTransferApprovalsGET:
         _token.abi = {}
         db.add(_token)
 
-        # prepare data: IDXTransferApproval(issuer-1 token)
+        # prepare data: IDXTransferApproval(ApplyFor(unapproved))
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 1
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -175,9 +177,10 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.transfer_approved = None  # unapproved
         db.add(_idx_transfer_approval)
 
+        # prepare data: IDXTransferApproval(EscrowFinish(escrow_finished))
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 11
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -191,9 +194,10 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
+        # prepare data: IDXTransferApproval(Approve(operation completed, event synchronizing))
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 21
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -204,16 +208,65 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True  # escrow_finished
-        _idx_transfer_approval.transfer_approved = True  # transferred
+        _idx_transfer_approval.transfer_approved = None  # event not synchronized
         db.add(_idx_transfer_approval)
 
+        _transfer_approval_history = TransferApprovalHistory()
+        _transfer_approval_history.token_address = self.test_token_address_1
+        _transfer_approval_history.exchange_address = config.ZERO_ADDRESS
+        _transfer_approval_history.application_id = 21
+        _transfer_approval_history.operation_type = TransferApprovalOperationType.APPROVE.value
+        db.add(_transfer_approval_history)
+
+        # prepare data: IDXTransferApproval(Approve(transferred))
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 31
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 31
+        _idx_transfer_approval.application_datetime = self.test_application_datetime
+        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.approval_datetime = self.test_approval_datetime
+        _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+        _idx_transfer_approval.cancelled = None
+        _idx_transfer_approval.escrow_finished = True  # escrow_finished
+        _idx_transfer_approval.transfer_approved = True  # transferred
+        db.add(_idx_transfer_approval)
+
+        # prepare data: IDXTransferApproval(Cancel(operation completed, event synchronizing))
+        _idx_transfer_approval = IDXTransferApproval()
+        _idx_transfer_approval.token_address = self.test_token_address_1
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+        _idx_transfer_approval.application_id = 41
+        _idx_transfer_approval.from_address = self.test_from_address
+        _idx_transfer_approval.to_address = self.test_to_address
+        _idx_transfer_approval.amount = 41
+        _idx_transfer_approval.application_datetime = self.test_application_datetime
+        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.approval_datetime = None
+        _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancelled = None  # event not synchronized
+        _idx_transfer_approval.escrow_finished = None
+        _idx_transfer_approval.transfer_approved = None
+        db.add(_idx_transfer_approval)
+
+        _transfer_approval_history = TransferApprovalHistory()
+        _transfer_approval_history.token_address = self.test_token_address_1
+        _transfer_approval_history.exchange_address = config.ZERO_ADDRESS
+        _transfer_approval_history.application_id = 41
+        _transfer_approval_history.operation_type = TransferApprovalOperationType.CANCEL.value
+        db.add(_transfer_approval_history)
+
+        # prepare data: IDXTransferApproval(Cancel(canceled))
+        _idx_transfer_approval = IDXTransferApproval()
+        _idx_transfer_approval.token_address = self.test_token_address_1
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+        _idx_transfer_approval.application_id = 51
+        _idx_transfer_approval.from_address = self.test_from_address
+        _idx_transfer_approval.to_address = self.test_to_address
+        _idx_transfer_approval.amount = 51
         _idx_transfer_approval.application_datetime = self.test_application_datetime
         _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
         _idx_transfer_approval.approval_datetime = None
@@ -222,6 +275,8 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -241,11 +296,11 @@ class TestAppRoutersShareTransferApprovalsGET:
                 {
                     "issuer_address": self.test_issuer_address_1,
                     "token_address": self.test_token_address_1,
-                    "application_count": 4,
+                    "application_count": 6,
                     "unapproved_count": 1,
                     "escrow_finished_count": 1,
-                    "transferred_count": 1,
-                    "canceled_count": 1,
+                    "transferred_count": 2,
+                    "canceled_count": 2,
                 },
             ]
         }
@@ -285,7 +340,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         # prepare data: IDXTransferApproval(issuer-1 token-1)
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 1
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -301,7 +356,7 @@ class TestAppRoutersShareTransferApprovalsGET:
 
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 11
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -317,7 +372,7 @@ class TestAppRoutersShareTransferApprovalsGET:
 
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 12
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -332,7 +387,7 @@ class TestAppRoutersShareTransferApprovalsGET:
 
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 31
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -349,7 +404,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         # prepare data: IDXTransferApproval(issuer-1 token-2)
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_2
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 1
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -366,7 +421,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         # prepare data: IDXTransferApproval(issuer-2)
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_3
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 1
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -454,7 +509,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         # prepare data: IDXTransferApproval(issuer-1 token-1)
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 1
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -470,7 +525,7 @@ class TestAppRoutersShareTransferApprovalsGET:
 
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 11
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -486,7 +541,7 @@ class TestAppRoutersShareTransferApprovalsGET:
 
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 12
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -501,7 +556,7 @@ class TestAppRoutersShareTransferApprovalsGET:
 
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 31
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -518,7 +573,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         # prepare data: IDXTransferApproval(issuer-1 token-2)
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_2
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 1
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -535,7 +590,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         # prepare data: IDXTransferApproval(issuer-2)
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_3
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 1
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -637,7 +692,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         # prepare data: IDXTransferApproval(issuer-1 token-1)
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_1
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 1
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -654,7 +709,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         # prepare data: IDXTransferApproval(issuer-1 token-2)
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_2
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 1
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -671,7 +726,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         # prepare data: IDXTransferApproval(issuer-1 token-2)
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_3
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 1
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -688,7 +743,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         # prepare data: IDXTransferApproval(issuer-1 token-2)
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.token_address = self.test_token_address_4
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 1
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address

@@ -26,6 +26,7 @@ from unittest import mock
 from unittest.mock import patch
 from uuid import UUID
 
+import config
 from app.exceptions import ServiceUnavailableError
 from app.model.db import (
     Token,
@@ -317,7 +318,7 @@ class TestProcessor:
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
         assert _transfer_approval.token_address == token_address_1
-        assert _transfer_approval.exchange_address is None
+        assert _transfer_approval.exchange_address == config.ZERO_ADDRESS
         assert _transfer_approval.application_id == 0
         assert _transfer_approval.from_address == user_address_1
         assert _transfer_approval.to_address == issuer_address
@@ -440,7 +441,7 @@ class TestProcessor:
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
         assert _transfer_approval.token_address == token_address_1
-        assert _transfer_approval.exchange_address is None
+        assert _transfer_approval.exchange_address == config.ZERO_ADDRESS
         assert _transfer_approval.application_id == 0
         assert _transfer_approval.from_address == user_address_1
         assert _transfer_approval.to_address == issuer_address
@@ -562,7 +563,7 @@ class TestProcessor:
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
         assert _transfer_approval.token_address == token_address_1
-        assert _transfer_approval.exchange_address is None
+        assert _transfer_approval.exchange_address == config.ZERO_ADDRESS
         assert _transfer_approval.application_id == 0
         assert _transfer_approval.from_address == user_address_1
         assert _transfer_approval.to_address == issuer_address
@@ -683,7 +684,7 @@ class TestProcessor:
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
         assert _transfer_approval.token_address == token_address_1
-        assert _transfer_approval.exchange_address is None
+        assert _transfer_approval.exchange_address == config.ZERO_ADDRESS
         assert _transfer_approval.application_id == 0
         assert _transfer_approval.from_address == user_address_1
         assert _transfer_approval.to_address == issuer_address

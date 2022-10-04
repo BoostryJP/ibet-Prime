@@ -16,10 +16,11 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from enum import Enum
+
 from sqlalchemy import (
     BigInteger,
     Column,
-    Integer,
     String
 )
 
@@ -27,24 +28,29 @@ from .base import Base
 
 
 class TransferApprovalHistory(Base):
-    """Token Transfer Approval History"""
+    """Token Transfer Approval Operation History"""
     __tablename__ = 'transfer_approval_history'
 
     # Sequence Id
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     # Token Address
-    token_address = Column(String(42), index=True)
+    token_address = Column(String(42), index=True, nullable=False)
     # Exchange Address (value is set if the event is from exchange)
-    exchange_address = Column(String(42), index=True)
-    # Application Id (escrow id is set if the event is from exchange)
-    application_id = Column(BigInteger, index=True)
-    # Result (Success:1, Fail:2)
-    result = Column(Integer)
+    exchange_address = Column(String(42), index=True, nullable=False)
+    # Application ID (escrow id is set if the event is from exchange)
+    application_id = Column(BigInteger, index=True, nullable=False)
+    # Operation Type: TransferApprovalOperationType
+    operation_type = Column(String(20), index=True, nullable=False)
 
     def json(self):
         return {
             "token_address": self.token_address,
             "exchange_address": self.exchange_address,
             "application_id": self.application_id,
-            "result": self.result,
+            "operation_type": self.operation_type,
         }
+
+
+class TransferApprovalOperationType(str, Enum):
+    APPROVE = "approve"
+    CANCEL = "cancel"

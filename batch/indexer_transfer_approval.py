@@ -190,7 +190,7 @@ class Processor:
                             db_session=db_session,
                             event_type="ApplyFor",
                             token_address=token.address,
-                            exchange_address=None,
+                            exchange_address=ZERO_ADDRESS,
                             application_id=args.get("index"),
                             from_address=args.get("from", ZERO_ADDRESS),
                             to_address=args.get("to", ZERO_ADDRESS),
@@ -202,7 +202,7 @@ class Processor:
                             db_session=db_session,
                             transaction_hash=event["transactionHash"],
                             token_address=token.address,
-                            exchange_address=None,
+                            exchange_address=ZERO_ADDRESS,
                             application_id=args.get("index"),
                             notice_code=0
                         )
@@ -231,7 +231,7 @@ class Processor:
                         db_session=db_session,
                         event_type="Cancel",
                         token_address=token.address,
-                        exchange_address=None,
+                        exchange_address=ZERO_ADDRESS,
                         application_id=args.get("index"),
                         from_address=args.get("from", ZERO_ADDRESS),
                         to_address=args.get("to", ZERO_ADDRESS),
@@ -240,7 +240,7 @@ class Processor:
                         db_session=db_session,
                         transaction_hash=event["transactionHash"],
                         token_address=token.address,
-                        exchange_address=None,
+                        exchange_address=ZERO_ADDRESS,
                         application_id=args.get("index"),
                         notice_code=1
                     )
@@ -270,7 +270,7 @@ class Processor:
                         db_session=db_session,
                         event_type="Approve",
                         token_address=token.address,
-                        exchange_address=None,
+                        exchange_address=ZERO_ADDRESS,
                         application_id=args.get("index"),
                         from_address=args.get("from", ZERO_ADDRESS),
                         to_address=args.get("to", ZERO_ADDRESS),
@@ -281,7 +281,7 @@ class Processor:
                         db_session=db_session,
                         transaction_hash=event["transactionHash"],
                         token_address=token.address,
-                        exchange_address=None,
+                        exchange_address=ZERO_ADDRESS,
                         application_id=args.get("index"),
                         notice_code=2
                     )
