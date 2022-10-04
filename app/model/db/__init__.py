@@ -95,7 +95,10 @@ from .notification import (
     Notification,
     NotificationType
 )
-from .transfer_appoval_history import TransferApprovalHistory
+from .transfer_appoval_history import (
+    TransferApprovalHistory,
+    TransferApprovalOperationType
+)
 from .tx_management import TransactionLock
 from .utxo import UTXO, UTXOBlockNumber
 from .scheduled_events import (
