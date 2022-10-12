@@ -25,6 +25,7 @@ from datetime import (
 )
 
 from sqlalchemy import desc
+from sqlalchemy.exc import IntegrityError as SAIntegrityError
 from sqlalchemy.orm import Session
 from web3.exceptions import TimeExhausted
 
@@ -36,7 +37,10 @@ from config import (
     ZERO_ADDRESS
 )
 from app.database import engine
-from app.model.db import TokenAttrUpdate
+from app.model.db import (
+    TokenAttrUpdate,
+    TokenCache
+)
 from app.model.schema import (
     IbetStraightBondUpdate,
     IbetStraightBondTransfer,
@@ -110,32 +114,36 @@ class IbetStandardTokenInterface:
         return balance
 
     @staticmethod
-    def is_token_attr_updated(contract_address: str, base_datetime: datetime):
-        db_session = Session(autocommit=False, autoflush=True, bind=engine)
+    def check_attr_update(db_session: Session, contract_address: str, base_datetime: datetime):
         is_updated = False
-        try:
-            _token_attr_update = db_session.query(TokenAttrUpdate). \
-                filter(TokenAttrUpdate.token_address == contract_address). \
-                order_by(desc(TokenAttrUpdate.id)). \
-                first()
-            if _token_attr_update is not None \
-                    and _token_attr_update.updated_datetime > base_datetime:
-                is_updated = True
-        finally:
-            db_session.close()
+        _token_attr_update = db_session.query(TokenAttrUpdate). \
+            filter(TokenAttrUpdate.token_address == contract_address). \
+            order_by(desc(TokenAttrUpdate.id)). \
+            first()
+        if _token_attr_update is not None and _token_attr_update.updated_datetime > base_datetime:
+            is_updated = True
         return is_updated
 
     @staticmethod
-    def set_token_attr_update(contract_address: str):
-        db_session = Session(autocommit=False, autoflush=True, bind=engine)
-        try:
-            _token_attr_update = TokenAttrUpdate()
-            _token_attr_update.token_address = contract_address
-            _token_attr_update.updated_datetime = datetime.utcnow()
-            db_session.add(_token_attr_update)
-            db_session.commit()
-        finally:
-            db_session.close()
+    def record_attr_update(db_session: Session, contract_address: str):
+        _token_attr_update = TokenAttrUpdate()
+        _token_attr_update.token_address = contract_address
+        _token_attr_update.updated_datetime = datetime.utcnow()
+        db_session.add(_token_attr_update)
+
+    def create_cache(self, db_session: Session, contract_address: str):
+        token_cache = TokenCache()
+        token_cache.token_address = contract_address
+        token_cache.attributes = self.__dict__
+        token_cache.cached_datetime = datetime.utcnow()
+        token_cache.expiration_datetime = datetime.utcnow() + timedelta(seconds=TOKEN_CACHE_TTL)
+        db_session.add(token_cache)
+
+    @staticmethod
+    def delete_cache(db_session: Session, contract_address: str):
+        db_session.query(TokenCache). \
+            filter(TokenCache.token_address == contract_address). \
+            delete()
 
 
 class IbetSecurityTokenInterface(IbetStandardTokenInterface):
@@ -213,9 +221,6 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
     memo: str
     is_redeemed: bool
 
-    # Cache
-    cache = DictCache("bond_tokens")
-
     @staticmethod
     def create(args: list, tx_from: str, private_key: str):
         """Deploy token
@@ -240,6 +245,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         :param contract_address: contract address
         :return: IbetStraightBond
         """
+        db_session = Session(autocommit=False, autoflush=True, bind=engine)
         bond_contract = ContractUtils.get_contract(
             contract_name="IbetStraightBond",
             contract_address=contract_address
@@ -247,17 +253,21 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
 
         # When using the cache
         if TOKEN_CACHE:
-            if contract_address in IbetStraightBondContract.cache:
-                token_cache = IbetStraightBondContract.cache[contract_address]
-                is_updated = IbetStraightBondContract.is_token_attr_updated(
+            token_cache: TokenCache = db_session.query(TokenCache). \
+                filter(TokenCache.token_address == contract_address). \
+                first()
+            if token_cache is not None:
+                is_updated = IbetStraightBondContract.check_attr_update(
+                    db_session=db_session,
                     contract_address=contract_address,
-                    base_datetime=token_cache.get("cached_datetime")
+                    base_datetime=token_cache.cached_datetime
                 )
-                if is_updated is False and token_cache.get("expiration_datetime") > datetime.utcnow():
+                if is_updated is False and token_cache.expiration_datetime > datetime.utcnow():
                     # Get data from cache
                     bond_token = IbetStraightBondContract()
-                    for k, v in token_cache["token"].items():
+                    for k, v in token_cache.attributes.items():
                         setattr(bond_token, k, v)
+                    db_session.close()
                     return bond_token
 
         # When cache is not used
@@ -357,11 +367,19 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         bond_token.interest_payment_date = interest_payment_date_list
 
         if TOKEN_CACHE:
-            IbetStraightBondContract.cache[contract_address] = {
-                "cached_datetime": datetime.utcnow(),
-                "expiration_datetime": datetime.utcnow() + timedelta(seconds=TOKEN_CACHE_TTL),
-                "token": bond_token.__dict__
-            }
+            # Create token cache
+            try:
+                token_cache = TokenCache()
+                token_cache.token_address = contract_address
+                token_cache.attributes = bond_token.__dict__
+                token_cache.cached_datetime = datetime.utcnow()
+                token_cache.expiration_datetime = datetime.utcnow() + timedelta(seconds=TOKEN_CACHE_TTL)
+                db_session.add(token_cache)
+                db_session.commit()
+            except SAIntegrityError:
+                db_session.rollback()
+                pass
+        db_session.close()
 
         return bond_token
 
@@ -630,8 +648,21 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         # Delete Cache
-        IbetStraightBondContract.set_token_attr_update(contract_address)
-        IbetStraightBondContract.cache.pop(contract_address)
+        db_session = Session(autocommit=False, autoflush=True, bind=engine)
+        try:
+            IbetStraightBondContract.record_attr_update(
+                db_session=db_session,
+                contract_address=contract_address
+            )
+            IbetStraightBondContract.delete_cache(
+                db_session=db_session,
+                contract_address=contract_address
+            )
+            db_session.commit()
+        except Exception as err:
+            raise SendTransactionError(err)
+        finally:
+            db_session.close()
 
     @staticmethod
     def transfer(data: IbetStraightBondTransfer,
@@ -692,15 +723,29 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 transaction=tx,
                 private_key=private_key
             )
-            # Delete Cache
-            IbetStraightBondContract.set_token_attr_update(contract_address)
-            IbetStraightBondContract.cache.pop(contract_address)
         except ContractRevertError:
             raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
             raise SendTransactionError(err)
+
+        # Delete Cache
+        db_session = Session(autocommit=False, autoflush=True, bind=engine)
+        try:
+            IbetStraightBondContract.record_attr_update(
+                db_session=db_session,
+                contract_address=contract_address
+            )
+            IbetStraightBondContract.delete_cache(
+                db_session=db_session,
+                contract_address=contract_address
+            )
+            db_session.commit()
+        except Exception as err:
+            raise SendTransactionError(err)
+        finally:
+            db_session.close()
 
         return tx_hash
 
@@ -729,15 +774,29 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 transaction=tx,
                 private_key=private_key
             )
-            # Delete Cache
-            IbetStraightBondContract.set_token_attr_update(contract_address)
-            IbetStraightBondContract.cache.pop(contract_address)
         except ContractRevertError:
             raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
             raise SendTransactionError(err)
+
+        # Delete Cache
+        db_session = Session(autocommit=False, autoflush=True, bind=engine)
+        try:
+            IbetStraightBondContract.record_attr_update(
+                db_session=db_session,
+                contract_address=contract_address
+            )
+            IbetStraightBondContract.delete_cache(
+                db_session=db_session,
+                contract_address=contract_address
+            )
+            db_session.commit()
+        except Exception as err:
+            raise SendTransactionError(err)
+        finally:
+            db_session.close()
 
         return tx_hash
 
@@ -779,6 +838,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
         :param contract_address: contract address
         :return: IbetShare
         """
+        db_session = Session(autocommit=False, autoflush=True, bind=engine)
         share_contract = ContractUtils.get_contract(
             contract_name="IbetShare",
             contract_address=contract_address
@@ -786,17 +846,21 @@ class IbetShareContract(IbetSecurityTokenInterface):
 
         # When using the cache
         if TOKEN_CACHE:
-            if contract_address in IbetShareContract.cache:
-                token_cache = IbetShareContract.cache[contract_address]
-                is_updated = IbetShareContract.is_token_attr_updated(
+            token_cache: TokenCache = db_session.query(TokenCache). \
+                filter(TokenCache.token_address == contract_address). \
+                first()
+            if token_cache is not None:
+                is_updated = IbetStraightBondContract.check_attr_update(
+                    db_session=db_session,
                     contract_address=contract_address,
-                    base_datetime=token_cache.get("cached_datetime")
+                    base_datetime=token_cache.cached_datetime
                 )
-                if is_updated is False and token_cache.get("expiration_datetime") > datetime.utcnow():
+                if is_updated is False and token_cache.expiration_datetime > datetime.utcnow():
                     # Get data from cache
                     share_token = IbetShareContract()
-                    for k, v in token_cache["token"].items():
+                    for k, v in token_cache.attributes.items():
                         setattr(share_token, k, v)
+                    db_session.close()
                     return share_token
 
         # When cache is not used
@@ -872,11 +936,19 @@ class IbetShareContract(IbetSecurityTokenInterface):
         share_token.dividend_payment_date = _dividend_info[2]
 
         if TOKEN_CACHE:
-            IbetShareContract.cache[contract_address] = {
-                "cached_datetime": datetime.utcnow(),
-                "expiration_datetime": datetime.utcnow() + timedelta(seconds=TOKEN_CACHE_TTL),
-                "token": share_token.__dict__
-            }
+            # Create token cache
+            try:
+                token_cache = TokenCache()
+                token_cache.token_address = contract_address
+                token_cache.attributes = share_token.__dict__
+                token_cache.cached_datetime = datetime.utcnow()
+                token_cache.expiration_datetime = datetime.utcnow() + timedelta(seconds=TOKEN_CACHE_TTL)
+                db_session.add(token_cache)
+                db_session.commit()
+            except SAIntegrityError:
+                db_session.rollback()
+                pass
+        db_session.close()
 
         return share_token
 
@@ -1127,8 +1199,22 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         # Delete Cache
-        IbetShareContract.set_token_attr_update(contract_address)
-        IbetShareContract.cache.pop(contract_address)
+        db_session = Session(autocommit=False, autoflush=True, bind=engine)
+        try:
+            IbetShareContract.record_attr_update(
+                db_session=db_session,
+                contract_address=contract_address
+            )
+            IbetShareContract.delete_cache(
+                db_session=db_session,
+                contract_address=contract_address
+            )
+            db_session.commit()
+        except Exception as err:
+            raise SendTransactionError(err)
+        finally:
+            db_session.close()
+
 
     @staticmethod
     def transfer(data: IbetShareTransfer,
@@ -1189,15 +1275,29 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 transaction=tx,
                 private_key=private_key
             )
-            # Delete Cache
-            IbetShareContract.set_token_attr_update(contract_address)
-            IbetShareContract.cache.pop(contract_address)
         except ContractRevertError:
             raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
             raise SendTransactionError(err)
+
+        # Delete Cache
+        db_session = Session(autocommit=False, autoflush=True, bind=engine)
+        try:
+            IbetShareContract.record_attr_update(
+                db_session=db_session,
+                contract_address=contract_address
+            )
+            IbetShareContract.delete_cache(
+                db_session=db_session,
+                contract_address=contract_address
+            )
+            db_session.commit()
+        except Exception as err:
+            raise SendTransactionError(err)
+        finally:
+            db_session.close()
 
         return tx_hash
 
@@ -1226,14 +1326,28 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 transaction=tx,
                 private_key=private_key
             )
-            # Delete Cache
-            IbetShareContract.set_token_attr_update(contract_address)
-            IbetShareContract.cache.pop(contract_address)
         except ContractRevertError:
             raise
         except TimeExhausted as timeout_error:
             raise SendTransactionError(timeout_error)
         except Exception as err:
             raise SendTransactionError(err)
+
+        # Delete Cache
+        db_session = Session(autocommit=False, autoflush=True, bind=engine)
+        try:
+            IbetShareContract.record_attr_update(
+                db_session=db_session,
+                contract_address=contract_address
+            )
+            IbetShareContract.delete_cache(
+                db_session=db_session,
+                contract_address=contract_address
+            )
+            db_session.commit()
+        except Exception as err:
+            raise SendTransactionError(err)
+        finally:
+            db_session.close()
 
         return tx_hash

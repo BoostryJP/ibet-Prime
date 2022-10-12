@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from datetime import datetime
 from enum import Enum
 
 from sqlalchemy import (
@@ -63,3 +64,17 @@ class TokenAttrUpdate(Base):
 class TokenType(str, Enum):
     IBET_STRAIGHT_BOND = "IbetStraightBond"
     IBET_SHARE = "IbetShare"
+
+
+class TokenCache(Base):
+    """Token Cache"""
+    __tablename__ = "token_cache"
+
+    # token address
+    token_address = Column(String(42), primary_key=True)
+    # token attributes
+    attributes = Column(JSON, nullable=False)
+    # cached datetime
+    cached_datetime = Column(DateTime, default=datetime.utcnow)
+    # expiration datetime
+    expiration_datetime = Column(DateTime, default=datetime.utcnow)

@@ -20,7 +20,7 @@ import pytest
 import time
 from unittest import mock
 from binascii import Error
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from pydantic.error_wrappers import ValidationError
 from eth_keyfile import decode_keyfile_json
@@ -29,11 +29,15 @@ from web3.exceptions import (
     InvalidAddress,
     TimeExhausted,
     TransactionNotFound,
-    ValidationError as Web3ValidationError, ContractLogicError
+    ValidationError as Web3ValidationError,
+    ContractLogicError
 )
 
-from config import ZERO_ADDRESS
-from app.model.db import TokenAttrUpdate
+from config import ZERO_ADDRESS, TOKEN_CACHE_TTL
+from app.model.db import (
+    TokenAttrUpdate,
+    TokenCache
+)
 from app.model.blockchain import IbetShareContract
 from app.utils.contract_utils import ContractUtils
 from app.model.schema import (
@@ -319,30 +323,37 @@ class TestGet:
             private_key=private_key
         )
 
-        # cache put
-        IbetShareContract.get(contract_address=contract_address)
-        token_cache = IbetShareContract.cache[contract_address]["token"]
-        token_cache["issuer_address"] = issuer_address
-        token_cache["token_address"] = contract_address
-        token_cache["name"] = "テスト株式-test"
-        token_cache["symbol"] = "TEST-test"
-        token_cache["total_supply"] = 999999
-        token_cache["contact_information"] = "test1"
-        token_cache["privacy_policy"] = "test2"
-        token_cache["tradable_exchange_contract_address"] = "0x1234567890123456789012345678901234567890"
-        token_cache["status"] = False
-        token_cache["personal_info_contract_address"] = "0x1234567890123456789012345678901234567891"
-        token_cache["transferable"] = True
-        token_cache["is_offering"] = True
-        token_cache["transfer_approval_required"] = True
-        token_cache["issue_price"] = 999997
-        token_cache["cancellation_date"] = "99991231"
-        token_cache["memo"] = "memo_test"
-        token_cache["principal_value"] = 999998
-        token_cache["is_canceled"] = True
-        token_cache["dividends"] = 9.99
-        token_cache["dividend_record_date"] = "99991230"
-        token_cache["dividend_payment_date"] = "99991229"
+        # create cache
+        token_attr = {
+            "issuer_address": issuer_address,
+            "token_address": contract_address,
+            "name": "テスト株式-test",
+            "symbol": "TEST-test",
+            "total_supply": 999999,
+            "contact_information": "test1",
+            "privacy_policy": "test2",
+            "tradable_exchange_contract_address": "0x1234567890123456789012345678901234567890",
+            "status": False,
+            "personal_info_contract_address": "0x1234567890123456789012345678901234567891",
+            "transferable": True,
+            "is_offering": True,
+            "transfer_approval_required": True,
+            "issue_price": 999997,
+            "cancellation_date": "99991231",
+            "memo": "memo_test",
+            "principal_value": 999998,
+            "is_canceled": True,
+            "dividends": 9.99,
+            "dividend_record_date": "99991230",
+            "dividend_payment_date": "99991229"
+        }
+        token_cache = TokenCache()
+        token_cache.token_address = contract_address
+        token_cache.attributes = token_attr
+        token_cache.cached_datetime = datetime.utcnow()
+        token_cache.expiration_datetime = datetime.utcnow() + timedelta(seconds=TOKEN_CACHE_TTL)
+        db.add(token_cache)
+        db.commit()
 
         # execute the function
         share_contract = IbetShareContract.get(contract_address=contract_address)
@@ -401,30 +412,37 @@ class TestGet:
             private_key=private_key
         )
 
-        # cache put
-        IbetShareContract.get(contract_address=contract_address)
-        token_cache = IbetShareContract.cache[contract_address]["token"]
-        token_cache["issuer_address"] = issuer_address
-        token_cache["token_address"] = contract_address
-        token_cache["name"] = "テスト株式-test"
-        token_cache["symbol"] = "TEST-test"
-        token_cache["total_supply"] = 999999
-        token_cache["contact_information"] = "test1"
-        token_cache["privacy_policy"] = "test2"
-        token_cache["tradable_exchange_contract_address"] = "0x1234567890123456789012345678901234567890"
-        token_cache["status"] = False
-        token_cache["personal_info_contract_address"] = "0x1234567890123456789012345678901234567891"
-        token_cache["transferable"] = True
-        token_cache["is_offering"] = True
-        token_cache["transfer_approval_required"] = True
-        token_cache["issue_price"] = 999997
-        token_cache["cancellation_date"] = "99991231"
-        token_cache["memo"] = "memo_test"
-        token_cache["principal_value"] = 999998
-        token_cache["is_canceled"] = True
-        token_cache["dividends"] = 9.99
-        token_cache["dividend_record_date"] = "99991230"
-        token_cache["dividend_payment_date"] = "99991229"
+        # create cache
+        token_attr = {
+            "issuer_address": issuer_address,
+            "token_address": contract_address,
+            "name": "テスト株式-test",
+            "symbol": "TEST-test",
+            "total_supply": 999999,
+            "contact_information": "test1",
+            "privacy_policy": "test2",
+            "tradable_exchange_contract_address": "0x1234567890123456789012345678901234567890",
+            "status": False,
+            "personal_info_contract_address": "0x1234567890123456789012345678901234567891",
+            "transferable": True,
+            "is_offering": True,
+            "transfer_approval_required": True,
+            "issue_price": 999997,
+            "cancellation_date": "99991231",
+            "memo": "memo_test",
+            "principal_value": 999998,
+            "is_canceled": True,
+            "dividends": 9.99,
+            "dividend_record_date": "99991230",
+            "dividend_payment_date": "99991229"
+        }
+        token_cache = TokenCache()
+        token_cache.token_address = contract_address
+        token_cache.attributes = token_attr
+        token_cache.cached_datetime = datetime.utcnow()
+        token_cache.expiration_datetime = datetime.utcnow() + timedelta(seconds=TOKEN_CACHE_TTL)
+        db.add(token_cache)
+        db.commit()
 
         # updated token attribute
         _token_attr_update = TokenAttrUpdate()
@@ -2438,7 +2456,7 @@ class TestGetAccountBalance:
             )
 
 
-class TestIsTokenAttrUpdated:
+class TestCheckAttrUpdate:
     token_address = "0x0123456789abcDEF0123456789abCDef01234567"
 
     ###########################################################################
@@ -2451,7 +2469,7 @@ class TestIsTokenAttrUpdated:
         before_datetime = datetime.utcnow()
 
         # Test
-        result = IbetShareContract.is_token_attr_updated(self.token_address, before_datetime)
+        result = IbetShareContract.check_attr_update(db, self.token_address, before_datetime)
 
         # assertion
         assert result is False
@@ -2471,7 +2489,7 @@ class TestIsTokenAttrUpdated:
         db.commit()
 
         # Test
-        result = IbetShareContract.is_token_attr_updated(self.token_address, after_datetime)
+        result = IbetShareContract.check_attr_update(db, self.token_address, after_datetime)
 
         # assertion
         assert result is False
@@ -2491,7 +2509,7 @@ class TestIsTokenAttrUpdated:
         db.commit()
 
         # Test
-        result = IbetShareContract.is_token_attr_updated(self.token_address, before_datetime)
+        result = IbetShareContract.check_attr_update(db, self.token_address, before_datetime)
 
         # assertion
         assert result is True
@@ -2501,7 +2519,7 @@ class TestIsTokenAttrUpdated:
     ###########################################################################
 
 
-class TestSetTokenAttrUpdate:
+class TestRecordAttrUpdate:
     token_address = "0x0123456789abcDEF0123456789abCDef01234567"
 
     ###########################################################################
@@ -2513,7 +2531,7 @@ class TestSetTokenAttrUpdate:
     @pytest.mark.freeze_time('2021-04-27 12:34:56')
     def test_normal_1(self, db):
         # Test
-        IbetShareContract.set_token_attr_update(self.token_address)
+        IbetShareContract.record_attr_update(db, self.token_address)
 
         # assertion
         _update = db.query(TokenAttrUpdate).first()
@@ -2536,7 +2554,7 @@ class TestSetTokenAttrUpdate:
         freezer.move_to('2021-04-27 12:34:56')
 
         # Test
-        IbetShareContract.set_token_attr_update(self.token_address)
+        IbetShareContract.record_attr_update(db, self.token_address)
 
         # assertion
         _update = db.query(TokenAttrUpdate).filter(TokenAttrUpdate.id == 2).first()

@@ -26,7 +26,8 @@ from .auth_token import AuthToken
 from .token import (
     Token,
     TokenAttrUpdate,
-    TokenType
+    TokenType,
+    TokenCache
 )
 from .token_holders import (
     TokenHolder,
