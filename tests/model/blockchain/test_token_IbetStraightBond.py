@@ -21,7 +21,7 @@ import time
 from unittest import mock
 from binascii import Error
 from unittest.mock import patch, MagicMock
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from pydantic.error_wrappers import ValidationError
 from eth_keyfile import decode_keyfile_json
@@ -29,10 +29,14 @@ from web3.exceptions import (
     InvalidAddress,
     TimeExhausted,
     TransactionNotFound,
-    ValidationError as Web3ValidationError, ContractLogicError
+    ValidationError as Web3ValidationError,
+    ContractLogicError
 )
-from config import ZERO_ADDRESS
-from app.model.db import TokenAttrUpdate
+from config import ZERO_ADDRESS, TOKEN_CACHE_TTL
+from app.model.db import (
+    TokenAttrUpdate,
+    TokenCache
+)
 from app.model.blockchain import IbetStraightBondContract
 from app.utils.contract_utils import ContractUtils
 from app.model.schema import (
@@ -308,34 +312,42 @@ class TestGet:
             private_key=private_key
         )
 
-        # cache put
-        IbetStraightBondContract.get(contract_address=contract_address)
-        token_cache = IbetStraightBondContract.cache[contract_address]["token"]
-        token_cache["issuer_address"] = issuer_address
-        token_cache["token_address"] = contract_address
-        token_cache["name"] = "テスト債券-test"
-        token_cache["symbol"] = "TEST-test"
-        token_cache["total_supply"] = 9999999
-        token_cache["contact_information"] = "test1"
-        token_cache["privacy_policy"] = "test2"
-        token_cache["tradable_exchange_contract_address"] = "0x1234567890123456789012345678901234567890"
-        token_cache["status"] = False
-        token_cache["personal_info_contract_address"] = "0x1234567890123456789012345678901234567891"
-        token_cache["transferable"] = True
-        token_cache["is_offering"] = True
-        token_cache["transfer_approval_required"] = True
-        token_cache["face_value"] = 9999998
-        token_cache["interest_rate"] = 99.999
-        token_cache["interest_payment_date"] = ["99991231", "99991231", "99991231", "99991231", "99991231",
-                                                "99991231", "99991231", "99991231", "99991231", "99991231",
-                                                "99991231", "99991231"]
-        token_cache["redemption_date"] = "99991231"
-        token_cache["redemption_value"] = 9999997
-        token_cache["return_date"] = "99991230"
-        token_cache["return_amount"] = "return_amount-test"
-        token_cache["purpose"] = "purpose-test"
-        token_cache["memo"] = "memo-test"
-        token_cache["is_redeemed"] = True
+        # create cache
+        token_attr = {
+            "issuer_address": issuer_address,
+            "token_address": contract_address,
+            "name": "テスト債券-test",
+            "symbol": "TEST-test",
+            "total_supply": 9999999,
+            "contact_information": "test1",
+            "privacy_policy": "test2",
+            "tradable_exchange_contract_address": "0x1234567890123456789012345678901234567890",
+            "status": False,
+            "personal_info_contract_address": "0x1234567890123456789012345678901234567891",
+            "transferable": True,
+            "is_offering": True,
+            "transfer_approval_required": True,
+            "face_value": 9999998, "interest_rate": 99.999,
+            "interest_payment_date": [
+                "99991231", "99991231", "99991231", "99991231", "99991231",
+                "99991231", "99991231", "99991231", "99991231", "99991231",
+                "99991231", "99991231"
+            ],
+            "redemption_date": "99991231",
+            "redemption_value": 9999997,
+            "return_date": "99991230",
+            "return_amount": "return_amount-test",
+            "purpose": "purpose-test",
+            "memo": "memo-test",
+            "is_redeemed": True
+        }
+        token_cache = TokenCache()
+        token_cache.token_address = contract_address
+        token_cache.attributes = token_attr
+        token_cache.cached_datetime = datetime.utcnow()
+        token_cache.expiration_datetime = datetime.utcnow() + timedelta(seconds=TOKEN_CACHE_TTL)
+        db.add(token_cache)
+        db.commit()
 
         # get token data
         bond_contract = IbetStraightBondContract.get(contract_address=contract_address)
@@ -392,34 +404,41 @@ class TestGet:
             private_key=private_key
         )
 
-        # cache put
-        IbetStraightBondContract.get(contract_address=contract_address)
-        token_cache = IbetStraightBondContract.cache[contract_address]["token"]
-        token_cache["issuer_address"] = issuer_address
-        token_cache["token_address"] = contract_address
-        token_cache["name"] = "テスト債券-test"
-        token_cache["symbol"] = "TEST-test"
-        token_cache["total_supply"] = 9999999
-        token_cache["contact_information"] = "test1"
-        token_cache["privacy_policy"] = "test2"
-        token_cache["tradable_exchange_contract_address"] = "0x1234567890123456789012345678901234567890"
-        token_cache["status"] = False
-        token_cache["personal_info_contract_address"] = "0x1234567890123456789012345678901234567891"
-        token_cache["transferable"] = True
-        token_cache["is_offering"] = True
-        token_cache["transfer_approval_required"] = True
-        token_cache["face_value"] = 9999998
-        token_cache["interest_rate"] = 99.999
-        token_cache["interest_payment_date"] = ["99991231", "99991231", "99991231", "99991231", "99991231",
-                                                "99991231", "99991231", "99991231", "99991231", "99991231",
-                                                "99991231", "99991231"]
-        token_cache["redemption_date"] = "99991231"
-        token_cache["redemption_value"] = 9999997
-        token_cache["return_date"] = "99991230"
-        token_cache["return_amount"] = "return_amount-test"
-        token_cache["purpose"] = "purpose-test"
-        token_cache["memo"] = "memo-test"
-        token_cache["is_redeemed"] = True
+        # create cache
+        token_attr = {
+            "issuer_address": issuer_address,
+            "token_address": contract_address,
+            "name": "テスト債券-test",
+            "symbol": "TEST-test",
+            "total_supply": 9999999,
+            "contact_information": "test1",
+            "privacy_policy": "test2",
+            "tradable_exchange_contract_address": "0x1234567890123456789012345678901234567890",
+            "status": False,
+            "personal_info_contract_address": "0x1234567890123456789012345678901234567891",
+            "transferable": True,
+            "is_offering": True,
+            "transfer_approval_required": True,
+            "face_value": 9999998, "interest_rate": 99.999,
+            "interest_payment_date": [
+                "99991231", "99991231", "99991231", "99991231", "99991231",
+                "99991231", "99991231", "99991231", "99991231", "99991231",
+                "99991231", "99991231"
+            ],
+            "redemption_date": "99991231",
+            "redemption_value": 9999997,
+            "return_date": "99991230",
+            "return_amount": "return_amount-test",
+            "purpose": "purpose-test",
+            "memo": "memo-test",
+            "is_redeemed": True
+        }
+        token_cache = TokenCache()
+        token_cache.token_address = contract_address
+        token_cache.attributes = token_attr
+        token_cache.cached_datetime = datetime.utcnow()
+        token_cache.expiration_datetime = datetime.utcnow() + timedelta(seconds=TOKEN_CACHE_TTL)
+        db.add(token_cache)
 
         # updated token attribute
         _token_attr_update = TokenAttrUpdate()
@@ -2317,7 +2336,7 @@ class TestGetAccountBalance:
             )
 
 
-class TestIsTokenAttrUpdated:
+class TestCheckAttrUpdate:
     token_address = "0x0123456789abcDEF0123456789abCDef01234567"
 
     ###########################################################################
@@ -2330,7 +2349,7 @@ class TestIsTokenAttrUpdated:
         before_datetime = datetime.utcnow()
 
         # Test
-        result = IbetStraightBondContract.is_token_attr_updated(self.token_address, before_datetime)
+        result = IbetStraightBondContract.check_attr_update(db, self.token_address, before_datetime)
 
         # assertion
         assert result is False
@@ -2350,7 +2369,7 @@ class TestIsTokenAttrUpdated:
         db.commit()
 
         # Test
-        result = IbetStraightBondContract.is_token_attr_updated(self.token_address, after_datetime)
+        result = IbetStraightBondContract.check_attr_update(db, self.token_address, after_datetime)
 
         # assertion
         assert result is False
@@ -2370,7 +2389,7 @@ class TestIsTokenAttrUpdated:
         db.commit()
 
         # Test
-        result = IbetStraightBondContract.is_token_attr_updated(self.token_address, before_datetime)
+        result = IbetStraightBondContract.check_attr_update(db, self.token_address, before_datetime)
 
         # assertion
         assert result is True
@@ -2380,7 +2399,7 @@ class TestIsTokenAttrUpdated:
     ###########################################################################
 
 
-class TestSetTokenAttrUpdate:
+class TestRecordAttrUpdate:
     token_address = "0x0123456789abcDEF0123456789abCDef01234567"
 
     ###########################################################################
@@ -2392,7 +2411,7 @@ class TestSetTokenAttrUpdate:
     @pytest.mark.freeze_time('2021-04-27 12:34:56')
     def test_normal_1(self, db):
         # Test
-        IbetStraightBondContract.set_token_attr_update(self.token_address)
+        IbetStraightBondContract.record_attr_update(db, self.token_address)
 
         # assertion
         _update = db.query(TokenAttrUpdate).first()
@@ -2415,7 +2434,7 @@ class TestSetTokenAttrUpdate:
         freezer.move_to('2021-04-27 12:34:56')
 
         # Test
-        IbetStraightBondContract.set_token_attr_update(self.token_address)
+        IbetStraightBondContract.record_attr_update(db, self.token_address)
 
         # assertion
         _update = db.query(TokenAttrUpdate).filter(TokenAttrUpdate.id == 2).first()
