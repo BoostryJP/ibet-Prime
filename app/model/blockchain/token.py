@@ -61,7 +61,6 @@ from app.exceptions import (
 from app import log
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
-from app.utils.cache_utils import DictCache
 
 LOG = log.get_logger()
 
@@ -810,9 +809,6 @@ class IbetShareContract(IbetSecurityTokenInterface):
     dividends: float
     dividend_record_date: str
     dividend_payment_date: str
-
-    # Cache
-    cache = DictCache("share_tokens")
 
     @staticmethod
     def create(args: list, tx_from: str, private_key: str):
