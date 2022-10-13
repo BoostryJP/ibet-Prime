@@ -53,22 +53,6 @@ class DictCache:
             "is_extend_size": False,
             "extend_incremental": 0,
         },
-        "bond_tokens": {
-            # NOTE:
-            # Default size is about 100 record.(Assuming that the average size of tokens is about 1500)
-            # Incremental is about 10 record.
-            "default_size": 151552,
-            "is_extend_size": True,
-            "extend_incremental": 16384,
-        },
-        "share_tokens": {
-            # NOTE:
-            # Default size is about 100 record.(Assuming that the average size of tokens is about 1500)
-            # Incremental is about 10 record.
-            "default_size": 151552,
-            "is_extend_size": True,
-            "extend_incremental": 16384,
-        },
     }
     MEMORY_CACHE = False
     caches = {}
