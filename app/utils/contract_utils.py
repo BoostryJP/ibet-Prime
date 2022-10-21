@@ -16,7 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import Tuple
+from typing import Tuple, TypeVar
 import json
 
 from web3 import contract
@@ -135,11 +135,13 @@ class ContractUtils:
         )
         return contract
 
+    T = TypeVar("T")
+
     @staticmethod
     def call_function(contract: contract,
                       function_name: str,
                       args: tuple,
-                      default_returns=None):
+                      default_returns: T = None) -> T:
         """Call contract function
 
         :param contract: Contract
@@ -151,7 +153,7 @@ class ContractUtils:
         try:
             _function = getattr(contract.functions, function_name)
             result = _function(*args).call()
-        except (BadFunctionCallOutput, ABIFunctionNotFound) as web3_exception:
+        except (BadFunctionCallOutput, ABIFunctionNotFound, ContractLogicError) as web3_exception:
             if default_returns is not None:
                 return default_returns
             else:
