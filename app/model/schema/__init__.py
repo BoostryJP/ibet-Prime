@@ -113,7 +113,8 @@ from .token import (
 from .token_holders import (
     CreateTokenHoldersListRequest,
     CreateTokenHoldersListResponse,
-    GetTokenHoldersListResponse
+    RetrieveTokenHoldersListResponse,
+    ListAllTokenHolderCollectionsResponse
 )
 from .transfer import (
     UpdateTransferApprovalRequest,

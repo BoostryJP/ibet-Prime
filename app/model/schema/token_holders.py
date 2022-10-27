@@ -20,6 +20,7 @@ import uuid
 from typing import List, Dict, Union
 from pydantic import BaseModel, Field, validator
 from app.model.db import TokenHolderBatchStatus
+from app.model.schema.types import ResultSet
 
 
 ############################
@@ -70,8 +71,23 @@ class CreateTokenHoldersListResponse(BaseModel):
         }
 
 
-class GetTokenHoldersListResponse(BaseModel):
-    """Get Token Holders List schema (RESPONSE)"""
+class RetrieveTokenHolderCollectionResponse(BaseModel):
+    """Retrieve Token Holders Collection schema (RESPONSE)"""
+
+    token_address: str
+    block_number: int
+    list_id: str = Field(description="UUID v4 required")
+    status: TokenHolderBatchStatus
+
+
+class ListAllTokenHolderCollectionsResponse(BaseModel):
+    """List All Token Holders Collections schema (RESPONSE)"""
+    result_set: ResultSet
+    collections: List[RetrieveTokenHolderCollectionResponse]
+
+
+class RetrieveTokenHoldersListResponse(BaseModel):
+    """Retrieve Token Holders List schema (RESPONSE)"""
 
     status: TokenHolderBatchStatus
     holders: List[Dict[str, Union[int, str]]]

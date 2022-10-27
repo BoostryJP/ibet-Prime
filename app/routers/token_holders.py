@@ -17,12 +17,21 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import uuid
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Header, Path
+from fastapi import (
+    APIRouter,
+    Depends,
+    Header,
+    Path,
+    Query
+)
 from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import asc
+from sqlalchemy import (
+    asc,
+    desc
+)
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 import config
@@ -31,11 +40,20 @@ from app.database import db_session
 from app.model.schema import (
     CreateTokenHoldersListRequest,
     CreateTokenHoldersListResponse,
-    GetTokenHoldersListResponse,
+    RetrieveTokenHoldersListResponse,
+    ListAllTokenHolderCollectionsResponse
 )
 from app.utils.docs_utils import get_routers_responses
-from app.utils.check_utils import validate_headers, address_is_valid_address
-from app.model.db import Token, TokenHoldersList, TokenHolderBatchStatus, TokenHolder
+from app.utils.check_utils import (
+    validate_headers,
+    address_is_valid_address
+)
+from app.model.db import (
+    Token,
+    TokenHoldersList,
+    TokenHolderBatchStatus,
+    TokenHolder
+)
 from app.exceptions import InvalidParameterError
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
@@ -123,13 +141,96 @@ def create_collection(
     }
 
 
+# GET: /token/holders/{token_address}/collection
+@router.get(
+    "/holders/{token_address}/collection",
+    response_model=ListAllTokenHolderCollectionsResponse,
+    responses=get_routers_responses(422, 404, InvalidParameterError)
+)
+def list_all_token_holders_collections(
+    token_address: str = Path(...),
+    issuer_address: Optional[str] = Header(None),
+    status: Optional[TokenHolderBatchStatus] = Query(None),
+    sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc (created)"),
+    offset: Optional[int] = Query(None),
+    limit: Optional[int] = Query(None),
+    db: Session = Depends(db_session)
+):
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
+
+    # Get Token to ensure input token valid
+    query = (
+        db.query(Token)
+        .filter(Token.token_address == token_address)
+        .filter(Token.token_status != 2)
+    )
+
+    if issuer_address is not None:
+        query = query.filter(Token.issuer_address == issuer_address)
+
+    _token = query.first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
+    query = db.query(TokenHoldersList).filter(TokenHoldersList.token_address == token_address)
+
+    # Total
+    total = query.count()
+    if status is not None:
+        query = query.filter(TokenHoldersList.batch_status == status.value)
+
+    # Sort
+    if sort_order == 0:  # ASC
+        query = query.order_by(TokenHoldersList.created)
+    else:  # DESC
+        query = query.order_by(desc(TokenHoldersList.created))
+
+    # Count
+    count = query.count()
+
+    # Pagination
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+
+    # Get all collections
+    _token_holders_collections: list[TokenHoldersList] = query.all()
+
+    token_holders_collections = []
+    for _collection in _token_holders_collections:
+        token_holders_collections.append(
+            {
+                "token_address": _collection.token_address,
+                "block_number": _collection.block_number,
+                "list_id": _collection.list_id,
+                "status": _collection.batch_status
+            }
+        )
+
+    resp = {
+        "result_set": {
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": total
+        },
+        "collections": token_holders_collections
+    }
+
+    return resp
+
+
 # GET: /token/holders/{token_address}/collection/{list_id}
 @router.get(
     "/holders/{token_address}/collection/{list_id}",
-    response_model=GetTokenHoldersListResponse,
+    response_model=RetrieveTokenHoldersListResponse,
     responses=get_routers_responses(404, InvalidParameterError),
 )
-def get_token_holders(
+def retrieve_token_holders_list(
     token_address: str = Path(...),
     list_id: str = Path(
         ...,
