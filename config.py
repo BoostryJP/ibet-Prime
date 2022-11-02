@@ -161,6 +161,9 @@ BLOCK_SYNC_STATUS_SLEEP_INTERVAL = int(os.environ.get("BLOCK_SYNC_STATUS_SLEEP_I
 # number of monitoring data period
 BLOCK_SYNC_STATUS_CALC_PERIOD = int(os.environ.get("BLOCK_SYNC_STATUS_CALC_PERIOD")) \
     if os.environ.get("BLOCK_SYNC_STATUS_CALC_PERIOD") else 3
+# Threshold for remaining block synchronization
+# - Threshold for difference between highestBlock and currentBlock
+BLOCK_SYNC_REMAINING_THRESHOLD = int(os.environ.get("BLOCK_SYNC_REMAINING_THRESHOLD", 1))
 # Threshold of block generation speed for judging synchronous stop(%)
 if APP_ENV == "local":
     BLOCK_GENERATION_SPEED_THRESHOLD = int(os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD")) \
