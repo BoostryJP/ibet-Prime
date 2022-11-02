@@ -65,7 +65,7 @@ class TestProcessor:
 
         time.sleep(BLOCK_SYNC_STATUS_SLEEP_INTERVAL)
 
-        # Run 2st: block generation speed down(same the previous)
+        # Run 2nd: block generation speed down(same the previous)
         with mock.patch("batch.processor_monitor_block_sync.BLOCK_GENERATION_SPEED_THRESHOLD", 100):
             processor.process()
 
