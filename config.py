@@ -80,13 +80,13 @@ AWS_REGION_NAME = os.environ.get("AWS_REGION_NAME") or "ap-northeast-1"
 #            lowercase alphabetic, uppercase alphabetic, numeric, and symbolic(space exclude)
 EOA_PASSWORD_PATTERN = \
     os.environ.get("EOA_PASSWORD_PATTERN") or \
-    "^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,200}$"
+    r"^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,200}$"
 EOA_PASSWORD_PATTERN_MSG = \
     os.environ.get("EOA_PASSWORD_PATTERN_MSG") or \
     "password must be 8 to 200 alphanumeric or symbolic character"
 PERSONAL_INFO_RSA_PASSPHRASE_PATTERN = \
     os.environ.get("PERSONAL_INFO_RSA_PASSPHRASE_PATTERN") or \
-    "^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,200}$"
+    r"^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,200}$"
 PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG = \
     os.environ.get("PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG") or \
     "passphrase must be 8 to 200 alphanumeric or symbolic characters"
@@ -95,7 +95,7 @@ PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE = \
     "password"
 E2E_MESSAGING_RSA_PASSPHRASE_PATTERN = \
     os.environ.get("E2E_MESSAGING_RSA_PASSPHRASE_PATTERN") or \
-    "^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,200}$"
+    r"^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,200}$"
 E2E_MESSAGING_RSA_PASSPHRASE_PATTERN_MSG = \
     os.environ.get("E2E_MESSAGING_RSA_PASSPHRASE_PATTERN_MSG") or \
     "passphrase must be 8 to 200 alphanumeric or symbolic characters"
@@ -104,7 +104,7 @@ E2E_MESSAGING_RSA_DEFAULT_PASSPHRASE = \
     "password"
 EOA_PASSWORD_CHECK_ENABLED = False if os.environ.get("EOA_PASSWORD_CHECK_ENABLED") == "0" else True
 
-# End to End Encryption (RSA)
+# End-to-End Encryption (RSA)
 # NOTE:
 # about E2EE_RSA_RESOURCE_MODE
 # - 0:File, Set the file path to E2EE_RSA_RESOURCE.
@@ -186,7 +186,7 @@ AWS_KMS_GENERATE_RANDOM_ENABLED = True if os.environ.get("AWS_KMS_GENERATE_RANDO
 
 # Create UTXO
 CREATE_UTXO_INTERVAL = int(os.environ.get("CREATE_UTXO_INTERVAL")) \
-    if os.environ.get("CREATE_UTXO_INTERVAL") else 10
+    if os.environ.get("CREATE_UTXO_INTERVAL") else 600
 CREATE_UTXO_BLOCK_LOT_MAX_SIZE = int(os.environ.get("CREATE_UTXO_BLOCK_LOT_MAX_SIZE")) \
     if os.environ.get("CREATE_UTXO_BLOCK_LOT_MAX_SIZE") else 10000
 
