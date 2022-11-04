@@ -254,7 +254,7 @@ class TestProcessor:
         db.commit()
 
         # Transfer
-        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).buildTransaction({
+        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -324,14 +324,14 @@ class TestProcessor:
         db.commit()
 
         # Transfer
-        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).buildTransaction({
+        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
             "gasPrice": 0
         })
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
-        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_2, 30).buildTransaction({
+        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_2, 30).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -419,7 +419,7 @@ class TestProcessor:
         # Bulk Transfer
         address_list1 = [user_address_1, user_address_2, user_address_3]
         value_list1 = [10, 20, 30]
-        tx = token_contract_1.functions.bulkTransfer(address_list1, value_list1).buildTransaction({
+        tx = token_contract_1.functions.bulkTransfer(address_list1, value_list1).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -430,7 +430,7 @@ class TestProcessor:
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
         address_list2 = [user_address_1, user_address_2, user_address_3, user_address_4]
         value_list2 = [1, 2, 3, 4]
-        tx = token_contract_1.functions.bulkTransfer(address_list2, value_list2).buildTransaction({
+        tx = token_contract_1.functions.bulkTransfer(address_list2, value_list2).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -516,14 +516,14 @@ class TestProcessor:
         db.commit()
 
         # Transfer(Token1)
-        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).buildTransaction({
+        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
             "gasPrice": 0
         })
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
-        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_2, 30).buildTransaction({
+        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_2, 30).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -532,14 +532,14 @@ class TestProcessor:
         tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Transfer(Token2)
-        tx = token_contract_2.functions.transferFrom(issuer_address, user_address_1, 40).buildTransaction({
+        tx = token_contract_2.functions.transferFrom(issuer_address, user_address_1, 40).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
             "gasPrice": 0
         })
         tx_hash_3, tx_receipt_3 = ContractUtils.send_transaction(tx, issuer_private_key)
-        tx = token_contract_2.functions.transferFrom(issuer_address, user_address_2, 30).buildTransaction({
+        tx = token_contract_2.functions.transferFrom(issuer_address, user_address_2, 30).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,

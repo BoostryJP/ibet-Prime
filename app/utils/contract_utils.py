@@ -92,7 +92,7 @@ class ContractUtils:
 
         try:
             # Build transaction
-            tx = contract.constructor(*args).buildTransaction(
+            tx = contract.constructor(*args).build_transaction(
                 transaction={
                     "chainId": CHAIN_ID,
                     "from": deployer,

@@ -71,7 +71,7 @@ def deploy_escrow_contract():
     )
     tx = storage_contract.functions.upgradeVersion(
         escrow_contract_address
-    ).buildTransaction({
+    ).build_transaction({
         "chainId": CHAIN_ID,
         "from": deployer["address"],
         "gas": TX_GAS_LIMIT,
@@ -115,7 +115,7 @@ def issue_bond_token(issuer: dict, exchange_address: str):
     )
     tx = token_contract.functions.setTransferable(
         True
-    ).buildTransaction({
+    ).build_transaction({
         "chainId": CHAIN_ID,
         "from": issuer_address,
         "gas": TX_GAS_LIMIT,
@@ -129,7 +129,7 @@ def issue_bond_token(issuer: dict, exchange_address: str):
     # set tradable exchange address
     tx = token_contract.functions.setTradableExchange(
         exchange_address
-    ).buildTransaction({
+    ).build_transaction({
         "chainId": CHAIN_ID,
         "from": issuer_address,
         "gas": TX_GAS_LIMIT,
@@ -193,7 +193,7 @@ class TestGetAccountBalance:
         tx = token_contract.functions.transfer(
             exchange_contract.address,
             100
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user1_account["address"],
             "gas": TX_GAS_LIMIT,
@@ -211,7 +211,7 @@ class TestGetAccountBalance:
             30,
             user1_account["address"],
             "test_data"
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user1_account["address"],
             "gas": TX_GAS_LIMIT,

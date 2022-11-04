@@ -77,7 +77,7 @@ def deploy_security_token_escrow_contract():
     )
     tx = storage_contract.functions.upgradeVersion(
         escrow_contract_address
-    ).buildTransaction({
+    ).build_transaction({
         "chainId": CHAIN_ID,
         "from": deployer["address"],
         "gas": TX_GAS_LIMIT,
@@ -121,7 +121,7 @@ def issue_bond_token(issuer: dict, exchange_address: str):
     )
     tx = token_contract.functions.setTransferable(
         True
-    ).buildTransaction({
+    ).build_transaction({
         "chainId": CHAIN_ID,
         "from": issuer_address,
         "gas": TX_GAS_LIMIT,
@@ -135,7 +135,7 @@ def issue_bond_token(issuer: dict, exchange_address: str):
     # set tradable exchange address
     tx = token_contract.functions.setTradableExchange(
         exchange_address
-    ).buildTransaction({
+    ).build_transaction({
         "chainId": CHAIN_ID,
         "from": issuer_address,
         "gas": TX_GAS_LIMIT,
@@ -151,7 +151,7 @@ def issue_bond_token(issuer: dict, exchange_address: str):
         "PersonalInfo", [], issuer_address, issuer_pk)
     tx = token_contract.functions.setPersonalInfoAddress(
         personal_info_contract_address
-    ).buildTransaction({
+    ).build_transaction({
         "chainId": CHAIN_ID,
         "from": issuer_address,
         "gas": TX_GAS_LIMIT,
@@ -165,7 +165,7 @@ def issue_bond_token(issuer: dict, exchange_address: str):
     # set transfer approval required
     tx = token_contract.functions.setTransferApprovalRequired(
         True
-    ).buildTransaction({
+    ).build_transaction({
         "chainId": CHAIN_ID,
         "from": issuer_address,
         "gas": TX_GAS_LIMIT,
@@ -213,7 +213,7 @@ class TestApproveTransfer:
         personal_info_contract = ContractUtils.get_contract("PersonalInfo", personal_info_contract_address)
         tx = personal_info_contract.functions.register(
             user1_account["address"], "test"
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user2_account["address"],
             "gas": TX_GAS_LIMIT,
@@ -225,7 +225,7 @@ class TestApproveTransfer:
         )
         tx = token_contract.functions.transferFrom(
             user1_account["address"], user2_account["address"], 100
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user1_account["address"],
             "gas": TX_GAS_LIMIT,
@@ -239,7 +239,7 @@ class TestApproveTransfer:
         # Deposit escrow
         tx = token_contract.functions.transfer(
             escrow_contract.address, 100
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user2_account["address"],
             "gas": TX_GAS_LIMIT,
@@ -258,7 +258,7 @@ class TestApproveTransfer:
             user2_account["address"],
             "test",
             "test"
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user2_account["address"],
             "gas": TX_GAS_LIMIT,
@@ -271,7 +271,7 @@ class TestApproveTransfer:
 
         # Finish Escrow
         latest_escrow_id = escrow_contract.functions.latestEscrowId().call()
-        tx = escrow_contract.functions.finishEscrow(latest_escrow_id).buildTransaction({
+        tx = escrow_contract.functions.finishEscrow(latest_escrow_id).build_transaction({
             "chainId": CHAIN_ID,
             "from": user2_account["address"],
             "gas": TX_GAS_LIMIT,
@@ -339,7 +339,7 @@ class TestApproveTransfer:
         personal_info_contract = ContractUtils.get_contract("PersonalInfo", personal_info_contract_address)
         tx = personal_info_contract.functions.register(
             user1_account["address"], "test"
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user2_account["address"],
             "gas": TX_GAS_LIMIT,
@@ -351,7 +351,7 @@ class TestApproveTransfer:
         )
         tx = token_contract.functions.transferFrom(
             user1_account["address"], user2_account["address"], 100
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user1_account["address"],
             "gas": TX_GAS_LIMIT,
@@ -365,7 +365,7 @@ class TestApproveTransfer:
         # Deposit escrow
         tx = token_contract.functions.transfer(
             escrow_contract.address, 100
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user2_account["address"],
             "gas": TX_GAS_LIMIT,
@@ -384,7 +384,7 @@ class TestApproveTransfer:
             user2_account["address"],
             "test",
             "test"
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user2_account["address"],
             "gas": TX_GAS_LIMIT,
@@ -397,7 +397,7 @@ class TestApproveTransfer:
 
         # Finish Escrow
         latest_escrow_id = escrow_contract.functions.latestEscrowId().call()
-        tx = escrow_contract.functions.finishEscrow(latest_escrow_id).buildTransaction({
+        tx = escrow_contract.functions.finishEscrow(latest_escrow_id).build_transaction({
             "chainId": CHAIN_ID,
             "from": user2_account["address"],
             "gas": TX_GAS_LIMIT,

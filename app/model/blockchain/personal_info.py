@@ -157,7 +157,7 @@ class PersonalInfoContract:
                 password=password.encode("utf-8")
             )
             tx = self.personal_info_contract.functions.forceRegister(account_address, ciphertext). \
-                buildTransaction({
+                build_transaction({
                     "chainId": CHAIN_ID,
                     "from": self.issuer.issuer_address,
                     "gas": TX_GAS_LIMIT,
@@ -207,7 +207,7 @@ class PersonalInfoContract:
                 password=password.encode("utf-8")
             )
             tx = self.personal_info_contract.functions.modify(account_address, ciphertext). \
-                buildTransaction({
+                build_transaction({
                     "chainId": CHAIN_ID,
                     "from": self.issuer.issuer_address,
                     "gas": TX_GAS_LIMIT,

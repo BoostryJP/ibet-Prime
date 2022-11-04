@@ -76,7 +76,7 @@ class IbetSecurityTokenEscrow(IbetExchangeInterface):
         try:
             tx = self.exchange_contract.functions.approveTransfer(
                 data.escrow_id, data.data
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,

@@ -164,7 +164,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             )
             tx = security_contract.functions.approveTransfer(
                 data.application_id, data.data
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -192,7 +192,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             )
             tx = security_contract.functions.cancelTransfer(
                 data.application_id, data.data
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -396,7 +396,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         if data.face_value is not None:
             tx = bond_contract.functions.setFaceValue(
                 data.face_value
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -415,7 +415,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             _interest_rate = int(Decimal(str(data.interest_rate)) * Decimal("10000"))
             tx = bond_contract.functions.setInterestRate(
                 _interest_rate
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -437,7 +437,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             _interest_payment_date_string = json.dumps(_interest_payment_date)
             tx = bond_contract.functions.setInterestPaymentDate(
                 _interest_payment_date_string
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -455,7 +455,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         if data.redemption_value is not None:
             tx = bond_contract.functions.setRedemptionValue(
                 data.redemption_value
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -471,7 +471,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         if data.transferable is not None:
             tx = bond_contract.functions.setTransferable(
                 data.transferable
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -489,7 +489,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         if data.status is not None:
             tx = bond_contract.functions.setStatus(
                 data.status
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -507,7 +507,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         if data.is_offering is not None:
             tx = bond_contract.functions.changeOfferingStatus(
                 data.is_offering
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -523,7 +523,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.is_redeemed is not None and data.is_redeemed:
-            tx = bond_contract.functions.changeToRedeemed().buildTransaction({
+            tx = bond_contract.functions.changeToRedeemed().build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -541,7 +541,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         if data.tradable_exchange_contract_address is not None:
             tx = bond_contract.functions.setTradableExchange(
                 data.tradable_exchange_contract_address
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -559,7 +559,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         if data.personal_info_contract_address is not None:
             tx = bond_contract.functions.setPersonalInfoAddress(
                 data.personal_info_contract_address
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -577,7 +577,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         if data.contact_information is not None:
             tx = bond_contract.functions.setContactInformation(
                 data.contact_information
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -595,7 +595,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         if data.privacy_policy is not None:
             tx = bond_contract.functions.setPrivacyPolicy(
                 data.privacy_policy
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -613,7 +613,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         if data.transfer_approval_required is not None:
             tx = bond_contract.functions.setTransferApprovalRequired(
                 data.transfer_approval_required
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -631,7 +631,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         if data.memo is not None:
             tx = bond_contract.functions.setMemo(
                 data.memo
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -678,7 +678,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             _amount = data.amount
             tx = bond_contract.functions.transferFrom(
                 _from, _to, _amount
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -712,7 +712,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             _amount = data.amount
             tx = bond_contract.functions.issueFrom(
                 _target_address, ZERO_ADDRESS, _amount
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -763,7 +763,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             _amount = data.amount
             tx = bond_contract.functions.redeemFrom(
                 _target_address, ZERO_ADDRESS, _amount
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -962,7 +962,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
         if data.tradable_exchange_contract_address is not None:
             tx = share_contract.functions.setTradableExchange(
                 data.tradable_exchange_contract_address
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -980,7 +980,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
         if data.personal_info_contract_address is not None:
             tx = share_contract.functions.setPersonalInfoAddress(
                 data.personal_info_contract_address
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -1001,7 +1001,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 _dividends,
                 data.dividend_record_date,
                 data.dividend_payment_date
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -1019,7 +1019,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
         if data.cancellation_date is not None:
             tx = share_contract.functions.setCancellationDate(
                 data.cancellation_date
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -1037,7 +1037,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
         if data.contact_information is not None:
             tx = share_contract.functions.setContactInformation(
                 data.contact_information
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -1055,7 +1055,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
         if data.privacy_policy is not None:
             tx = share_contract.functions.setPrivacyPolicy(
                 data.privacy_policy
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -1073,7 +1073,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
         if data.status is not None:
             tx = share_contract.functions.setStatus(
                 data.status
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -1091,7 +1091,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
         if data.transferable is not None:
             tx = share_contract.functions.setTransferable(
                 data.transferable
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -1109,7 +1109,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
         if data.is_offering is not None:
             tx = share_contract.functions.changeOfferingStatus(
                 data.is_offering
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -1127,7 +1127,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
         if data.transfer_approval_required is not None:
             tx = share_contract.functions.setTransferApprovalRequired(
                 data.transfer_approval_required
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -1145,7 +1145,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
         if data.principal_value is not None:
             tx = share_contract.functions.setPrincipalValue(
                 data.principal_value
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -1161,7 +1161,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 raise SendTransactionError(err)
 
         if data.is_canceled is not None and data.is_canceled:
-            tx = share_contract.functions.changeToCanceled().buildTransaction({
+            tx = share_contract.functions.changeToCanceled().build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -1179,7 +1179,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
         if data.memo is not None:
             tx = share_contract.functions.setMemo(
                 data.memo
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -1227,7 +1227,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
             _amount = data.amount
             tx = share_contract.functions.transferFrom(
                 _from, _to, _amount
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -1261,7 +1261,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
             _amount = data.amount
             tx = share_contract.functions.issueFrom(
                 _target_address, ZERO_ADDRESS, _amount
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -1312,7 +1312,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
             _amount = data.amount
             tx = share_contract.functions.redeemFrom(
                 _target_address, ZERO_ADDRESS, _amount
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
