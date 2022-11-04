@@ -56,7 +56,7 @@ class E2EMessaging:
         try:
             tx = contract.functions.sendMessage(
                 to_address, message
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -134,7 +134,7 @@ class E2EMessaging:
         try:
             tx = contract.functions.setPublicKey(
                 public_key, key_type
-            ).buildTransaction({
+            ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,

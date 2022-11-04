@@ -239,7 +239,7 @@ class TestProcessor:
             issuer_address,
             config.ZERO_ADDRESS,
             40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -303,7 +303,7 @@ class TestProcessor:
             issuer_address,
             config.ZERO_ADDRESS,
             40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -367,7 +367,7 @@ class TestProcessor:
             issuer_address,
             config.ZERO_ADDRESS,
             10
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -431,7 +431,7 @@ class TestProcessor:
             issuer_address,
             config.ZERO_ADDRESS,
             10
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -494,7 +494,7 @@ class TestProcessor:
             issuer_address,
             config.ZERO_ADDRESS,
             10
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -506,7 +506,7 @@ class TestProcessor:
             issuer_address,
             config.ZERO_ADDRESS,
             20
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -581,7 +581,7 @@ class TestProcessor:
             issuer_address,
             config.ZERO_ADDRESS,
             10
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,

@@ -116,7 +116,7 @@ def set_personal_info_contract(db, contract_address, issuer_address, sender_list
     contract = ContractUtils.get_contract("PersonalInfo", contract_address)
 
     for sender in sender_list:
-        tx = contract.functions.register(issuer_address, "").buildTransaction({
+        tx = contract.functions.register(issuer_address, "").build_transaction({
             "nonce": web3.eth.get_transaction_count(sender["address"]),
             "chainId": CHAIN_ID,
             "from": sender["address"],

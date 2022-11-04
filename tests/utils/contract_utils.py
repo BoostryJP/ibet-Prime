@@ -47,7 +47,7 @@ class PersonalInfoContractTestUtils:
         )
         tx = personal_info_contract.functions. \
             register(*args). \
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -74,7 +74,7 @@ class IbetSecurityTokenContractTestUtils:
         )
         tx = security_token_contract.functions.\
             transfer(*args).\
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -90,7 +90,7 @@ class IbetSecurityTokenContractTestUtils:
         )
         tx = security_token_contract.functions.\
             bulkTransfer(*args).\
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -106,7 +106,7 @@ class IbetSecurityTokenContractTestUtils:
         )
         tx = security_token_contract.functions.\
             authorizeLockAddress(*args).\
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -122,7 +122,7 @@ class IbetSecurityTokenContractTestUtils:
         )
         tx = security_token_contract.functions.\
             lock(*args).\
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -138,7 +138,7 @@ class IbetSecurityTokenContractTestUtils:
         )
         tx = security_token_contract.functions.\
             unlock(*args).\
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -154,7 +154,7 @@ class IbetSecurityTokenContractTestUtils:
         )
         tx = security_token_contract.functions.\
             issueFrom(*args).\
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -170,7 +170,7 @@ class IbetSecurityTokenContractTestUtils:
         )
         tx = security_token_contract.functions.\
             redeemFrom(*args).\
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -186,7 +186,7 @@ class IbetSecurityTokenContractTestUtils:
         )
         tx = security_token_contract.functions.\
             setTransferApprovalRequired(*args).\
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -202,7 +202,7 @@ class IbetSecurityTokenContractTestUtils:
         )
         tx = security_token_contract.functions.\
             applyForTransfer(*args).\
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -218,7 +218,7 @@ class IbetSecurityTokenContractTestUtils:
         )
         tx = security_token_contract.functions.\
             cancelTransfer(*args).\
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -234,7 +234,7 @@ class IbetSecurityTokenContractTestUtils:
         )
         tx = security_token_contract.functions.\
             approveTransfer(*args).\
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -261,7 +261,7 @@ class IbetExchangeContractTestUtils:
         )
         tx = exchange_contract.functions.\
             createOrder(*args). \
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -285,7 +285,7 @@ class IbetExchangeContractTestUtils:
         )
         tx = exchange_contract.functions. \
             forceCancelOrder(*args). \
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -301,7 +301,7 @@ class IbetExchangeContractTestUtils:
         )
         tx = exchange_contract.functions. \
             cancelOrder(*args). \
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -317,7 +317,7 @@ class IbetExchangeContractTestUtils:
         )
         tx = exchange_contract.functions. \
             executeOrder(*args). \
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -341,7 +341,7 @@ class IbetExchangeContractTestUtils:
         )
         tx = exchange_contract.functions. \
             cancelAgreement(*args). \
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -357,7 +357,7 @@ class IbetExchangeContractTestUtils:
         )
         tx = exchange_contract.functions. \
             confirmAgreement(*args). \
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -384,7 +384,7 @@ class IbetSecurityTokenEscrowContractTestUtils:
         )
         tx = escrow_contract.functions.\
             createEscrow(*args). \
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -400,7 +400,7 @@ class IbetSecurityTokenEscrowContractTestUtils:
         )
         tx = escrow_contract.functions.\
             cancelEscrow(*args). \
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -416,7 +416,7 @@ class IbetSecurityTokenEscrowContractTestUtils:
         )
         tx = escrow_contract.functions.\
             approveTransfer(*args). \
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,
@@ -432,7 +432,7 @@ class IbetSecurityTokenEscrowContractTestUtils:
         )
         tx = escrow_contract.functions.\
             finishEscrow(*args). \
-            buildTransaction({
+            build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
                 "gas": TX_GAS_LIMIT,

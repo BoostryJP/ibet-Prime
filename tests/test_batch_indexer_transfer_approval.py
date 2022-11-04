@@ -287,7 +287,7 @@ class TestProcessor:
             issuer_address,
             user_address_1,
             40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -300,7 +300,7 @@ class TestProcessor:
             issuer_address,
             30,
             ""
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -395,7 +395,7 @@ class TestProcessor:
             issuer_address,
             user_address_1,
             40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -408,7 +408,7 @@ class TestProcessor:
             issuer_address,
             30,
             ""
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -420,7 +420,7 @@ class TestProcessor:
         tx_3 = token_contract_1.functions.cancelTransfer(
             0,
             ""
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -517,7 +517,7 @@ class TestProcessor:
             issuer_address,
             user_address_1,
             40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -530,7 +530,7 @@ class TestProcessor:
             issuer_address,
             30,
             ""
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -542,7 +542,7 @@ class TestProcessor:
         tx_3 = token_contract_1.functions.cancelTransfer(
             0,
             ""
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -638,7 +638,7 @@ class TestProcessor:
             issuer_address,
             user_address_1,
             40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -651,7 +651,7 @@ class TestProcessor:
             issuer_address,
             30,
             ""
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -665,7 +665,7 @@ class TestProcessor:
         tx = token_contract_1.functions.approveTransfer(
             0,
             str(now.timestamp())
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -763,7 +763,7 @@ class TestProcessor:
             issuer_address,
             user_address_1,
             40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -774,7 +774,7 @@ class TestProcessor:
         tx = token_contract_1.functions.transfer(
             ibet_security_token_escrow_contract.address,
             40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -791,7 +791,7 @@ class TestProcessor:
             user_address_1,
             str(now.timestamp()),
             ""
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -898,7 +898,7 @@ class TestProcessor:
             issuer_address,
             user_address_1,
             40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -909,7 +909,7 @@ class TestProcessor:
         tx = token_contract_1.functions.transfer(
             ibet_security_token_escrow_contract.address,
             40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -925,7 +925,7 @@ class TestProcessor:
             user_address_1,
             "",
             ""
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -935,7 +935,7 @@ class TestProcessor:
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
 
         # CancelTransfer from applicant
-        tx = ibet_security_token_escrow_contract.functions.cancelEscrow(1).buildTransaction({
+        tx = ibet_security_token_escrow_contract.functions.cancelEscrow(1).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -1032,7 +1032,7 @@ class TestProcessor:
             issuer_address,
             user_address_1,
             40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -1043,7 +1043,7 @@ class TestProcessor:
         tx = token_contract_1.functions.transfer(
             ibet_security_token_escrow_contract.address,
             40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -1059,7 +1059,7 @@ class TestProcessor:
             user_address_1,
             "",
             ""
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -1069,7 +1069,7 @@ class TestProcessor:
         block_1 = web3.eth.get_block(tx_receipt_1["blockNumber"])
 
         # FinishTransfer
-        tx = ibet_security_token_escrow_contract.functions.finishEscrow(1).buildTransaction({
+        tx = ibet_security_token_escrow_contract.functions.finishEscrow(1).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -1165,7 +1165,7 @@ class TestProcessor:
             issuer_address,
             user_address_1,
             40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -1176,7 +1176,7 @@ class TestProcessor:
         tx = token_contract_1.functions.transfer(
             ibet_security_token_escrow_contract.address,
             40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -1192,7 +1192,7 @@ class TestProcessor:
             user_address_1,
             "",
             ""
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -1202,7 +1202,7 @@ class TestProcessor:
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
 
         # FinishTransfer
-        tx = ibet_security_token_escrow_contract.functions.finishEscrow(1).buildTransaction({
+        tx = ibet_security_token_escrow_contract.functions.finishEscrow(1).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -1214,7 +1214,7 @@ class TestProcessor:
         tx = ibet_security_token_escrow_contract.functions.approveTransfer(
             1,
             ""
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,

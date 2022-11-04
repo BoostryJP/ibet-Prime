@@ -399,7 +399,7 @@ class TestProcessor:
         IbetStraightBondContract.update(token_address_1, IbetStraightBondUpdate(
             personal_info_contract_address=personal_contract_address), issuer_address, issuer_private_key)
         personal_contract = ContractUtils.get_contract("PersonalInfo", personal_contract_address)
-        tx = personal_contract.functions.register(issuer_address, "").buildTransaction(
+        tx = personal_contract.functions.register(issuer_address, "").build_transaction(
             {
                 "chainId": CHAIN_ID,
                 "from": user_address_1,
@@ -408,7 +408,7 @@ class TestProcessor:
             }
         )
         ContractUtils.send_transaction(tx, user_1_private_key)
-        tx = personal_contract.functions.register(issuer_address, "").buildTransaction(
+        tx = personal_contract.functions.register(issuer_address, "").build_transaction(
             {
                 "chainId": CHAIN_ID,
                 "from": user_address_2,
@@ -422,7 +422,7 @@ class TestProcessor:
         tx = token_contract.functions.bulkTransfer(
             [user_address_1, user_address_2, user_address_1],
             [10, 20, 40]
-        ).buildTransaction(
+        ).build_transaction(
             {
                 "chainId": CHAIN_ID,
                 "from": issuer_address,
@@ -478,7 +478,7 @@ class TestProcessor:
         exchange_address, _, _ = \
             ContractUtils.deploy_contract("IbetEscrow", [storage_address], issuer_address, issuer_private_key)
         storage_contract = ContractUtils.get_contract("EscrowStorage", storage_address)
-        tx = storage_contract.functions.upgradeVersion(exchange_address).buildTransaction({
+        tx = storage_contract.functions.upgradeVersion(exchange_address).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,

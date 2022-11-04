@@ -260,7 +260,7 @@ class TestProcessor:
         db.commit()
 
         # Issue
-        tx = token_contract_1.functions.issueFrom(user_address_1, ZERO_ADDRESS, 40).buildTransaction({
+        tx = token_contract_1.functions.issueFrom(user_address_1, ZERO_ADDRESS, 40).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -342,7 +342,7 @@ class TestProcessor:
         db.commit()
 
         # Transfer
-        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).buildTransaction({
+        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -425,7 +425,7 @@ class TestProcessor:
         # Deposit
         tx = token_contract_1.functions.transferFrom(
             issuer_address, ibet_escrow_contract.address, 40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -503,7 +503,7 @@ class TestProcessor:
         # Deposit
         tx = token_contract_1.functions.transferFrom(
             issuer_address, ibet_escrow_contract.address, 40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -526,7 +526,7 @@ class TestProcessor:
         # Holder Change
         tx = ibet_escrow_contract.functions.createEscrow(
             token_contract_1.address, user_address_1, 30, issuer_address, ""
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -535,7 +535,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
         escrow_id = ContractUtils.call_function(
             ibet_escrow_contract, "latestEscrowId", ())
-        tx = ibet_escrow_contract.functions.finishEscrow(escrow_id).buildTransaction({
+        tx = ibet_escrow_contract.functions.finishEscrow(escrow_id).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -619,14 +619,14 @@ class TestProcessor:
         db.commit()
 
         # Lock
-        tx = token_contract_1.functions.authorizeLockAddress(issuer_address, True).buildTransaction({
+        tx = token_contract_1.functions.authorizeLockAddress(issuer_address, True).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
             "gasPrice": 0
         })
         ContractUtils.send_transaction(tx, issuer_private_key)
-        tx = token_contract_1.functions.lock(issuer_address, 40).buildTransaction({
+        tx = token_contract_1.functions.lock(issuer_address, 40).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -699,14 +699,14 @@ class TestProcessor:
         db.commit()
 
         # Lock
-        tx = token_contract_1.functions.authorizeLockAddress(issuer_address, True).buildTransaction({
+        tx = token_contract_1.functions.authorizeLockAddress(issuer_address, True).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
             "gasPrice": 0
         })
         ContractUtils.send_transaction(tx, issuer_private_key)
-        tx = token_contract_1.functions.lock(issuer_address, 40).buildTransaction({
+        tx = token_contract_1.functions.lock(issuer_address, 40).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -727,7 +727,7 @@ class TestProcessor:
         assert _position.pending_transfer == 0
 
         # Unlock
-        tx = token_contract_1.functions.unlock(issuer_address, issuer_address, 30).buildTransaction({
+        tx = token_contract_1.functions.unlock(issuer_address, issuer_address, 30).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -804,7 +804,7 @@ class TestProcessor:
         db.commit()
 
         # Redeem
-        tx = token_contract_1.functions.redeemFrom(issuer_address, ZERO_ADDRESS, 40).buildTransaction({
+        tx = token_contract_1.functions.redeemFrom(issuer_address, ZERO_ADDRESS, 40).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -888,7 +888,7 @@ class TestProcessor:
                                                user_address_1,
                                                user_private_key_1,
                                                [issuer_address, "test"])
-        tx = token_contract_1.functions.applyForTransfer(user_address_1, 40, "").buildTransaction({
+        tx = token_contract_1.functions.applyForTransfer(user_address_1, 40, "").build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -972,7 +972,7 @@ class TestProcessor:
                                                user_address_1,
                                                user_private_key_1,
                                                [issuer_address, "test"])
-        tx = token_contract_1.functions.applyForTransfer(user_address_1, 40, "").buildTransaction({
+        tx = token_contract_1.functions.applyForTransfer(user_address_1, 40, "").build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -993,7 +993,7 @@ class TestProcessor:
         assert _position.pending_transfer == 40
 
         # CancelTransfer
-        tx = token_contract_1.functions.cancelTransfer(0, "").buildTransaction({
+        tx = token_contract_1.functions.cancelTransfer(0, "").build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -1081,7 +1081,7 @@ class TestProcessor:
                                                user_address_1,
                                                user_private_key_1,
                                                [issuer_address, "test"])
-        tx = token_contract_1.functions.applyForTransfer(user_address_1, 40, "").buildTransaction({
+        tx = token_contract_1.functions.applyForTransfer(user_address_1, 40, "").build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -1102,7 +1102,7 @@ class TestProcessor:
         assert _position.pending_transfer == 40
 
         # ApproveTransfer
-        tx = token_contract_1.functions.approveTransfer(0, "").buildTransaction({
+        tx = token_contract_1.functions.approveTransfer(0, "").build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -1189,7 +1189,7 @@ class TestProcessor:
         # Deposit
         tx = token_contract_1.functions.transferFrom(
             issuer_address, ibet_exchange_contract.address, 40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -1212,7 +1212,7 @@ class TestProcessor:
         # NewOrder(Sell)
         tx = ibet_exchange_contract.functions.createOrder(
             token_address_1, 30, 10000, False, issuer_address
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -1727,7 +1727,7 @@ class TestProcessor:
         # Deposit
         tx = token_contract_1.functions.transferFrom(
             issuer_address, ibet_security_token_escrow_contract.address, 40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -1750,7 +1750,7 @@ class TestProcessor:
         # EscrowCreated
         tx = ibet_security_token_escrow_contract.functions.createEscrow(
             token_contract_1.address, user_address_1, 30, issuer_address, "", ""
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -2015,7 +2015,7 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Transfer: 1st
-        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).buildTransaction({
+        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -2032,7 +2032,7 @@ class TestProcessor:
                                                user_address_2,
                                                user_private_key_2,
                                                [issuer_address, "test"])
-        tx = token_contract_1.functions.transfer(user_address_2, 10).buildTransaction({
+        tx = token_contract_1.functions.transfer(user_address_2, 10).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -2132,7 +2132,7 @@ class TestProcessor:
         # BulkTransfer: 1st
         address_list1 = [user_address_1, user_address_2, user_address_3]
         value_list1 = [10, 20, 30]
-        tx = token_contract_1.functions.bulkTransfer(address_list1, value_list1).buildTransaction({
+        tx = token_contract_1.functions.bulkTransfer(address_list1, value_list1).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -2143,7 +2143,7 @@ class TestProcessor:
         # BulkTransfer: 2nd
         address_list2 = [user_address_1, user_address_2, user_address_3, user_address_4]
         value_list2 = [1, 2, 3, 4]
-        tx = token_contract_1.functions.bulkTransfer(address_list2, value_list2).buildTransaction({
+        tx = token_contract_1.functions.bulkTransfer(address_list2, value_list2).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,

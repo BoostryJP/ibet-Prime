@@ -122,7 +122,7 @@ def ibet_exchange_contract():
                                                                            deployer_address,
                                                                            deployer_private_key)
     payment_gateway_contract = ContractUtils.get_contract("PaymentGateway", payment_gateway_contract_address)
-    tx = payment_gateway_contract.functions.addAgent(deployer_address).buildTransaction({
+    tx = payment_gateway_contract.functions.addAgent(deployer_address).build_transaction({
         "chainId": CHAIN_ID,
         "from": deployer_address,
         "gas": TX_GAS_LIMIT,
@@ -144,7 +144,7 @@ def ibet_exchange_contract():
 
     # Upgrade version
     storage_contract = ContractUtils.get_contract("ExchangeStorage", storage_contract_address)
-    tx = storage_contract.functions.upgradeVersion(contract_address).buildTransaction({
+    tx = storage_contract.functions.upgradeVersion(contract_address).build_transaction({
         "chainId": CHAIN_ID,
         "from": deployer_address,
         "gas": TX_GAS_LIMIT,
@@ -178,7 +178,7 @@ def ibet_escrow_contract():
 
     # Upgrade version
     storage_contract = ContractUtils.get_contract("EscrowStorage", storage_contract_address)
-    tx = storage_contract.functions.upgradeVersion(contract_address).buildTransaction({
+    tx = storage_contract.functions.upgradeVersion(contract_address).build_transaction({
         "chainId": CHAIN_ID,
         "from": deployer_address,
         "gas": TX_GAS_LIMIT,
@@ -212,7 +212,7 @@ def ibet_security_token_escrow_contract():
 
     # Upgrade version
     storage_contract = ContractUtils.get_contract("EscrowStorage", storage_contract_address)
-    tx = storage_contract.functions.upgradeVersion(contract_address).buildTransaction({
+    tx = storage_contract.functions.upgradeVersion(contract_address).build_transaction({
         "chainId": CHAIN_ID,
         "from": deployer_address,
         "gas": TX_GAS_LIMIT,
