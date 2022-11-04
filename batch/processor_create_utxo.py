@@ -59,6 +59,7 @@ class Processor:
 
     def process(self):
         db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
+        latest_synced = True
         try:
             self.__refresh_token_contract_list(db_session=db_session)
 
@@ -74,6 +75,7 @@ class Processor:
                 block_to = latest_block
                 if block_to - block_from > CREATE_UTXO_BLOCK_LOT_MAX_SIZE - 1:
                     block_to = block_from + CREATE_UTXO_BLOCK_LOT_MAX_SIZE - 1
+                    latest_synced = False
                 LOG.info(f"syncing from={block_from}, to={block_to}")
                 for token_contract in self.token_contract_list:
                     event_triggered = False
@@ -81,7 +83,8 @@ class Processor:
                         db_session=db_session,
                         token_contract=token_contract,
                         block_from=block_from,
-                        block_to=block_to)
+                        block_to=block_to
+                    )
                     event_triggered = event_triggered | self.__process_issue(
                         db_session=db_session,
                         token_contract=token_contract,
@@ -103,6 +106,8 @@ class Processor:
                 db_session.commit()
         finally:
             db_session.close()
+
+        return latest_synced
 
     def __refresh_token_contract_list(self, db_session: Session):
         self.token_contract_list = []
@@ -414,8 +419,10 @@ def main():
     processor = Processor()
 
     while True:
+        start_time = time.time()
+        latest_synced = True
         try:
-            processor.process()
+            latest_synced = processor.process()
             LOG.debug("Processed")
         except ServiceUnavailableError:
             LOG.warning("An external service was unavailable")
@@ -424,7 +431,11 @@ def main():
         except Exception as ex:
             LOG.exception(ex)
 
-        time.sleep(CREATE_UTXO_INTERVAL)
+        if latest_synced is False:
+            continue
+        else:
+            elapsed_time = time.time() - start_time
+            time.sleep(max(CREATE_UTXO_INTERVAL - elapsed_time, 0))
 
 
 if __name__ == "__main__":

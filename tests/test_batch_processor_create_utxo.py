@@ -24,7 +24,6 @@ from unittest.mock import (
     ANY
 )
 import time
-from datetime import datetime
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
