@@ -3,7 +3,6 @@ psycopg2-binary==2.9.3
 web3==5.31.1
 eth-keyfile==0.5.1
 eth-utils==1.10.0
-pysha3==1.0.2
 coincurve==17.0.0
 pydantic==1.8.2
 fastapi==0.85.0
