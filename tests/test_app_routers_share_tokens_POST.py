@@ -1054,21 +1054,39 @@ class TestAppRoutersShareTokensPOST:
             "detail": [
                 {
                     'loc': ['body', 'dividend_record_date'],
-                    'msg': 'string does not match regex "^$|^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    'msg': 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
                     'type': 'value_error.str.regex',
-                    'ctx': {'pattern': '^$|^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                    'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                },
+                {
+                    'loc': ['body', 'dividend_record_date'],
+                    'msg': "unexpected value; permitted: ''",
+                    'type': 'value_error.const',
+                    'ctx': {'given': '202101010', 'permitted': ['']}
                 },
                 {
                     'loc': ['body', 'dividend_payment_date'],
-                    'msg': 'string does not match regex "^$|^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    'msg': 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
                     'type': 'value_error.str.regex',
-                    'ctx': {'pattern': '^$|^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                    'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                },
+                {
+                    'loc': ['body', 'dividend_payment_date'],
+                    'msg': "unexpected value; permitted: ''",
+                    'type': 'value_error.const',
+                    'ctx': {'given': '202101010', 'permitted': ['']}
                 },
                 {
                     'loc': ['body', 'cancellation_date'],
-                    'msg': 'string does not match regex "^$|^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    'msg': 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
                     'type': 'value_error.str.regex',
-                    'ctx': {'pattern': '^$|^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                    'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                },
+                {
+                    'loc': ['body', 'cancellation_date'],
+                    'msg': "unexpected value; permitted: ''",
+                    'type': 'value_error.const',
+                    'ctx': {'given': '202201010', 'permitted': ['']}
                 }
             ]
         }
