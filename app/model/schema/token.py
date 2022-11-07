@@ -31,7 +31,8 @@ from web3 import Web3
 
 from .types import (
     MMDD_constr,
-    YYYYMMDD_constr
+    YYYYMMDD_constr,
+    YYYYMMDD_or_empty_constr
 )
 
 
@@ -194,9 +195,9 @@ class IbetShareCreate(BaseModel):
     total_supply: int = Field(..., ge=0, le=1_000_000_000_000)
     symbol: Optional[str] = Field(max_length=100)
     dividends: Optional[float] = Field(None, ge=0.00, le=5_000_000_000.00)
-    dividend_record_date: Optional[YYYYMMDD_constr]
-    dividend_payment_date: Optional[YYYYMMDD_constr]
-    cancellation_date: Optional[YYYYMMDD_constr]
+    dividend_record_date: Optional[YYYYMMDD_or_empty_constr]
+    dividend_payment_date: Optional[YYYYMMDD_or_empty_constr]
+    cancellation_date: Optional[YYYYMMDD_or_empty_constr]
     transferable: Optional[bool]
     status: Optional[bool]
     is_offering: Optional[bool]
@@ -231,9 +232,9 @@ class IbetShareCreate(BaseModel):
 
 class IbetShareUpdate(BaseModel):
     """ibet Share schema (Update)"""
-    cancellation_date: Optional[YYYYMMDD_constr]
-    dividend_record_date: Optional[YYYYMMDD_constr]
-    dividend_payment_date: Optional[YYYYMMDD_constr]
+    cancellation_date: Optional[YYYYMMDD_or_empty_constr]
+    dividend_record_date: Optional[YYYYMMDD_or_empty_constr]
+    dividend_payment_date: Optional[YYYYMMDD_or_empty_constr]
     dividends: Optional[float] = Field(None, ge=0.00, le=5_000_000_000.00)
     tradable_exchange_contract_address: Optional[str]
     personal_info_contract_address: Optional[str]
