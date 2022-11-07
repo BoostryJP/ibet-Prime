@@ -32,10 +32,9 @@ from fastapi.exceptions import HTTPException
 from pytz import timezone
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError as SAIntegrityError
-from sha3 import keccak_256
 from coincurve import PublicKey
 from Crypto.PublicKey import RSA
-from eth_utils import to_checksum_address
+from eth_utils import to_checksum_address, keccak
 import eth_keyfile
 import boto3
 
@@ -106,11 +105,11 @@ def create_key(
     if AWS_KMS_GENERATE_RANDOM_ENABLED:
         kms = boto3.client(service_name="kms", region_name=AWS_REGION_NAME)
         result = kms.generate_random(NumberOfBytes=32)
-        private_key = keccak_256(result.get("Plaintext")).digest()
+        private_key = keccak(result.get("Plaintext"))
     else:
-        private_key = keccak_256(secrets.token_bytes(32)).digest()
+        private_key = keccak(secrets.token_bytes(32))
     public_key = PublicKey.from_valid_secret(private_key).format(compressed=False)[1:]
-    addr = to_checksum_address(keccak_256(public_key).digest()[-20:])
+    addr = to_checksum_address(keccak(public_key)[-20:])
     keyfile_json = eth_keyfile.create_keyfile_json(
         private_key=private_key,
         password=eoa_password.encode("utf-8"),
