@@ -92,12 +92,7 @@ class Processor:
             ]
         )
         loaded_token_address_list: tuple[str, ...] = tuple(self.token_list.keys())
-
-        load_required_address_list: list[str] = []
-        # List addresses of tokens that need to be newly loaded
-        for issued_token_address in issued_token_address_list:
-            if issued_token_address not in loaded_token_address_list:
-                load_required_address_list.append(issued_token_address)
+        load_required_address_list = list(set(issued_token_address_list) ^ set(loaded_token_address_list))
 
         if not load_required_address_list:
             # If there are no tokens to load newly, skip process
