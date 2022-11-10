@@ -1039,7 +1039,7 @@ def redeem_token_in_batch(
     response_model=GetBatchIssueRedeemResponse,
     responses=get_routers_responses(422, 404)
 )
-def retrieve_batch_additional_issue(
+def retrieve_batch_redeem(
         token_address: str,
         batch_id: str,
         issuer_address: str = Header(...),
