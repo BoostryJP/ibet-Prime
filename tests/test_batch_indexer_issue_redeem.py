@@ -612,6 +612,65 @@ class TestProcessor:
         processor.sync_new_logs()
         assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "skip process"))
 
+    # Normal_8
+    # Newly tokens added
+    def test_normal_8(self, processor: Processor, db: Session, personal_info_contract):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"],
+            password="password".encode("utf-8")
+        )
+
+        # Prepare data : Token
+        token_contract_1 = deploy_bond_token_contract(
+            address=issuer_address,
+            private_key=issuer_private_key,
+            personal_info_contract_address=personal_info_contract.address
+        )
+
+        token_address_1 = token_contract_1.address
+        token_1 = Token()
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.token_address = token_address_1
+        token_1.issuer_address = issuer_address
+        token_1.abi = token_contract_1.abi
+        token_1.tx_hash = "tx_hash"
+        db.add(token_1)
+
+        db.commit()
+
+        # Run target process
+        processor.sync_new_logs()
+
+        # Assertion
+        assert len(processor.token_list.keys()) == 1
+
+        # Prepare additional token
+        token_contract_2 = deploy_share_token_contract(
+            address=issuer_address,
+            private_key=issuer_private_key,
+            personal_info_contract_address=personal_info_contract.address
+        )
+
+        token_address_2 = token_contract_2.address
+        token_2 = Token()
+        token_2.type = TokenType.IBET_SHARE.value
+        token_2.token_address = token_address_2
+        token_2.issuer_address = issuer_address
+        token_2.abi = token_contract_2.abi
+        token_2.tx_hash = "tx_hash"
+        db.add(token_2)
+
+        db.commit()
+
+        # Run target process
+        processor.sync_new_logs()
+
+        # Assertion
+        # newly issued token is loaded properly
+        assert len(processor.token_list.keys()) == 2
+
     ###########################################################################
     # Error Case
     ###########################################################################
