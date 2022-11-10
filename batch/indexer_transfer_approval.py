@@ -28,6 +28,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from typing import Optional
+from web3.eth import Contract
 
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
@@ -77,7 +78,8 @@ ibetSecurityTokenEscrow
 class Processor:
     def __init__(self):
         self.latest_block = web3.eth.block_number
-        self.token_list = []
+        self.token_list: dict[str, Contract] = {}
+        self.exchange_list: list[Contract] = []
 
     def sync_new_logs(self):
         db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
@@ -106,19 +108,39 @@ class Processor:
             db_session.close()
 
     def __get_contract_list(self, db_session: Session):
-        self.token_list = []
         self.exchange_list = []
-        _exchange_list_tmp = []
-        issued_token_list = db_session.query(Token). \
-            filter(Token.type.in_([TokenType.IBET_STRAIGHT_BOND.value, TokenType.IBET_SHARE.value])). \
-            filter(Token.token_status == 1). \
+
+        issued_token_address_list: tuple[str, ...] = tuple(
+            [
+                record[0] for record in (
+                    db_session.query(Token.token_address).
+                    filter(Token.token_status == 1).all()
+                )
+            ]
+        )
+        loaded_token_address_list: tuple[str, ...] = tuple(self.token_list.keys())
+
+        load_required_address_list: list[str] = []
+        # List addresses of tokens that need to be newly loaded
+        for issued_token_address in issued_token_address_list:
+            if issued_token_address not in loaded_token_address_list:
+                load_required_address_list.append(issued_token_address)
+
+        load_required_token_list: list[Token] = (
+            db_session.query(Token).
+            filter(Token.token_status == 1).
+            filter(Token.token_address.in_(load_required_address_list)).
             all()
-        for issued_token in issued_token_list:
+        )
+        for load_required_token in load_required_token_list:
             token_contract = web3.eth.contract(
-                address=issued_token.token_address,
-                abi=issued_token.abi
+                address=load_required_token.token_address,
+                abi=load_required_token.abi
             )
-            self.token_list.append(token_contract)
+            self.token_list[load_required_token.token_address] = token_contract
+
+        _exchange_list_tmp = []
+        for token_contract in self.token_list.values():
             tradable_exchange_address = ContractUtils.call_function(
                 contract=token_contract,
                 function_name="tradableExchange",
@@ -171,7 +193,7 @@ class Processor:
         :param block_to: To Block
         :return: None
         """
-        for token in self.token_list:
+        for token in self.token_list.values():
             try:
                 events = ContractUtils.get_event_logs(
                     contract=token,
@@ -217,7 +239,7 @@ class Processor:
         :param block_to: To Block
         :return: None
         """
-        for token in self.token_list:
+        for token in self.token_list.values():
             try:
                 events = ContractUtils.get_event_logs(
                     contract=token,
@@ -255,7 +277,7 @@ class Processor:
         :param block_to: To Block
         :return: None
         """
-        for token in self.token_list:
+        for token in self.token_list.values():
             try:
                 events = ContractUtils.get_event_logs(
                     contract=token,
