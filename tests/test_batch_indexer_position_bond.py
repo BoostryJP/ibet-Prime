@@ -2635,6 +2635,71 @@ class TestProcessor:
         # Error occurs in Transfer and Escrow events.
         assert 2 == caplog.record_tuples.count((LOG.name, logging.ERROR, "An exception occurred during event synchronization"))
 
+    # <Normal_8>
+    # Newly tokens added
+    def test_normal_8(self, processor: Processor, db: Session, personal_info_contract, ibet_security_token_escrow_contract):
+        escrow_contract = ibet_security_token_escrow_contract
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8"))
+
+        # Issuer issues bond token.
+        token_contract1 = deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=escrow_contract.address,
+            transfer_approval_required=False,
+        )
+        token_address_1 = token_contract1.address
+        token_1 = Token()
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.token_address = token_address_1
+        token_1.issuer_address = issuer_address
+        token_1.abi = token_contract1.abi
+        token_1.tx_hash = "tx_hash"
+        db.add(token_1)
+
+        db.commit()
+
+        # Run target process
+        processor.sync_new_logs()
+
+        # Assertion
+        assert len(processor.token_list.keys()) == 1
+        assert len(processor.exchange_address_list) == 1
+
+        # Prepare additional token
+        token_contract2 = deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=escrow_contract.address,
+            transfer_approval_required=False,
+        )
+        token_address_2 = token_contract2.address
+        token_2 = Token()
+        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.token_address = token_address_2
+        token_2.issuer_address = issuer_address
+        token_2.abi = token_contract2.abi
+        token_2.tx_hash = "tx_hash"
+        db.add(token_2)
+
+        db.commit()
+
+        # Run target process
+        processor.sync_new_logs()
+
+        # Assertion
+        # newly issued token is loaded properly
+        assert len(processor.token_list.keys()) == 2
+        assert len(processor.exchange_address_list) == 1
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
     # <Error_1>
     # If exception occures out of Processor except-catch, batch outputs logs in mainloop.
     def test_error_1(self, main_func, db:Session, personal_info_contract, caplog: pytest.LogCaptureFixture):
