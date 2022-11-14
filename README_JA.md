@@ -5,7 +5,7 @@
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
-<a href='./README.md'>English</a> | 日本語
+[English](./README.md) | 日本語
 
 <img width="33%" align="right" src="https://user-images.githubusercontent.com/963333/71672471-6383c080-2db9-11ea-85b6-8815519652ec.png"/>
 
@@ -29,7 +29,8 @@
 
 ## コントラクトのバージョン
 
-* ibet-SmartContract: バージョン 22.3.0
+* ibet-SmartContract: バージョン 22.12.0
+* [詳細](./contracts/contract_version.md)を参照ください。
 
 ## セットアップ
 
