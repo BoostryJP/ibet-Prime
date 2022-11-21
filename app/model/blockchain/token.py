@@ -136,7 +136,7 @@ class IbetStandardTokenInterface:
         token_cache.attributes = self.__dict__
         token_cache.cached_datetime = datetime.utcnow()
         token_cache.expiration_datetime = datetime.utcnow() + timedelta(seconds=TOKEN_CACHE_TTL)
-        db_session.add(token_cache)
+        db_session.merge(token_cache)
 
     @staticmethod
     def delete_cache(db_session: Session, contract_address: str):
@@ -373,7 +373,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 token_cache.attributes = bond_token.__dict__
                 token_cache.cached_datetime = datetime.utcnow()
                 token_cache.expiration_datetime = datetime.utcnow() + timedelta(seconds=TOKEN_CACHE_TTL)
-                db_session.add(token_cache)
+                db_session.merge(token_cache)
                 db_session.commit()
             except SAIntegrityError:
                 db_session.rollback()
@@ -939,7 +939,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 token_cache.attributes = share_token.__dict__
                 token_cache.cached_datetime = datetime.utcnow()
                 token_cache.expiration_datetime = datetime.utcnow() + timedelta(seconds=TOKEN_CACHE_TTL)
-                db_session.add(token_cache)
+                db_session.merge(token_cache)
                 db_session.commit()
             except SAIntegrityError:
                 db_session.rollback()
