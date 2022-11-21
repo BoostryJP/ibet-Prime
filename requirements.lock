@@ -35,7 +35,7 @@ ipfshttpclient==0.8.0a2
 jmespath==0.10.0
 jsonschema==4.17.0
 lru-dict==1.1.8
-Mako==1.2.3
+Mako==1.2.4
 MarkupSafe==2.1.1
 multiaddr==0.0.9
 multidict==6.0.2
@@ -62,7 +62,7 @@ starlette==0.20.4
 toolz==0.12.0
 typing_extensions==4.4.0
 urllib3==1.26.12
-uvicorn==0.18.3
+uvicorn==0.20.0
 varint==1.0.2
 web3==5.31.1
 websockets==9.1
