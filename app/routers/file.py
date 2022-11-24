@@ -71,7 +71,18 @@ def list_all_upload_files(
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
-    query = db.query(UploadFile). \
+    rows = [
+        UploadFile.file_id,
+        UploadFile.issuer_address,
+        UploadFile.relation,
+        UploadFile.file_name,
+        UploadFile.content_size,
+        UploadFile.description,
+        UploadFile.label,
+        UploadFile.created
+    ]
+
+    query = db.query(*rows). \
         order_by(desc(UploadFile.modified))
     total = query.count()
 
@@ -99,15 +110,15 @@ def list_all_upload_files(
 
     files = []
     for _upload_file in _upload_file_list:
-        created_formatted = utc_tz.localize(_upload_file.created).astimezone(local_tz).isoformat()
+        created_formatted = utc_tz.localize(_upload_file[7]).astimezone(local_tz).isoformat()
         files.append({
-            "file_id": _upload_file.file_id,
-            "issuer_address": _upload_file.issuer_address,
-            "relation": _upload_file.relation,
-            "file_name": _upload_file.file_name,
-            "content_size": _upload_file.content_size,
-            "description": _upload_file.description,
-            "label": _upload_file.label,
+            "file_id": _upload_file[0],
+            "issuer_address": _upload_file[1],
+            "relation": _upload_file[2],
+            "file_name": _upload_file[3],
+            "content_size": _upload_file[4],
+            "description": _upload_file[5],
+            "label": _upload_file[6],
             "created": created_formatted,
         })
 
