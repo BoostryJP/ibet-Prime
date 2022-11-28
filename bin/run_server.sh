@@ -48,6 +48,7 @@ function start () {
            --timeout ${WORKER_TIMEOUT} \
            --max-requests ${WORKER_MAX_REQUESTS} \
            --max-requests-jitter ${WORKER_MAX_REQUESTS_JITTER} \
+           --limit-request-line 0 \
            app.main:app
 }
 
