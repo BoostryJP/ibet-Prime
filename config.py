@@ -176,11 +176,6 @@ WEB3_REQUEST_RETRY_COUNT = int(os.environ.get("WEB3_REQUEST_RETRY_COUNT")) if os
 WEB3_REQUEST_WAIT_TIME = int(os.environ.get("WEB3_REQUEST_WAIT_TIME")) \
     if os.environ.get("WEB3_REQUEST_WAIT_TIME") else BLOCK_SYNC_STATUS_SLEEP_INTERVAL  # Same batch interval
 
-# Auto transfer approval
-# interval(second)
-AUTO_TRANSFER_APPROVAL_INTERVAL = int(os.environ.get("AUTO_TRANSFER_APPROVAL_INTERVAL")) \
-    if os.environ.get("AUTO_TRANSFER_APPROVAL_INTERVAL") else 10
-
 # Random Bytes Generator
 AWS_KMS_GENERATE_RANDOM_ENABLED = True if os.environ.get("AWS_KMS_GENERATE_RANDOM_ENABLED") == "1" else False
 
@@ -198,3 +193,6 @@ MAX_UPLOAD_FILE_SIZE = int(os.environ.get("MAX_UPLOAD_FILE_SIZE")) \
 # Rotate E2E Messaging RSA Key
 ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL = int(os.environ.get("ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL")) \
     if os.environ.get("ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL") else 10
+
+# Blockchain Explorer
+BC_EXPLORER_ENABLED = True if os.environ.get("BC_EXPLORER_ENABLED") == "1" else False
