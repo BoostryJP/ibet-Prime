@@ -14,6 +14,7 @@
 | IbetSecurityTokenInterface.json | **v22.12.0** | no                     | yes      |
 | IbetShare.json                  | **v22.12.0** | **yes**                | yes      |
 | IbetStandardTokenInterface.json | **v22.12.0** | no                     | yes      |
+| IbetStandardToken.json          | **v22.12.0** | yes(only for unittest) | yes      |
 | IbetStraightBond.json           | **v22.12.0** | **yes**                | yes      |
 | Ownable.json                    | **v22.12.0** | yes(only for unittest) | yes      |
 | PaymentGateway.json             | **v22.12.0** | yes(only for unittest) | yes      |
