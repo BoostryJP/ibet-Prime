@@ -16,6 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from typing import Dict
+
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
@@ -55,6 +57,59 @@ class PersonalInfoContractTestUtils:
             })
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
+
+class IbetStandardTokenUtils:
+
+    @staticmethod
+    def issue(tx_from: str, private_key: str, args: Dict):
+        """issue token
+
+        :param tx_from: transaction sender
+        :param private_key: private key
+        :param args: deploy args
+        :return: Contract
+        """
+        web3.eth.default_account = tx_from
+        arguments = [
+            args["name"],
+            args["symbol"],
+            args["totalSupply"],
+            args["tradableExchange"],
+            args["contactInformation"],
+            args["privacyPolicy"]
+        ]
+        contract_address, abi, _ = ContractUtils.deploy_contract(
+            contract_name="IbetStandardToken",
+            args=arguments,
+            deployer=tx_from,
+            private_key = private_key
+        )
+        contract = ContractUtils.get_contract(
+            contract_name="IbetStandardToken",
+            contract_address=contract_address
+        )
+        return contract
+
+    @staticmethod
+    def transfer(contract_address: str, tx_from: str, private_key: str, args: list):
+        token_contract = ContractUtils.get_contract(
+            contract_name="IbetStandardTokenInterface",
+            contract_address=contract_address
+        )
+        tx = token_contract.functions.\
+            transfer(*args).\
+            build_transaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+        tx_hash, _ = ContractUtils.send_transaction(
+            transaction=tx,
+            private_key=private_key
+        )
+
+        return tx_hash
 
 class IbetSecurityTokenContractTestUtils:
 

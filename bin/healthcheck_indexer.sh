@@ -29,6 +29,10 @@ if [ -n "${E2E_MESSAGING_CONTRACT_ADDRESS}" ]; then
   PROC_LIST="${PROC_LIST} batch/indexer_e2e_messaging.py"
 fi
 
+if [[ $BC_EXPLORER_ENABLED = 1 ]]; then
+  PROC_LIST="${PROC_LIST} batch/indexer_block_tx_data.py"
+fi
+
 for i in ${PROC_LIST}; do
   # shellcheck disable=SC2009
   ps -ef | grep -v grep | grep "$i"
