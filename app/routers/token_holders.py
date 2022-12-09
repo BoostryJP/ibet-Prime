@@ -32,9 +32,6 @@ from sqlalchemy import (
     asc,
     desc
 )
-from web3 import Web3
-from web3.middleware import geth_poa_middleware
-import config
 
 from app.database import db_session
 from app.model.schema import (
@@ -55,9 +52,9 @@ from app.model.db import (
     TokenHolder
 )
 from app.exceptions import InvalidParameterError
+from app.utils.web3_utils import Web3Wrapper
 
-web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+web3 = Web3Wrapper()
 
 router = APIRouter(
     prefix="/token",
