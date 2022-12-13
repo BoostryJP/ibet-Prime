@@ -91,7 +91,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "transfer_approval_required": False,
             "principal_value": 1000,
             "is_canceled": True,
-            "memo": "memo_test1"
+            "memo": "m" * 10000
         }
         resp = client.post(
             self.base_url.format(_token_address),
