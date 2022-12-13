@@ -90,7 +90,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "transfer_approval_required": True,
-            "memo": "memo_test1"
+            "memo": "m" * 10000
         }
         resp = client.post(
             self.base_url.format(_token_address),
