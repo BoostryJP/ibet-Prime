@@ -234,9 +234,6 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [exchange_contract.address, 10000])
         # user1: 30000 user2: 10000
 
-        STContractUtils.authorize_lock_address(token_contract.address, issuer_address, issuer_private_key, [user_address_1, True])
-        STContractUtils.authorize_lock_address(token_contract.address, issuer_address, issuer_private_key, [user_address_2, True])
-
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 10000])
         IbetExchangeContractTestUtils.create_order(
             exchange_contract.address, user_address_1, user_pk_1, [token_contract.address, 10000, 100, False, issuer_address]
@@ -605,9 +602,6 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_2, 10000])
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [exchange_contract.address, 10000])
         # user1: 20000 user2: 10000
-
-        STContractUtils.authorize_lock_address(token_contract.address, issuer_address, issuer_private_key, [user_address_1, True])
-        STContractUtils.authorize_lock_address(token_contract.address, issuer_address, issuer_private_key, [user_address_2, True])
 
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 10000])
         IbetExchangeContractTestUtils.create_order(

@@ -38,9 +38,9 @@ def error_code_msg(code_str: str) -> Tuple[int, str]:
         100101: "The address has not been registered.",
         100102: "Message sender must be the token owner.",
         # IbetShare (11XXXX)
-        110001:	"Lock address is invalid.",
+        110001:	"Lock address is invalid.",  # < v22.12
         110002: "Lock amount is greater than message sender balance.",
-        110101: "Unlock address is invalid.",
+        110101: "Unlock address is invalid.",  # < v22.12
         110102: "Unlock amount is greater than locked amount.",
         110201: "The token isn't transferable.",
         110202: "Destination address check is failed.",
@@ -62,10 +62,11 @@ def error_code_msg(code_str: str) -> Tuple[int, str]:
         111002: "Personal information of message sender isn't registered to token owner.",
         111101: "Redeem amount is less than locked address balance.",
         111102: "Redeem amount is less than target address balance.",
+        111201: "Unlock amount is greater than locked amount.",
         # IbetStraightBond (12XXXX)
-        120001: "Lock address is invalid.",
+        120001: "Lock address is invalid.",  # < v22.12
         120002: "Lock amount is greater than message sender balance.",
-        120101: "Unlock address is invalid.",
+        120101: "Unlock address is invalid.",  # < v22.12
         120102: "Unlock amount is greater than locked amount.",
         120201: "The token isn't transferable.",
         120202: "Destination address check is failed.",
@@ -86,6 +87,7 @@ def error_code_msg(code_str: str) -> Tuple[int, str]:
         121002: "Personal information of message sender isn't registered to token owner.",
         121101: "Redeem amount is less than locked address balance.",
         121102: "Redeem amount is less than target address balance.",
+        121201: "Unlock amount is greater than locked amount.",
         # IbetCoupon (13XXXX)
         130001: "Destination address isn't tradable exchange.",
         130101: "Message sender balance is insufficient.",

@@ -619,14 +619,7 @@ class TestProcessor:
         db.commit()
 
         # Lock
-        tx = token_contract_1.functions.authorizeLockAddress(issuer_address, True).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
-        ContractUtils.send_transaction(tx, issuer_private_key)
-        tx = token_contract_1.functions.lock(issuer_address, 40).build_transaction({
+        tx = token_contract_1.functions.lock(issuer_address, 40, "").build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -699,14 +692,7 @@ class TestProcessor:
         db.commit()
 
         # Lock
-        tx = token_contract_1.functions.authorizeLockAddress(issuer_address, True).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
-        ContractUtils.send_transaction(tx, issuer_private_key)
-        tx = token_contract_1.functions.lock(issuer_address, 40).build_transaction({
+        tx = token_contract_1.functions.lock(issuer_address, 40, "").build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -727,7 +713,7 @@ class TestProcessor:
         assert _position.pending_transfer == 0
 
         # Unlock
-        tx = token_contract_1.functions.unlock(issuer_address, issuer_address, 30).build_transaction({
+        tx = token_contract_1.functions.unlock(issuer_address, issuer_address, 30, "").build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -2557,11 +2543,8 @@ class TestProcessor:
         latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(exchange_contract.address)
         IbetExchangeContractTestUtils.cancel_order(exchange_contract.address, user_address_1, user_pk_1, [latest_order_id])
 
-        STContractUtils.authorize_lock_address(token_contract1.address, issuer_address, issuer_private_key, [user_address_1, True])
-        STContractUtils.authorize_lock_address(token_contract1.address, issuer_address, issuer_private_key, [user_address_2, True])
-
-        STContractUtils.lock(token_contract1.address, user_address_1, user_pk_1, [user_address_2, 10])
-        STContractUtils.unlock(token_contract1.address, user_address_2, user_pk_2, [user_address_1, user_address_2, 10])
+        STContractUtils.lock(token_contract1.address, user_address_1, user_pk_1, [user_address_2, 10, ""])
+        STContractUtils.unlock(token_contract1.address, user_address_2, user_pk_2, [user_address_1, user_address_2, 10, ""])
 
         STContractUtils.issue_from(token_contract1.address, issuer_address, issuer_private_key, [issuer_address, ZERO_ADDRESS, 40000])
         STContractUtils.redeem_from(token_contract1.address, issuer_address, issuer_private_key, [issuer_address, ZERO_ADDRESS, 10000])
