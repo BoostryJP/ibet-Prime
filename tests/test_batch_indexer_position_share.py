@@ -2544,7 +2544,7 @@ class TestProcessor:
         IbetExchangeContractTestUtils.cancel_order(exchange_contract.address, user_address_1, user_pk_1, [latest_order_id])
 
         STContractUtils.lock(token_contract1.address, user_address_1, user_pk_1, [user_address_2, 10, ""])
-        STContractUtils.unlock(token_contract1.address, user_address_2, user_pk_2, [user_address_1, user_address_2, 10], "")
+        STContractUtils.unlock(token_contract1.address, user_address_2, user_pk_2, [user_address_1, user_address_2, 10, ""])
 
         STContractUtils.issue_from(token_contract1.address, issuer_address, issuer_private_key, [issuer_address, ZERO_ADDRESS, 40000])
         STContractUtils.redeem_from(token_contract1.address, issuer_address, issuer_private_key, [issuer_address, ZERO_ADDRESS, 10000])
