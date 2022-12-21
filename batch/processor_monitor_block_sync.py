@@ -47,6 +47,12 @@ from app.model.db import Node
 from app.exceptions import ServiceUnavailableError
 import batch_log
 
+"""
+[PROCESSOR-Monitor-Block-Sync]
+
+Processor for block synchronization monitoring
+"""
+
 process_name = "PROCESSOR-Monitor-Block-Sync"
 LOG = batch_log.get_logger(process_name=process_name)
 

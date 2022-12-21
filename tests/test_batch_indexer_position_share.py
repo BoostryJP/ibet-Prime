@@ -2708,14 +2708,6 @@ class TestProcessor:
 
         db.commit()
 
-        # Run mainloop once successfully
-        with patch("batch.indexer_position_share.INDEXER_SYNC_INTERVAL", None),\
-            patch.object(Processor, "sync_new_logs", return_value=True),\
-                pytest.raises(TypeError):
-            main_func()
-        assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "Processed"))
-        caplog.clear()
-
         # Run mainloop once and fail with web3 utils error
         with patch("batch.indexer_position_share.INDEXER_SYNC_INTERVAL", None),\
             patch.object(web3.eth, "contract", side_effect=ServiceUnavailableError()), \

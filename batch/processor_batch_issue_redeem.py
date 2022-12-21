@@ -57,6 +57,12 @@ from app.exceptions import (
 )
 import batch_log
 
+"""
+[PROCESSOR-Batch-Issue-Redeem]
+
+Batch processing for additional issuance and redemption
+"""
+
 process_name = "PROCESSOR-Batch-Issue-Redeem"
 LOG = batch_log.get_logger(process_name=process_name)
 
@@ -72,6 +78,8 @@ class Processor:
                 filter(BatchIssueRedeemUpload.processed == False). \
                 all()
             for upload in upload_list:
+                LOG.info(f"Process start: upload_id={upload.upload_id}")
+
                 # Get issuer's private key
                 issuer_account = db_session.query(Account). \
                     filter(Account.issuer_address == upload.issuer_address). \
@@ -196,6 +204,8 @@ class Processor:
                 # Update to processed
                 upload.processed = True
                 db_session.commit()
+
+                LOG.info(f"Process end: upload_id={upload.upload_id}")
         finally:
             db_session.close()
 
@@ -230,7 +240,6 @@ def main():
     while True:
         try:
             processor.process()
-            LOG.debug("Processed")
         except SQLAlchemyError as sa_err:
             LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
         except Exception as ex:

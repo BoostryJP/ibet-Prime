@@ -804,7 +804,7 @@ class TestProcessor:
         db.commit()
 
         processor.process()
-        assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "skip Process"))
+        assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "skip process"))
 
     # <Normal_6>
     # If DB session fails in phase sinking register/modify events, batch logs exception message.
@@ -941,14 +941,6 @@ class TestProcessor:
         db.add(token_1)
 
         db.commit()
-
-        # Run mainloop once successfully
-        with patch("batch.indexer_personal_info.INDEXER_SYNC_INTERVAL", None),\
-            patch.object(Processor, "process", return_value=True), \
-                pytest.raises(TypeError):
-            main_func()
-        assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "Processed"))
-        caplog.clear()
 
         # Run mainloop once and fail with web3 utils error
         with patch("batch.indexer_personal_info.INDEXER_SYNC_INTERVAL", None),\

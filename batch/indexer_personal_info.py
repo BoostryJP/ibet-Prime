@@ -67,7 +67,7 @@ class Processor:
             latest_block = web3.eth.block_number  # latest blockNumber
 
             if block_number >= latest_block:
-                LOG.debug("skip Process")
+                LOG.debug("skip process")
             else:
                 self.__sync_all(
                     db_session=db_session,
@@ -79,6 +79,7 @@ class Processor:
                 db_session.commit()
         finally:
             db_session.close()
+        LOG.info("Sync job has been completed")
 
     def __refresh_personal_info_list(self, db_session: Session):
         self.personal_info_contract_list.clear()
@@ -132,7 +133,7 @@ class Processor:
         db_session.merge(_block_number)
 
     def __sync_all(self, db_session: Session, block_from: int, block_to: int):
-        LOG.info(f"syncing from={block_from}, to={block_to}")
+        LOG.info(f"Syncing from={block_from}, to={block_to}")
         self.__sync_personal_info_register(
             db_session=db_session,
             block_from=block_from,
@@ -228,7 +229,6 @@ def main():
     while True:
         try:
             processor.process()
-            LOG.debug("Processed")
         except ServiceUnavailableError:
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:

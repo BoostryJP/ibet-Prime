@@ -87,6 +87,7 @@ class Processor:
                 db_session.commit()
         finally:
             db_session.close()
+        LOG.info("Sync job has been completed")
 
     def __get_contract_list(self, db_session: Session):
         self.exchange_address_list = []
@@ -149,7 +150,7 @@ class Processor:
         db_session.merge(_idx_position_block_number)
 
     def __sync_all(self, db_session: Session, block_from: int, block_to: int):
-        LOG.info("syncing from={}, to={}".format(block_from, block_to))
+        LOG.info("Syncing from={}, to={}".format(block_from, block_to))
         self.__sync_issuer(db_session)
         self.__sync_issue(db_session, block_from, block_to)
         self.__sync_transfer(db_session, block_from, block_to)
@@ -748,7 +749,6 @@ def main():
     while True:
         try:
             processor.sync_new_logs()
-            LOG.debug("Processed")
         except ServiceUnavailableError:
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:

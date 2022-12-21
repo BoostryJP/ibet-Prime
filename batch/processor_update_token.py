@@ -64,6 +64,12 @@ from app.exceptions import (
 )
 import batch_log
 
+"""
+[PROCESSOR-Update-token]
+
+Processor for asynchronous updating of update items when issuing new tokens
+"""
+
 process_name = "PROCESSOR-Update-token"
 LOG = batch_log.get_logger(process_name=process_name)
 
@@ -77,6 +83,7 @@ class Processor:
         try:
             _update_token_list = self.__get_update_token_list(db_session=db_session)
             for _update_token in _update_token_list:
+                LOG.info(f"Process start: upload_id={_update_token.token_address}")
 
                 notice_type = ""
                 if _update_token.trigger == "Issue":
@@ -232,6 +239,7 @@ class Processor:
                         arguments=_update_token.arguments)
 
                 db_session.commit()
+                LOG.info(f"Process end: upload_id={_update_token.token_address}")
         finally:
             db_session.close()
 

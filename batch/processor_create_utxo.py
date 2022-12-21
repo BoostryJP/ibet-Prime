@@ -45,6 +45,12 @@ from app.utils.contract_utils import ContractUtils
 from app.exceptions import ServiceUnavailableError
 import batch_log
 
+"""
+[PROCESSOR-Create-UTXO]
+
+Batch processing for creation of ledger data
+"""
+
 process_name = "PROCESSOR-Create-UTXO"
 LOG = batch_log.get_logger(process_name=process_name)
 
@@ -76,7 +82,7 @@ class Processor:
                 if block_to - block_from > CREATE_UTXO_BLOCK_LOT_MAX_SIZE - 1:
                     block_to = block_from + CREATE_UTXO_BLOCK_LOT_MAX_SIZE - 1
                     latest_synced = False
-                LOG.info(f"syncing from={block_from}, to={block_to}")
+                LOG.info(f"Syncing from={block_from}, to={block_to}")
                 for token_contract in self.token_contract_list:
                     event_triggered = False
                     event_triggered = event_triggered | self.__process_transfer(
@@ -106,6 +112,7 @@ class Processor:
                 db_session.commit()
         finally:
             db_session.close()
+        LOG.info("Sync job has been completed")
 
         return latest_synced
 
@@ -423,7 +430,6 @@ def main():
         latest_synced = True
         try:
             latest_synced = processor.process()
-            LOG.debug("Processed")
         except ServiceUnavailableError:
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:

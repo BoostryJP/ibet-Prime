@@ -156,14 +156,14 @@ class Processor:
             self.__process_all(local_session, self.block_from, self.block_to)
             self.__update_status(local_session, TokenHolderBatchStatus.DONE)
             local_session.commit()
-        except Exception:
-            LOG.exception("An exception occurred during event synchronization")
+            LOG.info("Collect job has been completed")
+        except Exception as e:
             local_session.rollback()
             self.__update_status(local_session, TokenHolderBatchStatus.FAILED)
             local_session.commit()
+            raise e
         finally:
             local_session.close()
-            LOG.info(f"<{process_name}> Collect job has been completed")
 
     def __update_status(self, local_session: Session, status: TokenHolderBatchStatus):
         self.target.batch_status = status.value
@@ -365,7 +365,6 @@ def main():
     while True:
         try:
             processor.collect()
-            LOG.debug("Processed")
         except ServiceUnavailableError:
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:

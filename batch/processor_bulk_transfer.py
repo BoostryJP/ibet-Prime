@@ -62,6 +62,12 @@ from app.exceptions import (
 )
 import batch_log
 
+"""
+[PROCESSOR-Bulk-Transfer]
+
+Asynchronous batch processing for token bulk transfers
+"""
+
 process_name = "PROCESSOR-Bulk-Transfer"
 LOG = batch_log.get_logger(process_name=process_name)
 
@@ -81,8 +87,7 @@ class Processor:
                 return
 
             for _upload in upload_list:
-                LOG.info(
-                    f"thread {self.thread_num} START upload_id:{_upload.upload_id} issuer_address:{_upload.issuer_address}")
+                LOG.info(f"<{self.thread_num}> Process start: upload_id={_upload.upload_id}")
 
                 # Get issuer's private key
                 try:
@@ -212,6 +217,7 @@ class Processor:
 
                 db_session.commit()
                 self.__release_processing_issuer(_upload.upload_id)
+                LOG.info(f"<{self.thread_num}> Process end: upload_id={_upload.upload_id}")
         finally:
             db_session.close()
 
@@ -354,7 +360,7 @@ def main():
         worker = Worker(i)
         thread = threading.Thread(target=worker.run, daemon=True)
         thread.start()
-        LOG.info(f"thread {i} started")
+        LOG.debug(f"thread {i} started")
 
     while True:
         if len(err_bucket) > 0:
