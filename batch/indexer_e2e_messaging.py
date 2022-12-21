@@ -109,6 +109,7 @@ class Processor:
                 db_session.commit()
         finally:
             db_session.close()
+        LOG.info("Sync job has been completed")
 
     def __get_idx_e2e_messaging_block_number(self, db_session: Session):
         _idx_e2e_messaging_block_number = db_session.query(IDXE2EMessagingBlockNumber). \
@@ -128,7 +129,7 @@ class Processor:
         db_session.merge(_idx_e2e_messaging_block_number)
 
     def __sync_all(self, db_session: Session, block_from: int, block_to: int):
-        LOG.info(f"syncing from={block_from}, to={block_to}")
+        LOG.info(f"Syncing from={block_from}, to={block_to}")
         self.__sync_message(db_session, block_from, block_to)
 
     def __sync_message(self, db_session: Session, block_from: int, block_to: int):
@@ -281,7 +282,6 @@ def main():
         start_time = time.time()
         try:
             processor.process()
-            LOG.debug("Processed")
         except ServiceUnavailableError:
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:

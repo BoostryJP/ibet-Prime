@@ -91,7 +91,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "transfer_approval_required": False,
             "principal_value": 1000,
             "is_canceled": True,
-            "memo": "memo_test1"
+            "memo": "m" * 10000
         }
         resp = client.post(
             self.base_url.format(_token_address),
@@ -224,6 +224,144 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         assert resp.status_code == 200
         assert resp.json() is None
 
+    # <Normal_4_1>
+    # YYYYMMDD parameter is not an empty string
+    @mock.patch("app.model.blockchain.token.IbetShareContract.update")
+    def test_normal_4_1(self, IbetShareContract_mock, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_SHARE.value
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        db.add(token)
+
+        # mock
+        IbetShareContract_mock.side_effect = [None]
+
+        # request target API
+        req_param = {
+            "cancellation_date": "20221231",
+            "dividends": 345.67,
+            "dividend_record_date": "20211231",
+            "dividend_payment_date": "20211231"
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            }
+        )
+
+        # assertion
+        IbetShareContract_mock.assert_any_call(
+            contract_address=_token_address,
+            data={
+                "cancellation_date": "20221231",
+                "dividends": 345.67,
+                "dividend_record_date": "20211231",
+                "dividend_payment_date": "20211231",
+                "tradable_exchange_contract_address": None,
+                "personal_info_contract_address": None,
+                "transferable": None,
+                "status": None,
+                "is_offering": None,
+                "contact_information": None,
+                "privacy_policy": None,
+                "transfer_approval_required": None,
+                "principal_value": None,
+                "is_canceled": None,
+                "memo": None
+            },
+            tx_from=_issuer_address,
+            private_key=ANY
+        )
+        assert resp.status_code == 200
+        assert resp.json() is None
+
+    # <Normal_4_2>
+    # YYYYMMDD parameter is an empty string
+    @mock.patch("app.model.blockchain.token.IbetShareContract.update")
+    def test_normal_4_2(self, IbetShareContract_mock, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_SHARE.value
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        db.add(token)
+
+        # mock
+        IbetShareContract_mock.side_effect = [None]
+
+        # request target API
+        req_param = {
+            "cancellation_date": "",
+            "dividends": 345.67,
+            "dividend_record_date": "",
+            "dividend_payment_date": ""
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            }
+        )
+
+        # assertion
+        IbetShareContract_mock.assert_any_call(
+            contract_address=_token_address,
+            data={
+                "cancellation_date": "",
+                "dividends": 345.67,
+                "dividend_record_date": "",
+                "dividend_payment_date": "",
+                "tradable_exchange_contract_address": None,
+                "personal_info_contract_address": None,
+                "transferable": None,
+                "status": None,
+                "is_offering": None,
+                "contact_information": None,
+                "privacy_policy": None,
+                "transfer_approval_required": None,
+                "principal_value": None,
+                "is_canceled": None,
+                "memo": None
+            },
+            tx_from=_issuer_address,
+            private_key=ANY
+        )
+        assert resp.status_code == 200
+        assert resp.json() is None
+
     ###########################################################################
     # Error Case
     ###########################################################################
@@ -237,7 +375,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
 
         # request target API
         req_param = {
-            "dividends": 0.001,
+            "dividends": 0.00000000000001,
         }
         resp = client.post(
             self.base_url.format(_token_address),
@@ -259,7 +397,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
                         "body",
                         "dividends"
                     ],
-                    "msg": "dividends must be rounded to 2 decimal places",
+                    "msg": "dividends must be rounded to 13 decimal places",
                     "type": "value_error"
                 }
             ]
@@ -641,16 +779,34 @@ class TestAppRoutersShareTokensTokenAddressPOST:
                     'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
                 },
                 {
+                    'loc': ['body', 'cancellation_date'],
+                    'msg': "unexpected value; permitted: ''",
+                    'type': 'value_error.const',
+                    'ctx': {'given': '202112310', 'permitted': ['']}
+                },
+                {
                     'loc': ['body', 'dividend_record_date'],
                     'msg': 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
                     'type': 'value_error.str.regex',
                     'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
                 },
                 {
+                    'loc': ['body', 'dividend_record_date'],
+                    'msg': "unexpected value; permitted: ''",
+                    'type': 'value_error.const',
+                    'ctx': {'given': '202112310', 'permitted': ['']}
+                },
+                {
                     'loc': ['body', 'dividend_payment_date'],
                     'msg': 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
                     'type': 'value_error.str.regex',
                     'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                },
+                {
+                    'loc': ['body', 'dividend_payment_date'],
+                    'msg': "unexpected value; permitted: ''",
+                    'type': 'value_error.const',
+                    'ctx': {'given': '202112310', 'permitted': ['']}
                 }
             ]
         }

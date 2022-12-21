@@ -75,7 +75,7 @@ def set_personal_info_contract(db, contract_address, issuer_address, sender_list
     contract = ContractUtils.get_contract("PersonalInfo", contract_address)
 
     for sender in sender_list:
-        tx = contract.functions.register(issuer_address, "").buildTransaction({
+        tx = contract.functions.register(issuer_address, "").build_transaction({
             "nonce": web3.eth.get_transaction_count(sender["user"]["address"]),
             "chainId": CHAIN_ID,
             "from": sender["user"]["address"],
@@ -135,7 +135,7 @@ def deploy_share_token_contract(issuer_user, personal_info_contract_address):
         "token.symbol",
         10,
         20,
-        int(0.03 * 100),
+        3,
         "token.dividend_record_date",
         "token.dividend_payment_date",
         "token.cancellation_date",

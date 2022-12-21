@@ -24,6 +24,7 @@ from eth_utils import to_checksum_address
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from web3.eth import Contract
 
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
@@ -53,7 +54,7 @@ db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 class Processor:
     def __init__(self):
         self.latest_block = web3.eth.block_number
-        self.token_list = []
+        self.token_list: dict[str, Contract] = {}
 
     def sync_new_logs(self):
         db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
@@ -80,16 +81,34 @@ class Processor:
                 db_session.commit()
         finally:
             db_session.close()
+        LOG.info("Sync job has been completed")
 
     def __get_token_list(self, db_session: Session):
-        self.token_list = []
-        issued_token_list = db_session.query(Token).filter(Token.token_status == 1).all()
-        for issued_token in issued_token_list:
+        issued_token_address_list: tuple[str, ...] = tuple(
+            [
+                record[0] for record in (
+                    db_session.query(Token.token_address).filter(Token.token_status == 1).all()
+                )
+            ]
+        )
+        loaded_token_address_list: tuple[str, ...] = tuple(self.token_list.keys())
+        load_required_address_list = list(set(issued_token_address_list) ^ set(loaded_token_address_list))
+
+        if not load_required_address_list:
+            # If there are no additional tokens to load, skip process
+            return
+
+        load_required_token_list: list[Token] = (
+            db_session.query(Token).
+            filter(Token.token_status == 1).
+            filter(Token.token_address.in_(load_required_address_list)).all()
+        )
+        for load_required_token in load_required_token_list:
             token_contract = web3.eth.contract(
-                address=issued_token.token_address,
-                abi=issued_token.abi
+                address=load_required_token.token_address,
+                abi=load_required_token.abi
             )
-            self.token_list.append(token_contract)
+            self.token_list[load_required_token.token_address] = token_contract
 
     def __get_idx_transfer_block_number(self, db_session: Session):
         _idx_transfer_block_number = db_session.query(IDXTransferBlockNumber). \
@@ -109,7 +128,7 @@ class Processor:
         db_session.merge(_idx_transfer_block_number)
 
     def __sync_all(self, db_session: Session, block_from: int, block_to: int):
-        LOG.info(f"syncing from={block_from}, to={block_to}")
+        LOG.info(f"Syncing from={block_from}, to={block_to}")
         self.__sync_transfer(db_session, block_from, block_to)
 
     def __sync_transfer(self, db_session: Session, block_from: int, block_to: int):
@@ -120,7 +139,7 @@ class Processor:
         :param block_to: to block number
         :return: None
         """
-        for token in self.token_list:
+        for token in self.token_list.values():
             try:
                 events = ContractUtils.get_event_logs(
                     contract=token,
@@ -173,7 +192,6 @@ def main():
     while True:
         try:
             processor.sync_new_logs()
-            LOG.debug("Processed")
         except ServiceUnavailableError:
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:

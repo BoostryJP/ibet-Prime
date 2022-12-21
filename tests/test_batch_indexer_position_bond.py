@@ -260,7 +260,7 @@ class TestProcessor:
         db.commit()
 
         # Issue
-        tx = token_contract_1.functions.issueFrom(user_address_1, ZERO_ADDRESS, 40).buildTransaction({
+        tx = token_contract_1.functions.issueFrom(user_address_1, ZERO_ADDRESS, 40).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -342,7 +342,7 @@ class TestProcessor:
         db.commit()
 
         # Transfer
-        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).buildTransaction({
+        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -425,7 +425,7 @@ class TestProcessor:
         # Deposit
         tx = token_contract_1.functions.transferFrom(
             issuer_address, ibet_escrow_contract.address, 40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -503,7 +503,7 @@ class TestProcessor:
         # Deposit
         tx = token_contract_1.functions.transferFrom(
             issuer_address, ibet_escrow_contract.address, 40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -526,7 +526,7 @@ class TestProcessor:
         # Holder Change
         tx = ibet_escrow_contract.functions.createEscrow(
             token_contract_1.address, user_address_1, 30, issuer_address, ""
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -535,7 +535,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, issuer_private_key)
         escrow_id = ContractUtils.call_function(
             ibet_escrow_contract, "latestEscrowId", ())
-        tx = ibet_escrow_contract.functions.finishEscrow(escrow_id).buildTransaction({
+        tx = ibet_escrow_contract.functions.finishEscrow(escrow_id).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -619,14 +619,7 @@ class TestProcessor:
         db.commit()
 
         # Lock
-        tx = token_contract_1.functions.authorizeLockAddress(issuer_address, True).buildTransaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
-        ContractUtils.send_transaction(tx, issuer_private_key)
-        tx = token_contract_1.functions.lock(issuer_address, 40).buildTransaction({
+        tx = token_contract_1.functions.lock(issuer_address, 40, "").build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -699,14 +692,7 @@ class TestProcessor:
         db.commit()
 
         # Lock
-        tx = token_contract_1.functions.authorizeLockAddress(issuer_address, True).buildTransaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
-        ContractUtils.send_transaction(tx, issuer_private_key)
-        tx = token_contract_1.functions.lock(issuer_address, 40).buildTransaction({
+        tx = token_contract_1.functions.lock(issuer_address, 40, "").build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -727,7 +713,7 @@ class TestProcessor:
         assert _position.pending_transfer == 0
 
         # Unlock
-        tx = token_contract_1.functions.unlock(issuer_address, issuer_address, 30).buildTransaction({
+        tx = token_contract_1.functions.unlock(issuer_address, issuer_address, 30, "").build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -804,7 +790,7 @@ class TestProcessor:
         db.commit()
 
         # Redeem
-        tx = token_contract_1.functions.redeemFrom(issuer_address, ZERO_ADDRESS, 40).buildTransaction({
+        tx = token_contract_1.functions.redeemFrom(issuer_address, ZERO_ADDRESS, 40).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -888,7 +874,7 @@ class TestProcessor:
                                                user_address_1,
                                                user_private_key_1,
                                                [issuer_address, "test"])
-        tx = token_contract_1.functions.applyForTransfer(user_address_1, 40, "").buildTransaction({
+        tx = token_contract_1.functions.applyForTransfer(user_address_1, 40, "").build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -972,7 +958,7 @@ class TestProcessor:
                                                user_address_1,
                                                user_private_key_1,
                                                [issuer_address, "test"])
-        tx = token_contract_1.functions.applyForTransfer(user_address_1, 40, "").buildTransaction({
+        tx = token_contract_1.functions.applyForTransfer(user_address_1, 40, "").build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -993,7 +979,7 @@ class TestProcessor:
         assert _position.pending_transfer == 40
 
         # CancelTransfer
-        tx = token_contract_1.functions.cancelTransfer(0, "").buildTransaction({
+        tx = token_contract_1.functions.cancelTransfer(0, "").build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -1081,7 +1067,7 @@ class TestProcessor:
                                                user_address_1,
                                                user_private_key_1,
                                                [issuer_address, "test"])
-        tx = token_contract_1.functions.applyForTransfer(user_address_1, 40, "").buildTransaction({
+        tx = token_contract_1.functions.applyForTransfer(user_address_1, 40, "").build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -1102,7 +1088,7 @@ class TestProcessor:
         assert _position.pending_transfer == 40
 
         # ApproveTransfer
-        tx = token_contract_1.functions.approveTransfer(0, "").buildTransaction({
+        tx = token_contract_1.functions.approveTransfer(0, "").build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -1189,7 +1175,7 @@ class TestProcessor:
         # Deposit
         tx = token_contract_1.functions.transferFrom(
             issuer_address, ibet_exchange_contract.address, 40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -1212,7 +1198,7 @@ class TestProcessor:
         # NewOrder(Sell)
         tx = ibet_exchange_contract.functions.createOrder(
             token_address_1, 30, 10000, False, issuer_address
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -1727,7 +1713,7 @@ class TestProcessor:
         # Deposit
         tx = token_contract_1.functions.transferFrom(
             issuer_address, ibet_security_token_escrow_contract.address, 40
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -1750,7 +1736,7 @@ class TestProcessor:
         # EscrowCreated
         tx = ibet_security_token_escrow_contract.functions.createEscrow(
             token_contract_1.address, user_address_1, 30, issuer_address, "", ""
-        ).buildTransaction({
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -2015,7 +2001,7 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Transfer: 1st
-        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).buildTransaction({
+        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -2032,7 +2018,7 @@ class TestProcessor:
                                                user_address_2,
                                                user_private_key_2,
                                                [issuer_address, "test"])
-        tx = token_contract_1.functions.transfer(user_address_2, 10).buildTransaction({
+        tx = token_contract_1.functions.transfer(user_address_2, 10).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -2132,7 +2118,7 @@ class TestProcessor:
         # BulkTransfer: 1st
         address_list1 = [user_address_1, user_address_2, user_address_3]
         value_list1 = [10, 20, 30]
-        tx = token_contract_1.functions.bulkTransfer(address_list1, value_list1).buildTransaction({
+        tx = token_contract_1.functions.bulkTransfer(address_list1, value_list1).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -2143,7 +2129,7 @@ class TestProcessor:
         # BulkTransfer: 2nd
         address_list2 = [user_address_1, user_address_2, user_address_3, user_address_4]
         value_list2 = [1, 2, 3, 4]
-        tx = token_contract_1.functions.bulkTransfer(address_list2, value_list2).buildTransaction({
+        tx = token_contract_1.functions.bulkTransfer(address_list2, value_list2).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -2557,11 +2543,8 @@ class TestProcessor:
         latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(exchange_contract.address)
         IbetExchangeContractTestUtils.cancel_order(exchange_contract.address, user_address_1, user_pk_1, [latest_order_id])
 
-        STContractUtils.authorize_lock_address(token_contract1.address, issuer_address, issuer_private_key, [user_address_1, True])
-        STContractUtils.authorize_lock_address(token_contract1.address, issuer_address, issuer_private_key, [user_address_2, True])
-
-        STContractUtils.lock(token_contract1.address, user_address_1, user_pk_1, [user_address_2, 10])
-        STContractUtils.unlock(token_contract1.address, user_address_2, user_pk_2, [user_address_1, user_address_2, 10])
+        STContractUtils.lock(token_contract1.address, user_address_1, user_pk_1, [user_address_2, 10, ""])
+        STContractUtils.unlock(token_contract1.address, user_address_2, user_pk_2, [user_address_1, user_address_2, 10, ""])
 
         STContractUtils.issue_from(token_contract1.address, issuer_address, issuer_private_key, [issuer_address, ZERO_ADDRESS, 40000])
         STContractUtils.redeem_from(token_contract1.address, issuer_address, issuer_private_key, [issuer_address, ZERO_ADDRESS, 10000])
@@ -2635,6 +2618,71 @@ class TestProcessor:
         # Error occurs in Transfer and Escrow events.
         assert 2 == caplog.record_tuples.count((LOG.name, logging.ERROR, "An exception occurred during event synchronization"))
 
+    # <Normal_8>
+    # Newly tokens added
+    def test_normal_8(self, processor: Processor, db: Session, personal_info_contract, ibet_security_token_escrow_contract):
+        escrow_contract = ibet_security_token_escrow_contract
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8"))
+
+        # Issuer issues bond token.
+        token_contract1 = deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=escrow_contract.address,
+            transfer_approval_required=False,
+        )
+        token_address_1 = token_contract1.address
+        token_1 = Token()
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.token_address = token_address_1
+        token_1.issuer_address = issuer_address
+        token_1.abi = token_contract1.abi
+        token_1.tx_hash = "tx_hash"
+        db.add(token_1)
+
+        db.commit()
+
+        # Run target process
+        processor.sync_new_logs()
+
+        # Assertion
+        assert len(processor.token_list.keys()) == 1
+        assert len(processor.exchange_address_list) == 1
+
+        # Prepare additional token
+        token_contract2 = deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=escrow_contract.address,
+            transfer_approval_required=False,
+        )
+        token_address_2 = token_contract2.address
+        token_2 = Token()
+        token_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_2.token_address = token_address_2
+        token_2.issuer_address = issuer_address
+        token_2.abi = token_contract2.abi
+        token_2.tx_hash = "tx_hash"
+        db.add(token_2)
+
+        db.commit()
+
+        # Run target process
+        processor.sync_new_logs()
+
+        # Assertion
+        # newly issued token is loaded properly
+        assert len(processor.token_list.keys()) == 2
+        assert len(processor.exchange_address_list) == 1
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
     # <Error_1>
     # If exception occures out of Processor except-catch, batch outputs logs in mainloop.
     def test_error_1(self, main_func, db:Session, personal_info_contract, caplog: pytest.LogCaptureFixture):
@@ -2659,14 +2707,6 @@ class TestProcessor:
         db.add(token_1)
 
         db.commit()
-
-        # Run mainloop once successfully
-        with patch("batch.indexer_position_bond.INDEXER_SYNC_INTERVAL", None),\
-            patch.object(Processor, "sync_new_logs", return_value=True),\
-                pytest.raises(TypeError):
-            main_func()
-        assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "Processed"))
-        caplog.clear()
 
         # Run mainloop once and fail with web3 utils error
         with patch("batch.indexer_position_bond.INDEXER_SYNC_INTERVAL", None),\

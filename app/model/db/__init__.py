@@ -26,7 +26,8 @@ from .auth_token import AuthToken
 from .token import (
     Token,
     TokenAttrUpdate,
-    TokenType
+    TokenType,
+    TokenCache
 )
 from .token_holders import (
     TokenHolder,
@@ -51,6 +52,10 @@ from .e2e_messaging_account import (
     E2EMessagingAccount,
     E2EMessagingAccountRsaKey
 )
+from .idx_block_data import (
+    IDXBlockData,
+    IDXBlockDataBlockNumber
+)
 from .idx_e2e_messaging import (
     IDXE2EMessaging,
     IDXE2EMessagingBlockNumber
@@ -71,6 +76,7 @@ from .idx_transfer_approval import (
     IDXTransferApprovalsSortItem,
     IDXTransferApprovalBlockNumber
 )
+from .idx_tx_data import IDXTxData
 from .idx_position import (
     IDXPosition,
     IDXPositionBondBlockNumber,
@@ -95,7 +101,10 @@ from .notification import (
     Notification,
     NotificationType
 )
-from .transfer_appoval_history import TransferApprovalHistory
+from .transfer_appoval_history import (
+    TransferApprovalHistory,
+    TransferApprovalOperationType
+)
 from .tx_management import TransactionLock
 from .utxo import UTXO, UTXOBlockNumber
 from .scheduled_events import (

@@ -1,11 +1,11 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-22.9-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-22.12-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
-English | <a href='./README_JA.md'>日本語</a>
+English | [日本語](./README_JA.md)
 
 <img width="33%" align="right" src="https://user-images.githubusercontent.com/963333/71672471-6383c080-2db9-11ea-85b6-8815519652ec.png"/>
 
@@ -20,8 +20,8 @@ English | <a href='./README_JA.md'>日本語</a>
 
 ## Dependencies
 
-- [python3](https://www.python.org/downloads/release/python-3811/) version 3.10 or later
-- [PostgreSQL](https://www.postgresql.org/) - Version 13
+- [Python3](https://www.python.org/downloads/release/python-3811/) - version 3.10
+- [PostgreSQL](https://www.postgresql.org/) - version 13
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - We support the official GoQuorum node of [ibet-Network](https://github.com/BoostryJP/ibet-Network).
   - We use [ganache](https://github.com/trufflesuite/ganache) for local development and unit testing, and we use the latest version.
@@ -29,7 +29,8 @@ English | <a href='./README_JA.md'>日本語</a>
 
 ## Supported ibet smart contract version
 
-* ibet-SmartContract: version 22.3.0
+* ibet-SmartContract: version 22.12.0
+* See [details](./contracts/contract_version.md).
 
 
 ## Setup

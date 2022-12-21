@@ -125,7 +125,7 @@ def deploy_share_token_contract(
         "token.symbol",
         20,
         100000000,
-        int(0.03 * 100),
+        3,
         "token.dividend_record_date",
         "token.dividend_payment_date",
         "token.cancellation_date",
@@ -233,9 +233,6 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_2, 10000])
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [exchange_contract.address, 10000])
         # user1: 30000 user2: 10000
-
-        STContractUtils.authorize_lock_address(token_contract.address, issuer_address, issuer_private_key, [user_address_1, True])
-        STContractUtils.authorize_lock_address(token_contract.address, issuer_address, issuer_private_key, [user_address_2, True])
 
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 10000])
         IbetExchangeContractTestUtils.create_order(
@@ -605,9 +602,6 @@ class TestProcessor:
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_2, 10000])
         STContractUtils.transfer(token_contract.address, issuer_address, issuer_private_key, [exchange_contract.address, 10000])
         # user1: 20000 user2: 10000
-
-        STContractUtils.authorize_lock_address(token_contract.address, issuer_address, issuer_private_key, [user_address_1, True])
-        STContractUtils.authorize_lock_address(token_contract.address, issuer_address, issuer_private_key, [user_address_2, True])
 
         STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 10000])
         IbetExchangeContractTestUtils.create_order(
@@ -993,7 +987,7 @@ class TestProcessor:
         processor.collect()
 
         assert 1 == caplog.record_tuples.count((LOG.name, logging.INFO, f"Token holder list({_token_holders_list1.list_id}) status changes to be done."))
-        assert 2 == caplog.record_tuples.count((LOG.name, logging.INFO, f"<INDEXER-Token-Holders> Collect job has been completed"))
+        assert 1 == caplog.record_tuples.count((LOG.name, logging.INFO, "Collect job has been completed"))
 
     # <Normal_8>
     # StraightBond
@@ -1181,7 +1175,6 @@ class TestProcessor:
         processor.collect()
 
         assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "There are no pending collect batch"))
-        assert 1 == caplog.record_tuples.count((LOG.name, logging.INFO, f"<INDEXER-Token-Holders> Collect job has been completed"))
 
     # <Error_2>
     # There is target token holders list id with batch_status PENDING.
@@ -1207,7 +1200,6 @@ class TestProcessor:
         processor.collect()
         assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "Token contract must be listed to TokenList contract."))
         assert 1 == caplog.record_tuples.count((LOG.name, logging.INFO, f"Token holder list({target_token_holders_list.list_id}) status changes to be failed."))
-        assert 1 == caplog.record_tuples.count((LOG.name, logging.INFO, f"<INDEXER-Token-Holders> Collect job has been completed"))
 
         # Batch status of token holders list expects to be "ERROR"
         error_record_num = len(list(db.query(TokenHoldersList).filter(TokenHoldersList.batch_status == TokenHolderBatchStatus.FAILED.value)))
@@ -1316,13 +1308,6 @@ class TestProcessor:
         _token_holders_list = token_holders_list(token_contract.address, block_number, list_id)
         db.add(_token_holders_list)
         db.commit()
-
-        with patch("batch.indexer_token_holders.INDEXER_SYNC_INTERVAL", None),\
-            patch.object(Processor, "collect", return_value=True),\
-                pytest.raises(TypeError):
-            main_func()
-        assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "Processed"))
-        caplog.clear()
 
         with patch("batch.indexer_token_holders.INDEXER_SYNC_INTERVAL", None),\
             patch.object(Session, "close", side_effect=SQLAlchemyError()), \

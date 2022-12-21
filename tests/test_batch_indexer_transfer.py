@@ -103,7 +103,7 @@ def deploy_share_token_contract(address,
         "token.symbol",
         20,
         100,
-        int(0.03 * 100),
+        3,
         "token.dividend_record_date",
         "token.dividend_payment_date",
         "token.cancellation_date",
@@ -254,7 +254,7 @@ class TestProcessor:
         db.commit()
 
         # Transfer
-        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).buildTransaction({
+        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -324,14 +324,14 @@ class TestProcessor:
         db.commit()
 
         # Transfer
-        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).buildTransaction({
+        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
             "gasPrice": 0
         })
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
-        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_2, 30).buildTransaction({
+        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_2, 30).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -419,7 +419,7 @@ class TestProcessor:
         # Bulk Transfer
         address_list1 = [user_address_1, user_address_2, user_address_3]
         value_list1 = [10, 20, 30]
-        tx = token_contract_1.functions.bulkTransfer(address_list1, value_list1).buildTransaction({
+        tx = token_contract_1.functions.bulkTransfer(address_list1, value_list1).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -430,7 +430,7 @@ class TestProcessor:
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
         address_list2 = [user_address_1, user_address_2, user_address_3, user_address_4]
         value_list2 = [1, 2, 3, 4]
-        tx = token_contract_1.functions.bulkTransfer(address_list2, value_list2).buildTransaction({
+        tx = token_contract_1.functions.bulkTransfer(address_list2, value_list2).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -516,14 +516,14 @@ class TestProcessor:
         db.commit()
 
         # Transfer(Token1)
-        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).buildTransaction({
+        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
             "gasPrice": 0
         })
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
-        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_2, 30).buildTransaction({
+        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_2, 30).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -532,14 +532,14 @@ class TestProcessor:
         tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Transfer(Token2)
-        tx = token_contract_2.functions.transferFrom(issuer_address, user_address_1, 40).buildTransaction({
+        tx = token_contract_2.functions.transferFrom(issuer_address, user_address_1, 40).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
             "gasPrice": 0
         })
         tx_hash_3, tx_receipt_3 = ContractUtils.send_transaction(tx, issuer_private_key)
-        tx = token_contract_2.functions.transferFrom(issuer_address, user_address_2, 30).buildTransaction({
+        tx = token_contract_2.functions.transferFrom(issuer_address, user_address_2, 30).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -659,6 +659,69 @@ class TestProcessor:
         processor.sync_new_logs()
         assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "skip process"))
 
+    # <Normal_7>
+    # Newly tokens added
+    def test_normal_7(self, processor: Processor, db: Session, personal_info_contract, ibet_security_token_escrow_contract):
+        escrow_contract = ibet_security_token_escrow_contract
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8"))
+
+        # Issuer issues bond token.
+        token_contract1 = deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=escrow_contract.address,
+            transfer_approval_required=False,
+        )
+        token_address_1 = token_contract1.address
+        token_1 = Token()
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.token_address = token_address_1
+        token_1.issuer_address = issuer_address
+        token_1.abi = token_contract1.abi
+        token_1.tx_hash = "tx_hash"
+        db.add(token_1)
+
+        db.commit()
+
+        # Run target process
+        processor.sync_new_logs()
+
+        # Assertion
+        assert len(processor.token_list.keys()) == 1
+
+        # Prepare additional token
+        token_contract2 = deploy_share_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=escrow_contract.address,
+            transfer_approval_required=False,
+        )
+        token_address_2 = token_contract2.address
+        token_2 = Token()
+        token_2.type = TokenType.IBET_SHARE.value
+        token_2.token_address = token_address_2
+        token_2.issuer_address = issuer_address
+        token_2.abi = token_contract2.abi
+        token_2.tx_hash = "tx_hash"
+        db.add(token_2)
+
+        db.commit()
+
+        # Run target process
+        processor.sync_new_logs()
+
+        # Assertion
+        # newly issued token is loaded properly
+        assert len(processor.token_list.keys()) == 2
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
     # <Error_1>
     # If each error occurs, batch will output logs and continue next sync.
     def test_error_1(self, main_func, db:Session, personal_info_contract, caplog: pytest.LogCaptureFixture):
@@ -682,14 +745,6 @@ class TestProcessor:
         db.add(token_1)
 
         db.commit()
-
-        # Run mainloop once successfully
-        with patch("batch.indexer_transfer.INDEXER_SYNC_INTERVAL", None),\
-            patch.object(Processor, "sync_new_logs", return_value=True),\
-                pytest.raises(TypeError):
-            main_func()
-        assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "Processed"))
-        caplog.clear()
 
         # Run mainloop once and fail with web3 utils error
         with patch("batch.indexer_transfer.INDEXER_SYNC_INTERVAL", None),\

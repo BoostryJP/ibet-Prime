@@ -30,7 +30,13 @@ from sqlalchemy.exc import SQLAlchemyError
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
-from config import DATABASE_URL, ZERO_ADDRESS, BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE, BATCH_REGISTER_PERSONAL_INFO_INTERVAL, BATCH_REGISTER_PERSONAL_INFO_WORKER_COUNT
+from config import (
+    DATABASE_URL,
+    ZERO_ADDRESS,
+    BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE,
+    BATCH_REGISTER_PERSONAL_INFO_INTERVAL,
+    BATCH_REGISTER_PERSONAL_INFO_WORKER_COUNT
+)
 from app.model.db import (
     Account,
     Token,
@@ -52,6 +58,12 @@ from app.exceptions import (
     ContractRevertError
 )
 import batch_log
+
+"""
+[PROCESSOR-Batch-Register-Personal-Info]
+
+Batch processing for force registration of investor's personal information
+"""
 
 process_name = "PROCESSOR-Batch-Register-Personal-Info"
 LOG = batch_log.get_logger(process_name=process_name)
@@ -77,9 +89,12 @@ class Processor:
                 return
 
             for _upload in upload_list:
+                LOG.info(f"<{self.thread_num}> Process start: upload_id={_upload.upload_id}")
+
                 # Get issuer's private key
-                issuer_account: Account | None = db_session.query(Account). \
-                    filter(Account.issuer_address == _upload.issuer_address).first()
+                issuer_account: Account | None = db_session.query(Account).\
+                    filter(Account.issuer_address == _upload.issuer_address).\
+                    first()
                 if issuer_account is None:  # If issuer does not exist, update the status of the upload to ERROR
                     LOG.warning(f"Issuer of the upload_id:{_upload.upload_id} does not exist")
                     self.__sink_on_finish_upload_process(
@@ -177,6 +192,8 @@ class Processor:
                     )
                 db_session.commit()
                 self.__release_processing_issuer(_upload.upload_id)
+
+                LOG.info(f"<{self.thread_num}> Process end: upload_id={_upload.upload_id}")
         finally:
             self.personal_info_contract_accessor_map = {}
             db_session.close()
@@ -355,7 +372,7 @@ def main():
         worker = Worker(i)
         thread = threading.Thread(target=worker.run, daemon=True)
         thread.start()
-        LOG.info(f"thread {i} started")
+        LOG.debug(f"Thread {i} started")
 
     while True:
         if len(err_bucket) > 0:

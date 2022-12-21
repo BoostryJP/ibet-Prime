@@ -31,7 +31,8 @@ from web3 import Web3
 
 from .types import (
     MMDD_constr,
-    YYYYMMDD_constr
+    YYYYMMDD_constr,
+    EMPTY_str
 )
 
 
@@ -106,7 +107,7 @@ class IbetStraightBondUpdate(BaseModel):
     contact_information: Optional[str] = Field(max_length=2000)
     privacy_policy: Optional[str] = Field(max_length=5000)
     transfer_approval_required: Optional[bool]
-    memo: Optional[str] = Field(max_length=2000)
+    memo: Optional[str] = Field(max_length=10000)
 
     @validator("interest_rate")
     def interest_rate_4_decimal_places(cls, v):
@@ -194,9 +195,9 @@ class IbetShareCreate(BaseModel):
     total_supply: int = Field(..., ge=0, le=1_000_000_000_000)
     symbol: Optional[str] = Field(max_length=100)
     dividends: Optional[float] = Field(None, ge=0.00, le=5_000_000_000.00)
-    dividend_record_date: Optional[YYYYMMDD_constr]
-    dividend_payment_date: Optional[YYYYMMDD_constr]
-    cancellation_date: Optional[YYYYMMDD_constr]
+    dividend_record_date: Optional[YYYYMMDD_constr | EMPTY_str]
+    dividend_payment_date: Optional[YYYYMMDD_constr | EMPTY_str]
+    cancellation_date: Optional[YYYYMMDD_constr | EMPTY_str]
     transferable: Optional[bool]
     status: Optional[bool]
     is_offering: Optional[bool]
@@ -208,12 +209,12 @@ class IbetShareCreate(BaseModel):
     is_canceled: Optional[bool]
 
     @validator("dividends")
-    def dividends_2_decimal_places(cls, v):
+    def dividends_13_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10 ** 2)
-            int_data = int(v * 10 ** 2)
+            float_data = float(v * 10 ** 13)
+            int_data = int(v * 10 ** 13)
             if not math.isclose(int_data, float_data):
-                raise ValueError("dividends must be rounded to 2 decimal places")
+                raise ValueError("dividends must be rounded to 13 decimal places")
         return v
 
     @validator("tradable_exchange_contract_address")
@@ -231,9 +232,9 @@ class IbetShareCreate(BaseModel):
 
 class IbetShareUpdate(BaseModel):
     """ibet Share schema (Update)"""
-    cancellation_date: Optional[YYYYMMDD_constr]
-    dividend_record_date: Optional[YYYYMMDD_constr]
-    dividend_payment_date: Optional[YYYYMMDD_constr]
+    cancellation_date: Optional[YYYYMMDD_constr | EMPTY_str]
+    dividend_record_date: Optional[YYYYMMDD_constr | EMPTY_str]
+    dividend_payment_date: Optional[YYYYMMDD_constr | EMPTY_str]
     dividends: Optional[float] = Field(None, ge=0.00, le=5_000_000_000.00)
     tradable_exchange_contract_address: Optional[str]
     personal_info_contract_address: Optional[str]
@@ -245,15 +246,15 @@ class IbetShareUpdate(BaseModel):
     transfer_approval_required: Optional[bool]
     principal_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
     is_canceled: Optional[bool]
-    memo: Optional[str] = Field(max_length=2000)
+    memo: Optional[str] = Field(max_length=10000)
 
     @validator("dividends")
-    def dividends_2_decimal_places(cls, v):
+    def dividends_13_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10 ** 2)
-            int_data = int(v * 10 ** 2)
+            float_data = float(v * 10 ** 13)
+            int_data = int(v * 10 ** 13)
             if not math.isclose(int_data, float_data):
-                raise ValueError("dividends must be rounded to 2 decimal places")
+                raise ValueError("dividends must be rounded to 13 decimal places")
         return v
 
     @validator("dividends")

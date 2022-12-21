@@ -116,25 +116,6 @@
       "anonymous": false,
       "inputs": [
         {
-          "indexed": false,
-          "internalType": "address",
-          "name": "lockAddress",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "bool",
-          "name": "auth",
-          "type": "bool"
-        }
-      ],
-      "name": "AuthorizeLockAddress",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
           "indexed": true,
           "internalType": "uint256",
           "name": "index",
@@ -252,6 +233,12 @@
           "internalType": "uint256",
           "name": "value",
           "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "data",
+          "type": "string"
         }
       ],
       "name": "Lock",
@@ -339,6 +326,12 @@
           "internalType": "uint256",
           "name": "value",
           "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "data",
+          "type": "string"
         }
       ],
       "name": "Unlock",
@@ -488,43 +481,6 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "_lockAddress",
-          "type": "address"
-        },
-        {
-          "internalType": "bool",
-          "name": "_auth",
-          "type": "bool"
-        }
-      ],
-      "name": "authorizeLockAddress",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "authorizedLockAddress",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
           "name": "_owner",
           "type": "address"
         }
@@ -628,6 +584,39 @@
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_lockAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_accountAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_recipientAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_value",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "_data",
+          "type": "string"
+        }
+      ],
+      "name": "forceUnlock",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "isOffering",
       "outputs": [
@@ -674,6 +663,11 @@
           "internalType": "uint256",
           "name": "_value",
           "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "_data",
+          "type": "string"
         }
       ],
       "name": "lock",
@@ -1048,6 +1042,11 @@
           "internalType": "uint256",
           "name": "_value",
           "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "_data",
+          "type": "string"
         }
       ],
       "name": "unlock",

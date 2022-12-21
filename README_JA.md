@@ -1,11 +1,11 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-22.9-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-22.12-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
-<a href='./README.md'>English</a> | 日本語
+[English](./README.md) | 日本語
 
 <img width="33%" align="right" src="https://user-images.githubusercontent.com/963333/71672471-6383c080-2db9-11ea-85b6-8815519652ec.png"/>
 
@@ -21,7 +21,7 @@
 
 ## 依存
 
-- [python3](https://www.python.org/downloads/release/python-3811/) バージョン 3.10 以上
+- [Python3](https://www.python.org/downloads/release/python-3811/) - バージョン 3.10
 - [PostgreSQL](https://www.postgresql.org/) - バージョン 13
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - [ibet-Network](https://github.com/BoostryJP/ibet-Network) の公式の GoQuorum をサポートしています。
@@ -29,7 +29,8 @@
 
 ## コントラクトのバージョン
 
-* ibet-SmartContract: バージョン 22.3.0
+* ibet-SmartContract: バージョン 22.12.0
+* [詳細](./contracts/contract_version.md)を参照ください。
 
 ## セットアップ
 

@@ -54,7 +54,7 @@ class TokenListContract:
                 contract_address=token_list_address,
             )
             tx = contract.functions.register(token_address, token_template). \
-                buildTransaction({
+                build_transaction({
                     "chainId": CHAIN_ID,
                     "from": account_address,
                     "gas": TX_GAS_LIMIT,

@@ -26,6 +26,7 @@ from eth_utils import to_checksum_address
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from web3.eth import Contract
 
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
@@ -58,8 +59,8 @@ db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 class Processor:
     def __init__(self):
         self.latest_block = web3.eth.block_number
-        self.token_list = []
-        self.exchange_address_list = []
+        self.token_list: dict[str, Contract] = {}
+        self.exchange_address_list: list[str] = []
 
     def sync_new_logs(self):
         db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
@@ -86,23 +87,40 @@ class Processor:
                 db_session.commit()
         finally:
             db_session.close()
+        LOG.info("Sync job has been completed")
 
     def __get_contract_list(self, db_session: Session):
-        self.token_list = []
         self.exchange_address_list = []
 
-        issued_token_list = db_session.query(Token). \
-            filter(Token.type == TokenType.IBET_SHARE.value). \
-            filter(Token.token_status == 1). \
-            all()
-        _exchange_list_tmp = []
-        for issued_token in issued_token_list:
-            token_contract = web3.eth.contract(
-                address=issued_token.token_address,
-                abi=issued_token.abi
-            )
-            self.token_list.append(token_contract)
+        issued_token_address_list: tuple[str, ...] = tuple(
+            [
+                record[0] for record in (
+                    db_session.query(Token.token_address).
+                    filter(Token.type == TokenType.IBET_SHARE.value).
+                    filter(Token.token_status == 1).all()
+                )
+            ]
+        )
+        loaded_token_address_list: tuple[str, ...] = tuple(self.token_list.keys())
+        load_required_address_list = list(set(issued_token_address_list) ^ set(loaded_token_address_list))
 
+        load_required_token_list: list[Token] = (
+            db_session.query(Token).
+            filter(Token.type == TokenType.IBET_SHARE.value).
+            filter(Token.token_status == 1).
+            filter(Token.token_address.in_(load_required_address_list)).
+            all()
+        )
+
+        for load_required_token in load_required_token_list:
+            token_contract = web3.eth.contract(
+                address=load_required_token.token_address,
+                abi=load_required_token.abi
+            )
+            self.token_list[load_required_token.token_address] = token_contract
+
+        _exchange_list_tmp = []
+        for token_contract in self.token_list.values():
             tradable_exchange_address = ContractUtils.call_function(
                 contract=token_contract,
                 function_name="tradableExchange",
@@ -133,7 +151,7 @@ class Processor:
         db_session.merge(_idx_position_block_number)
 
     def __sync_all(self, db_session: Session, block_from: int, block_to: int):
-        LOG.info("syncing from={}, to={}".format(block_from, block_to))
+        LOG.info("Syncing from={}, to={}".format(block_from, block_to))
         self.__sync_issuer(db_session)
         self.__sync_issue(db_session, block_from, block_to)
         self.__sync_transfer(db_session, block_from, block_to)
@@ -148,7 +166,7 @@ class Processor:
 
     def __sync_issuer(self, db_session: Session):
         """Synchronize issuer position"""
-        for token in self.token_list:
+        for token in self.token_list.values():
             try:
                 issuer_address = ContractUtils.call_function(
                     contract=token,
@@ -175,7 +193,7 @@ class Processor:
         :param block_to: to block number
         :return: None
         """
-        for token in self.token_list:
+        for token in self.token_list.values():
             try:
                 events = ContractUtils.get_event_logs(
                     contract=token,
@@ -205,7 +223,7 @@ class Processor:
         :param block_to: to block number
         :return: None
         """
-        for token in self.token_list:
+        for token in self.token_list.values():
             try:
                 # Get "Transfer" events from token contract
                 events = ContractUtils.get_event_logs(
@@ -240,7 +258,7 @@ class Processor:
         :param block_to: to block number
         :return: None
         """
-        for token in self.token_list:
+        for token in self.token_list.values():
             try:
                 events = ContractUtils.get_event_logs(
                     contract=token,
@@ -270,7 +288,7 @@ class Processor:
         :param block_to: to block number
         :return: None
         """
-        for token in self.token_list:
+        for token in self.token_list.values():
             try:
                 events = ContractUtils.get_event_logs(
                     contract=token,
@@ -300,7 +318,7 @@ class Processor:
         :param block_to: to block number
         :return: None
         """
-        for token in self.token_list:
+        for token in self.token_list.values():
             try:
                 events = ContractUtils.get_event_logs(
                     contract=token,
@@ -330,7 +348,7 @@ class Processor:
         :param block_to: To block
         :return: None
         """
-        for token in self.token_list:
+        for token in self.token_list.values():
             try:
                 events = ContractUtils.get_event_logs(
                     contract=token,
@@ -360,7 +378,7 @@ class Processor:
         :param block_to: To block
         :return: None
         """
-        for token in self.token_list:
+        for token in self.token_list.values():
             try:
                 events = ContractUtils.get_event_logs(
                     contract=token,
@@ -390,7 +408,7 @@ class Processor:
         :param block_to: To block
         :return: None
         """
-        for token in self.token_list:
+        for token in self.token_list.values():
             try:
                 events = ContractUtils.get_event_logs(
                     contract=token,
@@ -732,7 +750,6 @@ def main():
     while True:
         try:
             processor.sync_new_logs()
-            LOG.debug("Processed")
         except ServiceUnavailableError:
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:

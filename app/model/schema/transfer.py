@@ -84,7 +84,7 @@ class TransferApprovalTokenResponse(BaseModel):
     """transfer approval token data"""
     id: int
     token_address: str
-    exchange_address: Optional[str]
+    exchange_address: str
     application_id: int
     from_address: str
     to_address: str

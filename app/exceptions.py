@@ -49,3 +49,6 @@ class ServiceUnavailableError(Exception):
 
 class AuthTokenAlreadyExistsError(Exception):
     pass
+
+class ResponseLimitExceededError(Exception):
+    pass

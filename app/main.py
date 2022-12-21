@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from datetime import datetime
 from fastapi import (
     FastAPI,
     Request,
@@ -24,6 +25,7 @@ from fastapi import (
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from config import SERVER_NAME
@@ -37,7 +39,8 @@ from app.routers import (
     notification,
     position,
     share,
-    token_holders
+    token_holders,
+    bc_explorer
 )
 from app.utils.docs_utils import custom_openapi
 from app.exceptions import *
@@ -45,14 +48,15 @@ from app.log import output_access_log
 
 app = FastAPI(
     title="ibet Prime",
-    version="22.9.0"
+    version="22.12.0"
 )
 
 
 @app.middleware("http")
 async def api_call_handler(request: Request, call_next):
+    request_start_time = datetime.utcnow()
     response = await call_next(request)
-    output_access_log(request, response)
+    output_access_log(request, response, request_start_time)
     return response
 
 
@@ -78,6 +82,7 @@ app.include_router(notification.router)
 app.include_router(position.router)
 app.include_router(share.router)
 app.include_router(token_holders.router)
+app.include_router(bc_explorer.router)
 
 
 ###############################################################
@@ -100,6 +105,20 @@ async def internal_server_error_handler(request: Request, exc: Exception):
 # 422:RequestValidationError
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    meta = {
+        "code": 1,
+        "title": "RequestValidationError"
+    }
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content=jsonable_encoder({"meta": meta, "detail": exc.errors()}),
+    )
+
+
+# 422:ValidationError
+# NOTE: for exceptions raised directly from Pydantic validation
+@app.exception_handler(ValidationError)
+async def query_validation_exception_handler(request: Request, exc: ValidationError):
     meta = {
         "code": 1,
         "title": "RequestValidationError"
@@ -146,6 +165,19 @@ async def auth_token_already_exists_error_handler(request: Request, exc: AuthTok
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content=jsonable_encoder({"meta": meta}),
+    )
+
+
+# 400:ResponseLimitExceededError
+@app.exception_handler(ResponseLimitExceededError)
+async def response_limit_exceeded_error_handler(request: Request, exc: ResponseLimitExceededError):
+    meta = {
+        "code": 4,
+        "title": "ResponseLimitExceededError"
+    }
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
     )
 
 

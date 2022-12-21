@@ -50,8 +50,8 @@ class TestProcessor:
     # Execute Batch Run 1st: synced
     # Execute Batch Run 2nd: block generation speed down(same the previous)
     # Execute Batch Run 3rd: synced
-    # Execute Batch Run 4th: node syncing(DIFF:over 1)
-    # Execute Batch Run 5th: node syncing(DIFF:1) == synced
+    # Execute Batch Run 4th: node syncing(DIFF:over 2)
+    # Execute Batch Run 5th: node syncing(DIFF:2) == synced
     def test_normal_1(self, processor, db):
         # Run 1st: synced
         processor.process()
@@ -65,7 +65,7 @@ class TestProcessor:
 
         time.sleep(BLOCK_SYNC_STATUS_SLEEP_INTERVAL)
 
-        # Run 2st: block generation speed down(same the previous)
+        # Run 2nd: block generation speed down(same the previous)
         with mock.patch("batch.processor_monitor_block_sync.BLOCK_GENERATION_SPEED_THRESHOLD", 100):
             processor.process()
 
@@ -86,13 +86,13 @@ class TestProcessor:
 
         time.sleep(BLOCK_SYNC_STATUS_SLEEP_INTERVAL)
 
-        # Run 4th: node syncing(DIFF:over 1)
+        # Run 4th: node syncing(DIFF:over 2)
         block_number = web3.eth.block_number
-        with mock.patch("web3.eth.Eth.is_syncing") as mock_is_syncing:
+        with mock.patch("web3.eth.BaseEth._is_syncing") as mock_is_syncing:
             mock_is_syncing.side_effect = [
                 {
                     "highestBlock": block_number,
-                    "currentBlock": block_number - 2
+                    "currentBlock": block_number - 3
                 }
             ]
             processor.process()
@@ -104,13 +104,13 @@ class TestProcessor:
 
         time.sleep(BLOCK_SYNC_STATUS_SLEEP_INTERVAL)
 
-        # Run 5th: node syncing(DIFF:1) == synced
+        # Run 5th: node syncing(DIFF:2) == synced
         block_number = web3.eth.block_number
-        with mock.patch("web3.eth.Eth.is_syncing") as mock_is_syncing:
+        with mock.patch("web3.eth.BaseEth._is_syncing") as mock_is_syncing:
             mock_is_syncing.side_effect = [
                 {
                     "highestBlock": block_number,
-                    "currentBlock": block_number - 1
+                    "currentBlock": block_number - 2
                 }
             ]
             processor.process()

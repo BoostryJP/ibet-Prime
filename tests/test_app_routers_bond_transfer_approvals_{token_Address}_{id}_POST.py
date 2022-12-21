@@ -34,7 +34,9 @@ from app.model.db import (
     AuthToken,
     Token,
     TokenType,
-    IDXTransferApproval
+    IDXTransferApproval,
+    TransferApprovalHistory,
+    TransferApprovalOperationType
 )
 from app.model.schema import (
     IbetSecurityTokenApproveTransfer,
@@ -97,7 +99,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.id = id
         _idx_transfer_approval.token_address = self.test_token_address
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 100
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -143,6 +145,14 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             tx_from=issuer_address,
             private_key=ANY
         )
+
+        approval_op_list: list[TransferApprovalHistory] = db.query(TransferApprovalHistory).all()
+        assert len(approval_op_list) == 1
+        approval_op = approval_op_list[0]
+        assert approval_op.token_address == self.test_token_address
+        assert approval_op.exchange_address == config.ZERO_ADDRESS
+        assert approval_op.application_id == 100
+        assert approval_op.operation_type == TransferApprovalOperationType.APPROVE.value
 
     # <Normal_1_2>
     # APPROVE
@@ -218,6 +228,14 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             private_key=ANY
         )
 
+        approval_op_list: list[TransferApprovalHistory] = db.query(TransferApprovalHistory).all()
+        assert len(approval_op_list) == 1
+        approval_op = approval_op_list[0]
+        assert approval_op.token_address == self.test_token_address
+        assert approval_op.exchange_address == self.test_exchange_address
+        assert approval_op.application_id == 100
+        assert approval_op.operation_type == TransferApprovalOperationType.APPROVE.value
+
     # <Normal_2_1>
     # CANCEL
     # token
@@ -245,7 +263,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.id = id
         _idx_transfer_approval.token_address = self.test_token_address
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 100
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -292,6 +310,14 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             private_key=ANY
         )
 
+        cancel_op_list: list[TransferApprovalHistory] = db.query(TransferApprovalHistory).all()
+        assert len(cancel_op_list) == 1
+        cancel_op = cancel_op_list[0]
+        assert cancel_op.token_address == self.test_token_address
+        assert cancel_op.exchange_address == config.ZERO_ADDRESS
+        assert cancel_op.application_id == 100
+        assert cancel_op.operation_type == TransferApprovalOperationType.CANCEL.value
+
     # <Normal_3>
     # Authorization by auth-token
     @pytest.mark.freeze_time('2021-04-27 12:34:56')
@@ -324,7 +350,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.id = id
         _idx_transfer_approval.token_address = self.test_token_address
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 100
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -742,7 +768,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.id = id
         _idx_transfer_approval.token_address = self.test_token_address
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 100
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -804,7 +830,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.id = id
         _idx_transfer_approval.token_address = self.test_token_address
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 100
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -964,6 +990,75 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             "detail": "application that cannot be canceled"
         }
 
+    # <Error_4_6>
+    # Invalid Parameter Error
+    # This operation is duplicated
+    def test_error_4_6(self, client, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer["address"]
+
+        # prepare data
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = issuer["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        id = 10
+        _idx_transfer_approval = IDXTransferApproval()
+        _idx_transfer_approval.id = id
+        _idx_transfer_approval.token_address = self.test_token_address
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+        _idx_transfer_approval.application_id = 100
+        _idx_transfer_approval.from_address = self.test_from_address
+        _idx_transfer_approval.to_address = self.test_to_address
+        _idx_transfer_approval.amount = 200
+        _idx_transfer_approval.application_datetime = self.test_application_datetime
+        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.approval_datetime = None
+        _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancelled = False
+        _idx_transfer_approval.escrow_finished = True
+        _idx_transfer_approval.transfer_approved = None
+        db.add(_idx_transfer_approval)
+
+        _cancel_op = TransferApprovalHistory()
+        _cancel_op.token_address = self.test_token_address
+        _cancel_op.exchange_address = config.ZERO_ADDRESS
+        _cancel_op.application_id = 100
+        _cancel_op.operation_type = TransferApprovalOperationType.CANCEL.value
+        db.add(_cancel_op)
+
+        # request target api
+        resp = client.post(
+            self.base_url.format(self.test_token_address, id),
+            headers={
+                "issuer-address": issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password")
+            },
+            json={
+                "operation_type": "cancel"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {
+                "code": 1,
+                "title": "InvalidParameterError"
+            },
+            "detail": "duplicate operation"
+        }
+
     # <Error_5_1>
     # APPROVE
     # Send Transaction Error
@@ -995,7 +1090,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.id = id
         _idx_transfer_approval.token_address = self.test_token_address
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 100
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -1057,7 +1152,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.id = id
         _idx_transfer_approval.token_address = self.test_token_address
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 100
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -1269,7 +1364,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.id = id
         _idx_transfer_approval.token_address = self.test_token_address
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 100
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address
@@ -1331,7 +1426,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval = IDXTransferApproval()
         _idx_transfer_approval.id = id
         _idx_transfer_approval.token_address = self.test_token_address
-        _idx_transfer_approval.exchange_address = None
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
         _idx_transfer_approval.application_id = 100
         _idx_transfer_approval.from_address = self.test_from_address
         _idx_transfer_approval.to_address = self.test_to_address

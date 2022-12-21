@@ -257,7 +257,7 @@ class TestSendTransaction:
         )
 
         # Build transaction
-        tx = contract.constructor(*self.test_arg).buildTransaction(
+        tx = contract.constructor(*self.test_arg).build_transaction(
             transaction={
                 "chainId": CHAIN_ID,
                 "from": self.test_account["address"],
@@ -292,7 +292,7 @@ class TestSendTransaction:
         )
 
         # Build transaction
-        tx = contract.constructor(*self.test_arg).buildTransaction(
+        tx = contract.constructor(*self.test_arg).build_transaction(
             transaction={
                 "chainId": CHAIN_ID,
                 "from": self.test_account["address"],
@@ -332,7 +332,7 @@ class TestSendTransaction:
         )
 
         # Build transaction
-        tx = contract.constructor(*self.test_arg).buildTransaction(
+        tx = contract.constructor(*self.test_arg).build_transaction(
             transaction={
                 "chainId": CHAIN_ID,
                 "from": self.test_account["address"],
@@ -371,7 +371,7 @@ class TestSendTransaction:
         )
 
         # Build transaction
-        tx = contract.constructor(*self.test_arg).buildTransaction(
+        tx = contract.constructor(*self.test_arg).build_transaction(
             transaction={
                 "chainId": CHAIN_ID,
                 "from": self.test_account["address"],
@@ -435,7 +435,7 @@ class TestGetBlockByTransactionHash:
         )
 
         # Build transaction
-        tx = contract.constructor(*self.test_arg).buildTransaction(
+        tx = contract.constructor(*self.test_arg).build_transaction(
             transaction={
                 "chainId": CHAIN_ID,
                 "from": self.test_account["address"],

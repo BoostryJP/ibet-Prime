@@ -121,7 +121,7 @@ def deploy_share_token_contract(address,
         "token.symbol",
         20,
         100,
-        int(0.03 * 100),
+        3,
         "token.dividend_record_date",
         "token.dividend_payment_date",
         "token.cancellation_date",
@@ -327,7 +327,7 @@ class TestProcessor:
             "tax_category": 10
         }
         ciphertext = encrypt_personal_info(personal_info_1, issuer_rsa_public_key, issuer_rsa_passphrase)
-        tx = personal_info_contract.functions.register(issuer_address, ciphertext).buildTransaction({
+        tx = personal_info_contract.functions.register(issuer_address, ciphertext).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -418,7 +418,7 @@ class TestProcessor:
             "tax_category": 10
         }
         ciphertext = encrypt_personal_info(personal_info_1, issuer_rsa_public_key, issuer_rsa_passphrase)
-        tx = personal_info_contract.functions.register(issuer_address, ciphertext).buildTransaction({
+        tx = personal_info_contract.functions.register(issuer_address, ciphertext).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -448,7 +448,7 @@ class TestProcessor:
             "tax_category": 20
         }
         ciphertext = encrypt_personal_info(personal_info_2, issuer_rsa_public_key, issuer_rsa_passphrase)
-        tx = personal_info_contract.functions.modify(user_address_1, ciphertext).buildTransaction({
+        tx = personal_info_contract.functions.modify(user_address_1, ciphertext).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -543,7 +543,7 @@ class TestProcessor:
             "tax_category": 10
         }
         ciphertext = encrypt_personal_info(personal_info_1, issuer_rsa_public_key, issuer_rsa_passphrase)
-        tx = personal_info_contract.functions.register(issuer_address, ciphertext).buildTransaction({
+        tx = personal_info_contract.functions.register(issuer_address, ciphertext).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -573,7 +573,7 @@ class TestProcessor:
             "tax_category": 20
         }
         ciphertext = encrypt_personal_info(personal_info_2, issuer_rsa_public_key, issuer_rsa_passphrase)
-        tx = personal_info_contract.functions.modify(user_address_1, ciphertext).buildTransaction({
+        tx = personal_info_contract.functions.modify(user_address_1, ciphertext).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -613,7 +613,7 @@ class TestProcessor:
             "tax_category": 30
         }
         ciphertext = encrypt_personal_info(personal_info_3, issuer_rsa_public_key, issuer_rsa_passphrase)
-        tx = personal_info_contract.functions.modify(user_address_1, ciphertext).buildTransaction({
+        tx = personal_info_contract.functions.modify(user_address_1, ciphertext).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -734,7 +734,7 @@ class TestProcessor:
             "tax_category": 10
         }
         ciphertext = encrypt_personal_info(personal_info_1, issuer_rsa_public_key_1, issuer_rsa_passphrase_1)
-        tx = personal_info_contract_1.functions.register(issuer_address_1, ciphertext).buildTransaction({
+        tx = personal_info_contract_1.functions.register(issuer_address_1, ciphertext).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address_1,
             "gas": TX_GAS_LIMIT,
@@ -753,7 +753,7 @@ class TestProcessor:
             "tax_category": 20
         }
         ciphertext = encrypt_personal_info(personal_info_2, issuer_rsa_public_key_2, issuer_rsa_passphrase_2)
-        tx = personal_info_contract_2.functions.register(issuer_address_2, ciphertext).buildTransaction({
+        tx = personal_info_contract_2.functions.register(issuer_address_2, ciphertext).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address_2,
             "gas": TX_GAS_LIMIT,
@@ -804,7 +804,7 @@ class TestProcessor:
         db.commit()
 
         processor.process()
-        assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "skip Process"))
+        assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "skip process"))
 
     # <Normal_6>
     # If DB session fails in phase sinking register/modify events, batch logs exception message.
@@ -871,7 +871,7 @@ class TestProcessor:
             "tax_category": 10
         }
         ciphertext = encrypt_personal_info(personal_info_1, issuer_rsa_public_key, issuer_rsa_passphrase)
-        tx = personal_info_contract.functions.register(issuer_address, ciphertext).buildTransaction({
+        tx = personal_info_contract.functions.register(issuer_address, ciphertext).build_transaction({
             "chainId": CHAIN_ID,
             "from": user_address_1,
             "gas": TX_GAS_LIMIT,
@@ -891,7 +891,7 @@ class TestProcessor:
             "tax_category": 20
         }
         ciphertext = encrypt_personal_info(personal_info_2, issuer_rsa_public_key, issuer_rsa_passphrase)
-        tx = personal_info_contract.functions.modify(user_address_1, ciphertext).buildTransaction({
+        tx = personal_info_contract.functions.modify(user_address_1, ciphertext).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -941,14 +941,6 @@ class TestProcessor:
         db.add(token_1)
 
         db.commit()
-
-        # Run mainloop once successfully
-        with patch("batch.indexer_personal_info.INDEXER_SYNC_INTERVAL", None),\
-            patch.object(Processor, "process", return_value=True), \
-                pytest.raises(TypeError):
-            main_func()
-        assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "Processed"))
-        caplog.clear()
 
         # Run mainloop once and fail with web3 utils error
         with patch("batch.indexer_personal_info.INDEXER_SYNC_INTERVAL", None),\

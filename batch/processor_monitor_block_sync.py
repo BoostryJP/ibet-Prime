@@ -40,11 +40,18 @@ from config import (
     WEB3_HTTP_PROVIDER_STANDBY,
     BLOCK_SYNC_STATUS_SLEEP_INTERVAL,
     BLOCK_SYNC_STATUS_CALC_PERIOD,
+    BLOCK_SYNC_REMAINING_THRESHOLD,
     BLOCK_GENERATION_SPEED_THRESHOLD
 )
 from app.model.db import Node
 from app.exceptions import ServiceUnavailableError
 import batch_log
+
+"""
+[PROCESSOR-Monitor-Block-Sync]
+
+Processor for block synchronization monitoring
+"""
 
 process_name = "PROCESSOR-Monitor-Block-Sync"
 LOG = batch_log.get_logger(process_name=process_name)
@@ -161,9 +168,7 @@ class Processor:
         syncing = web3.eth.syncing
         if syncing:
             remaining_blocks = syncing["highestBlock"] - syncing["currentBlock"]
-            # NOTE: If it is delayed by one block,
-            #       it will be treated normally assuming that it will be updated immediately afterwards.
-            if remaining_blocks > 1:
+            if remaining_blocks > BLOCK_SYNC_REMAINING_THRESHOLD:
                 is_synced = False
                 errors.append(f"highestBlock={syncing['highestBlock']}, currentBlock={syncing['currentBlock']}")
 

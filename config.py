@@ -80,13 +80,13 @@ AWS_REGION_NAME = os.environ.get("AWS_REGION_NAME") or "ap-northeast-1"
 #            lowercase alphabetic, uppercase alphabetic, numeric, and symbolic(space exclude)
 EOA_PASSWORD_PATTERN = \
     os.environ.get("EOA_PASSWORD_PATTERN") or \
-    "^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,200}$"
+    r"^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,200}$"
 EOA_PASSWORD_PATTERN_MSG = \
     os.environ.get("EOA_PASSWORD_PATTERN_MSG") or \
     "password must be 8 to 200 alphanumeric or symbolic character"
 PERSONAL_INFO_RSA_PASSPHRASE_PATTERN = \
     os.environ.get("PERSONAL_INFO_RSA_PASSPHRASE_PATTERN") or \
-    "^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,200}$"
+    r"^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,200}$"
 PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG = \
     os.environ.get("PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG") or \
     "passphrase must be 8 to 200 alphanumeric or symbolic characters"
@@ -95,7 +95,7 @@ PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE = \
     "password"
 E2E_MESSAGING_RSA_PASSPHRASE_PATTERN = \
     os.environ.get("E2E_MESSAGING_RSA_PASSPHRASE_PATTERN") or \
-    "^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,200}$"
+    r"^[a-zA-Z0-9 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~]{8,200}$"
 E2E_MESSAGING_RSA_PASSPHRASE_PATTERN_MSG = \
     os.environ.get("E2E_MESSAGING_RSA_PASSPHRASE_PATTERN_MSG") or \
     "passphrase must be 8 to 200 alphanumeric or symbolic characters"
@@ -104,7 +104,7 @@ E2E_MESSAGING_RSA_DEFAULT_PASSPHRASE = \
     "password"
 EOA_PASSWORD_CHECK_ENABLED = False if os.environ.get("EOA_PASSWORD_CHECK_ENABLED") == "0" else True
 
-# End to End Encryption (RSA)
+# End-to-End Encryption (RSA)
 # NOTE:
 # about E2EE_RSA_RESOURCE_MODE
 # - 0:File, Set the file path to E2EE_RSA_RESOURCE.
@@ -161,6 +161,9 @@ BLOCK_SYNC_STATUS_SLEEP_INTERVAL = int(os.environ.get("BLOCK_SYNC_STATUS_SLEEP_I
 # number of monitoring data period
 BLOCK_SYNC_STATUS_CALC_PERIOD = int(os.environ.get("BLOCK_SYNC_STATUS_CALC_PERIOD")) \
     if os.environ.get("BLOCK_SYNC_STATUS_CALC_PERIOD") else 3
+# Threshold for remaining block synchronization
+# - Threshold for difference between highestBlock and currentBlock
+BLOCK_SYNC_REMAINING_THRESHOLD = int(os.environ.get("BLOCK_SYNC_REMAINING_THRESHOLD", 2))
 # Threshold of block generation speed for judging synchronous stop(%)
 if APP_ENV == "local":
     BLOCK_GENERATION_SPEED_THRESHOLD = int(os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD")) \
@@ -173,17 +176,12 @@ WEB3_REQUEST_RETRY_COUNT = int(os.environ.get("WEB3_REQUEST_RETRY_COUNT")) if os
 WEB3_REQUEST_WAIT_TIME = int(os.environ.get("WEB3_REQUEST_WAIT_TIME")) \
     if os.environ.get("WEB3_REQUEST_WAIT_TIME") else BLOCK_SYNC_STATUS_SLEEP_INTERVAL  # Same batch interval
 
-# Auto transfer approval
-# interval(second)
-AUTO_TRANSFER_APPROVAL_INTERVAL = int(os.environ.get("AUTO_TRANSFER_APPROVAL_INTERVAL")) \
-    if os.environ.get("AUTO_TRANSFER_APPROVAL_INTERVAL") else 10
-
 # Random Bytes Generator
 AWS_KMS_GENERATE_RANDOM_ENABLED = True if os.environ.get("AWS_KMS_GENERATE_RANDOM_ENABLED") == "1" else False
 
 # Create UTXO
 CREATE_UTXO_INTERVAL = int(os.environ.get("CREATE_UTXO_INTERVAL")) \
-    if os.environ.get("CREATE_UTXO_INTERVAL") else 10
+    if os.environ.get("CREATE_UTXO_INTERVAL") else 600
 CREATE_UTXO_BLOCK_LOT_MAX_SIZE = int(os.environ.get("CREATE_UTXO_BLOCK_LOT_MAX_SIZE")) \
     if os.environ.get("CREATE_UTXO_BLOCK_LOT_MAX_SIZE") else 10000
 
@@ -195,3 +193,6 @@ MAX_UPLOAD_FILE_SIZE = int(os.environ.get("MAX_UPLOAD_FILE_SIZE")) \
 # Rotate E2E Messaging RSA Key
 ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL = int(os.environ.get("ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL")) \
     if os.environ.get("ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL") else 10
+
+# Blockchain Explorer
+BC_EXPLORER_ENABLED = True if os.environ.get("BC_EXPLORER_ENABLED") == "1" else False

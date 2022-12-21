@@ -93,7 +93,7 @@ class TestGetInfo:
         }
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], ciphertext).buildTransaction({
+        tx = contract.functions.register(issuer["address"], ciphertext).build_transaction({
             "nonce": web3.eth.get_transaction_count(setting_user["address"]),
             "from": setting_user["address"],
             "gas": TX_GAS_LIMIT,
@@ -121,7 +121,7 @@ class TestGetInfo:
         # Set personal information data
         setting_user = config_eth_account("user2")
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], "").buildTransaction({
+        tx = contract.functions.register(issuer["address"], "").build_transaction({
             "nonce": web3.eth.get_transaction_count(setting_user["address"]),
             "from": setting_user["address"],
             "gas": TX_GAS_LIMIT,
@@ -176,7 +176,7 @@ class TestGetInfo:
         }
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], ciphertext).buildTransaction({
+        tx = contract.functions.register(issuer["address"], ciphertext).build_transaction({
             "nonce": web3.eth.get_transaction_count(setting_user["address"]),
             "from": setting_user["address"],
             "gas": TX_GAS_LIMIT,
@@ -216,7 +216,7 @@ class TestGetInfo:
         # Set personal information data
         setting_user = config_eth_account("user2")
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], "testtest").buildTransaction({
+        tx = contract.functions.register(issuer["address"], "testtest").build_transaction({
             "nonce": web3.eth.get_transaction_count(setting_user["address"]),
             "from": setting_user["address"],
             "gas": TX_GAS_LIMIT,
@@ -299,7 +299,7 @@ class TestRegisterInfo:
         }
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], ciphertext).buildTransaction({
+        tx = contract.functions.register(issuer["address"], ciphertext).build_transaction({
             "nonce": web3.eth.get_transaction_count(setting_user["address"]),
             "from": setting_user["address"],
             "gas": TX_GAS_LIMIT,
@@ -413,7 +413,7 @@ class TestModifyInfo:
         }
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], ciphertext).buildTransaction({
+        tx = contract.functions.register(issuer["address"], ciphertext).build_transaction({
             "nonce": web3.eth.get_transaction_count(setting_user["address"]),
             "from": setting_user["address"],
             "gas": TX_GAS_LIMIT,
@@ -471,7 +471,7 @@ class TestModifyInfo:
         }
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], ciphertext).buildTransaction({
+        tx = contract.functions.register(issuer["address"], ciphertext).build_transaction({
             "nonce": web3.eth.get_transaction_count(setting_user["address"]),
             "from": setting_user["address"],
             "gas": TX_GAS_LIMIT,
@@ -523,7 +523,7 @@ class TestModifyInfo:
         }
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], ciphertext).buildTransaction({
+        tx = contract.functions.register(issuer["address"], ciphertext).build_transaction({
             "nonce": web3.eth.get_transaction_count(setting_user["address"]),
             "from": setting_user["address"],
             "gas": TX_GAS_LIMIT,
@@ -618,7 +618,7 @@ class TestGetRegisterEvent:
         }
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], ciphertext).buildTransaction({
+        tx = contract.functions.register(issuer["address"], ciphertext).build_transaction({
             "nonce": web3.eth.get_transaction_count(setting_user["address"]),
             "from": setting_user["address"],
             "gas": TX_GAS_LIMIT,
@@ -669,7 +669,7 @@ class TestGetModifyEvent:
         }
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], ciphertext).buildTransaction({
+        tx = contract.functions.register(issuer["address"], ciphertext).build_transaction({
             "nonce": web3.eth.get_transaction_count(setting_user["address"]),
             "from": setting_user["address"],
             "gas": TX_GAS_LIMIT,
@@ -698,7 +698,7 @@ class TestGetModifyEvent:
         }
         ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(update_data).encode('utf-8')))
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.modify(setting_user["address"], ciphertext).buildTransaction({
+        tx = contract.functions.modify(setting_user["address"], ciphertext).build_transaction({
             "nonce": web3.eth.get_transaction_count(issuer["address"]),
             "from": issuer["address"],
             "gas": TX_GAS_LIMIT,

@@ -26,6 +26,7 @@ from sqlalchemy import (
     BigInteger
 )
 
+import config
 from .base import Base
 
 
@@ -36,11 +37,11 @@ class IDXTransferApproval(Base):
     # Sequence Id
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     # Token Address
-    token_address = Column(String(42), index=True)
+    token_address = Column(String(42), index=True, nullable=False)
     # Exchange Address (value is set if the event is from exchange)
-    exchange_address = Column(String(42), index=True)
-    # Application Id (escrow id is set if the event is from exchange)
-    application_id = Column(BigInteger, index=True)
+    exchange_address = Column(String(42), index=True, nullable=False, default=config.ZERO_ADDRESS)
+    # Application ID (escrow id is set if the event is from exchange)
+    application_id = Column(BigInteger, index=True, nullable=False)
     # Transfer From
     from_address = Column(String(42))
     # Transfer To
@@ -69,7 +70,7 @@ class IDXTransferApproval(Base):
             "application_id": self.application_id,
             "from_address": self.from_address,
             "to_address": self.to_address,
-            "value": self.value,
+            "amount": self.amount,
             "application_datetime": self.application_datetime,
             "application_blocktimestamp": self.application_blocktimestamp,
             "approval_datetime": self.approval_datetime,

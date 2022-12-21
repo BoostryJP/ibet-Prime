@@ -52,6 +52,13 @@ from app.utils.contract_utils import ContractUtils
 from app.exceptions import ServiceUnavailableError
 import batch_log
 
+"""
+[PROCESSOR-Modify-Personal-Info]
+
+Re-encryption of investor's personal information 
+when the issuer's RSA key is updated.
+"""
+
 process_name = "PROCESSOR-Modify-Personal-Info"
 LOG = batch_log.get_logger(process_name=process_name)
 
@@ -65,6 +72,7 @@ class Processor:
         try:
             temporary_list = self.__get_temporary_list(db_session=db_session)
             for temporary in temporary_list:
+                LOG.info(f"Process start: issuer={temporary.issuer_address}")
 
                 contract_accessor_list = self.__get_personal_info_contract_accessor_list(
                     db_session=db_session,
@@ -72,13 +80,13 @@ class Processor:
                 )
 
                 # Get target PersonalInfo account address
-                idx_personal_info_list = db_session.query(IDXPersonalInfo).filter(
-                    IDXPersonalInfo.issuer_address == temporary.issuer_address).all()
+                idx_personal_info_list = db_session.query(IDXPersonalInfo).\
+                    filter(IDXPersonalInfo.issuer_address == temporary.issuer_address).\
+                    all()
 
                 count = len(idx_personal_info_list)
                 completed_count = 0
                 for idx_personal_info in idx_personal_info_list:
-
                     # Get target PersonalInfo contract accessor
                     for contract_accessor in contract_accessor_list:
                         is_registered = ContractUtils.call_function(
@@ -101,12 +109,16 @@ class Processor:
                         # Confirm to that modify data is not modified in the next process.
                         completed_count += 1
 
+                # Once all investors' personal information has been updated,
+                # update the status of the issuer's RSA key.
                 if count == completed_count:
                     self.__sink_on_account(
                         db_session=db_session,
                         issuer_address=temporary.issuer_address
                     )
                     db_session.commit()
+
+                LOG.info(f"Process end: issuer={temporary.issuer_address}")
         finally:
             db_session.close()
 
@@ -170,14 +182,10 @@ class Processor:
         personal_info_contract_accessor.issuer.rsa_private_key = temporary.rsa_private_key
         personal_info_contract_accessor.issuer.rsa_passphrase = temporary.rsa_passphrase
         # Modify
-        LOG.info(
-            f"Modify Start: issuer_address={temporary.issuer_address}, account_address={idx_personal_info.account_address}")
         info = personal_info_contract_accessor.get_info(
             idx_personal_info.account_address,
             default_value=None
         )
-        LOG.info(
-            f"Modify End: issuer_address={temporary.issuer_address}, account_address={idx_personal_info.account_address}")
         # Back RSA
         personal_info_contract_accessor.issuer.rsa_private_key = org_rsa_private_key
         personal_info_contract_accessor.issuer.rsa_passphrase = org_rsa_passphrase
@@ -224,7 +232,6 @@ def main():
     while True:
         try:
             processor.process()
-            LOG.debug("Processed")
         except ServiceUnavailableError:
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:

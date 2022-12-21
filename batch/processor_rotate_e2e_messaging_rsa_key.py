@@ -54,6 +54,12 @@ from app.exceptions import (
 )
 import batch_log
 
+"""
+[PROCESSOR-Rotate-E2E-Messaging-RSA-Key]
+
+Processor for key rotation for encrypted E2E messaging on the blockchain
+"""
+
 process_name = "PROCESSOR-Rotate-E2E-Messaging-RSA-Key"
 LOG = batch_log.get_logger(process_name=process_name)
 
@@ -135,6 +141,7 @@ class Processor:
                     tx_from=e2e_messaging_account.account_address,
                     private_key=private_key
                 )
+                LOG.info(f"New RSA key created: account_address={e2e_messaging_account.account_address}")
             except ContractRevertError as e:
                 LOG.warning(f"Transaction reverted: account_address=<{e2e_messaging_account.account_address}> error_code:<{e.code}> error_msg:<{e.message}>")
                 return

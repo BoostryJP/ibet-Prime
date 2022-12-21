@@ -31,6 +31,14 @@ from .batch_issue_redeem import (
     GetBatchIssueRedeemResult,
     ListBatchIssueRedeemUploadResponse
 )
+from .bc_explorer import (
+    ListBlockDataQuery,
+    ListTxDataQuery,
+    BlockDataResponse,
+    BlockDataListResponse,
+    TxDataResponse,
+    TxDataListResponse
+)
 from .bulk_transfer import (
     BulkTransferUploadIdResponse,
     BulkTransferUploadResponse,
@@ -113,7 +121,8 @@ from .token import (
 from .token_holders import (
     CreateTokenHoldersListRequest,
     CreateTokenHoldersListResponse,
-    GetTokenHoldersListResponse
+    RetrieveTokenHoldersListResponse,
+    ListAllTokenHolderCollectionsResponse
 )
 from .transfer import (
     UpdateTransferApprovalRequest,
