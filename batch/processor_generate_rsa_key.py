@@ -40,6 +40,12 @@ from app.model.db import (
 from app.utils.e2ee_utils import E2EEUtils
 import batch_log
 
+"""
+[PROCESSOR-Generate-RSA-Key]
+
+Process for generating and updating issuer RSA keys
+"""
+
 process_name = "PROCESSOR-Generate-RSA-Key"
 LOG = batch_log.get_logger(process_name=process_name)
 
@@ -54,20 +60,25 @@ class Processor:
             account_list = self.__get_account_list(db_session=db_session)
 
             for account in account_list:
+                LOG.info(f"Process start: issuer_address={account.issuer_address}")
+
                 # rsa_passphrase is encrypted, so decrypt it.
                 passphrase = E2EEUtils.decrypt(account.rsa_passphrase)
 
-                LOG.info(f"Generate Start: issuer_address={account.issuer_address}")
+                # Generate RSA key
                 rsa_private_pem, rsa_public_pem = self.__generate_rsa_key(passphrase)
-                LOG.info(f"Generate End: issuer_address={account.issuer_address}")
 
+                # Update the issuer's RSA key data
                 self.__sink_on_account(
                     db_session=db_session,
                     issuer_address=account.issuer_address,
                     rsa_private_pem=rsa_private_pem,
                     rsa_public_pem=rsa_public_pem
                 )
+
                 db_session.commit()
+                LOG.info(f"Process end: issuer_address={account.issuer_address}")
+
         finally:
             db_session.close()
 
@@ -113,7 +124,6 @@ def main():
     while True:
         try:
             processor.process()
-            LOG.debug("Processed")
         except SQLAlchemyError as sa_err:
             LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
         except Exception as ex:

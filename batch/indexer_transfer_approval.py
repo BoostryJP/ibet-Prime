@@ -40,7 +40,6 @@ from config import (
 )
 from app.model.db import (
     Token,
-    TokenType,
     IDXTransferApproval,
     IDXTransferApprovalBlockNumber,
     Notification,
@@ -106,6 +105,7 @@ class Processor:
                 db_session.commit()
         finally:
             db_session.close()
+        LOG.info("Sync job has been completed")
 
     def __get_contract_list(self, db_session: Session):
         self.exchange_list = []
@@ -171,7 +171,7 @@ class Processor:
         db_session.merge(_idx_transfer_approval_block_number)
 
     def __sync_all(self, db_session: Session, block_from: int, block_to: int):
-        LOG.info(f"syncing from={block_from}, to={block_to}")
+        LOG.info(f"Syncing from={block_from}, to={block_to}")
         self.__sync_token_apply_for_transfer(db_session, block_from, block_to)
         self.__sync_token_cancel_transfer(db_session, block_from, block_to)
         self.__sync_token_approve_transfer(db_session, block_from, block_to)

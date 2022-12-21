@@ -154,7 +154,6 @@ def main():
     while True:
         try:
             processor.process()
-            LOG.debug("Processed")
         except ServiceUnavailableError:
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:

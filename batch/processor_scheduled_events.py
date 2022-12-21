@@ -66,6 +66,12 @@ from app.exceptions import (
 )
 import batch_log
 
+"""
+[PROCESSOR-Scheduled-Events]
+
+Processor for scheduled token update events
+"""
+
 process_name = "PROCESSOR-Scheduled-Events"
 LOG = batch_log.get_logger(process_name=process_name)
 
@@ -129,7 +135,8 @@ class Processor:
 
     def __process(self, db_session: Session, events_list: List[ScheduledEvents]):
         for _event in events_list:
-            LOG.info(f"START event_id:{_event.id}")
+            LOG.info(f"<{self.thread_num}> Process start: upload_id={_event.id}")
+
             _upload_status = 1
 
             # Get issuer's private key
@@ -236,6 +243,8 @@ class Processor:
                 )
             db_session.commit()
 
+            LOG.info(f"<{self.thread_num}> Process end: upload_id={_event.id}")
+
     @staticmethod
     def __sink_on_finish_event_process(db_session: Session, record_id: int, status: int):
         scheduled_event_record = db_session.query(ScheduledEvents). \
@@ -295,7 +304,7 @@ def main():
         worker = Worker(i)
         thread = threading.Thread(target=worker.run, daemon=True)
         thread.start()
-        LOG.info(f"thread {i} started")
+        LOG.debug(f"thread {i} started")
 
     while True:
         time.sleep(99999)
