@@ -42,7 +42,8 @@ sys.path.append(path)
 from config import (
     INDEXER_SYNC_INTERVAL,
     DATABASE_URL,
-    E2E_MESSAGING_CONTRACT_ADDRESS
+    E2E_MESSAGING_CONTRACT_ADDRESS,
+    INDEXER_BLOCK_LOT_MAX_SIZE
 )
 from app.model.db import (
     IDXE2EMessaging,
@@ -81,32 +82,52 @@ decoded message's max length is 5000.
 
 class Processor:
     def __init__(self):
-        self.latest_block = web3.eth.block_number
         self.e2e_messaging_contract = ContractUtils.get_contract(
             contract_name="E2EMessaging",
-            contract_address=E2E_MESSAGING_CONTRACT_ADDRESS)
+            contract_address=E2E_MESSAGING_CONTRACT_ADDRESS
+        )
 
     def process(self):
         db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
         try:
             # Get from_block_number and to_block_number for contract event filter
-            idx_e2e_messaging_block_number = self.__get_idx_e2e_messaging_block_number(db_session=db_session)
             latest_block = web3.eth.block_number
+            _from_block = self.__get_idx_e2e_messaging_block_number(db_session=db_session)
+            _to_block = _from_block + INDEXER_BLOCK_LOT_MAX_SIZE
 
-            if idx_e2e_messaging_block_number >= latest_block:
+            # Skip processing if the latest block is not counted up
+            if _from_block >= latest_block:
                 LOG.debug("skip process")
-                pass
+                return
+
+            # Create index data with the upper limit of one process
+            # as INDEXER_BLOCK_LOT_MAX_SIZE(1_000_000 blocks)
+            if latest_block > _to_block:
+                while _to_block < latest_block:
+                    self.__sync_all(
+                        db_session=db_session,
+                        block_from=_from_block + 1,
+                        block_to=_to_block,
+                    )
+                    _to_block += INDEXER_BLOCK_LOT_MAX_SIZE
+                    _from_block += INDEXER_BLOCK_LOT_MAX_SIZE
+                self.__sync_all(
+                    db_session=db_session,
+                    block_from=_from_block + 1,
+                    block_to=latest_block
+                )
             else:
                 self.__sync_all(
                     db_session=db_session,
-                    block_from=idx_e2e_messaging_block_number + 1,
+                    block_from=_from_block + 1,
                     block_to=latest_block
                 )
-                self.__set_idx_e2e_messaging_block_number(
-                    db_session=db_session,
-                    block_number=latest_block
-                )
-                db_session.commit()
+
+            self.__set_idx_e2e_messaging_block_number(
+                db_session=db_session,
+                block_number=latest_block
+            )
+            db_session.commit()
         finally:
             db_session.close()
         LOG.info("Sync job has been completed")

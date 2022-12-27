@@ -64,8 +64,10 @@ E2E_MESSAGING_CONTRACT_ADDRESS = os.environ.get('E2E_MESSAGING_CONTRACT_ADDRESS'
 TOKEN_CACHE = False if os.environ.get("TOKEN_CACHE") == "0" else True
 TOKEN_CACHE_TTL = int(os.environ.get("TOKEN_CACHE_TTL")) if os.environ.get("TOKEN_CACHE_TTL") else 43200
 
-# Indexer sync interval
+# Indexer
 INDEXER_SYNC_INTERVAL = 10
+INDEXER_BLOCK_LOT_MAX_SIZE = int(os.environ.get("INDEXER_BLOCK_LOT_MAX_SIZE")) \
+    if os.environ.get("INDEXER_BLOCK_LOT_MAX_SIZE") else 1000000
 
 # AWS Region
 AWS_REGION_NAME = os.environ.get("AWS_REGION_NAME") or "ap-northeast-1"

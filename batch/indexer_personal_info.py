@@ -32,7 +32,8 @@ sys.path.append(path)
 from config import (
     DATABASE_URL,
     ZERO_ADDRESS,
-    INDEXER_SYNC_INTERVAL
+    INDEXER_SYNC_INTERVAL,
+    INDEXER_BLOCK_LOT_MAX_SIZE
 )
 from app.model.db import (
     Token,
@@ -55,7 +56,6 @@ db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 class Processor:
     def __init__(self):
-        self.latest_block = web3.eth.block_number
         self.personal_info_contract_list = []
 
     def process(self):
@@ -63,20 +63,43 @@ class Processor:
         try:
             self.__refresh_personal_info_list(db_session=db_session)
             # most recent blockNumber that has been synchronized with DB
-            block_number = self.__get_block_number(db_session=db_session)
             latest_block = web3.eth.block_number  # latest blockNumber
+            _from_block = self.__get_block_number(db_session=db_session)
+            _to_block = _from_block + INDEXER_BLOCK_LOT_MAX_SIZE
 
-            if block_number >= latest_block:
+            # Skip processing if the latest block is not counted up
+            if _from_block >= latest_block:
                 LOG.debug("skip process")
+                return
+
+            # Create index data with the upper limit of one process
+            # as INDEXER_BLOCK_LOT_MAX_SIZE(1_000_000 blocks)
+            if latest_block > _to_block:
+                while _to_block < latest_block:
+                    self.__sync_all(
+                        db_session=db_session,
+                        block_from=_from_block + 1,
+                        block_to=_to_block,
+                    )
+                    _to_block += INDEXER_BLOCK_LOT_MAX_SIZE
+                    _from_block += INDEXER_BLOCK_LOT_MAX_SIZE
+                self.__sync_all(
+                    db_session=db_session,
+                    block_from=_from_block + 1,
+                    block_to=latest_block
+                )
             else:
                 self.__sync_all(
                     db_session=db_session,
-                    block_from=block_number + 1,
-                    block_to=latest_block)
-                self.__set_block_number(
-                    db_session=db_session,
-                    block_number=latest_block)
-                db_session.commit()
+                    block_from=_from_block + 1,
+                    block_to=latest_block
+                )
+
+            self.__set_block_number(
+                db_session=db_session,
+                block_number=latest_block
+            )
+            db_session.commit()
         finally:
             db_session.close()
         LOG.info("Sync job has been completed")
