@@ -34,7 +34,7 @@ web3 = Web3Wrapper()
 
 LOG = log.get_logger()
 
-router = APIRouter(tags=["index"])
+router = APIRouter(tags=["common"])
 
 
 # GET: /e2ee

@@ -73,7 +73,7 @@ from app.exceptions import InvalidParameterError
 
 router = APIRouter(
     prefix="/ledger",
-    tags=["ledger"],
+    tags=["token_common"],
 )
 
 local_tz = pytz.timezone(TZ)

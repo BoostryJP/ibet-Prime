@@ -49,7 +49,7 @@ from app.model.blockchain import (
 )
 from app.exceptions import InvalidParameterError
 
-router = APIRouter(tags=["position"])
+router = APIRouter(tags=["token_common"])
 
 
 # GET: /positions/{account_address}
