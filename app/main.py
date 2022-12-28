@@ -49,7 +49,7 @@ from app.log import output_access_log
 
 tags_metadata = [
     {
-        "name": "default",
+        "name": "root",
         "description": ""
     },
     {
@@ -115,7 +115,7 @@ app.openapi = custom_openapi(app)
 # ROUTER
 ###############################################################
 
-@app.get("/")
+@app.get("/", tags=["root"])
 async def root():
     return {"server": SERVER_NAME}
 
