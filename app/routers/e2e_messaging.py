@@ -87,7 +87,10 @@ from app.exceptions import (
     ContractRevertError
 )
 
-router = APIRouter(prefix="/e2e_messaging", tags=["e2e_messaging"])
+router = APIRouter(
+    prefix="/e2e_messaging",
+    tags=["messaging"]
+)
 
 local_tz = pytz.timezone(TZ)
 utc_tz = pytz.timezone("UTC")

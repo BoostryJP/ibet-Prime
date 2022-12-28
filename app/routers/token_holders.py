@@ -58,7 +58,7 @@ web3 = Web3Wrapper()
 
 router = APIRouter(
     prefix="/token",
-    tags=["token"],
+    tags=["token_common"],
 )
 
 

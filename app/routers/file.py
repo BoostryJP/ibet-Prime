@@ -46,7 +46,10 @@ from app.utils.check_utils import (
 )
 from app.utils.docs_utils import get_routers_responses
 
-router = APIRouter(tags=["file"])
+router = APIRouter(
+    prefix="/files",
+    tags=["utility"]
+)
 
 local_tz = pytz.timezone(TZ)
 utc_tz = pytz.timezone("UTC")
@@ -54,7 +57,7 @@ utc_tz = pytz.timezone("UTC")
 
 # GET: /files
 @router.get(
-    "/files",
+    "",
     response_model=ListAllFilesResponse,
     responses=get_routers_responses(422)
 )
@@ -137,7 +140,7 @@ def list_all_upload_files(
 
 # POST: /files
 @router.post(
-    "/files",
+    "",
     response_model=FileResponse,
     responses=get_routers_responses(422)
 )
@@ -182,7 +185,7 @@ def upload_file(
 
 # GET: /files/{file_id}
 @router.get(
-    "/files/{file_id}",
+    "/{file_id}",
     response_model=DownloadFileResponse,
     responses=get_routers_responses(404)
 )
@@ -227,7 +230,7 @@ def download_file(
 
 # DELETE: /files/{file_id}
 @router.delete(
-    "/files/{file_id}",
+    "/{file_id}",
     response_model=None,
     responses=get_routers_responses(422, 404)
 )

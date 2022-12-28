@@ -46,9 +46,57 @@ from app.utils.docs_utils import custom_openapi
 from app.exceptions import *
 from app.log import output_access_log
 
+
+tags_metadata = [
+    {
+        "name": "default",
+        "description": ""
+    },
+    {
+        "name": "common",
+        "description": "Common functions"
+    },
+    {
+        "name": "account",
+        "description": "Issuer account management"
+    },
+    {
+        "name": "notification",
+        "description": "Notifications for accounts"
+    },
+    {
+        "name": "token_common",
+        "description": "Common functions for tokens"
+    },
+    {
+        "name": "bond",
+        "description": "Bond token management"
+    },
+    {
+        "name": "share",
+        "description": "Share token management"
+    },
+    {
+        "name": "utility",
+        "description": "Utility functions"
+    },
+    {
+        "name": "messaging",
+        "description": "Messaging functions with external systems"
+    },
+    {
+        "name": "blockchain_explorer",
+        "description": "Blockchain explorer"
+    }
+]
+
 app = FastAPI(
     title="ibet Prime",
-    version="23.3.0"
+    description="Security token management system for ibet network",
+    version="23.3.0",
+    contact={"email": "dev@boostry.co.jp"},
+    license_info={"name": "Apache 2.0", "url": "http://www.apache.org/licenses/LICENSE-2.0.html"},
+    openapi_tags=tags_metadata
 )
 
 
