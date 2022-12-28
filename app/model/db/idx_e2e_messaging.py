@@ -38,7 +38,7 @@ class IDXE2EMessaging(Base):
     # to address
     to_address = Column(String(42), index=True)
     # type
-    type = Column(String(50), nullable=False)
+    type = Column(String(50), nullable=False, index=True)
     # message
     message = Column(String(5000), nullable=False)
     # send timestamp
