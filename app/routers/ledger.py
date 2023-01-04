@@ -43,6 +43,7 @@ from app.model.blockchain import (
     IbetStraightBondContract,
     PersonalInfoContract
 )
+from app.utils.fastapi import json_response
 from app.utils.check_utils import (
     validate_headers,
     address_is_valid_address
@@ -149,7 +150,7 @@ def list_all_ledger_history(
         "ledgers": ledgers
     }
 
-    return resp
+    return json_response(resp)
 
 
 # GET: /ledger/{token_address}/history/{ledger_id}
@@ -218,7 +219,7 @@ def retrieve_ledger_history(
                         data["name"] = personal_info.get("name", None)
                         data["address"] = personal_info.get("address", None)
 
-    return resp
+    return json_response(resp)
 
 
 # GET: /ledger/{token_address}/template
@@ -284,7 +285,7 @@ def retrieve_ledger_template(
         "footers": _template.footers,
     }
 
-    return resp
+    return json_response(resp)
 
 
 # POST: /ledger/{token_address}/template
@@ -491,7 +492,7 @@ def list_all_ledger_details_data(
 
     resp = {
         "result_set": {
-            "count": total,
+            "count": count,
             "offset": offset,
             "limit": limit,
             "total": total
@@ -499,7 +500,7 @@ def list_all_ledger_details_data(
         "details_data": details_data
     }
 
-    return resp
+    return json_response(resp)
 
 
 # POST: /ledger/{token_address}/details_data
@@ -543,7 +544,9 @@ def create_ledger_details_data(
         db.add(_details_data)
 
     db.commit()
-    return {"data_id": data_id}
+    return json_response({
+        "data_id": data_id
+    })
 
 
 # GET: /ledger/{token_address}/details_data/{data_id}
@@ -596,7 +599,7 @@ def retrieve_ledger_details_data(
             "acquisition_date": _details_data.acquisition_date,
         })
 
-    return resp
+    return json_response(resp)
 
 
 # POST: /ledger/{token_address}/details_data/{data_id}
@@ -724,4 +727,4 @@ def __get_personal_info(token_address: str, token_type: str, account_address: st
                 account_address=account_address,
                 default_value=None
             )
-        return personal_info
+        return json_response(personal_info)

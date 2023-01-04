@@ -59,6 +59,7 @@ from app.model.schema import (
     AccountAuthTokenRequest,
     AccountAuthTokenResponse
 )
+from app.utils.fastapi import json_response
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.check_utils import (
     validate_headers,
@@ -132,12 +133,12 @@ def create_key(
 
     db.commit()
 
-    return {
+    return json_response({
         "issuer_address": _account.issuer_address,
         "rsa_public_key": "",
         "rsa_status": _account.rsa_status,
         "is_deleted": _account.is_deleted
-    }
+    })
 
 
 # GET: /accounts
@@ -160,7 +161,7 @@ def list_all_accounts(db: Session = Depends(db_session)):
             "is_deleted": _account.is_deleted
         })
 
-    return account_list
+    return json_response(account_list)
 
 
 # GET: /accounts/{issuer_address}
@@ -178,12 +179,12 @@ def retrieve_account(issuer_address: str, db: Session = Depends(db_session)):
     if _account is None:
         raise HTTPException(status_code=404, detail="issuer does not exist")
 
-    return {
+    return json_response({
         "issuer_address": _account.issuer_address,
         "rsa_public_key": _account.rsa_public_key,
         "rsa_status": _account.rsa_status,
         "is_deleted": _account.is_deleted
-    }
+    })
 
 
 # DELETE: /accounts/{issuer_address}
@@ -205,12 +206,12 @@ def delete_account(issuer_address: str, db: Session = Depends(db_session)):
     db.merge(_account)
     db.commit()
 
-    return {
+    return json_response({
         "issuer_address": _account.issuer_address,
         "rsa_public_key": _account.rsa_public_key,
         "rsa_status": _account.rsa_status,
         "is_deleted": _account.is_deleted
-    }
+    })
 
 
 # POST: /accounts/{issuer_address}/rsakey
@@ -267,12 +268,12 @@ def generate_rsa_key(
 
     db.commit()
 
-    return {
+    return json_response({
         "issuer_address": issuer_address,
         "rsa_public_key": _account.rsa_public_key,
         "rsa_status": rsa_status,
         "is_deleted": _account.is_deleted
-    }
+    })
 
 
 # POST: /accounts/{issuer_address}/eoa_password
@@ -438,11 +439,11 @@ def create_auth_token(
             # NOTE: Registration can be conflicting.
             raise AuthTokenAlreadyExistsError()
 
-    return AccountAuthTokenResponse(
-        auth_token=new_token,
-        usage_start=current_datetime_local,
-        valid_duration=data.valid_duration
-    )
+    return json_response({
+        "auth_token": new_token,
+        "usage_start": current_datetime_local,
+        "valid_duration": data.valid_duration
+    })
 
 
 # DELETE: /accounts/{issuer_address}/auth_token

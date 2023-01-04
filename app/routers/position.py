@@ -33,6 +33,7 @@ from app.model.schema import (
     PositionResponse,
     ListAllPositionResponse
 )
+from app.utils.fastapi import json_response
 from app.utils.docs_utils import get_routers_responses
 from app.utils.check_utils import (
     validate_headers,
@@ -135,7 +136,7 @@ def list_all_position(
         "positions": positions
     }
 
-    return resp
+    return json_response(resp)
 
 
 # GET: /positions/{account_address}/{token_address}
@@ -195,4 +196,4 @@ def retrieve_position(
         "pending_transfer": _position.pending_transfer,
     }
 
-    return resp
+    return json_response(resp)

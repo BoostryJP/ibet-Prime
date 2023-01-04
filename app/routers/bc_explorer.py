@@ -46,6 +46,7 @@ from app.model.schema import (
     TxDataResponse,
     TxDataListResponse
 )
+from app.utils.fastapi import json_response
 from app.utils.contract_utils import ContractUtils
 from app.utils.docs_utils import get_routers_responses
 from app.utils.web3_utils import Web3Wrapper
@@ -128,7 +129,7 @@ def list_block_data(
             "size": bd.size
         })
 
-    return {
+    return json_response({
         "result_set": {
             "count": count,
             "offset": offset,
@@ -136,7 +137,7 @@ def list_block_data(
             "total": total
         },
         "block_data": block_data
-    }
+    })
 
 # ------------------------------
 # [BC-Explorer] Retrieve Block data
@@ -166,7 +167,7 @@ def get_block_data(
     if block_data is None:
         raise HTTPException(status_code=404, detail="block data not found")
 
-    return {
+    return json_response({
         "number": block_data.number,
         "parent_hash": block_data.parent_hash,
         "sha3_uncles": block_data.sha3_uncles,
@@ -185,7 +186,7 @@ def get_block_data(
         "hash": block_data.hash,
         "size": block_data.size,
         "transactions": block_data.transactions
-    }
+    })
 
 # ------------------------------
 # [BC-Explorer] List Tx data
@@ -251,7 +252,7 @@ def list_tx_data(
             "to_address": txd.to_address
         })
 
-    return {
+    return json_response({
         "result_set": {
             "count": count,
             "offset": offset,
@@ -259,7 +260,7 @@ def list_tx_data(
             "total": total
         },
         "tx_data": tx_data
-    }
+    })
 
 
 # ------------------------------
@@ -310,7 +311,7 @@ def get_tx_data(
         contract_function = decoded_input[0].fn_name
         contract_parameters = decoded_input[1]
 
-    return {
+    return json_response({
         "hash": tx_data.hash,
         "block_hash": tx_data.block_hash,
         "block_number": tx_data.block_number,
@@ -324,4 +325,4 @@ def get_tx_data(
         "gas_price": tx_data.gas_price,
         "value": tx_data.value,
         "nonce": tx_data.nonce
-    }
+    })

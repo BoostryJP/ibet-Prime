@@ -78,13 +78,11 @@ from app.model.schema import (
     UpdateTransferApprovalOperationType,
     BatchIssueRedeemUploadIdResponse,
     GetBatchIssueRedeemResponse,
-    GetBatchIssueRedeemResult,
     ListBatchIssueRedeemUploadResponse,
     IssueRedeemHistoryResponse,
     BatchRegisterPersonalInfoUploadResponse,
     ListBatchRegisterPersonalInfoUploadResponse,
     GetBatchRegisterPersonalInfoResponse,
-    BatchRegisterPersonalInfoResult
 )
 from app.model.db import (
     Account,
@@ -119,6 +117,7 @@ from app.model.blockchain import (
     PersonalInfoContract,
     IbetSecurityTokenEscrow
 )
+from app.utils.fastapi import json_response
 from app.utils.contract_utils import ContractUtils
 from app.utils.check_utils import (
     validate_headers,
@@ -289,10 +288,10 @@ def issue_token(
 
     db.commit()
 
-    return {
+    return json_response({
         "token_address": _token.token_address,
         "token_status": token_status
-    }
+    })
 
 
 # GET: /bond/tokens
@@ -331,7 +330,7 @@ def list_all_tokens(
         bond_token["token_status"] = token.token_status
         bond_tokens.append(bond_token)
 
-    return bond_tokens
+    return json_response(bond_tokens)
 
 
 # GET: /bond/tokens/{token_address}
@@ -361,7 +360,7 @@ def retrieve_token(
     bond_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
     bond_token["token_status"] = _token.token_status
 
-    return bond_token
+    return json_response(bond_token)
 
 
 # POST: /bond/tokens/{token_address}
@@ -491,15 +490,15 @@ def list_additional_issuance_history(
             "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat()
         })
 
-    return IssueRedeemHistoryResponse(
-        result_set={
+    return json_response({
+        "result_set": {
             "count": count,
             "offset": offset,
             "limit": limit,
             "total": total
         },
-        history=history
-    )
+        "history": history
+    })
 
 
 # POST: /bond/tokens/{token_address}/additional_issue
@@ -632,7 +631,7 @@ def list_all_additional_issue_upload(
         },
         "uploads": uploads
     }
-    return resp
+    return json_response(resp)
 
 
 # POST: /bond/tokens/{token_address}/additional_issue/batch
@@ -705,7 +704,9 @@ def additional_issue_in_batch(
 
     db.commit()
 
-    return BatchIssueRedeemUploadIdResponse(batch_id=str(upload_id))
+    return json_response({
+        "batch_id": str(upload_id)
+    })
 
 
 # GET: /bond/tokens/{token_address}/additional_issue/batch/{batch_id}
@@ -742,16 +743,16 @@ def retrieve_batch_additional_issue(
         filter(BatchIssueRedeem.upload_id == batch_id). \
         all()
 
-    return GetBatchIssueRedeemResponse(
-        processed=batch.processed,
-        results=[
-            GetBatchIssueRedeemResult(
-                account_address=record.account_address,
-                amount=record.amount,
-                status=record.status
-            ) for record in record_list
+    return json_response({
+        "processed": batch.processed,
+        "results": [
+            {
+                "account_address": record.account_address,
+                "amount": record.amount,
+                "status": record.status
+            } for record in record_list
         ]
-    )
+    })
 
 
 # GET: /bond/tokens/{token_address}/redeem
@@ -816,15 +817,15 @@ def list_redeem_history(
             "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat()
         })
 
-    return IssueRedeemHistoryResponse(
-        result_set={
+    return json_response({
+        "result_set": {
             "count": count,
             "offset": offset,
             "limit": limit,
             "total": total
         },
-        history=history
-    )
+        "history": history
+    })
 
 
 # POST: /bond/tokens/{token_address}/redeem
@@ -957,7 +958,7 @@ def list_all_redeem_upload(
         },
         "uploads": uploads
     }
-    return resp
+    return json_response(resp)
 
 
 # POST: /bond/tokens/{token_address}/redeem/batch
@@ -1030,7 +1031,9 @@ def redeem_token_in_batch(
 
     db.commit()
 
-    return BatchIssueRedeemUploadIdResponse(batch_id=str(upload_id))
+    return json_response({
+        "batch_id": str(upload_id)
+    })
 
 
 # GET: /bond/tokens/{token_address}/redeem/batch/{batch_id}
@@ -1067,16 +1070,16 @@ def retrieve_batch_redeem(
         filter(BatchIssueRedeem.upload_id == batch_id). \
         all()
 
-    return GetBatchIssueRedeemResponse(
-        processed=batch.processed,
-        results=[
-            GetBatchIssueRedeemResult(
-                account_address=record.account_address,
-                amount=record.amount,
-                status=record.status
-            ) for record in record_list
+    return json_response({
+        "processed": batch.processed,
+        "results": [
+            {
+                "account_address": record.account_address,
+                "amount": record.amount,
+                "status": record.status
+            } for record in record_list
         ]
-    )
+    })
 
 
 # GET: /bond/tokens/{token_address}/scheduled_events
@@ -1120,7 +1123,7 @@ def list_all_scheduled_events(
                 "created": created_utc.astimezone(local_tz).isoformat()
             }
         )
-    return token_events
+    return json_response(token_events)
 
 
 # POST: /bond/tokens/{token_address}/scheduled_events
@@ -1179,7 +1182,9 @@ def schedule_new_update_event(
     db.add(_scheduled_event)
     db.commit()
 
-    return {"scheduled_event_id": _scheduled_event.event_id}
+    return json_response({
+        "scheduled_event_id": _scheduled_event.event_id
+    })
 
 
 # GET: /bond/tokens/{token_address}/scheduled_events/{scheduled_event_id}
@@ -1213,7 +1218,7 @@ def retrieve_token_event(
 
     scheduled_datetime_utc = timezone("UTC").localize(_token_event.scheduled_datetime)
     created_utc = timezone("UTC").localize(_token_event.created)
-    return {
+    return json_response({
         "scheduled_event_id": _token_event.event_id,
         "token_address": token_address,
         "token_type": TokenType.IBET_STRAIGHT_BOND.value,
@@ -1222,7 +1227,7 @@ def retrieve_token_event(
         "status": _token_event.status,
         "data": _token_event.data,
         "created": created_utc.astimezone(local_tz).isoformat()
-    }
+    })
 
 
 # DELETE: /bond/tokens/{token_address}/scheduled_events/{scheduled_event_id}
@@ -1281,7 +1286,7 @@ def delete_scheduled_event(
 
     db.delete(_token_event)
     db.commit()
-    return rtn
+    return json_response(rtn)
 
 
 # GET: /bond/tokens/{token_address}/holders
@@ -1366,7 +1371,7 @@ def list_all_holders(
             "pending_transfer": _holder.pending_transfer
         })
 
-    return holders
+    return json_response(holders)
 
 
 # GET: /bond/tokens/{token_address}/holders/count
@@ -1414,7 +1419,9 @@ def count_number_of_holders(
         ). \
         count()
 
-    return HolderCountResponse(count=_count)
+    return json_response({
+        "count": _count
+    })
 
 
 # GET: /bond/tokens/{token_address}/holders/{account_address}
@@ -1497,7 +1504,7 @@ def retrieve_holder(
         "pending_transfer": pending_transfer
     }
 
-    return holder
+    return json_response(holder)
 
 
 # POST: /bond/tokens/{token_address}/holders/{account_address}/personal_info
@@ -1690,15 +1697,15 @@ def list_all_personal_info_batch_registration_uploads(
             "created": created_utc.astimezone(local_tz).isoformat()
         })
 
-    return ListBatchRegisterPersonalInfoUploadResponse(
-        result_set={
+    return json_response({
+        "result_set": {
             "count": count,
             "offset": offset,
             "limit": limit,
             "total": total
         },
-        uploads=uploads
-    )
+        "uploads": uploads
+    })
 
 
 # POST: /bond/tokens/{token_address}/personal_info/batch
@@ -1764,11 +1771,11 @@ def batch_register_personal_info(
 
     db.commit()
 
-    return {
+    return json_response({
         "batch_id": batch_id,
         "status": batch.status,
         "created": timezone("UTC").localize(batch.created).astimezone(local_tz).isoformat()
-    }
+    })
 
 
 # GET: /bond/tokens/{token_address}/personal_info/batch/{batch_id}
@@ -1803,23 +1810,23 @@ def retrieve_batch_register_personal_info(
         filter(BatchRegisterPersonalInfo.token_address == token_address). \
         all()
 
-    return GetBatchRegisterPersonalInfoResponse(
-        status=batch.status,
-        results=[
-            BatchRegisterPersonalInfoResult(
-                status=record.status,
-                account_address=record.account_address,
-                key_manager=record.personal_info.get("key_manager"),
-                name=record.personal_info.get("name"),
-                postal_code=record.personal_info.get("postal_code"),
-                address=record.personal_info.get("address"),
-                email=record.personal_info.get("email"),
-                birth=record.personal_info.get("birth"),
-                is_corporate=record.personal_info.get("is_corporate"),
-                tax_category=record.personal_info.get("tax_category")
-            ) for record in record_list
+    return json_response({
+        "status": batch.status,
+        "results": [
+            {
+                "status": record.status,
+                "account_address": record.account_address,
+                "key_manager": record.personal_info.get("key_manager"),
+                "name": record.personal_info.get("name"),
+                "postal_code": record.personal_info.get("postal_code"),
+                "address": record.personal_info.get("address"),
+                "email": record.personal_info.get("email"),
+                "birth": record.personal_info.get("birth"),
+                "is_corporate": record.personal_info.get("is_corporate"),
+                "tax_category": record.personal_info.get("tax_category")
+            } for record in record_list
         ]
-    )
+    })
 
 
 # POST: /bond/transfers
@@ -1946,7 +1953,7 @@ def list_transfer_history(
             "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat()
         })
 
-    return {
+    return json_response({
         "result_set": {
             "count": count,
             "offset": offset,
@@ -1954,7 +1961,7 @@ def list_transfer_history(
             "total": total
         },
         "transfer_history": transfer_history
-    }
+    })
 
 
 # GET: /bond/transfer_approvals
@@ -2054,7 +2061,7 @@ def list_transfer_approval_history(
             "canceled_count": canceled_count,
         })
 
-    return {
+    return json_response({
         "result_set": {
             "count": count,
             "offset": offset,
@@ -2062,7 +2069,7 @@ def list_transfer_approval_history(
             "total": total
         },
         "transfer_approvals": transfer_approvals
-    }
+    })
 
 
 # GET: /bond/transfer_approvals/{token_address}
@@ -2235,7 +2242,7 @@ def list_token_transfer_approval_history(
             "issuer_cancelable": issuer_cancelable
         })
 
-    return {
+    return json_response({
         "result_set": {
             "count": count,
             "offset": offset,
@@ -2243,7 +2250,7 @@ def list_token_transfer_approval_history(
             "total": total
         },
         "transfer_approval_history": transfer_approval_history
-    }
+    })
 
 
 # POST: /bond/transfer_approvals/{token_address}/{id}
@@ -2521,7 +2528,7 @@ def retrieve_transfer_approval_history(
         "issuer_cancelable": issuer_cancelable
     }
 
-    return history
+    return json_response(history)
 
 
 # POST: /bond/bulk_transfer
@@ -2596,7 +2603,9 @@ def bulk_transfer_ownership(
 
     db.commit()
 
-    return {"upload_id": str(upload_id)}
+    return json_response({
+        "upload_id": str(upload_id)
+    })
 
 
 # GET: /bond/bulk_transfer
@@ -2636,7 +2645,7 @@ def list_bulk_transfer_upload(
             "created": created_utc.astimezone(local_tz).isoformat()
         })
 
-    return uploads
+    return json_response(uploads)
 
 
 # GET: /bond/bulk_transfer/{upload_id}
@@ -2684,4 +2693,4 @@ def retrieve_bulk_transfer(
     if len(bulk_transfers) < 1:
         raise HTTPException(status_code=404, detail="bulk transfer not found")
 
-    return bulk_transfers
+    return json_response(bulk_transfers)

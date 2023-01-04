@@ -43,6 +43,9 @@ else:
 CONFIG = configparser.ConfigParser()
 CONFIG.read(INI_FILE)
 
+# Response validation mode
+RESPONSE_VALIDATION_MODE = True if os.environ.get("RESPONSE_VALIDATION_MODE") == "1" else False
+
 
 ####################################################
 # Server settings
