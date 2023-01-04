@@ -36,6 +36,7 @@ from app.utils.check_utils import (
     validate_headers,
     address_is_valid_address
 )
+from app.utils.fastapi import json_response
 from app.utils.docs_utils import get_routers_responses
 
 router = APIRouter(tags=["notification"])
@@ -103,7 +104,7 @@ def list_all_notifications(
         "notifications": notifications
     }
 
-    return resp
+    return json_response(resp)
 
 
 # DELETE: /notifications/{notice_id}

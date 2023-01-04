@@ -30,7 +30,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from config import SERVER_NAME
 from app.routers import (
-    index,
+    common,
     account,
     bond,
     e2e_messaging,
@@ -120,7 +120,7 @@ async def root():
     return {"server": SERVER_NAME}
 
 
-app.include_router(index.router)
+app.include_router(common.router)
 app.include_router(account.router)
 app.include_router(bond.router)
 app.include_router(e2e_messaging.router)

@@ -40,6 +40,7 @@ from app.model.schema import (
     RetrieveTokenHoldersListResponse,
     ListAllTokenHolderCollectionsResponse
 )
+from app.utils.fastapi import json_response
 from app.utils.docs_utils import get_routers_responses
 from app.utils.check_utils import (
     validate_headers,
@@ -118,10 +119,10 @@ def create_collection(
     )
 
     if _same_combi_record:
-        return {
+        return json_response({
             "status": _same_combi_record.batch_status,
             "list_id": _same_combi_record.list_id,
-        }
+        })
 
     _token_holders_list = TokenHoldersList()
     _token_holders_list.token_address = token_address
@@ -132,10 +133,10 @@ def create_collection(
     db.add(_token_holders_list)
     db.commit()
 
-    return {
+    return json_response({
         "status": _token_holders_list.batch_status,
         "list_id": _token_holders_list.list_id,
-    }
+    })
 
 
 # GET: /token/holders/{token_address}/collection
@@ -218,7 +219,7 @@ def list_all_token_holders_collections(
         "collections": token_holders_collections
     }
 
-    return resp
+    return json_response(resp)
 
 
 # GET: /token/holders/{token_address}/collection/{list_id}
@@ -284,7 +285,7 @@ def retrieve_token_holders_list(
     )
     token_holders = [_token_holder.json() for _token_holder in _token_holders]
 
-    return {
+    return json_response({
         "status": _same_list_id_record.batch_status,
         "holders": token_holders,
-    }
+    })

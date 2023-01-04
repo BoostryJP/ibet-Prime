@@ -40,6 +40,7 @@ from app.model.schema import (
     ListAllFilesResponse,
     DownloadFileResponse
 )
+from app.utils.fastapi import json_response
 from app.utils.check_utils import (
     validate_headers,
     address_is_valid_address
@@ -135,7 +136,7 @@ def list_all_upload_files(
         "files": files
     }
 
-    return resp
+    return json_response(resp)
 
 
 # POST: /files
@@ -180,7 +181,7 @@ def upload_file(
         "created": utc_tz.localize(_upload_file.created).astimezone(local_tz).isoformat()
     }
 
-    return resp
+    return json_response(resp)
 
 
 # GET: /files/{file_id}
@@ -225,7 +226,7 @@ def download_file(
         "label": _upload_file.label,
     }
 
-    return resp
+    return json_response(resp)
 
 
 # DELETE: /files/{file_id}

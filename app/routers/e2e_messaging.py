@@ -71,6 +71,7 @@ from app.model.schema import (
     E2EMessagingResponse,
     ListAllE2EMessagingResponse
 )
+from app.utils.fastapi import json_response
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.docs_utils import get_routers_responses
@@ -180,13 +181,13 @@ def create_account(
 
     db.commit()
 
-    return {
+    return json_response({
         "account_address": _account.account_address,
         "rsa_key_generate_interval": _account.rsa_key_generate_interval,
         "rsa_generation": _account.rsa_generation,
         "rsa_public_key": rsa_public_key,
         "is_deleted": _account.is_deleted
-    }
+    })
 
 
 # GET: /e2e_messaging/accounts
@@ -227,7 +228,7 @@ def list_all_accounts(db: Session = Depends(db_session)):
             "is_deleted": _account.is_deleted
         })
 
-    return account_list
+    return json_response(account_list)
 
 
 # GET: /e2e_messaging/accounts/{account_address}
@@ -253,13 +254,13 @@ def retrieve_account(account_address: str, db: Session = Depends(db_session)):
             first()
         rsa_public_key = _rsa_key.rsa_public_key
 
-    return {
+    return json_response({
         "account_address": _account.account_address,
         "rsa_key_generate_interval": _account.rsa_key_generate_interval,
         "rsa_generation": _account.rsa_generation,
         "rsa_public_key": rsa_public_key,
         "is_deleted": _account.is_deleted
-    }
+    })
 
 
 # DELETE: /e2e_messaging/accounts/{account_address}
@@ -287,13 +288,13 @@ def delete_account(account_address: str, db: Session = Depends(db_session)):
 
     db.commit()
 
-    return {
+    return json_response({
         "account_address": _account.account_address,
         "rsa_key_generate_interval": _account.rsa_key_generate_interval,
         "rsa_generation": _account.rsa_generation,
         "rsa_public_key": None,
         "is_deleted": _account.is_deleted
-    }
+    })
 
 
 # POST: /e2e_messaging/accounts/{account_address}/rsa_key
@@ -326,13 +327,13 @@ def update_account_rsa_key(
 
     db.commit()
 
-    return {
+    return json_response({
         "account_address": _account.account_address,
         "rsa_key_generate_interval": _account.rsa_key_generate_interval,
         "rsa_generation": _account.rsa_generation,
         "rsa_public_key": _rsa_key.rsa_public_key,
         "is_deleted": _account.is_deleted
-    }
+    })
 
 
 # POST: /e2e_messaging/accounts/{account_address}/eoa_password
@@ -507,7 +508,7 @@ def list_all_e2e_messages(
         "e2e_messages": e2e_messages
     }
 
-    return resp
+    return json_response(resp)
 
 
 # GET: /e2e_messaging/messages/{id}
@@ -535,11 +536,11 @@ def retrieve_e2e_messaging(
     except json.decoder.JSONDecodeError:
         message = _e2e_messaging.message
 
-    return {
+    return json_response({
         "id": _e2e_messaging.id,
         "from_address": _e2e_messaging.from_address,
         "to_address": _e2e_messaging.to_address,
         "type": _e2e_messaging.type,
         "message": message,
         "send_timestamp": send_timestamp_formatted,
-    }
+    })

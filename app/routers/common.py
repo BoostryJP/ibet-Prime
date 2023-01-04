@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from config import E2EE_REQUEST_ENABLED
 from app.database import db_session
 from app.model.db import Node
+from app.utils.fastapi import json_response
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.docs_utils import get_routers_responses
 from app.utils.web3_utils import Web3Wrapper
@@ -46,11 +47,13 @@ def e2e_encryption_key():
     """Get E2EE public key"""
 
     if not E2EE_REQUEST_ENABLED:
-        return {"public_key": None}
+        return json_response({"public_key": None})
 
     _, public_key = E2EEUtils.get_key()
 
-    return {"public_key": public_key}
+    return json_response({
+        "public_key": public_key
+    })
 
 
 # GET: /healthcheck
@@ -106,4 +109,6 @@ def get_block_number():
     """Get Block Number in current"""
     block_number = web3.eth.block_number
 
-    return {"block_number": block_number}
+    return json_response({
+        "block_number": block_number
+    })
