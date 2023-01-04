@@ -234,7 +234,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
         resp = client.get(
             self.base_url.format(self.test_token_address),
             params={
-                "sort_item": IDXIssueRedeemSortItem.BLOCK_TIMESTAMP,
+                "sort_item": IDXIssueRedeemSortItem.BLOCK_TIMESTAMP.value,
                 "sort_order": 0
             }
         )

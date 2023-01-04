@@ -20,11 +20,19 @@ import sys
 import os
 import configparser
 
-# Global Config
 SERVER_NAME = 'ibet-Prime'
-APP_ENV = os.environ.get('APP_ENV') or 'local'
+
+####################################################
+# Basic settings
+####################################################
+# System timezone for REST API
+TZ = os.environ.get("TZ") or "Asia/Tokyo"
+
+# Blockchain network
 NETWORK = os.environ.get("NETWORK") or "IBET"  # IBET or IBETFIN
 
+# Environment-specific settings
+APP_ENV = os.environ.get('APP_ENV') or 'local'
 if APP_ENV != "live":
     INI_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), f"conf/{APP_ENV}.ini")
 else:
@@ -35,10 +43,10 @@ else:
 CONFIG = configparser.ConfigParser()
 CONFIG.read(INI_FILE)
 
-# Logging
-LOG_LEVEL = CONFIG['logging']['level']
-AUTH_LOGFILE = os.environ.get('AUTH_LOGFILE') or '/dev/stdout'
-ACCESS_LOGFILE = os.environ.get('ACCESS_LOGFILE') or '/dev/stdout'
+
+####################################################
+# Server settings
+####################################################
 
 # Database
 if 'pytest' in sys.modules:  # for unit test
@@ -50,13 +58,59 @@ else:
 DATABASE_SCHEMA = os.environ.get('DATABASE_SCHEMA')
 DB_ECHO = True if CONFIG['database']['echo'] == 'yes' else False
 
-# Blockchain
+# Logging
+LOG_LEVEL = CONFIG['logging']['level']
+AUTH_LOGFILE = os.environ.get('AUTH_LOGFILE') or '/dev/stdout'
+ACCESS_LOGFILE = os.environ.get('ACCESS_LOGFILE') or '/dev/stdout'
+
+
+####################################################
+# Blockchain monitoring settings
+####################################################
+# Block synchronization monitoring interval [sec]
+BLOCK_SYNC_STATUS_SLEEP_INTERVAL = int(os.environ.get("BLOCK_SYNC_STATUS_SLEEP_INTERVAL")) \
+    if os.environ.get("BLOCK_SYNC_STATUS_SLEEP_INTERVAL") else 3
+# Number of monitoring data period
+BLOCK_SYNC_STATUS_CALC_PERIOD = int(os.environ.get("BLOCK_SYNC_STATUS_CALC_PERIOD")) \
+    if os.environ.get("BLOCK_SYNC_STATUS_CALC_PERIOD") else 3
+# Threshold for remaining block synchronization
+# - Threshold for difference between highestBlock and currentBlock
+BLOCK_SYNC_REMAINING_THRESHOLD = int(os.environ.get("BLOCK_SYNC_REMAINING_THRESHOLD", 2))
+# Threshold of block generation speed for judging synchronous stop [%]
+if APP_ENV == "local":
+    BLOCK_GENERATION_SPEED_THRESHOLD = int(os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD")) \
+        if os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD") else 0
+else:
+    BLOCK_GENERATION_SPEED_THRESHOLD = int(os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD")) \
+        if os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD") else 20
+
+
+####################################################
+# Web3 settings
+####################################################
+# Provider
 WEB3_HTTP_PROVIDER = os.environ.get('WEB3_HTTP_PROVIDER') or 'http://localhost:8545'
 WEB3_HTTP_PROVIDER_STANDBY = [node.strip() for node in os.environ.get("WEB3_HTTP_PROVIDER_STANDBY").split(",")] \
     if os.environ.get("WEB3_HTTP_PROVIDER_STANDBY") else []
+
+# Chain ID
 CHAIN_ID = int(os.environ.get("CHAIN_ID")) if os.environ.get("CHAIN_ID") else 2017
+
+# Gas limit
 TX_GAS_LIMIT = int(os.environ.get("TX_GAS_LIMIT")) if os.environ.get("TX_GAS_LIMIT") else 6000000
+
+WEB3_REQUEST_RETRY_COUNT = int(os.environ.get("WEB3_REQUEST_RETRY_COUNT")) if os.environ.get(
+    "WEB3_REQUEST_RETRY_COUNT") else 3
+WEB3_REQUEST_WAIT_TIME = int(os.environ.get("WEB3_REQUEST_WAIT_TIME")) \
+    if os.environ.get("WEB3_REQUEST_WAIT_TIME") else BLOCK_SYNC_STATUS_SLEEP_INTERVAL  # Same batch interval
+
+
+####################################################
+# Token settings
+####################################################
+# Default addresses
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+
 TOKEN_LIST_CONTRACT_ADDRESS = os.environ.get('TOKEN_LIST_CONTRACT_ADDRESS')
 E2E_MESSAGING_CONTRACT_ADDRESS = os.environ.get('E2E_MESSAGING_CONTRACT_ADDRESS')
 
@@ -64,15 +118,56 @@ E2E_MESSAGING_CONTRACT_ADDRESS = os.environ.get('E2E_MESSAGING_CONTRACT_ADDRESS'
 TOKEN_CACHE = False if os.environ.get("TOKEN_CACHE") == "0" else True
 TOKEN_CACHE_TTL = int(os.environ.get("TOKEN_CACHE_TTL")) if os.environ.get("TOKEN_CACHE_TTL") else 43200
 
+
+####################################################
+# Batch settings
+####################################################
 # Indexer
 INDEXER_SYNC_INTERVAL = 10
 INDEXER_BLOCK_LOT_MAX_SIZE = int(os.environ.get("INDEXER_BLOCK_LOT_MAX_SIZE")) \
     if os.environ.get("INDEXER_BLOCK_LOT_MAX_SIZE") else 1000000
 
-# AWS Region
-AWS_REGION_NAME = os.environ.get("AWS_REGION_NAME") or "ap-northeast-1"
+# Processor
+# Bulk Transfer
+BULK_TRANSFER_INTERVAL = int(os.environ.get("BULK_TRANSFER_INTERVAL")) \
+    if os.environ.get("BULK_TRANSFER_INTERVAL") else 10
+BULK_TRANSFER_WORKER_COUNT = int(os.environ.get("BULK_TRANSFER_WORKER_COUNT")) \
+    if os.environ.get("BULK_TRANSFER_WORKER_COUNT") else 5
+BULK_TRANSFER_WORKER_LOT_SIZE = int(os.environ.get("BULK_TRANSFER_WORKER_LOT_SIZE")) \
+    if os.environ.get("BULK_TRANSFER_WORKER_LOT_SIZE") else 5
 
-# Password Policy
+# Batch Register Personal Info
+BATCH_REGISTER_PERSONAL_INFO_INTERVAL = int(os.environ.get("BATCH_REGISTER_PERSONAL_INFO_INTERVAL")) \
+    if os.environ.get("BATCH_REGISTER_PERSONAL_INFO_INTERVAL") else 60
+BATCH_REGISTER_PERSONAL_INFO_WORKER_COUNT = int(os.environ.get("BATCH_REGISTER_PERSONAL_INFO_WORKER_COUNT")) \
+    if os.environ.get("BATCH_REGISTER_PERSONAL_INFO_WORKER_COUNT") else 1
+BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE = int(os.environ.get("BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE")) \
+    if os.environ.get("BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE") else 2
+
+# Scheduled Events
+SCHEDULED_EVENTS_INTERVAL = int(os.environ.get("SCHEDULED_EVENTS_INTERVAL")) \
+    if os.environ.get("SCHEDULED_EVENTS_INTERVAL") else 60
+SCHEDULED_EVENTS_WORKER_COUNT = int(os.environ.get("SCHEDULED_EVENTS_WORKER_COUNT")) \
+    if os.environ.get("SCHEDULED_EVENTS_WORKER_COUNT") else 5
+
+# Update Token
+UPDATE_TOKEN_INTERVAL = int(os.environ.get("UPDATE_TOKEN_INTERVAL")) \
+    if os.environ.get("UPDATE_TOKEN_INTERVAL") else 10
+
+# Create UTXO
+CREATE_UTXO_INTERVAL = int(os.environ.get("CREATE_UTXO_INTERVAL")) \
+    if os.environ.get("CREATE_UTXO_INTERVAL") else 600
+CREATE_UTXO_BLOCK_LOT_MAX_SIZE = int(os.environ.get("CREATE_UTXO_BLOCK_LOT_MAX_SIZE")) \
+    if os.environ.get("CREATE_UTXO_BLOCK_LOT_MAX_SIZE") else 10000
+
+# Rotate E2E Messaging RSA Key
+ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL = int(os.environ.get("ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL")) \
+    if os.environ.get("ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL") else 10
+
+
+####################################################
+# Password settings
+####################################################
 # NOTE:
 # Set PATTERN with a regular expression.
 # e.g.) ^(?=.*?[a-z])(?=.*?[A-Z])[a-zA-Z]{10,}$
@@ -127,74 +222,24 @@ else:
     E2EE_RSA_PASSPHRASE = os.environ.get("E2EE_RSA_PASSPHRASE")
 E2EE_REQUEST_ENABLED = False if os.environ.get("E2EE_REQUEST_ENABLED") == "0" else True
 
-# Bulk Transfer
-BULK_TRANSFER_INTERVAL = int(os.environ.get("BULK_TRANSFER_INTERVAL")) \
-    if os.environ.get("BULK_TRANSFER_INTERVAL") else 10
-BULK_TRANSFER_WORKER_COUNT = int(os.environ.get("BULK_TRANSFER_WORKER_COUNT")) \
-    if os.environ.get("BULK_TRANSFER_WORKER_COUNT") else 5
-BULK_TRANSFER_WORKER_LOT_SIZE = int(os.environ.get("BULK_TRANSFER_WORKER_LOT_SIZE")) \
-    if os.environ.get("BULK_TRANSFER_WORKER_LOT_SIZE") else 5
 
-# Batch Register Personal Info
-BATCH_REGISTER_PERSONAL_INFO_INTERVAL = int(os.environ.get("BATCH_REGISTER_PERSONAL_INFO_INTERVAL")) \
-    if os.environ.get("BATCH_REGISTER_PERSONAL_INFO_INTERVAL") else 60
-BATCH_REGISTER_PERSONAL_INFO_WORKER_COUNT = int(os.environ.get("BATCH_REGISTER_PERSONAL_INFO_WORKER_COUNT")) \
-    if os.environ.get("BATCH_REGISTER_PERSONAL_INFO_WORKER_COUNT") else 1
-BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE = int(os.environ.get("BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE")) \
-    if os.environ.get("BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE") else 2
+####################################################
+# Blockchain explorer settings
+####################################################
+# Blockchain Explorer
+BC_EXPLORER_ENABLED = True if os.environ.get("BC_EXPLORER_ENABLED") == "1" else False
 
-# System timezone for REST API
-TZ = os.environ.get("TZ") or "Asia/Tokyo"
 
-# Scheduled Events
-SCHEDULED_EVENTS_INTERVAL = int(os.environ.get("SCHEDULED_EVENTS_INTERVAL")) \
-    if os.environ.get("SCHEDULED_EVENTS_INTERVAL") else 60
-SCHEDULED_EVENTS_WORKER_COUNT = int(os.environ.get("SCHEDULED_EVENTS_WORKER_COUNT")) \
-    if os.environ.get("SCHEDULED_EVENTS_WORKER_COUNT") else 5
-
-# Update Token
-UPDATE_TOKEN_INTERVAL = int(os.environ.get("UPDATE_TOKEN_INTERVAL")) \
-    if os.environ.get("UPDATE_TOKEN_INTERVAL") else 10
-
-# Block Sync Monitor
-# monitoring interval(second)
-BLOCK_SYNC_STATUS_SLEEP_INTERVAL = int(os.environ.get("BLOCK_SYNC_STATUS_SLEEP_INTERVAL")) \
-    if os.environ.get("BLOCK_SYNC_STATUS_SLEEP_INTERVAL") else 3
-# number of monitoring data period
-BLOCK_SYNC_STATUS_CALC_PERIOD = int(os.environ.get("BLOCK_SYNC_STATUS_CALC_PERIOD")) \
-    if os.environ.get("BLOCK_SYNC_STATUS_CALC_PERIOD") else 3
-# Threshold for remaining block synchronization
-# - Threshold for difference between highestBlock and currentBlock
-BLOCK_SYNC_REMAINING_THRESHOLD = int(os.environ.get("BLOCK_SYNC_REMAINING_THRESHOLD", 2))
-# Threshold of block generation speed for judging synchronous stop(%)
-if APP_ENV == "local":
-    BLOCK_GENERATION_SPEED_THRESHOLD = int(os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD")) \
-        if os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD") else 0
-else:
-    BLOCK_GENERATION_SPEED_THRESHOLD = int(os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD")) \
-        if os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD") else 20
-WEB3_REQUEST_RETRY_COUNT = int(os.environ.get("WEB3_REQUEST_RETRY_COUNT")) if os.environ.get(
-    "WEB3_REQUEST_RETRY_COUNT") else 3
-WEB3_REQUEST_WAIT_TIME = int(os.environ.get("WEB3_REQUEST_WAIT_TIME")) \
-    if os.environ.get("WEB3_REQUEST_WAIT_TIME") else BLOCK_SYNC_STATUS_SLEEP_INTERVAL  # Same batch interval
+####################################################
+# Other settings
+####################################################
+# AWS Region
+AWS_REGION_NAME = os.environ.get("AWS_REGION_NAME") or "ap-northeast-1"
 
 # Random Bytes Generator
 AWS_KMS_GENERATE_RANDOM_ENABLED = True if os.environ.get("AWS_KMS_GENERATE_RANDOM_ENABLED") == "1" else False
-
-# Create UTXO
-CREATE_UTXO_INTERVAL = int(os.environ.get("CREATE_UTXO_INTERVAL")) \
-    if os.environ.get("CREATE_UTXO_INTERVAL") else 600
-CREATE_UTXO_BLOCK_LOT_MAX_SIZE = int(os.environ.get("CREATE_UTXO_BLOCK_LOT_MAX_SIZE")) \
-    if os.environ.get("CREATE_UTXO_BLOCK_LOT_MAX_SIZE") else 10000
 
 # File Upload
 # NOTE: (Reference information) WSGI server and app used by ibet-Prime has no request body size limit.
 MAX_UPLOAD_FILE_SIZE = int(os.environ.get("MAX_UPLOAD_FILE_SIZE")) \
     if os.environ.get("MAX_UPLOAD_FILE_SIZE") else 100_000_000
-
-# Rotate E2E Messaging RSA Key
-ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL = int(os.environ.get("ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL")) \
-    if os.environ.get("ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL") else 10
-
-# Blockchain Explorer
-BC_EXPLORER_ENABLED = True if os.environ.get("BC_EXPLORER_ENABLED") == "1" else False
