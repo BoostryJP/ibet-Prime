@@ -727,4 +727,4 @@ def __get_personal_info(token_address: str, token_type: str, account_address: st
                 account_address=account_address,
                 default_value=None
             )
-        return json_response(personal_info)
+        return personal_info
