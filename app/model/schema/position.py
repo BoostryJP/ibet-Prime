@@ -42,6 +42,7 @@ class PositionResponse(BaseModel):
     exchange_balance: int
     exchange_commitment: int
     pending_transfer: int
+    locked: int
 
 
 class ListAllPositionResponse(BaseModel):

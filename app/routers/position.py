@@ -25,7 +25,7 @@ from fastapi import (
     Query
 )
 from fastapi.exceptions import HTTPException
-from sqlalchemy import or_
+from sqlalchemy import or_, func, and_
 from sqlalchemy.orm import Session
 
 from app.database import db_session
@@ -41,6 +41,7 @@ from app.utils.check_utils import (
 )
 from app.model.db import (
     IDXPosition,
+    IDXLockedPosition,
     Token,
     TokenType
 )
@@ -73,17 +74,24 @@ def list_all_position(
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get a list of positions
-    query = db.query(IDXPosition, Token). \
+    query = db.query(IDXPosition, func.sum(IDXLockedPosition.value), Token). \
         join(Token, IDXPosition.token_address == Token.token_address). \
+        outerjoin(
+            IDXLockedPosition,
+            and_(IDXLockedPosition.token_address == IDXPosition.token_address,
+                 IDXLockedPosition.account_address == IDXPosition.account_address)
+        ). \
         filter(IDXPosition.account_address == account_address). \
-        filter(Token.token_status != 2)
+        filter(Token.token_status != 2). \
+        group_by(IDXPosition.id, Token.id, IDXLockedPosition.token_address, IDXLockedPosition.account_address)
 
     if not include_former_position:
         query = query.filter(or_(
             IDXPosition.balance != 0,
             IDXPosition.exchange_balance != 0,
             IDXPosition.pending_transfer != 0,
-            IDXPosition.exchange_commitment != 0
+            IDXPosition.exchange_commitment != 0,
+            IDXLockedPosition.value != 0
         ))
 
     query = query.order_by(IDXPosition.token_address, IDXPosition.account_address)
@@ -106,7 +114,7 @@ def list_all_position(
     _position_list = query.all()
 
     positions = []
-    for _position, _token in _position_list:
+    for _position, _locked, _token in _position_list:
         # Get Token Name
         token_name = None
         if _token.type == TokenType.IBET_STRAIGHT_BOND.value:
@@ -124,6 +132,7 @@ def list_all_position(
             "exchange_balance": _position.exchange_balance,
             "exchange_commitment": _position.exchange_commitment,
             "pending_transfer": _position.pending_transfer,
+            "locked": _locked if _locked is not None else 0
         })
 
     resp = {
@@ -168,13 +177,32 @@ def retrieve_position(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Position
-    _position = db.query(IDXPosition). \
+    _record = db.query(IDXPosition, func.sum(IDXLockedPosition.value)). \
+        outerjoin(
+            IDXLockedPosition,
+            and_(IDXLockedPosition.token_address == IDXPosition.token_address,
+                 IDXLockedPosition.account_address == IDXPosition.account_address)
+        ). \
         filter(IDXPosition.token_address == token_address). \
         filter(IDXPosition.account_address == account_address). \
+        group_by(IDXPosition.id, IDXLockedPosition.token_address, IDXLockedPosition.account_address). \
         first()
+
+    if _record is not None:
+        _position = _record[0]
+        _locked = _record[1]
+    else:
+        _position = None
+        _locked = None
+
     if _position is None:
         # If there is no position, set default value(0) to each balance.
-        _position = IDXPosition(balance=0, exchange_balance=0, exchange_commitment=0, pending_transfer=0)
+        _position = IDXPosition(
+            balance=0,
+            exchange_balance=0,
+            exchange_commitment=0,
+            pending_transfer=0
+        )
 
     # Get Token Name
     token_name = None
@@ -194,6 +222,7 @@ def retrieve_position(
         "exchange_balance": _position.exchange_balance,
         "exchange_commitment": _position.exchange_commitment,
         "pending_transfer": _position.pending_transfer,
+        "locked": _locked if _locked is not None else 0
     }
 
     return json_response(resp)

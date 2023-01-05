@@ -71,3 +71,25 @@ class IDXPositionShareBlockNumber(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     # latest blockNumber
     latest_block_number = Column(BigInteger)
+
+
+class IDXLockedPosition(Base):
+    """INDEX Locked Position"""
+    __tablename__ = "idx_locked_position"
+
+    # token address
+    token_address = Column(String(42), primary_key=True)
+    # lock address
+    lock_address = Column(String(42), primary_key=True)
+    # account address
+    account_address = Column(String(42), primary_key=True)
+    # locked amount
+    value = Column(BigInteger, nullable=False)
+
+    def json(self):
+        return {
+            "token_address": self.token_address,
+            "lock_address": self.lock_address,
+            "account_address": self.account_address,
+            "value": self.value
+        }

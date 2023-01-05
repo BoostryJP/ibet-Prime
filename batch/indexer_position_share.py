@@ -36,7 +36,8 @@ from app.model.db import (
     Token,
     TokenType,
     IDXPosition,
-    IDXPositionShareBlockNumber
+    IDXPositionShareBlockNumber,
+    IDXLockedPosition
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
@@ -105,6 +106,9 @@ class Processor:
                 block_number=latest_block
             )
             db_session.commit()
+        except Exception as e:
+            db_session.rollback()
+            raise e
         finally:
             db_session.close()
         LOG.info("Sync job has been completed")
@@ -202,8 +206,8 @@ class Processor:
                     balance=balance,
                     pending_transfer=pending_transfer
                 )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+            except Exception as e:
+                raise e
 
     def __sync_issue(self, db_session: Session, block_from: int, block_to: int):
         """Synchronize Issue events
@@ -232,8 +236,8 @@ class Processor:
                         balance=balance,
                         pending_transfer=pending_transfer
                     )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+            except Exception as e:
+                raise e
 
     def __sync_transfer(self, db_session: Session, block_from: int, block_to: int):
         """Synchronize Transfer events
@@ -267,8 +271,8 @@ class Processor:
                                 exchange_commitment=exchange_commitment,
                                 pending_transfer=pending_transfer
                             )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+            except Exception as e:
+                raise e
 
     def __sync_lock(self, db_session: Session, block_from: int, block_to: int):
         """Synchronize Lock events
@@ -286,6 +290,36 @@ class Processor:
                     block_from=block_from,
                     block_to=block_to
                 )
+
+                # Update locked positions
+                try:
+                    lock_map: dict[str, dict[str, True]] = {}
+                    for event in events:
+                        args = event["args"]
+                        account_address = args.get("accountAddress", "")
+                        lock_address = args.get("lockAddress", "")
+                        if lock_address not in lock_map:
+                            lock_map[lock_address] = {}
+                        lock_map[lock_address][account_address] = True
+
+                    for lock_address in lock_map:
+                        for account_address in lock_map[lock_address]:
+                            value = self.__get_account_locked_token(
+                                token_contract=token,
+                                lock_address=lock_address,
+                                account_address=account_address
+                            )
+                            self.__sink_on_locked_position(
+                                db_session=db_session,
+                                token_address=to_checksum_address(token.address),
+                                lock_address=lock_address,
+                                account_address=account_address,
+                                value=value
+                            )
+                except Exception:
+                    pass
+
+                # Update positions
                 for event in events:
                     args = event['args']
                     account = args.get("accountAddress", ZERO_ADDRESS)
@@ -297,8 +331,8 @@ class Processor:
                         balance=balance,
                         pending_transfer=pending_transfer
                     )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+            except Exception as e:
+                raise e
 
     def __sync_unlock(self, db_session: Session, block_from: int, block_to: int):
         """Synchronize Unlock events
@@ -316,6 +350,35 @@ class Processor:
                     block_from=block_from,
                     block_to=block_to
                 )
+
+                # Update locked positions
+                try:
+                    lock_map: dict[str, dict[str, True]] = {}
+                    for event in events:
+                        args = event["args"]
+                        account_address = args.get("accountAddress", "")
+                        lock_address = args.get("lockAddress", "")
+                        if lock_address not in lock_map:
+                            lock_map[lock_address] = {}
+                        lock_map[lock_address][account_address] = True
+
+                    for lock_address in lock_map:
+                        for account_address in lock_map[lock_address]:
+                            value = self.__get_account_locked_token(
+                                token_contract=token,
+                                lock_address=lock_address,
+                                account_address=account_address
+                            )
+                            self.__sink_on_locked_position(
+                                db_session=db_session,
+                                token_address=to_checksum_address(token.address),
+                                lock_address=lock_address,
+                                account_address=account_address,
+                                value=value
+                            )
+                except Exception:
+                    pass
+
                 for event in events:
                     args = event['args']
                     account = args.get("recipientAddress", ZERO_ADDRESS)
@@ -327,8 +390,8 @@ class Processor:
                         balance=balance,
                         pending_transfer=pending_transfer
                     )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+            except Exception as e:
+                raise e
 
     def __sync_redeem(self, db_session: Session, block_from: int, block_to: int):
         """Synchronize Redeem events
@@ -357,8 +420,8 @@ class Processor:
                         balance=balance,
                         pending_transfer=pending_transfer
                     )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+            except Exception as e:
+                raise e
 
     def __sync_apply_for_transfer(self, db_session: Session, block_from: int, block_to: int):
         """Sync ApplyForTransfer Events
@@ -387,8 +450,8 @@ class Processor:
                         balance=balance,
                         pending_transfer=pending_transfer
                     )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+            except Exception as e:
+                raise e
 
     def __sync_cancel_transfer(self, db_session: Session, block_from: int, block_to: int):
         """Sync CancelTransfer Events
@@ -417,8 +480,8 @@ class Processor:
                         balance=balance,
                         pending_transfer=pending_transfer
                     )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+            except Exception as e:
+                raise e
 
     def __sync_approve_transfer(self, db_session: Session, block_from: int, block_to: int):
         """Sync ApproveTransfer Events
@@ -447,8 +510,8 @@ class Processor:
                             balance=balance,
                             pending_transfer=pending_transfer
                         )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+            except Exception as e:
+                raise e
 
     def __sync_exchange(self, db_session: Session, block_from: int, block_to: int):
         """Sync Events from IbetExchange
@@ -568,8 +631,8 @@ class Processor:
                         exchange_balance=exchange_balance,
                         exchange_commitment=exchange_commitment
                     )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+            except Exception as e:
+                raise e
 
     def __sync_escrow(self, db_session: Session, block_from: int, block_to: int):
         """Sync Events from IbetSecurityTokenEscrow
@@ -650,8 +713,8 @@ class Processor:
                         exchange_balance=exchange_balance,
                         exchange_commitment=exchange_commitment
                     )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+            except Exception as e:
+                raise e
 
     @staticmethod
     def __sink_on_position(db_session: Session,
@@ -697,6 +760,37 @@ class Processor:
             position.exchange_balance = exchange_balance or 0
             position.exchange_commitment = exchange_commitment or 0
             db_session.add(position)
+
+    @staticmethod
+    def __sink_on_locked_position(db_session: Session,
+                                  token_address: str,
+                                  lock_address: str,
+                                  account_address: str,
+                                  value: int):
+        """Update locked balance data
+
+        :param db_session: ORM session
+        :param token_address: token address
+        :param lock_address: account address
+        :param account_address: account address
+        :param value: updated locked amount
+        :return: None
+        """
+        locked = db_session.query(IDXLockedPosition). \
+            filter(IDXLockedPosition.token_address == token_address). \
+            filter(IDXLockedPosition.lock_address == lock_address). \
+            filter(IDXLockedPosition.account_address == account_address). \
+            first()
+        if locked is not None:
+            locked.value = value
+            db_session.merge(locked)
+        else:
+            locked = IDXLockedPosition()
+            locked.token_address = token_address
+            locked.lock_address = lock_address
+            locked.account_address = account_address
+            locked.value = value
+            db_session.add(locked)
 
     @staticmethod
     def __get_account_balance_all(token_contract, account_address: str):
@@ -750,6 +844,17 @@ class Processor:
             default_returns=0
         )
         return balance, pending_transfer
+
+    @staticmethod
+    def __get_account_locked_token(token_contract, lock_address: str, account_address: str):
+        """Get locked balance on token"""
+        value = ContractUtils.call_function(
+            contract=token_contract,
+            function_name="lockedOf",
+            args=(lock_address, account_address,),
+            default_returns=0
+        )
+        return value
 
     @staticmethod
     def __get_account_balance_exchange(exchange_address: str, token_address: str, account_address: str):

@@ -80,7 +80,8 @@ from .idx_tx_data import IDXTxData
 from .idx_position import (
     IDXPosition,
     IDXPositionBondBlockNumber,
-    IDXPositionShareBlockNumber
+    IDXPositionShareBlockNumber,
+    IDXLockedPosition
 )
 from .idx_personal_info import (
     IDXPersonalInfo,

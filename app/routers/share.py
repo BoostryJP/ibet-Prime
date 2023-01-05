@@ -91,6 +91,7 @@ from app.model.db import (
     TokenType,
     UpdateToken,
     IDXPosition,
+    IDXLockedPosition,
     IDXPersonalInfo,
     BulkTransfer,
     BulkTransferUpload,
@@ -1314,15 +1315,22 @@ def list_all_holders(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Holders
-    query = db.query(IDXPosition). \
-        filter(IDXPosition.token_address == token_address)
+    query = db.query(IDXPosition, func.sum(IDXLockedPosition.value)). \
+        outerjoin(
+            IDXLockedPosition,
+            and_(IDXLockedPosition.token_address == IDXPosition.token_address,
+                 IDXLockedPosition.account_address == IDXPosition.account_address)
+        ). \
+        filter(IDXPosition.token_address == token_address).\
+        group_by(IDXPosition.id, IDXLockedPosition.token_address, IDXLockedPosition.account_address)
+
     if not include_former_holder:
-        # Get Holders
         query = query.filter(or_(
             IDXPosition.balance != 0,
             IDXPosition.exchange_balance != 0,
             IDXPosition.pending_transfer != 0,
-            IDXPosition.exchange_commitment != 0
+            IDXPosition.exchange_commitment != 0,
+            IDXLockedPosition.value != 0
         ))
     _holders = query.order_by(IDXPosition.id).all()
 
@@ -1346,18 +1354,19 @@ def list_all_holders(
     }
 
     holders = []
-    for _holder in _holders:
+    for _position, _locked in _holders:
         _personal_info = _personal_info_dict.get(
-            _holder.account_address,
+            _position.account_address,
             personal_info_default
         )
         holders.append({
-            "account_address": _holder.account_address,
+            "account_address": _position.account_address,
             "personal_information": _personal_info,
-            "balance": _holder.balance,
-            "exchange_balance": _holder.exchange_balance,
-            "exchange_commitment": _holder.exchange_commitment,
-            "pending_transfer": _holder.pending_transfer
+            "balance": _position.balance,
+            "exchange_balance": _position.exchange_balance,
+            "exchange_commitment": _position.exchange_commitment,
+            "pending_transfer": _position.pending_transfer,
+            "locked": _locked if _locked is not None else 0
         })
 
     return json_response(holders)
@@ -1398,14 +1407,21 @@ def count_number_of_holders(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Holders
-    _count: int = db.query(IDXPosition). \
+    _count: int = db.query(IDXPosition, func.sum(IDXLockedPosition.value)). \
+        outerjoin(
+            IDXLockedPosition,
+            and_(IDXLockedPosition.token_address == IDXPosition.token_address,
+                 IDXLockedPosition.account_address == IDXPosition.account_address)
+        ). \
         filter(IDXPosition.token_address == token_address). \
         filter(
             or_(IDXPosition.balance != 0,
                 IDXPosition.exchange_balance != 0,
                 IDXPosition.pending_transfer != 0,
-                IDXPosition.exchange_commitment != 0)
+                IDXPosition.exchange_commitment != 0,
+                IDXLockedPosition.value != 0)
         ). \
+        group_by(IDXPosition.id, IDXLockedPosition.token_address, IDXLockedPosition.account_address). \
         count()
 
     return json_response({
@@ -1449,20 +1465,29 @@ def retrieve_holder(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Holders
-    _holder = db.query(IDXPosition). \
+    _holder = db.query(IDXPosition, func.sum(IDXLockedPosition.value)). \
+        outerjoin(
+            IDXLockedPosition,
+            and_(IDXLockedPosition.token_address == IDXPosition.token_address,
+                 IDXLockedPosition.account_address == IDXPosition.account_address)
+        ). \
         filter(IDXPosition.token_address == token_address). \
         filter(IDXPosition.account_address == account_address). \
+        group_by(IDXPosition.id, IDXLockedPosition.token_address, IDXLockedPosition.account_address). \
         first()
+
     if _holder is None:
         balance = 0
         exchange_balance = 0
         exchange_commitment = 0
         pending_transfer = 0
+        locked = 0
     else:
-        balance = _holder.balance
-        exchange_balance = _holder.exchange_balance
-        exchange_commitment = _holder.exchange_commitment
-        pending_transfer = _holder.pending_transfer
+        balance = _holder[0].balance
+        exchange_balance = _holder[0].exchange_balance
+        exchange_commitment = _holder[0].exchange_commitment
+        pending_transfer = _holder[0].pending_transfer
+        locked = _holder[1]
 
     # Get personal information
     personal_info_default = {
@@ -1490,7 +1515,8 @@ def retrieve_holder(
         "balance": balance,
         "exchange_balance": exchange_balance,
         "exchange_commitment": exchange_commitment,
-        "pending_transfer": pending_transfer
+        "pending_transfer": pending_transfer,
+        "locked": locked if locked is not None else 0
     }
 
     return json_response(holder)
