@@ -31,7 +31,8 @@ from sqlalchemy.orm import Session
 from app.database import db_session
 from app.model.schema import (
     PositionResponse,
-    ListAllPositionResponse
+    ListAllPositionResponse,
+    ListAllLockedPositionResponse
 )
 from app.utils.fastapi import json_response
 from app.utils.docs_utils import get_routers_responses
@@ -57,17 +58,19 @@ router = APIRouter(tags=["token_common"])
 # GET: /positions/{account_address}
 @router.get(
     "/positions/{account_address}",
+    summary="List all positions in the account",
     response_model=ListAllPositionResponse,
     responses=get_routers_responses(422)
 )
 def list_all_position(
-        account_address: str,
-        issuer_address: Optional[str] = Header(None),
-        include_former_position: bool = False,
-        token_type: Optional[TokenType] = Query(None),
-        offset: Optional[int] = Query(None),
-        limit: Optional[int] = Query(None),
-        db: Session = Depends(db_session)):
+    account_address: str,
+    issuer_address: Optional[str] = Header(None),
+    include_former_position: bool = False,
+    token_type: Optional[TokenType] = Query(None),
+    offset: Optional[int] = Query(None),
+    limit: Optional[int] = Query(None),
+    db: Session = Depends(db_session)
+):
     """List all account's position"""
 
     # Validate Headers
@@ -148,17 +151,97 @@ def list_all_position(
     return json_response(resp)
 
 
+# GET: /positions/{account_address}/lock
+@router.get(
+    "/positions/{account_address}/lock",
+    summary="List all locked positions in the account",
+    response_model=ListAllLockedPositionResponse,
+    responses=get_routers_responses(422)
+)
+def list_all_locked_position(
+    account_address: str,
+    issuer_address: Optional[str] = Header(None),
+    token_type: Optional[TokenType] = Query(None),
+    offset: Optional[int] = Query(None),
+    limit: Optional[int] = Query(None),
+    db: Session = Depends(db_session)
+):
+    """List all account's locked position"""
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
+
+    # Get a list of locked positions
+    query = db.query(IDXLockedPosition, Token).\
+        join(Token, IDXLockedPosition.token_address == Token.token_address).\
+        filter(IDXLockedPosition.account_address == account_address).\
+        filter(IDXLockedPosition.value > 0).\
+        filter(Token.token_status != 2).\
+        order_by(IDXLockedPosition.token_address)
+
+    if issuer_address is not None:
+        query = query.filter(Token.issuer_address == issuer_address)
+
+    total = query.count()
+
+    # Search Filter
+    if token_type is not None:
+        query = query.filter(Token.type == token_type.value)
+
+    count = query.count()
+
+    # Pagination
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+
+    _position_list = query.all()
+
+    positions = []
+    for _locked_position, _token in _position_list:
+        # Get Token Name
+        token_name = None
+        if _token.type == TokenType.IBET_STRAIGHT_BOND.value:
+            _bond = IbetStraightBondContract.get(contract_address=_token.token_address)
+            token_name = _bond.name
+        elif _token.type == TokenType.IBET_SHARE.value:
+            _share = IbetShareContract.get(contract_address=_token.token_address)
+            token_name = _share.name
+        positions.append({
+            "issuer_address": _token.issuer_address,
+            "token_address": _token.token_address,
+            "token_type": _token.type,
+            "token_name": token_name,
+            "lock_address": _locked_position.lock_address,
+            "locked": _locked_position.value
+        })
+
+    resp = {
+        "result_set": {
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": total
+        },
+        "locked_positions": positions
+    }
+    return json_response(resp)
+
+
 # GET: /positions/{account_address}/{token_address}
 @router.get(
     "/positions/{account_address}/{token_address}",
+    summary="Token position in the account",
     response_model=PositionResponse,
     responses=get_routers_responses(422, InvalidParameterError, 404)
 )
 def retrieve_position(
-        account_address: str,
-        token_address: str,
-        issuer_address: Optional[str] = Header(None),
-        db: Session = Depends(db_session)):
+    account_address: str,
+    token_address: str,
+    issuer_address: Optional[str] = Header(None),
+    db: Session = Depends(db_session)
+):
     """Retrieve account's position"""
 
     # Validate Headers

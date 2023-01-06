@@ -92,7 +92,8 @@ from .personal_info import (
 )
 from .position import (
     PositionResponse,
-    ListAllPositionResponse
+    ListAllPositionResponse,
+    ListAllLockedPositionResponse
 )
 from .scheduled_events import (
     IbetStraightBondScheduledUpdate,
