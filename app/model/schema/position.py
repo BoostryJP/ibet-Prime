@@ -49,3 +49,19 @@ class ListAllPositionResponse(BaseModel):
     """List All Position schema (Response)"""
     result_set: ResultSet
     positions: List[PositionResponse]
+
+
+class LockedPosition(BaseModel):
+    """Locked Position"""
+    issuer_address: str
+    token_address: str
+    token_type: TokenType
+    token_name: str
+    lock_address: str
+    locked: int
+
+
+class ListAllLockedPositionResponse(BaseModel):
+    """List All Locked Position schema (Response)"""
+    result_set: ResultSet
+    locked_positions: List[LockedPosition]
