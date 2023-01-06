@@ -190,6 +190,7 @@ class TestProcessor:
     #   - CancelAgreement/ConfirmAgreement
     # - IssueFrom
     # - RedeemFrom
+    # - Lock
     def test_normal_1(
         self,
         processor,
@@ -294,6 +295,9 @@ class TestProcessor:
         STContractUtils.redeem_from(token_contract.address, issuer_address, issuer_private_key, [issuer_address, ZERO_ADDRESS, 10000])
         # user1: 16000 user2: 44000
 
+        STContractUtils.lock(token_contract.address, user_address_1, user_pk_1, [issuer_address, 3000, ""])
+        # user1: 16000 user2: 44000
+
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
         block_number = web3.eth.block_number
@@ -335,6 +339,8 @@ class TestProcessor:
     #   - CreateEscrow
     #   - FinishEscrow
     #   - ApproveTransfer
+    # - Lock
+    # - Unlock
     def test_normal_2(
         self,
         processor,
@@ -412,6 +418,10 @@ class TestProcessor:
         )
         # user1: 13000 user2: 17000
 
+        STContractUtils.lock(token_contract.address, user_address_1, user_pk_1, [issuer_address, 3000, ""])
+        STContractUtils.unlock(token_contract.address, issuer_address, issuer_private_key, [user_address_1, user_address_2, 3000, ""])
+        # user1: 10000 user2: 20000
+
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
         block_number = web3.eth.block_number
@@ -439,8 +449,8 @@ class TestProcessor:
             .first()
         )
 
-        assert user1_record.hold_balance == 13000
-        assert user2_record.hold_balance == 17000
+        assert user1_record.hold_balance == 10000
+        assert user2_record.hold_balance == 20000
 
         assert len(list(db.query(TokenHolder).filter(TokenHolder.holder_list_id == _token_holders_list.id))) == 2
 
@@ -559,6 +569,7 @@ class TestProcessor:
     #   - CancelAgreement/ConfirmAgreement
     # - IssueFrom
     # - RedeemFrom
+    # - Lock
     def test_normal_4(
         self,
         processor,
@@ -663,6 +674,9 @@ class TestProcessor:
         STContractUtils.redeem_from(token_contract.address, issuer_address, issuer_private_key, [issuer_address, ZERO_ADDRESS, 10000])
         # user1: 6000 user2: 44000
 
+        STContractUtils.lock(token_contract.address, user_address_1, user_pk_1, [issuer_address, 3000, ""])
+        # user1: 16000 user2: 44000
+
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
         block_number = web3.eth.block_number
@@ -704,6 +718,8 @@ class TestProcessor:
     #   - CreateEscrow
     #   - FinishEscrow
     #   - ApproveTransfer
+    # - Lock
+    # - Unlock
     def test_normal_5(
         self,
         processor,
@@ -781,6 +797,10 @@ class TestProcessor:
         )
         # user1: 13000 user2: 17000
 
+        STContractUtils.lock(token_contract.address, user_address_1, user_pk_1, [issuer_address, 3000, ""])
+        STContractUtils.unlock(token_contract.address, issuer_address, issuer_private_key, [user_address_1, user_address_2, 3000, ""])
+        # user1: 10000 user2: 20000
+
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
         block_number = web3.eth.block_number
@@ -808,8 +828,8 @@ class TestProcessor:
             .first()
         )
 
-        assert user1_record.hold_balance == 13000
-        assert user2_record.hold_balance == 17000
+        assert user1_record.hold_balance == 10000
+        assert user2_record.hold_balance == 20000
 
         assert len(list(db.query(TokenHolder).filter(TokenHolder.holder_list_id == _token_holders_list.id))) == 2
 
