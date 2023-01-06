@@ -25,7 +25,13 @@ from unittest import mock
 from unittest.mock import patch
 
 from app.exceptions import ServiceUnavailableError
-from app.model.db import Token, TokenType, IDXPosition, IDXPositionBondBlockNumber
+from app.model.db import (
+    Token,
+    TokenType,
+    IDXPosition,
+    IDXLockedPosition,
+    IDXPositionBondBlockNumber
+)
 from app.model.blockchain import IbetStraightBondContract
 from app.model.schema import IbetStraightBondUpdate
 from app.utils.web3_utils import Web3Wrapper
@@ -634,6 +640,7 @@ class TestProcessor:
         # Assertion
         _position_list = db.query(IDXPosition).all()
         assert len(_position_list) == 1
+
         _position = db.query(IDXPosition).filter(IDXPosition.account_address == issuer_address).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -641,6 +648,16 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
+        _locked_position = db.query(IDXLockedPosition). \
+            filter(IDXLockedPosition.token_address == token_address_1). \
+            filter(IDXLockedPosition.account_address == issuer_address).\
+            first()
+        assert _locked_position.token_address == token_address_1
+        assert _locked_position.lock_address == issuer_address
+        assert _locked_position.account_address == issuer_address
+        assert _locked_position.value == 40
+
         _idx_position_bond_block_number = db.query(IDXPositionBondBlockNumber).first()
         assert _idx_position_bond_block_number.id == 1
         assert _idx_position_bond_block_number.latest_block_number == block_number
@@ -732,6 +749,7 @@ class TestProcessor:
         # Assertion
         _position_list = db.query(IDXPosition).all()
         assert len(_position_list) == 1
+
         _position = db.query(IDXPosition).filter(IDXPosition.account_address == issuer_address).first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
@@ -739,6 +757,16 @@ class TestProcessor:
         assert _position.exchange_balance == 0
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
+
+        _locked_position = db.query(IDXLockedPosition). \
+            filter(IDXLockedPosition.token_address == token_address_1). \
+            filter(IDXLockedPosition.account_address == issuer_address).\
+            first()
+        assert _locked_position.token_address == token_address_1
+        assert _locked_position.lock_address == issuer_address
+        assert _locked_position.account_address == issuer_address
+        assert _locked_position.value == 40 - 30
+
         _idx_position_bond_block_number = db.query(IDXPositionBondBlockNumber).first()
         assert _idx_position_bond_block_number.id == 1
         assert _idx_position_bond_block_number.latest_block_number == block_number
@@ -2497,130 +2525,8 @@ class TestProcessor:
         assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "skip process"))
 
     # <Normal_6>
-    # If DB session fails in sinking phase each event, batch outputs logs exception occured.
-    def test_normal_6(self, processor, db, personal_info_contract, ibet_exchange_contract, caplog: pytest.LogCaptureFixture):
-        exchange_contract = ibet_exchange_contract
-        user_1 = config_eth_account("user1")
-        issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8"))
-        user_2 = config_eth_account("user2")
-        user_address_1 = user_2["address"]
-        user_pk_1 = decode_keyfile_json(raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8"))
-        user_3 = config_eth_account("user3")
-        user_address_2 = user_3["address"]
-        user_pk_2 = decode_keyfile_json(raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8"))
-
-        # Issuer issues bond token.
-        token_contract1 = deploy_bond_token_contract(
-            issuer_address,
-            issuer_private_key,
-            personal_info_contract.address,
-            tradable_exchange_contract_address=exchange_contract.address,
-            transfer_approval_required=False,
-        )
-        token_address_1 = token_contract1.address
-        token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
-        token_1.token_address = token_address_1
-        token_1.issuer_address = issuer_address
-        token_1.abi = token_contract1.abi
-        token_1.tx_hash = "tx_hash"
-        db.add(token_1)
-
-        db.commit()
-
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_1, user_pk_1, [issuer_address, ""])
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_2, user_pk_2, [issuer_address, ""])
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, issuer_address, issuer_private_key, [issuer_address, ""])
-
-        STContractUtils.transfer(token_contract1.address, issuer_address, issuer_private_key, [user_address_1, 50])
-        STContractUtils.transfer(token_contract1.address, issuer_address, issuer_private_key, [user_address_2, 50])
-
-        STContractUtils.transfer(token_contract1.address, user_address_1, user_pk_1, [exchange_contract.address, 50])
-        IbetExchangeContractTestUtils.create_order(
-            exchange_contract.address, user_address_1, user_pk_1, [token_contract1.address, 30, 100, False, issuer_address]
-        )
-        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(exchange_contract.address)
-        IbetExchangeContractTestUtils.cancel_order(exchange_contract.address, user_address_1, user_pk_1, [latest_order_id])
-
-        STContractUtils.lock(token_contract1.address, user_address_1, user_pk_1, [user_address_2, 10, ""])
-        STContractUtils.unlock(token_contract1.address, user_address_2, user_pk_2, [user_address_1, user_address_2, 10, ""])
-
-        STContractUtils.issue_from(token_contract1.address, issuer_address, issuer_private_key, [issuer_address, ZERO_ADDRESS, 40000])
-        STContractUtils.redeem_from(token_contract1.address, issuer_address, issuer_private_key, [issuer_address, ZERO_ADDRESS, 10000])
-
-        STContractUtils.set_transfer_approve_required(token_contract1.address, issuer_address, issuer_private_key, [True])
-        STContractUtils.apply_for_transfer(token_contract1.address, issuer_address, issuer_private_key, [user_address_1, 10, "to user1#1"])
-        STContractUtils.apply_for_transfer(token_contract1.address, issuer_address, issuer_private_key, [user_address_2, 10, "to user2#1"])
-        STContractUtils.cancel_transfer(token_contract1.address, issuer_address, issuer_private_key, [0, "to user1#1"])
-        STContractUtils.approve_transfer(token_contract1.address, issuer_address, issuer_private_key, [1, "to user2#1"])
-
-        with patch.object(Session, "add", side_effect=Exception()):
-            # Then execute processor.
-            processor.sync_new_logs()
-        # Error occurs in events with exception of Escrow.
-        assert 10 == caplog.record_tuples.count((LOG.name, logging.ERROR, "An exception occurred during event synchronization"))
-
-    # <Normal_7>
-    # If DB session fails in phase sinking each event, batch outputs logs exception occured.
-    def test_normal_7(self, processor, db, personal_info_contract, ibet_security_token_escrow_contract, caplog: pytest.LogCaptureFixture):
-        user_1 = config_eth_account("user1")
-        issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8"))
-        user_2 = config_eth_account("user2")
-        user_address_1 = user_2["address"]
-        user_pk_1 = decode_keyfile_json(raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8"))
-        user_3 = config_eth_account("user3")
-        user_address_2 = user_3["address"]
-        user_pk_2 = decode_keyfile_json(raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8"))
-
-        # Issuer issues bond token.
-        token_contract1 = deploy_bond_token_contract(
-            issuer_address,
-            issuer_private_key,
-            personal_info_contract.address,
-            tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
-            transfer_approval_required=False,
-        )
-        token_address_1 = token_contract1.address
-        token_1 = Token()
-        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
-        token_1.token_address = token_address_1
-        token_1.issuer_address = issuer_address
-        token_1.abi = token_contract1.abi
-        token_1.tx_hash = "tx_hash"
-        db.add(token_1)
-
-        db.commit()
-
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_1, user_pk_1, [issuer_address, ""])
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_2, user_pk_2, [issuer_address, ""])
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, issuer_address, issuer_private_key, [issuer_address, ""])
-
-        STContractUtils.transfer(token_contract1.address, issuer_address, issuer_private_key, [user_address_1, 50])
-        STContractUtils.transfer(token_contract1.address, issuer_address, issuer_private_key, [user_address_2, 50])
-
-        STContractUtils.transfer(token_contract1.address, user_address_1, user_pk_1, [ibet_security_token_escrow_contract.address, 50])
-        STEscrowContractUtils.create_escrow(
-            ibet_security_token_escrow_contract.address,
-            user_address_1,
-            user_pk_1,
-            [token_contract1.address, user_address_2, 10, issuer_address, "", ""],
-        )
-        latest_security_escrow_id = STEscrowContractUtils.get_latest_escrow_id(ibet_security_token_escrow_contract.address)
-        STEscrowContractUtils.finish_escrow(
-            ibet_security_token_escrow_contract.address, issuer_address, issuer_private_key, [latest_security_escrow_id]
-        )
-
-        with patch.object(Session, "add", side_effect=Exception()):
-            # Then execute processor.
-            processor.sync_new_logs()
-        # Error occurs in Transfer and Escrow events.
-        assert 2 == caplog.record_tuples.count((LOG.name, logging.ERROR, "An exception occurred during event synchronization"))
-
-    # <Normal_8>
     # Newly tokens added
-    def test_normal_8(self, processor: Processor, db: Session, personal_info_contract, ibet_security_token_escrow_contract):
+    def test_normal_6(self, processor: Processor, db: Session, personal_info_contract, ibet_security_token_escrow_contract):
         escrow_contract = ibet_security_token_escrow_contract
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
@@ -2684,7 +2590,7 @@ class TestProcessor:
     ###########################################################################
 
     # <Error_1>
-    # If exception occures out of Processor except-catch, batch outputs logs in mainloop.
+    # If exception occurs out of Processor except-catch, batch outputs logs in mainloop.
     def test_error_1(self, main_func, db:Session, personal_info_contract, caplog: pytest.LogCaptureFixture):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
