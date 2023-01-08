@@ -30,7 +30,9 @@ from app.model.db import (
     TokenType,
     IDXPosition,
     IDXLockedPosition,
-    IDXPositionBondBlockNumber
+    IDXPositionBondBlockNumber,
+    IDXLock,
+    IDXUnlock
 )
 from app.model.blockchain import IbetStraightBondContract
 from app.model.schema import IbetStraightBondUpdate
@@ -625,7 +627,11 @@ class TestProcessor:
         db.commit()
 
         # Lock
-        tx = token_contract_1.functions.lock(issuer_address, 40, "").build_transaction({
+        tx = token_contract_1.functions.lock(
+            issuer_address,
+            40,
+            '{"message": "locked1"}'
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -641,7 +647,9 @@ class TestProcessor:
         _position_list = db.query(IDXPosition).all()
         assert len(_position_list) == 1
 
-        _position = db.query(IDXPosition).filter(IDXPosition.account_address == issuer_address).first()
+        _position = db.query(IDXPosition).\
+            filter(IDXPosition.account_address == issuer_address).\
+            first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
@@ -649,14 +657,25 @@ class TestProcessor:
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
 
-        _locked_position = db.query(IDXLockedPosition). \
-            filter(IDXLockedPosition.token_address == token_address_1). \
+        _locked_position = db.query(IDXLockedPosition).\
+            filter(IDXLockedPosition.token_address == token_address_1).\
             filter(IDXLockedPosition.account_address == issuer_address).\
             first()
         assert _locked_position.token_address == token_address_1
         assert _locked_position.lock_address == issuer_address
         assert _locked_position.account_address == issuer_address
         assert _locked_position.value == 40
+
+        _lock_list = db.query(IDXLock).order_by(IDXLock.id).all()
+        assert len(_lock_list) == 1
+
+        _lock1 = _lock_list[0]
+        assert _lock1.id == 1
+        assert _lock1.token_address == token_address_1
+        assert _lock1.lock_address == issuer_address
+        assert _lock1.account_address == issuer_address
+        assert _lock1.value == 40
+        assert _lock1.data == {"message": "locked1"}
 
         _idx_position_bond_block_number = db.query(IDXPositionBondBlockNumber).first()
         assert _idx_position_bond_block_number.id == 1
@@ -709,7 +728,11 @@ class TestProcessor:
         db.commit()
 
         # Lock
-        tx = token_contract_1.functions.lock(issuer_address, 40, "").build_transaction({
+        tx = token_contract_1.functions.lock(
+            issuer_address,
+            40,
+            '{"message": "locked1"}'
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -719,9 +742,13 @@ class TestProcessor:
 
         # Before run(consume accumulated events)
         processor.sync_new_logs()
+
         _position_list = db.query(IDXPosition).all()
         assert len(_position_list) == 1
-        _position = db.query(IDXPosition).filter(IDXPosition.account_address == issuer_address).first()
+
+        _position = db.query(IDXPosition).\
+            filter(IDXPosition.account_address == issuer_address).\
+            first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40
@@ -730,7 +757,12 @@ class TestProcessor:
         assert _position.pending_transfer == 0
 
         # Unlock
-        tx = token_contract_1.functions.unlock(issuer_address, issuer_address, 30, "").build_transaction({
+        tx = token_contract_1.functions.unlock(
+            issuer_address,
+            issuer_address,
+            30,
+            '{"message": "unlocked1"}'
+        ).build_transaction({
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
@@ -750,7 +782,9 @@ class TestProcessor:
         _position_list = db.query(IDXPosition).all()
         assert len(_position_list) == 1
 
-        _position = db.query(IDXPosition).filter(IDXPosition.account_address == issuer_address).first()
+        _position = db.query(IDXPosition).\
+            filter(IDXPosition.account_address == issuer_address).\
+            first()
         assert _position.token_address == token_address_1
         assert _position.account_address == issuer_address
         assert _position.balance == 100 - 40 + 30
@@ -758,14 +792,39 @@ class TestProcessor:
         assert _position.exchange_commitment == 0
         assert _position.pending_transfer == 0
 
-        _locked_position = db.query(IDXLockedPosition). \
-            filter(IDXLockedPosition.token_address == token_address_1). \
+        _locked_position = db.query(IDXLockedPosition).\
+            filter(IDXLockedPosition.token_address == token_address_1).\
             filter(IDXLockedPosition.account_address == issuer_address).\
             first()
         assert _locked_position.token_address == token_address_1
         assert _locked_position.lock_address == issuer_address
         assert _locked_position.account_address == issuer_address
         assert _locked_position.value == 40 - 30
+
+        _lock_list = db.query(IDXLock).order_by(IDXLock.id).all()
+        assert len(_lock_list) == 1
+
+        _lock1 = _lock_list[0]
+        assert _lock1.id == 1
+        assert _lock1.token_address == token_address_1
+        assert _lock1.lock_address == issuer_address
+        assert _lock1.account_address == issuer_address
+        assert _lock1.value == 40
+        assert _lock1.data == {"message": "locked1"}
+
+        _unlock_list = db.query(IDXUnlock).order_by(IDXUnlock.id).all()
+        assert len(_unlock_list) == 1
+
+        _unlock1 = _unlock_list[0]
+        assert _unlock1.id == 1
+        assert _unlock1.token_address == token_address_1
+        assert _unlock1.lock_address == issuer_address
+        assert _unlock1.account_address == issuer_address
+        assert _unlock1.recipient_address == issuer_address
+        assert _unlock1.value == 30
+        assert _unlock1.data == {
+            "message": "unlocked1"
+        }
 
         _idx_position_bond_block_number = db.query(IDXPositionBondBlockNumber).first()
         assert _idx_position_bond_block_number.id == 1

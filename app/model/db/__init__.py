@@ -66,6 +66,10 @@ from .idx_issue_redeem import (
     IDXIssueRedeemSortItem,
     IDXIssueRedeemBlockNumber
 )
+from .idx_lock_unlock import (
+    IDXLock,
+    IDXUnlock
+)
 from .idx_transfer import (
     IDXTransfer,
     IDXTransfersSortItem,

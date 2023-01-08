@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from enum import IntEnum
 from typing import Optional, Literal
 
 from pydantic import (
@@ -34,3 +35,8 @@ class ResultSet(BaseModel):
     offset: Optional[int]
     limit: Optional[int]
     total: Optional[int]
+
+
+class SortOrder(IntEnum):
+    ASC = 0
+    DESC = 1
