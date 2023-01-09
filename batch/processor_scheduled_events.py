@@ -55,9 +55,11 @@ from app.model.blockchain import (
     IbetStraightBondContract,
     IbetShareContract
 )
-from app.model.schema import (
-    IbetShareUpdate,
-    IbetStraightBondUpdate
+from app.model.blockchain.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams
 )
 from app.exceptions import (
     SendTransactionError,
@@ -188,7 +190,7 @@ class Processor:
                 if _event.token_type == TokenType.IBET_SHARE.value:
                     # Update
                     if _event.event_type == ScheduledEventType.UPDATE.value:
-                        _update_data = IbetShareUpdate(**_event.data)
+                        _update_data = IbetShareUpdateParams(**_event.data)
                         IbetShareContract.update(
                             contract_address=_event.token_address,
                             data=_update_data,
@@ -198,7 +200,7 @@ class Processor:
                 elif _event.token_type == TokenType.IBET_STRAIGHT_BOND.value:
                     # Update
                     if _event.event_type == ScheduledEventType.UPDATE.value:
-                        _update_data = IbetStraightBondUpdate(**_event.data)
+                        _update_data = IbetStraightBondUpdateParams(**_event.data)
                         IbetStraightBondContract.update(
                             contract_address=_event.token_address,
                             data=_update_data,

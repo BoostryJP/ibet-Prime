@@ -72,9 +72,6 @@ from app.model.schema import (
     ScheduledEventResponse,
     ModifyPersonalInfoRequest,
     RegisterPersonalInfoRequest,
-    IbetSecurityTokenApproveTransfer,
-    IbetSecurityTokenCancelTransfer,
-    IbetSecurityTokenEscrowApproveTransfer,
     UpdateTransferApprovalRequest,
     BatchIssueRedeemUploadIdResponse,
     GetBatchIssueRedeemResponse,
@@ -118,6 +115,17 @@ from app.model.blockchain import (
     TokenListContract,
     PersonalInfoContract,
     IbetSecurityTokenEscrow
+)
+from app.model.blockchain.tx_params.ibet_share import (
+    UpdateParams,
+    TransferParams,
+    AdditionalIssueParams,
+    RedeemParams,
+    ApproveTransferParams,
+    CancelTransferParams
+)
+from app.model.blockchain.tx_params.ibet_security_token_escrow import (
+    ApproveTransferParams as EscrowApproveTransferParams
 )
 from app.utils.fastapi import json_response
 from app.utils.contract_utils import ContractUtils
@@ -405,7 +413,7 @@ def update_token(
     try:
         IbetShareContract.update(
             contract_address=token_address,
-            data=token,
+            data=UpdateParams(**token.dict()),
             tx_from=issuer_address,
             private_key=private_key
         )
@@ -544,7 +552,7 @@ def additional_issue(
     try:
         IbetShareContract.additional_issue(
             contract_address=token_address,
-            data=data,
+            data=AdditionalIssueParams(**data.dict()),
             tx_from=issuer_address,
             private_key=private_key
         )
@@ -871,7 +879,7 @@ def redeem_token(
     try:
         IbetShareContract.redeem(
             contract_address=token_address,
-            data=data,
+            data=RedeemParams(**data.dict()),
             tx_from=issuer_address,
             private_key=private_key
         )
@@ -1895,7 +1903,8 @@ def transfer_ownership(
 
     try:
         IbetShareContract.transfer(
-            data=token,
+            contract_address=token.token_address,
+            data=TransferParams(**token.dict()),
             tx_from=issuer_address,
             private_key=private_key
         )
@@ -2363,7 +2372,7 @@ def update_transfer_approval(
                 try:
                     _, tx_receipt = IbetShareContract.approve_transfer(
                         contract_address=token_address,
-                        data=IbetSecurityTokenApproveTransfer(**_data),
+                        data=ApproveTransferParams(**_data),
                         tx_from=issuer_address,
                         private_key=private_key,
                     )
@@ -2374,7 +2383,7 @@ def update_transfer_approval(
                     try:
                         IbetShareContract.cancel_transfer(
                             contract_address=token_address,
-                            data=IbetSecurityTokenCancelTransfer(**_data),
+                            data=CancelTransferParams(**_data),
                             tx_from=issuer_address,
                             private_key=private_key,
                         )
@@ -2392,7 +2401,7 @@ def update_transfer_approval(
                 escrow = IbetSecurityTokenEscrow(_transfer_approval.exchange_address)
                 try:
                     _, tx_receipt = escrow.approve_transfer(
-                        data=IbetSecurityTokenEscrowApproveTransfer(**_data),
+                        data=EscrowApproveTransferParams(**_data),
                         tx_from=issuer_address,
                         private_key=private_key,
                     )
@@ -2409,7 +2418,7 @@ def update_transfer_approval(
             try:
                 _, tx_receipt = IbetShareContract.cancel_transfer(
                     contract_address=token_address,
-                    data=IbetSecurityTokenCancelTransfer(**_data),
+                    data=CancelTransferParams(**_data),
                     tx_from=issuer_address,
                     private_key=private_key,
                 )

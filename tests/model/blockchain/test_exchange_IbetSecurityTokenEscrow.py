@@ -29,7 +29,9 @@ from app.model.blockchain import (
     IbetStraightBondContract,
     IbetSecurityTokenEscrow
 )
-from app.model.schema import IbetSecurityTokenEscrowApproveTransfer
+from app.model.blockchain.tx_params.ibet_security_token_escrow import (
+    ApproveTransferParams
+)
 from app.utils.contract_utils import ContractUtils
 from config import (
     CHAIN_ID,
@@ -285,7 +287,7 @@ class TestApproveTransfer:
         # test IbetSecurityTokenEscrow.approve_transfer
         security_token_escrow = IbetSecurityTokenEscrow(escrow_contract.address)
         tx_hash, tx_receipt = security_token_escrow.approve_transfer(
-            data=IbetSecurityTokenEscrowApproveTransfer(escrow_id=1, data="test"),
+            data=ApproveTransferParams(escrow_id=1, data="test"),
             tx_from=user1_account["address"],
             private_key=user1_account_pk
         )
@@ -417,7 +419,7 @@ class TestApproveTransfer:
         with InspectionMock, pytest.raises(SendTransactionError) as exc_info:
             security_token_escrow = IbetSecurityTokenEscrow(escrow_contract.address)
             security_token_escrow.approve_transfer(
-                data=IbetSecurityTokenEscrowApproveTransfer(escrow_id=1, data="test"),
+                data=ApproveTransferParams(escrow_id=1, data="test"),
                 tx_from=user1_account["address"],
                 private_key=user1_account_pk
             )
@@ -447,7 +449,7 @@ class TestApproveTransfer:
                             MagicMock(side_effect=TimeExhausted("Timeout Error test"))):
                 security_token_escrow = IbetSecurityTokenEscrow(exchange_contract.address)
                 security_token_escrow.approve_transfer(
-                    data=IbetSecurityTokenEscrowApproveTransfer(escrow_id=0, data="test"),
+                    data=ApproveTransferParams(escrow_id=0, data="test"),
                     tx_from=user1_account["address"],
                     private_key=user1_account_pk
                 )
@@ -486,7 +488,7 @@ class TestApproveTransfer:
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             security_token_escrow = IbetSecurityTokenEscrow(exchange_contract.address)
             security_token_escrow.approve_transfer(
-                data=IbetSecurityTokenEscrowApproveTransfer(escrow_id=0, data="test"),
+                data=ApproveTransferParams(escrow_id=0, data="test"),
                 tx_from=user1_account["address"],
                 private_key=user1_account_pk
             )

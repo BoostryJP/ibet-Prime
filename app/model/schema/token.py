@@ -327,24 +327,6 @@ class IbetShareRedeem(BaseModel):
         return v
 
 
-class IbetSecurityTokenApproveTransfer(BaseModel):
-    """ibet SecurityToken schema (ApproveTransfer)"""
-    application_id: int
-    data: str
-
-
-class IbetSecurityTokenCancelTransfer(BaseModel):
-    """ibet SecurityToken schema (CancelTransfer)"""
-    application_id: int
-    data: str
-
-
-class IbetSecurityTokenEscrowApproveTransfer(BaseModel):
-    """ibet SecurityTokenEscrow schema (ApproveTransfer)"""
-    escrow_id: int
-    data: str
-
-
 ############################
 # RESPONSE
 ############################

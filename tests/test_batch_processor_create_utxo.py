@@ -38,21 +38,23 @@ from app.model.blockchain import (
     IbetShareContract,
     IbetStraightBondContract
 )
+from app.model.blockchain.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+    TransferParams as IbetShareTransferParams,
+    AdditionalIssueParams as IbetShareAdditionalIssueParams,
+    RedeemParams as IbetShareRedeemParams
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams,
+    TransferParams as IbetStraightBondTransferParams,
+    AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
+    RedeemParams as IbetStraightBondRedeemParams
+)
 from app.model.db import (
     Token,
     TokenType,
     UTXO,
     UTXOBlockNumber
-)
-from app.model.schema import (
-    IbetShareTransfer,
-    IbetStraightBondTransfer,
-    IbetStraightBondUpdate,
-    IbetShareUpdate,
-    IbetStraightBondAdditionalIssue,
-    IbetShareAdditionalIssue,
-    IbetStraightBondRedeem,
-    IbetShareRedeem,
 )
 from app.utils.contract_utils import ContractUtils
 from batch.processor_create_utxo import Processor
@@ -83,7 +85,7 @@ def deploy_bond_token_contract(address, private_key):
     contract_address, _, _ = IbetStraightBondContract.create(arguments, address, private_key)
     IbetStraightBondContract.update(
         contract_address,
-        IbetStraightBondUpdate(transferable=True),
+        IbetStraightBondUpdateParams(transferable=True),
         address,
         private_key
     )
@@ -107,7 +109,7 @@ def deploy_share_token_contract(address, private_key):
     contract_address, _, _ = IbetShareContract.create(arguments, address, private_key)
     IbetShareContract.update(
         contract_address,
-        IbetShareUpdate(transferable=True),
+        IbetShareUpdateParams(transferable=True),
         address,
         private_key
     )
@@ -171,43 +173,39 @@ class TestProcessor:
 
         # Execute Transfer Event
         # Share:issuer -> user1
-        _transfer_1 = IbetShareTransfer(
-            token_address=token_address_2,
+        _transfer_1 = IbetShareTransferParams(
             from_address=issuer_address,
             to_address=user_address_1,
             amount=70
         )
-        IbetShareContract.transfer(_transfer_1, issuer_address, issuer_private_key)
+        IbetShareContract.transfer(token_address_2, _transfer_1, issuer_address, issuer_private_key)
         time.sleep(1)
 
         # Bond:issuer -> user1
-        _transfer_2 = IbetStraightBondTransfer(
-            token_address=token_address_1,
+        _transfer_2 = IbetStraightBondTransferParams(
             from_address=issuer_address,
             to_address=user_address_1,
             amount=40
         )
-        IbetStraightBondContract.transfer(_transfer_2, issuer_address, issuer_private_key)
+        IbetStraightBondContract.transfer(token_address_1, _transfer_2, issuer_address, issuer_private_key)
         time.sleep(1)
 
         # Bond:issuer -> user2
-        _transfer_3 = IbetStraightBondTransfer(
-            token_address=token_address_1,
+        _transfer_3 = IbetStraightBondTransferParams(
             from_address=issuer_address,
             to_address=user_address_2,
             amount=20
         )
-        IbetStraightBondContract.transfer(_transfer_3, issuer_address, issuer_private_key)
+        IbetStraightBondContract.transfer(token_address_1, _transfer_3, issuer_address, issuer_private_key)
         time.sleep(1)
 
         # Share:user1 -> user2
-        _transfer_4 = IbetShareTransfer(
-            token_address=token_address_2,
+        _transfer_4 = IbetShareTransferParams(
             from_address=user_address_1,
             to_address=user_address_2,
             amount=10
         )
-        IbetShareContract.transfer(_transfer_4, issuer_address, issuer_private_key)
+        IbetShareContract.transfer(token_address_2, _transfer_4, issuer_address, issuer_private_key)
         time.sleep(1)
 
         # Execute batch(Run 2nd)
@@ -292,29 +290,27 @@ class TestProcessor:
         db.commit()
 
         # Transfer event 6 times
-        _transfer = IbetStraightBondTransfer(
-            token_address=token_address_1,
+        _transfer = IbetStraightBondTransferParams(
             from_address=issuer_address,
             to_address=user_address_1,
             amount=60
         )
-        IbetStraightBondContract.transfer(_transfer, issuer_address, issuer_private_key)
+        IbetStraightBondContract.transfer(token_address_1, _transfer, issuer_address, issuer_private_key)
         time.sleep(1)
-        _transfer = IbetStraightBondTransfer(
-            token_address=token_address_1,
+        _transfer = IbetStraightBondTransferParams(
             from_address=user_address_1,
             to_address=user_address_2,
             amount=10
         )
-        IbetStraightBondContract.transfer(_transfer, issuer_address, issuer_private_key)
+        IbetStraightBondContract.transfer(token_address_1, _transfer, issuer_address, issuer_private_key)
         time.sleep(1)
-        IbetStraightBondContract.transfer(_transfer, issuer_address, issuer_private_key)
+        IbetStraightBondContract.transfer(token_address_1, _transfer, issuer_address, issuer_private_key)
         time.sleep(1)
-        IbetStraightBondContract.transfer(_transfer, issuer_address, issuer_private_key)
+        IbetStraightBondContract.transfer(token_address_1, _transfer, issuer_address, issuer_private_key)
         time.sleep(1)
-        IbetStraightBondContract.transfer(_transfer, issuer_address, issuer_private_key)
+        IbetStraightBondContract.transfer(token_address_1, _transfer, issuer_address, issuer_private_key)
         time.sleep(1)
-        IbetStraightBondContract.transfer(_transfer, issuer_address, issuer_private_key)
+        IbetStraightBondContract.transfer(token_address_1, _transfer, issuer_address, issuer_private_key)
         time.sleep(1)
 
         # Execute batch
@@ -396,7 +392,7 @@ class TestProcessor:
         # set personal info
         personal_contract_address, _, _ = ContractUtils.deploy_contract(
             "PersonalInfo", [], issuer_address, issuer_private_key)
-        IbetStraightBondContract.update(token_address_1, IbetStraightBondUpdate(
+        IbetStraightBondContract.update(token_address_1, IbetStraightBondUpdateParams(
             personal_info_contract_address=personal_contract_address), issuer_address, issuer_private_key)
         personal_contract = ContractUtils.get_contract("PersonalInfo", personal_contract_address)
         tx = personal_contract.functions.register(issuer_address, "").build_transaction(
@@ -485,18 +481,17 @@ class TestProcessor:
             "gasPrice": 0
         })
         ContractUtils.send_transaction(tx, issuer_private_key)
-        update_data = IbetStraightBondUpdate(tradable_exchange_contract_address=exchange_address)
+        update_data = IbetStraightBondUpdateParams(tradable_exchange_contract_address=exchange_address)
         IbetStraightBondContract.update(token_address_1, update_data, issuer_address, issuer_private_key)
 
         # Execute Transfer Event
         # Bond:issuer -> Exchange
-        _transfer_1 = IbetStraightBondTransfer(
-            token_address=token_address_1,
+        _transfer_1 = IbetStraightBondTransferParams(
             from_address=issuer_address,
             to_address=exchange_address,
             amount=100
         )
-        IbetStraightBondContract.transfer(_transfer_1, issuer_address, issuer_private_key)
+        IbetStraightBondContract.transfer(token_address_1, _transfer_1, issuer_address, issuer_private_key)
 
         # Execute batch
         # Assume: Not Create UTXO and Ledger
@@ -545,7 +540,7 @@ class TestProcessor:
 
         # Execute Issue Event
         # Share
-        _additional_issue_1 = IbetShareAdditionalIssue(
+        _additional_issue_1 = IbetShareAdditionalIssueParams(
             account_address=user_address_1,
             amount=70
         )
@@ -553,7 +548,7 @@ class TestProcessor:
         time.sleep(1)
 
         # Bond
-        _additional_issue_2 = IbetStraightBondAdditionalIssue(
+        _additional_issue_2 = IbetStraightBondAdditionalIssueParams(
             account_address=user_address_2,
             amount=80
         )
@@ -619,13 +614,13 @@ class TestProcessor:
 
         # Execute Issue Event
         # Share
-        _additional_issue_1 = IbetShareAdditionalIssue(
+        _additional_issue_1 = IbetShareAdditionalIssueParams(
             account_address=user_address_1,
             amount=10
         )
         IbetShareContract.additional_issue(token_address_1, _additional_issue_1, issuer_address, issuer_private_key)
         time.sleep(1)
-        _additional_issue_2 = IbetShareAdditionalIssue(
+        _additional_issue_2 = IbetShareAdditionalIssueParams(
             account_address=user_address_1,
             amount=20
         )
@@ -633,13 +628,13 @@ class TestProcessor:
         time.sleep(1)
 
         # Bond
-        _additional_issue_3 = IbetStraightBondAdditionalIssue(
+        _additional_issue_3 = IbetStraightBondAdditionalIssueParams(
             account_address=user_address_2,
             amount=30
         )
         IbetStraightBondContract.additional_issue(token_address_2, _additional_issue_3, issuer_address, issuer_private_key)
         time.sleep(1)
-        _additional_issue_4 = IbetStraightBondAdditionalIssue(
+        _additional_issue_4 = IbetStraightBondAdditionalIssueParams(
             account_address=user_address_2,
             amount=40
         )
@@ -673,7 +668,7 @@ class TestProcessor:
 
         # Execute Redeem Event
         # Share
-        _redeem_1 = IbetShareRedeem(
+        _redeem_1 = IbetShareRedeemParams(
             account_address=user_address_1,
             amount=20
         )
@@ -681,7 +676,7 @@ class TestProcessor:
         time.sleep(1)
 
         # Bond
-        _redeem_2 = IbetStraightBondRedeem(
+        _redeem_2 = IbetStraightBondRedeemParams(
             account_address=user_address_2,
             amount=40
         )

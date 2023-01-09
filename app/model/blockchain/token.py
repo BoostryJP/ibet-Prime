@@ -37,23 +37,27 @@ from config import (
     ZERO_ADDRESS
 )
 from app.database import engine
+from app.model.blockchain import IbetExchangeInterface
+from app.model.blockchain.tx_params.ibet_security_token import (
+    ApproveTransferParams as IbetSecurityTokenApproveTransfer,
+    CancelTransferParams as IbetSecurityTokenCancelTransfer
+)
+from app.model.blockchain.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+    TransferParams as IbetShareTransferParams,
+    AdditionalIssueParams as IbetShareAdditionalIssueParams,
+    RedeemParams as IbetShareRedeemParams
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams,
+    TransferParams as IbetStraightBondTransferParams,
+    AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
+    RedeemParams as IbetStraightBondRedeemParams
+)
 from app.model.db import (
     TokenAttrUpdate,
     TokenCache
 )
-from app.model.schema import (
-    IbetStraightBondUpdate,
-    IbetStraightBondTransfer,
-    IbetStraightBondAdditionalIssue,
-    IbetStraightBondRedeem,
-    IbetShareUpdate,
-    IbetShareTransfer,
-    IbetShareAdditionalIssue,
-    IbetShareRedeem,
-    IbetSecurityTokenApproveTransfer,
-    IbetSecurityTokenCancelTransfer
-)
-from app.model.blockchain import IbetExchangeInterface
 from app.exceptions import (
     SendTransactionError,
     ContractRevertError
@@ -384,7 +388,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
 
     @staticmethod
     def update(contract_address: str,
-               data: IbetStraightBondUpdate,
+               data: IbetStraightBondUpdateParams,
                tx_from: str,
                private_key: str):
         """Update token"""
@@ -664,14 +668,15 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             db_session.close()
 
     @staticmethod
-    def transfer(data: IbetStraightBondTransfer,
+    def transfer(contract_address: str,
+                 data: IbetStraightBondTransferParams,
                  tx_from: str,
                  private_key: str):
         """Transfer ownership"""
         try:
             bond_contract = ContractUtils.get_contract(
                 contract_name="IbetStraightBond",
-                contract_address=data.token_address
+                contract_address=contract_address
             )
             _from = data.from_address
             _to = data.to_address
@@ -699,7 +704,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
 
     @staticmethod
     def additional_issue(contract_address: str,
-                         data: IbetStraightBondAdditionalIssue,
+                         data: IbetStraightBondAdditionalIssueParams,
                          tx_from: str,
                          private_key: str):
         """Additional issue"""
@@ -750,7 +755,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
 
     @staticmethod
     def redeem(contract_address: str,
-               data: IbetStraightBondRedeem,
+               data: IbetStraightBondRedeemParams,
                tx_from: str,
                private_key: str):
         """Redeem a token"""
@@ -950,7 +955,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
 
     @staticmethod
     def update(contract_address: str,
-               data: IbetShareUpdate,
+               data: IbetShareUpdateParams,
                tx_from: str,
                private_key: str):
         """Update token"""
@@ -1211,16 +1216,16 @@ class IbetShareContract(IbetSecurityTokenInterface):
         finally:
             db_session.close()
 
-
     @staticmethod
-    def transfer(data: IbetShareTransfer,
+    def transfer(contract_address: str,
+                 data: IbetShareTransferParams,
                  tx_from: str,
                  private_key: str):
         """Transfer ownership"""
         try:
             share_contract = ContractUtils.get_contract(
                 contract_name="IbetShare",
-                contract_address=data.token_address
+                contract_address=contract_address
             )
             _from = data.from_address
             _to = data.to_address
@@ -1248,7 +1253,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
 
     @staticmethod
     def additional_issue(contract_address: str,
-                         data: IbetShareAdditionalIssue,
+                         data: IbetShareAdditionalIssueParams,
                          tx_from: str,
                          private_key: str):
         """Additional issue"""
@@ -1299,7 +1304,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
 
     @staticmethod
     def redeem(contract_address: str,
-               data: IbetShareRedeem,
+               data: IbetShareRedeemParams,
                tx_from: str,
                private_key: str):
         """Redeem a token"""

@@ -23,7 +23,7 @@ from config import (
     TX_GAS_LIMIT
 )
 from app.utils.contract_utils import ContractUtils
-from app.model.schema import IbetSecurityTokenEscrowApproveTransfer
+from app.model.blockchain.tx_params.ibet_security_token_escrow import ApproveTransferParams
 from app.exceptions import SendTransactionError, ContractRevertError
 
 
@@ -69,7 +69,7 @@ class IbetSecurityTokenEscrow(IbetExchangeInterface):
         super().__init__(contract_address=contract_address, contract_name="IbetSecurityTokenEscrow")
 
     def approve_transfer(self,
-                         data: IbetSecurityTokenEscrowApproveTransfer,
+                         data: ApproveTransferParams,
                          tx_from: str,
                          private_key: str):
         """Approve Transfer"""

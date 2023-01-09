@@ -44,11 +44,13 @@ from app.model.db import (
     Notification,
     NotificationType
 )
-from app.model.schema import (
-    IbetStraightBondAdditionalIssue,
-    IbetStraightBondRedeem,
-    IbetShareAdditionalIssue,
-    IbetShareRedeem
+from app.model.blockchain.tx_params.ibet_share import (
+    AdditionalIssueParams as IbetShareAdditionalIssueParams,
+    RedeemParams as IbetShareRedeemParams
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
+    RedeemParams as IbetStraightBondRedeemParams
 )
 from app.utils.e2ee_utils import E2EEUtils
 from app.exceptions import (
@@ -133,7 +135,7 @@ class Processor:
                             if upload.category == BatchIssueRedeemProcessingCategory.ISSUE.value:
                                 tx_hash = IbetStraightBondContract.additional_issue(
                                     contract_address=upload.token_address,
-                                    data=IbetStraightBondAdditionalIssue(
+                                    data=IbetStraightBondAdditionalIssueParams(
                                         account_address=batch_data.account_address,
                                         amount=batch_data.amount
                                     ),
@@ -143,7 +145,7 @@ class Processor:
                             elif upload.category == BatchIssueRedeemProcessingCategory.REDEEM.value:
                                 tx_hash = IbetStraightBondContract.redeem(
                                     contract_address=upload.token_address,
-                                    data=IbetStraightBondRedeem(
+                                    data=IbetStraightBondRedeemParams(
                                         account_address=batch_data.account_address,
                                         amount=batch_data.amount
                                     ),
@@ -154,7 +156,7 @@ class Processor:
                             if upload.category == BatchIssueRedeemProcessingCategory.ISSUE.value:
                                 tx_hash = IbetShareContract.additional_issue(
                                     contract_address=upload.token_address,
-                                    data=IbetShareAdditionalIssue(
+                                    data=IbetShareAdditionalIssueParams(
                                         account_address=batch_data.account_address,
                                         amount=batch_data.amount
                                     ),
@@ -164,7 +166,7 @@ class Processor:
                             elif upload.category == BatchIssueRedeemProcessingCategory.REDEEM.value:
                                 tx_hash = IbetShareContract.redeem(
                                     contract_address=upload.token_address,
-                                    data=IbetShareRedeem(
+                                    data=IbetShareRedeemParams(
                                         account_address=batch_data.account_address,
                                         amount=batch_data.amount
                                     ),

@@ -38,9 +38,11 @@ from app.model.db import (
     TransferApprovalHistory,
     TransferApprovalOperationType
 )
-from app.model.schema import (
-    IbetSecurityTokenApproveTransfer,
-    IbetSecurityTokenEscrowApproveTransfer
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    ApproveTransferParams,
+)
+from app.model.blockchain.tx_params.ibet_security_token_escrow import (
+    ApproveTransferParams as EscrowApproveTransferParams,
 )
 from app.utils.e2ee_utils import E2EEUtils
 from app.exceptions import SendTransactionError, ContractRevertError
@@ -141,7 +143,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
 
         mock_transfer.assert_called_once_with(
             contract_address=self.test_token_address,
-            data=IbetSecurityTokenApproveTransfer(**_expected),
+            data=ApproveTransferParams(**_expected),
             tx_from=issuer_address,
             private_key=ANY
         )
@@ -223,7 +225,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         }
 
         mock_transfer.assert_called_once_with(
-            data=IbetSecurityTokenEscrowApproveTransfer(**_expected),
+            data=EscrowApproveTransferParams(**_expected),
             tx_from=issuer_address,
             private_key=ANY
         )
@@ -305,7 +307,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
 
         mock_transfer.assert_called_once_with(
             contract_address=self.test_token_address,
-            data=IbetSecurityTokenApproveTransfer(**_expected),
+            data=ApproveTransferParams(**_expected),
             tx_from=issuer_address,
             private_key=ANY
         )
@@ -392,7 +394,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
 
         mock_transfer.assert_called_once_with(
             contract_address=self.test_token_address,
-            data=IbetSecurityTokenApproveTransfer(**_expected),
+            data=ApproveTransferParams(**_expected),
             tx_from=issuer_address,
             private_key=ANY
         )
