@@ -45,7 +45,9 @@ from app.model.blockchain.tx_params.ibet_share import (
     AdditionalIssueParams,
     RedeemParams,
     ApproveTransferParams,
-    CancelTransferParams
+    CancelTransferParams,
+    LockParams,
+    ForceUnlockPrams
 )
 from app.utils.contract_utils import ContractUtils
 from app.exceptions import SendTransactionError, ContractRevertError
@@ -1091,10 +1093,17 @@ class TestTransfer:
                 "loc": ("from_address",),
                 "msg": "from_address is not a valid address",
                 "type": "value_error"
-            }, {
+            },
+            {
                 "loc": ("to_address",),
                 "msg": "to_address is not a valid address",
                 "type": "value_error"
+            },
+            {
+                'loc': ('amount',),
+                'msg': 'ensure this value is greater than 0',
+                'type': 'value_error.number.not_gt',
+                'ctx': {'limit_value': 0}
             }
         ]
 
@@ -1503,6 +1512,12 @@ class TestAdditionalIssue:
                 "loc": ("account_address",),
                 "msg": "account_address is not a valid address",
                 "type": "value_error"
+            },
+            {
+                'loc': ('amount',),
+                'msg': 'ensure this value is greater than 0',
+                'type': 'value_error.number.not_gt',
+                'ctx': {'limit_value': 0}
             }
         ]
 
@@ -1900,6 +1915,12 @@ class TestRedeem:
                 "loc": ("account_address",),
                 "msg": "account_address is not a valid address",
                 "type": "value_error"
+            },
+            {
+                'loc': ('amount',),
+                'msg': 'ensure this value is greater than 0',
+                'type': 'value_error.number.not_gt',
+                'ctx': {'limit_value': 0}
             }
         ]
 
@@ -3131,3 +3152,882 @@ class TestCancelTransfer:
 
         # assertion
         assert exc_info.value.args[0] == "Application is invalid."
+
+
+class TestLock:
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    def test_normal_1(self, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8")
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        # deploy ibet share token (from issuer)
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
+        ]
+        token_address, _, _ = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # lock
+        lock_data = {
+            "lock_address": lock_address,
+            "value": 10,
+            "data": ""
+        }
+        tx_hash, tx_receipt = IbetShareContract.lock(
+            contract_address=token_address,
+            data=LockParams(**lock_data),
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+        )
+
+        # assertion
+        assert isinstance(tx_hash, str) and int(tx_hash, 16) > 0
+        assert tx_receipt["status"] == 1
+
+        share_token = ContractUtils.get_contract(
+            contract_name="IbetShare",
+            contract_address=token_address
+        )
+        lock_amount = share_token.functions.lockedOf(lock_address, issuer_address).call()
+        assert lock_amount == 10
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1_1>
+    # ValidationError
+    # field required
+    def test_error_1_1(self, db):
+        lock_data = {}
+        with pytest.raises(ValidationError) as ex_info:
+            LockParams(**lock_data)
+
+        assert ex_info.value.errors() == [
+            {
+                'loc': ('lock_address',),
+                'msg': 'field required',
+                'type': 'value_error.missing'
+            },
+            {
+                'loc': ('value',),
+                'msg': 'field required',
+                'type': 'value_error.missing'
+            },
+            {
+                'loc': ('data',),
+                'msg': 'field required',
+                'type': 'value_error.missing'}
+        ]
+
+    # <Error_1_2>
+    # ValidationError
+    # - lock_address is not a valid address
+    # - value is not greater than 0
+    def test_error_1_2(self, db):
+        lock_data = {
+            "lock_address": "test_address",
+            "value": 0,
+            "data": ""
+        }
+        with pytest.raises(ValidationError) as ex_info:
+            LockParams(**lock_data)
+
+        assert ex_info.value.errors() == [
+            {
+                'loc': ('lock_address',),
+                'msg': 'lock_address is not a valid address',
+                'type': 'value_error'
+            },
+            {
+                'loc': ('value',),
+                'msg': 'ensure this value is greater than 0',
+                'type': 'value_error.number.not_gt',
+                'ctx': {'limit_value': 0}
+            }
+        ]
+
+    # <Error_2_1>
+    # SendTransactionError
+    # Invalid tx_from
+    def test_error_2_1(self, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8")
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        # deploy ibet share token (from issuer)
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
+        ]
+        token_address, _, _ = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # lock
+        lock_data = {
+            "lock_address": lock_address,
+            "value": 10,
+            "data": ""
+        }
+        with pytest.raises(SendTransactionError) as exc_info:
+            IbetShareContract.lock(
+                contract_address=token_address,
+                data=LockParams(**lock_data),
+                tx_from="invalid_tx_from",  # invalid tx from
+                private_key="",
+            )
+
+        assert isinstance(exc_info.value.args[0], InvalidAddress)
+        assert exc_info.match("ENS name: \'invalid_tx_from\' is invalid.")
+
+    # <Error_2_2>
+    # SendTransactionError
+    # Invalid pk
+    def test_error_2_2(self, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8")
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        # deploy ibet share token (from issuer)
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
+        ]
+        token_address, _, _ = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # lock
+        lock_data = {
+            "lock_address": lock_address,
+            "value": 10,
+            "data": ""
+        }
+        with pytest.raises(SendTransactionError) as exc_info:
+            IbetShareContract.lock(
+                contract_address=token_address,
+                data=LockParams(**lock_data),
+                tx_from=issuer_address,
+                private_key="invalid_pk",  # invalid pk
+            )
+
+        assert isinstance(exc_info.value.args[0], Error)
+        assert exc_info.match("Non-hexadecimal digit found")
+
+    # <Error_3>
+    # SendTransactionError
+    # TimeExhausted
+    def test_error_3(self, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8")
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        # deploy ibet share token (from issuer)
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
+        ]
+        token_address, _, _ = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # mock
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
+            side_effect=TimeExhausted
+        )
+
+        # lock
+        lock_data = {
+            "lock_address": lock_address,
+            "value": 10,
+            "data": ""
+        }
+        with Web3_send_raw_transaction:
+            with pytest.raises(SendTransactionError) as exc_info:
+                IbetShareContract.lock(
+                    contract_address=token_address,
+                    data=LockParams(**lock_data),
+                    tx_from=issuer_address,
+                    private_key=issuer_pk
+                )
+
+        assert exc_info.type(SendTransactionError(TimeExhausted))
+
+    # <Error_4>
+    # SendTransactionError
+    # TransactionNotFound
+    def test_error_4(self, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8")
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        # deploy ibet share token (from issuer)
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
+        ]
+        token_address, _, _ = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # mock
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
+            side_effect=TransactionNotFound
+        )
+
+        # lock
+        lock_data = {
+            "lock_address": lock_address,
+            "value": 10,
+            "data": ""
+        }
+        with Web3_send_raw_transaction:
+            with pytest.raises(SendTransactionError) as exc_info:
+                IbetShareContract.lock(
+                    contract_address=token_address,
+                    data=LockParams(**lock_data),
+                    tx_from=issuer_address,
+                    private_key=issuer_pk
+                )
+
+        assert exc_info.type(SendTransactionError(TransactionNotFound))
+
+    # <Error_5>
+    # ContractRevertError
+    def test_error_5(self, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8")
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        # deploy ibet share token (from issuer)
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
+        ]
+        token_address, _, _ = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # mock
+        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
+        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
+        #         geth: ContractLogicError("execution reverted")
+        InspectionMock = mock.patch(
+            "web3.eth.Eth.call",
+            MagicMock(side_effect=ContractLogicError("execution reverted: 110002"))
+        )
+
+        # lock
+        lock_data = {
+            "lock_address": lock_address,
+            "value": 20001,
+            "data": ""
+        }
+        with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
+            IbetShareContract.lock(
+                contract_address=token_address,
+                data=LockParams(**lock_data),
+                tx_from=issuer_address,
+                private_key=issuer_pk
+            )
+
+        # assertion
+        assert exc_info.value.code == 110002
+        assert exc_info.value.message == "Lock amount is greater than message sender balance."
+
+
+class TestForceUnlock:
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    def test_normal_1(self, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8")
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        # deploy ibet share token (from issuer)
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
+        ]
+        token_address, _, _ = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # lock
+        lock_data = {
+            "lock_address": lock_address,
+            "value": 10,
+            "data": ""
+        }
+        IbetShareContract.lock(
+            contract_address=token_address,
+            data=LockParams(**lock_data),
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+        )
+
+        # forceUnlock
+        lock_data = {
+            "lock_address": lock_address,
+            "account_address": issuer_address,
+            "recipient_address": issuer_address,
+            "value": 5,
+            "data": ""
+        }
+        tx_hash, tx_receipt = IbetShareContract.force_unlock(
+            contract_address=token_address,
+            data=ForceUnlockPrams(**lock_data),
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+        )
+
+        # assertion
+        assert isinstance(tx_hash, str) and int(tx_hash, 16) > 0
+        assert tx_receipt["status"] == 1
+
+        share_token = ContractUtils.get_contract(
+            contract_name="IbetShare",
+            contract_address=token_address
+        )
+        lock_amount = share_token.functions.lockedOf(lock_address, issuer_address).call()
+        assert lock_amount == 5
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1_1>
+    # ValidationError
+    # field required
+    def test_error_1_1(self, db):
+        lock_data = {}
+        with pytest.raises(ValidationError) as ex_info:
+            ForceUnlockPrams(**lock_data)
+
+        assert ex_info.value.errors() == [
+            {
+                'loc': ('lock_address',),
+                'msg': 'field required',
+                'type': 'value_error.missing'
+            },
+            {
+                'loc': ('account_address',),
+                'msg': 'field required',
+                'type': 'value_error.missing'
+            },
+            {
+                'loc': ('recipient_address',),
+                'msg': 'field required',
+                'type': 'value_error.missing'
+            },
+            {
+                'loc': ('value',),
+                'msg': 'field required',
+                'type': 'value_error.missing'
+            },
+            {
+                'loc': ('data',),
+                'msg': 'field required',
+                'type': 'value_error.missing'
+            }
+        ]
+
+    # <Error_1_2>
+    # ValidationError
+    # - address is not a valid address
+    # - value is not greater than 0
+    def test_error_1_2(self, db):
+        lock_data = {
+            "lock_address": "test_address",
+            "account_address": "test_address",
+            "recipient_address": "test_address",
+            "value": 0,
+            "data": ""
+        }
+        with pytest.raises(ValidationError) as ex_info:
+            ForceUnlockPrams(**lock_data)
+
+        assert ex_info.value.errors() == [
+            {
+                'loc': ('lock_address',),
+                'msg': 'lock_address is not a valid address',
+                'type': 'value_error'
+            },
+            {
+                'loc': ('account_address',),
+                'msg': 'account_address is not a valid address',
+                'type': 'value_error'
+            },
+            {
+                'loc': ('recipient_address',),
+                'msg': 'recipient_address is not a valid address',
+                'type': 'value_error'
+            },
+            {
+                'loc': ('value',),
+                'msg': 'ensure this value is greater than 0',
+                'type': 'value_error.number.not_gt',
+                'ctx': {'limit_value': 0}
+            }
+        ]
+
+    # <Error_2_1>
+    # SendTransactionError
+    # Invalid tx_from
+    def test_error_2_1(self, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8")
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        # deploy ibet share token (from issuer)
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
+        ]
+        token_address, _, _ = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # lock
+        lock_data = {
+            "lock_address": lock_address,
+            "value": 10,
+            "data": ""
+        }
+        IbetShareContract.lock(
+            contract_address=token_address,
+            data=LockParams(**lock_data),
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+        )
+
+        # forceUnlock
+        lock_data = {
+            "lock_address": lock_address,
+            "account_address": issuer_address,
+            "recipient_address": issuer_address,
+            "value": 5,
+            "data": ""
+        }
+        with pytest.raises(SendTransactionError) as exc_info:
+            IbetShareContract.force_unlock(
+                contract_address=token_address,
+                data=ForceUnlockPrams(**lock_data),
+                tx_from="invalid_tx_from",  # invalid tx from
+                private_key="",
+            )
+
+        assert isinstance(exc_info.value.args[0], InvalidAddress)
+        assert exc_info.match("ENS name: \'invalid_tx_from\' is invalid.")
+
+    # <Error_2_2>
+    # SendTransactionError
+    # Invalid pk
+    def test_error_2_2(self, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8")
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        # deploy ibet share token (from issuer)
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
+        ]
+        token_address, _, _ = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # lock
+        lock_data = {
+            "lock_address": lock_address,
+            "value": 10,
+            "data": ""
+        }
+        IbetShareContract.lock(
+            contract_address=token_address,
+            data=LockParams(**lock_data),
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+        )
+
+        # forceUnlock
+        lock_data = {
+            "lock_address": lock_address,
+            "account_address": issuer_address,
+            "recipient_address": issuer_address,
+            "value": 5,
+            "data": ""
+        }
+        with pytest.raises(SendTransactionError) as exc_info:
+            IbetShareContract.force_unlock(
+                contract_address=token_address,
+                data=ForceUnlockPrams(**lock_data),
+                tx_from=issuer_address,
+                private_key="invalid_pk",  # invalid pk
+            )
+
+        assert isinstance(exc_info.value.args[0], Error)
+        assert exc_info.match("Non-hexadecimal digit found")
+
+    # <Error_3>
+    # SendTransactionError
+    # TimeExhausted
+    def test_error_3(self, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8")
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        # deploy ibet share token (from issuer)
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
+        ]
+        token_address, _, _ = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # lock
+        lock_data = {
+            "lock_address": lock_address,
+            "value": 10,
+            "data": ""
+        }
+        IbetShareContract.lock(
+            contract_address=token_address,
+            data=LockParams(**lock_data),
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+        )
+
+        # mock
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
+            side_effect=TimeExhausted
+        )
+
+        # forceUnlock
+        lock_data = {
+            "lock_address": lock_address,
+            "account_address": issuer_address,
+            "recipient_address": issuer_address,
+            "value": 5,
+            "data": ""
+        }
+        with Web3_send_raw_transaction:
+            with pytest.raises(SendTransactionError) as exc_info:
+                IbetShareContract.force_unlock(
+                    contract_address=token_address,
+                    data=ForceUnlockPrams(**lock_data),
+                    tx_from=issuer_address,
+                    private_key=issuer_pk
+                )
+
+        assert exc_info.type(SendTransactionError(TimeExhausted))
+
+    # <Error_4>
+    # SendTransactionError
+    # TransactionNotFound
+    def test_error_4(self, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8")
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        # deploy ibet share token (from issuer)
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
+        ]
+        token_address, _, _ = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # lock
+        lock_data = {
+            "lock_address": lock_address,
+            "value": 10,
+            "data": ""
+        }
+        IbetShareContract.lock(
+            contract_address=token_address,
+            data=LockParams(**lock_data),
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+        )
+
+        # mock
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
+            side_effect=TransactionNotFound
+        )
+
+        # forceUnlock
+        lock_data = {
+            "lock_address": lock_address,
+            "account_address": issuer_address,
+            "recipient_address": issuer_address,
+            "value": 5,
+            "data": ""
+        }
+        with Web3_send_raw_transaction:
+            with pytest.raises(SendTransactionError) as exc_info:
+                IbetShareContract.force_unlock(
+                    contract_address=token_address,
+                    data=ForceUnlockPrams(**lock_data),
+                    tx_from=issuer_address,
+                    private_key=issuer_pk
+                )
+
+        assert exc_info.type(SendTransactionError(TransactionNotFound))
+
+    # <Error_5>
+    # ContractRevertError
+    def test_error_5(self, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer.get("address")
+        issuer_pk = decode_keyfile_json(
+            raw_keyfile_json=issuer.get("keyfile_json"),
+            password=issuer.get("password").encode("utf-8")
+        )
+
+        lock_account = config_eth_account("user2")
+        lock_address = lock_account.get("address")
+
+        # deploy ibet share token (from issuer)
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
+        ]
+        token_address, _, _ = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=issuer_pk
+        )
+
+        # lock
+        lock_data = {
+            "lock_address": lock_address,
+            "value": 10,
+            "data": ""
+        }
+        IbetShareContract.lock(
+            contract_address=token_address,
+            data=LockParams(**lock_data),
+            tx_from=issuer_address,
+            private_key=issuer_pk,
+        )
+
+        # mock
+        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
+        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
+        #         geth: ContractLogicError("execution reverted")
+        InspectionMock = mock.patch(
+            "web3.eth.Eth.call",
+            MagicMock(side_effect=ContractLogicError("execution reverted: 111201"))
+        )
+
+        # forceUnlock
+        lock_data = {
+            "lock_address": lock_address,
+            "account_address": issuer_address,
+            "recipient_address": issuer_address,
+            "value": 11,
+            "data": ""
+        }
+        with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
+            IbetShareContract.force_unlock(
+                contract_address=token_address,
+                data=ForceUnlockPrams(**lock_data),
+                tx_from=issuer_address,
+                private_key=issuer_pk
+            )
+
+        # assertion
+        assert exc_info.value.code == 111201
+        assert exc_info.value.message == "Unlock amount is greater than locked amount."

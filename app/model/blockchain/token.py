@@ -39,20 +39,19 @@ from config import (
 from app.database import engine
 from app.model.blockchain import IbetExchangeInterface
 from app.model.blockchain.tx_params.ibet_security_token import (
+    TransferParams as IbetSecurityTokenTransferParams,
+    AdditionalIssueParams as IbetSecurityTokenAdditionalIssueParams,
+    RedeemParams as IbetSecurityTokenRedeemParams,
     ApproveTransferParams as IbetSecurityTokenApproveTransfer,
-    CancelTransferParams as IbetSecurityTokenCancelTransfer
+    CancelTransferParams as IbetSecurityTokenCancelTransfer,
+    LockParams as IbetSecurityTokenLockParams,
+    ForceUnlockParams as IbetSecurityTokenForceUnlockParams
 )
 from app.model.blockchain.tx_params.ibet_share import (
-    UpdateParams as IbetShareUpdateParams,
-    TransferParams as IbetShareTransferParams,
-    AdditionalIssueParams as IbetShareAdditionalIssueParams,
-    RedeemParams as IbetShareRedeemParams
+    UpdateParams as IbetShareUpdateParams
 )
 from app.model.blockchain.tx_params.ibet_straight_bond import (
-    UpdateParams as IbetStraightBondUpdateParams,
-    TransferParams as IbetStraightBondTransferParams,
-    AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
-    RedeemParams as IbetStraightBondRedeemParams
+    UpdateParams as IbetStraightBondUpdateParams
 )
 from app.model.db import (
     TokenAttrUpdate,
@@ -156,6 +155,143 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
     transfer_approval_required: bool
 
     @staticmethod
+    def transfer(contract_address: str,
+                 data: IbetSecurityTokenTransferParams,
+                 tx_from: str,
+                 private_key: str):
+        """Transfer ownership"""
+        try:
+            security_contract = ContractUtils.get_contract(
+                contract_name="IbetSecurityTokenInterface",
+                contract_address=contract_address
+            )
+            _from = data.from_address
+            _to = data.to_address
+            _amount = data.amount
+            tx = security_contract.functions.transferFrom(
+                _from, _to, _amount
+            ).build_transaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            tx_hash, _ = ContractUtils.send_transaction(
+                transaction=tx,
+                private_key=private_key
+            )
+        except ContractRevertError:
+            raise
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+        return tx_hash
+
+    @staticmethod
+    def additional_issue(contract_address: str,
+                         data: IbetSecurityTokenAdditionalIssueParams,
+                         tx_from: str,
+                         private_key: str):
+        """Additional issue"""
+        try:
+            share_contract = ContractUtils.get_contract(
+                contract_name="IbetShare",
+                contract_address=contract_address
+            )
+            _target_address = data.account_address
+            _amount = data.amount
+            tx = share_contract.functions.issueFrom(
+                _target_address, ZERO_ADDRESS, _amount
+            ).build_transaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            tx_hash, _ = ContractUtils.send_transaction(
+                transaction=tx,
+                private_key=private_key
+            )
+        except ContractRevertError:
+            raise
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+        # Delete Cache
+        db_session = Session(autocommit=False, autoflush=True, bind=engine)
+        try:
+            IbetShareContract.record_attr_update(
+                db_session=db_session,
+                contract_address=contract_address
+            )
+            IbetShareContract.delete_cache(
+                db_session=db_session,
+                contract_address=contract_address
+            )
+            db_session.commit()
+        except Exception as err:
+            raise SendTransactionError(err)
+        finally:
+            db_session.close()
+
+        return tx_hash
+
+    @staticmethod
+    def redeem(contract_address: str,
+               data: IbetSecurityTokenRedeemParams,
+               tx_from: str,
+               private_key: str):
+        """Redeem a token"""
+        try:
+            share_contract = ContractUtils.get_contract(
+                contract_name="IbetShare",
+                contract_address=contract_address
+            )
+            _target_address = data.account_address
+            _amount = data.amount
+            tx = share_contract.functions.redeemFrom(
+                _target_address, ZERO_ADDRESS, _amount
+            ).build_transaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            tx_hash, _ = ContractUtils.send_transaction(
+                transaction=tx,
+                private_key=private_key
+            )
+        except ContractRevertError:
+            raise
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+        # Delete Cache
+        db_session = Session(autocommit=False, autoflush=True, bind=engine)
+        try:
+            IbetShareContract.record_attr_update(
+                db_session=db_session,
+                contract_address=contract_address
+            )
+            IbetShareContract.delete_cache(
+                db_session=db_session,
+                contract_address=contract_address
+            )
+            db_session.commit()
+        except Exception as err:
+            raise SendTransactionError(err)
+        finally:
+            db_session.close()
+
+        return tx_hash
+
+    @staticmethod
     def approve_transfer(contract_address: str,
                          data: IbetSecurityTokenApproveTransfer,
                          tx_from: str,
@@ -196,6 +332,68 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             )
             tx = security_contract.functions.cancelTransfer(
                 data.application_id, data.data
+            ).build_transaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            tx_hash, tx_receipt = ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            return tx_hash, tx_receipt
+        except ContractRevertError:
+            raise
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+    @staticmethod
+    def lock(contract_address: str,
+             data: IbetSecurityTokenLockParams,
+             tx_from: str,
+             private_key: str):
+        """Lock"""
+        try:
+            security_contract = ContractUtils.get_contract(
+                contract_name="IbetSecurityTokenInterface",
+                contract_address=contract_address
+            )
+            tx = security_contract.functions.lock(
+                data.lock_address,
+                data.value,
+                data.data
+            ).build_transaction({
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0
+            })
+            tx_hash, tx_receipt = ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            return tx_hash, tx_receipt
+        except ContractRevertError:
+            raise
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+    @staticmethod
+    def force_unlock(contract_address: str,
+                     data: IbetSecurityTokenForceUnlockParams,
+                     tx_from: str,
+                     private_key: str):
+        """Force Unlock"""
+        try:
+            security_contract = ContractUtils.get_contract(
+                contract_name="IbetSecurityTokenInterface",
+                contract_address=contract_address
+            )
+            tx = security_contract.functions.forceUnlock(
+                data.lock_address,
+                data.account_address,
+                data.recipient_address,
+                data.value,
+                data.data
             ).build_transaction({
                 "chainId": CHAIN_ID,
                 "from": tx_from,
@@ -667,143 +865,6 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         finally:
             db_session.close()
 
-    @staticmethod
-    def transfer(contract_address: str,
-                 data: IbetStraightBondTransferParams,
-                 tx_from: str,
-                 private_key: str):
-        """Transfer ownership"""
-        try:
-            bond_contract = ContractUtils.get_contract(
-                contract_name="IbetStraightBond",
-                contract_address=contract_address
-            )
-            _from = data.from_address
-            _to = data.to_address
-            _amount = data.amount
-            tx = bond_contract.functions.transferFrom(
-                _from, _to, _amount
-            ).build_transaction({
-                "chainId": CHAIN_ID,
-                "from": tx_from,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0
-            })
-            tx_hash, _ = ContractUtils.send_transaction(
-                transaction=tx,
-                private_key=private_key
-            )
-        except ContractRevertError:
-            raise
-        except TimeExhausted as timeout_error:
-            raise SendTransactionError(timeout_error)
-        except Exception as err:
-            raise SendTransactionError(err)
-
-        return tx_hash
-
-    @staticmethod
-    def additional_issue(contract_address: str,
-                         data: IbetStraightBondAdditionalIssueParams,
-                         tx_from: str,
-                         private_key: str):
-        """Additional issue"""
-        try:
-            bond_contract = ContractUtils.get_contract(
-                contract_name="IbetStraightBond",
-                contract_address=contract_address
-            )
-            _target_address = data.account_address
-            _amount = data.amount
-            tx = bond_contract.functions.issueFrom(
-                _target_address, ZERO_ADDRESS, _amount
-            ).build_transaction({
-                "chainId": CHAIN_ID,
-                "from": tx_from,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0
-            })
-            tx_hash, _ = ContractUtils.send_transaction(
-                transaction=tx,
-                private_key=private_key
-            )
-        except ContractRevertError:
-            raise
-        except TimeExhausted as timeout_error:
-            raise SendTransactionError(timeout_error)
-        except Exception as err:
-            raise SendTransactionError(err)
-
-        # Delete Cache
-        db_session = Session(autocommit=False, autoflush=True, bind=engine)
-        try:
-            IbetStraightBondContract.record_attr_update(
-                db_session=db_session,
-                contract_address=contract_address
-            )
-            IbetStraightBondContract.delete_cache(
-                db_session=db_session,
-                contract_address=contract_address
-            )
-            db_session.commit()
-        except Exception as err:
-            raise SendTransactionError(err)
-        finally:
-            db_session.close()
-
-        return tx_hash
-
-    @staticmethod
-    def redeem(contract_address: str,
-               data: IbetStraightBondRedeemParams,
-               tx_from: str,
-               private_key: str):
-        """Redeem a token"""
-        try:
-            bond_contract = ContractUtils.get_contract(
-                contract_name="IbetStraightBond",
-                contract_address=contract_address
-            )
-            _target_address = data.account_address
-            _amount = data.amount
-            tx = bond_contract.functions.redeemFrom(
-                _target_address, ZERO_ADDRESS, _amount
-            ).build_transaction({
-                "chainId": CHAIN_ID,
-                "from": tx_from,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0
-            })
-            tx_hash, _ = ContractUtils.send_transaction(
-                transaction=tx,
-                private_key=private_key
-            )
-        except ContractRevertError:
-            raise
-        except TimeExhausted as timeout_error:
-            raise SendTransactionError(timeout_error)
-        except Exception as err:
-            raise SendTransactionError(err)
-
-        # Delete Cache
-        db_session = Session(autocommit=False, autoflush=True, bind=engine)
-        try:
-            IbetStraightBondContract.record_attr_update(
-                db_session=db_session,
-                contract_address=contract_address
-            )
-            IbetStraightBondContract.delete_cache(
-                db_session=db_session,
-                contract_address=contract_address
-            )
-            db_session.commit()
-        except Exception as err:
-            raise SendTransactionError(err)
-        finally:
-            db_session.close()
-
-        return tx_hash
-
 
 class IbetShareContract(IbetSecurityTokenInterface):
     issue_price: int
@@ -1216,139 +1277,3 @@ class IbetShareContract(IbetSecurityTokenInterface):
         finally:
             db_session.close()
 
-    @staticmethod
-    def transfer(contract_address: str,
-                 data: IbetShareTransferParams,
-                 tx_from: str,
-                 private_key: str):
-        """Transfer ownership"""
-        try:
-            share_contract = ContractUtils.get_contract(
-                contract_name="IbetShare",
-                contract_address=contract_address
-            )
-            _from = data.from_address
-            _to = data.to_address
-            _amount = data.amount
-            tx = share_contract.functions.transferFrom(
-                _from, _to, _amount
-            ).build_transaction({
-                "chainId": CHAIN_ID,
-                "from": tx_from,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0
-            })
-            tx_hash, _ = ContractUtils.send_transaction(
-                transaction=tx,
-                private_key=private_key
-            )
-        except ContractRevertError:
-            raise
-        except TimeExhausted as timeout_error:
-            raise SendTransactionError(timeout_error)
-        except Exception as err:
-            raise SendTransactionError(err)
-
-        return tx_hash
-
-    @staticmethod
-    def additional_issue(contract_address: str,
-                         data: IbetShareAdditionalIssueParams,
-                         tx_from: str,
-                         private_key: str):
-        """Additional issue"""
-        try:
-            share_contract = ContractUtils.get_contract(
-                contract_name="IbetShare",
-                contract_address=contract_address
-            )
-            _target_address = data.account_address
-            _amount = data.amount
-            tx = share_contract.functions.issueFrom(
-                _target_address, ZERO_ADDRESS, _amount
-            ).build_transaction({
-                "chainId": CHAIN_ID,
-                "from": tx_from,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0
-            })
-            tx_hash, _ = ContractUtils.send_transaction(
-                transaction=tx,
-                private_key=private_key
-            )
-        except ContractRevertError:
-            raise
-        except TimeExhausted as timeout_error:
-            raise SendTransactionError(timeout_error)
-        except Exception as err:
-            raise SendTransactionError(err)
-
-        # Delete Cache
-        db_session = Session(autocommit=False, autoflush=True, bind=engine)
-        try:
-            IbetShareContract.record_attr_update(
-                db_session=db_session,
-                contract_address=contract_address
-            )
-            IbetShareContract.delete_cache(
-                db_session=db_session,
-                contract_address=contract_address
-            )
-            db_session.commit()
-        except Exception as err:
-            raise SendTransactionError(err)
-        finally:
-            db_session.close()
-
-        return tx_hash
-
-    @staticmethod
-    def redeem(contract_address: str,
-               data: IbetShareRedeemParams,
-               tx_from: str,
-               private_key: str):
-        """Redeem a token"""
-        try:
-            share_contract = ContractUtils.get_contract(
-                contract_name="IbetShare",
-                contract_address=contract_address
-            )
-            _target_address = data.account_address
-            _amount = data.amount
-            tx = share_contract.functions.redeemFrom(
-                _target_address, ZERO_ADDRESS, _amount
-            ).build_transaction({
-                "chainId": CHAIN_ID,
-                "from": tx_from,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0
-            })
-            tx_hash, _ = ContractUtils.send_transaction(
-                transaction=tx,
-                private_key=private_key
-            )
-        except ContractRevertError:
-            raise
-        except TimeExhausted as timeout_error:
-            raise SendTransactionError(timeout_error)
-        except Exception as err:
-            raise SendTransactionError(err)
-
-        # Delete Cache
-        db_session = Session(autocommit=False, autoflush=True, bind=engine)
-        try:
-            IbetShareContract.record_attr_update(
-                db_session=db_session,
-                contract_address=contract_address
-            )
-            IbetShareContract.delete_cache(
-                db_session=db_session,
-                contract_address=contract_address
-            )
-            db_session.commit()
-        except Exception as err:
-            raise SendTransactionError(err)
-        finally:
-            db_session.close()
-
-        return tx_hash
