@@ -25,9 +25,12 @@ from typing import (
 from fastapi import Query
 from pydantic import (
     BaseModel,
-    Field
+    Field,
+    PositiveInt,
+    validator
 )
 from pydantic.dataclasses import dataclass
+from web3 import Web3
 
 from .types import (
     ResultSet,
@@ -108,6 +111,39 @@ class ListAllLockEventsQuery:
 
     sort_item: ListAllLockEventsSortItem = Query(default=ListAllLockEventsSortItem.block_timestamp, description="Sort item")
     sort_order: SortOrder = Query(default=SortOrder.DESC, description="Sort order(0: ASC, 1: DESC)")
+
+
+class ForceUnlockRequest(BaseModel):
+    token_address: str = Field(..., description="Token address")
+    lock_address: str = Field(..., description="Lock address")
+    account_address: str = Field(..., description="Account address")
+    recipient_address: str = Field(..., description="Recipient address")
+    value: PositiveInt = Field(..., description="Unlock amount")
+
+    @validator("token_address")
+    def token_address_is_valid_address(cls, v):
+        if not Web3.isAddress(v):
+            raise ValueError("token_address is not a valid address")
+        return v
+
+    @validator("lock_address")
+    def lock_address_is_valid_address(cls, v):
+        if not Web3.isAddress(v):
+            raise ValueError("lock_address is not a valid address")
+        return v
+
+    @validator("account_address")
+    def account_address_is_valid_address(cls, v):
+        if not Web3.isAddress(v):
+            raise ValueError("account_address is not a valid address")
+        return v
+
+    @validator("recipient_address")
+    def recipient_address_is_valid_address(cls, v):
+        if not Web3.isAddress(v):
+            raise ValueError("recipient_address is not a valid address")
+        return v
+
 
 ############################
 # RESPONSE

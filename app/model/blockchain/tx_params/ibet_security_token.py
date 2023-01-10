@@ -18,7 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 from pydantic import (
     validator,
-    BaseModel
+    BaseModel,
+    PositiveInt
 )
 from web3 import Web3
 
@@ -26,7 +27,7 @@ from web3 import Web3
 class TransferParams(BaseModel):
     from_address: str
     to_address: str
-    amount: int
+    amount: PositiveInt
 
     @validator("from_address")
     def from_address_is_valid_address(cls, v):
@@ -43,7 +44,7 @@ class TransferParams(BaseModel):
 
 class AdditionalIssueParams(BaseModel):
     account_address: str
-    amount: int
+    amount: PositiveInt
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):
@@ -54,7 +55,7 @@ class AdditionalIssueParams(BaseModel):
 
 class RedeemParams(BaseModel):
     account_address: str
-    amount: int
+    amount: PositiveInt
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):
@@ -71,3 +72,41 @@ class ApproveTransferParams(BaseModel):
 class CancelTransferParams(BaseModel):
     application_id: int
     data: str
+
+
+class LockParams(BaseModel):
+    lock_address: str
+    value: PositiveInt
+    data: str
+
+    @validator("lock_address")
+    def lock_address_is_valid_address(cls, v):
+        if not Web3.isAddress(v):
+            raise ValueError("lock_address is not a valid address")
+        return v
+
+
+class ForceUnlockParams(BaseModel):
+    lock_address: str
+    account_address: str
+    recipient_address: str
+    value: PositiveInt
+    data: str
+
+    @validator("lock_address")
+    def lock_address_is_valid_address(cls, v):
+        if not Web3.isAddress(v):
+            raise ValueError("lock_address is not a valid address")
+        return v
+
+    @validator("account_address")
+    def account_address_is_valid_address(cls, v):
+        if not Web3.isAddress(v):
+            raise ValueError("account_address is not a valid address")
+        return v
+
+    @validator("recipient_address")
+    def recipient_address_is_valid_address(cls, v):
+        if not Web3.isAddress(v):
+            raise ValueError("recipient_address is not a valid address")
+        return v

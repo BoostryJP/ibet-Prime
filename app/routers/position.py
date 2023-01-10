@@ -18,11 +18,13 @@ SPDX-License-Identifier: Apache-2.0
 """
 from typing import Optional
 
+from eth_keyfile import decode_keyfile_json
 from fastapi import (
     APIRouter,
     Depends,
     Header,
-    Query
+    Query,
+    Request
 )
 from fastapi.exceptions import HTTPException
 from pytz import timezone
@@ -40,8 +42,12 @@ from sqlalchemy.orm import Session
 
 from app.database import db_session
 from app.model.blockchain import (
+    IbetSecurityTokenInterface,
     IbetStraightBondContract,
     IbetShareContract
+)
+from app.model.blockchain.tx_params.ibet_security_token import (
+    ForceUnlockParams
 )
 from app.model.db import (
     IDXPosition,
@@ -58,25 +64,34 @@ from app.model.schema import (
     LockEventCategory,
     ListAllLockEventsSortItem,
     ListAllLockEventsQuery,
-    ListAllLockEventsResponse
+    ListAllLockEventsResponse,
+    ForceUnlockRequest
 )
 from app.utils.fastapi import json_response
 from app.utils.docs_utils import get_routers_responses
 from app.utils.check_utils import (
     validate_headers,
-    address_is_valid_address
+    address_is_valid_address, eoa_password_is_encrypted_value, check_auth
 )
-from app.exceptions import InvalidParameterError
+from app.exceptions import (
+    InvalidParameterError,
+    AuthorizationError,
+    SendTransactionError,
+    ContractRevertError
+)
 from config import TZ
 
-router = APIRouter(tags=["token_common"])
+router = APIRouter(
+    prefix="/positions",
+    tags=["token_common"]
+)
 
 local_tz = timezone(TZ)
 
 
 # GET: /positions/{account_address}
 @router.get(
-    "/positions/{account_address}",
+    "/{account_address}",
     summary="List all positions in the account",
     response_model=ListAllPositionResponse,
     responses=get_routers_responses(422)
@@ -172,7 +187,7 @@ def list_all_position(
 
 # GET: /positions/{account_address}/lock
 @router.get(
-    "/positions/{account_address}/lock",
+    "/{account_address}/lock",
     summary="List all locked positions in the account",
     response_model=ListAllLockedPositionResponse,
     responses=get_routers_responses(422)
@@ -247,10 +262,9 @@ def list_all_locked_position(
     }
     return json_response(resp)
 
-
 # GET: /positions/{account_address}/lock/events
 @router.get(
-    "/positions/{account_address}/lock/events",
+    "/{account_address}/lock/events",
     summary="List all lock/unlock events in the account",
     response_model=ListAllLockEventsResponse,
     responses=get_routers_responses(422)
@@ -391,9 +405,83 @@ def list_all_lock_events(
     return json_response(data)
 
 
+@router.post(
+    "/{account_address}/force_unlock",
+    summary="Force unlock the locked position",
+    response_model=None,
+    responses=get_routers_responses(401, 422,
+                                    AuthorizationError, InvalidParameterError,
+                                    SendTransactionError, ContractRevertError)
+)
+def force_unlock(
+    request: Request,
+    data: ForceUnlockRequest,
+    issuer_address: str = Header(...),
+    eoa_password: Optional[str] = Header(None),
+    auth_token: Optional[str] = Header(None),
+    db: Session = Depends(db_session)
+):
+    """Force unlock the locked position"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
+    )
+
+    # Authentication
+    _account, decrypt_password = check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
+
+    # Get private key
+    keyfile_json = _account.keyfile
+    private_key = decode_keyfile_json(
+        raw_keyfile_json=keyfile_json,
+        password=decrypt_password.encode("utf-8")
+    )
+
+    # Verify that the token is issued by the issuer_address
+    _token = db.query(Token). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == data.token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise InvalidParameterError("token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Force unlock
+    unlock_data = {
+        "lock_address": data.lock_address,
+        "account_address": data.account_address,
+        "recipient_address": data.recipient_address,
+        "value": data.value,
+        "data": ""
+    }
+    try:
+        IbetSecurityTokenInterface.force_unlock(
+            contract_address=data.token_address,
+            data=ForceUnlockParams(**unlock_data),
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+    except ContractRevertError:
+        raise
+    except SendTransactionError:
+        raise SendTransactionError("failed to send transaction")
+
+    return
+
+
 # GET: /positions/{account_address}/{token_address}
 @router.get(
-    "/positions/{account_address}/{token_address}",
+    "/{account_address}/{token_address}",
     summary="Token position in the account",
     response_model=PositionResponse,
     responses=get_routers_responses(422, InvalidParameterError, 404)
