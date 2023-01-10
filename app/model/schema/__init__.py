@@ -106,6 +106,7 @@ from .scheduled_events import (
     ScheduledEventResponse
 )
 from .token import (
+    # Request
     IbetStraightBondCreate,
     IbetStraightBondUpdate,
     IbetStraightBondTransfer,
@@ -116,9 +117,7 @@ from .token import (
     IbetShareTransfer,
     IbetShareAdditionalIssue,
     IbetShareRedeem,
-    IbetSecurityTokenApproveTransfer,
-    IbetSecurityTokenCancelTransfer,
-    IbetSecurityTokenEscrowApproveTransfer,
+    # Response
     TokenAddressResponse,
     IbetStraightBondResponse,
     IbetShareResponse

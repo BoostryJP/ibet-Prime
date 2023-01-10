@@ -53,10 +53,13 @@ from app.model.blockchain import (
     IbetShareContract,
     TokenListContract
 )
-from app.model.schema import (
-    IbetShareUpdate,
-    IbetStraightBondUpdate
+from app.model.blockchain.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams
 )
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams
+)
+
 from app.exceptions import (
     SendTransactionError,
     ServiceUnavailableError,
@@ -265,7 +268,7 @@ class Processor:
                     "transfer_approval_required": arguments.get("transfer_approval_required"),
                     "is_canceled": arguments.get("is_canceled")
                 }
-                return IbetShareUpdate(**update_data)
+                return IbetShareUpdateParams(**update_data)
             elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
                 update_data = {
                     "interest_rate": arguments.get("interest_rate"),
@@ -280,7 +283,7 @@ class Processor:
                     "privacy_policy": arguments.get("privacy_policy"),
                     "transfer_approval_required": arguments.get("transfer_approval_required"),
                 }
-                return IbetStraightBondUpdate(**update_data)
+                return IbetStraightBondUpdateParams(**update_data)
         return
 
     @staticmethod

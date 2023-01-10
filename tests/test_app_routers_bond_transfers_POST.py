@@ -91,7 +91,12 @@ class TestAppRoutersBondTransfersPOST:
 
         # assertion
         IbetStraightBondContract_mock.assert_any_call(
-            data=req_param,
+            contract_address=_token_address,
+            data={
+                "from_address": _from_address,
+                "to_address": _to_address,
+                "amount": 10
+            },
             tx_from=_admin_address,
             private_key=ANY
         )
@@ -157,7 +162,12 @@ class TestAppRoutersBondTransfersPOST:
 
         # assertion
         IbetStraightBondContract_mock.assert_any_call(
-            data=req_param,
+            contract_address=_token_address,
+            data={
+                "from_address": _from_address,
+                "to_address": _to_address,
+                "amount": 10
+            },
             tx_from=_admin_address,
             private_key=ANY
         )
@@ -305,7 +315,7 @@ class TestAppRoutersBondTransfersPOST:
 
     # <Error_4>
     # RequestValidationError: issuer-address
-    def test_normal_4(self, client, db):
+    def test_error_4(self, client, db):
         _from_address_account = config_eth_account("user2")
         _from_address = _from_address_account["address"]
 
@@ -347,7 +357,7 @@ class TestAppRoutersBondTransfersPOST:
 
     # <Error_5>
     # RequestValidationError: eoa-password(not decrypt)
-    def test_normal_5(self, client, db):
+    def test_error_5(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _from_address_account = config_eth_account("user2")

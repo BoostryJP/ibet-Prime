@@ -39,15 +39,15 @@ from app.model.db import (
     TokenCache
 )
 from app.model.blockchain import IbetShareContract
-from app.utils.contract_utils import ContractUtils
-from app.model.schema import (
-    IbetShareAdditionalIssue,
-    IbetShareRedeem,
-    IbetShareTransfer,
-    IbetShareUpdate,
-    IbetSecurityTokenApproveTransfer,
-    IbetSecurityTokenCancelTransfer
+from app.model.blockchain.tx_params.ibet_share import (
+    UpdateParams,
+    TransferParams,
+    AdditionalIssueParams,
+    RedeemParams,
+    ApproveTransferParams,
+    CancelTransferParams
 )
+from app.utils.contract_utils import ContractUtils
 from app.exceptions import SendTransactionError, ContractRevertError
 
 from tests.account_config import config_eth_account
@@ -556,7 +556,7 @@ class TestUpdate:
 
         # update
         _data = {}
-        _add_data = IbetShareUpdate(**_data)
+        _add_data = UpdateParams(**_data)
         pre_datetime = datetime.utcnow()
         IbetShareContract.update(
             contract_address=contract_address,
@@ -633,7 +633,7 @@ class TestUpdate:
             "is_canceled": True,
             "memo": "memo_test",
         }
-        _add_data = IbetShareUpdate(**_data)
+        _add_data = UpdateParams(**_data)
         pre_datetime = datetime.utcnow()
         IbetShareContract.update(
             contract_address=contract_address,
@@ -700,7 +700,7 @@ class TestUpdate:
         _data = {
             "interest_rate": 0.0001,
         }
-        _add_data = IbetShareUpdate(**_data)
+        _add_data = UpdateParams(**_data)
         with pytest.raises(ValueError) as exc_info:
             IbetShareContract.update(
                 contract_address=contract_address[:-1],  # short
@@ -713,7 +713,7 @@ class TestUpdate:
         assert exc_info.match("Unknown format.*, attempted to normalize to.*")
 
     # <Error_2>
-    # Validation (IbetShareUpdate)
+    # Validation (UpdateParams)
     # invalid parameter
     def test_error_2(self, db):
         # update
@@ -723,7 +723,7 @@ class TestUpdate:
             "personal_info_contract_address": "invalid contract address",
         }
         with pytest.raises(ValidationError) as exc_info:
-            IbetShareUpdate(**_data)
+            UpdateParams(**_data)
         assert exc_info.value.errors() == [
             {
                 "loc": ("dividends",),
@@ -741,83 +741,8 @@ class TestUpdate:
         ]
 
     # <Error_3>
-    # invalid parameter (dividends)
-    def test_error_3(self, db):
-        # update
-        _data = {
-            "dividends": 0.01
-        }
-        with pytest.raises(ValidationError) as exc_info:
-            IbetShareUpdate(**_data)
-        assert exc_info.value.errors() == [
-            {
-                "loc": ("dividends",),
-                "msg": "all items are required to update the dividend information",
-                "type": "value_error"
-            }
-        ]
-
-    # <Error_4>
-    # invalid parameter (min value)
-    def test_error_4(self, db):
-        # update
-        _data = {
-            "dividends": -0.01,
-            "principal_value": -1,
-        }
-        with pytest.raises(ValidationError) as exc_info:
-            IbetShareUpdate(**_data)
-        assert exc_info.value.errors() == [
-            {
-                "ctx": {
-                    "limit_value": 0.0
-                },
-                "loc": ("dividends",),
-                "msg": "ensure this value is greater than or equal to 0.0",
-                "type": "value_error.number.not_ge"
-            },
-            {
-                "ctx": {
-                    "limit_value": 0
-                },
-                "loc": ("principal_value",),
-                "msg": "ensure this value is greater than or equal to 0",
-                "type": "value_error.number.not_ge"
-            },
-        ]
-
-    # <Error_5>
-    # invalid parameter (max value)
-    def test_error_5(self, db):
-        # update
-        _data = {
-            "dividends": 5_000_000_000.01,
-            "principal_value": 5_000_000_001,
-        }
-        with pytest.raises(ValidationError) as exc_info:
-            IbetShareUpdate(**_data)
-        assert exc_info.value.errors() == [
-            {
-                "ctx": {
-                    "limit_value": 5_000_000_000.00
-                },
-                "loc": ("dividends",),
-                "msg": "ensure this value is less than or equal to 5000000000.0",
-                "type": "value_error.number.not_le"
-            },
-            {
-                "ctx": {
-                    "limit_value": 5_000_000_000
-                },
-                "loc": ("principal_value",),
-                "msg": "ensure this value is less than or equal to 5000000000",
-                "type": "value_error.number.not_le"
-            },
-        ]
-
-    # <Error_6>
     # invalid tx_from
-    def test_error_6(self, db):
+    def test_error_3(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -847,7 +772,7 @@ class TestUpdate:
         _data = {
             "cancellation_date": "20211231"
         }
-        _add_data = IbetShareUpdate(**_data)
+        _add_data = UpdateParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
             IbetShareContract.update(
                 contract_address=contract_address,
@@ -858,9 +783,9 @@ class TestUpdate:
         assert isinstance(exc_info.value.args[0], InvalidAddress)
         assert exc_info.match("ENS name: \'invalid_tx_from\' is invalid.")
 
-    # <Error_7>
+    # <Error_4>
     # invalid private key
-    def test_error_7(self, db):
+    def test_error_4(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -890,7 +815,7 @@ class TestUpdate:
         _data = {
             "cancellation_date": "20211231"
         }
-        _add_data = IbetShareUpdate(**_data)
+        _add_data = UpdateParams(**_data)
         with pytest.raises(SendTransactionError):
             IbetShareContract.update(
                 contract_address=contract_address,
@@ -899,9 +824,9 @@ class TestUpdate:
                 private_key="invalid private key"
             )
 
-    # <Error_8>
+    # <Error_5>
     # TimeExhausted
-    def test_error_8(self, db):
+    def test_error_5(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -937,7 +862,7 @@ class TestUpdate:
         _data = {
             "cancellation_date": "20211231"
         }
-        _add_data = IbetShareUpdate(**_data)
+        _add_data = UpdateParams(**_data)
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetShareContract.update(
@@ -950,9 +875,9 @@ class TestUpdate:
         # assertion
         assert isinstance(exc_info.value.args[0], TimeExhausted)
 
-    # <Error_9>
+    # <Error_6>
     # Transaction Error
-    def test_error_9(self, db):
+    def test_error_6(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -988,7 +913,7 @@ class TestUpdate:
         _data = {
             "cancellation_date": "20211231"
         }
-        _add_data = IbetShareUpdate(**_data)
+        _add_data = UpdateParams(**_data)
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetShareContract.update(
@@ -1001,9 +926,9 @@ class TestUpdate:
         # assertion
         assert isinstance(exc_info.value.args[0], TransactionNotFound)
 
-    # <Error_10>
+    # <Error_7>
     # Transaction REVERT(not owner)
-    def test_error_10(self, db):
+    def test_error_7(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         user_account = config_eth_account("user2")
@@ -1048,7 +973,7 @@ class TestUpdate:
         _data = {
             "cancellation_date": "20211231"
         }
-        _add_data = IbetShareUpdate(**_data)
+        _add_data = UpdateParams(**_data)
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             IbetShareContract.update(
                 contract_address=contract_address,
@@ -1099,13 +1024,13 @@ class TestTransfer:
 
         # transfer
         _data = {
-            "token_address": token_address,
             "from_address": from_address,
             "to_address": to_address,
             "amount": 10
         }
-        _transfer_data = IbetShareTransfer(**_data)
+        _transfer_data = TransferParams(**_data)
         IbetShareContract.transfer(
+            contract_address=token_address,
             data=_transfer_data,
             tx_from=from_address,
             private_key=from_private_key
@@ -1128,18 +1053,14 @@ class TestTransfer:
     ###########################################################################
 
     # <Error_1>
-    # validation (IbetShareTransfer)
+    # validation (TransferParams)
     # required field
     def test_error_1(self, db):
         _data = {}
         with pytest.raises(ValidationError) as exc_info:
-            IbetShareTransfer(**_data)
+            TransferParams(**_data)
         assert exc_info.value.errors() == [
             {
-                "loc": ("token_address",),
-                "msg": "field required",
-                "type": "value_error.missing"
-            }, {
                 "loc": ("from_address",),
                 "msg": "field required",
                 "type": "value_error.missing"
@@ -1155,23 +1076,18 @@ class TestTransfer:
         ]
 
     # <Error_2>
-    # validation (IbetShareTransfer)
+    # validation (TransferParams)
     # invalid parameter
     def test_error_2(self, db):
         _data = {
-            "token_address": "invalid contract address",
             "from_address": "invalid from_address",
             "to_address": "invalid to_address",
             "amount": 0
         }
         with pytest.raises(ValidationError) as exc_info:
-            IbetShareTransfer(**_data)
+            TransferParams(**_data)
         assert exc_info.value.errors() == [
             {
-                "loc": ("token_address",),
-                "msg": "token_address is not a valid address",
-                "type": "value_error"
-            }, {
                 "loc": ("from_address",),
                 "msg": "from_address is not a valid address",
                 "type": "value_error"
@@ -1179,41 +1095,59 @@ class TestTransfer:
                 "loc": ("to_address",),
                 "msg": "to_address is not a valid address",
                 "type": "value_error"
-            }, {
-                "ctx": {
-                    "limit_value": 1
-                },
-                "loc": ("amount",),
-                "msg": "ensure this value is greater than or equal to 1",
-                "type": "value_error.number.not_ge"
             }
         ]
 
     # <Error_3>
-    # validation (IbetShareTransfer)
-    # invalid parameter: max value
+    # invalid tx_from
     def test_error_3(self, db):
-        _data = {
-            "token_address": "0x1234567890123456789012345678901234567890",
-            "from_address": "0x1234567890123456789012345678901234567890",
-            "to_address": "0x1234567890123456789012345678901234567890",
-            "amount": 1_000_000_000_001
-        }
-        with pytest.raises(ValidationError) as exc_info:
-            IbetShareTransfer(**_data)
-        assert exc_info.value.errors() == [
-            {
-                "ctx": {
-                    "limit_value": 1_000_000_000_000
-                },
-                "loc": ("amount",),
-                "msg": "ensure this value is less than or equal to 1000000000000",
-                "type": "value_error.number.not_le"
-            }
+        from_account = config_eth_account("user1")
+        from_address = from_account.get("address")
+        from_private_key = decode_keyfile_json(
+            raw_keyfile_json=from_account.get("keyfile_json"),
+            password=from_account.get("password").encode("utf-8")
+        )
+
+        to_account = config_eth_account("user2")
+        to_address = to_account.get("address")
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
         ]
+        token_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=from_address,
+            private_key=from_private_key
+        )
+
+        # transfer
+        _data = {
+            "from_address": from_address,
+            "to_address": to_address,
+            "amount": 10
+        }
+        _transfer_data = TransferParams(**_data)
+        with pytest.raises(SendTransactionError) as exc_info:
+            IbetShareContract.transfer(
+                contract_address=token_address,
+                data=_transfer_data,
+                tx_from="invalid_tx_from",
+                private_key=from_private_key
+            )
+        assert isinstance(exc_info.value.args[0], InvalidAddress)
+        assert exc_info.match("ENS name: \'invalid_tx_from\' is invalid.")
 
     # <Error_4>
-    # invalid tx_from
+    # invalid private key
     def test_error_4(self, db):
         from_account = config_eth_account("user1")
         from_address = from_account.get("address")
@@ -1245,70 +1179,22 @@ class TestTransfer:
 
         # transfer
         _data = {
-            "token_address": token_address,
             "from_address": from_address,
             "to_address": to_address,
             "amount": 10
         }
-        _transfer_data = IbetShareTransfer(**_data)
-        with pytest.raises(SendTransactionError) as exc_info:
-            IbetShareContract.transfer(
-                data=_transfer_data,
-                tx_from="invalid_tx_from",
-                private_key=from_private_key
-            )
-        assert isinstance(exc_info.value.args[0], InvalidAddress)
-        assert exc_info.match("ENS name: \'invalid_tx_from\' is invalid.")
-
-    # <Error_5>
-    # invalid private key
-    def test_error_5(self, db):
-        from_account = config_eth_account("user1")
-        from_address = from_account.get("address")
-        from_private_key = decode_keyfile_json(
-            raw_keyfile_json=from_account.get("keyfile_json"),
-            password=from_account.get("password").encode("utf-8")
-        )
-
-        to_account = config_eth_account("user2")
-        to_address = to_account.get("address")
-
-        # deploy token
-        arguments = [
-            "テスト株式",
-            "TEST",
-            10000,
-            20000,
-            1,
-            "20211231",
-            "20211231",
-            "20221231",
-            10000
-        ]
-        token_address, abi, tx_hash = IbetShareContract.create(
-            args=arguments,
-            tx_from=from_address,
-            private_key=from_private_key
-        )
-
-        # transfer
-        _data = {
-            "token_address": token_address,
-            "from_address": from_address,
-            "to_address": to_address,
-            "amount": 10
-        }
-        _transfer_data = IbetShareTransfer(**_data)
+        _transfer_data = TransferParams(**_data)
         with pytest.raises(SendTransactionError):
             IbetShareContract.transfer(
+                contract_address=token_address,
                 data=_transfer_data,
                 tx_from=from_address,
                 private_key="invalid_private_key"
             )
 
-    # <Error_6>
+    # <Error_5>
     # TimeExhausted
-    def test_error_6(self, db):
+    def test_error_5(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1345,24 +1231,24 @@ class TestTransfer:
 
         # transfer
         _data = {
-            "token_address": contract_address,
             "from_address": issuer_address,
             "to_address": to_address,
             "amount": 10
         }
-        _transfer_data = IbetShareTransfer(**_data)
+        _transfer_data = TransferParams(**_data)
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetShareContract.transfer(
+                    contract_address=contract_address,
                     data=_transfer_data,
                     tx_from=issuer_address,
                     private_key=private_key
                 )
         assert isinstance(exc_info.value.args[0], TimeExhausted)
 
-    # <Error_7>
+    # <Error_6>
     # Error
-    def test_error_7(self, db):
+    def test_error_6(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1399,24 +1285,24 @@ class TestTransfer:
 
         # transfer
         _data = {
-            "token_address": contract_address,
             "from_address": issuer_address,
             "to_address": to_address,
             "amount": 10
         }
-        _transfer_data = IbetShareTransfer(**_data)
+        _transfer_data = TransferParams(**_data)
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetShareContract.transfer(
+                    contract_address=contract_address,
                     data=_transfer_data,
                     tx_from=issuer_address,
                     private_key=private_key
                 )
         assert isinstance(exc_info.value.args[0], TransactionNotFound)
 
-    # <Error_8>
+    # <Error_7>
     # Transaction REVERT(insufficient balance)
-    def test_error_8(self, db):
+    def test_error_7(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1447,12 +1333,11 @@ class TestTransfer:
 
         # transfer with insufficient balance
         _data = {
-            "token_address": contract_address,
             "from_address": issuer_address,
             "to_address": to_address,
             "amount": 10000000
         }
-        _transfer_data = IbetShareTransfer(**_data)
+        _transfer_data = TransferParams(**_data)
 
         # mock
         # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
@@ -1465,6 +1350,7 @@ class TestTransfer:
 
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             IbetShareContract.transfer(
+                contract_address=contract_address,
                 data=_transfer_data,
                 tx_from=issuer_address,
                 private_key=private_key
@@ -1512,7 +1398,7 @@ class TestAdditionalIssue:
             "account_address": issuer_address,
             "amount": 10
         }
-        _add_data = IbetShareAdditionalIssue(**_data)
+        _add_data = AdditionalIssueParams(**_data)
         pre_datetime = datetime.utcnow()
         IbetShareContract.additional_issue(
             contract_address=contract_address,
@@ -1570,7 +1456,7 @@ class TestAdditionalIssue:
             "account_address": issuer_address,
             "amount": 10
         }
-        _add_data = IbetShareAdditionalIssue(**_data)
+        _add_data = AdditionalIssueParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
             IbetShareContract.additional_issue(
                 contract_address=contract_address[:-1],  # short
@@ -1582,11 +1468,11 @@ class TestAdditionalIssue:
         assert exc_info.match("Unknown format.*, attempted to normalize to.*")
 
     # <Error_2>
-    # invalid parameter (IbetShareAdditionalIssue)
+    # invalid parameter (AdditionalIssueParams)
     def test_error_2(self, db):
         _data = {}
         with pytest.raises(ValidationError) as exc_info:
-            IbetShareAdditionalIssue(**_data)
+            AdditionalIssueParams(**_data)
         assert exc_info.value.errors() == [
             {
                 "loc": ("account_address",),
@@ -1600,7 +1486,7 @@ class TestAdditionalIssue:
         ]
 
     # <Error_3>
-    # invalid parameter (IbetShareAdditionalIssue)
+    # invalid parameter (AdditionalIssueParams)
     def test_error_3(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
@@ -1611,48 +1497,61 @@ class TestAdditionalIssue:
         }
 
         with pytest.raises(ValidationError) as exc_info:
-            IbetShareAdditionalIssue(**_data)
+            AdditionalIssueParams(**_data)
         assert exc_info.value.errors() == [
             {
                 "loc": ("account_address",),
                 "msg": "account_address is not a valid address",
                 "type": "value_error"
-            }, {
-                "ctx": {
-                    "limit_value": 1
-                },
-                "loc": ("amount",),
-                "msg": "ensure this value is greater than or equal to 1",
-                "type": "value_error.number.not_ge"
             }
         ]
 
     # <Error_4>
-    # invalid parameter: max value (IbetShareAdditionalIssue)
+    # invalid tx_from
     def test_error_4(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
 
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # additional issue
         _data = {
             "account_address": issuer_address,
-            "amount": 1_000_000_000_001
+            "amount": 10
         }
-
-        with pytest.raises(ValidationError) as exc_info:
-            IbetShareAdditionalIssue(**_data)
-        assert exc_info.value.errors() == [
-            {
-                "ctx": {
-                    "limit_value": 1_000_000_000_000
-                },
-                "loc": ("amount",),
-                "msg": "ensure this value is less than or equal to 1000000000000",
-                "type": "value_error.number.not_le"
-            }
-        ]
+        _add_data = AdditionalIssueParams(**_data)
+        with pytest.raises(SendTransactionError) as exc_info:
+            IbetShareContract.additional_issue(
+                contract_address=contract_address,
+                data=_add_data,
+                tx_from="invalid_tx_from",
+                private_key=private_key
+            )
+        assert isinstance(exc_info.value.args[0], InvalidAddress)
+        assert exc_info.match("ENS name: \'invalid_tx_from\' is invalid.")
 
     # <Error_5>
-    # invalid tx_from
+    # invalid private key
     def test_error_5(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
@@ -1684,51 +1583,7 @@ class TestAdditionalIssue:
             "account_address": issuer_address,
             "amount": 10
         }
-        _add_data = IbetShareAdditionalIssue(**_data)
-        with pytest.raises(SendTransactionError) as exc_info:
-            IbetShareContract.additional_issue(
-                contract_address=contract_address,
-                data=_add_data,
-                tx_from="invalid_tx_from",
-                private_key=private_key
-            )
-        assert isinstance(exc_info.value.args[0], InvalidAddress)
-        assert exc_info.match("ENS name: \'invalid_tx_from\' is invalid.")
-
-    # <Error_6>
-    # invalid private key
-    def test_error_6(self, db):
-        test_account = config_eth_account("user1")
-        issuer_address = test_account.get("address")
-        private_key = decode_keyfile_json(
-            raw_keyfile_json=test_account.get("keyfile_json"),
-            password=test_account.get("password").encode("utf-8")
-        )
-
-        # deploy token
-        arguments = [
-            "テスト株式",
-            "TEST",
-            10000,
-            20000,
-            1,
-            "20211231",
-            "20211231",
-            "20221231",
-            10000
-        ]
-        contract_address, abi, tx_hash = IbetShareContract.create(
-            args=arguments,
-            tx_from=issuer_address,
-            private_key=private_key
-        )
-
-        # additional issue
-        _data = {
-            "account_address": issuer_address,
-            "amount": 10
-        }
-        _add_data = IbetShareAdditionalIssue(**_data)
+        _add_data = AdditionalIssueParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
             IbetShareContract.additional_issue(
                 contract_address=contract_address,
@@ -1739,9 +1594,9 @@ class TestAdditionalIssue:
         assert isinstance(exc_info.value.args[0], Error)
         assert exc_info.match("Non-hexadecimal digit found")
 
-    # <Error_7>
+    # <Error_6>
     # TimeExhausted
-    def test_error_7(self, db):
+    def test_error_6(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1778,7 +1633,7 @@ class TestAdditionalIssue:
             "account_address": issuer_address,
             "amount": 10
         }
-        _add_data = IbetShareAdditionalIssue(**_data)
+        _add_data = AdditionalIssueParams(**_data)
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetShareContract.additional_issue(
@@ -1789,9 +1644,9 @@ class TestAdditionalIssue:
                 )
         assert exc_info.type(SendTransactionError(TimeExhausted))
 
-    # <Error_8>
+    # <Error_7>
     # Error
-    def test_error_8(self, db):
+    def test_error_7(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1828,7 +1683,7 @@ class TestAdditionalIssue:
             "account_address": issuer_address,
             "amount": 10
         }
-        _add_data = IbetShareAdditionalIssue(**_data)
+        _add_data = AdditionalIssueParams(**_data)
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetShareContract.additional_issue(
@@ -1839,9 +1694,9 @@ class TestAdditionalIssue:
                 )
         assert isinstance(exc_info.value.args[0], TransactionNotFound)
 
-    # <Error_9>
+    # <Error_8>
     # Transaction REVERT(not owner)
-    def test_error_9(self, db):
+    def test_error_8(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         user_account = config_eth_account("user2")
@@ -1878,7 +1733,7 @@ class TestAdditionalIssue:
             "account_address": issuer_address,
             "amount": 10
         }
-        _add_data = IbetShareAdditionalIssue(**_data)
+        _add_data = AdditionalIssueParams(**_data)
         pre_datetime = datetime.utcnow()
 
         # mock
@@ -1940,7 +1795,7 @@ class TestRedeem:
             "account_address": issuer_address,
             "amount": 10
         }
-        _add_data = IbetShareRedeem(**_data)
+        _add_data = RedeemParams(**_data)
         pre_datetime = datetime.utcnow()
         IbetShareContract.redeem(
             contract_address=contract_address,
@@ -1998,7 +1853,7 @@ class TestRedeem:
             "account_address": issuer_address,
             "amount": 10
         }
-        _add_data = IbetShareRedeem(**_data)
+        _add_data = RedeemParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
             IbetShareContract.redeem(
                 contract_address=contract_address[:-1],  # short
@@ -2010,11 +1865,11 @@ class TestRedeem:
         assert exc_info.match("Unknown format.*, attempted to normalize to.*")
 
     # <Error_2>
-    # invalid parameter (IbetShareRedeem)
+    # invalid parameter (RedeemParams)
     def test_error_2(self, db):
         _data = {}
         with pytest.raises(ValidationError) as exc_info:
-            IbetShareRedeem(**_data)
+            RedeemParams(**_data)
         assert exc_info.value.errors() == [
             {
                 "loc": ("account_address",),
@@ -2028,7 +1883,7 @@ class TestRedeem:
         ]
 
     # <Error_3>
-    # invalid parameter (IbetShareRedeem)
+    # invalid parameter (RedeemParams)
     def test_error_3(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
@@ -2039,48 +1894,61 @@ class TestRedeem:
         }
 
         with pytest.raises(ValidationError) as exc_info:
-            IbetShareRedeem(**_data)
+            RedeemParams(**_data)
         assert exc_info.value.errors() == [
             {
                 "loc": ("account_address",),
                 "msg": "account_address is not a valid address",
                 "type": "value_error"
-            }, {
-                "ctx": {
-                    "limit_value": 1
-                },
-                "loc": ("amount",),
-                "msg": "ensure this value is greater than or equal to 1",
-                "type": "value_error.number.not_ge"
             }
         ]
 
     # <Error_4>
-    # invalid parameter: max value (IbetShareRedeem)
+    # invalid tx_from
     def test_error_4(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
+        private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account.get("keyfile_json"),
+            password=test_account.get("password").encode("utf-8")
+        )
 
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000
+        ]
+        contract_address, abi, tx_hash = IbetShareContract.create(
+            args=arguments,
+            tx_from=issuer_address,
+            private_key=private_key
+        )
+
+        # redeem
         _data = {
             "account_address": issuer_address,
-            "amount": 1_000_000_000_001
+            "amount": 10
         }
-
-        with pytest.raises(ValidationError) as exc_info:
-            IbetShareRedeem(**_data)
-        assert exc_info.value.errors() == [
-            {
-                "ctx": {
-                    "limit_value": 1_000_000_000_000
-                },
-                "loc": ("amount",),
-                "msg": "ensure this value is less than or equal to 1000000000000",
-                "type": "value_error.number.not_le"
-            }
-        ]
+        _add_data = RedeemParams(**_data)
+        with pytest.raises(SendTransactionError) as exc_info:
+            IbetShareContract.redeem(
+                contract_address=contract_address,
+                data=_add_data,
+                tx_from="invalid_tx_from",
+                private_key=private_key
+            )
+        assert isinstance(exc_info.value.args[0], InvalidAddress)
+        assert exc_info.match("ENS name: \'invalid_tx_from\' is invalid.")
 
     # <Error_5>
-    # invalid tx_from
+    # invalid private key
     def test_error_5(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
@@ -2112,51 +1980,7 @@ class TestRedeem:
             "account_address": issuer_address,
             "amount": 10
         }
-        _add_data = IbetShareRedeem(**_data)
-        with pytest.raises(SendTransactionError) as exc_info:
-            IbetShareContract.redeem(
-                contract_address=contract_address,
-                data=_add_data,
-                tx_from="invalid_tx_from",
-                private_key=private_key
-            )
-        assert isinstance(exc_info.value.args[0], InvalidAddress)
-        assert exc_info.match("ENS name: \'invalid_tx_from\' is invalid.")
-
-    # <Error_6>
-    # invalid private key
-    def test_error_6(self, db):
-        test_account = config_eth_account("user1")
-        issuer_address = test_account.get("address")
-        private_key = decode_keyfile_json(
-            raw_keyfile_json=test_account.get("keyfile_json"),
-            password=test_account.get("password").encode("utf-8")
-        )
-
-        # deploy token
-        arguments = [
-            "テスト株式",
-            "TEST",
-            10000,
-            20000,
-            1,
-            "20211231",
-            "20211231",
-            "20221231",
-            10000
-        ]
-        contract_address, abi, tx_hash = IbetShareContract.create(
-            args=arguments,
-            tx_from=issuer_address,
-            private_key=private_key
-        )
-
-        # redeem
-        _data = {
-            "account_address": issuer_address,
-            "amount": 10
-        }
-        _add_data = IbetShareRedeem(**_data)
+        _add_data = RedeemParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
             IbetShareContract.redeem(
                 contract_address=contract_address,
@@ -2167,9 +1991,9 @@ class TestRedeem:
         assert isinstance(exc_info.value.args[0], Error)
         assert exc_info.match("Non-hexadecimal digit found")
 
-    # <Error_7>
+    # <Error_6>
     # TimeExhausted
-    def test_error_7(self, db):
+    def test_error_6(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -2206,7 +2030,7 @@ class TestRedeem:
             "account_address": issuer_address,
             "amount": 10
         }
-        _add_data = IbetShareRedeem(**_data)
+        _add_data = RedeemParams(**_data)
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetShareContract.redeem(
@@ -2217,9 +2041,9 @@ class TestRedeem:
                 )
         assert exc_info.type(SendTransactionError(TimeExhausted))
 
-    # <Error_8>
+    # <Error_7>
     # Error
-    def test_error_8(self, db):
+    def test_error_7(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -2256,7 +2080,7 @@ class TestRedeem:
             "account_address": issuer_address,
             "amount": 10
         }
-        _add_data = IbetShareRedeem(**_data)
+        _add_data = RedeemParams(**_data)
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 IbetShareContract.redeem(
@@ -2267,9 +2091,9 @@ class TestRedeem:
                 )
         assert isinstance(exc_info.value.args[0], TransactionNotFound)
 
-    # <Error_9>
+    # <Error_8>
     # Transaction REVERT(lack balance)
-    def test_error_9(self, db):
+    def test_error_8(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -2300,7 +2124,7 @@ class TestRedeem:
             "account_address": issuer_address,
             "amount": 100_000_000
         }
-        _add_data = IbetShareRedeem(**_data)
+        _add_data = RedeemParams(**_data)
         pre_datetime = datetime.utcnow()
 
         # mock
@@ -2630,7 +2454,7 @@ class TestApproveTransfer:
         }
         IbetShareContract.update(
             contract_address=token_address,
-            data=IbetShareUpdate(**update_data),
+            data=UpdateParams(**update_data),
             tx_from=issuer_address,
             private_key=issuer_pk
         )
@@ -2658,7 +2482,7 @@ class TestApproveTransfer:
         }
         tx_hash, tx_receipt = IbetShareContract.approve_transfer(
             contract_address=token_address,
-            data=IbetSecurityTokenApproveTransfer(**approve_data),
+            data=ApproveTransferParams(**approve_data),
             tx_from=issuer_address,
             private_key=issuer_pk
         )
@@ -2694,7 +2518,7 @@ class TestApproveTransfer:
             "application_id": "not-integer",
         }
         with pytest.raises(ValidationError) as ex_info:
-            _approve_transfer_data = IbetSecurityTokenApproveTransfer(**approve_data)
+            _approve_transfer_data = ApproveTransferParams(**approve_data)
 
         assert ex_info.value.errors() == [
             {
@@ -2723,7 +2547,7 @@ class TestApproveTransfer:
             "application_id": 0,
             "data": "test_data"
         }
-        _approve_transfer_data = IbetSecurityTokenApproveTransfer(**approve_data)
+        _approve_transfer_data = ApproveTransferParams(**approve_data)
         with pytest.raises(SendTransactionError) as ex_info:
             IbetShareContract.approve_transfer(
                 contract_address="not address",
@@ -2767,7 +2591,7 @@ class TestApproveTransfer:
             "application_id": 0,
             "data": "test_data"
         }
-        _approve_transfer_data = IbetSecurityTokenApproveTransfer(**approve_data)
+        _approve_transfer_data = ApproveTransferParams(**approve_data)
         with pytest.raises(SendTransactionError) as ex_info:
             IbetShareContract.approve_transfer(
                 contract_address=contract_address,
@@ -2811,7 +2635,7 @@ class TestApproveTransfer:
             "application_id": 0,
             "data": "test_data"
         }
-        _approve_transfer_data = IbetSecurityTokenApproveTransfer(**approve_data)
+        _approve_transfer_data = ApproveTransferParams(**approve_data)
         with pytest.raises(SendTransactionError) as ex_info:
             IbetShareContract.approve_transfer(
                 contract_address=contract_address,
@@ -2880,7 +2704,7 @@ class TestApproveTransfer:
         }
         IbetShareContract.update(
             contract_address=token_address,
-            data=IbetShareUpdate(**update_data),
+            data=UpdateParams(**update_data),
             tx_from=issuer_address,
             private_key=issuer_pk
         )
@@ -2908,7 +2732,7 @@ class TestApproveTransfer:
         }
         IbetShareContract.approve_transfer(
             contract_address=token_address,
-            data=IbetSecurityTokenApproveTransfer(**approve_data),
+            data=ApproveTransferParams(**approve_data),
             tx_from=issuer_address,
             private_key=issuer_pk
         )
@@ -2928,7 +2752,7 @@ class TestApproveTransfer:
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             IbetShareContract.approve_transfer(
                 contract_address=token_address,
-                data=IbetSecurityTokenApproveTransfer(**approve_data),
+                data=ApproveTransferParams(**approve_data),
                 tx_from=issuer_address,
                 private_key=issuer_pk
             )
@@ -3000,7 +2824,7 @@ class TestCancelTransfer:
         }
         IbetShareContract.update(
             contract_address=token_address,
-            data=IbetShareUpdate(**update_data),
+            data=UpdateParams(**update_data),
             tx_from=issuer_address,
             private_key=issuer_pk
         )
@@ -3026,7 +2850,7 @@ class TestCancelTransfer:
             "application_id": 0,
             "data": "approve transfer test"
         }
-        _approve_transfer_data = IbetSecurityTokenCancelTransfer(**cancel_data)
+        _approve_transfer_data = CancelTransferParams(**cancel_data)
 
         tx_hash, tx_receipt = IbetShareContract.cancel_transfer(
             contract_address=token_address,
@@ -3066,7 +2890,7 @@ class TestCancelTransfer:
             "application_id": "not-integer",
         }
         with pytest.raises(ValidationError) as ex_info:
-            _approve_transfer_data = IbetSecurityTokenCancelTransfer(**cancel_data)
+            _approve_transfer_data = CancelTransferParams(**cancel_data)
 
         assert ex_info.value.errors() == [
             {
@@ -3095,7 +2919,7 @@ class TestCancelTransfer:
             "application_id": 0,
             "data": "test_data"
         }
-        _cancel_transfer_data = IbetSecurityTokenCancelTransfer(**cancel_data)
+        _cancel_transfer_data = CancelTransferParams(**cancel_data)
         with pytest.raises(SendTransactionError) as ex_info:
             IbetShareContract.cancel_transfer(
                 contract_address="not address",
@@ -3139,7 +2963,7 @@ class TestCancelTransfer:
             "application_id": 0,
             "data": "test_data"
         }
-        _cancel_transfer_data = IbetSecurityTokenCancelTransfer(**cancel_data)
+        _cancel_transfer_data = CancelTransferParams(**cancel_data)
         with pytest.raises(SendTransactionError) as ex_info:
             IbetShareContract.cancel_transfer(
                 contract_address=contract_address,
@@ -3183,7 +3007,7 @@ class TestCancelTransfer:
             "application_id": 0,
             "data": "test_data"
         }
-        _cancel_transfer_data = IbetSecurityTokenCancelTransfer(**cancel_data)
+        _cancel_transfer_data = CancelTransferParams(**cancel_data)
         with pytest.raises(SendTransactionError) as ex_info:
             IbetShareContract.cancel_transfer(
                 contract_address=contract_address,
@@ -3252,7 +3076,7 @@ class TestCancelTransfer:
         }
         IbetShareContract.update(
             contract_address=token_address,
-            data=IbetShareUpdate(**update_data),
+            data=UpdateParams(**update_data),
             tx_from=issuer_address,
             private_key=issuer_pk
         )
@@ -3280,7 +3104,7 @@ class TestCancelTransfer:
         }
         IbetShareContract.approve_transfer(
             contract_address=token_address,
-            data=IbetSecurityTokenApproveTransfer(**approve_data),
+            data=ApproveTransferParams(**approve_data),
             tx_from=issuer_address,
             private_key=issuer_pk
         )
@@ -3300,7 +3124,7 @@ class TestCancelTransfer:
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             IbetShareContract.cancel_transfer(
                 contract_address=token_address,
-                data=IbetSecurityTokenCancelTransfer(**cancel_data),
+                data=CancelTransferParams(**cancel_data),
                 tx_from=issuer_address,
                 private_key=issuer_pk
             )

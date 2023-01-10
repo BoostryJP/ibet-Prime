@@ -50,9 +50,11 @@ from app.model.blockchain import (
     IbetStraightBondContract,
     IbetShareContract
 )
-from app.model.schema import (
-    IbetShareTransfer,
-    IbetStraightBondTransfer
+from app.model.blockchain.tx_params.ibet_share import (
+    TransferParams as IbetShareTransferParams
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    TransferParams as IbetStraightBondTransferParams
 )
 from app.utils.web3_utils import Web3Wrapper
 from app.exceptions import (
@@ -154,15 +156,17 @@ class Processor:
                     }
                     try:
                         if _transfer.token_type == TokenType.IBET_SHARE.value:
-                            _transfer_data = IbetShareTransfer(**token)
+                            _transfer_data = IbetShareTransferParams(**token)
                             IbetShareContract.transfer(
+                                contract_address=_transfer.token_address,
                                 data=_transfer_data,
                                 tx_from=_transfer.issuer_address,
                                 private_key=private_key
                             )
                         elif _transfer.token_type == TokenType.IBET_STRAIGHT_BOND.value:
-                            _transfer_data = IbetStraightBondTransfer(**token)
+                            _transfer_data = IbetStraightBondTransferParams(**token)
                             IbetStraightBondContract.transfer(
+                                contract_address=_transfer.token_address,
                                 data=_transfer_data,
                                 tx_from=_transfer.issuer_address,
                                 private_key=private_key

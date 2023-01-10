@@ -91,7 +91,12 @@ class TestAppRoutersShareTransfersPOST:
 
         # assertion
         IbetShareContract_mock.assert_any_call(
-            data=req_param,
+            contract_address=_token_address,
+            data={
+                "from_address": _from_address,
+                "to_address": _to_address,
+                "amount": 10
+            },
             tx_from=_admin_address,
             private_key=ANY
         )
@@ -157,7 +162,12 @@ class TestAppRoutersShareTransfersPOST:
 
         # assertion
         IbetShareContract_mock.assert_any_call(
-            data=req_param,
+            contract_address=_token_address,
+            data={
+                "from_address": _from_address,
+                "to_address": _to_address,
+                "amount": 10
+            },
             tx_from=_admin_address,
             private_key=ANY
         )
