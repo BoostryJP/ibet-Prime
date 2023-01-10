@@ -93,7 +93,11 @@ from .personal_info import (
 from .position import (
     PositionResponse,
     ListAllPositionResponse,
-    ListAllLockedPositionResponse
+    ListAllLockedPositionResponse,
+    LockEventCategory,
+    ListAllLockEventsSortItem,
+    ListAllLockEventsQuery,
+    ListAllLockEventsResponse
 )
 from .scheduled_events import (
     IbetStraightBondScheduledUpdate,

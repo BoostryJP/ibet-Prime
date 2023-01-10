@@ -16,9 +16,15 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import json
 import os
 import sys
 import time
+from datetime import (
+    datetime,
+    timezone,
+    timedelta
+)
 from typing import Optional
 from itertools import groupby
 
@@ -37,7 +43,9 @@ from app.model.db import (
     TokenType,
     IDXPosition,
     IDXPositionShareBlockNumber,
-    IDXLockedPosition
+    IDXLockedPosition,
+    IDXLock,
+    IDXUnlock
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
@@ -52,6 +60,8 @@ from config import (
 
 process_name = "INDEXER-Position-Share"
 LOG = batch_log.get_logger(process_name=process_name)
+
+UTC = timezone(timedelta(hours=0), "UTC")
 
 web3 = Web3Wrapper()
 
@@ -298,6 +308,23 @@ class Processor:
                         args = event["args"]
                         account_address = args.get("accountAddress", "")
                         lock_address = args.get("lockAddress", "")
+                        value = args.get("value", 0)
+                        data = args.get("data", "")
+                        event_created = self.__gen_block_timestamp(event=event)
+
+                        # Index Lock event
+                        self.__insert_lock_idx(
+                            db_session=db_session,
+                            transaction_hash=event["transactionHash"].hex(),
+                            block_number=event["blockNumber"],
+                            token_address=token.address,
+                            lock_address=lock_address,
+                            account_address=account_address,
+                            value=value,
+                            data_str=data,
+                            block_timestamp=event_created
+                        )
+
                         if lock_address not in lock_map:
                             lock_map[lock_address] = {}
                         lock_map[lock_address][account_address] = True
@@ -358,6 +385,25 @@ class Processor:
                         args = event["args"]
                         account_address = args.get("accountAddress", "")
                         lock_address = args.get("lockAddress", "")
+                        recipient_address = args.get("recipientAddress", "")
+                        value = args.get("value", 0)
+                        data = args.get("data", "")
+                        event_created = self.__gen_block_timestamp(event=event)
+
+                        # Index Unlock event
+                        self.__insert_unlock_idx(
+                            db_session=db_session,
+                            transaction_hash=event["transactionHash"].hex(),
+                            block_number=event["blockNumber"],
+                            token_address=token.address,
+                            lock_address=lock_address,
+                            account_address=account_address,
+                            recipient_address=recipient_address,
+                            value=value,
+                            data_str=data,
+                            block_timestamp=event_created
+                        )
+
                         if lock_address not in lock_map:
                             lock_map[lock_address] = {}
                         lock_map[lock_address][account_address] = True
@@ -717,6 +763,72 @@ class Processor:
                 raise e
 
     @staticmethod
+    def __insert_lock_idx(db_session: Session,
+                          transaction_hash: str, block_number: int,
+                          token_address: str, lock_address: str, account_address: str,
+                          value: int, data_str: str, block_timestamp: datetime):
+        """Registry Lock event data in DB
+
+        :param transaction_hash: transaction hash
+        :param token_address: token address
+        :param lock_address: lock address
+        :param account_address: account address
+        :param value: amount
+        :param data_str: data string
+        :param block_timestamp: block timestamp
+        :return: None
+        """
+        try:
+            data = json.loads(data_str)
+        except Exception:
+            data = {}
+
+        lock = IDXLock()
+        lock.transaction_hash = transaction_hash
+        lock.block_number = block_number
+        lock.token_address = token_address
+        lock.lock_address = lock_address
+        lock.account_address = account_address
+        lock.value = value
+        lock.data = data
+        lock.block_timestamp = block_timestamp
+        db_session.add(lock)
+
+    @staticmethod
+    def __insert_unlock_idx(db_session: Session,
+                            transaction_hash: str, block_number: int,
+                            token_address: str, lock_address: str, account_address: str, recipient_address: str,
+                            value: int, data_str: str, block_timestamp: datetime):
+        """Registry Unlock event data in DB
+
+        :param transaction_hash: transaction hash
+        :param token_address: token address
+        :param lock_address: lock address
+        :param account_address: account address
+        :param recipient_address: recipient address
+        :param value: amount
+        :param data_str: data string
+        :param block_timestamp: block timestamp
+        :return: None
+        """
+        try:
+            data = json.loads(data_str)
+        except Exception:
+            data = {}
+
+        unlock = IDXUnlock()
+        unlock.transaction_hash = transaction_hash
+        unlock.block_number = block_number
+        unlock.token_address = token_address
+        unlock.lock_address = lock_address
+        unlock.account_address = account_address
+        unlock.recipient_address = recipient_address
+        unlock.value = value
+        unlock.data = data
+        unlock.block_timestamp = block_timestamp
+        db_session.add(unlock)
+
+    @staticmethod
     def __sink_on_position(db_session: Session,
                            token_address: str,
                            account_address: str,
@@ -867,6 +979,12 @@ class Processor:
         )
         return exchange_contract_balance["balance"], exchange_contract_balance["commitment"]
 
+    @staticmethod
+    def __gen_block_timestamp(event):
+        return datetime.fromtimestamp(
+            web3.eth.get_block(event["blockNumber"])["timestamp"],
+            UTC
+        )
 
 def main():
     LOG.info("Service started successfully")
