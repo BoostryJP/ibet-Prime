@@ -192,7 +192,6 @@ class TestProcessor:
 
             # assertion(contract)
             IbetShareContract_update.assert_called_with(
-                contract_address=_token_address_1,
                 data=IbetShareUpdate(
                     cancellation_date=None,
                     dividend_record_date=None,
@@ -213,7 +212,6 @@ class TestProcessor:
             )
 
             IbetStraightBondContract_update.assert_called_with(
-                contract_address=_token_address_2,
                 data=IbetStraightBondUpdate(
                     interest_rate=0.0001,
                     interest_payment_date=["0331", "0930"],
@@ -1061,7 +1059,6 @@ class TestProcessor:
 
             # assertion(contract)
             IbetShareContract_update.assert_called_with(
-                contract_address=_token_address_1,
                 data=IbetShareUpdate(
                     cancellation_date=None,
                     dividend_record_date=None,
@@ -1082,7 +1079,6 @@ class TestProcessor:
             )
 
             IbetStraightBondContract_update.assert_called_with(
-                contract_address=_token_address_2,
                 data=IbetStraightBondUpdate(
                     interest_rate=0.0001,
                     interest_payment_date=["0331", "0930"],

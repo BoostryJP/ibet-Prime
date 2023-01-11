@@ -35,7 +35,7 @@ from app.model.db import (
     IDXUnlock
 )
 from app.model.blockchain import IbetShareContract
-from app.model.schema import IbetShareUpdate
+from app.model.blockchain.tx_params.ibet_share import UpdateParams as IbetShareUpdateParams
 from app.utils.web3_utils import Web3Wrapper
 from app.utils.contract_utils import ContractUtils
 from batch.indexer_position_share import Processor, LOG, main
@@ -89,14 +89,15 @@ def deploy_share_token_contract(address,
         "token.cancellation_date",
         30
     ]
-
-    token_address, _, _ = IbetShareContract.create(arguments, address, private_key)
-    IbetShareContract.update(
-        contract_address=token_address,
-        data=IbetShareUpdate(transferable=True,
-                             personal_info_contract_address=personal_info_contract_address,
-                             tradable_exchange_contract_address=tradable_exchange_contract_address,
-                             transfer_approval_required=transfer_approval_required),
+    share_contract = IbetShareContract()
+    token_address, _, _ = share_contract.create(arguments, address, private_key)
+    share_contract.update(
+        data=IbetShareUpdateParams(
+            transferable=True,
+            personal_info_contract_address=personal_info_contract_address,
+            tradable_exchange_contract_address=tradable_exchange_contract_address,
+            transfer_approval_required=transfer_approval_required
+        ),
         tx_from=address,
         private_key=private_key
     )

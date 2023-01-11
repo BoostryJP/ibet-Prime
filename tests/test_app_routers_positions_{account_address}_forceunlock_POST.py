@@ -93,7 +93,6 @@ class TestAppRoutersForceUnlockPOST:
 
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
-            contract_address=_token_address,
             data={
                 "lock_address": _lock_address,
                 "account_address": _admin_address,
@@ -164,7 +163,6 @@ class TestAppRoutersForceUnlockPOST:
 
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
-            contract_address=_token_address,
             data={
                 "lock_address": _lock_address,
                 "account_address": _admin_address,

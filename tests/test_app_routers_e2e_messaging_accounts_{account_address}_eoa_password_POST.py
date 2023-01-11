@@ -80,7 +80,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
             "return_amount_test",
             "purpose_test"
         ]
-        IbetStraightBondContract.create(
+        IbetStraightBondContract().create(
             args=arguments,
             tx_from=user_address_1,
             private_key=private_key

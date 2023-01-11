@@ -147,10 +147,10 @@ def __get_details_data_list(token_address: str, token_type: str, data_type: str,
 
 def __get_details_data_list_from_ibetfin(token_address: str, token_type: str, db: Session):
     if token_type == TokenType.IBET_SHARE.value:
-        token_contract = IbetShareContract.get(token_address)
+        token_contract = IbetShareContract(token_address).get()
         price = token_contract.principal_value
     elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
-        token_contract = IbetStraightBondContract.get(token_address)
+        token_contract = IbetStraightBondContract(token_address).get()
         price = token_contract.face_value
 
     issuer_address = token_contract.issuer_address

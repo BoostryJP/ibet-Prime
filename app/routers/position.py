@@ -155,10 +155,10 @@ def list_all_position(
         # Get Token Name
         token_name = None
         if _token.type == TokenType.IBET_STRAIGHT_BOND.value:
-            _bond = IbetStraightBondContract.get(contract_address=_token.token_address)
+            _bond = IbetStraightBondContract(_token.token_address).get()
             token_name = _bond.name
         elif _token.type == TokenType.IBET_SHARE.value:
-            _share = IbetShareContract.get(contract_address=_token.token_address)
+            _share = IbetShareContract(_token.token_address).get()
             token_name = _share.name
         positions.append({
             "issuer_address": _token.issuer_address,
@@ -237,10 +237,10 @@ def list_all_locked_position(
         # Get Token Name
         token_name = None
         if _token.type == TokenType.IBET_STRAIGHT_BOND.value:
-            _bond = IbetStraightBondContract.get(contract_address=_token.token_address)
+            _bond = IbetStraightBondContract(_token.token_address).get()
             token_name = _bond.name
         elif _token.type == TokenType.IBET_SHARE.value:
-            _share = IbetShareContract.get(contract_address=_token.token_address)
+            _share = IbetShareContract(_token.token_address).get()
             token_name = _share.name
         positions.append({
             "issuer_address": _token.issuer_address,
@@ -371,10 +371,10 @@ def list_all_lock_events(
         token_name = None
         _token = lock_event[9]
         if _token.type == TokenType.IBET_STRAIGHT_BOND.value:
-            _bond = IbetStraightBondContract.get(contract_address=_token.token_address)
+            _bond = IbetStraightBondContract(_token.token_address).get()
             token_name = _bond.name
         elif _token.type == TokenType.IBET_SHARE.value:
-            _share = IbetShareContract.get(contract_address=_token.token_address)
+            _share = IbetShareContract(_token.token_address).get()
             token_name = _share.name
 
         block_timestamp_utc = timezone("UTC").localize(lock_event[8])
@@ -465,8 +465,7 @@ def force_unlock(
         "data": ""
     }
     try:
-        IbetSecurityTokenInterface.force_unlock(
-            contract_address=data.token_address,
+        IbetSecurityTokenInterface(data.token_address).force_unlock(
             data=ForceUnlockParams(**unlock_data),
             tx_from=issuer_address,
             private_key=private_key
@@ -540,10 +539,10 @@ def retrieve_position(
     # Get Token Name
     token_name = None
     if _token.type == TokenType.IBET_STRAIGHT_BOND.value:
-        _bond = IbetStraightBondContract.get(contract_address=_token.token_address)
+        _bond = IbetStraightBondContract(_token.token_address).get()
         token_name = _bond.name
     elif _token.type == TokenType.IBET_SHARE.value:
-        _share = IbetShareContract.get(contract_address=_token.token_address)
+        _share = IbetShareContract(_token.token_address).get()
         token_name = _share.name
 
     resp = {

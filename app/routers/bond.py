@@ -207,7 +207,7 @@ def issue_token(
         token.purpose
     ]
     try:
-        contract_address, abi, tx_hash = IbetStraightBondContract.create(
+        contract_address, abi, tx_hash = IbetStraightBondContract().create(
             args=arguments,
             tx_from=issuer_address,
             private_key=private_key
@@ -333,10 +333,11 @@ def list_all_tokens(
     bond_tokens = []
     for token in tokens:
         # Get contract data
-        bond_token = IbetStraightBondContract.get(contract_address=token.token_address).__dict__
+        bond_token = IbetStraightBondContract(token.token_address).get().__dict__
         issue_datetime_utc = timezone("UTC").localize(token.created)
         bond_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
         bond_token["token_status"] = token.token_status
+        bond_token.pop("contract_name")
         bond_tokens.append(bond_token)
 
     return json_response(bond_tokens)
@@ -364,10 +365,11 @@ def retrieve_token(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get contract data
-    bond_token = IbetStraightBondContract.get(contract_address=token_address).__dict__
+    bond_token = IbetStraightBondContract(token_address).get().__dict__
     issue_datetime_utc = timezone("UTC").localize(_token.created)
     bond_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
     bond_token["token_status"] = _token.token_status
+    bond_token.pop("contract_name")
 
     return json_response(bond_token)
 
@@ -424,8 +426,7 @@ def update_token(
 
     # Send transaction
     try:
-        IbetStraightBondContract.update(
-            contract_address=token_address,
+        IbetStraightBondContract(token_address).update(
             data=UpdateParams(**token.dict()),
             tx_from=issuer_address,
             private_key=private_key
@@ -562,8 +563,7 @@ def additional_issue(
 
     # Send transaction
     try:
-        IbetStraightBondContract.additional_issue(
-            contract_address=token_address,
+        IbetStraightBondContract(token_address).additional_issue(
             data=AdditionalIssueParams(**data.dict()),
             tx_from=issuer_address,
             private_key=private_key
@@ -889,8 +889,7 @@ def redeem_token(
 
     # Send transaction
     try:
-        IbetStraightBondContract.redeem(
-            contract_address=token_address,
+        IbetStraightBondContract(token_address).redeem(
             data=RedeemParams(**data.dict()),
             tx_from=issuer_address,
             private_key=private_key
@@ -1590,7 +1589,7 @@ def modify_holder_personal_info(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Modify Personal Info
-    token_contract = IbetStraightBondContract.get(token_address)
+    token_contract = IbetStraightBondContract(token_address).get()
     try:
         personal_info_contract = PersonalInfoContract(
             db=db,
@@ -1652,7 +1651,7 @@ def register_holder_personal_info(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Register Personal Info
-    token_contract = IbetStraightBondContract.get(token_address)
+    token_contract = IbetStraightBondContract(token_address).get()
     try:
         personal_info_contract = PersonalInfoContract(
             db=db,
@@ -1915,8 +1914,7 @@ def transfer_ownership(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     try:
-        IbetStraightBondContract.transfer(
-            contract_address=token.token_address,
+        IbetStraightBondContract(token.token_address).transfer(
             data=TransferParams(**token.dict()),
             tx_from=issuer_address,
             private_key=private_key
@@ -2383,8 +2381,7 @@ def update_transfer_approval(
                     "data": now
                 }
                 try:
-                    _, tx_receipt = IbetStraightBondContract.approve_transfer(
-                        contract_address=token_address,
+                    _, tx_receipt = IbetStraightBondContract(token_address).approve_transfer(
                         data=ApproveTransferParams(**_data),
                         tx_from=issuer_address,
                         private_key=private_key,
@@ -2394,8 +2391,7 @@ def update_transfer_approval(
                     # cancelTransfer should be performed immediately.
                     # After cancelTransfer, ContractRevertError is returned.
                     try:
-                        IbetStraightBondContract.cancel_transfer(
-                            contract_address=token_address,
+                        IbetStraightBondContract(token_address).cancel_transfer(
                             data=CancelTransferParams(**_data),
                             tx_from=issuer_address,
                             private_key=private_key,
@@ -2429,8 +2425,7 @@ def update_transfer_approval(
                 "data": now
             }
             try:
-                _, tx_receipt = IbetStraightBondContract.cancel_transfer(
-                    contract_address=token_address,
+                _, tx_receipt = IbetStraightBondContract(token_address).cancel_transfer(
                     data=CancelTransferParams(**_data),
                     tx_from=issuer_address,
                     private_key=private_key,

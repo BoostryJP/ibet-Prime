@@ -85,7 +85,8 @@ class TestRegisterTokenList:
             "20221231",
             10000
         ]
-        share_token_address, abi, tx_hash = IbetShareContract.create(
+        share_contract = IbetShareContract()
+        share_token_address, abi, tx_hash = share_contract.create(
             args=arguments,
             tx_from=issuer_address,
             private_key=private_key
@@ -118,7 +119,7 @@ class TestRegisterTokenList:
             "リターン内容",
             "発行目的"
         ]
-        bond_token_address, abi, tx_hash = IbetStraightBondContract.create(
+        bond_token_address, abi, tx_hash = IbetStraightBondContract().create(
             args=arguments,
             tx_from=issuer_address,
             private_key=private_key

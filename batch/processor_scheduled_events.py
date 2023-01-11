@@ -191,8 +191,7 @@ class Processor:
                     # Update
                     if _event.event_type == ScheduledEventType.UPDATE.value:
                         _update_data = IbetShareUpdateParams(**_event.data)
-                        IbetShareContract.update(
-                            contract_address=_event.token_address,
+                        IbetShareContract(_event.token_address).update(
                             data=_update_data,
                             tx_from=_event.issuer_address,
                             private_key=private_key
@@ -201,8 +200,7 @@ class Processor:
                     # Update
                     if _event.event_type == ScheduledEventType.UPDATE.value:
                         _update_data = IbetStraightBondUpdateParams(**_event.data)
-                        IbetStraightBondContract.update(
-                            contract_address=_event.token_address,
+                        IbetStraightBondContract(_event.token_address).update(
                             data=_update_data,
                             tx_from=_event.issuer_address,
                             private_key=private_key

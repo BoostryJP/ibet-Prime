@@ -104,7 +104,6 @@ class TestAppRoutersShareTokensTokenAddressPOST:
 
         # assertion
         IbetShareContract_mock.assert_any_call(
-            contract_address=_token_address,
             data=req_param,
             tx_from=_issuer_address,
             private_key=ANY
@@ -216,7 +215,6 @@ class TestAppRoutersShareTokensTokenAddressPOST:
 
         # assertion
         IbetShareContract_mock.assert_any_call(
-            contract_address=_token_address,
             data=req_param,
             tx_from=_issuer_address,
             private_key=ANY
@@ -269,7 +267,6 @@ class TestAppRoutersShareTokensTokenAddressPOST:
 
         # assertion
         IbetShareContract_mock.assert_any_call(
-            contract_address=_token_address,
             data={
                 "cancellation_date": "20221231",
                 "dividends": 345.67,
@@ -338,7 +335,6 @@ class TestAppRoutersShareTokensTokenAddressPOST:
 
         # assertion
         IbetShareContract_mock.assert_any_call(
-            contract_address=_token_address,
             data={
                 "cancellation_date": "",
                 "dividends": 345.67,

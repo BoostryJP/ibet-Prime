@@ -207,7 +207,7 @@ def issue_token(
         token.principal_value
     ]
     try:
-        contract_address, abi, tx_hash = IbetShareContract.create(
+        contract_address, abi, tx_hash = IbetShareContract().create(
             args=arguments,
             tx_from=issuer_address,
             private_key=private_key
@@ -320,10 +320,11 @@ def list_all_tokens(
     share_tokens = []
     for token in tokens:
         # Get contract data
-        share_token = IbetShareContract.get(contract_address=token.token_address).__dict__
+        share_token = IbetShareContract(token.token_address).get().__dict__
         issue_datetime_utc = timezone("UTC").localize(token.created)
         share_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
         share_token["token_status"] = token.token_status
+        share_token.pop("contract_name")
         share_tokens.append(share_token)
 
     return json_response(share_tokens)
@@ -351,10 +352,11 @@ def retrieve_token(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get contract data
-    share_token = IbetShareContract.get(contract_address=token_address).__dict__
+    share_token = IbetShareContract(token_address).get().__dict__
     issue_datetime_utc = timezone("UTC").localize(_token.created)
     share_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
     share_token["token_status"] = _token.token_status
+    share_token.pop("contract_name")
 
     return json_response(share_token)
 
@@ -411,8 +413,7 @@ def update_token(
 
     # Send transaction
     try:
-        IbetShareContract.update(
-            contract_address=token_address,
+        IbetShareContract(token_address).update(
             data=UpdateParams(**token.dict()),
             tx_from=issuer_address,
             private_key=private_key
@@ -550,8 +551,7 @@ def additional_issue(
 
     # Send transaction
     try:
-        IbetShareContract.additional_issue(
-            contract_address=token_address,
+        IbetShareContract(token_address).additional_issue(
             data=AdditionalIssueParams(**data.dict()),
             tx_from=issuer_address,
             private_key=private_key
@@ -877,8 +877,7 @@ def redeem_token(
 
     # Send transaction
     try:
-        IbetShareContract.redeem(
-            contract_address=token_address,
+        IbetShareContract(token_address).redeem(
             data=RedeemParams(**data.dict()),
             tx_from=issuer_address,
             private_key=private_key
@@ -1577,7 +1576,7 @@ def modify_holder_personal_info(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Modify Personal Info
-    token_contract = IbetShareContract.get(token_address)
+    token_contract = IbetShareContract(token_address).get()
     try:
         personal_info_contract = PersonalInfoContract(
             db=db,
@@ -1713,7 +1712,7 @@ def register_holder_personal_info(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Register Personal Info
-    token_contract = IbetShareContract.get(token_address)
+    token_contract = IbetShareContract(token_address).get()
     try:
         personal_info_contract = PersonalInfoContract(
             db=db,
@@ -1902,8 +1901,7 @@ def transfer_ownership(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     try:
-        IbetShareContract.transfer(
-            contract_address=token.token_address,
+        IbetShareContract(token.token_address).transfer(
             data=TransferParams(**token.dict()),
             tx_from=issuer_address,
             private_key=private_key
@@ -2370,8 +2368,7 @@ def update_transfer_approval(
                     "data": now
                 }
                 try:
-                    _, tx_receipt = IbetShareContract.approve_transfer(
-                        contract_address=token_address,
+                    _, tx_receipt = IbetShareContract(token_address).approve_transfer(
                         data=ApproveTransferParams(**_data),
                         tx_from=issuer_address,
                         private_key=private_key,
@@ -2381,8 +2378,7 @@ def update_transfer_approval(
                     # cancelTransfer should be performed immediately.
                     # After cancelTransfer, ContractRevertError is returned.
                     try:
-                        IbetShareContract.cancel_transfer(
-                            contract_address=token_address,
+                        IbetShareContract(token_address).cancel_transfer(
                             data=CancelTransferParams(**_data),
                             tx_from=issuer_address,
                             private_key=private_key,
@@ -2416,8 +2412,7 @@ def update_transfer_approval(
                 "data": now
             }
             try:
-                _, tx_receipt = IbetShareContract.cancel_transfer(
-                    contract_address=token_address,
+                _, tx_receipt = IbetShareContract(token_address).cancel_transfer(
                     data=CancelTransferParams(**_data),
                     tx_from=issuer_address,
                     private_key=private_key,
