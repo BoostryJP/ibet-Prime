@@ -125,10 +125,9 @@ class TestAppRoutersShareTokensPOST:
                 private_key=ANY
             )
             TokenListContract.register.assert_called_with(
-                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                 token_address="contract_address_test1",
                 token_template=TokenType.IBET_SHARE.value,
-                account_address=test_account["address"],
+                tx_from=test_account["address"],
                 private_key=ANY
             )
             ContractUtils.get_block_by_transaction_hash(
@@ -231,10 +230,9 @@ class TestAppRoutersShareTokensPOST:
                 private_key=ANY
             )
             TokenListContract.register.assert_called_with(
-                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                 token_address="contract_address_test1",
                 token_template=TokenType.IBET_SHARE.value,
-                account_address=test_account["address"],
+                tx_from=test_account["address"],
                 private_key=ANY
             )
             ContractUtils.get_block_by_transaction_hash(
@@ -454,10 +452,9 @@ class TestAppRoutersShareTokensPOST:
                 private_key=ANY
             )
             TokenListContract.register.assert_called_with(
-                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
                 token_address="contract_address_test1",
                 token_template=TokenType.IBET_SHARE.value,
-                account_address=test_account["address"],
+                tx_from=test_account["address"],
                 private_key=ANY
             )
             ContractUtils.get_block_by_transaction_hash(

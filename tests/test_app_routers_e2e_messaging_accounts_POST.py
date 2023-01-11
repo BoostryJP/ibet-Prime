@@ -85,7 +85,6 @@ class TestAppRoutersE2EMessagingAccountsPOST:
 
             # assertion
             E2EMessaging.set_public_key.assert_called_with(
-                contract_address=e2e_messaging_contract.address,
                 public_key=ANY,
                 key_type="RSA4096",
                 tx_from=resp.json()["account_address"],
@@ -181,7 +180,6 @@ class TestAppRoutersE2EMessagingAccountsPOST:
 
             # assertion
             E2EMessaging.set_public_key.assert_called_with(
-                contract_address=e2e_messaging_contract.address,
                 public_key=ANY,
                 key_type="RSA4096",
                 tx_from=resp.json()["account_address"],

@@ -83,9 +83,11 @@ def deploy_bond_token_contract(address,
     token_address, _, _ = bond_contrat.create(arguments, address, private_key)
     bond_contrat.update(
         data=IbetStraightBondUpdateParams(
-                                    personal_info_contract_address=personal_info_contract_address,
-                                    tradable_exchange_contract_address=tradable_exchange_contract_address,
-                                    transfer_approval_required=transfer_approval_required),
+            transferable=True,
+            personal_info_contract_address=personal_info_contract_address,
+            tradable_exchange_contract_address=tradable_exchange_contract_address,
+            transfer_approval_required=transfer_approval_required
+        ),
         tx_from=address,
         private_key=private_key
     )

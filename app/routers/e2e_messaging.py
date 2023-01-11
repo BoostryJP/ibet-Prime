@@ -143,8 +143,7 @@ def create_account(
 
     # Send transaction
     try:
-        tx_hash, _ = E2EMessaging.set_public_key(
-            contract_address=E2E_MESSAGING_CONTRACT_ADDRESS,
+        tx_hash, _ = E2EMessaging(E2E_MESSAGING_CONTRACT_ADDRESS).set_public_key(
             public_key=rsa_public_key,
             key_type="RSA4096",
             tx_from=addr,

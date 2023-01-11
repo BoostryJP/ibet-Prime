@@ -242,11 +242,10 @@ def issue_token(
     else:
         # Register token_address token list
         try:
-            TokenListContract.register(
-                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
+            TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                 token_address=contract_address,
                 token_template=TokenType.IBET_SHARE.value,
-                account_address=issuer_address,
+                tx_from=issuer_address,
                 private_key=private_key
             )
         except SendTransactionError:

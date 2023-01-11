@@ -230,15 +230,13 @@ class TestProcessor:
             )
 
             TokenListContract_register.assert_has_calls([
-                call(token_list_address=TOKEN_LIST_CONTRACT_ADDRESS,
-                     token_address=_token_address_1,
+                call(token_address=_token_address_1,
                      token_template=TokenType.IBET_SHARE.value,
-                     account_address=_issuer_address,
+                     tx_from=_issuer_address,
                      private_key=ANY),
-                call(token_list_address=TOKEN_LIST_CONTRACT_ADDRESS,
-                     token_address=_token_address_2,
+                call(token_address=_token_address_2,
                      token_template=TokenType.IBET_STRAIGHT_BOND.value,
-                     account_address=_issuer_address,
+                     tx_from=_issuer_address,
                      private_key=ANY),
             ])
 

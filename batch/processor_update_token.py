@@ -170,11 +170,10 @@ class Processor:
                     if _update_token.trigger == "Issue":
 
                         # Register token_address token list
-                        TokenListContract.register(
-                            token_list_address=TOKEN_LIST_CONTRACT_ADDRESS,
+                        TokenListContract(TOKEN_LIST_CONTRACT_ADDRESS).register(
                             token_address=_update_token.token_address,
                             token_template=token_template,
-                            account_address=_update_token.issuer_address,
+                            tx_from=_update_token.issuer_address,
                             private_key=private_key
                         )
 
