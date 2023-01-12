@@ -145,6 +145,36 @@ class TestProcessor:
         _node = db.query(Node).filter(Node.endpoint_uri == "http://test1:1000").first()
         assert _node.is_synced == True
 
+    # <Normal_3>
+    # Delete old node data
+    def test_normal_3(self, db):
+        node = Node()
+        node.id = 1
+        node.endpoint_uri = "old_node"
+        node.priority = 1
+        node.is_synced = True
+        db.add(node)
+        db.commit()
+
+        processor = Processor()
+
+        # assertion-1
+        old_node = db.query(Node).\
+            filter(Node.endpoint_uri.not_in(list(WEB3_HTTP_PROVIDER))).\
+            all()
+        assert len(old_node) == 0
+
+        # process
+        processor.process()
+        db.commit()
+
+        # assertion-2
+        new_node = db.query(Node).first()
+        assert new_node.id == 1
+        assert new_node.endpoint_uri == WEB3_HTTP_PROVIDER
+        assert new_node.priority == 0
+        assert new_node.is_synced == True
+
     ###########################################################################
     # Error Case
     ###########################################################################
