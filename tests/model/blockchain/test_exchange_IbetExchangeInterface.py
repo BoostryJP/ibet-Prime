@@ -104,7 +104,7 @@ def issue_bond_token(issuer: dict, exchange_address: str):
         "リターン内容",
         "発行目的"
     ]
-    token_contract_address, abi, tx_hash = IbetStraightBondContract.create(
+    token_contract_address, abi, tx_hash = IbetStraightBondContract().create(
         args=arguments,
         tx_from=issuer_address,
         private_key=issuer_pk

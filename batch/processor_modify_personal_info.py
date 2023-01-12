@@ -142,9 +142,9 @@ class Processor:
         personal_info_contract_list = set()
         for token in token_list:
             if token.type == TokenType.IBET_SHARE.value:
-                token_contract = IbetShareContract.get(token.token_address)
+                token_contract = IbetShareContract(token.token_address).get()
             elif token.type == TokenType.IBET_STRAIGHT_BOND.value:
-                token_contract = IbetStraightBondContract.get(token.token_address)
+                token_contract = IbetStraightBondContract(token.token_address).get()
             else:
                 continue
 

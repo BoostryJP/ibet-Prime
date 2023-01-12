@@ -142,7 +142,6 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         }
 
         mock_transfer.assert_called_once_with(
-            contract_address=self.test_token_address,
             data=ApproveTransferParams(**_expected),
             tx_from=issuer_address,
             private_key=ANY
@@ -306,7 +305,6 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         }
 
         mock_transfer.assert_called_once_with(
-            contract_address=self.test_token_address,
             data=ApproveTransferParams(**_expected),
             tx_from=issuer_address,
             private_key=ANY
@@ -393,7 +391,6 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         }
 
         mock_transfer.assert_called_once_with(
-            contract_address=self.test_token_address,
             data=ApproveTransferParams(**_expected),
             tx_from=issuer_address,
             private_key=ANY

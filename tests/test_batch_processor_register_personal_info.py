@@ -22,17 +22,19 @@ import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy.orm import Session
 from unittest.mock import patch
-from app.model.blockchain import IbetShareContract
 
+from app.model.blockchain import IbetShareContract
+from app.model.blockchain.tx_params.ibet_share import UpdateParams as IbetShareUpdateParams
 from app.model.db import (
     Account,
-    BulkTransfer,
-    BulkTransferUpload,
     TokenType,
     Notification,
-    NotificationType, BatchRegisterPersonalInfoUpload, BatchRegisterPersonalInfo, BatchRegisterPersonalInfoUploadStatus, Token
+    NotificationType,
+    BatchRegisterPersonalInfoUpload,
+    BatchRegisterPersonalInfo,
+    BatchRegisterPersonalInfoUploadStatus,
+    Token
 )
-from app.model.schema import IbetShareUpdate
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from app.exceptions import SendTransactionError, ContractRevertError
@@ -107,14 +109,15 @@ class TestProcessor:
             "token.cancellation_date",
             30
         ]
-
-        token_address, _, _ = IbetShareContract.create(arguments, address, private_key)
-        IbetShareContract.update(
-            contract_address=token_address,
-            data=IbetShareUpdate(transferable=True,
-                                 personal_info_contract_address=personal_info_contract_address,
-                                 tradable_exchange_contract_address=tradable_exchange_contract_address,
-                                 transfer_approval_required=transfer_approval_required),
+        share_contract = IbetShareContract()
+        token_address, _, _ = share_contract.create(arguments, address, private_key)
+        share_contract.update(
+            data=IbetShareUpdateParams(
+                transferable=True,
+                personal_info_contract_address=personal_info_contract_address,
+                tradable_exchange_contract_address=tradable_exchange_contract_address,
+                transfer_approval_required=transfer_approval_required
+            ),
             tx_from=address,
             private_key=private_key
         )

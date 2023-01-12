@@ -157,16 +157,14 @@ class Processor:
                     try:
                         if _transfer.token_type == TokenType.IBET_SHARE.value:
                             _transfer_data = IbetShareTransferParams(**token)
-                            IbetShareContract.transfer(
-                                contract_address=_transfer.token_address,
+                            IbetShareContract(_transfer.token_address).transfer(
                                 data=_transfer_data,
                                 tx_from=_transfer.issuer_address,
                                 private_key=private_key
                             )
                         elif _transfer.token_type == TokenType.IBET_STRAIGHT_BOND.value:
                             _transfer_data = IbetStraightBondTransferParams(**token)
-                            IbetStraightBondContract.transfer(
-                                contract_address=_transfer.token_address,
+                            IbetStraightBondContract(_transfer.token_address).transfer(
                                 data=_transfer_data,
                                 tx_from=_transfer.issuer_address,
                                 private_key=private_key

@@ -36,11 +36,9 @@ from app.model.blockchain import (
     IbetStraightBondContract,
     PersonalInfoContract,
 )
+from app.model.blockchain.tx_params.ibet_straight_bond import UpdateParams as IbetStraightBondUpdateParams
+from app.model.blockchain.tx_params.ibet_share import UpdateParams as IbetShareUpdateParams
 from app.utils.contract_utils import ContractUtils
-from app.model.schema import (
-    IbetShareUpdate,
-    IbetStraightBondUpdate
-)
 from app.model.db import (
     Account,
     AccountRsaStatus,
@@ -75,12 +73,12 @@ def deploy_bond_token_contract(address, private_key, personal_info_contract_addr
         "token.return_amount",
         "token.purpose"
     ]
+    bond_contrat = IbetStraightBondContract()
+    contract_address, _, _ = bond_contrat.create(arguments, address, private_key)
 
-    contract_address, _, _ = IbetStraightBondContract.create(arguments, address, private_key)
-
-    data = IbetStraightBondUpdate()
+    data = IbetStraightBondUpdateParams()
     data.personal_info_contract_address = personal_info_contract_address
-    IbetStraightBondContract.update(contract_address, data, address, private_key)
+    bond_contrat.update(data, address, private_key)
 
     return contract_address
 
@@ -97,12 +95,12 @@ def deploy_share_token_contract(address, private_key, personal_info_contract_add
         "token.cancellation_date",
         200
     ]
+    share_contract = IbetShareContract()
+    contract_address, _, _ = share_contract.create(arguments, address, private_key)
 
-    contract_address, _, _ = IbetShareContract.create(arguments, address, private_key)
-
-    data = IbetShareUpdate()
+    data = IbetShareUpdateParams()
     data.personal_info_contract_address = personal_info_contract_address
-    IbetShareContract.update(contract_address, data, address, private_key)
+    share_contract.update(data, address, private_key)
 
     return contract_address
 

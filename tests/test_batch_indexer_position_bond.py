@@ -35,7 +35,7 @@ from app.model.db import (
     IDXUnlock
 )
 from app.model.blockchain import IbetStraightBondContract
-from app.model.schema import IbetStraightBondUpdate
+from app.model.blockchain.tx_params.ibet_straight_bond import UpdateParams as IbetStraightBondUpdateParams
 from app.utils.web3_utils import Web3Wrapper
 from app.utils.contract_utils import ContractUtils
 from batch.indexer_position_bond import Processor, LOG, main
@@ -89,14 +89,15 @@ def deploy_bond_token_contract(address,
         "token.return_amount",
         "token.purpose"
     ]
-
-    token_address, _, _ = IbetStraightBondContract.create(arguments, address, private_key)
-    IbetStraightBondContract.update(
-        contract_address=token_address,
-        data=IbetStraightBondUpdate(transferable=True,
-                                    personal_info_contract_address=personal_info_contract_address,
-                                    tradable_exchange_contract_address=tradable_exchange_contract_address,
-                                    transfer_approval_required=transfer_approval_required),
+    bond_contrat = IbetStraightBondContract()
+    token_address, _, _ = bond_contrat.create(arguments, address, private_key)
+    bond_contrat.update(
+        data=IbetStraightBondUpdateParams(
+            transferable=True,
+            personal_info_contract_address=personal_info_contract_address,
+            tradable_exchange_contract_address=tradable_exchange_contract_address,
+            transfer_approval_required=transfer_approval_required
+        ),
         tx_from=address,
         private_key=private_key
     )

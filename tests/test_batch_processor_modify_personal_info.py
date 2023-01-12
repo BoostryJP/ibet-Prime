@@ -32,6 +32,8 @@ from app.model.blockchain import (
     IbetShareContract,
     PersonalInfoContract
 )
+from app.model.blockchain.tx_params.ibet_straight_bond import UpdateParams as IbetStraightBondUpdateParams
+from app.model.blockchain.tx_params.ibet_share import UpdateParams as IbetShareUpdateParams
 from app.utils.contract_utils import ContractUtils
 from app.model.db import (
     Account,
@@ -42,10 +44,6 @@ from app.model.db import (
     IDXPersonalInfo
 )
 from app.utils.e2ee_utils import E2EEUtils
-from app.model.schema import (
-    IbetStraightBondUpdate,
-    IbetShareUpdate
-)
 from batch.processor_modify_personal_info import Processor
 from tests.account_config import config_eth_account
 
@@ -115,12 +113,13 @@ def deploy_bond_token_contract(issuer_user, personal_info_contract_address):
         password=eoa_password.encode("utf-8")
     )
 
-    contract_address, _, _ = IbetStraightBondContract.create(arguments, address, private_key)
+    bond_contract = IbetStraightBondContract()
+    contract_address, _, _ = bond_contract.create(arguments, address, private_key)
 
     if personal_info_contract_address:
-        data = IbetStraightBondUpdate()
+        data = IbetStraightBondUpdateParams()
         data.personal_info_contract_address = personal_info_contract_address
-        IbetStraightBondContract.update(contract_address, data, address, private_key)
+        bond_contract.update(data, address, private_key)
 
     return contract_address
 
@@ -147,12 +146,13 @@ def deploy_share_token_contract(issuer_user, personal_info_contract_address):
         password=eoa_password.encode("utf-8")
     )
 
-    contract_address, _, _ = IbetShareContract.create(arguments, address, private_key)
+    share_contract = IbetShareContract()
+    contract_address, _, _ = share_contract.create(arguments, address, private_key)
 
     if personal_info_contract_address:
-        data = IbetShareUpdate()
+        data = IbetShareUpdateParams()
         data.personal_info_contract_address = personal_info_contract_address
-        IbetShareContract.update(contract_address, data, address, private_key)
+        share_contract.update(data, address, private_key)
 
     return contract_address
 

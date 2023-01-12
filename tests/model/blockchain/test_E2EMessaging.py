@@ -64,8 +64,7 @@ class TestSendMessage:
         message = "test message"
 
         # Run Test
-        tx_hash, tx_receipt = E2EMessaging.send_message(
-            contract_address=e2e_messaging_contract.address,
+        tx_hash, tx_receipt = E2EMessaging(e2e_messaging_contract.address).send_message(
             to_address=user_address_2,
             message=message,
             tx_from=user_address_1,
@@ -102,8 +101,7 @@ class TestSendMessage:
             with mock.patch("app.utils.contract_utils.ContractUtils.send_transaction",
                             MagicMock(side_effect=Exception("tx error"))):
                 # Run Test
-                E2EMessaging.send_message(
-                    contract_address=e2e_messaging_contract.address,
+                E2EMessaging(e2e_messaging_contract.address).send_message(
                     to_address=user_address_2,
                     message=message,
                     tx_from=user_address_1,
@@ -132,8 +130,7 @@ class TestSendMessage:
             with mock.patch("app.utils.contract_utils.ContractUtils.send_transaction",
                             MagicMock(side_effect=TimeExhausted("Timeout Error test"))):
                 # Run Test
-                E2EMessaging.send_message(
-                    contract_address=e2e_messaging_contract.address,
+                E2EMessaging(e2e_messaging_contract.address).send_message(
                     to_address=user_address_2,
                     message=message,
                     tx_from=user_address_1,
@@ -235,8 +232,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _type = "test_type"
 
         # Run Test
-        tx_hash, tx_receipt = E2EMessaging.send_message_external(
-            contract_address=e2e_messaging_contract.address,
+        tx_hash, tx_receipt = E2EMessaging(e2e_messaging_contract.address).send_message_external(
             to_address=user_address_2,
             _type=_type,
             message_org=message_org,
@@ -303,8 +299,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         ]
 
         # Run Test
-        tx_hash, tx_receipt = E2EMessaging.send_message_external(
-            contract_address=e2e_messaging_contract.address,
+        tx_hash, tx_receipt = E2EMessaging(e2e_messaging_contract.address).send_message_external(
             to_address=user_address_2,
             _type=_type,
             message_org=message_org,
@@ -357,8 +352,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             with mock.patch("app.utils.contract_utils.ContractUtils.send_transaction",
                             MagicMock(side_effect=Exception("tx error"))):
                 # Run Test
-                E2EMessaging.send_message_external(
-                    contract_address=e2e_messaging_contract.address,
+                E2EMessaging(e2e_messaging_contract.address).send_message_external(
                     to_address=user_address_2,
                     _type=_type,
                     message_org=message_org,
@@ -390,8 +384,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             with mock.patch("app.utils.contract_utils.ContractUtils.send_transaction",
                             MagicMock(side_effect=TimeExhausted("Timeout Error test"))):
                 # Run Test
-                E2EMessaging.send_message_external(
-                    contract_address=e2e_messaging_contract.address,
+                E2EMessaging(e2e_messaging_contract.address).send_message_external(
                     to_address=user_address_2,
                     _type=_type,
                     message_org=message_org,
@@ -438,8 +431,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         key_type = "RSA4098"
 
         # Run Test
-        tx_hash, tx_receipt = E2EMessaging.set_public_key(
-            contract_address=e2e_messaging_contract.address,
+        tx_hash, tx_receipt = E2EMessaging(e2e_messaging_contract.address).set_public_key(
             public_key=self.rsa_public_key,
             key_type=key_type,
             tx_from=user_address_1,
@@ -473,8 +465,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             with mock.patch("app.utils.contract_utils.ContractUtils.send_transaction",
                             MagicMock(side_effect=Exception("tx error"))):
                 # Run Test
-                E2EMessaging.set_public_key(
-                    contract_address=e2e_messaging_contract.address,
+                E2EMessaging(e2e_messaging_contract.address).set_public_key(
                     public_key=self.rsa_public_key,
                     key_type=key_type,
                     tx_from=user_address_1,
@@ -501,8 +492,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             with mock.patch("app.utils.contract_utils.ContractUtils.send_transaction",
                             MagicMock(side_effect=TimeExhausted("Timeout Error test"))):
                 # Run Test
-                E2EMessaging.set_public_key(
-                    contract_address=e2e_messaging_contract.address,
+                E2EMessaging(e2e_messaging_contract.address).set_public_key(
                     public_key=self.rsa_public_key,
                     key_type=key_type,
                     tx_from=user_address_1,

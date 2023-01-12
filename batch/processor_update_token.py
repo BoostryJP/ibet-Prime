@@ -147,8 +147,7 @@ class Processor:
                             token_type=TokenType.IBET_SHARE.value,
                             arguments=_update_token.arguments
                         )
-                        IbetShareContract.update(
-                            contract_address=_update_token.token_address,
+                        IbetShareContract(_update_token.token_address).update(
                             data=_update_data,
                             tx_from=_update_token.issuer_address,
                             private_key=private_key
@@ -161,8 +160,7 @@ class Processor:
                             token_type=TokenType.IBET_STRAIGHT_BOND.value,
                             arguments=_update_token.arguments
                         )
-                        IbetStraightBondContract.update(
-                            contract_address=_update_token.token_address,
+                        IbetStraightBondContract(_update_token.token_address).update(
                             data=_update_data,
                             tx_from=_update_token.issuer_address,
                             private_key=private_key
@@ -172,11 +170,10 @@ class Processor:
                     if _update_token.trigger == "Issue":
 
                         # Register token_address token list
-                        TokenListContract.register(
-                            token_list_address=TOKEN_LIST_CONTRACT_ADDRESS,
+                        TokenListContract(TOKEN_LIST_CONTRACT_ADDRESS).register(
                             token_address=_update_token.token_address,
                             token_template=token_template,
-                            account_address=_update_token.issuer_address,
+                            tx_from=_update_token.issuer_address,
                             private_key=private_key
                         )
 

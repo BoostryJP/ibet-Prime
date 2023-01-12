@@ -90,9 +90,6 @@ class TestAppRoutersShareTokensGET:
 
         resp = client.get(self.apiurl)
 
-        # assertion mock call arguments
-        mock_get.assert_any_call(contract_address=token.token_address)
-
         assumed_response = [
             {
                 "issuer_address": issuer_address_1,
@@ -206,12 +203,6 @@ class TestAppRoutersShareTokensGET:
         ]
 
         resp = client.get(self.apiurl)
-
-        # assertion mock call arguments
-        mock_get.assert_has_calls([
-            call(contract_address=token_1.token_address),
-            call(contract_address=token_2.token_address)
-        ])
 
         assumed_response = [
             {
@@ -342,9 +333,6 @@ class TestAppRoutersShareTokensGET:
 
         resp = client.get(self.apiurl, headers={"issuer-address": issuer_address_1})
 
-        # assertion mock call arguments
-        mock_get.assert_any_call(contract_address=token_1.token_address)
-
         assumed_response = [
             {
                 "issuer_address": issuer_address_1,
@@ -467,12 +455,6 @@ class TestAppRoutersShareTokensGET:
         db.add(token_3)
 
         resp = client.get(self.apiurl, headers={"issuer-address": issuer_address_1})
-
-        # assertion mock call arguments
-        mock_get.assert_has_calls([
-            call(contract_address=token_1.token_address),
-            call(contract_address=token_2.token_address)
-        ])
 
         assumed_response = [
             {

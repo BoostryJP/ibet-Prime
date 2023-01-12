@@ -89,8 +89,6 @@ class TestAppRoutersBondTokensTokenAddressGET:
         resp = client.get(self.base_apiurl + "token_address_test1")
 
         # assertion
-        mock_get.assert_any_call(contract_address="token_address_test1")
-
         assumed_response = {
             "issuer_address": "issuer_address_test1",
             "token_address": "token_address_test1",
@@ -182,8 +180,6 @@ class TestAppRoutersBondTokensTokenAddressGET:
         resp = client.get(self.base_apiurl + "token_address_test1")
 
         # assertion
-        mock_get.assert_any_call(contract_address="token_address_test1")
-
         assumed_response = {
             "issuer_address": "issuer_address_test1",
             "token_address": "token_address_test1",

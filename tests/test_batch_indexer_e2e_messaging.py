@@ -188,8 +188,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str = json.dumps(message)
-        sending_tx_hash, sending_tx_receipt = E2EMessaging.send_message_external(
-            e2e_messaging_contract.address,
+        sending_tx_hash, sending_tx_receipt = E2EMessaging(e2e_messaging_contract.address).send_message_external(
             user_address_1,
             _type,
             message_message_str,
@@ -276,8 +275,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str = json.dumps(message)
-        sending_tx_hash, sending_tx_receipt = E2EMessaging.send_message_external(
-            e2e_messaging_contract.address,
+        sending_tx_hash, sending_tx_receipt = E2EMessaging(e2e_messaging_contract.address).send_message_external(
             user_address_1,
             _type,
             message_message_str,
@@ -385,8 +383,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str_1 = json.dumps(message)
-        sending_tx_hash_1, sending_tx_receipt = E2EMessaging.send_message_external(
-            e2e_messaging_contract.address,
+        sending_tx_hash_1, sending_tx_receipt = E2EMessaging(e2e_messaging_contract.address).send_message_external(
             user_address_1,
             _type_1,
             message_message_str_1,
@@ -401,8 +398,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _type_2 = "test_type2"
         message = ["テスト太郎2", "東京都2"]
         message_message_str_2 = json.dumps(message)
-        sending_tx_hash_2, sending_tx_receipt = E2EMessaging.send_message_external(
-            e2e_messaging_contract.address,
+        sending_tx_hash_2, sending_tx_receipt = E2EMessaging(e2e_messaging_contract.address).send_message_external(
             user_address_2,
             _type_2,
             message_message_str_2,
@@ -416,8 +412,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Send Message(user3 -> user1)
         _type_3 = "test_type3"
         message_message_str_3 = "テスト太郎1,東京都1"
-        sending_tx_hash_3, sending_tx_receipt = E2EMessaging.send_message_external(
-            e2e_messaging_contract.address,
+        sending_tx_hash_3, sending_tx_receipt = E2EMessaging(e2e_messaging_contract.address).send_message_external(
             user_address_1,
             _type_3,
             message_message_str_3,
@@ -431,8 +426,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Send Message(user3 -> user2)
         _type_4 = "a" * 50
         message_message_str_4 = "a" * 5000
-        sending_tx_hash_4, sending_tx_receipt = E2EMessaging.send_message_external(
-            e2e_messaging_contract.address,
+        sending_tx_hash_4, sending_tx_receipt = E2EMessaging(e2e_messaging_contract.address).send_message_external(
             user_address_2,
             _type_4,
             message_message_str_4,
@@ -529,8 +523,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str = json.dumps(message)
-        E2EMessaging.send_message_external(
-            e2e_messaging_contract.address,
+        E2EMessaging(e2e_messaging_contract.address).send_message_external(
             user_address_3,  # not target
             _type,
             message_message_str,
@@ -587,11 +580,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         # Send Message
         message = "test"
-        E2EMessaging.send_message(e2e_messaging_contract.address,
-                                  user_address_1,
-                                  message,
-                                  user_address_2,
-                                  user_private_key_2)
+        E2EMessaging(e2e_messaging_contract.address).\
+            send_message(user_address_1, message, user_address_2, user_private_key_2)
 
         # Run target process
         block_number = web3.eth.block_number
@@ -650,11 +640,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "message": encrypted_message,
             }
         })
-        E2EMessaging.send_message(e2e_messaging_contract.address,
-                                  user_address_1,
-                                  message,
-                                  user_address_2,
-                                  user_private_key_2)
+        E2EMessaging(e2e_messaging_contract.address).\
+            send_message(user_address_1, message, user_address_2, user_private_key_2)
 
         # Run target process
         block_number = web3.eth.block_number
@@ -702,11 +689,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         message = json.dumps({
             "type": "test_type",
         })
-        E2EMessaging.send_message(e2e_messaging_contract.address,
-                                  user_address_1,
-                                  message,
-                                  user_address_2,
-                                  user_private_key_2)
+        E2EMessaging(e2e_messaging_contract.address).\
+            send_message(user_address_1, message, user_address_2, user_private_key_2)
 
         # Run target process
         block_number = web3.eth.block_number
@@ -766,11 +750,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "message": encrypted_message
             }
         })
-        E2EMessaging.send_message(e2e_messaging_contract.address,
-                                  user_address_1,
-                                  message,
-                                  user_address_2,
-                                  user_private_key_2)
+        E2EMessaging(e2e_messaging_contract.address).\
+            send_message(user_address_1, message, user_address_2, user_private_key_2)
 
         # Run target process
         block_number = web3.eth.block_number
@@ -826,11 +807,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "message": encrypted_message,
             }
         })
-        E2EMessaging.send_message(e2e_messaging_contract.address,
-                                  user_address_1,
-                                  message,
-                                  user_address_2,
-                                  user_private_key_2)
+        E2EMessaging(e2e_messaging_contract.address).\
+            send_message(user_address_1, message, user_address_2, user_private_key_2)
 
         # Run target process
         block_number = web3.eth.block_number
@@ -885,11 +863,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "cipher_key": cipher_key,
             }
         })
-        E2EMessaging.send_message(e2e_messaging_contract.address,
-                                  user_address_1,
-                                  message,
-                                  user_address_2,
-                                  user_private_key_2)
+        E2EMessaging(e2e_messaging_contract.address).\
+            send_message(user_address_1, message, user_address_2, user_private_key_2)
 
         # Run target process
         block_number = web3.eth.block_number
@@ -949,11 +924,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "message": encrypted_message
             }
         })
-        E2EMessaging.send_message(e2e_messaging_contract.address,
-                                  user_address_1,
-                                  message,
-                                  user_address_2,
-                                  user_private_key_2)
+        E2EMessaging(e2e_messaging_contract.address). \
+            send_message(user_address_1, message, user_address_2, user_private_key_2)
 
         # Run target process
         block_number = web3.eth.block_number
@@ -991,8 +963,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str = json.dumps(message)
-        E2EMessaging.send_message_external(
-            e2e_messaging_contract.address,
+        E2EMessaging(e2e_messaging_contract.address).send_message_external(
             user_address_1,
             _type,
             message_message_str,
@@ -1068,11 +1039,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "message": encrypted_message
             }
         })
-        E2EMessaging.send_message(e2e_messaging_contract.address,
-                                  user_address_1,
-                                  message,
-                                  user_address_2,
-                                  user_private_key_2)
+        E2EMessaging(e2e_messaging_contract.address). \
+            send_message(user_address_1, message, user_address_2, user_private_key_2)
 
         # Run target process
         block_number = web3.eth.block_number
@@ -1130,11 +1098,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "message": encrypted_message
             }
         })
-        E2EMessaging.send_message(e2e_messaging_contract.address,
-                                  user_address_1,
-                                  message,
-                                  user_address_2,
-                                  user_private_key_2)
+        E2EMessaging(e2e_messaging_contract.address). \
+            send_message(user_address_1, message, user_address_2, user_private_key_2)
 
         # Run target process
         block_number = web3.eth.block_number
@@ -1197,11 +1162,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "message": encrypted_message
             }
         })
-        E2EMessaging.send_message(e2e_messaging_contract.address,
-                                  user_address_1,
-                                  message,
-                                  user_address_2,
-                                  user_private_key_2)
+        E2EMessaging(e2e_messaging_contract.address). \
+            send_message(user_address_1, message, user_address_2, user_private_key_2)
 
         # Run target process
         block_number = web3.eth.block_number
@@ -1257,11 +1219,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "message": "test_message"
             }
         })
-        E2EMessaging.send_message(e2e_messaging_contract.address,
-                                  user_address_1,
-                                  message,
-                                  user_address_2,
-                                  user_private_key_2)
+        E2EMessaging(e2e_messaging_contract.address). \
+            send_message(user_address_1, message, user_address_2, user_private_key_2)
 
         # Run target process
         block_number = web3.eth.block_number
@@ -1322,11 +1281,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "message": encrypted_message
             }
         })
-        E2EMessaging.send_message(e2e_messaging_contract.address,
-                                  user_address_1,
-                                  message,
-                                  user_address_2,
-                                  user_private_key_2)
+        E2EMessaging(e2e_messaging_contract.address). \
+            send_message(user_address_1, message, user_address_2, user_private_key_2)
 
         # Run target process
         block_number = web3.eth.block_number

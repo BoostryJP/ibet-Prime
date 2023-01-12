@@ -85,17 +85,17 @@ class TestRegisterTokenList:
             "20221231",
             10000
         ]
-        share_token_address, abi, tx_hash = IbetShareContract.create(
+        share_contract = IbetShareContract()
+        share_token_address, abi, tx_hash = share_contract.create(
             args=arguments,
             tx_from=issuer_address,
             private_key=private_key
         )
 
-        TokenListContract.register(
+        TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
             token_address=share_token_address,
             token_template=TokenType.IBET_SHARE.value,
-            token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
-            account_address=issuer_address,
+            tx_from=issuer_address,
             private_key=private_key
         )
 
@@ -118,17 +118,16 @@ class TestRegisterTokenList:
             "リターン内容",
             "発行目的"
         ]
-        bond_token_address, abi, tx_hash = IbetStraightBondContract.create(
+        bond_token_address, abi, tx_hash = IbetStraightBondContract().create(
             args=arguments,
             tx_from=issuer_address,
             private_key=private_key
         )
 
-        TokenListContract.register(
+        TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
             token_address=bond_token_address,
             token_template=TokenType.IBET_STRAIGHT_BOND.value,
-            token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
-            account_address=issuer_address,
+            tx_from=issuer_address,
             private_key=private_key
         )
 
@@ -160,11 +159,10 @@ class TestRegisterTokenList:
         )
 
         with pytest.raises(SendTransactionError) as exc_info:
-            TokenListContract.register(
+            TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                 token_address="dummy_token_address",
                 token_template=TokenType.IBET_SHARE.value,
-                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
-                account_address=issuer_address,
+                tx_from=issuer_address,
                 private_key=private_key
             )
         assert isinstance(exc_info.value.args[0], ValidationError)
@@ -179,11 +177,10 @@ class TestRegisterTokenList:
         )
 
         with pytest.raises(SendTransactionError) as exc_info:
-            TokenListContract.register(
+            TokenListContract("dummy_token_list_address").register(
                 token_address=ZERO_ADDRESS,
                 token_template=TokenType.IBET_STRAIGHT_BOND.value,
-                token_list_address="dummy_token_list_address",
-                account_address=issuer_address,
+                tx_from=issuer_address,
                 private_key=private_key
             )
         assert isinstance(exc_info.value.args[0], ValueError)
@@ -198,11 +195,10 @@ class TestRegisterTokenList:
         )
 
         with pytest.raises(SendTransactionError) as exc_info:
-            TokenListContract.register(
+            TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                 token_address=ZERO_ADDRESS,
                 token_template=TokenType.IBET_SHARE.value,
-                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
-                account_address=issuer_address[:-1],
+                tx_from=issuer_address[:-1],
                 private_key=private_key
             )
         assert isinstance(exc_info.value.args[0], InvalidAddress)
@@ -213,11 +209,10 @@ class TestRegisterTokenList:
         issuer_address = test_account.get("address")
 
         with pytest.raises(SendTransactionError) as exc_info:
-            TokenListContract.register(
+            TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                 token_address=ZERO_ADDRESS,
                 token_template=TokenType.IBET_SHARE.value,
-                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
-                account_address=issuer_address,
+                tx_from=issuer_address,
                 private_key="not private key"
             )
         assert isinstance(exc_info.value.args[0], Error)
@@ -240,11 +235,10 @@ class TestRegisterTokenList:
         # execute the function
         with ContractUtils_send_transaction:
             with pytest.raises(SendTransactionError):
-                TokenListContract.register(
+                TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                     token_address=ZERO_ADDRESS,
                     token_template=TokenType.IBET_SHARE.value,
-                    token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
-                    account_address=issuer_address,
+                    tx_from=issuer_address,
                     private_key=private_key
                 )
 
@@ -268,11 +262,10 @@ class TestRegisterTokenList:
 
         # execute the function
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
-            TokenListContract.register(
+            TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                 token_address=ZERO_ADDRESS,
                 token_template=TokenType.IBET_SHARE.value,
-                token_list_address=config.TOKEN_LIST_CONTRACT_ADDRESS,
-                account_address=issuer_address,
+                tx_from=issuer_address,
                 private_key=private_key
             )
 

@@ -275,13 +275,11 @@ class TestProcessor:
             # # Assertion
             assert user_address_2 < user_address_1
             E2EMessaging.set_public_key.assert_has_calls([
-                call(contract_address=e2e_messaging_contract.address,
-                     public_key=ANY,
+                call(public_key=ANY,
                      key_type="RSA4096",
                      tx_from=user_address_2,
                      private_key=user_private_key_2),
-                call(contract_address=e2e_messaging_contract.address,
-                     public_key=ANY,
+                call(public_key=ANY,
                      key_type="RSA4096",
                      tx_from=user_address_1,
                      private_key=user_private_key_1),
@@ -425,7 +423,6 @@ class TestProcessor:
 
             # Assertion
             E2EMessaging.set_public_key.assert_called_with(
-                contract_address=e2e_messaging_contract.address,
                 public_key=ANY,
                 key_type="RSA4096",
                 tx_from=user_address_1,
@@ -482,7 +479,6 @@ class TestProcessor:
 
             # Assertion
             E2EMessaging.set_public_key.assert_called_with(
-                contract_address=e2e_messaging_contract.address,
                 public_key=ANY,
                 key_type="RSA4096",
                 tx_from=user_address_1,

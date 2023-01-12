@@ -18,7 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 import pytz
 from unittest import mock
-from unittest.mock import call
+
+from web3.datastructures import AttributeDict
 
 from app.model.blockchain import IbetStraightBondContract
 from app.model.db import (
@@ -96,13 +97,10 @@ class TestAppRoutersBondTokensGET:
         mock_token.memo = "memo_test1"
 
         mock_get.side_effect = [
-            mock_token
+            AttributeDict(mock_token.__dict__)
         ]
 
         resp = client.get(self.apiurl)
-
-        # assertion mock call arguments
-        mock_get.assert_any_call(contract_address=token.token_address)
 
         assumed_response = [
             {
@@ -241,14 +239,11 @@ class TestAppRoutersBondTokensGET:
         mock_token_2.memo = "memo_test2"
 
         mock_get.side_effect = [
-            mock_token_1, mock_token_2
+            AttributeDict(mock_token_1.__dict__),
+            AttributeDict(mock_token_2.__dict__)
         ]
 
         resp = client.get(self.apiurl)
-
-        # assertion mock call arguments
-        mock_get.assert_has_calls(
-            [call(contract_address=token_1.token_address), call(contract_address=token_2.token_address)])
 
         assumed_response = [
             {
@@ -398,7 +393,7 @@ class TestAppRoutersBondTokensGET:
         mock_token.memo = "memo_test1"
 
         mock_get.side_effect = [
-            mock_token
+            AttributeDict(mock_token.__dict__)
         ]
 
         # No Target Data
@@ -411,9 +406,6 @@ class TestAppRoutersBondTokensGET:
         db.add(token_2)
 
         resp = client.get(self.apiurl, headers={"issuer-address": issuer_address_1})
-
-        # assertion mock call arguments
-        mock_get.assert_any_call(contract_address=token_1.token_address)
 
         assumed_response = [
             {
@@ -552,7 +544,8 @@ class TestAppRoutersBondTokensGET:
         mock_token_2.memo = "memo_test2"
 
         mock_get.side_effect = [
-            mock_token_1, mock_token_2
+            AttributeDict(mock_token_1.__dict__),
+            AttributeDict(mock_token_2.__dict__)
         ]
 
         # No Target Data
@@ -565,10 +558,6 @@ class TestAppRoutersBondTokensGET:
         db.add(token_3)
 
         resp = client.get(self.apiurl, headers={"issuer-address": issuer_address_1})
-
-        # assertion mock call arguments
-        mock_get.assert_has_calls(
-            [call(contract_address=token_1.token_address), call(contract_address=token_2.token_address)])
 
         assumed_response = [
             {

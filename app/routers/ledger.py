@@ -715,9 +715,9 @@ def __get_personal_info(token_address: str, token_type: str, account_address: st
             # Get personal info from contract
             token_contract = None
             if token_type == TokenType.IBET_SHARE.value:
-                token_contract = IbetShareContract.get(token_address)
+                token_contract = IbetShareContract(token_address).get()
             elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
-                token_contract = IbetStraightBondContract.get(token_address)
+                token_contract = IbetStraightBondContract(token_address).get()
             personal_info_contract = PersonalInfoContract(
                 db=db,
                 issuer_address=issuer_address,

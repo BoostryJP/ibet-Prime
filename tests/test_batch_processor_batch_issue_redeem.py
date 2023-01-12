@@ -120,7 +120,6 @@ class TestProcessor:
 
             # Assertion: contract
             IbetStraightBondContract_additional_issue.assert_called_with(
-                contract_address=token_address,
                 data=IbetStraightBondAdditionalIssue(
                     account_address=target_address,
                     amount=target_amount
@@ -219,7 +218,6 @@ class TestProcessor:
 
         # Assertion: contract
         IbetStraightBondContract_redeem.assert_called_with(
-            contract_address=token_address,
             data=IbetStraightBondRedeem(
                 account_address=target_address,
                 amount=target_amount
@@ -318,7 +316,6 @@ class TestProcessor:
 
         # Assertion: contract
         IbetShareContract_additional_issue.assert_called_with(
-            contract_address=token_address,
             data=IbetShareAdditionalIssue(
                 account_address=target_address,
                 amount=target_amount
@@ -417,7 +414,6 @@ class TestProcessor:
 
         # Assertion: contract
         IbetShareContract_redeem.assert_called_with(
-            contract_address=token_address,
             data=IbetShareRedeem(
                 account_address=target_address,
                 amount=target_amount

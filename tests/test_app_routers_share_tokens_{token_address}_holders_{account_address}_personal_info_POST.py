@@ -108,7 +108,6 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressPersonalInfoPOST
             # assertion
             assert resp.status_code == 200
             assert resp.json() is None
-            IbetShareContract.get.assert_called_with(_token_address)
             PersonalInfoContract.__init__.assert_called_with(
                 db=db,
                 issuer_address=_issuer_address,
@@ -187,7 +186,6 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressPersonalInfoPOST
             # assertion
             assert resp.status_code == 200
             assert resp.json() is None
-            IbetShareContract.get.assert_called_with(_token_address)
             PersonalInfoContract.__init__.assert_called_with(
                 db=db,
                 issuer_address=_issuer_address,
@@ -272,7 +270,6 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressPersonalInfoPOST
             # assertion
             assert resp.status_code == 200
             assert resp.json() is None
-            IbetShareContract.get.assert_called_with(_token_address)
             PersonalInfoContract.__init__.assert_called_with(
                 db=db,
                 issuer_address=_issuer_address,
