@@ -16,10 +16,11 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import Tuple, TypeVar
+from typing import Tuple, TypeVar, Type
 import json
 
 from web3 import contract
+from web3.contract import Contract
 from web3.exceptions import (
     TimeExhausted,
     BadFunctionCallOutput,
@@ -45,6 +46,7 @@ web3 = Web3Wrapper()
 
 
 class ContractUtils:
+    factory_map: dict[str, Type[Contract]] = {}
 
     @staticmethod
     def get_contract_code(contract_name: str):
@@ -119,21 +121,23 @@ class ContractUtils:
 
         return contract_address, contract_json['abi'], tx_hash
 
-    @staticmethod
-    def get_contract(contract_name: str, contract_address: str):
+    @classmethod
+    def get_contract(cls, contract_name: str, contract_address: str):
         """Get contract
 
         :param contract_name: contract name
         :param contract_address: contract address
         :return: Contract
         """
+        contract_factory = cls.factory_map.get(contract_name)
+        if contract_factory is not None:
+            return contract_factory(address=to_checksum_address(contract_address))
+
         contract_file = f"contracts/{contract_name}.json"
         contract_json = json.load(open(contract_file, "r"))
-        contract = web3.eth.contract(
-            address=to_checksum_address(contract_address),
-            abi=contract_json['abi'],
-        )
-        return contract
+        contract_factory = web3.eth.contract(abi=contract_json['abi'])
+        cls.factory_map[contract_name] = contract_factory
+        return contract_factory(address=to_checksum_address(contract_address))
 
     T = TypeVar("T")
 
