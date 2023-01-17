@@ -22,10 +22,17 @@ from sqlalchemy import (
     Column,
     BigInteger,
     String,
-    DateTime
+    DateTime,
+    JSON
 )
 
 from .base import Base
+
+
+class IDXTransferSourceEventType(str, Enum):
+    """Transfer source event type"""
+    TRANSFER = "Transfer"
+    UNLOCK = "Unlock"
 
 
 class IDXTransfer(Base):
@@ -43,15 +50,12 @@ class IDXTransfer(Base):
     to_address = Column(String(42), index=True)
     # transfer amount
     amount = Column(BigInteger)
+    # Source Event (IDXTransferSourceEventType)
+    source_event = Column(String(50), nullable=False)
+    # Data
+    data = Column(JSON)
     # block timestamp
     block_timestamp = Column(DateTime)
-
-
-class IDXTransfersSortItem(str, Enum):
-    BLOCK_TIMESTAMP = "block_timestamp"
-    FROM_ADDRESS = "from_address"
-    TO_ADDRESS = "to_address"
-    AMOUNT = "amount"
 
 
 class IDXTransferBlockNumber(Base):

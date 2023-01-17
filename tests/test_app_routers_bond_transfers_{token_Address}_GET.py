@@ -24,7 +24,8 @@ import config
 from app.model.db import (
     Token,
     TokenType,
-    IDXTransfer
+    IDXTransfer,
+    IDXTransferSourceEventType
 )
 
 local_tz = timezone(config.TZ)
@@ -74,6 +75,8 @@ class TestAppRoutersBondTransfersGET:
             _idx_transfer.from_address = self.test_from_address
             _idx_transfer.to_address = self.test_to_address
             _idx_transfer.amount = i
+            _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+            _idx_transfer.data = None
             _idx_transfer.block_timestamp = self.test_block_timestamp[i]
             db.add(_idx_transfer)
 
@@ -98,6 +101,8 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
                     "amount": 0,
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
                     "block_timestamp": self.test_block_timestamp_str[0]
                 },
                 {
@@ -106,6 +111,8 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
                     "amount": 2,
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
                     "block_timestamp": self.test_block_timestamp_str[2]
                 },
                 {
@@ -114,16 +121,17 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
                     "amount": 1,
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
                     "block_timestamp": self.test_block_timestamp_str[1]
                 },
             ]
         }
         assert resp.json() == assumed_response
 
-    # <Normal_2>
+    # <Normal_2_1>
     # offset, limit
-    # default sort
-    def test_normal_2(self, client, db):
+    def test_normal_2_1(self, client, db):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -141,6 +149,8 @@ class TestAppRoutersBondTransfersGET:
             _idx_transfer.from_address = self.test_from_address
             _idx_transfer.to_address = self.test_to_address
             _idx_transfer.amount = i
+            _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+            _idx_transfer.data = None
             _idx_transfer.block_timestamp = self.test_block_timestamp[i]
             db.add(_idx_transfer)
 
@@ -165,8 +175,166 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
                     "amount": 2,
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
                     "block_timestamp": self.test_block_timestamp_str[2]
                 },
+            ]
+        }
+        assert resp.json() == assumed_response
+
+    # <Normal_2_2>
+    # filter: source_event
+    def test_normal_2_2(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        # prepare data: IDXTransfer
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.from_address = "test_from_address_2"
+        _idx_transfer.to_address = self.test_to_address
+        _idx_transfer.amount = 0
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
+        _idx_transfer.block_timestamp = self.test_block_timestamp[0]
+        db.add(_idx_transfer)
+
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.from_address = "test_from_address_2"
+        _idx_transfer.to_address = self.test_to_address
+        _idx_transfer.amount = 1
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
+        _idx_transfer.block_timestamp = self.test_block_timestamp[1]
+        db.add(_idx_transfer)
+
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.from_address = "test_from_address_1"
+        _idx_transfer.to_address = self.test_to_address
+        _idx_transfer.amount = 2
+        _idx_transfer.source_event = IDXTransferSourceEventType.UNLOCK.value
+        _idx_transfer.data = {"message": "unlock"}
+        _idx_transfer.block_timestamp = self.test_block_timestamp[2]
+        db.add(_idx_transfer)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={
+                "source_event": IDXTransferSourceEventType.UNLOCK.value
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = {
+            "result_set": {
+                "count": 1,
+                "offset": None,
+                "limit": None,
+                "total": 3
+            },
+            "transfer_history": [
+                {
+                    "transaction_hash": self.test_transaction_hash,
+                    "token_address": self.test_token_address,
+                    "from_address": "test_from_address_1",
+                    "to_address": self.test_to_address,
+                    "amount": 2,
+                    "source_event": IDXTransferSourceEventType.UNLOCK.value,
+                    "data": {"message": "unlock"},
+                    "block_timestamp": self.test_block_timestamp_str[2]
+                }
+            ]
+        }
+        assert resp.json() == assumed_response
+
+    # <Normal_2_3>
+    # filter: data
+    def test_normal_2_3(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        # prepare data: IDXTransfer
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.from_address = "test_from_address_2"
+        _idx_transfer.to_address = self.test_to_address
+        _idx_transfer.amount = 0
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
+        _idx_transfer.block_timestamp = self.test_block_timestamp[0]
+        db.add(_idx_transfer)
+
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.from_address = "test_from_address_2"
+        _idx_transfer.to_address = self.test_to_address
+        _idx_transfer.amount = 1
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
+        _idx_transfer.block_timestamp = self.test_block_timestamp[1]
+        db.add(_idx_transfer)
+
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.from_address = "test_from_address_1"
+        _idx_transfer.to_address = self.test_to_address
+        _idx_transfer.amount = 2
+        _idx_transfer.source_event = IDXTransferSourceEventType.UNLOCK.value
+        _idx_transfer.data = {"message": "unlock"}
+        _idx_transfer.block_timestamp = self.test_block_timestamp[2]
+        db.add(_idx_transfer)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={
+                "data": "unlo"
+            }
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = {
+            "result_set": {
+                "count": 1,
+                "offset": None,
+                "limit": None,
+                "total": 3
+            },
+            "transfer_history": [
+                {
+                    "transaction_hash": self.test_transaction_hash,
+                    "token_address": self.test_token_address,
+                    "from_address": "test_from_address_1",
+                    "to_address": self.test_to_address,
+                    "amount": 2,
+                    "source_event": IDXTransferSourceEventType.UNLOCK.value,
+                    "data": {"message": "unlock"},
+                    "block_timestamp": self.test_block_timestamp_str[2]
+                }
             ]
         }
         assert resp.json() == assumed_response
@@ -191,6 +359,8 @@ class TestAppRoutersBondTransfersGET:
             _idx_transfer.from_address = self.test_from_address
             _idx_transfer.to_address = self.test_to_address
             _idx_transfer.amount = i
+            _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+            _idx_transfer.data = None
             _idx_transfer.block_timestamp = self.test_block_timestamp[i]
             db.add(_idx_transfer)
 
@@ -219,6 +389,8 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
                     "amount": 1,
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
                     "block_timestamp": self.test_block_timestamp_str[1]
                 },
                 {
@@ -227,6 +399,8 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
                     "amount": 2,
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
                     "block_timestamp": self.test_block_timestamp_str[2]
                 },
                 {
@@ -235,6 +409,8 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
                     "amount": 0,
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
                     "block_timestamp": self.test_block_timestamp_str[0]
                 }
             ]
@@ -260,6 +436,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.from_address = "test_from_address_2"
         _idx_transfer.to_address = self.test_to_address
         _idx_transfer.amount = 0
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
         _idx_transfer.block_timestamp = self.test_block_timestamp[0]
         db.add(_idx_transfer)
 
@@ -269,6 +447,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.from_address = "test_from_address_2"
         _idx_transfer.to_address = self.test_to_address
         _idx_transfer.amount = 1
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
         _idx_transfer.block_timestamp = self.test_block_timestamp[1]
         db.add(_idx_transfer)
 
@@ -278,6 +458,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.from_address = "test_from_address_1"
         _idx_transfer.to_address = self.test_to_address
         _idx_transfer.amount = 2
+        _idx_transfer.source_event = IDXTransferSourceEventType.UNLOCK.value
+        _idx_transfer.data = {"message": "unlock"}
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
 
@@ -306,6 +488,8 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": "test_from_address_1",
                     "to_address": self.test_to_address,
                     "amount": 2,
+                    "source_event": IDXTransferSourceEventType.UNLOCK.value,
+                    "data": {"message": "unlock"},
                     "block_timestamp": self.test_block_timestamp_str[2]
                 },
                 {
@@ -314,6 +498,8 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": "test_from_address_2",
                     "to_address": self.test_to_address,
                     "amount": 0,
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
                     "block_timestamp": self.test_block_timestamp_str[0]
                 },
                 {
@@ -322,6 +508,8 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": "test_from_address_2",
                     "to_address": self.test_to_address,
                     "amount": 1,
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
                     "block_timestamp": self.test_block_timestamp_str[1]
                 },
             ]
@@ -347,6 +535,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.from_address = self.test_from_address
         _idx_transfer.to_address = "test_to_address_2"
         _idx_transfer.amount = 0
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
         _idx_transfer.block_timestamp = self.test_block_timestamp[0]
         db.add(_idx_transfer)
 
@@ -356,6 +546,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.from_address = self.test_from_address
         _idx_transfer.to_address = "test_to_address_1"
         _idx_transfer.amount = 1
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
         _idx_transfer.block_timestamp = self.test_block_timestamp[1]
         db.add(_idx_transfer)
 
@@ -365,6 +557,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.from_address = self.test_from_address
         _idx_transfer.to_address = "test_to_address_1"
         _idx_transfer.amount = 2
+        _idx_transfer.source_event = IDXTransferSourceEventType.UNLOCK.value
+        _idx_transfer.data = {"message": "unlock"}
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
 
@@ -393,6 +587,8 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": "test_to_address_2",
                     "amount": 0,
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
                     "block_timestamp": self.test_block_timestamp_str[0]
                 },
                 {
@@ -401,6 +597,8 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": "test_to_address_1",
                     "amount": 2,
+                    "source_event": IDXTransferSourceEventType.UNLOCK.value,
+                    "data": {"message": "unlock"},
                     "block_timestamp": self.test_block_timestamp_str[2]
                 },
                 {
@@ -409,6 +607,8 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": "test_to_address_1",
                     "amount": 1,
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
                     "block_timestamp": self.test_block_timestamp_str[1]
                 },
             ]
@@ -434,6 +634,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.from_address = self.test_from_address
         _idx_transfer.to_address = self.test_to_address
         _idx_transfer.amount = 1
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
         _idx_transfer.block_timestamp = self.test_block_timestamp[0]
         db.add(_idx_transfer)
 
@@ -443,6 +645,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.from_address = self.test_from_address
         _idx_transfer.to_address = self.test_to_address
         _idx_transfer.amount = 2
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
         _idx_transfer.block_timestamp = self.test_block_timestamp[1]
         db.add(_idx_transfer)
 
@@ -452,6 +656,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.from_address = self.test_from_address
         _idx_transfer.to_address = self.test_to_address
         _idx_transfer.amount = 2
+        _idx_transfer.source_event = IDXTransferSourceEventType.UNLOCK.value
+        _idx_transfer.data = {"message": "unlock"}
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
 
@@ -480,6 +686,8 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
                     "amount": 1,
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
                     "block_timestamp": self.test_block_timestamp_str[0]
                 },
                 {
@@ -488,6 +696,8 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
                     "amount": 2,
+                    "source_event": IDXTransferSourceEventType.UNLOCK.value,
+                    "data": {"message": "unlock"},
                     "block_timestamp": self.test_block_timestamp_str[2]
                 },
                 {
@@ -496,6 +706,8 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
                     "amount": 2,
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
                     "block_timestamp": self.test_block_timestamp_str[1]
                 },
             ]

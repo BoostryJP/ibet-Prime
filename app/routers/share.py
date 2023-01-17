@@ -38,7 +38,9 @@ from sqlalchemy import (
     and_,
     or_,
     func,
-    literal_column
+    literal_column,
+    cast,
+    String
 )
 from sqlalchemy.orm import (
     Session,
@@ -51,36 +53,40 @@ import config
 from app import log
 from app.database import db_session
 from app.model.schema import (
+    # Request
     IbetShareCreate,
     IbetShareUpdate,
     IbetShareTransfer,
     IbetShareAdditionalIssue,
     IbetShareRedeem,
+    ModifyPersonalInfoRequest,
+    RegisterPersonalInfoRequest,
+    IbetShareScheduledUpdate,
+    UpdateTransferApprovalOperationType,
+    UpdateTransferApprovalRequest,
+    ListTransferHistorySortItem,
+    ListTransferHistoryQuery,
+    # Response
     IbetShareResponse,
     TokenAddressResponse,
     HolderResponse,
     HolderCountResponse,
-    TransferApprovalsResponse,
     TransferHistoryResponse,
-    TransferApprovalHistoryResponse,
-    TransferApprovalTokenResponse,
     BulkTransferUploadIdResponse,
     BulkTransferUploadResponse,
     BulkTransferResponse,
-    IbetShareScheduledUpdate,
     ScheduledEventIdResponse,
     ScheduledEventResponse,
-    ModifyPersonalInfoRequest,
-    RegisterPersonalInfoRequest,
-    UpdateTransferApprovalRequest,
+    TransferApprovalsResponse,
+    TransferApprovalHistoryResponse,
+    TransferApprovalTokenResponse,
     BatchIssueRedeemUploadIdResponse,
     GetBatchIssueRedeemResponse,
     ListBatchIssueRedeemUploadResponse,
+    IssueRedeemHistoryResponse,
     BatchRegisterPersonalInfoUploadResponse,
     ListBatchRegisterPersonalInfoUploadResponse,
     GetBatchRegisterPersonalInfoResponse,
-    UpdateTransferApprovalOperationType,
-    IssueRedeemHistoryResponse
 )
 from app.model.db import (
     Account,
@@ -93,9 +99,11 @@ from app.model.db import (
     BulkTransfer,
     BulkTransferUpload,
     IDXTransfer,
-    IDXTransfersSortItem,
     IDXTransferApproval,
     IDXTransferApprovalsSortItem,
+    IDXIssueRedeem,
+    IDXIssueRedeemEventType,
+    IDXIssueRedeemSortItem,
     ScheduledEvents,
     UTXO,
     BatchIssueRedeemUpload,
@@ -104,9 +112,6 @@ from app.model.db import (
     BatchRegisterPersonalInfoUpload,
     BatchRegisterPersonalInfoUploadStatus,
     BatchRegisterPersonalInfo,
-    IDXIssueRedeemSortItem,
-    IDXIssueRedeem,
-    IDXIssueRedeemEventType,
     TransferApprovalHistory,
     TransferApprovalOperationType
 )
@@ -1593,6 +1598,68 @@ def modify_holder_personal_info(
     return
 
 
+# POST: /share/tokens/{token_address}/personal_info
+@router.post(
+    "/tokens/{token_address}/personal_info",
+    response_model=None,
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError, SendTransactionError, ContractRevertError)
+)
+def register_holder_personal_info(
+        request: Request,
+        token_address: str,
+        personal_info: RegisterPersonalInfoRequest,
+        issuer_address: str = Header(...),
+        eoa_password: Optional[str] = Header(None),
+        auth_token: Optional[str] = Header(None),
+        db: Session = Depends(db_session)):
+    """Register the holder's personal information"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
+    )
+
+    # Authentication
+    check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token
+    )
+
+    # Verify that the token is issued by the issuer_address
+    _token = db.query(Token). \
+        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.issuer_address == issuer_address). \
+        filter(Token.token_address == token_address). \
+        filter(Token.token_status != 2). \
+        first()
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Register Personal Info
+    token_contract = IbetShareContract(token_address).get()
+    try:
+        personal_info_contract = PersonalInfoContract(
+            db=db,
+            issuer_address=issuer_address,
+            contract_address=token_contract.personal_info_contract_address
+        )
+        personal_info_contract.register_info(
+            account_address=personal_info.account_address,
+            data=personal_info.dict(),
+            default_value=None
+        )
+    except SendTransactionError:
+        raise SendTransactionError("failed to register personal information")
+
+    return
+
+
 # GET: /share/tokens/{token_address}/personal_info/batch
 @router.get(
     "/tokens/{token_address}/personal_info/batch",
@@ -1665,68 +1732,6 @@ def list_all_personal_info_batch_registration_uploads(
         },
         "uploads": uploads
     })
-
-
-# POST: /share/tokens/{token_address}/personal_info
-@router.post(
-    "/tokens/{token_address}/personal_info",
-    response_model=None,
-    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError, SendTransactionError, ContractRevertError)
-)
-def register_holder_personal_info(
-        request: Request,
-        token_address: str,
-        personal_info: RegisterPersonalInfoRequest,
-        issuer_address: str = Header(...),
-        eoa_password: Optional[str] = Header(None),
-        auth_token: Optional[str] = Header(None),
-        db: Session = Depends(db_session)):
-    """Register the holder's personal information"""
-
-    # Validate Headers
-    validate_headers(
-        issuer_address=(issuer_address, address_is_valid_address),
-        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
-    )
-
-    # Authentication
-    check_auth(
-        request=request,
-        db=db,
-        issuer_address=issuer_address,
-        eoa_password=eoa_password,
-        auth_token=auth_token
-    )
-
-    # Verify that the token is issued by the issuer_address
-    _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
-        filter(Token.issuer_address == issuer_address). \
-        filter(Token.token_address == token_address). \
-        filter(Token.token_status != 2). \
-        first()
-    if _token is None:
-        raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
-        raise InvalidParameterError("this token is temporarily unavailable")
-
-    # Register Personal Info
-    token_contract = IbetShareContract(token_address).get()
-    try:
-        personal_info_contract = PersonalInfoContract(
-            db=db,
-            issuer_address=issuer_address,
-            contract_address=token_contract.personal_info_contract_address
-        )
-        personal_info_contract.register_info(
-            account_address=personal_info.account_address,
-            data=personal_info.dict(),
-            default_value=None
-        )
-    except SendTransactionError:
-        raise SendTransactionError("failed to register personal information")
-
-    return
 
 
 # POST: /share/tokens/{token_address}/personal_info/batch
@@ -1918,12 +1923,9 @@ def transfer_ownership(
     responses=get_routers_responses(422, 404, InvalidParameterError)
 )
 def list_transfer_history(
-        token_address: str,
-        sort_item: IDXTransfersSortItem = Query(IDXTransfersSortItem.BLOCK_TIMESTAMP),
-        sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
-        offset: Optional[int] = Query(None),
-        limit: Optional[int] = Query(None),
-        db: Session = Depends(db_session)
+    token_address: str,
+    request_query: ListTransferHistoryQuery = Depends(),
+    db: Session = Depends(db_session)
 ):
     """List token transfer history"""
     # Get token
@@ -1942,24 +1944,27 @@ def list_transfer_history(
         filter(IDXTransfer.token_address == token_address)
     total = query.count()
 
-    # NOTE: Because it don`t filter, `total` and `count` will be the same.
+    if request_query.source_event is not None:
+        query = query.filter(IDXTransfer.source_event == request_query.source_event.value)
+    if request_query.data is not None:
+        query = query.filter(cast(IDXTransfer.data, String).like("%" + request_query.data + "%"))
     count = query.count()
 
     # Sort
-    sort_attr = getattr(IDXTransfer, sort_item.value, None)
-    if sort_order == 0:  # ASC
+    sort_attr = getattr(IDXTransfer, request_query.sort_item.value, None)
+    if request_query.sort_order == 0:  # ASC
         query = query.order_by(sort_attr)
     else:  # DESC
         query = query.order_by(desc(sort_attr))
-    if sort_item != IDXTransfersSortItem.BLOCK_TIMESTAMP:
+    if request_query.sort_item != ListTransferHistorySortItem.BLOCK_TIMESTAMP:
         # NOTE: Set secondary sort for consistent results
         query = query.order_by(desc(IDXTransfer.block_timestamp))
 
     # Pagination
-    if limit is not None:
-        query = query.limit(limit)
-    if offset is not None:
-        query = query.offset(offset)
+    if request_query.limit is not None:
+        query = query.limit(request_query.limit)
+    if request_query.offset is not None:
+        query = query.offset(request_query.offset)
     _transfers = query.all()
 
     transfer_history = []
@@ -1971,14 +1976,16 @@ def list_transfer_history(
             "from_address": _transfer.from_address,
             "to_address": _transfer.to_address,
             "amount": _transfer.amount,
+            "source_event": _transfer.source_event,
+            "data": _transfer.data,
             "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat()
         })
 
     return json_response({
         "result_set": {
             "count": count,
-            "offset": offset,
-            "limit": limit,
+            "offset": request_query.offset,
+            "limit": request_query.limit,
             "total": total
         },
         "transfer_history": transfer_history
@@ -1992,10 +1999,10 @@ def list_transfer_history(
     responses=get_routers_responses(422)
 )
 def list_transfer_approval_history(
-        issuer_address: Optional[str] = Header(None),
-        offset: Optional[int] = Query(None),
-        limit: Optional[int] = Query(None),
-        db: Session = Depends(db_session)
+    issuer_address: Optional[str] = Header(None),
+    offset: Optional[int] = Query(None),
+    limit: Optional[int] = Query(None),
+    db: Session = Depends(db_session)
 ):
     """List transfer approval history"""
     # Create a subquery for 'status' added IDXTransferApproval
