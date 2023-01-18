@@ -37,7 +37,9 @@ from sqlalchemy import (
     and_,
     or_,
     func,
-    literal_column
+    literal_column,
+    cast,
+    String
 )
 from sqlalchemy.orm import (
     Session,
@@ -50,11 +52,20 @@ import config
 from app import log
 from app.database import db_session
 from app.model.schema import (
+    # Request
     IbetStraightBondCreate,
     IbetStraightBondUpdate,
     IbetStraightBondTransfer,
     IbetStraightBondAdditionalIssue,
     IbetStraightBondRedeem,
+    ModifyPersonalInfoRequest,
+    RegisterPersonalInfoRequest,
+    IbetStraightBondScheduledUpdate,
+    UpdateTransferApprovalOperationType,
+    UpdateTransferApprovalRequest,
+    ListTransferHistorySortItem,
+    ListTransferHistoryQuery,
+    # Response
     IbetStraightBondResponse,
     TokenAddressResponse,
     HolderResponse,
@@ -63,16 +74,11 @@ from app.model.schema import (
     BulkTransferUploadIdResponse,
     BulkTransferUploadResponse,
     BulkTransferResponse,
-    IbetStraightBondScheduledUpdate,
     ScheduledEventIdResponse,
     ScheduledEventResponse,
-    ModifyPersonalInfoRequest,
-    RegisterPersonalInfoRequest,
     TransferApprovalsResponse,
     TransferApprovalHistoryResponse,
     TransferApprovalTokenResponse,
-    UpdateTransferApprovalRequest,
-    UpdateTransferApprovalOperationType,
     BatchIssueRedeemUploadIdResponse,
     GetBatchIssueRedeemResponse,
     ListBatchIssueRedeemUploadResponse,
@@ -92,7 +98,6 @@ from app.model.db import (
     BulkTransfer,
     BulkTransferUpload,
     IDXTransfer,
-    IDXTransfersSortItem,
     IDXTransferApproval,
     IDXTransferApprovalsSortItem,
     IDXIssueRedeem,
@@ -141,7 +146,6 @@ from app.exceptions import (
     ContractRevertError,
     AuthorizationError
 )
-from config import TZ
 
 router = APIRouter(
     prefix="/bond",
@@ -149,7 +153,7 @@ router = APIRouter(
 )
 
 LOG = log.get_logger()
-local_tz = timezone(TZ)
+local_tz = timezone(config.TZ)
 
 
 # POST: /bond/tokens
@@ -1610,7 +1614,7 @@ def modify_holder_personal_info(
 @router.post(
     "/tokens/{token_address}/personal_info",
     response_model=None,
-    responses=get_routers_responses(422, 401, 404, InvalidParameterError, SendTransactionError, ContractRevertError)
+    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError, SendTransactionError, ContractRevertError)
 )
 def register_holder_personal_info(
         request: Request,
@@ -1931,12 +1935,9 @@ def transfer_ownership(
     responses=get_routers_responses(422, 404, InvalidParameterError)
 )
 def list_transfer_history(
-        token_address: str,
-        sort_item: IDXTransfersSortItem = Query(IDXTransfersSortItem.BLOCK_TIMESTAMP),
-        sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
-        offset: Optional[int] = Query(None),
-        limit: Optional[int] = Query(None),
-        db: Session = Depends(db_session)
+    token_address: str,
+    request_query: ListTransferHistoryQuery = Depends(),
+    db: Session = Depends(db_session)
 ):
     """List token transfer history"""
     # Get token
@@ -1955,24 +1956,27 @@ def list_transfer_history(
         filter(IDXTransfer.token_address == token_address)
     total = query.count()
 
-    # NOTE: Because it don`t filter, `total` and `count` will be the same.
-    count = total
+    if request_query.source_event is not None:
+        query = query.filter(IDXTransfer.source_event == request_query.source_event.value)
+    if request_query.data is not None:
+        query = query.filter(cast(IDXTransfer.data, String).like("%" + request_query.data + "%"))
+    count = query.count()
 
     # Sort
-    sort_attr = getattr(IDXTransfer, sort_item.value, None)
-    if sort_order == 0:  # ASC
+    sort_attr = getattr(IDXTransfer, request_query.sort_item.value, None)
+    if request_query.sort_order == 0:  # ASC
         query = query.order_by(sort_attr)
     else:  # DESC
         query = query.order_by(desc(sort_attr))
-    if sort_item != IDXTransfersSortItem.BLOCK_TIMESTAMP:
+    if request_query.sort_item != ListTransferHistorySortItem.BLOCK_TIMESTAMP:
         # NOTE: Set secondary sort for consistent results
         query = query.order_by(desc(IDXTransfer.block_timestamp))
 
     # Pagination
-    if limit is not None:
-        query = query.limit(limit)
-    if offset is not None:
-        query = query.offset(offset)
+    if request_query.limit is not None:
+        query = query.limit(request_query.limit)
+    if request_query.offset is not None:
+        query = query.offset(request_query.offset)
     _transfers = query.all()
 
     transfer_history = []
@@ -1984,14 +1988,16 @@ def list_transfer_history(
             "from_address": _transfer.from_address,
             "to_address": _transfer.to_address,
             "amount": _transfer.amount,
+            "source_event": _transfer.source_event,
+            "data": _transfer.data,
             "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat()
         })
 
     return json_response({
         "result_set": {
             "count": count,
-            "offset": offset,
-            "limit": limit,
+            "offset": request_query.offset,
+            "limit": request_query.limit,
             "total": total
         },
         "transfer_history": transfer_history
@@ -2005,10 +2011,10 @@ def list_transfer_history(
     responses=get_routers_responses(422)
 )
 def list_transfer_approval_history(
-        issuer_address: Optional[str] = Header(None),
-        offset: Optional[int] = Query(None),
-        limit: Optional[int] = Query(None),
-        db: Session = Depends(db_session)
+    issuer_address: Optional[str] = Header(None),
+    offset: Optional[int] = Query(None),
+    limit: Optional[int] = Query(None),
+    db: Session = Depends(db_session)
 ):
     """List transfer approval history"""
     # Create a subquery for 'status' added IDXTransferApproval

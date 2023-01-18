@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import json
 import os
 import sys
 import time
@@ -38,7 +39,8 @@ from config import (
 from app.model.db import (
     Token,
     IDXTransfer,
-    IDXTransferBlockNumber
+    IDXTransferBlockNumber,
+    IDXTransferSourceEventType
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
@@ -186,6 +188,8 @@ class Processor:
                             from_address=args["from"],
                             to_address=args["to"],
                             amount=args["value"],
+                            source_event=IDXTransferSourceEventType.TRANSFER,
+                            data_str=None,
                             block_timestamp=block_timestamp
                         )
             except Exception:
@@ -216,6 +220,7 @@ class Processor:
                     else:
                         from_address = args.get("accountAddress", ZERO_ADDRESS)
                         to_address = args.get("recipientAddress", ZERO_ADDRESS)
+                        data_str = args.get("data", "")
                         if from_address != to_address:
                             self.__sink_on_transfer(
                                 db_session=db_session,
@@ -224,6 +229,8 @@ class Processor:
                                 from_address=from_address,
                                 to_address=to_address,
                                 amount=args["value"],
+                                source_event=IDXTransferSourceEventType.UNLOCK,
+                                data_str=data_str,
                                 block_timestamp=block_timestamp
                             )
             except Exception:
@@ -236,13 +243,24 @@ class Processor:
                            from_address: str,
                            to_address: str,
                            amount: int,
+                           source_event: IDXTransferSourceEventType,
+                           data_str: str | None,
                            block_timestamp: datetime):
+        if data_str is not None:
+            try:
+                data = json.loads(data_str)
+            except:
+                data = {}
+        else:
+            data = None
         transfer_record = IDXTransfer()
         transfer_record.transaction_hash = transaction_hash
         transfer_record.token_address = token_address
         transfer_record.from_address = from_address
         transfer_record.to_address = to_address
         transfer_record.amount = amount
+        transfer_record.source_event = source_event.value
+        transfer_record.data = data
         transfer_record.block_timestamp = block_timestamp
         db_session.add(transfer_record)
         LOG.debug(f"Transfer: transaction_hash={transaction_hash}")

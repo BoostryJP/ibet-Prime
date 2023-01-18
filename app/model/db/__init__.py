@@ -72,8 +72,8 @@ from .idx_lock_unlock import (
 )
 from .idx_transfer import (
     IDXTransfer,
-    IDXTransfersSortItem,
-    IDXTransferBlockNumber
+    IDXTransferBlockNumber,
+    IDXTransferSourceEventType
 )
 from .idx_transfer_approval import (
     IDXTransferApproval,

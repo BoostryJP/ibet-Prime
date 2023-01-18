@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import json
 from datetime import datetime
 from eth_keyfile import decode_keyfile_json
 import logging
@@ -26,14 +27,30 @@ from unittest import mock
 from unittest.mock import patch
 
 from app.exceptions import ServiceUnavailableError
-from app.model.db import Token, TokenType, IDXTransfer, IDXTransferBlockNumber
-from app.model.blockchain import IbetStraightBondContract, IbetShareContract
+from app.model.db import (
+    Token,
+    TokenType,
+    IDXTransfer,
+    IDXTransferBlockNumber,
+    IDXTransferSourceEventType
+)
+from app.model.blockchain import (
+    IbetStraightBondContract,
+    IbetShareContract
+)
 from app.model.blockchain.tx_params.ibet_straight_bond import UpdateParams as IbetStraightBondUpdateParams
 from app.model.blockchain.tx_params.ibet_share import UpdateParams as IbetShareUpdateParams
 from app.utils.web3_utils import Web3Wrapper
 from app.utils.contract_utils import ContractUtils
-from batch.indexer_transfer import Processor, LOG, main
-from config import CHAIN_ID, TX_GAS_LIMIT
+from batch.indexer_transfer import (
+    Processor,
+    LOG,
+    main
+)
+from config import (
+    CHAIN_ID,
+    TX_GAS_LIMIT
+)
 from tests.account_config import config_eth_account
 from tests.utils.contract_utils import PersonalInfoContractTestUtils
 
@@ -294,7 +311,7 @@ class TestProcessor:
             issuer_address,
             user_address_1,
             10,
-            ""
+            json.dumps({"message": "unlock"})
         ).build_transaction({
             "chainId": CHAIN_ID,
             "from": lock_account["address"],
@@ -318,6 +335,8 @@ class TestProcessor:
         assert _transfer.from_address == issuer_address
         assert _transfer.to_address == user_address_1
         assert _transfer.amount == 40
+        assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
+        assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
         assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
 
@@ -328,6 +347,8 @@ class TestProcessor:
         assert _transfer.from_address == issuer_address
         assert _transfer.to_address == user_address_1
         assert _transfer.amount == 10
+        assert _transfer.source_event == IDXTransferSourceEventType.UNLOCK.value
+        assert _transfer.data == {"message": "unlock"}
         block = web3.eth.get_block(tx_receipt_2["blockNumber"])
         assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
 
@@ -395,7 +416,7 @@ class TestProcessor:
             issuer_address,
             issuer_address,
             10,
-            ""
+            json.dumps({"message": "unlock"})
         ).build_transaction({
             "chainId": CHAIN_ID,
             "from": lock_account["address"],
@@ -508,7 +529,7 @@ class TestProcessor:
             issuer_address,
             user_address_1,
             10,
-            ""
+            json.dumps({"message": "unlock"})
         ).build_transaction({
             "chainId": CHAIN_ID,
             "from": lock_account["address"],
@@ -533,7 +554,7 @@ class TestProcessor:
             issuer_address,
             user_address_1,
             10,
-            ""
+            json.dumps({"message": "unlock"})
         ).build_transaction({
             "chainId": CHAIN_ID,
             "from": lock_account["address"],
@@ -557,6 +578,8 @@ class TestProcessor:
         assert _transfer.from_address == issuer_address
         assert _transfer.to_address == user_address_1
         assert _transfer.amount == 40
+        assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
+        assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
         assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
 
@@ -567,6 +590,8 @@ class TestProcessor:
         assert _transfer.from_address == issuer_address
         assert _transfer.to_address == user_address_2
         assert _transfer.amount == 30
+        assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
+        assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_2["blockNumber"])
         assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
 
@@ -577,6 +602,8 @@ class TestProcessor:
         assert _transfer.from_address == issuer_address
         assert _transfer.to_address == user_address_1
         assert _transfer.amount == 10
+        assert _transfer.source_event == IDXTransferSourceEventType.UNLOCK.value
+        assert _transfer.data == {"message": "unlock"}
         block = web3.eth.get_block(tx_receipt_3["blockNumber"])
         assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
 
@@ -587,6 +614,8 @@ class TestProcessor:
         assert _transfer.from_address == issuer_address
         assert _transfer.to_address == user_address_1
         assert _transfer.amount == 10
+        assert _transfer.source_event == IDXTransferSourceEventType.UNLOCK.value
+        assert _transfer.data == {"message": "unlock"}
         block = web3.eth.get_block(tx_receipt_4["blockNumber"])
         assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
 
@@ -681,6 +710,8 @@ class TestProcessor:
             assert _transfer.from_address == issuer_address
             assert _transfer.to_address == address_list1[i]
             assert _transfer.amount == value_list1[i]
+            assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
+            assert _transfer.data is None
             assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
 
         block = web3.eth.get_block(tx_receipt_2["blockNumber"])
@@ -692,6 +723,8 @@ class TestProcessor:
             assert _transfer.from_address == issuer_address
             assert _transfer.to_address == address_list2[i]
             assert _transfer.amount == value_list2[i]
+            assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
+            assert _transfer.data is None
             assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
 
         _idx_transfer_block_number = db.query(IDXTransferBlockNumber).first()
@@ -787,6 +820,8 @@ class TestProcessor:
         assert _transfer.from_address == issuer_address
         assert _transfer.to_address == user_address_1
         assert _transfer.amount == 40
+        assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
+        assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
         assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
         _transfer = _transfer_list[1]
@@ -796,6 +831,8 @@ class TestProcessor:
         assert _transfer.from_address == issuer_address
         assert _transfer.to_address == user_address_2
         assert _transfer.amount == 30
+        assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
+        assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_2["blockNumber"])
         assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
 
@@ -806,6 +843,8 @@ class TestProcessor:
         assert _transfer.from_address == issuer_address
         assert _transfer.to_address == user_address_1
         assert _transfer.amount == 40
+        assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
+        assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_3["blockNumber"])
         assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
 
@@ -816,6 +855,8 @@ class TestProcessor:
         assert _transfer.from_address == issuer_address
         assert _transfer.to_address == user_address_2
         assert _transfer.amount == 30
+        assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
+        assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_4["blockNumber"])
         assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
 

@@ -21,17 +21,49 @@ from typing import (
     List,
     Optional
 )
+from fastapi import Query
 from pydantic import (
     BaseModel,
-    Field
+    Field,
+    NonNegativeInt
 )
+from pydantic.dataclasses import dataclass
 
 from .types import ResultSet
 
 
 ############################
+# COMMON
+############################
+
+class TransferSourceEventType(str, Enum):
+    Transfer = "Transfer"
+    Unlock = "Unlock"
+
+
+############################
 # REQUEST
 ############################
+
+class ListTransferHistorySortItem(str, Enum):
+    BLOCK_TIMESTAMP = "block_timestamp"
+    FROM_ADDRESS = "from_address"
+    TO_ADDRESS = "to_address"
+    AMOUNT = "amount"
+
+
+@dataclass
+class ListTransferHistoryQuery:
+    source_event: Optional[TransferSourceEventType] = Query(default=None, description="source event of transfer")
+    data: Optional[str] = Query(default=None, description="source event data")
+
+    sort_item: ListTransferHistorySortItem = Query(
+        default=ListTransferHistorySortItem.BLOCK_TIMESTAMP, description="sort item"
+    )
+    sort_order: int = Query(default=1, ge=0, le=1, description="0:asc, 1:desc")
+    offset: Optional[NonNegativeInt] = Query(default=None, description="start position")
+    limit: Optional[NonNegativeInt] = Query(default=None, description="number of set")
+
 
 class UpdateTransferApprovalOperationType(str, Enum):
     APPROVE = "approve"
@@ -54,6 +86,8 @@ class TransferResponse(BaseModel):
     from_address: str
     to_address: str
     amount: int
+    source_event: TransferSourceEventType = Field(description="Source Event")
+    data: dict | None = Field(description="Event data")
     block_timestamp: str
 
 
