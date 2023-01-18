@@ -32,7 +32,9 @@ from app.model.db import (
     IDXLockedPosition,
     IDXPositionShareBlockNumber,
     IDXLock,
-    IDXUnlock
+    IDXUnlock,
+    Notification,
+    NotificationType
 )
 from app.model.blockchain import IbetShareContract
 from app.model.blockchain.tx_params.ibet_share import UpdateParams as IbetShareUpdateParams
@@ -678,6 +680,25 @@ class TestProcessor:
         assert _lock1.value == 40
         assert _lock1.data == {"message": "locked1"}
 
+        _notification_list = db.query(Notification).order_by(Notification.created).all()
+        assert len(_notification_list) == 1
+
+        _notification1 = _notification_list[0]
+        assert _notification1.id == 1
+        assert _notification1.issuer_address == issuer_address
+        assert _notification1.priority == 0
+        assert _notification1.type == NotificationType.LOCK_INFO
+        assert _notification1.metainfo == {
+            "token_address": token_address_1,
+            "token_type": "IbetShare",
+            "account_address": issuer_address,
+            "lock_address": issuer_address,
+            "value": 40,
+            "data": {
+                "message": "locked1"
+            }
+        }
+
         _idx_position_share_block_number = db.query(IDXPositionShareBlockNumber).first()
         assert _idx_position_share_block_number.id == 1
         assert _idx_position_share_block_number.latest_block_number == block_number
@@ -825,6 +846,42 @@ class TestProcessor:
         assert _unlock1.value == 30
         assert _unlock1.data == {
             "message": "unlocked1"
+        }
+
+        _notification_list = db.query(Notification).order_by(Notification.created).all()
+        assert len(_notification_list) == 2
+
+        _notification1 = _notification_list[0]
+        assert _notification1.id == 1
+        assert _notification1.issuer_address == issuer_address
+        assert _notification1.priority == 0
+        assert _notification1.type == NotificationType.LOCK_INFO
+        assert _notification1.metainfo == {
+            "token_address": token_address_1,
+            "token_type": "IbetShare",
+            "account_address": issuer_address,
+            "lock_address": issuer_address,
+            "value": 40,
+            "data": {
+                "message": "locked1"
+            }
+        }
+
+        _notification1 = _notification_list[1]
+        assert _notification1.id == 2
+        assert _notification1.issuer_address == issuer_address
+        assert _notification1.priority == 0
+        assert _notification1.type == NotificationType.UNLOCK_INFO
+        assert _notification1.metainfo == {
+            "token_address": token_address_1,
+            "token_type": "IbetShare",
+            "account_address": issuer_address,
+            "lock_address": issuer_address,
+            "recipient_address": issuer_address,
+            "value": 30,
+            "data": {
+                "message": "unlocked1"
+            }
         }
 
         _idx_position_share_block_number = db.query(IDXPositionShareBlockNumber).first()
