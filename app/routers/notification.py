@@ -52,11 +52,12 @@ utc_tz = pytz.timezone("UTC")
     responses=get_routers_responses(422)
 )
 def list_all_notifications(
-        issuer_address: Optional[str] = Header(None),
-        notice_type: str = Query(None),
-        offset: int = Query(None),
-        limit: int = Query(None),
-        db: Session = Depends(db_session)):
+    issuer_address: Optional[str] = Header(None),
+    notice_type: str = Query(None),
+    offset: int = Query(None),
+    limit: int = Query(None),
+    db: Session = Depends(db_session)
+):
     """List all notifications"""
 
     # Validate Headers
@@ -114,9 +115,10 @@ def list_all_notifications(
     responses=get_routers_responses(422, 404)
 )
 def delete_notification(
-        notice_id: str,
-        issuer_address: str = Header(...),
-        db: Session = Depends(db_session)):
+    notice_id: str,
+    issuer_address: str = Header(...),
+    db: Session = Depends(db_session)
+):
     """Delete notification"""
 
     # Validate Headers

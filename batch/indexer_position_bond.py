@@ -20,6 +20,7 @@ import json
 import os
 import sys
 import time
+import uuid
 from datetime import (
     datetime,
     timezone,
@@ -45,7 +46,9 @@ from app.model.db import (
     IDXPositionBondBlockNumber,
     IDXLockedPosition,
     IDXLock,
-    IDXUnlock
+    IDXUnlock,
+    Notification,
+    NotificationType
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
@@ -145,6 +148,7 @@ class Processor:
             filter(Token.token_address.in_(load_required_address_list)).
             all()
         )
+
         for load_required_token in load_required_token_list:
             token_contract = web3.eth.contract(
                 address=load_required_token.token_address,
@@ -357,6 +361,32 @@ class Processor:
                         balance=balance,
                         pending_transfer=pending_transfer
                     )
+
+                # Insert Notification
+                if len(events) > 0:
+                    issuer_address = ContractUtils.call_function(
+                        contract=token,
+                        function_name="owner",
+                        args=(),
+                        default_returns=ZERO_ADDRESS
+                    )
+                    for event in events:
+                        args = event["args"]
+                        account_address = args.get("accountAddress", "")
+                        lock_address = args.get("lockAddress", "")
+                        value = args.get("value", 0)
+                        data = args.get("data", "")
+                        self.__sink_on_lock_info_notification(
+                            db_session=db_session,
+                            issuer_address=issuer_address,
+                            token_address=token.address,
+                            token_type=TokenType.IBET_STRAIGHT_BOND.value,
+                            account_address=account_address,
+                            lock_address=lock_address,
+                            value=value,
+                            data_str=data
+                        )
+
             except Exception as e:
                 raise e
 
@@ -436,6 +466,34 @@ class Processor:
                         balance=balance,
                         pending_transfer=pending_transfer
                     )
+
+                # Insert Notification
+                if len(events) > 0:
+                    issuer_address = ContractUtils.call_function(
+                        contract=token,
+                        function_name="owner",
+                        args=(),
+                        default_returns=ZERO_ADDRESS
+                    )
+                    for event in events:
+                        args = event["args"]
+                        account_address = args.get("accountAddress", "")
+                        lock_address = args.get("lockAddress", "")
+                        recipient_address = args.get("recipientAddress", "")
+                        value = args.get("value", 0)
+                        data = args.get("data", "")
+                        self.__sink_on_unlock_info_notification(
+                            db_session=db_session,
+                            issuer_address=issuer_address,
+                            token_address=token.address,
+                            token_type=TokenType.IBET_STRAIGHT_BOND.value,
+                            account_address=account_address,
+                            lock_address=lock_address,
+                            recipient_address=recipient_address,
+                            value=value,
+                            data_str=data
+                        )
+
             except Exception as e:
                 raise e
 
@@ -903,6 +961,68 @@ class Processor:
             locked.account_address = account_address
             locked.value = value
             db_session.add(locked)
+
+    @staticmethod
+    def __sink_on_lock_info_notification(db_session: Session,
+                                         issuer_address: str,
+                                         token_address: str,
+                                         token_type: str,
+                                         account_address: str,
+                                         lock_address: str,
+                                         value: int,
+                                         data_str: str):
+        try:
+            data = json.loads(data_str)
+        except Exception:
+            data = {}
+
+        notification = Notification()
+        notification.notice_id = uuid.uuid4()
+        notification.issuer_address = issuer_address
+        notification.priority = 0  # Low
+        notification.type = NotificationType.LOCK_INFO
+        notification.code = 0
+        notification.metainfo = {
+            "token_address": token_address,
+            "token_type": token_type,
+            "account_address": account_address,
+            "lock_address": lock_address,
+            "value": value,
+            "data": data
+        }
+        db_session.add(notification)
+
+    @staticmethod
+    def __sink_on_unlock_info_notification(db_session: Session,
+                                           issuer_address: str,
+                                           token_address: str,
+                                           token_type: str,
+                                           account_address: str,
+                                           lock_address: str,
+                                           recipient_address: str,
+                                           value: int,
+                                           data_str: str):
+        try:
+            data = json.loads(data_str)
+        except Exception:
+            data = {}
+
+        notification = Notification()
+        notification.notice_id = uuid.uuid4()
+        notification.issuer_address = issuer_address
+        notification.priority = 0  # Low
+        notification.type = NotificationType.UNLOCK_INFO
+        notification.code = 0
+        notification.metainfo = {
+            "token_address": token_address,
+            "token_type": token_type,
+            "account_address": account_address,
+            "lock_address": lock_address,
+            "recipient_address": recipient_address,
+            "value": value,
+            "data": data
+        }
+        db_session.add(notification)
 
     @staticmethod
     def __get_account_balance_all(token_contract, account_address: str):

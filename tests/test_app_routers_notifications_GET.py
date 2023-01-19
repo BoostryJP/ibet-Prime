@@ -147,6 +147,45 @@ class TestAppRoutersNotificationsGET:
         _notification_7.created = datetime.strptime("2022/01/07 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/03
         db.add(_notification_7)
 
+        _notification_8 = Notification()
+        _notification_8.notice_id = "notice_id_8"
+        _notification_8.issuer_address = issuer_address_2
+        _notification_8.priority = 0
+        _notification_8.type = NotificationType.LOCK_INFO
+        _notification_8.code = 0
+        _notification_8.metainfo = {
+            "token_address": "0x0000000000000000000000000000000000000000",
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "lock_address": "0x0000000000000000000000000000000000000000",
+            "account_address": "0x0000000000000000000000000000000000000000",
+            "value": 30,
+            "data": {
+                "message": "lock1"
+            }
+        }
+        _notification_8.created = datetime.strptime("2022/01/08 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/03
+        db.add(_notification_8)
+
+        _notification_9 = Notification()
+        _notification_9.notice_id = "notice_id_9"
+        _notification_9.issuer_address = issuer_address_2
+        _notification_9.priority = 0
+        _notification_9.type = NotificationType.UNLOCK_INFO
+        _notification_9.code = 0
+        _notification_9.metainfo = {
+            "token_address": "0x0000000000000000000000000000000000000000",
+            "token_type": TokenType.IBET_SHARE.value,
+            "lock_address": "0x0000000000000000000000000000000000000000",
+            "account_address": "0x0000000000000000000000000000000000000000",
+            "recipient_address": "0x0000000000000000000000000000000000000000",
+            "value": 30,
+            "data": {
+                "message": "unlock1"
+            }
+        }
+        _notification_9.created = datetime.strptime("2022/01/09 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/03
+        db.add(_notification_9)
+
         # request target API
         resp = client.get(
             self.base_url,
@@ -156,10 +195,10 @@ class TestAppRoutersNotificationsGET:
         assert resp.status_code == 200
         assert resp.json() == {
             "result_set": {
-                "count": 7,
+                "count": 9,
                 "offset": None,
                 "limit": None,
-                "total": 7
+                "total": 9
             },
             "notifications": [
                 {
@@ -254,6 +293,43 @@ class TestAppRoutersNotificationsGET:
                     },
                     "created": "2022-01-07T09:20:30+09:00"
                 },
+                {
+                    "notice_id": "notice_id_8",
+                    "issuer_address": issuer_address_2,
+                    "priority": 0,
+                    "notice_type": NotificationType.LOCK_INFO,
+                    "notice_code": 0,
+                    "metainfo": {
+                        "token_address": "0x0000000000000000000000000000000000000000",
+                        "token_type": TokenType.IBET_STRAIGHT_BOND,
+                        "lock_address": "0x0000000000000000000000000000000000000000",
+                        "account_address": "0x0000000000000000000000000000000000000000",
+                        "value": 30,
+                        "data": {
+                            "message": "lock1"
+                        }
+                    },
+                    "created": "2022-01-08T09:20:30+09:00"
+                },
+                {
+                    "notice_id": "notice_id_9",
+                    "issuer_address": issuer_address_2,
+                    "priority": 0,
+                    "notice_type": NotificationType.UNLOCK_INFO,
+                    "notice_code": 0,
+                    "metainfo": {
+                        "token_address": "0x0000000000000000000000000000000000000000",
+                        "token_type": TokenType.IBET_SHARE,
+                        "lock_address": "0x0000000000000000000000000000000000000000",
+                        "account_address": "0x0000000000000000000000000000000000000000",
+                        "recipient_address": "0x0000000000000000000000000000000000000000",
+                        "value": 30,
+                        "data": {
+                            "message": "unlock1"
+                        }
+                    },
+                    "created": "2022-01-09T09:20:30+09:00"
+                },
             ]
         }
 
@@ -324,7 +400,7 @@ class TestAppRoutersNotificationsGET:
         resp = client.get(
             self.base_url,
             params={
-                "notice_type": NotificationType.SCHEDULE_EVENT_ERROR,
+                "notice_type": NotificationType.SCHEDULE_EVENT_ERROR.value,
             },
             headers={
                 "issuer-address": issuer_address_1,
