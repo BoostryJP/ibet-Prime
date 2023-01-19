@@ -61,10 +61,10 @@ notice_type: TransferApprovalInfo
 notice_type: CreateLedgerInfo
 - 0: Created ledger info successfully
 
-notice_type: LOCK_INFO
+notice_type: LockInfo
 - 0: Balance is locked
 
-notice_type: CreateLedgerInfo
+notice_type: UnlockInfo
 - 0: Balance is unlocked
 """
 
