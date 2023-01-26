@@ -42,10 +42,6 @@ class PersonalInfo(BaseModel):
 ############################
 # REQUEST
 ############################
-class ModifyPersonalInfoRequest(PersonalInfo):
-    """Modify Personal Information schema (REQUEST)"""
-    key_manager: str
-
 
 class RegisterPersonalInfoRequest(PersonalInfo):
     """Register Personal Information schema (REQUEST)"""
@@ -58,11 +54,9 @@ class RegisterPersonalInfoRequest(PersonalInfo):
             raise ValueError("account_address is not a valid address")
         return v
 
-
 ############################
 # RESPONSE
 ############################
-
 
 class BatchRegisterPersonalInfoUploadResponse(BaseModel):
     """Batch Register PersonalInfo schema (RESPONSE)"""

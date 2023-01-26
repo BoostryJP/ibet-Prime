@@ -59,7 +59,6 @@ from app.model.schema import (
     IbetShareTransfer,
     IbetShareAdditionalIssue,
     IbetShareRedeem,
-    ModifyPersonalInfoRequest,
     RegisterPersonalInfoRequest,
     IbetShareScheduledUpdate,
     UpdateTransferApprovalOperationType,
@@ -1532,70 +1531,6 @@ def retrieve_holder(
 
     return json_response(holder)
 
-
-# POST: /share/tokens/{token_address}/holders/{account_address}/personal_info
-@router.post(
-    "/tokens/{token_address}/holders/{account_address}/personal_info",
-    response_model=None,
-    responses=get_routers_responses(422, 401, 404, AuthorizationError, InvalidParameterError, SendTransactionError, ContractRevertError),
-    deprecated=True
-)
-def modify_holder_personal_info(
-        request: Request,
-        token_address: str,
-        account_address: str,
-        personal_info: ModifyPersonalInfoRequest,
-        issuer_address: str = Header(...),
-        eoa_password: Optional[str] = Header(None),
-        auth_token: Optional[str] = Header(None),
-        db: Session = Depends(db_session)):
-    """Modify the holder's personal information"""
-    LOG.warning(DeprecationWarning("Deprecated API: /share/tokens/{token_address}/holders/{account_address}/personal_info"))
-
-    # Validate Headers
-    validate_headers(
-        issuer_address=(issuer_address, address_is_valid_address),
-        eoa_password=(eoa_password, eoa_password_is_encrypted_value)
-    )
-
-    # Authentication
-    check_auth(
-        request=request,
-        db=db,
-        issuer_address=issuer_address,
-        eoa_password=eoa_password,
-        auth_token=auth_token
-    )
-
-    # Verify that the token is issued by the issuer_address
-    _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
-        filter(Token.issuer_address == issuer_address). \
-        filter(Token.token_address == token_address). \
-        filter(Token.token_status != 2). \
-        first()
-    if _token is None:
-        raise HTTPException(status_code=404, detail="token not found")
-    if _token.token_status == 0:
-        raise InvalidParameterError("this token is temporarily unavailable")
-
-    # Modify Personal Info
-    token_contract = IbetShareContract(token_address).get()
-    try:
-        personal_info_contract = PersonalInfoContract(
-            db=db,
-            issuer_address=issuer_address,
-            contract_address=token_contract.personal_info_contract_address
-        )
-        personal_info_contract.modify_info(
-            account_address=account_address,
-            data=personal_info.dict(),
-            default_value=None
-        )
-    except SendTransactionError:
-        raise SendTransactionError("failed to modify personal information")
-
-    return
 
 
 # POST: /share/tokens/{token_address}/personal_info
