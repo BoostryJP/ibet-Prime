@@ -99,7 +99,6 @@ from .ledger import (
 from .notification import ListAllNotificationsResponse
 from .personal_info import (
     # Request
-    ModifyPersonalInfoRequest,
     RegisterPersonalInfoRequest,
     # Response
     BatchRegisterPersonalInfoUploadResponse,
