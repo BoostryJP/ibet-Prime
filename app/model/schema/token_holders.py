@@ -86,11 +86,18 @@ class ListAllTokenHolderCollectionsResponse(BaseModel):
     collections: List[RetrieveTokenHolderCollectionResponse]
 
 
+class TokenHoldersCollectionHolder(BaseModel):
+    account_address: str = Field(description="Account address of token holder.")
+    hold_balance: int = Field(description="Amount of balance."
+                                          "This includes balance/pending_transfer/exchange_balance/exchange_commitment.")
+    locked_balance: int = Field(description="Amount of locked balance.")
+
+
 class RetrieveTokenHoldersListResponse(BaseModel):
     """Retrieve Token Holders List schema (RESPONSE)"""
 
     status: TokenHolderBatchStatus
-    holders: List[Dict[str, Union[int, str]]]
+    holders: List[TokenHoldersCollectionHolder]
 
     class Config:
         schema_extra = {
@@ -99,7 +106,8 @@ class RetrieveTokenHoldersListResponse(BaseModel):
                 "holders": [
                     {
                         "account_address": "0x85a8b8887a4bD76859751b10C8aC8EC5f3aA1bDB",
-                        "hold_balance": 30000
+                        "hold_balance": 30000,
+                        "locked_balance": 0
                     }
                 ],
             }

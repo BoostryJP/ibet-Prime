@@ -295,7 +295,7 @@ class TestProcessor:
         # user1: 16000 user2: 44000
 
         STContractUtils.lock(token_contract.address, user_address_1, user_pk_1, [issuer_address, 3000, ""])
-        # user1: 16000 user2: 44000
+        # user1: (hold: 13000, locked: 3000) user2: 44000
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
@@ -323,8 +323,10 @@ class TestProcessor:
             .first()
         )
 
-        assert user1_record.hold_balance == 16000
+        assert user1_record.hold_balance == 13000
+        assert user1_record.locked_balance == 3000
         assert user2_record.hold_balance == 44000
+        assert user2_record.locked_balance == 0
 
         assert len(list(db.query(TokenHolder).filter(TokenHolder.holder_list_id == _token_holders_list.id))) == 2
 
@@ -449,7 +451,9 @@ class TestProcessor:
         )
 
         assert user1_record.hold_balance == 10000
+        assert user1_record.locked_balance == 0
         assert user2_record.hold_balance == 20000
+        assert user2_record.locked_balance == 0
 
         assert len(list(db.query(TokenHolder).filter(TokenHolder.holder_list_id == _token_holders_list.id))) == 2
 
@@ -674,7 +678,7 @@ class TestProcessor:
         # user1: 6000 user2: 44000
 
         STContractUtils.lock(token_contract.address, user_address_1, user_pk_1, [issuer_address, 3000, ""])
-        # user1: 16000 user2: 44000
+        # user1: (hold: 3000, locked: 3000) user2: 44000
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
@@ -702,8 +706,10 @@ class TestProcessor:
             .first()
         )
 
-        assert user1_record.hold_balance == 6000
+        assert user1_record.hold_balance == 3000
+        assert user1_record.locked_balance == 3000
         assert user2_record.hold_balance == 44000
+        assert user2_record.locked_balance == 0
 
         assert len(list(db.query(TokenHolder).filter(TokenHolder.holder_list_id == _token_holders_list.id))) == 2
 
@@ -828,7 +834,9 @@ class TestProcessor:
         )
 
         assert user1_record.hold_balance == 10000
+        assert user1_record.locked_balance == 0
         assert user2_record.hold_balance == 20000
+        assert user2_record.locked_balance == 0
 
         assert len(list(db.query(TokenHolder).filter(TokenHolder.holder_list_id == _token_holders_list.id))) == 2
 

@@ -118,6 +118,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             _token_holder.holder_list_id = _token_holders_list.id
             _token_holder.account_address = config_eth_account(user)["address"]
             _token_holder.hold_balance = 10000 * (i+1)
+            _token_holder.locked_balance = 20000 * (i+1)
             db.add(_token_holder)
             holders.append(_token_holder.json())
 
