@@ -29,9 +29,20 @@ from web3.contract import Contract
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
-from config import DATABASE_URL, ZERO_ADDRESS, INDEXER_SYNC_INTERVAL
+from config import (
+    DATABASE_URL,
+    ZERO_ADDRESS,
+    INDEXER_SYNC_INTERVAL,
+    INDEXER_BLOCK_LOT_MAX_SIZE
+)
 from app.exceptions import ServiceUnavailableError
-from app.model.db import TokenType, TokenHolder, TokenHoldersList, TokenHolderBatchStatus, Token
+from app.model.db import (
+    TokenType,
+    TokenHolder,
+    TokenHoldersList,
+    TokenHolderBatchStatus,
+    Token
+)
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
 import batch_log
@@ -70,10 +81,6 @@ class Processor:
     tradable_exchange_address: str
     token_owner_address: str
 
-    block_from: int
-    block_to: int
-    checkpoint_used: bool
-
     token_contract: Optional[Contract]
     exchange_contract: Optional[Contract]
     escrow_contract: Optional[Contract]
@@ -82,7 +89,6 @@ class Processor:
         self.target = None
         self.balance_book = self.BalanceBook()
         self.tradable_exchange_address = ""
-        self.checkpoint_used = False
 
     @staticmethod
     def __get_db_session() -> Session:
@@ -124,11 +130,11 @@ class Processor:
         )
         return True
 
-    def __load_checkpoint(self, local_session: Session) -> bool:
+    def __load_checkpoint(self, local_session: Session, target_token_address: str, block_to: int) -> int:
         _checkpoint: Optional[TokenHoldersList] = (
             local_session.query(TokenHoldersList)
-            .filter(TokenHoldersList.token_address == self.target.token_address)
-            .filter(TokenHoldersList.block_number < self.target.block_number)
+            .filter(TokenHoldersList.token_address == target_token_address)
+            .filter(TokenHoldersList.block_number < block_to)
             .filter(TokenHoldersList.batch_status == TokenHolderBatchStatus.DONE.value)
             .order_by(TokenHoldersList.block_number.desc())
             .first()
@@ -137,9 +143,9 @@ class Processor:
             _holders: List[TokenHolder] = local_session.query(TokenHolder).filter(TokenHolder.holder_list_id == _checkpoint.id).all()
             for holder in _holders:
                 self.balance_book.store(account_address=holder.account_address, amount=holder.hold_balance)
-            self.block_from = _checkpoint.block_number + 1
-            self.checkpoint_used = True
-        return True
+            block_from = _checkpoint.block_number + 1
+            return block_from
+        return 0
 
     def collect(self):
         local_session = self.__get_db_session()
@@ -152,10 +158,30 @@ class Processor:
                 self.__update_status(local_session, TokenHolderBatchStatus.FAILED)
                 local_session.commit()
                 return
-            self.block_from = 0
-            self.block_to = self.target.block_number
-            self.__load_checkpoint(local_session)
-            self.__process_all(local_session, self.block_from, self.block_to)
+            _target_block = self.target.block_number
+            _from_block = self.__load_checkpoint(local_session, self.target.token_address, block_to=_target_block)
+            _to_block = INDEXER_BLOCK_LOT_MAX_SIZE - 1 + _from_block
+
+            if _target_block > _to_block:
+                while _to_block < _target_block:
+                    self.__process_all(
+                        db_session=local_session,
+                        block_from=_from_block,
+                        block_to=_to_block
+                    )
+                    _from_block += INDEXER_BLOCK_LOT_MAX_SIZE
+                    _to_block += INDEXER_BLOCK_LOT_MAX_SIZE
+                self.__process_all(
+                    db_session=local_session,
+                    block_from=_from_block,
+                    block_to=_target_block
+                )
+            else:
+                self.__process_all(
+                    db_session=local_session,
+                    block_from=_from_block,
+                    block_to=_target_block
+                )
             self.__update_status(local_session, TokenHolderBatchStatus.DONE)
             local_session.commit()
             LOG.info("Collect job has been completed")
@@ -176,8 +202,6 @@ class Processor:
         self.balance_book = self.BalanceBook()
         self.tradable_exchange_address = ""
         self.token_owner_address = ""
-        self.block_from = 0
-        self.checkpoint_used = False
         self.token_contract = None
         self.exchange_contract = None
         self.escrow_contract = None

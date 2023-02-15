@@ -147,11 +147,11 @@ def deploy_share_token_contract(
     return ContractUtils.get_contract("IbetShare", token_address)
 
 
-def token_holders_list(token_address: str, block_number: str, list_id: str) -> TokenHoldersList:
+def token_holders_list(token_address: str, block_number: int, list_id: str, status: TokenHolderBatchStatus = TokenHolderBatchStatus.PENDING) -> TokenHoldersList:
     target_token_holders_list = TokenHoldersList()
     target_token_holders_list.list_id = list_id
     target_token_holders_list.token_address = token_address
-    target_token_holders_list.batch_status = TokenHolderBatchStatus.PENDING.value
+    target_token_holders_list.batch_status = status.value
     target_token_holders_list.block_number = block_number
     return target_token_holders_list
 
@@ -1183,6 +1183,70 @@ class TestProcessor:
         assert user2_record is None
 
         assert len(list(db.query(TokenHolder).filter(TokenHolder.holder_list_id == _token_holders_list.id))) == 0
+
+    # <Normal_10>
+    # When stored checkpoint is 9,999,999 and current block number is 19,999,999,
+    # then processor should call "__process_all" method 10 times.
+    def test_normal_10(
+        self,
+        processor,
+        db,
+        personal_info_contract,
+        ibet_exchange_contract,
+        caplog: pytest.LogCaptureFixture
+    ):
+        exchange_contract = ibet_exchange_contract
+        current_block_number = 20000000 - 1
+        checkpoint_block_number = 10000000 - 1
+
+        _user_1 = config_eth_account("user1")
+        issuer_address = _user_1["address"]
+        issuer_private_key = decode_keyfile_json(raw_keyfile_json=_user_1["keyfile_json"], password="password".encode("utf-8"))
+
+        # Issuer issues bond token.
+        token_contract = deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=exchange_contract.address,
+            transfer_approval_required=False,
+        )
+        token_address_1 = token_contract.address
+        token_1 = Token()
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.token_address = token_address_1
+        token_1.issuer_address = issuer_address
+        token_1.abi = token_contract.abi
+        token_1.tx_hash = "tx_hash"
+        db.add(token_1)
+
+        # Insert collection record with above token and checkpoint block number
+        target_list_id = str(uuid.uuid4())
+        target_holders_list = token_holders_list(token_contract.address, current_block_number, target_list_id)
+        db.add(target_holders_list)
+        completed_list_id = str(uuid.uuid4())
+        completed_holders_list = token_holders_list(token_contract.address, checkpoint_block_number, completed_list_id, status=TokenHolderBatchStatus.DONE)
+        db.add(completed_holders_list)
+        db.commit()
+
+        # Setting stored index to 9,999,999
+        processor.collect()
+        # Then processor call "__process_all" method 10 times.
+        assert 1 == caplog.record_tuples.count((LOG.name, logging.INFO, f"syncing from=10000000, to=10999999"))
+        assert 1 == caplog.record_tuples.count((LOG.name, logging.INFO, f"syncing from=11000000, to=11999999"))
+        assert 1 == caplog.record_tuples.count((LOG.name, logging.INFO, f"syncing from=12000000, to=12999999"))
+        assert 1 == caplog.record_tuples.count((LOG.name, logging.INFO, f"syncing from=13000000, to=13999999"))
+        assert 1 == caplog.record_tuples.count((LOG.name, logging.INFO, f"syncing from=14000000, to=14999999"))
+        assert 1 == caplog.record_tuples.count((LOG.name, logging.INFO, f"syncing from=15000000, to=15999999"))
+        assert 1 == caplog.record_tuples.count((LOG.name, logging.INFO, f"syncing from=16000000, to=16999999"))
+        assert 1 == caplog.record_tuples.count((LOG.name, logging.INFO, f"syncing from=17000000, to=17999999"))
+        assert 1 == caplog.record_tuples.count((LOG.name, logging.INFO, f"syncing from=18000000, to=18999999"))
+        assert 1 == caplog.record_tuples.count((LOG.name, logging.INFO, f"syncing from=19000000, to=19999999"))
+
+        db.rollback()
+        processed_list = db.query(TokenHoldersList).filter(TokenHoldersList.id == target_holders_list.id).first()
+        assert processed_list.block_number == 19999999
+        assert processed_list.batch_status == TokenHolderBatchStatus.DONE.value
 
     ###########################################################################
     # Error Case
