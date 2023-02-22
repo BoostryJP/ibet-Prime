@@ -16,23 +16,32 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from enum import Enum
 from typing import (
     List,
     Optional
 )
 import math
+from fastapi import Query
 
 from pydantic import (
     BaseModel,
     Field,
     validator
 )
+from pydantic.dataclasses import dataclass
 from web3 import Web3
+from . import (
+    LockEventCategory
+)
+from .position import LockEvent
 
 from .types import (
     MMDD_constr,
     YYYYMMDD_constr,
-    EMPTY_str
+    EMPTY_str,
+    SortOrder,
+    ResultSet
 )
 
 
@@ -327,6 +336,28 @@ class IbetShareRedeem(BaseModel):
         return v
 
 
+class ListAllTokenLockEventsSortItem(str, Enum):
+    account_address = "account_address"
+    lock_address = "lock_address"
+    recipient_address = "recipient_address"
+    value = "value"
+    block_timestamp = "block_timestamp"
+
+
+@dataclass
+class ListAllTokenLockEventsQuery:
+    offset: Optional[int] = Query(default=None, description="Start position", ge=0)
+    limit: Optional[int] = Query(default=None, description="Number of set", ge=0)
+
+    account_address: Optional[str] = Query(default=None, description="Account address")
+    lock_address: Optional[str] = Query(default=None, description="Lock address")
+    recipient_address: Optional[str] = Query(default=None, description="Recipient address")
+    category: Optional[LockEventCategory] = Query(default=None, description="Event category")
+
+    sort_item: ListAllTokenLockEventsSortItem = Query(default=ListAllTokenLockEventsSortItem.block_timestamp, description="Sort item")
+    sort_order: SortOrder = Query(default=SortOrder.DESC, description="Sort order(0: ASC, 1: DESC)")
+
+
 ############################
 # RESPONSE
 ############################
@@ -391,3 +422,9 @@ class IbetShareResponse(BaseModel):
     token_status: int
     is_canceled: bool
     memo: str
+
+
+class ListAllTokenLockEventsResponse(BaseModel):
+    """List All Lock/Unlock events (Response)"""
+    result_set: ResultSet
+    events: List[LockEvent] = Field(description="Lock/Unlock event list")

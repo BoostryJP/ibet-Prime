@@ -138,10 +138,13 @@ from .token import (
     IbetShareTransfer,
     IbetShareAdditionalIssue,
     IbetShareRedeem,
+    ListAllTokenLockEventsQuery,
+    ListAllTokenLockEventsSortItem,
     # Response
     TokenAddressResponse,
     IbetStraightBondResponse,
-    IbetShareResponse
+    IbetShareResponse,
+    ListAllTokenLockEventsResponse
 )
 from .token_holders import (
     # Request
