@@ -262,6 +262,7 @@ def list_all_locked_position(
     }
     return json_response(resp)
 
+
 # GET: /positions/{account_address}/lock/events
 @router.get(
     "/{account_address}/lock/events",
