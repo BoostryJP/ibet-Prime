@@ -1799,6 +1799,144 @@ def retrieve_batch_register_personal_info(
     })
 
 
+# GET: /share/tokens/{token_address}/lock_events
+@router.get(
+    "/tokens/{token_address}/lock_events",
+    summary="List all lock/unlock events related to given share token",
+    response_model=ListAllTokenLockEventsResponse,
+    responses=get_routers_responses(422)
+)
+def list_all_lock_events_by_share(
+    token_address: str,
+    issuer_address: Optional[str] = Header(None),
+    request_query: ListAllTokenLockEventsQuery = Depends(),
+    db: Session = Depends(db_session)
+):
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
+
+    # Request parameters
+    offset = request_query.offset
+    limit = request_query.limit
+    sort_item = request_query.sort_item
+    sort_order = request_query.sort_order
+
+    # Base query
+    query_lock = (
+        db.query(
+            literal(value=LockEventCategory.Lock.value, type_=String).label("category"),
+            IDXLock.transaction_hash.label("transaction_hash"),
+            IDXLock.token_address.label("token_address"),
+            IDXLock.lock_address.label("lock_address"),
+            IDXLock.account_address.label("account_address"),
+            null().label("recipient_address"),
+            IDXLock.value.label("value"),
+            IDXLock.data.label("data"),
+            IDXLock.block_timestamp.label("block_timestamp"),
+            Token
+        ).
+        join(Token, IDXLock.token_address == Token.token_address).
+        filter(Token.type == TokenType.IBET_SHARE.value).
+        filter(Token.token_address == token_address).
+        filter(Token.token_status != 2)
+    )
+    if issuer_address is not None:
+        query_lock = query_lock.filter(Token.issuer_address == issuer_address)
+
+    query_unlock = (
+        db.query(
+            literal(value=LockEventCategory.Unlock.value, type_=String).label("category"),
+            IDXUnlock.transaction_hash.label("transaction_hash"),
+            IDXUnlock.token_address.label("token_address"),
+            IDXUnlock.lock_address.label("lock_address"),
+            IDXUnlock.account_address.label("account_address"),
+            IDXUnlock.recipient_address.label("recipient_address"),
+            IDXUnlock.value.label("value"),
+            IDXUnlock.data.label("data"),
+            IDXUnlock.block_timestamp.label("block_timestamp"),
+            Token
+        ).
+        join(Token, IDXUnlock.token_address == Token.token_address).
+        filter(Token.type == TokenType.IBET_SHARE.value).
+        filter(Token.token_address == token_address).
+        filter(Token.token_status != 2)
+    )
+    if issuer_address is not None:
+        query_unlock = query_unlock.filter(Token.issuer_address == issuer_address)
+
+    total = query_lock.count() + query_unlock.count()
+
+    # Filter
+    match request_query.category:
+        case LockEventCategory.Lock.value:
+            query = query_lock
+        case LockEventCategory.Unlock.value:
+            query = query_unlock
+        case _:
+            query = query_lock.union_all(query_unlock)
+
+    if request_query.account_address is not None:
+        query = query.filter(column("account_address") == request_query.account_address)
+    if request_query.lock_address is not None:
+        query = query.filter(column("lock_address") == request_query.lock_address)
+    if request_query.recipient_address is not None:
+        query = query.filter(column("recipient_address") == request_query.recipient_address)
+
+    count = query.count()
+
+    # Sort
+    sort_attr = column(sort_item)
+    if sort_order == 0:  # ASC
+        query = query.order_by(sort_attr)
+    else:  # DESC
+        query = query.order_by(desc(sort_attr))
+
+    if sort_item != ListAllTokenLockEventsSortItem.block_timestamp.value:
+        # NOTE: Set secondary sort for consistent results
+        query = query.order_by(desc(column(ListAllTokenLockEventsSortItem.block_timestamp.value)))
+
+    # Pagination
+    if offset is not None:
+        query = query.offset(offset)
+    if limit is not None:
+        query = query.limit(limit)
+
+    lock_events = query.all()
+
+    resp_data = []
+    for lock_event in lock_events:
+        _token = lock_event[9]
+        _share = IbetShareContract(_token.token_address).get()
+        token_name = _share.name
+
+        block_timestamp_utc = timezone("UTC").localize(lock_event[8])
+        resp_data.append({
+            "category": lock_event[0],
+            "transaction_hash": lock_event[1],
+            "issuer_address": _token.issuer_address,
+            "token_address": lock_event[2],
+            "token_type": _token.type,
+            "token_name": token_name,
+            "lock_address": lock_event[3],
+            "account_address": lock_event[4],
+            "recipient_address": lock_event[5],
+            "value": lock_event[6],
+            "data": lock_event[7],
+            "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat()
+        })
+
+    data = {
+        "result_set": {
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": total
+        },
+        "events": resp_data
+    }
+    return json_response(data)
+
+
 # POST: /share/transfers
 @router.post(
     "/transfers",
@@ -2663,141 +2801,3 @@ def retrieve_bulk_transfer(
         raise HTTPException(status_code=404, detail="bulk transfer not found")
 
     return json_response(bulk_transfers)
-
-
-# GET: /share/tokens/{token_address}/lock_events
-@router.get(
-    "/tokens/{token_address}/lock_events",
-    summary="List all lock/unlock events related to given share token",
-    response_model=ListAllTokenLockEventsResponse,
-    responses=get_routers_responses(422)
-)
-def list_all_lock_events_by_share(
-    token_address: str,
-    issuer_address: Optional[str] = Header(None),
-    request_query: ListAllTokenLockEventsQuery = Depends(),
-    db: Session = Depends(db_session)
-):
-    # Validate Headers
-    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
-
-    # Request parameters
-    offset = request_query.offset
-    limit = request_query.limit
-    sort_item = request_query.sort_item
-    sort_order = request_query.sort_order
-
-    # Base query
-    query_lock = (
-        db.query(
-            literal(value=LockEventCategory.Lock.value, type_=String).label("category"),
-            IDXLock.transaction_hash.label("transaction_hash"),
-            IDXLock.token_address.label("token_address"),
-            IDXLock.lock_address.label("lock_address"),
-            IDXLock.account_address.label("account_address"),
-            null().label("recipient_address"),
-            IDXLock.value.label("value"),
-            IDXLock.data.label("data"),
-            IDXLock.block_timestamp.label("block_timestamp"),
-            Token
-        ).
-        join(Token, IDXLock.token_address == Token.token_address).
-        filter(Token.type == TokenType.IBET_SHARE.value).
-        filter(Token.token_address == token_address).
-        filter(Token.token_status != 2)
-    )
-    if issuer_address is not None:
-        query_lock = query_lock.filter(Token.issuer_address == issuer_address)
-
-    query_unlock = (
-        db.query(
-            literal(value=LockEventCategory.Unlock.value, type_=String).label("category"),
-            IDXUnlock.transaction_hash.label("transaction_hash"),
-            IDXUnlock.token_address.label("token_address"),
-            IDXUnlock.lock_address.label("lock_address"),
-            IDXUnlock.account_address.label("account_address"),
-            IDXUnlock.recipient_address.label("recipient_address"),
-            IDXUnlock.value.label("value"),
-            IDXUnlock.data.label("data"),
-            IDXUnlock.block_timestamp.label("block_timestamp"),
-            Token
-        ).
-        join(Token, IDXUnlock.token_address == Token.token_address).
-        filter(Token.type == TokenType.IBET_SHARE.value).
-        filter(Token.token_address == token_address).
-        filter(Token.token_status != 2)
-    )
-    if issuer_address is not None:
-        query_unlock = query_unlock.filter(Token.issuer_address == issuer_address)
-
-    total = query_lock.count() + query_unlock.count()
-
-    # Filter
-    match request_query.category:
-        case LockEventCategory.Lock.value:
-            query = query_lock
-        case LockEventCategory.Unlock.value:
-            query = query_unlock
-        case _:
-            query = query_lock.union_all(query_unlock)
-
-    if request_query.account_address is not None:
-        query = query.filter(column("account_address") == request_query.account_address)
-    if request_query.lock_address is not None:
-        query = query.filter(column("lock_address") == request_query.lock_address)
-    if request_query.recipient_address is not None:
-        query = query.filter(column("recipient_address") == request_query.recipient_address)
-
-    count = query.count()
-
-    # Sort
-    sort_attr = column(sort_item)
-    if sort_order == 0:  # ASC
-        query = query.order_by(sort_attr)
-    else:  # DESC
-        query = query.order_by(desc(sort_attr))
-
-    if sort_item != ListAllTokenLockEventsSortItem.block_timestamp.value:
-        # NOTE: Set secondary sort for consistent results
-        query = query.order_by(desc(column(ListAllTokenLockEventsSortItem.block_timestamp.value)))
-
-    # Pagination
-    if offset is not None:
-        query = query.offset(offset)
-    if limit is not None:
-        query = query.limit(limit)
-
-    lock_events = query.all()
-
-    resp_data = []
-    for lock_event in lock_events:
-        _token = lock_event[9]
-        _share = IbetShareContract(_token.token_address).get()
-        token_name = _share.name
-
-        block_timestamp_utc = timezone("UTC").localize(lock_event[8])
-        resp_data.append({
-            "category": lock_event[0],
-            "transaction_hash": lock_event[1],
-            "issuer_address": _token.issuer_address,
-            "token_address": lock_event[2],
-            "token_type": _token.type,
-            "token_name": token_name,
-            "lock_address": lock_event[3],
-            "account_address": lock_event[4],
-            "recipient_address": lock_event[5],
-            "value": lock_event[6],
-            "data": lock_event[7],
-            "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat()
-        })
-
-    data = {
-        "result_set": {
-            "count": count,
-            "offset": offset,
-            "limit": limit,
-            "total": total
-        },
-        "events": resp_data
-    }
-    return json_response(data)
