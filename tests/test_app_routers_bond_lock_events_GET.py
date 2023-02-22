@@ -36,7 +36,7 @@ from app.model.blockchain import (
 class TestAppRoutersBondLockEvents:
 
     # target API endpoint
-    base_url = "/bond/lock/events/{token_address}"
+    base_url = "/bond/tokens/{token_address}/lock_events"
 
     issuer_address = "0x1234567890123456789012345678900000000100"
 

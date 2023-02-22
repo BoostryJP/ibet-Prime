@@ -2665,9 +2665,9 @@ def retrieve_bulk_transfer(
     return json_response(bulk_transfers)
 
 
-# GET: /share/lock/events/{token_address}
+# GET: /share/tokens/{token_address}/lock_events
 @router.get(
-    "/lock/events/{token_address}",
+    "/tokens/{token_address}/lock_events",
     summary="List all lock/unlock events related to given share token",
     response_model=ListAllTokenLockEventsResponse,
     responses=get_routers_responses(422)

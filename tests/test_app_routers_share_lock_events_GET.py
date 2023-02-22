@@ -36,7 +36,7 @@ from app.model.blockchain import (
 class TestAppRoutersShareLockEvents:
 
     # target API endpoint
-    base_url = "/share/lock/events/{token_address}"
+    base_url = "/share/tokens/{token_address}/lock_events"
 
     issuer_address = "0x1234567890123456789012345678900000000100"
 
