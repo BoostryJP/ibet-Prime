@@ -131,12 +131,10 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchGET:
             'uploads': [
                 {
                     'batch_id': self.upload_id_list[1],
-                    'issuer_address': _issuer_address,
                     'status': BatchRegisterPersonalInfoUploadStatus.PENDING.value,
                     'created': mock.ANY
                 }, {
                     'batch_id': self.upload_id_list[0],
-                    'issuer_address': _issuer_address,
                     'status': BatchRegisterPersonalInfoUploadStatus.DONE.value,
                     'created': mock.ANY
                 }
@@ -196,7 +194,6 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchGET:
             'uploads': [
                 {
                     'batch_id': self.upload_id_list[0],
-                    'issuer_address': _issuer_address,
                     'status': BatchRegisterPersonalInfoUploadStatus.DONE.value,
                     'created': mock.ANY
                 }
@@ -257,7 +254,6 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchGET:
             'uploads': [
                 {
                     'batch_id': self.upload_id_list[1],
-                    'issuer_address': _issuer_address,
                     'status': BatchRegisterPersonalInfoUploadStatus.PENDING.value,
                     'created': mock.ANY
                 }
@@ -317,13 +313,11 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchGET:
             'uploads': [
                 {
                     'batch_id': self.upload_id_list[0],
-                    'issuer_address': _issuer_address,
                     'status': BatchRegisterPersonalInfoUploadStatus.DONE.value,
                     'created': mock.ANY
                 },
                 {
                     'batch_id': self.upload_id_list[1],
-                    'issuer_address': _issuer_address,
                     'status': BatchRegisterPersonalInfoUploadStatus.PENDING.value,
                     'created': mock.ANY
                 }
