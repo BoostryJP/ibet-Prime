@@ -54,10 +54,10 @@ RESPONSE_VALIDATION_MODE = True if os.environ.get("RESPONSE_VALIDATION_MODE") ==
 # Database
 if 'pytest' in sys.modules:  # for unit test
     DATABASE_URL = os.environ.get("TEST_DATABASE_URL") or \
-                   'postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb_test'
+                   'postgresql+psycopg://issuerapi:issuerapipass@localhost:5432/issuerapidb_test'
 else:
     DATABASE_URL = os.environ.get("DATABASE_URL") or \
-                   'postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb'
+                   'postgresql+psycopg://issuerapi:issuerapipass@localhost:5432/issuerapidb'
 DATABASE_SCHEMA = os.environ.get('DATABASE_SCHEMA')
 DB_ECHO = True if CONFIG['database']['echo'] == 'yes' else False
 

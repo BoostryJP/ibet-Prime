@@ -195,6 +195,31 @@ class TestAppRoutersE2EMessagingMessagesIdGET:
     # Not Found Error
     # no data
     def test_error_1(self, client, db):
+        # request target API
+        resp = client.get(
+            self.base_url.format(id="id")
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json() == {
+            'meta': {
+                'code': 1,
+                'title': 'RequestValidationError'
+            },
+            'detail': [
+                {
+                    'loc': ['path', 'id'],
+                    'msg': 'value is not a valid integer',
+                    'type': 'type_error.integer'
+                }
+            ]
+        }
+
+    # <Error_2>
+    # Not Found Error
+    # no data
+    def test_error_2(self, client, db):
         # prepare data
         e2e_messaging = {
             "id": 10,
