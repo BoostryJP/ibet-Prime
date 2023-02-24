@@ -518,7 +518,7 @@ def list_all_e2e_messages(
     responses=get_routers_responses(422, 404)
 )
 def retrieve_e2e_messaging(
-        _id: str = Path(..., alias="id"),
+        _id: int = Path(..., alias="id"),
         db: Session = Depends(db_session)):
     """Retrieve an e2e message"""
 
