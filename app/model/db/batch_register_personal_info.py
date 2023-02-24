@@ -40,7 +40,7 @@ class BatchRegisterPersonalInfoUpload(Base):
     status = Column(String, nullable=False, index=True)
 
 
-class BatchRegisterPersonalInfoUploadStatus(Enum):
+class BatchRegisterPersonalInfoUploadStatus(str, Enum):
     """Batch Register PersonalInfo Upload Status"""
     PENDING = "pending"
     DONE = "done"

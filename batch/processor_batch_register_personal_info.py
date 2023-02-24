@@ -248,7 +248,7 @@ class Processor:
             # NOTE: Priority is given to issuers that are not being processed by other threads.
             upload_1 = db_session.query(BatchRegisterPersonalInfoUpload). \
                 filter(BatchRegisterPersonalInfoUpload.upload_id.notin_(locked_update_id)). \
-                filter(BatchRegisterPersonalInfoUpload.status == BatchRegisterPersonalInfoUploadStatus.PENDING.value). \
+                filter(BatchRegisterPersonalInfoUpload.status == BatchRegisterPersonalInfoUploadStatus.PENDING). \
                 filter(BatchRegisterPersonalInfoUpload.issuer_address.notin_(exclude_issuer)). \
                 order_by(BatchRegisterPersonalInfoUpload.created). \
                 first()
@@ -256,7 +256,7 @@ class Processor:
                 # Retrieve again for all issuers
                 upload_1 = db_session.query(BatchRegisterPersonalInfoUpload). \
                     filter(BatchRegisterPersonalInfoUpload.upload_id.notin_(locked_update_id)). \
-                    filter(BatchRegisterPersonalInfoUpload.status == BatchRegisterPersonalInfoUploadStatus.PENDING.value). \
+                    filter(BatchRegisterPersonalInfoUpload.status == BatchRegisterPersonalInfoUploadStatus.PENDING). \
                     order_by(BatchRegisterPersonalInfoUpload.created). \
                     first()
 
@@ -268,7 +268,7 @@ class Processor:
                 if BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE > 1:
                     upload_list = upload_list + db_session.query(BatchRegisterPersonalInfoUpload). \
                         filter(BatchRegisterPersonalInfoUpload.upload_id.notin_(locked_update_id)). \
-                        filter(BatchRegisterPersonalInfoUpload.status == BatchRegisterPersonalInfoUploadStatus.PENDING.value). \
+                        filter(BatchRegisterPersonalInfoUpload.status == BatchRegisterPersonalInfoUploadStatus.PENDING). \
                         filter(BatchRegisterPersonalInfoUpload.issuer_address == upload_1.issuer_address). \
                         order_by(BatchRegisterPersonalInfoUpload.created). \
                         offset(1). \

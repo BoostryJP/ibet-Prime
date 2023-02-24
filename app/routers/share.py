@@ -21,7 +21,8 @@ from datetime import datetime
 from decimal import Decimal
 from typing import (
     List,
-    Optional
+    Optional, 
+    Type
 )
 
 from fastapi import (
@@ -321,11 +322,11 @@ def list_all_tokens(
     # Get issued token list
     if issuer_address is None:
         tokens = db.query(Token). \
-            filter(Token.type == TokenType.IBET_SHARE.value). \
+            filter(Token.type == TokenType.IBET_SHARE). \
             all()
     else:
         tokens = db.query(Token). \
-            filter(Token.type == TokenType.IBET_SHARE.value). \
+            filter(Token.type == TokenType.IBET_SHARE). \
             filter(Token.issuer_address == issuer_address). \
             all()
 
@@ -354,7 +355,7 @@ def retrieve_token(
     """Retrieve token"""
     # Get Token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
         first()
@@ -413,7 +414,7 @@ def update_token(
 
     # Get Token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -486,7 +487,7 @@ def list_additional_issuance_history(
         query = query.limit(limit)
     if offset is not None:
         query = query.offset(offset)
-    _events: List[IDXIssueRedeem] = query.all()
+    _events: List[Type[IDXIssueRedeem]] = query.all()
 
     history = []
     for _event in _events:
@@ -551,7 +552,7 @@ def additional_issue(
 
     # Get Token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -592,8 +593,8 @@ def list_all_additional_issue_upload(
     # Get a list of uploads
     query = db.query(BatchIssueRedeemUpload). \
         filter(BatchIssueRedeemUpload.token_address == token_address). \
-        filter(BatchIssueRedeemUpload.token_type == TokenType.IBET_SHARE.value). \
-        filter(BatchIssueRedeemUpload.category == BatchIssueRedeemProcessingCategory.ISSUE.value)
+        filter(BatchIssueRedeemUpload.token_type == TokenType.IBET_SHARE). \
+        filter(BatchIssueRedeemUpload.category == BatchIssueRedeemProcessingCategory.ISSUE)
 
     if issuer_address is not None:
         query = query.filter(BatchIssueRedeemUpload.issuer_address == issuer_address)
@@ -617,7 +618,7 @@ def list_all_additional_issue_upload(
     if offset is not None:
         query = query.offset(offset)
 
-    _upload_list: list[BatchIssueRedeemUpload] = query.all()
+    _upload_list: list[Type[BatchIssueRedeemUpload]] = query.all()
 
     uploads = []
     for _upload in _upload_list:
@@ -680,7 +681,7 @@ def additional_issue_in_batch(
 
     # Check token status
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -740,15 +741,15 @@ def retrieve_batch_additional_issue(
     batch: Optional[BatchIssueRedeemUpload] = db.query(BatchIssueRedeemUpload). \
         filter(BatchIssueRedeemUpload.upload_id == batch_id). \
         filter(BatchIssueRedeemUpload.issuer_address == issuer_address). \
-        filter(BatchIssueRedeemUpload.token_type == TokenType.IBET_SHARE.value). \
+        filter(BatchIssueRedeemUpload.token_type == TokenType.IBET_SHARE). \
         filter(BatchIssueRedeemUpload.token_address == token_address). \
-        filter(BatchIssueRedeemUpload.category == BatchIssueRedeemProcessingCategory.ISSUE.value). \
+        filter(BatchIssueRedeemUpload.category == BatchIssueRedeemProcessingCategory.ISSUE). \
         first()
     if batch is None:
         raise HTTPException(status_code=404, detail="batch not found")
 
     # Get Batch Records
-    record_list: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
+    record_list: List[Type[BatchIssueRedeem]] = db.query(BatchIssueRedeem). \
         filter(BatchIssueRedeem.upload_id == batch_id). \
         all()
 
@@ -877,7 +878,7 @@ def redeem_token(
 
     # Get Token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -918,8 +919,8 @@ def list_all_redeem_upload(
     # Get a list of uploads
     query = db.query(BatchIssueRedeemUpload). \
         filter(BatchIssueRedeemUpload.token_address == token_address). \
-        filter(BatchIssueRedeemUpload.token_type == TokenType.IBET_SHARE.value). \
-        filter(BatchIssueRedeemUpload.category == BatchIssueRedeemProcessingCategory.REDEEM.value)
+        filter(BatchIssueRedeemUpload.token_type == TokenType.IBET_SHARE). \
+        filter(BatchIssueRedeemUpload.category == BatchIssueRedeemProcessingCategory.REDEEM)
 
     if issuer_address is not None:
         query = query.filter(BatchIssueRedeemUpload.issuer_address == issuer_address)
@@ -1006,7 +1007,7 @@ def redeem_token_in_batch(
 
     # Check token status
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -1066,15 +1067,15 @@ def retrieve_batch_additional_issue(
     batch: Optional[BatchIssueRedeemUpload] = db.query(BatchIssueRedeemUpload). \
         filter(BatchIssueRedeemUpload.upload_id == batch_id). \
         filter(BatchIssueRedeemUpload.issuer_address == issuer_address). \
-        filter(BatchIssueRedeemUpload.token_type == TokenType.IBET_SHARE.value). \
+        filter(BatchIssueRedeemUpload.token_type == TokenType.IBET_SHARE). \
         filter(BatchIssueRedeemUpload.token_address == token_address). \
-        filter(BatchIssueRedeemUpload.category == BatchIssueRedeemProcessingCategory.REDEEM.value). \
+        filter(BatchIssueRedeemUpload.category == BatchIssueRedeemProcessingCategory.REDEEM). \
         first()
     if batch is None:
         raise HTTPException(status_code=404, detail="batch not found")
 
     # Get Batch Records
-    record_list: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
+    record_list: List[Type[BatchIssueRedeem]] = db.query(BatchIssueRedeem). \
         filter(BatchIssueRedeem.upload_id == batch_id). \
         all()
 
@@ -1103,13 +1104,13 @@ def list_all_scheduled_events(
 
     if issuer_address is None:
         _token_events = db.query(ScheduledEvents). \
-            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE.value). \
+            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
             filter(ScheduledEvents.token_address == token_address). \
             order_by(ScheduledEvents.id). \
             all()
     else:
         _token_events = db.query(ScheduledEvents). \
-            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE.value). \
+            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
             filter(ScheduledEvents.issuer_address == issuer_address). \
             filter(ScheduledEvents.token_address == token_address). \
             order_by(ScheduledEvents.id). \
@@ -1167,7 +1168,7 @@ def schedule_new_update_event(
 
     # Verify that the token is issued by the issuer
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -1210,13 +1211,13 @@ def retrieve_token_event(
 
     if issuer_address is None:
         _token_event = db.query(ScheduledEvents). \
-            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE.value). \
+            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
             filter(ScheduledEvents.event_id == scheduled_event_id). \
             filter(ScheduledEvents.token_address == token_address). \
             first()
     else:
         _token_event = db.query(ScheduledEvents). \
-            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE.value). \
+            filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
             filter(ScheduledEvents.event_id == scheduled_event_id). \
             filter(ScheduledEvents.issuer_address == issuer_address). \
             filter(ScheduledEvents.token_address == token_address). \
@@ -1271,7 +1272,7 @@ def delete_scheduled_event(
 
     # Delete an event
     _token_event = db.query(ScheduledEvents). \
-        filter(ScheduledEvents.token_type == TokenType.IBET_SHARE.value). \
+        filter(ScheduledEvents.token_type == TokenType.IBET_SHARE). \
         filter(ScheduledEvents.event_id == scheduled_event_id). \
         filter(ScheduledEvents.issuer_address == issuer_address). \
         filter(ScheduledEvents.token_address == token_address). \
@@ -1323,7 +1324,7 @@ def list_all_holders(
 
     # Get Token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -1415,7 +1416,7 @@ def count_number_of_holders(
 
     # Get Token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -1473,7 +1474,7 @@ def retrieve_holder(
 
     # Get Token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -1575,7 +1576,7 @@ def register_holder_personal_info(
 
     # Verify that the token is issued by the issuer_address
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -1622,7 +1623,7 @@ def list_all_personal_info_batch_registration_uploads(
 
     # Verify that the token is issued by the issuer_address
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -1711,7 +1712,7 @@ def batch_register_personal_info(
 
     # Verify that the token is issued by the issuer_address
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
@@ -1836,7 +1837,7 @@ def list_all_lock_events_by_share(
             Token
         ).
         join(Token, IDXLock.token_address == Token.token_address).
-        filter(Token.type == TokenType.IBET_SHARE.value).
+        filter(Token.type == TokenType.IBET_SHARE).
         filter(Token.token_address == token_address).
         filter(Token.token_status != 2)
     )
@@ -1857,7 +1858,7 @@ def list_all_lock_events_by_share(
             Token
         ).
         join(Token, IDXUnlock.token_address == Token.token_address).
-        filter(Token.type == TokenType.IBET_SHARE.value).
+        filter(Token.type == TokenType.IBET_SHARE).
         filter(Token.token_address == token_address).
         filter(Token.token_status != 2)
     )
@@ -1976,7 +1977,7 @@ def transfer_ownership(
 
     # Check that it is a token that has been issued.
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.issuer_address == issuer_address). \
         filter(Token.token_address == token.token_address). \
         filter(Token.token_status != 2). \
@@ -2012,7 +2013,7 @@ def list_transfer_history(
     """List token transfer history"""
     # Get token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
         first()
@@ -2027,7 +2028,7 @@ def list_transfer_history(
     total = query.count()
 
     if request_query.source_event is not None:
-        query = query.filter(IDXTransfer.source_event == request_query.source_event.value)
+        query = query.filter(IDXTransfer.source_event == request_query.source_event)
     if request_query.data is not None:
         query = query.filter(cast(IDXTransfer.data, String).like("%" + request_query.data + "%"))
     count = query.count()
@@ -2094,32 +2095,30 @@ def list_transfer_approval_history(
             IDXTransferApproval,
             TransferApprovalHistory,
             case(
-                [
-                    (
-                        and_(IDXTransferApproval.escrow_finished == True,
-                             IDXTransferApproval.transfer_approved == None,
-                             TransferApprovalHistory.operation_type == None),
-                        1
-                    ),  # EscrowFinish(escrow_finished)
-                    (
-                        and_(IDXTransferApproval.transfer_approved == None,
-                             TransferApprovalHistory.operation_type == TransferApprovalOperationType.APPROVE.value),
-                        2
-                    ),  # Approve(operation completed, event synchronizing)
-                    (
-                        IDXTransferApproval.transfer_approved == True,
-                        2
-                    ),  # Approve(transferred)
-                    (
-                        and_(IDXTransferApproval.cancelled == None,
-                             TransferApprovalHistory.operation_type == TransferApprovalOperationType.CANCEL.value),
-                        3
-                    ),  # Cancel(operation completed, event synchronizing)
-                    (
-                        IDXTransferApproval.cancelled == True,
-                        3
-                    ),  # Cancel(canceled)
-                ],
+                (
+                    and_(IDXTransferApproval.escrow_finished == True,
+                         IDXTransferApproval.transfer_approved == None,
+                         TransferApprovalHistory.operation_type == None),
+                    1
+                ),  # EscrowFinish(escrow_finished)
+                (
+                    and_(IDXTransferApproval.transfer_approved == None,
+                         TransferApprovalHistory.operation_type == TransferApprovalOperationType.APPROVE.value),
+                    2
+                ),  # Approve(operation completed, event synchronizing)
+                (
+                    IDXTransferApproval.transfer_approved == True,
+                    2
+                ),  # Approve(transferred)
+                (
+                    and_(IDXTransferApproval.cancelled == None,
+                         TransferApprovalHistory.operation_type == TransferApprovalOperationType.CANCEL.value),
+                    3
+                ),  # Cancel(operation completed, event synchronizing)
+                (
+                    IDXTransferApproval.cancelled == True,
+                    3
+                ),  # Cancel(canceled)
                 else_=0  # ApplyFor(unapproved)
             ).label("status")
         ).outerjoin(
@@ -2139,7 +2138,7 @@ def list_transfer_approval_history(
                      func.count(or_(literal_column("status") == 2, None)),
                      func.count(or_(literal_column("status") == 3, None))). \
         join(Token, subquery.token_address == Token.token_address). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.token_status != 2)
     if issuer_address is not None:
         query = query.filter(Token.issuer_address == issuer_address)
@@ -2207,7 +2206,7 @@ def list_token_transfer_approval_history(
     """List token transfer approval history"""
     # Get token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
         first()
@@ -2223,32 +2222,30 @@ def list_token_transfer_approval_history(
             IDXTransferApproval,
             TransferApprovalHistory,
             case(
-                [
-                    (
-                        and_(IDXTransferApproval.escrow_finished == True,
-                             IDXTransferApproval.transfer_approved == None,
-                             TransferApprovalHistory.operation_type == None),
-                        1
-                    ),  # EscrowFinish(escrow_finished)
-                    (
-                        and_(IDXTransferApproval.transfer_approved == None,
-                             TransferApprovalHistory.operation_type == TransferApprovalOperationType.APPROVE.value),
-                        2
-                    ),  # Approve(operation completed, event synchronizing)
-                    (
-                        IDXTransferApproval.transfer_approved == True,
-                        2
-                    ),  # Approve(transferred)
-                    (
-                        and_(IDXTransferApproval.cancelled == None,
-                             TransferApprovalHistory.operation_type == TransferApprovalOperationType.CANCEL.value),
-                        3
-                    ),  # Cancel(operation completed, event synchronizing)
-                    (
-                        IDXTransferApproval.cancelled == True,
-                        3
-                    ),  # Cancel(canceled)
-                ],
+                (
+                    and_(IDXTransferApproval.escrow_finished == True,
+                         IDXTransferApproval.transfer_approved == None,
+                         TransferApprovalHistory.operation_type == None),
+                    1
+                ),  # EscrowFinish(escrow_finished)
+                (
+                    and_(IDXTransferApproval.transfer_approved == None,
+                         TransferApprovalHistory.operation_type == TransferApprovalOperationType.APPROVE.value),
+                    2
+                ),  # Approve(operation completed, event synchronizing)
+                (
+                    IDXTransferApproval.transfer_approved == True,
+                    2
+                ),  # Approve(transferred)
+                (
+                    and_(IDXTransferApproval.cancelled == None,
+                         TransferApprovalHistory.operation_type == TransferApprovalOperationType.CANCEL.value),
+                    3
+                ),  # Cancel(operation completed, event synchronizing)
+                (
+                    IDXTransferApproval.cancelled == True,
+                    3
+                ),  # Cancel(canceled)
                 else_=0  # ApplyFor(unapproved)
             ).label("status")
         ).outerjoin(
@@ -2404,7 +2401,7 @@ def update_transfer_approval(
 
     # Get token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
         first()
@@ -2537,7 +2534,7 @@ def retrieve_transfer_approval_history(
     """Retrieve share token transfer approval history"""
     # Get token
     _token = db.query(Token). \
-        filter(Token.type == TokenType.IBET_SHARE.value). \
+        filter(Token.type == TokenType.IBET_SHARE). \
         filter(Token.token_address == token_address). \
         filter(Token.token_status != 2). \
         first()
@@ -2674,7 +2671,7 @@ def bulk_transfer_ownership(
     # Verify that the tokens are issued by the issuer_address
     for _token in tokens:
         _issued_token = db.query(Token). \
-            filter(Token.type == TokenType.IBET_SHARE.value). \
+            filter(Token.type == TokenType.IBET_SHARE). \
             filter(Token.issuer_address == issuer_address). \
             filter(Token.token_address == _token.token_address). \
             filter(Token.token_status != 2). \
@@ -2732,13 +2729,13 @@ def list_bulk_transfer_upload(
     # Get bulk transfer upload list
     if issuer_address is None:
         _uploads = db.query(BulkTransferUpload). \
-            filter(BulkTransferUpload.token_type == TokenType.IBET_SHARE.value). \
+            filter(BulkTransferUpload.token_type == TokenType.IBET_SHARE). \
             order_by(BulkTransferUpload.issuer_address). \
             all()
     else:
         _uploads = db.query(BulkTransferUpload). \
             filter(BulkTransferUpload.issuer_address == issuer_address). \
-            filter(BulkTransferUpload.token_type == TokenType.IBET_SHARE.value). \
+            filter(BulkTransferUpload.token_type == TokenType.IBET_SHARE). \
             all()
 
     uploads = []
@@ -2774,14 +2771,14 @@ def retrieve_bulk_transfer(
     if issuer_address is None:
         _bulk_transfers = db.query(BulkTransfer). \
             filter(BulkTransfer.upload_id == upload_id). \
-            filter(BulkTransfer.token_type == TokenType.IBET_SHARE.value). \
+            filter(BulkTransfer.token_type == TokenType.IBET_SHARE). \
             order_by(BulkTransfer.issuer_address). \
             all()
     else:
         _bulk_transfers = db.query(BulkTransfer). \
             filter(BulkTransfer.issuer_address == issuer_address). \
             filter(BulkTransfer.upload_id == upload_id). \
-            filter(BulkTransfer.token_type == TokenType.IBET_SHARE.value). \
+            filter(BulkTransfer.token_type == TokenType.IBET_SHARE). \
             all()
 
     bulk_transfers = []

@@ -27,7 +27,10 @@ from datetime import (
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from typing import Optional
+from typing import (
+    Optional,
+    Type
+)
 from web3.eth import Contract
 
 path = os.path.join(os.path.dirname(__file__), "../")
@@ -141,7 +144,7 @@ class Processor:
         loaded_token_address_list: tuple[str, ...] = tuple(self.token_list.keys())
         load_required_address_list = list(set(issued_token_address_list) ^ set(loaded_token_address_list))
 
-        load_required_token_list: list[Token] = (
+        load_required_token_list: list[Type[Token]] = (
             db_session.query(Token).
             filter(Token.token_status == 1).
             filter(Token.token_address.in_(load_required_address_list)).

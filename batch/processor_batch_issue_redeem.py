@@ -20,7 +20,10 @@ import os
 import sys
 import time
 import uuid
-from typing import List
+from typing import (
+    List,
+    Type
+)
 
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import create_engine
@@ -76,7 +79,7 @@ class Processor:
     def process(self):
         db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
         try:
-            upload_list: List[BatchIssueRedeemUpload] = db_session.query(BatchIssueRedeemUpload). \
+            upload_list: List[Type[BatchIssueRedeemUpload]] = db_session.query(BatchIssueRedeemUpload). \
                 filter(BatchIssueRedeemUpload.processed == False). \
                 all()
             for upload in upload_list:

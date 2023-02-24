@@ -16,7 +16,10 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import List
+from typing import (
+    List,
+    Type
+)
 import os
 import sys
 import time
@@ -275,7 +278,7 @@ class Processor:
                 processing_issuer[self.thread_num][upload.upload_id] = upload.issuer_address
         return upload_list
 
-    def __get_transfer_data(self, db_session: Session, upload_id: str, status: int) -> List[BulkTransfer]:
+    def __get_transfer_data(self, db_session: Session, upload_id: str, status: int) -> List[Type[BulkTransfer]]:
         transfer_list = db_session.query(BulkTransfer). \
             filter(BulkTransfer.upload_id == upload_id). \
             filter(BulkTransfer.status == status). \
