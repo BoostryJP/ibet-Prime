@@ -205,8 +205,9 @@ def list_all_accounts(db: Session = Depends(db_session)):
     #     WHERE t2.account_address = t1.account_address
     #   )
     rsa_key_aliased = aliased(E2EMessagingAccountRsaKey)
-    subquery_max = db.query(func.max(rsa_key_aliased.block_timestamp)). \
-        filter(rsa_key_aliased.account_address == E2EMessagingAccountRsaKey.account_address)
+    subquery_max = db.query(func.max(rsa_key_aliased.block_timestamp)).\
+        filter(rsa_key_aliased.account_address == E2EMessagingAccountRsaKey.account_address).\
+        scalar_subquery()
     subquery = db.query(E2EMessagingAccountRsaKey). \
         filter(E2EMessagingAccountRsaKey.block_timestamp == subquery_max)
     latest_rsa_key = aliased(E2EMessagingAccountRsaKey, subquery.subquery("latest_rsa_key"), adapt_on_names=True)
