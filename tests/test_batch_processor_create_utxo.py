@@ -59,6 +59,11 @@ from app.model.db import (
 from app.utils.contract_utils import ContractUtils
 from batch.processor_create_utxo import Processor
 from tests.account_config import config_eth_account
+from tests.utils.contract_utils import (
+    IbetSecurityTokenContractTestUtils as STContractUtils,
+    PersonalInfoContractTestUtils,
+    IbetExchangeContractTestUtils
+)
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
@@ -69,7 +74,7 @@ def processor(db):
     return Processor()
 
 
-def deploy_bond_token_contract(address, private_key):
+def deploy_bond_token_contract(address, private_key, personal_info_contract_address=None, tradable_exchange_contract_address=None):
     arguments = [
         "token.name",
         "token.symbol",
@@ -84,7 +89,11 @@ def deploy_bond_token_contract(address, private_key):
     bond_contrat = IbetStraightBondContract()
     contract_address, _, _ = bond_contrat.create(arguments, address, private_key)
     bond_contrat.update(
-        IbetStraightBondUpdateParams(transferable=True),
+        IbetStraightBondUpdateParams(
+            transferable=True,
+            personal_info_contract_address=personal_info_contract_address,
+            tradable_exchange_contract_address=tradable_exchange_contract_address,
+        ),
         address,
         private_key
     )
@@ -504,9 +513,114 @@ class TestProcessor:
         mock_func.assert_not_called()
 
     # <Normal_5>
+    # Holder Changed
+    @mock.patch("batch.processor_create_utxo.create_ledger")
+    def test_normal_5(self, mock_func, processor, db, personal_info_contract, ibet_exchange_contract):
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8"))
+        user_2 = config_eth_account("user2")
+        user_address_1 = user_2["address"]
+        user_pk_1 = decode_keyfile_json(raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8"))
+        user_3 = config_eth_account("user3")
+        user_address_2 = user_3["address"]
+        user_pk_2 = decode_keyfile_json(raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8"))
+
+        # prepare data
+        token_address_1 = deploy_bond_token_contract(
+            issuer_address, issuer_private_key,
+            personal_info_contract_address=personal_info_contract.address,
+            tradable_exchange_contract_address=ibet_exchange_contract.address
+        )
+        _token_1 = Token()
+        _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token_1.tx_hash = ""
+        _token_1.issuer_address = issuer_address
+        _token_1.token_address = token_address_1
+        _token_1.abi = {}
+        db.add(_token_1)
+
+        PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_1, user_pk_1, [issuer_address, ""])
+        PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_2, user_pk_2, [issuer_address, ""])
+        PersonalInfoContractTestUtils.register(personal_info_contract.address, issuer_address, issuer_private_key, [issuer_address, ""])
+
+        STContractUtils.transfer(token_address_1, issuer_address, issuer_private_key, [user_address_1, 10])
+        STContractUtils.transfer(token_address_1, issuer_address, issuer_private_key, [user_address_2, 10])
+        STContractUtils.transfer(token_address_1, user_address_1, user_pk_1, [ibet_exchange_contract.address, 10])
+        STContractUtils.transfer(token_address_1, issuer_address, issuer_private_key, [ibet_exchange_contract.address, 10])
+
+        IbetExchangeContractTestUtils.create_order(
+            ibet_exchange_contract.address, user_address_1, user_pk_1, [token_address_1, 10, 100, False, issuer_address]
+        )
+        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(ibet_exchange_contract.address)
+        IbetExchangeContractTestUtils.execute_order(ibet_exchange_contract.address, user_address_2, user_pk_2, [latest_order_id, 10, True])
+        latest_agreement_id = IbetExchangeContractTestUtils.get_latest_agreementid(ibet_exchange_contract.address, latest_order_id)
+        IbetExchangeContractTestUtils.confirm_agreement(
+            ibet_exchange_contract.address, issuer_address, issuer_private_key, [latest_order_id, latest_agreement_id]
+        )
+
+        # prepare other data
+        other_token_address = deploy_bond_token_contract(
+            issuer_address, issuer_private_key,
+            personal_info_contract_address=personal_info_contract.address,
+            tradable_exchange_contract_address=ibet_exchange_contract.address
+        )
+        STContractUtils.transfer(other_token_address, issuer_address, issuer_private_key, [user_address_1, 10])
+        STContractUtils.transfer(other_token_address, user_address_1, user_pk_1, [ibet_exchange_contract.address, 10])
+        STContractUtils.transfer(other_token_address, issuer_address, issuer_private_key, [ibet_exchange_contract.address, 10])
+
+        IbetExchangeContractTestUtils.create_order(
+            ibet_exchange_contract.address, user_address_1, user_pk_1, [other_token_address, 10, 100, False, issuer_address]
+        )
+        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(ibet_exchange_contract.address)
+        IbetExchangeContractTestUtils.execute_order(ibet_exchange_contract.address, user_address_2, user_pk_2, [latest_order_id, 10, True])
+        latest_agreement_id = IbetExchangeContractTestUtils.get_latest_agreementid(ibet_exchange_contract.address, latest_order_id)
+        IbetExchangeContractTestUtils.confirm_agreement(
+            ibet_exchange_contract.address, issuer_address, issuer_private_key, [latest_order_id, latest_agreement_id]
+        )
+
+        db.commit()
+
+        # Execute batch
+        # Assume: Not Create UTXO and Ledger
+        processor.process()
+
+        # assertion
+        db.rollback()
+        _utox_list = db.query(UTXO).order_by(UTXO.created).all()
+
+        assert len(_utox_list) == 3
+        _utox = _utox_list[0]
+        assert _utox.transaction_hash is not None
+        assert _utox.account_address == user_address_1
+        assert _utox.token_address == token_address_1
+        assert _utox.amount == 0
+        assert _utox.block_number < _utox_list[1].block_number
+        assert _utox.block_timestamp <= _utox_list[1].block_timestamp
+        _utox = _utox_list[1]
+        assert _utox.transaction_hash is not None
+        assert _utox.account_address == user_address_2
+        assert _utox.token_address == token_address_1
+        assert _utox.amount == 10
+        assert _utox.block_number < _utox_list[2].block_number
+        assert _utox.block_timestamp <= _utox_list[2].block_timestamp
+        _utox = _utox_list[2]
+        assert _utox.transaction_hash is not None
+        assert _utox.account_address == user_address_2
+        assert _utox.token_address == token_address_1
+        assert _utox.amount == 10
+
+        _utox_block_number = db.query(UTXOBlockNumber).first()
+        assert _utox_block_number.latest_block_number >= _utox_list[1].block_number
+
+        mock_func.assert_has_calls([
+            call(token_address=token_address_1, db=ANY)
+        ])
+
+    # <Normal_6>
     # Additional Issue
     @mock.patch("batch.processor_create_utxo.create_ledger")
-    def test_normal_5(self, mock_func, processor, db):
+    def test_normal_6(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -577,10 +691,10 @@ class TestProcessor:
         _utox_block_number = db.query(UTXOBlockNumber).first()
         assert _utox_block_number.latest_block_number == latest_block
 
-    # <Normal_6>
+    # <Normal_7>
     # Redeem
     @mock.patch("batch.processor_create_utxo.create_ledger")
-    def test_normal_6(self, mock_func, processor, db):
+    def test_normal_7(self, mock_func, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
