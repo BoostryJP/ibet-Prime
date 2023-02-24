@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import os
 import sys
 import time
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Type
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -96,7 +96,7 @@ class Processor:
 
     def __load_target(self, db_session: Session) -> bool:
         self.target: TokenHoldersList = (
-            db_session.query(TokenHoldersList).filter(TokenHoldersList.batch_status == TokenHolderBatchStatus.PENDING.value).first()
+            db_session.query(TokenHoldersList).filter(TokenHoldersList.batch_status == TokenHolderBatchStatus.PENDING).first()
         )
         return True if self.target else False
 
@@ -135,7 +135,7 @@ class Processor:
             local_session.query(TokenHoldersList)
             .filter(TokenHoldersList.token_address == target_token_address)
             .filter(TokenHoldersList.block_number < block_to)
-            .filter(TokenHoldersList.batch_status == TokenHolderBatchStatus.DONE.value)
+            .filter(TokenHoldersList.batch_status == TokenHolderBatchStatus.DONE)
             .order_by(TokenHoldersList.block_number.desc())
             .first()
         )
@@ -427,7 +427,7 @@ class Processor:
             if page.account_address == token_owner_address:
                 # Skip storing data for token owner
                 continue
-            token_holder: TokenHolder = (
+            token_holder: Type[TokenHolder] = (
                 db_session.query(TokenHolder)
                 .filter(TokenHolder.holder_list_id == holder_list_id)
                 .filter(TokenHolder.account_address == account_address)

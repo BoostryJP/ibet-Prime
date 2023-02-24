@@ -17,7 +17,10 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
-from typing import List
+from typing import (
+    List,
+    Type
+)
 import os
 import sys
 import time
@@ -243,7 +246,7 @@ class Processor:
         finally:
             db_session.close()
 
-    def __get_update_token_list(self, db_session: Session) -> List[UpdateToken]:
+    def __get_update_token_list(self, db_session: Session) -> List[Type[UpdateToken]]:
         _update_token_list = db_session.query(UpdateToken). \
             filter(UpdateToken.status == 0). \
             order_by(UpdateToken.id). \

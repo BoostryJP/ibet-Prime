@@ -20,6 +20,8 @@ import os
 import sys
 import time
 from datetime import datetime
+from typing import Type
+
 from eth_utils import to_checksum_address
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -119,7 +121,7 @@ class Processor:
             # If there are no tokens to load newly, skip process
             return
 
-        load_required_token_list: list[Token] = (
+        load_required_token_list: list[Type[Token]] = (
             db_session.query(Token).
             filter(Token.token_status == 1).
             filter(Token.token_address.in_(load_required_address_list)).all()

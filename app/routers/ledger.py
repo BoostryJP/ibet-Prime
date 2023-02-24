@@ -201,7 +201,7 @@ def retrieve_ledger_history(
         # Get ibet fin token_detail_type
         _ibet_fin_details_list = db.query(LedgerDetailsTemplate). \
             filter(LedgerDetailsTemplate.token_address == token_address). \
-            filter(LedgerDetailsTemplate.data_type == LedgerDetailsDataType.IBET_FIN.value). \
+            filter(LedgerDetailsTemplate.data_type == LedgerDetailsDataType.IBET_FIN). \
             order_by(LedgerDetailsTemplate.id). \
             all()
         _ibet_fin_token_detail_type_list = [_details.token_detail_type for _details in _ibet_fin_details_list]

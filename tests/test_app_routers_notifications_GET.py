@@ -421,12 +421,11 @@ class TestAppRoutersNotificationsGET:
                     "notice_id": "notice_id_2",
                     "issuer_address": issuer_address_1,
                     "priority": 1,
-                    "notice_type": NotificationType.SCHEDULE_EVENT_ERROR,
+                    "notice_type": NotificationType.SCHEDULE_EVENT_ERROR.value,
                     "notice_code": 1,
                     "metainfo": {
                         "scheduled_event_id": "1",
-                        "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-                        "token_address": None
+                        "token_type": TokenType.IBET_STRAIGHT_BOND.value
                     },
                     "created": "2022-01-02T09:20:30+09:00"
                 },
@@ -519,12 +518,11 @@ class TestAppRoutersNotificationsGET:
                     "notice_id": "notice_id_2",
                     "issuer_address": issuer_address_1,
                     "priority": 1,
-                    "notice_type": NotificationType.SCHEDULE_EVENT_ERROR,
+                    "notice_type": NotificationType.SCHEDULE_EVENT_ERROR.value,
                     "notice_code": 1,
                     "metainfo": {
                         "scheduled_event_id": "1",
-                        "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-                        "token_address": None
+                        "token_type": TokenType.IBET_STRAIGHT_BOND.value
                     },
                     "created": "2022-01-02T09:20:30+09:00"
                 },
@@ -532,7 +530,7 @@ class TestAppRoutersNotificationsGET:
                     "notice_id": "notice_id_3",
                     "issuer_address": issuer_address_2,
                     "priority": 2,
-                    "notice_type": NotificationType.TRANSFER_APPROVAL_INFO,
+                    "notice_type": NotificationType.TRANSFER_APPROVAL_INFO.value,
                     "notice_code": 2,
                     "metainfo": {
                         "id": 1,

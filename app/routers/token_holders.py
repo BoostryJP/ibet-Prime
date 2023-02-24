@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import uuid
-from typing import List, Optional
+from typing import List, Optional, Type
 
 from fastapi import (
     APIRouter,
@@ -110,11 +110,11 @@ def create_collection(
         raise InvalidParameterError("list_id must be unique.")
 
     # Check existing list
-    _same_combi_record: TokenHoldersList = (
+    _same_combi_record: Type[TokenHoldersList] = (
         db.query(TokenHoldersList)
         .filter(TokenHoldersList.block_number == data.block_number)
         .filter(TokenHoldersList.token_address == token_address)
-        .filter(TokenHoldersList.batch_status != TokenHolderBatchStatus.FAILED.value)
+        .filter(TokenHoldersList.batch_status != TokenHolderBatchStatus.FAILED)
         .first()
     )
 
@@ -196,7 +196,7 @@ def list_all_token_holders_collections(
         query = query.offset(offset)
 
     # Get all collections
-    _token_holders_collections: list[TokenHoldersList] = query.all()
+    _token_holders_collections: list[Type[TokenHoldersList]] = query.all()
 
     token_holders_collections = []
     for _collection in _token_holders_collections:
@@ -264,7 +264,7 @@ def retrieve_token_holders_list(
         raise InvalidParameterError(description)
 
     # Check existing list
-    _same_list_id_record: TokenHoldersList = (
+    _same_list_id_record: Type[TokenHoldersList] = (
         db.query(TokenHoldersList).filter(TokenHoldersList.list_id == list_id).first()
     )
 

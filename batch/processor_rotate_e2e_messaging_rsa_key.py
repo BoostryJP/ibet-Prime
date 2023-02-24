@@ -20,6 +20,7 @@ import os
 import sys
 import time
 from datetime import datetime
+from typing import Type
 
 from eth_keyfile import decode_keyfile_json
 from Crypto import Random
@@ -100,7 +101,7 @@ class Processor:
             all()
         return e2e_messaging_account_list
 
-    def __auto_generate_rsa_key(self, db_session: Session, base_time: int, e2e_messaging_account: E2EMessagingAccount):
+    def __auto_generate_rsa_key(self, db_session: Session, base_time: int, e2e_messaging_account: Type[E2EMessagingAccount]):
 
         if e2e_messaging_account.rsa_key_generate_interval > 0:
 
@@ -159,7 +160,7 @@ class Processor:
             _account_rsa_key.block_timestamp = datetime.utcfromtimestamp(block["timestamp"])
             db_session.add(_account_rsa_key)
 
-    def __rotate_rsa_key(self, db_session: Session, e2e_messaging_account: E2EMessagingAccount):
+    def __rotate_rsa_key(self, db_session: Session, e2e_messaging_account: Type[E2EMessagingAccount]):
 
         if e2e_messaging_account.rsa_generation > 0:
 
