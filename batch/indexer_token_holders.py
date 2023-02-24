@@ -242,6 +242,9 @@ class Processor:
                 event="HolderChanged",
                 block_from=block_from,
                 block_to=block_to,
+                argument_filters={
+                    "token": self.token_contract.address
+                }
             )
             for _event in holder_changed_events:
                 if self.token_contract.address == _event["args"]["token"]:

@@ -177,7 +177,10 @@ class Processor:
                 contract=exchange_contract,
                 event="HolderChanged",
                 block_from=block_from,
-                block_to=block_to
+                block_to=block_to,
+                argument_filters={
+                    "token": token_contract.address
+                }
             )
             tmp_events = []
             for _event in exchange_contract_events:

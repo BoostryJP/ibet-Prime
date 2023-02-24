@@ -297,6 +297,28 @@ class TestProcessor:
         STContractUtils.lock(token_contract.address, user_address_1, user_pk_1, [issuer_address, 3000, ""])
         # user1: (hold: 13000, locked: 3000) user2: 44000
 
+        # Issuer issues other token to create exchange event
+        other_token_contract = deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=exchange_contract.address,
+            transfer_approval_required=False,
+        )
+        STContractUtils.transfer(other_token_contract.address, issuer_address, issuer_private_key, [user_address_1, 10000])
+        STContractUtils.transfer(other_token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 10000])
+        STContractUtils.transfer(other_token_contract.address, issuer_address, issuer_private_key, [exchange_contract.address, 10000])
+
+        IbetExchangeContractTestUtils.create_order(
+            exchange_contract.address, user_address_1, user_pk_1, [other_token_contract.address, 10000, 100, False, issuer_address]
+        )
+        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(exchange_contract.address)
+        IbetExchangeContractTestUtils.execute_order(exchange_contract.address, user_address_2, user_pk_2, [latest_order_id, 10000, True])
+        latest_agreement_id = IbetExchangeContractTestUtils.get_latest_agreementid(exchange_contract.address, latest_order_id)
+        IbetExchangeContractTestUtils.confirm_agreement(
+            exchange_contract.address, issuer_address, issuer_private_key, [latest_order_id, latest_agreement_id]
+        )
+
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
         block_number = web3.eth.block_number
@@ -679,6 +701,32 @@ class TestProcessor:
 
         STContractUtils.lock(token_contract.address, user_address_1, user_pk_1, [issuer_address, 3000, ""])
         # user1: (hold: 3000, locked: 3000) user2: 44000
+
+        # Issuer issues other token to create exchange event
+        other_token_contract = deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=exchange_contract.address,
+            transfer_approval_required=False,
+        )
+
+        PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_1, user_pk_1, [issuer_address, ""])
+        PersonalInfoContractTestUtils.register(personal_info_contract.address, issuer_address, issuer_private_key, [issuer_address, ""])
+
+        STContractUtils.transfer(other_token_contract.address, issuer_address, issuer_private_key, [user_address_1, 10000])
+        STContractUtils.transfer(other_token_contract.address, user_address_1, user_pk_1, [exchange_contract.address, 10000])
+        STContractUtils.transfer(other_token_contract.address, issuer_address, issuer_private_key, [exchange_contract.address, 10000])
+
+        IbetExchangeContractTestUtils.create_order(
+            exchange_contract.address, user_address_1, user_pk_1, [other_token_contract.address, 10000, 100, False, issuer_address]
+        )
+        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(exchange_contract.address)
+        IbetExchangeContractTestUtils.execute_order(exchange_contract.address, user_address_2, user_pk_2, [latest_order_id, 10000, True])
+        latest_agreement_id = IbetExchangeContractTestUtils.get_latest_agreementid(exchange_contract.address, latest_order_id)
+        IbetExchangeContractTestUtils.confirm_agreement(
+            exchange_contract.address, issuer_address, issuer_private_key, [latest_order_id, latest_agreement_id]
+        )
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
