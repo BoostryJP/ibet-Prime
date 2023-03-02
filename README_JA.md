@@ -51,7 +51,7 @@
 
 以下のコマンドで Python パッケージをインストールします。
 ```bash
-$ pip install -r requirements.txt
+$ poetry install --no-root --only main -E explorer
 ```
 
 ### 環境変数の設定
@@ -69,13 +69,13 @@ $ pip install -r requirements.txt
         <td>DATABASE_URL</td>
         <td>False</td>
         <td nowrap>データベース URL</td>
-        <td>postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb</td>
+        <td>postgresql+psycopg://issuerapi:issuerapipass@localhost:5432/issuerapidb</td>
     </tr>
     <tr>
         <td>TEST_DATABASE_URL</td>
         <td>False</td>
         <td nowrap>テスト用データベース URL</td>
-        <td>postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb</td>
+        <td>postgresql+psycopg://issuerapi:issuerapipass@localhost:5432/issuerapidb</td>
     </tr>
     <tr>
         <td>DATABASE_SCHEMA</td>
