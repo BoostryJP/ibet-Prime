@@ -53,12 +53,21 @@ RUN . ~/.bash_profile \
  && pyenv global 3.10.4 \
  && pip install --upgrade pip
 
+# install poetry
+RUN . ~/.bash_profile \
+ && curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.4.0 python - \
+ && echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~apl/.bash_profile
+RUN . ~/.bash_profile \
+ && poetry config virtualenvs.create false
+
 # install python packages
 USER apl
-COPY requirements.txt /app/requirements.txt
+COPY pyproject.toml /app/pyproject.toml
+COPY poetry.lock /app/poetry.lock
 RUN . ~/.bash_profile \
- && pip install -r /app/requirements.txt \
- && rm -f /app/requirements.txt
+ && poetry install --directory /app --only main --no-root \
+ && rm -f /app/pyproject.toml \
+ && rm -f /app/poetry.lock
 
 # app deploy
 USER root
