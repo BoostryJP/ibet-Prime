@@ -26,12 +26,27 @@ uvicorn = "~0.20.0"
 web3 = "~5.31.3"
 sqlalchemy = "~2.0.4"
 
+ibet-prime-explorer = {path = "cmd/explorer", optional = true, develop = true}
+textual = {version = "~0.10.1", optional = true}
+async-cache = {version = "~1.1.1", optional = true}
+typer = {version = "~0.7.0", optional = true}
+aiohttp = {version = "~3.8.4", optional = true}
+
 [tool.poetry.group.dev.dependencies]
 httpx = "^0.23.3"
 pytest = "^7.2.1"
 pytest-cov = "^4.0.0"
 pyyaml = "^6.0"
 pytest-freezegun = "^0.4.2"
+
+[tool.poetry.extras]
+ibet-explorer = [
+    "ibet-prime-explorer",
+    "textual",
+    "async-cache",
+    "typer",
+    "aiohttp"
+]
 
 [build-system]
 requires = ["poetry-core"]
