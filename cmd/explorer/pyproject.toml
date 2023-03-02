@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "ibet-prime-explorer"
+version = "0.1.0"
+description = "ibet-Prime Terminal UI for Block Chain Explorer"
+authors = ["BOOSTRY Co., Ltd. <dev@boostry.co.jp>"]
+readme = "README.md"
+packages = [
+    { include = "src" },
+]
+
+[tool.poetry.dependencies]
+python = "3.10.4"
+
+[tool.poetry.scripts]
+ibet-explorer = "src.main:app"
+
+[tool.mypy]
+python_version = "3.10"
+no_strict_optional = true
+ignore_missing_imports = true
+check_untyped_defs = true
+
+[tool.black]
+includes = "src"
+target-version = ['py310']
+line-length = 120
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

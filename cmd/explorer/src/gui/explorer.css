@@ -1,0 +1,108 @@
+/*****************************
+    Screens
+ *****************************/
+BlockScreen {
+    layer: 0;
+    height: 100%;
+    layers: one two three;
+    align: center middle;
+}
+BlockScreen.menu {
+    align: left top;
+}
+TransactionScreen {
+    layer: 0;
+}
+TracebackScreen {
+    layer: 0;
+}
+
+/*****************************
+    Widgets
+ *****************************/
+Menu {
+    visibility: hidden;
+    height: auto;
+    width: auto;
+    layer: two;
+    opacity: 0;
+}
+
+DataTable {
+    width: 100%;
+    padding: 0;
+    border: $surface
+}
+
+DataTable:focus {
+     border: heavy $accent-darken-3;
+}
+
+QuerySetting {
+    layer: three;
+    visibility: hidden;
+    margin-top: 3;
+    width: auto;
+    height: auto;
+    align: center middle;
+    content-align: center middle;
+    text-align: center;
+    border: heavy $accent-darken-3;
+}
+
+QuerySetting.visible {
+    align: center middle;
+}
+
+/*****************************
+    Class&Id
+ *****************************/
+
+.column {
+    width: 1fr;
+}
+.visible {
+    visibility: visible;
+}
+.column_auto {
+    width: auto;
+}
+#block_screen_header {
+    height: 1;
+    background: $accent-darken-3;
+}
+#block_list_description {
+    dock: top;
+    height: auto;
+}
+#block_list_table {
+
+}
+#query_panel_from_block_input {
+    width: 50;
+    color: grey;
+}
+#query_panel_to_block_input {
+    width: 50;
+}
+#query_panel_sort_order_choice {
+    align: center middle;
+    width: 50;
+    height: 3;
+}
+#query_panel_enter {
+    width: 50;
+    height: 3;
+}
+#tx_list_header {
+    height: 1;
+    background: $accent-darken-3;
+}
+.menubutton {
+    color: $text;
+    width: 30;
+    height: 3;
+    margin: 0;
+    padding: 0;
+    border: heavy $accent-darken-3;
+}
