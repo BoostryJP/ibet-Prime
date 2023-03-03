@@ -17,21 +17,16 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import os
-import sys
 
 from pydantic import ValidationError
 from textual.app import App, ReturnType
 from textual.binding import Binding
 
-from connector import ApiNotEnabledException
-from gui.screen.block import BlockScreen
-from gui.screen.traceback import TracebackScreen
-from gui.screen.transaction import TransactionScreen
-
-from .error import Error
-
-path = os.path.join(os.path.dirname(__file__), "../../../../")
-sys.path.append(path)
+from src.connector import ApiNotEnabledException
+from src.gui.screen.block import BlockScreen
+from src.gui.screen.traceback import TracebackScreen
+from src.gui.screen.transaction import TransactionScreen
+from src.gui.error import Error
 
 from app.model.schema import ListBlockDataQuery, ListTxDataQuery
 
@@ -58,6 +53,7 @@ class ExplorerApp(App):
     # App State
     state: AppState = AppState()
 
+    # Run App
     async def run_async(
         self,
         *,
@@ -71,17 +67,15 @@ class ExplorerApp(App):
         self.lot_size = lot_size
         return await super().run_async(headless=headless, size=size, auto_pilot=auto_pilot)
 
+    ##################################################
+    # Event
+    ##################################################
+
     def on_mount(self):
         """
         Occurs when Self is mounted
         """
         self.push_screen(BlockScreen(name="block_screen"))
-
-    async def action_quit(self) -> None:
-        """
-        Occurs when keybind related to `quit` is called.
-        """
-        self.exit()
 
     def on_error(self, event: Error) -> None:
         if isinstance(event.error, ApiNotEnabledException):
@@ -90,3 +84,13 @@ class ExplorerApp(App):
             raise ValueError(event.error.json()) from None
         self.state.error = event.error
         self.push_screen("traceback_screen")
+
+    ##################################################
+    # Key binding
+    ##################################################
+
+    async def action_quit(self) -> None:
+        """
+        Occurs when keybind related to `quit` is called.
+        """
+        self.exit()

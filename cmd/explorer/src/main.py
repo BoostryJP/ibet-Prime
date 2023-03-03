@@ -16,23 +16,22 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import logging
 import asyncio
-import os
-import sys
+logging.getLogger("asyncio").setLevel(logging.WARNING)
+logging.getLogger("psycopg").setLevel(logging.WARNING)
 
 import typer
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__)))
-
-from gui.explorer import ExplorerApp
+from src.gui.explorer import ExplorerApp
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
 
 @app.command()
 def run(
-    url: str = typer.Argument("http://localhost:5000", help="ibet-Prime server URL to connect"),
-    lot_size: int = typer.Argument(100, help="Lot size to fetch Block Data list"),
+    url: str = typer.Option("http://localhost:5000", help="ibet-Prime server URL to connect"),
+    lot_size: int = typer.Option(100, help="Lot size to fetch Block Data list"),
 ):
     explorer = ExplorerApp()
     asyncio.run(explorer.run_async(url=url, lot_size=lot_size))

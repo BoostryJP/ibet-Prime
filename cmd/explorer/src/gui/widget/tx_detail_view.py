@@ -24,9 +24,9 @@ from rich.panel import Panel
 from rich.style import Style
 from textual.reactive import Reactive, reactive
 
-from .. import styles
-from ..rendarable.tx_detail_info import TxDetailInfo
-from .base import TuiWidget
+from src.gui import styles
+from src.gui.rendarable.tx_detail_info import TxDetailInfo
+from src.gui.widget.base import TuiWidget
 
 
 class TxDetailView(TuiWidget):

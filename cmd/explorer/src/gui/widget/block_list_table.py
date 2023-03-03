@@ -16,8 +16,6 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import os
-import sys
 import time
 from typing import Iterable
 
@@ -27,11 +25,7 @@ from textual.coordinate import Coordinate
 from textual.reactive import reactive
 from textual.widgets import DataTable
 
-from utils.time import human_time
-
-path = os.path.join(os.path.dirname(__file__), "../../../../../")
-sys.path.append(path)
-
+from src.utils.time import human_time
 from app.model.schema.bc_explorer import BlockData
 
 

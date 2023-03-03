@@ -20,9 +20,9 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.widgets import Footer
 
-from gui.screen.base import TuiScreen
-from gui.widget.block_list_table import BlockListTable
-from gui.widget.traceback import TracebackWidget
+from src.gui.screen.base import TuiScreen
+from src.gui.widget.block_list_table import BlockListTable
+from src.gui.widget.traceback import TracebackWidget
 
 
 class TracebackScreen(TuiScreen):
@@ -32,11 +32,19 @@ class TracebackScreen(TuiScreen):
         yield TracebackWidget()
         yield Footer()
 
+    ##################################################
+    # Event
+    ##################################################
+
     async def on_mount(self) -> None:
         """
         Occurs when Self is mounted
         """
         self.query(TracebackWidget)[0].focus()
+
+    ##################################################
+    # Key binding
+    ##################################################
 
     def action_quit(self):
         """

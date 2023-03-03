@@ -23,8 +23,8 @@ from rich.panel import Panel
 from rich.style import Style
 from rich.traceback import Traceback
 
-from gui import styles
-from gui.widget.base import TuiWidget
+from src.gui import styles
+from src.gui.widget.base import TuiWidget
 
 
 class TracebackWidget(TuiWidget):

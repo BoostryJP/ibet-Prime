@@ -16,10 +16,11 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from app.model.schema import TxDataDetail
 from rich.console import Group
 from rich.panel import Panel
 from rich.table import Table
+
+from app.model.schema import TxDataDetail
 
 
 class TxDetailInfo:

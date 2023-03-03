@@ -16,9 +16,6 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import os
-import sys
-
 from aiohttp import ClientSession, ClientTimeout, TCPConnector
 from rich.text import Text
 from textual.app import ComposeResult
@@ -26,16 +23,13 @@ from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.widgets import DataTable, Footer, Label
 
-import connector
-from gui.consts import ID
-from gui.screen.base import TuiScreen
-from gui.widget.block_list_table import BlockListTable
-from gui.widget.tx_detail_view import TxDetailView
-from gui.widget.tx_list_table import TxListTable
-from gui.widget.tx_list_view import TxListView
-
-path = os.path.join(os.path.dirname(__file__), "../../../../../")
-sys.path.append(path)
+from src import connector
+from src.gui.consts import ID
+from src.gui.screen.base import TuiScreen
+from src.gui.widget.block_list_table import BlockListTable
+from src.gui.widget.tx_detail_view import TxDetailView
+from src.gui.widget.tx_list_table import TxListTable
+from src.gui.widget.tx_list_view import TxListView
 
 from app.model.schema.bc_explorer import TxDataDetail
 
@@ -47,7 +41,7 @@ class TransactionScreen(TuiScreen):
         yield Horizontal(
             Vertical(
                 Horizontal(
-                    Label(Text.from_markup(" [bold]ibet-Prime BC Explorer[/bold]")),
+                    Label(Text.from_markup(" [bold]ibet-Wallet-API BC Explorer[/bold]")),
                     Label(" | "),
                     Label(f"Selected block: -", id=ID.TX_SELECTED_BLOCK_NUMBER),
                     id="tx_list_header",
@@ -58,19 +52,15 @@ class TransactionScreen(TuiScreen):
         )
         yield Footer()
 
+    ##################################################
+    # Event
+    ##################################################
+
     async def on_mount(self) -> None:
         """
         Occurs when Self is mounted
         """
         self.query(TxListTable)[0].focus()
-
-    def action_quit(self):
-        """
-        Occurs when keybind related to `quit` is called.
-        """
-        self.tui.pop_screen()
-        self.tui.query(BlockListTable)[0].can_focus = True
-        self.tui.query(BlockListTable)[0].focus()
 
     async def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         """
@@ -112,3 +102,15 @@ class TransactionScreen(TuiScreen):
                     self.query_one(f"#{ID.TX_SELECTED_BLOCK_NUMBER}", Label).update(
                         f"Selected block: {self.tui.state.tx_list_query.block_number}"
                     )
+
+    ##################################################
+    # Key binding
+    ##################################################
+
+    def action_quit(self):
+        """
+        Occurs when keybind related to `quit` is called.
+        """
+        self.tui.pop_screen()
+        self.tui.query(BlockListTable)[0].can_focus = True
+        self.tui.query(BlockListTable)[0].focus()

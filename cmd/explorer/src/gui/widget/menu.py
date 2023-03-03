@@ -22,8 +22,8 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.widgets import Button
 
-from gui.consts import ID
-from gui.widget.base import TuiWidget
+from src.gui.consts import ID
+from src.gui.widget.base import TuiWidget
 
 
 class MenuInstruction(BaseModel):

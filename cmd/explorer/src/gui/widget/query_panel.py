@@ -27,14 +27,14 @@ from textual.binding import Binding
 from textual.message import Message
 from textual.widgets import Button, Input, Label
 
-from gui.consts import ID
-from gui.widget.base import TuiWidget
-from gui.widget.block_list_table import BlockListTable
-from gui.widget.block_list_view import BlockListQueryPanel
-from gui.widget.choice import Choices
+from src.gui.consts import ID
+from src.gui.widget.base import TuiWidget
+from src.gui.widget.block_list_table import BlockListTable
+from src.gui.widget.block_list_view import BlockListQueryPanel
+from src.gui.widget.choice import Choices
 
 if TYPE_CHECKING:
-    from gui.explorer import ExplorerApp
+    from src.gui.explorer import ExplorerApp
 
 
 class ToBlockInput(Input):
@@ -235,7 +235,7 @@ class QuerySetting(TuiWidget):
         Occurs when `Button.Pressed` is emitted.
         """
         if event.button.id == ID.QUERY_PANEL_ENTER:
-            await self.action_enter()
+            self.action_enter()
         else:
             event.stop()
             event.prevent_default()

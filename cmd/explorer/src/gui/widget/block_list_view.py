@@ -18,7 +18,6 @@ SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
 
-from app.model.schema import ListBlockDataQuery
 from rich.panel import Panel
 from rich.spinner import Spinner
 from rich.table import Table
@@ -28,10 +27,11 @@ from textual.containers import Horizontal
 from textual.reactive import Reactive, reactive
 from textual.timer import Timer
 
-from .. import styles
-from ..consts import ID
-from .base import TuiStatic, TuiWidget
-from .block_list_table import BlockListTable
+from src.gui import styles
+from src.gui.consts import ID
+from src.gui.widget.base import TuiStatic, TuiWidget
+from src.gui.widget.block_list_table import BlockListTable
+from app.model.schema import ListBlockDataQuery
 
 
 class BlockListQueryPanel(TuiStatic):
