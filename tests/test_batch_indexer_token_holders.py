@@ -1205,6 +1205,15 @@ class TestProcessor:
         block_number = web3.eth.block_number
         _token_holders_list = token_holders_list(token_contract.address, block_number, list_id)
         db.add(_token_holders_list)
+        db.flush()
+
+        former_holder = TokenHolder()
+        former_holder.holder_list_id = _token_holders_list.id
+        former_holder.hold_balance = 0
+        former_holder.locked_balance = 0
+        former_holder.account_address = "former holder"
+        db.add(former_holder)
+
         db.commit()
 
         # Issuer transfers issued token to user1 again to proceed block_number on chain.
