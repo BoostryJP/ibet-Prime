@@ -28,7 +28,10 @@ from pydantic import (
 from pydantic.dataclasses import dataclass
 from web3 import Web3
 
-from .types import ResultSet
+from .types import (
+    ResultSet,
+    SortOrder
+)
 
 
 ############################
@@ -43,6 +46,7 @@ class BlockData(BaseModel):
     gas_limit: int
     gas_used: int
     size: NonNegativeInt
+
 
 class BlockDataDetail(BaseModel):
     number: NonNegativeInt = Field(description="Block number")
@@ -64,6 +68,7 @@ class BlockDataDetail(BaseModel):
     size: NonNegativeInt
     transactions: list[str] = Field(description="Transaction list")
 
+
 class TxData(BaseModel):
     hash: str = Field(description="Transaction hash")
     block_hash: str
@@ -71,6 +76,7 @@ class TxData(BaseModel):
     transaction_index: NonNegativeInt
     from_address: str
     to_address: Optional[str]
+
 
 class TxDataDetail(BaseModel):
     hash: str = Field(description="Transaction hash")
@@ -87,6 +93,7 @@ class TxDataDetail(BaseModel):
     value: NonNegativeInt
     nonce: NonNegativeInt
 
+
 ############################
 # REQUEST
 ############################
@@ -97,6 +104,8 @@ class ListBlockDataQuery:
     limit: Optional[NonNegativeInt] = Query(default=None, description="number of set")
     from_block_number: Optional[NonNegativeInt] = Query(default=None)
     to_block_number: Optional[NonNegativeInt] = Query(default=None)
+    sort_order: Optional[SortOrder] = Query(default=SortOrder.ASC, description="sort order(0: ASC, 1: DESC)")
+
 
 @dataclass
 class ListTxDataQuery:
@@ -120,6 +129,7 @@ class ListTxDataQuery:
                 raise ValueError("to_address is not a valid address")
         return v
 
+
 ############################
 # RESPONSE
 ############################
@@ -127,12 +137,15 @@ class ListTxDataQuery:
 class BlockDataResponse(BaseModel):
     __root__: BlockDataDetail
 
+
 class BlockDataListResponse(BaseModel):
     result_set: ResultSet
     block_data: list[BlockData]
 
+
 class TxDataResponse(BaseModel):
     __root__: TxDataDetail
+
 
 class TxDataListResponse(BaseModel):
     result_set: ResultSet

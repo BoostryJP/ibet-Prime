@@ -41,8 +41,10 @@ from .bc_explorer import (
     # Response
     BlockDataResponse,
     BlockDataListResponse,
+    BlockDataDetail,
     TxDataResponse,
-    TxDataListResponse
+    TxDataListResponse,
+    TxDataDetail
 )
 from .bulk_transfer import (
     # Response

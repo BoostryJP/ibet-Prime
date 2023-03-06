@@ -16,18 +16,20 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from pathlib import Path
 from typing import Tuple, Dict, Any, Type
 
 from eth_utils import to_checksum_address
 from fastapi import (
     APIRouter,
-    Depends, HTTPException
+    Depends,
+    HTTPException,
+    Path
 )
 from pydantic import NonNegativeInt
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 from web3.contract import ContractFunction
+import config
 
 from app import log
 from app.database import db_session
@@ -36,7 +38,9 @@ from app.exceptions import (
 )
 from app.model.db import (
     IDXBlockData,
-    IDXTxData, Token
+    IDXTxData,
+    Token,
+    IDXBlockDataBlockNumber
 )
 from app.model.schema import (
     ListBlockDataQuery,
@@ -90,9 +94,27 @@ def list_block_data(
     limit = request_query.limit
     from_block_number = request_query.from_block_number
     to_block_number = request_query.to_block_number
+    sort_order = request_query.sort_order  # default: asc
+
+    # NOTE: The more data, the slower the SELECT COUNT(1) query becomes.
+    #       To get total number of block data, latest block number where block data synced is used here.
+    idx_block_data_block_number = (
+        session.query(IDXBlockDataBlockNumber).filter(IDXBlockDataBlockNumber.chain_id == str(config.CHAIN_ID)).first()
+    )
+    if idx_block_data_block_number is None:
+        return json_response({
+            "result_set": {
+                "count": 0,
+                "offset": offset,
+                "limit": limit,
+                "total": 0
+            },
+            "block_data": []
+        })
+
+    total = idx_block_data_block_number.latest_block_number + 1
 
     query = session.query(IDXBlockData)
-    total = query.count()
 
     # Search Filter
     if from_block_number is not None and to_block_number is not None:
@@ -105,7 +127,10 @@ def list_block_data(
     count = query.count()
 
     # Sort
-    query = query.order_by(IDXBlockData.number)
+    if sort_order == 0:
+        query = query.order_by(IDXBlockData.number)
+    else:
+        query = query.order_by(desc(IDXBlockData.number))
 
     # Pagination
     if limit is not None:

@@ -21,7 +21,11 @@ from unittest import mock
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.model.db import IDXBlockData
+from app.model.db import (
+    IDXBlockData,
+    IDXBlockDataBlockNumber
+)
+from config import CHAIN_ID
 
 
 class TestListBlockData:
@@ -126,15 +130,44 @@ class TestListBlockData:
         db.add(block_model)
         db.commit()
 
+    @staticmethod
+    def insert_block_data_block_number(session: Session, latest_block_number: int):
+        idx_block_data_block_number = IDXBlockDataBlockNumber()
+        idx_block_data_block_number.chain_id = CHAIN_ID
+        idx_block_data_block_number.latest_block_number = latest_block_number
+        session.add(idx_block_data_block_number)
+        session.commit()
+
     ###########################################################################
     # Normal
     ###########################################################################
 
-    # Normal_1
-    def test_normal_1(self, client: TestClient, db: Session):
+    # Normal_1_1
+    # IDXBlockDataBlockNumber is None
+    def test_normal_1_1(self, client: TestClient, db: Session):
+        # Request target API
+        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+            resp = client.get(self.apiurl)
+
+        # Assertion
+        assert resp.status_code == 200
+
+        response_data = resp.json()
+        assert response_data["result_set"] == {
+            "count": 0,
+            "offset": None,
+            "limit": None,
+            "total": 0
+        }
+        assert response_data["block_data"] == []
+
+    # Normal_1_2
+    def test_normal_1_2(self, client: TestClient, db: Session):
         self.insert_block_data(db, self.block_0)
         self.insert_block_data(db, self.block_1)
         self.insert_block_data(db, self.block_2)
+
+        self.insert_block_data_block_number(db, latest_block_number=2)
 
         # Request target API
         with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
@@ -163,6 +196,8 @@ class TestListBlockData:
         self.insert_block_data(db, self.block_1)
         self.insert_block_data(db, self.block_2)
 
+        self.insert_block_data_block_number(db, latest_block_number=2)
+
         # Request target API
         with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"from_block_number": 1}
@@ -189,6 +224,8 @@ class TestListBlockData:
         self.insert_block_data(db, self.block_0)
         self.insert_block_data(db, self.block_1)
         self.insert_block_data(db, self.block_2)
+
+        self.insert_block_data_block_number(db, latest_block_number=2)
 
         # Request target API
         with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
@@ -217,6 +254,8 @@ class TestListBlockData:
         self.insert_block_data(db, self.block_1)
         self.insert_block_data(db, self.block_2)
 
+        self.insert_block_data_block_number(db, latest_block_number=2)
+
         # Request target API
         with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"offset": 1}
@@ -244,6 +283,8 @@ class TestListBlockData:
         self.insert_block_data(db, self.block_1)
         self.insert_block_data(db, self.block_2)
 
+        self.insert_block_data_block_number(db, latest_block_number=2)
+
         # Request target API
         with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {"limit": 1}
@@ -260,6 +301,36 @@ class TestListBlockData:
             "total": 3
         }
         assert response_data["block_data"] == [
+            self.filter_response_item(self.block_0)
+        ]
+
+    # Normal_4
+    # sort_order
+    def test_normal_4(self, client: TestClient, db: Session):
+        self.insert_block_data(db, self.block_0)
+        self.insert_block_data(db, self.block_1)
+        self.insert_block_data(db, self.block_2)
+
+        self.insert_block_data_block_number(db, latest_block_number=2)
+
+        # Request target API
+        with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True):
+            params = {"sort_order": 1}
+            resp = client.get(self.apiurl, params=params)
+
+        # Assertion
+        assert resp.status_code == 200
+
+        response_data = resp.json()
+        assert response_data["result_set"] == {
+            "count": 3,
+            "offset": None,
+            "limit": None,
+            "total": 3
+        }
+        assert response_data["block_data"] == [
+            self.filter_response_item(self.block_2),
+            self.filter_response_item(self.block_1),
             self.filter_response_item(self.block_0)
         ]
 
@@ -338,6 +409,8 @@ class TestListBlockData:
         self.insert_block_data(db, self.block_0)
         self.insert_block_data(db, self.block_1)
         self.insert_block_data(db, self.block_2)
+
+        self.insert_block_data_block_number(db, latest_block_number=2)
 
         # Request target API
         with mock.patch("app.routers.bc_explorer.BC_EXPLORER_ENABLED", True),\

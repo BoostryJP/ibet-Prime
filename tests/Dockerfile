@@ -61,19 +61,12 @@ RUN . ~/.bash_profile \
  && poetry config virtualenvs.create false
 
 # install python packages
-USER apl
-COPY pyproject.toml /app/pyproject.toml
-COPY poetry.lock /app/poetry.lock
-RUN . ~/.bash_profile \
- && poetry install --directory /app --no-root \
- && rm -f /app/pyproject.toml \
- && rm -f /app/poetry.lock
-
-# app deploy
 USER root
 COPY --chown=apl:apl LICENSE /app/ibet-Prime/
 RUN mkdir -p /app/ibet-Prime/bin/
 COPY --chown=apl:apl bin/ /app/ibet-Prime/bin/
+RUN mkdir -p /app/ibet-Prime/cmd/
+COPY --chown=apl:apl cmd/ /app/ibet-Prime/cmd/
 RUN mkdir -p /app/ibet-Prime/contracts/
 COPY --chown=apl:apl contracts/ /app/ibet-Prime/contracts/
 RUN mkdir -p /app/ibet-Prime/conf/
@@ -87,6 +80,15 @@ RUN mkdir -p /app/ibet-Prime/app/
 COPY --chown=apl:apl app/ /app/ibet-Prime/app/
 RUN find /app/ibet-Prime/ -type d -name __pycache__ | xargs rm -fr \
  && chmod -R 755 /app/ibet-Prime/
+
+USER apl
+COPY pyproject.toml /app/ibet-Prime/pyproject.toml
+COPY poetry.lock /app/ibet-Prime/poetry.lock
+RUN . ~/.bash_profile \
+ && cd /app/ibet-Prime \
+ && poetry install --no-root \
+ && rm -f /app/ibet-Prime/pyproject.toml \
+ && rm -f /app/ibet-Prime/poetry.lock
 
 # test build layer
 USER root
