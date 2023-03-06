@@ -194,6 +194,16 @@ class Processor:
             local_session.close()
 
     def __update_status(self, local_session: Session, status: TokenHolderBatchStatus):
+        if status == TokenHolderBatchStatus.DONE:
+            # Not to store non-holders
+            (
+                local_session.query(TokenHolder).
+                filter(TokenHolder.holder_list_id == self.target.id).
+                filter(TokenHolder.hold_balance == 0).
+                filter(TokenHolder.locked_balance == 0).
+                delete()
+            )
+
         self.target.batch_status = status.value
         local_session.merge(self.target)
         LOG.info(f"Token holder list({self.target.list_id}) status changes to be {status.value}.")
