@@ -73,7 +73,7 @@ class BlockScreen(TuiScreen):
             Vertical(
                 Horizontal(
                     Label(
-                        Text.from_markup(" [bold]ibet-Wallet-API BC Explorer[/bold]")
+                        Text.from_markup(" [bold]ibet-Prime BC Explorer[/bold]")
                     ),
                     Label(" | "),
                     Label(
