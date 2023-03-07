@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from .account import (
-    AccountAuthTokenRequest,  # Request; Response
+    AccountAuthTokenRequest,
     AccountAuthTokenResponse,
     AccountChangeEOAPasswordRequest,
     AccountChangeRSAPassphraseRequest,
@@ -26,13 +26,13 @@ from .account import (
     AccountResponse,
 )
 from .batch_issue_redeem import (
-    BatchIssueRedeemUploadIdResponse,  # Response
+    BatchIssueRedeemUploadIdResponse,
     GetBatchIssueRedeemResponse,
     GetBatchIssueRedeemResult,
     ListBatchIssueRedeemUploadResponse,
 )
 from .bc_explorer import (
-    BlockDataDetail,  # Request; Response
+    BlockDataDetail,
     BlockDataListResponse,
     BlockDataResponse,
     ListBlockDataQuery,
@@ -42,11 +42,11 @@ from .bc_explorer import (
     TxDataResponse,
 )
 from .bulk_transfer import (
-    BulkTransferResponse,  # Response
+    BulkTransferResponse,
     BulkTransferUploadIdResponse,
     BulkTransferUploadResponse,
 )
-from .e2e_messaging import (  # Request; Response
+from .e2e_messaging import (
     E2EMessagingAccountChangeEOAPasswordRequest,
     E2EMessagingAccountChangeRSAPassphraseRequest,
     E2EMessagingAccountCreateRequest,
@@ -57,15 +57,15 @@ from .e2e_messaging import (  # Request; Response
 )
 from .file import (
     DownloadFileResponse,
-    FileResponse,  # Request; Response
+    FileResponse,
     ListAllFilesResponse,
     UploadFileRequest,
 )
-from .holder import HolderCountResponse, HolderResponse  # Response
-from .index import BlockNumberResponse, E2EEResponse  # Response
-from .issue_redeem import IssueRedeemEvent, IssueRedeemHistoryResponse  # Response
+from .holder import HolderCountResponse, HolderResponse
+from .index import BlockNumberResponse, E2EEResponse
+from .issue_redeem import IssueRedeemEvent, IssueRedeemHistoryResponse
 from .ledger import (
-    CreateUpdateLedgerDetailsDataRequest,  # Request; Response
+    CreateUpdateLedgerDetailsDataRequest,
     CreateUpdateLedgerTemplateRequest,
     LedgerDetailsDataResponse,
     LedgerTemplateResponse,
@@ -75,7 +75,7 @@ from .ledger import (
     RetrieveLedgerHistoryResponse,
 )
 from .notification import ListAllNotificationsResponse
-from .personal_info import (  # Request; Response
+from .personal_info import (
     BatchRegisterPersonalInfoResult,
     BatchRegisterPersonalInfoUploadResponse,
     GetBatchRegisterPersonalInfoResponse,
@@ -83,7 +83,7 @@ from .personal_info import (  # Request; Response
     RegisterPersonalInfoRequest,
 )
 from .position import (
-    ForceUnlockRequest,  # Request; Response
+    ForceUnlockRequest,
     ListAllLockedPositionResponse,
     ListAllLockEventsQuery,
     ListAllLockEventsResponse,
@@ -93,13 +93,13 @@ from .position import (
     PositionResponse,
 )
 from .scheduled_events import (
-    IbetShareScheduledUpdate,  # Request; Response
+    IbetShareScheduledUpdate,
     IbetStraightBondScheduledUpdate,
     ScheduledEventIdResponse,
     ScheduledEventResponse,
 )
 from .token import (
-    IbetShareAdditionalIssue,  # Request; Response
+    IbetShareAdditionalIssue,
     IbetShareCreate,
     IbetShareRedeem,
     IbetShareResponse,
@@ -117,13 +117,13 @@ from .token import (
     TokenAddressResponse,
 )
 from .token_holders import (
-    CreateTokenHoldersListRequest,  # Request; Response
+    CreateTokenHoldersListRequest,
     CreateTokenHoldersListResponse,
     ListAllTokenHolderCollectionsResponse,
     RetrieveTokenHoldersListResponse,
 )
 from .transfer import (
-    ListTransferHistoryQuery,  # Request; Response
+    ListTransferHistoryQuery,
     ListTransferHistorySortItem,
     TransferApprovalHistoryResponse,
     TransferApprovalsResponse,

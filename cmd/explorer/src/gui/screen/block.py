@@ -72,9 +72,7 @@ class BlockScreen(TuiScreen):
         yield Horizontal(
             Vertical(
                 Horizontal(
-                    Label(
-                        Text.from_markup(" [bold]ibet-Prime BC Explorer[/bold]")
-                    ),
+                    Label(Text.from_markup(" [bold]ibet-Prime BC Explorer[/bold]")),
                     Label(" | "),
                     Label(
                         "Fetching current block...", id=ID.BLOCK_CURRENT_BLOCK_NUMBER

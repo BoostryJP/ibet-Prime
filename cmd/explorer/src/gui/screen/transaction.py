@@ -40,9 +40,7 @@ class TransactionScreen(TuiScreen):
         yield Horizontal(
             Vertical(
                 Horizontal(
-                    Label(
-                        Text.from_markup(" [bold]ibet-Prime BC Explorer[/bold]")
-                    ),
+                    Label(Text.from_markup(" [bold]ibet-Prime BC Explorer[/bold]")),
                     Label(" | "),
                     Label(f"Selected block: -", id=ID.TX_SELECTED_BLOCK_NUMBER),
                     id="tx_list_header",
