@@ -55,8 +55,7 @@ RUN . ~/.bash_profile \
 
 # install poetry
 RUN . ~/.bash_profile \
- && curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.4.0 python - \
- && echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~apl/.bash_profile
+ && python -m pip install poetry==1.4.0
 RUN . ~/.bash_profile \
  && poetry config virtualenvs.create false
 
