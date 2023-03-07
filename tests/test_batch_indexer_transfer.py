@@ -17,43 +17,37 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import json
-from datetime import datetime
-from eth_keyfile import decode_keyfile_json
 import logging
-import pytest
-from sqlalchemy.exc import InvalidRequestError
-from sqlalchemy.orm import Session
+from datetime import datetime
 from unittest import mock
 from unittest.mock import patch
 
+import pytest
+from eth_keyfile import decode_keyfile_json
+from sqlalchemy.exc import InvalidRequestError
+from sqlalchemy.orm import Session
+
 from app.exceptions import ServiceUnavailableError
+from app.model.blockchain import IbetShareContract, IbetStraightBondContract
+from app.model.blockchain.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams,
+)
 from app.model.db import (
-    Token,
-    TokenType,
     IDXTransfer,
     IDXTransferBlockNumber,
-    IDXTransferSourceEventType
+    IDXTransferSourceEventType,
+    Token,
+    TokenType,
 )
-from app.model.blockchain import (
-    IbetStraightBondContract,
-    IbetShareContract
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import UpdateParams as IbetStraightBondUpdateParams
-from app.model.blockchain.tx_params.ibet_share import UpdateParams as IbetShareUpdateParams
-from app.utils.web3_utils import Web3Wrapper
 from app.utils.contract_utils import ContractUtils
-from batch.indexer_transfer import (
-    Processor,
-    LOG,
-    main
-)
-from config import (
-    CHAIN_ID,
-    TX_GAS_LIMIT
-)
+from app.utils.web3_utils import Web3Wrapper
+from batch.indexer_transfer import LOG, Processor, main
+from config import CHAIN_ID, TX_GAS_LIMIT
 from tests.account_config import config_eth_account
 from tests.utils.contract_utils import PersonalInfoContractTestUtils
-
 
 web3 = Web3Wrapper()
 
@@ -80,11 +74,13 @@ def processor(db, caplog: pytest.LogCaptureFixture):
     LOG.setLevel(default_log_level)
 
 
-def deploy_bond_token_contract(address,
-                               private_key,
-                               personal_info_contract_address,
-                               tradable_exchange_contract_address=None,
-                               transfer_approval_required=None):
+def deploy_bond_token_contract(
+    address,
+    private_key,
+    personal_info_contract_address,
+    tradable_exchange_contract_address=None,
+    transfer_approval_required=None,
+):
     arguments = [
         "token.name",
         "token.symbol",
@@ -94,7 +90,7 @@ def deploy_bond_token_contract(address,
         30,
         "token.return_date",
         "token.return_amount",
-        "token.purpose"
+        "token.purpose",
     ]
     bond_contrat = IbetStraightBondContract()
     token_address, _, _ = bond_contrat.create(arguments, address, private_key)
@@ -103,20 +99,22 @@ def deploy_bond_token_contract(address,
             transferable=True,
             personal_info_contract_address=personal_info_contract_address,
             tradable_exchange_contract_address=tradable_exchange_contract_address,
-            transfer_approval_required=transfer_approval_required
+            transfer_approval_required=transfer_approval_required,
         ),
         tx_from=address,
-        private_key=private_key
+        private_key=private_key,
     )
 
     return ContractUtils.get_contract("IbetStraightBond", token_address)
 
 
-def deploy_share_token_contract(address,
-                                private_key,
-                                personal_info_contract_address,
-                                tradable_exchange_contract_address=None,
-                                transfer_approval_required=None):
+def deploy_share_token_contract(
+    address,
+    private_key,
+    personal_info_contract_address,
+    tradable_exchange_contract_address=None,
+    transfer_approval_required=None,
+):
     arguments = [
         "token.name",
         "token.symbol",
@@ -126,7 +124,7 @@ def deploy_share_token_contract(address,
         "token.dividend_record_date",
         "token.dividend_payment_date",
         "token.cancellation_date",
-        30
+        30,
     ]
     share_contract = IbetShareContract()
     token_address, _, _ = share_contract.create(arguments, address, private_key)
@@ -138,14 +136,13 @@ def deploy_share_token_contract(address,
             transfer_approval_required=transfer_approval_required,
         ),
         tx_from=address,
-        private_key=private_key
+        private_key=private_key,
     )
 
     return ContractUtils.get_contract("IbetShare", token_address)
 
 
 class TestProcessor:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -189,14 +186,13 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address)
+        token_contract_1 = deploy_bond_token_contract(
+            issuer_address, issuer_private_key, personal_info_contract.address
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -243,8 +239,7 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
         user_2 = config_eth_account("user2")
@@ -253,13 +248,13 @@ class TestProcessor:
         lock_account = config_eth_account("user3")
         lock_account_pk = decode_keyfile_json(
             raw_keyfile_json=lock_account["keyfile_json"],
-            password=lock_account["password"].encode("utf-8")
+            password=lock_account["password"].encode("utf-8"),
         )
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address)
+        token_contract_1 = deploy_bond_token_contract(
+            issuer_address, issuer_private_key, personal_info_contract.address
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -283,42 +278,45 @@ class TestProcessor:
 
         # Transfer
         tx_1 = token_contract_1.functions.transferFrom(
-            issuer_address,
-            user_address_1,
-            40
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
-        tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx_1, issuer_private_key)
+            issuer_address, user_address_1, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(
+            tx_1, issuer_private_key
+        )
 
         # Unlock (lock -> unlock)
         tx_2_1 = token_contract_1.functions.lock(
-            lock_account["address"],
-            10,
-            ""
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            lock_account["address"], 10, ""
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         _, _ = ContractUtils.send_transaction(tx_2_1, issuer_private_key)
 
         tx_2_2 = token_contract_1.functions.unlock(
-            issuer_address,
-            user_address_1,
-            10,
-            json.dumps({"message": "unlock"})
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": lock_account["address"],
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
-        tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(tx_2_2, lock_account_pk)
+            issuer_address, user_address_1, 10, json.dumps({"message": "unlock"})
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": lock_account["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(
+            tx_2_2, lock_account_pk
+        )
 
         # Run target process
         block_number = web3.eth.block_number
@@ -338,7 +336,9 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert _transfer.block_timestamp == datetime.utcfromtimestamp(
+            block["timestamp"]
+        )
 
         _transfer = _transfer_list[1]
         assert _transfer.id == 2
@@ -350,7 +350,9 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.UNLOCK.value
         assert _transfer.data == {"message": "unlock"}
         block = web3.eth.get_block(tx_receipt_2["blockNumber"])
-        assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert _transfer.block_timestamp == datetime.utcfromtimestamp(
+            block["timestamp"]
+        )
 
         _idx_transfer_block_number = db.query(IDXTransferBlockNumber).first()
         assert _idx_transfer_block_number.id == 1
@@ -364,20 +366,19 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
         lock_account = config_eth_account("user3")
         lock_account_pk = decode_keyfile_json(
             raw_keyfile_json=lock_account["keyfile_json"],
-            password=lock_account["password"].encode("utf-8")
+            password=lock_account["password"].encode("utf-8"),
         )
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address)
+        token_contract_1 = deploy_bond_token_contract(
+            issuer_address, issuer_private_key, personal_info_contract.address
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -401,28 +402,27 @@ class TestProcessor:
 
         # Unlock (lock -> unlock)
         tx_1_1 = token_contract_1.functions.lock(
-            lock_account["address"],
-            10,
-            ""
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            lock_account["address"], 10, ""
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         _, _ = ContractUtils.send_transaction(tx_1_1, issuer_private_key)
 
         tx_1_2 = token_contract_1.functions.unlock(
-            issuer_address,
-            issuer_address,
-            10,
-            json.dumps({"message": "unlock"})
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": lock_account["address"],
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            issuer_address, issuer_address, 10, json.dumps({"message": "unlock"})
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": lock_account["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         _, _ = ContractUtils.send_transaction(tx_1_2, lock_account_pk)
 
         # Run target process
@@ -446,8 +446,7 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
         user_2 = config_eth_account("user2")
@@ -459,13 +458,13 @@ class TestProcessor:
         lock_account = config_eth_account("user4")
         lock_account_pk = decode_keyfile_json(
             raw_keyfile_json=lock_account["keyfile_json"],
-            password=lock_account["password"].encode("utf-8")
+            password=lock_account["password"].encode("utf-8"),
         )
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address)
+        token_contract_1 = deploy_bond_token_contract(
+            issuer_address, issuer_private_key, personal_info_contract.address
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -489,79 +488,85 @@ class TestProcessor:
 
         # Transfer
         tx_1 = token_contract_1.functions.transferFrom(
-            issuer_address,
-            user_address_1,
-            40
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
-        tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx_1, issuer_private_key)
+            issuer_address, user_address_1, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(
+            tx_1, issuer_private_key
+        )
 
         tx_2 = token_contract_1.functions.transferFrom(
-            issuer_address,
-            user_address_2,
-            30
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
-        tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(tx_2, issuer_private_key)
+            issuer_address, user_address_2, 30
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(
+            tx_2, issuer_private_key
+        )
 
         # Unlock (lock -> unlock)
         tx_3_1 = token_contract_1.functions.lock(
-            lock_account["address"],
-            10,
-            ""
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            lock_account["address"], 10, ""
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         _, _ = ContractUtils.send_transaction(tx_3_1, issuer_private_key)
 
         tx_3_2 = token_contract_1.functions.unlock(
-            issuer_address,
-            user_address_1,
-            10,
-            json.dumps({"message": "unlock"})
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": lock_account["address"],
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
-        tx_hash_3, tx_receipt_3 = ContractUtils.send_transaction(tx_3_2, lock_account_pk)
+            issuer_address, user_address_1, 10, json.dumps({"message": "unlock"})
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": lock_account["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        tx_hash_3, tx_receipt_3 = ContractUtils.send_transaction(
+            tx_3_2, lock_account_pk
+        )
 
         tx_4_1 = token_contract_1.functions.lock(
-            lock_account["address"],
-            10,
-            ""
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            lock_account["address"], 10, ""
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         _, _ = ContractUtils.send_transaction(tx_4_1, issuer_private_key)
 
         tx_4_2 = token_contract_1.functions.unlock(
-            issuer_address,
-            user_address_1,
-            10,
-            json.dumps({"message": "unlock"})
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": lock_account["address"],
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
-        tx_hash_4, tx_receipt_4 = ContractUtils.send_transaction(tx_4_2, lock_account_pk)
+            issuer_address, user_address_1, 10, json.dumps({"message": "unlock"})
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": lock_account["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        tx_hash_4, tx_receipt_4 = ContractUtils.send_transaction(
+            tx_4_2, lock_account_pk
+        )
 
         # Run target process
         block_number = web3.eth.block_number
@@ -581,7 +586,9 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert _transfer.block_timestamp == datetime.utcfromtimestamp(
+            block["timestamp"]
+        )
 
         _transfer = _transfer_list[1]
         assert _transfer.id == 2
@@ -593,7 +600,9 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_2["blockNumber"])
-        assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert _transfer.block_timestamp == datetime.utcfromtimestamp(
+            block["timestamp"]
+        )
 
         _transfer = _transfer_list[2]
         assert _transfer.id == 3
@@ -605,7 +614,9 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.UNLOCK.value
         assert _transfer.data == {"message": "unlock"}
         block = web3.eth.get_block(tx_receipt_3["blockNumber"])
-        assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert _transfer.block_timestamp == datetime.utcfromtimestamp(
+            block["timestamp"]
+        )
 
         _transfer = _transfer_list[3]
         assert _transfer.id == 4
@@ -617,7 +628,9 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.UNLOCK.value
         assert _transfer.data == {"message": "unlock"}
         block = web3.eth.get_block(tx_receipt_4["blockNumber"])
-        assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert _transfer.block_timestamp == datetime.utcfromtimestamp(
+            block["timestamp"]
+        )
 
         _idx_transfer_block_number = db.query(IDXTransferBlockNumber).first()
         assert _idx_transfer_block_number.id == 1
@@ -631,26 +644,33 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_pk_1 = decode_keyfile_json(raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8"))
+        user_pk_1 = decode_keyfile_json(
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
+        )
         user_3 = config_eth_account("user3")
         user_address_2 = user_3["address"]
-        user_pk_2 = decode_keyfile_json(raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8"))
+        user_pk_2 = decode_keyfile_json(
+            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
+        )
         user_4 = config_eth_account("user3")
         user_address_3 = user_4["address"]
-        user_pk_3 = decode_keyfile_json(raw_keyfile_json=user_4["keyfile_json"], password="password".encode("utf-8"))
+        user_pk_3 = decode_keyfile_json(
+            raw_keyfile_json=user_4["keyfile_json"], password="password".encode("utf-8")
+        )
         user_5 = config_eth_account("user3")
         user_address_4 = user_5["address"]
-        user_pk_4 = decode_keyfile_json(raw_keyfile_json=user_5["keyfile_json"], password="password".encode("utf-8"))
+        user_pk_4 = decode_keyfile_json(
+            raw_keyfile_json=user_5["keyfile_json"], password="password".encode("utf-8")
+        )
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address)
+        token_contract_1 = deploy_bond_token_contract(
+            issuer_address, issuer_private_key, personal_info_contract.address
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -665,32 +685,65 @@ class TestProcessor:
         # Before run(consume accumulated events)
         processor.sync_new_logs()
 
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, issuer_address, issuer_private_key, [issuer_address, ""])
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_1, user_pk_1, [issuer_address, ""])
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_2, user_pk_2, [issuer_address, ""])
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_3, user_pk_3, [issuer_address, ""])
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_4, user_pk_4, [issuer_address, ""])
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [issuer_address, ""],
+        )
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            user_address_1,
+            user_pk_1,
+            [issuer_address, ""],
+        )
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            user_address_2,
+            user_pk_2,
+            [issuer_address, ""],
+        )
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            user_address_3,
+            user_pk_3,
+            [issuer_address, ""],
+        )
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            user_address_4,
+            user_pk_4,
+            [issuer_address, ""],
+        )
 
         # Bulk Transfer
         address_list1 = [user_address_1, user_address_2, user_address_3]
         value_list1 = [10, 20, 30]
-        tx = token_contract_1.functions.bulkTransfer(address_list1, value_list1).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+        tx = token_contract_1.functions.bulkTransfer(
+            address_list1, value_list1
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
 
         # BulkTransfer: 2nd
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
         address_list2 = [user_address_1, user_address_2, user_address_3, user_address_4]
         value_list2 = [1, 2, 3, 4]
-        tx = token_contract_1.functions.bulkTransfer(address_list2, value_list2).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+        tx = token_contract_1.functions.bulkTransfer(
+            address_list2, value_list2
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
@@ -704,7 +757,7 @@ class TestProcessor:
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
         for i in range(0, 3):
             _transfer = _transfer_list[i]
-            assert _transfer.id == i+1
+            assert _transfer.id == i + 1
             assert _transfer.transaction_hash == tx_hash_1
             assert _transfer.token_address == token_address_1
             assert _transfer.from_address == issuer_address
@@ -712,12 +765,14 @@ class TestProcessor:
             assert _transfer.amount == value_list1[i]
             assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
             assert _transfer.data is None
-            assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
+            assert _transfer.block_timestamp == datetime.utcfromtimestamp(
+                block["timestamp"]
+            )
 
         block = web3.eth.get_block(tx_receipt_2["blockNumber"])
         for i in range(0, 4):
-            _transfer = _transfer_list[i+3]
-            assert _transfer.id == i+1+3
+            _transfer = _transfer_list[i + 3]
+            assert _transfer.id == i + 1 + 3
             assert _transfer.transaction_hash == tx_hash_2
             assert _transfer.token_address == token_address_1
             assert _transfer.from_address == issuer_address
@@ -725,7 +780,9 @@ class TestProcessor:
             assert _transfer.amount == value_list2[i]
             assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
             assert _transfer.data is None
-            assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
+            assert _transfer.block_timestamp == datetime.utcfromtimestamp(
+                block["timestamp"]
+            )
 
         _idx_transfer_block_number = db.query(IDXTransferBlockNumber).first()
         assert _idx_transfer_block_number.id == 1
@@ -737,8 +794,7 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
@@ -746,9 +802,9 @@ class TestProcessor:
         user_address_2 = user_3["address"]
 
         # Prepare data : Token1
-        token_contract_1 = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address)
+        token_contract_1 = deploy_bond_token_contract(
+            issuer_address, issuer_private_key, personal_info_contract.address
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -759,9 +815,9 @@ class TestProcessor:
         db.add(token_1)
 
         # Prepare data : Token2
-        token_contract_2 = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address)
+        token_contract_2 = deploy_bond_token_contract(
+            issuer_address, issuer_private_key, personal_info_contract.address
+        )
 
         token_address_2 = token_contract_2.address
         token_2 = Token()
@@ -775,35 +831,51 @@ class TestProcessor:
         db.commit()
 
         # Transfer(Token1)
-        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_1, 40).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+        tx = token_contract_1.functions.transferFrom(
+            issuer_address, user_address_1, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
-        tx = token_contract_1.functions.transferFrom(issuer_address, user_address_2, 30).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+        tx = token_contract_1.functions.transferFrom(
+            issuer_address, user_address_2, 30
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Transfer(Token2)
-        tx = token_contract_2.functions.transferFrom(issuer_address, user_address_1, 40).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+        tx = token_contract_2.functions.transferFrom(
+            issuer_address, user_address_1, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         tx_hash_3, tx_receipt_3 = ContractUtils.send_transaction(tx, issuer_private_key)
-        tx = token_contract_2.functions.transferFrom(issuer_address, user_address_2, 30).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+        tx = token_contract_2.functions.transferFrom(
+            issuer_address, user_address_2, 30
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         tx_hash_4, tx_receipt_4 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
@@ -823,7 +895,9 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert _transfer.block_timestamp == datetime.utcfromtimestamp(
+            block["timestamp"]
+        )
         _transfer = _transfer_list[1]
         assert _transfer.id == 2
         assert _transfer.transaction_hash == tx_hash_2
@@ -834,7 +908,9 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_2["blockNumber"])
-        assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert _transfer.block_timestamp == datetime.utcfromtimestamp(
+            block["timestamp"]
+        )
 
         _transfer = _transfer_list[2]
         assert _transfer.id == 3
@@ -846,7 +922,9 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_3["blockNumber"])
-        assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert _transfer.block_timestamp == datetime.utcfromtimestamp(
+            block["timestamp"]
+        )
 
         _transfer = _transfer_list[3]
         assert _transfer.id == 4
@@ -858,7 +936,9 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
         block = web3.eth.get_block(tx_receipt_4["blockNumber"])
-        assert _transfer.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert _transfer.block_timestamp == datetime.utcfromtimestamp(
+            block["timestamp"]
+        )
 
         _idx_transfer_block_number = db.query(IDXTransferBlockNumber).first()
         assert _idx_transfer_block_number.id == 1
@@ -868,7 +948,9 @@ class TestProcessor:
     # If block number processed in batch is equal or greater than current block number,
     # batch logs "skip process".
     @mock.patch("web3.eth.Eth.block_number", 100)
-    def test_normal_5(self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture):
+    def test_normal_5(
+        self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture
+    ):
         _idx_position_bond_block_number = IDXTransferBlockNumber()
         _idx_position_bond_block_number.id = 1
         _idx_position_bond_block_number.latest_block_number = 1000
@@ -876,15 +958,25 @@ class TestProcessor:
         db.commit()
 
         processor.sync_new_logs()
-        assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "skip process"))
+        assert 1 == caplog.record_tuples.count(
+            (LOG.name, logging.DEBUG, "skip process")
+        )
 
     # <Normal_6>
     # Newly tokens added
-    def test_normal_6(self, processor: Processor, db: Session, personal_info_contract, ibet_security_token_escrow_contract):
+    def test_normal_6(
+        self,
+        processor: Processor,
+        db: Session,
+        personal_info_contract,
+        ibet_security_token_escrow_contract,
+    ):
         escrow_contract = ibet_security_token_escrow_contract
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8"))
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
 
         # Issuer issues bond token.
         token_contract1 = deploy_bond_token_contract(
@@ -943,17 +1035,22 @@ class TestProcessor:
 
     # <Error_1>
     # If each error occurs, batch will output logs and continue next sync.
-    def test_error_1(self, main_func, db:Session, personal_info_contract, caplog: pytest.LogCaptureFixture):
+    def test_error_1(
+        self,
+        main_func,
+        db: Session,
+        personal_info_contract,
+        caplog: pytest.LogCaptureFixture,
+    ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address)
+        token_contract_1 = deploy_bond_token_contract(
+            issuer_address, issuer_private_key, personal_info_contract.address
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -966,17 +1063,19 @@ class TestProcessor:
         db.commit()
 
         # Run mainloop once and fail with web3 utils error
-        with patch("batch.indexer_transfer.INDEXER_SYNC_INTERVAL", None),\
-            patch.object(web3.eth, "contract", side_effect=ServiceUnavailableError()), \
-                pytest.raises(TypeError):
+        with patch("batch.indexer_transfer.INDEXER_SYNC_INTERVAL", None), patch.object(
+            web3.eth, "contract", side_effect=ServiceUnavailableError()
+        ), pytest.raises(TypeError):
             main_func()
-        assert 1 == caplog.record_tuples.count((LOG.name, logging.WARNING, "An external service was unavailable"))
+        assert 1 == caplog.record_tuples.count(
+            (LOG.name, logging.WARNING, "An external service was unavailable")
+        )
         caplog.clear()
 
         # Run mainloop once and fail with sqlalchemy InvalidRequestError
-        with patch("batch.indexer_transfer.INDEXER_SYNC_INTERVAL", None),\
-            patch.object(Session, "query", side_effect=InvalidRequestError()), \
-                pytest.raises(TypeError):
+        with patch("batch.indexer_transfer.INDEXER_SYNC_INTERVAL", None), patch.object(
+            Session, "query", side_effect=InvalidRequestError()
+        ), pytest.raises(TypeError):
             main_func()
         assert 1 == caplog.text.count("A database error has occurred")
         caplog.clear()

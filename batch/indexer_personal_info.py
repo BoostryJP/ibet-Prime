@@ -21,30 +21,28 @@ import os
 import sys
 import time
 from datetime import datetime
+
+from eth_utils import to_checksum_address
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-from eth_utils import to_checksum_address
 
-path = os.path.join(os.path.dirname(__file__), '../')
+path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
-from config import (
-    DATABASE_URL,
-    ZERO_ADDRESS,
-    INDEXER_SYNC_INTERVAL,
-    INDEXER_BLOCK_LOT_MAX_SIZE
-)
-from app.model.db import (
-    Token,
-    IDXPersonalInfo,
-    IDXPersonalInfoBlockNumber
-)
+import batch_log
+
+from app.exceptions import ServiceUnavailableError
 from app.model.blockchain import PersonalInfoContract
+from app.model.db import IDXPersonalInfo, IDXPersonalInfoBlockNumber, Token
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
-from app.exceptions import ServiceUnavailableError
-import batch_log
+from config import (
+    DATABASE_URL,
+    INDEXER_BLOCK_LOT_MAX_SIZE,
+    INDEXER_SYNC_INTERVAL,
+    ZERO_ADDRESS,
+)
 
 process_name = "INDEXER-Personal-Info"
 LOG = batch_log.get_logger(process_name=process_name)
@@ -86,19 +84,16 @@ class Processor:
                 self.__sync_all(
                     db_session=db_session,
                     block_from=_from_block + 1,
-                    block_to=latest_block
+                    block_to=latest_block,
                 )
             else:
                 self.__sync_all(
                     db_session=db_session,
                     block_from=_from_block + 1,
-                    block_to=latest_block
+                    block_to=latest_block,
                 )
 
-            self.__set_block_number(
-                db_session=db_session,
-                block_number=latest_block
-            )
+            self.__set_block_number(db_session=db_session, block_number=latest_block)
             db_session.commit()
         finally:
             db_session.close()
@@ -110,21 +105,20 @@ class Processor:
         tmp_list = []
         for _token in _tokens:
             abi = _token.abi
-            token_contract = web3.eth.contract(
-                address=_token.token_address,
-                abi=abi
-            )
+            token_contract = web3.eth.contract(address=_token.token_address, abi=abi)
             personal_info_address = ContractUtils.call_function(
                 contract=token_contract,
                 function_name="personalInfoAddress",
                 args=(),
-                default_returns=ZERO_ADDRESS
+                default_returns=ZERO_ADDRESS,
             )
             if personal_info_address != ZERO_ADDRESS:
-                tmp_list.append({
-                    "issuer_address": _token.issuer_address,
-                    "personal_info_address": personal_info_address
-                })
+                tmp_list.append(
+                    {
+                        "issuer_address": _token.issuer_address,
+                        "personal_info_address": personal_info_address,
+                    }
+                )
 
         # Remove duplicates from the list
         unique_list = list(map(json.loads, set(map(json.dumps, tmp_list))))
@@ -133,7 +127,7 @@ class Processor:
             personal_info_contract = PersonalInfoContract(
                 db_session,
                 issuer_address=item["issuer_address"],
-                contract_address=item["personal_info_address"]
+                contract_address=item["personal_info_address"],
             )
             self.personal_info_contract_list.append(personal_info_contract)
 
@@ -158,19 +152,18 @@ class Processor:
     def __sync_all(self, db_session: Session, block_from: int, block_to: int):
         LOG.info(f"Syncing from={block_from}, to={block_to}")
         self.__sync_personal_info_register(
-            db_session=db_session,
-            block_from=block_from,
-            block_to=block_to)
+            db_session=db_session, block_from=block_from, block_to=block_to
+        )
         self.__sync_personal_info_modify(
-            db_session=db_session,
-            block_from=block_from,
-            block_to=block_to
+            db_session=db_session, block_from=block_from, block_to=block_to
         )
 
     def __sync_personal_info_register(self, db_session: Session, block_from, block_to):
         for _personal_info_contract in self.personal_info_contract_list:
             try:
-                register_event_list = _personal_info_contract.get_register_event(block_from, block_to)
+                register_event_list = _personal_info_contract.get_register_event(
+                    block_from, block_to
+                )
                 for event in register_event_list:
                     args = event["args"]
                     account_address = args.get("account_address", ZERO_ADDRESS)
@@ -179,15 +172,14 @@ class Processor:
                         block = web3.eth.get_block(event["blockNumber"])
                         timestamp = datetime.utcfromtimestamp(block["timestamp"])
                         decrypted_personal_info = _personal_info_contract.get_info(
-                            account_address=account_address,
-                            default_value=None
+                            account_address=account_address, default_value=None
                         )
                         self.__sink_on_personal_info(
                             db_session=db_session,
                             account_address=account_address,
                             issuer_address=link_address,
                             personal_info=decrypted_personal_info,
-                            timestamp=timestamp
+                            timestamp=timestamp,
                         )
                         db_session.commit()
             except Exception:
@@ -196,7 +188,9 @@ class Processor:
     def __sync_personal_info_modify(self, db_session: Session, block_from, block_to):
         for _personal_info_contract in self.personal_info_contract_list:
             try:
-                register_event_list = _personal_info_contract.get_modify_event(block_from, block_to)
+                register_event_list = _personal_info_contract.get_modify_event(
+                    block_from, block_to
+                )
                 for event in register_event_list:
                     args = event["args"]
                     account_address = args.get("account_address", ZERO_ADDRESS)
@@ -205,35 +199,44 @@ class Processor:
                         block = web3.eth.get_block(event["blockNumber"])
                         timestamp = datetime.utcfromtimestamp(block["timestamp"])
                         decrypted_personal_info = _personal_info_contract.get_info(
-                            account_address=account_address,
-                            default_value=None
+                            account_address=account_address, default_value=None
                         )
                         self.__sink_on_personal_info(
                             db_session=db_session,
                             account_address=account_address,
                             issuer_address=link_address,
                             personal_info=decrypted_personal_info,
-                            timestamp=timestamp
+                            timestamp=timestamp,
                         )
                         db_session.commit()
             except Exception:
                 LOG.exception("An exception occurred during event synchronization")
 
     @staticmethod
-    def __sink_on_personal_info(db_session: Session,
-                                account_address: str,
-                                issuer_address: str,
-                                personal_info: dict,
-                                timestamp: datetime):
-        _personal_info = db_session.query(IDXPersonalInfo). \
-            filter(IDXPersonalInfo.account_address == to_checksum_address(account_address)). \
-            filter(IDXPersonalInfo.issuer_address == to_checksum_address(issuer_address)). \
-            first()
+    def __sink_on_personal_info(
+        db_session: Session,
+        account_address: str,
+        issuer_address: str,
+        personal_info: dict,
+        timestamp: datetime,
+    ):
+        _personal_info = (
+            db_session.query(IDXPersonalInfo)
+            .filter(
+                IDXPersonalInfo.account_address == to_checksum_address(account_address)
+            )
+            .filter(
+                IDXPersonalInfo.issuer_address == to_checksum_address(issuer_address)
+            )
+            .first()
+        )
         if _personal_info is not None:
             _personal_info.personal_info = personal_info
             _personal_info.modified = timestamp
             db_session.merge(_personal_info)
-            LOG.debug(f"Modify: account_address={account_address}, issuer_address={issuer_address}")
+            LOG.debug(
+                f"Modify: account_address={account_address}, issuer_address={issuer_address}"
+            )
         else:
             _personal_info = IDXPersonalInfo()
             _personal_info.account_address = account_address
@@ -242,7 +245,9 @@ class Processor:
             _personal_info.created = timestamp
             _personal_info.modified = timestamp
             db_session.add(_personal_info)
-            LOG.debug(f"Register: account_address={account_address}, issuer_address={issuer_address}")
+            LOG.debug(
+                f"Register: account_address={account_address}, issuer_address={issuer_address}"
+            )
 
 
 def main():

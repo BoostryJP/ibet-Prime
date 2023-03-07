@@ -17,10 +17,10 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from typing import List
+
 from pydantic import BaseModel
 
 from .types import ResultSet
-
 
 ############################
 # REQUEST
@@ -31,8 +31,10 @@ from .types import ResultSet
 # RESPONSE
 ############################
 
+
 class IssueRedeemEvent(BaseModel):
     """Issue/Redeem event"""
+
     transaction_hash: str
     token_address: str
     locked_address: str
@@ -43,5 +45,6 @@ class IssueRedeemEvent(BaseModel):
 
 class IssueRedeemHistoryResponse(BaseModel):
     """Issue/Redeem history"""
+
     result_set: ResultSet
     history: List[IssueRedeemEvent]

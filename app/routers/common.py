@@ -11,25 +11,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
-from fastapi import (
-    APIRouter,
-    Depends
-)
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from config import E2EE_REQUEST_ENABLED
-from app.database import db_session
-from app.model.db import Node
-from app.utils.fastapi import json_response
-from app.utils.e2ee_utils import E2EEUtils
-from app.utils.docs_utils import get_routers_responses
-from app.utils.web3_utils import Web3Wrapper
-from app.model.schema import (
-    E2EEResponse,
-    BlockNumberResponse
-)
-from app.exceptions import ServiceUnavailableError
 from app import log
+from app.database import db_session
+from app.exceptions import ServiceUnavailableError
+from app.model.db import Node
+from app.model.schema import BlockNumberResponse, E2EEResponse
+from app.utils.docs_utils import get_routers_responses
+from app.utils.e2ee_utils import E2EEUtils
+from app.utils.fastapi import json_response
+from app.utils.web3_utils import Web3Wrapper
+from config import E2EE_REQUEST_ENABLED
 
 web3 = Web3Wrapper()
 
@@ -39,10 +33,7 @@ router = APIRouter(tags=["common"])
 
 
 # GET: /e2ee
-@router.get(
-    "/e2ee",
-    response_model=E2EEResponse
-)
+@router.get("/e2ee", response_model=E2EEResponse)
 def e2e_encryption_key():
     """Get E2EE public key"""
 
@@ -51,20 +42,16 @@ def e2e_encryption_key():
 
     _, public_key = E2EEUtils.get_key()
 
-    return json_response({
-        "public_key": public_key
-    })
+    return json_response({"public_key": public_key})
 
 
 # GET: /healthcheck
 @router.get(
     "/healthcheck",
     response_model=None,
-    responses=get_routers_responses(ServiceUnavailableError)
+    responses=get_routers_responses(ServiceUnavailableError),
 )
-def check_health(
-        db: Session = Depends(db_session)
-):
+def check_health(db: Session = Depends(db_session)):
     errors = []
 
     # Check DB Connection
@@ -103,12 +90,10 @@ def __check_ethereum(errors: list, db: Session):
 @router.get(
     "/block_number",
     response_model=BlockNumberResponse,
-    responses=get_routers_responses(ServiceUnavailableError)
+    responses=get_routers_responses(ServiceUnavailableError),
 )
 def get_block_number():
     """Get Block Number in current"""
     block_number = web3.eth.block_number
 
-    return json_response({
-        "block_number": block_number
-    })
+    return json_response({"block_number": block_number})

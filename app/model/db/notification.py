@@ -17,12 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    JSON
-)
+
+from sqlalchemy import JSON, Column, Integer, String
 
 from .base import Base
 
@@ -71,6 +67,7 @@ notice_type: UnlockInfo
 
 class Notification(Base):
     """Notification"""
+
     __tablename__ = "notification"
 
     # sequence id

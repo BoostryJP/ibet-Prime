@@ -18,11 +18,6 @@ SPDX-License-Identifier: Apache-2.0
 """
 from aiohttp import ClientSession, ClientTimeout, TCPConnector
 from rich.text import Text
-from textual.app import ComposeResult
-from textual.binding import Binding
-from textual.containers import Horizontal, Vertical
-from textual.widgets import DataTable, Footer, Label
-
 from src import connector
 from src.gui.consts import ID
 from src.gui.screen.base import TuiScreen
@@ -30,6 +25,10 @@ from src.gui.widget.block_list_table import BlockListTable
 from src.gui.widget.tx_detail_view import TxDetailView
 from src.gui.widget.tx_list_table import TxListTable
 from src.gui.widget.tx_list_view import TxListView
+from textual.app import ComposeResult
+from textual.binding import Binding
+from textual.containers import Horizontal, Vertical
+from textual.widgets import DataTable, Footer, Label
 
 from app.model.schema.bc_explorer import TxDataDetail
 
@@ -41,12 +40,16 @@ class TransactionScreen(TuiScreen):
         yield Horizontal(
             Vertical(
                 Horizontal(
-                    Label(Text.from_markup(" [bold]ibet-Wallet-API BC Explorer[/bold]")),
+                    Label(
+                        Text.from_markup(" [bold]ibet-Wallet-API BC Explorer[/bold]")
+                    ),
                     Label(" | "),
                     Label(f"Selected block: -", id=ID.TX_SELECTED_BLOCK_NUMBER),
                     id="tx_list_header",
                 ),
-                Horizontal(TxListView(classes="column"), TxDetailView(classes="column")),
+                Horizontal(
+                    TxListView(classes="column"), TxDetailView(classes="column")
+                ),
                 classes="column",
             )
         )
@@ -74,7 +77,9 @@ class TransactionScreen(TuiScreen):
 
         tx_hash = selected_row[0]
         async with TCPConnector(limit=1, keepalive_timeout=0) as tcp_connector:
-            async with ClientSession(connector=tcp_connector, timeout=ClientTimeout(30)) as session:
+            async with ClientSession(
+                connector=tcp_connector, timeout=ClientTimeout(30)
+            ) as session:
                 tx_detail: TxDataDetail = await connector.get_tx_data(
                     session,
                     self.tui.url,
@@ -94,9 +99,13 @@ class TransactionScreen(TuiScreen):
         """
         if self.tui.state.tx_list_query is not None:
             async with TCPConnector(limit=1, keepalive_timeout=0) as tcp_connector:
-                async with ClientSession(connector=tcp_connector, timeout=ClientTimeout(30)) as session:
+                async with ClientSession(
+                    connector=tcp_connector, timeout=ClientTimeout(30)
+                ) as session:
                     tx_list = await connector.list_tx_data(
-                        session=session, url=self.tui.url, query=self.tui.state.tx_list_query
+                        session=session,
+                        url=self.tui.url,
+                        query=self.tui.state.tx_list_query,
                     )
                     self.query_one(TxListTable).update_rows(tx_list.tx_data)
                     self.query_one(f"#{ID.TX_SELECTED_BLOCK_NUMBER}", Label).update(

@@ -18,18 +18,14 @@ SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
 
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    JSON
-)
+from sqlalchemy import JSON, Column, Integer, String
 
 from .base import Base
 
 
 class LedgerTemplate(Base):
     """Ledger Template"""
+
     __tablename__ = "ledger_template"
 
     # token address
@@ -46,6 +42,7 @@ class LedgerTemplate(Base):
 
 class LedgerDetailsTemplate(Base):
     """Ledger Details Template"""
+
     __tablename__ = "ledger_details_template"
 
     # sequence id

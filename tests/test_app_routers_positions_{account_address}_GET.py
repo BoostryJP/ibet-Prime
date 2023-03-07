@@ -18,16 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 from unittest import mock
 
-from app.model.db import (
-    IDXPosition,
-    IDXLockedPosition,
-    Token,
-    TokenType
-)
-from app.model.blockchain import (
-    IbetStraightBondContract,
-    IbetShareContract
-)
+from app.model.blockchain import IbetShareContract, IbetStraightBondContract
+from app.model.db import IDXLockedPosition, IDXPosition, Token, TokenType
 
 
 class TestAppRoutersPositionsAccountAddressGET:
@@ -55,7 +47,9 @@ class TestAppRoutersPositionsAccountAddressGET:
         # prepare data: Position
         _position = IDXPosition()
         _position.token_address = "0x1234567890123456789012345678900000000010"
-        _position.account_address = "0x1234567890123456789012345678900000000001"  # not target
+        _position.account_address = (
+            "0x1234567890123456789012345678900000000001"  # not target
+        )
         _position.balance = 10
         _position.exchange_balance = 11
         _position.exchange_commitment = 12
@@ -76,7 +70,7 @@ class TestAppRoutersPositionsAccountAddressGET:
                 "limit": None,
                 "total": 0,
             },
-            "positions": []
+            "positions": [],
         }
 
     # <Normal_2>
@@ -110,14 +104,18 @@ class TestAppRoutersPositionsAccountAddressGET:
         # prepare data: Locked Position
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address_1
-        _locked_position.lock_address = "0x1234567890123456789012345678900000000001"  # lock address 1
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
         _locked_position.account_address = account_address
         _locked_position.value = 5
         db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address_1
-        _locked_position.lock_address = "0x1234567890123456789012345678900000000002"  # lock address 2
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
         _locked_position.account_address = account_address
         _locked_position.value = 5
         db.add(_locked_position)
@@ -158,16 +156,18 @@ class TestAppRoutersPositionsAccountAddressGET:
                     "exchange_balance": 11,
                     "exchange_commitment": 12,
                     "pending_transfer": 13,
-                    "locked": 10
+                    "locked": 10,
                 },
-            ]
+            ],
         }
 
     # <Normal_3_1>
     # multi record
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_3_1(self, mock_IbetStraightBondContract_get, mock_IbetShareContract_get, client, db):
+    def test_normal_3_1(
+        self, mock_IbetStraightBondContract_get, mock_IbetShareContract_get, client, db
+    ):
         issuer_address = "0x1234567890123456789012345678900000000100"
         account_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
@@ -196,14 +196,18 @@ class TestAppRoutersPositionsAccountAddressGET:
         # prepare data: Locked Position 1
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address_1
-        _locked_position.lock_address = "0x1234567890123456789012345678900000000001"  # lock address 1
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
         _locked_position.account_address = account_address
         _locked_position.value = 5
         db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address_1
-        _locked_position.lock_address = "0x1234567890123456789012345678900000000002"  # lock address 2
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
         _locked_position.account_address = account_address
         _locked_position.value = 5
         db.add(_locked_position)
@@ -230,14 +234,18 @@ class TestAppRoutersPositionsAccountAddressGET:
         # prepare data: Locked Position 2
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address_2
-        _locked_position.lock_address = "0x1234567890123456789012345678900000000001"  # lock address 1
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
         _locked_position.account_address = account_address
         _locked_position.value = 10
         db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address_2
-        _locked_position.lock_address = "0x1234567890123456789012345678900000000002"  # lock address 2
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
         _locked_position.account_address = account_address
         _locked_position.value = 10
         db.add(_locked_position)
@@ -264,14 +272,18 @@ class TestAppRoutersPositionsAccountAddressGET:
         # prepare data: Locked Position 3
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address_3
-        _locked_position.lock_address = "0x1234567890123456789012345678900000000001"  # lock address 1
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
         _locked_position.account_address = account_address
         _locked_position.value = 15
         db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address_3
-        _locked_position.lock_address = "0x1234567890123456789012345678900000000002"  # lock address 2
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
         _locked_position.account_address = account_address
         _locked_position.value = 15
         db.add(_locked_position)
@@ -310,7 +322,7 @@ class TestAppRoutersPositionsAccountAddressGET:
                     "exchange_balance": 11,
                     "exchange_commitment": 12,
                     "pending_transfer": 13,
-                    "locked": 10
+                    "locked": 10,
                 },
                 {
                     "issuer_address": issuer_address,
@@ -321,7 +333,7 @@ class TestAppRoutersPositionsAccountAddressGET:
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
                     "pending_transfer": 23,
-                    "locked": 20
+                    "locked": 20,
                 },
                 {
                     "issuer_address": issuer_address,
@@ -332,16 +344,18 @@ class TestAppRoutersPositionsAccountAddressGET:
                     "exchange_balance": 31,
                     "exchange_commitment": 32,
                     "pending_transfer": 33,
-                    "locked": 30
+                    "locked": 30,
                 },
-            ]
+            ],
         }
 
     # <Normal_3_2>
     # multi record (Including former holder)
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_3_2(self, mock_IbetStraightBondContract_get, mock_IbetShareContract_get, client, db):
+    def test_normal_3_2(
+        self, mock_IbetStraightBondContract_get, mock_IbetShareContract_get, client, db
+    ):
         issuer_address = "0x1234567890123456789012345678900000000100"
         account_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
@@ -389,7 +403,9 @@ class TestAppRoutersPositionsAccountAddressGET:
         # prepare data: Locked Position 2
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address_2
-        _locked_position.lock_address = "0x1234567890123456789012345678900000000001"  # lock address 1
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
         _locked_position.account_address = account_address
         _locked_position.value = 0
         db.add(_locked_position)
@@ -416,7 +432,9 @@ class TestAppRoutersPositionsAccountAddressGET:
         # prepare data: Locked Position 3
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address_3
-        _locked_position.lock_address = "0x1234567890123456789012345678900000000001"  # lock address 1
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
         _locked_position.account_address = account_address
         _locked_position.value = 0
         db.add(_locked_position)
@@ -455,7 +473,7 @@ class TestAppRoutersPositionsAccountAddressGET:
                     "exchange_balance": 11,
                     "exchange_commitment": 12,
                     "pending_transfer": 13,
-                    "locked": 0
+                    "locked": 0,
                 },
                 {
                     "issuer_address": issuer_address,
@@ -466,16 +484,18 @@ class TestAppRoutersPositionsAccountAddressGET:
                     "exchange_balance": 0,
                     "exchange_commitment": 22,
                     "pending_transfer": 23,
-                    "locked": 0
-                }
-            ]
+                    "locked": 0,
+                },
+            ],
         }
 
     # <Normal_4>
     # specify header
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_4(self, mock_IbetStraightBondContract_get, mock_IbetShareContract_get, client, db):
+    def test_normal_4(
+        self, mock_IbetStraightBondContract_get, mock_IbetShareContract_get, client, db
+    ):
         account_address = "0x1234567890123456789012345678900000000000"
 
         # prepare data: Token
@@ -500,7 +520,9 @@ class TestAppRoutersPositionsAccountAddressGET:
         # prepare data: Token
         _token = Token()
         _token.token_address = "0x1234567890123456789012345678900000000011"
-        _token.issuer_address = "0x1234567890123456789012345678900000000101"  # not target
+        _token.issuer_address = (
+            "0x1234567890123456789012345678900000000101"  # not target
+        )
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
@@ -548,7 +570,7 @@ class TestAppRoutersPositionsAccountAddressGET:
         # request target api
         resp = client.get(
             self.base_url.format(account_address=account_address),
-            headers={"issuer-address": "0x1234567890123456789012345678900000000100"}
+            headers={"issuer-address": "0x1234567890123456789012345678900000000100"},
         )
 
         # assertion
@@ -570,7 +592,7 @@ class TestAppRoutersPositionsAccountAddressGET:
                     "exchange_balance": 11,
                     "exchange_commitment": 12,
                     "pending_transfer": 13,
-                    "locked": 0
+                    "locked": 0,
                 },
                 {
                     "issuer_address": "0x1234567890123456789012345678900000000100",
@@ -581,9 +603,9 @@ class TestAppRoutersPositionsAccountAddressGET:
                     "exchange_balance": 31,
                     "exchange_commitment": 32,
                     "pending_transfer": 33,
-                    "locked": 0
+                    "locked": 0,
                 },
-            ]
+            ],
         }
 
     # <Normal_5_1>
@@ -661,7 +683,7 @@ class TestAppRoutersPositionsAccountAddressGET:
         # request target api
         resp = client.get(
             self.base_url.format(account_address=account_address),
-            params={"token_type": TokenType.IBET_STRAIGHT_BOND.value}
+            params={"token_type": TokenType.IBET_STRAIGHT_BOND.value},
         )
 
         # assertion
@@ -683,7 +705,7 @@ class TestAppRoutersPositionsAccountAddressGET:
                     "exchange_balance": 11,
                     "exchange_commitment": 12,
                     "pending_transfer": 13,
-                    "locked": 0
+                    "locked": 0,
                 },
                 {
                     "issuer_address": "0x1234567890123456789012345678900000000101",
@@ -694,9 +716,9 @@ class TestAppRoutersPositionsAccountAddressGET:
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
                     "pending_transfer": 23,
-                    "locked": 0
+                    "locked": 0,
                 },
-            ]
+            ],
         }
 
     # <Normal_5_2>
@@ -772,7 +794,7 @@ class TestAppRoutersPositionsAccountAddressGET:
         # request target api
         resp = client.get(
             self.base_url.format(account_address=account_address),
-            params={"token_type": TokenType.IBET_SHARE.value}
+            params={"token_type": TokenType.IBET_SHARE.value},
         )
 
         # assertion
@@ -794,9 +816,9 @@ class TestAppRoutersPositionsAccountAddressGET:
                     "exchange_balance": 31,
                     "exchange_commitment": 32,
                     "pending_transfer": 33,
-                    "locked": 0
+                    "locked": 0,
                 },
-            ]
+            ],
         }
 
     # <Normal_5_3>
@@ -804,7 +826,9 @@ class TestAppRoutersPositionsAccountAddressGET:
     # including_former_position
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_5_3(self, mock_IbetStraightBondContract_get, mock_IbetShareContract_get, client, db):
+    def test_normal_5_3(
+        self, mock_IbetStraightBondContract_get, mock_IbetShareContract_get, client, db
+    ):
         account_address = "0x1234567890123456789012345678900000000000"
 
         # prepare data: Token
@@ -898,9 +922,7 @@ class TestAppRoutersPositionsAccountAddressGET:
         # request target api
         resp = client.get(
             self.base_url.format(account_address=account_address),
-            params={
-                "include_former_position": "true"
-            }
+            params={"include_former_position": "true"},
         )
 
         # assertion
@@ -922,7 +944,7 @@ class TestAppRoutersPositionsAccountAddressGET:
                     "exchange_balance": 11,
                     "exchange_commitment": 12,
                     "pending_transfer": 13,
-                    "locked": 0
+                    "locked": 0,
                 },
                 {
                     "issuer_address": "0x1234567890123456789012345678900000000101",
@@ -933,7 +955,7 @@ class TestAppRoutersPositionsAccountAddressGET:
                     "exchange_balance": 0,
                     "exchange_commitment": 0,
                     "pending_transfer": 0,
-                    "locked": 0
+                    "locked": 0,
                 },
                 {
                     "issuer_address": "0x1234567890123456789012345678900000000100",
@@ -944,7 +966,7 @@ class TestAppRoutersPositionsAccountAddressGET:
                     "exchange_balance": 20,
                     "exchange_commitment": 10,
                     "pending_transfer": 1,
-                    "locked": 0
+                    "locked": 0,
                 },
                 {
                     "issuer_address": "0x1234567890123456789012345678900000000101",
@@ -955,16 +977,18 @@ class TestAppRoutersPositionsAccountAddressGET:
                     "exchange_balance": 0,
                     "exchange_commitment": 0,
                     "pending_transfer": 0,
-                    "locked": 0
-                }
-            ]
+                    "locked": 0,
+                },
+            ],
         }
 
     # <Normal_6>
     # Pagination
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_6(self, mock_IbetStraightBondContract_get, mock_IbetShareContract_get, client, db):
+    def test_normal_6(
+        self, mock_IbetStraightBondContract_get, mock_IbetShareContract_get, client, db
+    ):
         account_address = "0x1234567890123456789012345678900000000000"
 
         # prepare data: Token
@@ -1057,7 +1081,7 @@ class TestAppRoutersPositionsAccountAddressGET:
             params={
                 "offset": 1,
                 "limit": 2,
-            }
+            },
         )
 
         # assertion
@@ -1079,7 +1103,7 @@ class TestAppRoutersPositionsAccountAddressGET:
                     "exchange_balance": 21,
                     "exchange_commitment": 22,
                     "pending_transfer": 23,
-                    "locked": 0
+                    "locked": 0,
                 },
                 {
                     "issuer_address": "0x1234567890123456789012345678900000000100",
@@ -1090,9 +1114,9 @@ class TestAppRoutersPositionsAccountAddressGET:
                     "exchange_balance": 31,
                     "exchange_commitment": 32,
                     "pending_transfer": 33,
-                    "locked": 0
+                    "locked": 0,
                 },
-            ]
+            ],
         }
 
     ###########################################################################
@@ -1110,23 +1134,20 @@ class TestAppRoutersPositionsAccountAddressGET:
             self.base_url.format(account_address=account_address),
             headers={
                 "issuer-address": "test",
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_1_2>
@@ -1142,32 +1163,29 @@ class TestAppRoutersPositionsAccountAddressGET:
                 "token_type": "test",
                 "offset": "test",
                 "limit": "test",
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["query", "token_type"],
                     "ctx": {"enum_values": ["IbetStraightBond", "IbetShare"]},
                     "msg": "value is not a valid enumeration member; permitted: 'IbetStraightBond', 'IbetShare'",
-                    "type": "type_error.enum"
+                    "type": "type_error.enum",
                 },
                 {
                     "loc": ["query", "offset"],
                     "msg": "value is not a valid integer",
-                    "type": "type_error.integer"
+                    "type": "type_error.integer",
                 },
                 {
                     "loc": ["query", "limit"],
                     "msg": "value is not a valid integer",
-                    "type": "type_error.integer"
+                    "type": "type_error.integer",
                 },
-            ]
+            ],
         }

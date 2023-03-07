@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
 
-from sqlalchemy import Column, String, BigInteger
+from sqlalchemy import BigInteger, Column, String
 
 from .base import Base
 
@@ -63,5 +63,5 @@ class TokenHolder(Base):
         return {
             "account_address": self.account_address,
             "hold_balance": self.hold_balance,
-            "locked_balance": self.locked_balance
+            "locked_balance": self.locked_balance,
         }

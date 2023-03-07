@@ -17,35 +17,29 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import hashlib
-from unittest.mock import (
-    ANY,
-    patch
-)
-from datetime import (
-    datetime,
-    timezone
-)
+import random
+import string
+from datetime import datetime, timezone
+from unittest.mock import ANY, patch
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
 import config
-import string
-import random
 from app.exceptions import SendTransactionError
+from app.model.blockchain.token import IbetStraightBondContract
+from app.model.blockchain.token_list import TokenListContract
 from app.model.db import (
+    UTXO,
     Account,
     AuthToken,
+    IDXPosition,
     Token,
     TokenType,
     UpdateToken,
-    IDXPosition,
-    UTXO
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-from app.model.blockchain.token import IbetStraightBondContract
-from app.model.blockchain.token_list import TokenListContract
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
@@ -77,23 +71,25 @@ class TestAppRoutersBondTokensPOST:
         # mock
         IbetStraightBondContract_create = patch(
             target="app.model.blockchain.token.IbetStraightBondContract.create",
-            return_value=("contract_address_test1", "abi_test1", "tx_hash_test1")
+            return_value=("contract_address_test1", "abi_test1", "tx_hash_test1"),
         )
         TokenListContract_register = patch(
             target="app.model.blockchain.token_list.TokenListContract.register",
-            return_value=None
+            return_value=None,
         )
         ContractUtils_get_block_by_transaction_hash = patch(
             target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
             return_value={
                 "number": 12345,
-                "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=timezone.utc).timestamp()
-            }
+                "timestamp": datetime(
+                    2021, 4, 27, 12, 34, 56, tzinfo=timezone.utc
+                ).timestamp(),
+            },
         )
 
-        with IbetStraightBondContract_create, \
-                TokenListContract_register, \
-                ContractUtils_get_block_by_transaction_hash:
+        with (
+            IbetStraightBondContract_create
+        ), TokenListContract_register, ContractUtils_get_block_by_transaction_hash:
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -106,28 +102,23 @@ class TestAppRoutersBondTokensPOST:
                 json=req_param,
                 headers={
                     "issuer-address": test_account["address"],
-                    "eoa-password": E2EEUtils.encrypt("password")
-                }
+                    "eoa-password": E2EEUtils.encrypt("password"),
+                },
             )
 
             # assertion
             IbetStraightBondContract.create.assert_called_with(
-                args=[
-                    "name_test1", "", 10000, 200, "", 0,
-                    "", "", "purpose_test1"
-                ],
+                args=["name_test1", "", 10000, 200, "", 0, "", "", "purpose_test1"],
                 tx_from=test_account["address"],
-                private_key=ANY
+                private_key=ANY,
             )
             TokenListContract.register.assert_called_with(
                 token_address="contract_address_test1",
                 token_template=TokenType.IBET_STRAIGHT_BOND.value,
                 tx_from=test_account["address"],
-                private_key=ANY
+                private_key=ANY,
             )
-            ContractUtils.get_block_by_transaction_hash(
-                tx_hash="tx_hash_test1"
-            )
+            ContractUtils.get_block_by_transaction_hash(tx_hash="tx_hash_test1")
 
             assert resp.status_code == 200
             assert resp.json()["token_address"] == "contract_address_test1"
@@ -181,23 +172,25 @@ class TestAppRoutersBondTokensPOST:
         # mock
         IbetStraightBondContract_create = patch(
             target="app.model.blockchain.token.IbetStraightBondContract.create",
-            return_value=("contract_address_test1", "abi_test1", "tx_hash_test1")
+            return_value=("contract_address_test1", "abi_test1", "tx_hash_test1"),
         )
         TokenListContract_register = patch(
             target="app.model.blockchain.token_list.TokenListContract.register",
-            return_value=None
+            return_value=None,
         )
         ContractUtils_get_block_by_transaction_hash = patch(
             target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
             return_value={
                 "number": 12345,
-                "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=timezone.utc).timestamp()
-            }
+                "timestamp": datetime(
+                    2021, 4, 27, 12, 34, 56, tzinfo=timezone.utc
+                ).timestamp(),
+            },
         )
 
-        with IbetStraightBondContract_create, \
-                TokenListContract_register, \
-                ContractUtils_get_block_by_transaction_hash:
+        with (
+            IbetStraightBondContract_create
+        ), TokenListContract_register, ContractUtils_get_block_by_transaction_hash:
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -227,8 +220,8 @@ class TestAppRoutersBondTokensPOST:
                 json=req_param,
                 headers={
                     "issuer-address": test_account["address"],
-                    "eoa-password": E2EEUtils.encrypt("password")
-                }
+                    "eoa-password": E2EEUtils.encrypt("password"),
+                },
             )
 
             # assertion
@@ -242,10 +235,10 @@ class TestAppRoutersBondTokensPOST:
                     4000,
                     "20211231",
                     "return_amount_test1",
-                    "purpose_test1"
+                    "purpose_test1",
                 ],
                 tx_from=test_account["address"],
-                private_key=ANY
+                private_key=ANY,
             )
 
             TokenListContract.register.assert_not_called()
@@ -305,23 +298,25 @@ class TestAppRoutersBondTokensPOST:
         # mock
         IbetStraightBondContract_create = patch(
             target="app.model.blockchain.token.IbetStraightBondContract.create",
-            return_value=("contract_address_test1", "abi_test1", "tx_hash_test1")
+            return_value=("contract_address_test1", "abi_test1", "tx_hash_test1"),
         )
         TokenListContract_register = patch(
             target="app.model.blockchain.token_list.TokenListContract.register",
-            return_value=None
+            return_value=None,
         )
         ContractUtils_get_block_by_transaction_hash = patch(
             target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
             return_value={
                 "number": 12345,
-                "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=timezone.utc).timestamp()
-            }
+                "timestamp": datetime(
+                    2021, 4, 27, 12, 34, 56, tzinfo=timezone.utc
+                ).timestamp(),
+            },
         )
 
-        with IbetStraightBondContract_create, \
-                TokenListContract_register, \
-                ContractUtils_get_block_by_transaction_hash:
+        with (
+            IbetStraightBondContract_create
+        ), TokenListContract_register, ContractUtils_get_block_by_transaction_hash:
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -334,28 +329,23 @@ class TestAppRoutersBondTokensPOST:
                 json=req_param,
                 headers={
                     "issuer-address": test_account["address"],
-                    "auth-token": "test_auth_token"
-                }
+                    "auth-token": "test_auth_token",
+                },
             )
 
             # assertion
             IbetStraightBondContract.create.assert_called_with(
-                args=[
-                    "name_test1", "", 10000, 200, "", 0,
-                    "", "", "purpose_test1"
-                ],
+                args=["name_test1", "", 10000, 200, "", 0, "", "", "purpose_test1"],
                 tx_from=test_account["address"],
-                private_key=ANY
+                private_key=ANY,
             )
             TokenListContract.register.assert_called_with(
                 token_address="contract_address_test1",
                 token_template=TokenType.IBET_STRAIGHT_BOND.value,
                 tx_from=test_account["address"],
-                private_key=ANY
+                private_key=ANY,
             )
-            ContractUtils.get_block_by_transaction_hash(
-                tx_hash="tx_hash_test1"
-            )
+            ContractUtils.get_block_by_transaction_hash(tx_hash="tx_hash_test1")
 
             assert resp.status_code == 200
             assert resp.json()["token_address"] == "contract_address_test1"
@@ -401,29 +391,24 @@ class TestAppRoutersBondTokensPOST:
     # missing fields
     def test_error_1(self, client, db):
         # request target api
-        resp = client.post(
-            self.apiurl
-        )
+        resp = client.post(self.apiurl)
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
                 {
                     "loc": ["body"],
                     "msg": "field required",
-                    "type": "value_error.missing"
-                }
-            ]
+                    "type": "value_error.missing",
+                },
+            ],
         }
 
     # <Error_2_1>
@@ -457,7 +442,7 @@ class TestAppRoutersBondTokensPOST:
                 "1001",
                 "1101",
                 "1201",
-                "1231"
+                "1231",
             ],
             "tradable_exchange_contract_address": "0x0",
             "personal_info_contract_address": "0x0",
@@ -465,52 +450,35 @@ class TestAppRoutersBondTokensPOST:
         resp = client.post(
             self.apiurl,
             json=req_param,
-            headers={
-                "issuer-address": test_account["address"]
-            }
+            headers={"issuer-address": test_account["address"]},
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "loc": [
-                        "body",
-                        "interest_rate"
-                    ],
+                    "loc": ["body", "interest_rate"],
                     "msg": "interest_rate must be less than or equal to four decimal places",
-                    "type": "value_error"
+                    "type": "value_error",
                 },
                 {
-                    "loc": [
-                        "body",
-                        "interest_payment_date"
-                    ],
+                    "loc": ["body", "interest_payment_date"],
                     "msg": "list length of interest_payment_date must be less than 13",
-                    "type": "value_error"
+                    "type": "value_error",
                 },
                 {
-                    "loc": [
-                        "body",
-                        "tradable_exchange_contract_address"
-                    ],
+                    "loc": ["body", "tradable_exchange_contract_address"],
                     "msg": "tradable_exchange_contract_address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 },
                 {
-                    "loc": [
-                        "body",
-                        "personal_info_contract_address"
-                    ],
+                    "loc": ["body", "personal_info_contract_address"],
                     "msg": "personal_info_contract_address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 },
-            ]
+            ],
         }
 
     # <Error_2_2>
@@ -530,27 +498,20 @@ class TestAppRoutersBondTokensPOST:
             "purpose": "purpose_test1",
         }
         resp = client.post(
-            self.apiurl,
-            json=req_param,
-            headers={
-                "issuer-address": "issuer-address"
-            }
+            self.apiurl, json=req_param, headers={"issuer-address": "issuer-address"}
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_2_3>
@@ -583,22 +544,21 @@ class TestAppRoutersBondTokensPOST:
             json=req_param,
             headers={
                 "issuer-address": test_account_1["address"],
-                "eoa-password": "password"
-            }
+                "eoa-password": "password",
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
-            "detail": [{
-                "loc": ["header", "eoa-password"],
-                "msg": "eoa-password is not a Base64-encoded encrypted data",
-                "type": "value_error"
-            }]
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "loc": ["header", "eoa-password"],
+                    "msg": "eoa-password is not a Base64-encoded encrypted data",
+                    "type": "value_error",
+                }
+            ],
         }
 
     # <Error_2_4>
@@ -616,30 +576,23 @@ class TestAppRoutersBondTokensPOST:
             "return_date": "20211231",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
-            "is_redeemed": "invalid value"
+            "is_redeemed": "invalid value",
         }
         resp = client.post(
-            self.apiurl,
-            json=req_param,
-            headers={
-                "issuer-address": "issuer-address"
-            }
+            self.apiurl, json=req_param, headers={"issuer-address": "issuer-address"}
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "is_redeemed"],
                     "msg": "value could not be parsed to a boolean",
-                    "type": "type_error.bool"
+                    "type": "type_error.bool",
                 }
-            ]
+            ],
         }
 
     # <Error_2_5>
@@ -675,64 +628,39 @@ class TestAppRoutersBondTokensPOST:
         resp = client.post(
             self.apiurl,
             json=req_param,
-            headers={
-                "issuer-address": test_account["address"]
-            }
+            headers={"issuer-address": test_account["address"]},
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {
-                        "limit_value": 0
-                    },
-                    "loc": [
-                        "body",
-                        "total_supply"
-                    ],
+                    "ctx": {"limit_value": 0},
+                    "loc": ["body", "total_supply"],
                     "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge"
+                    "type": "value_error.number.not_ge",
                 },
                 {
-                    "ctx": {
-                        "limit_value": 0
-                    },
-                    "loc": [
-                        "body",
-                        "face_value"
-                    ],
+                    "ctx": {"limit_value": 0},
+                    "loc": ["body", "face_value"],
                     "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge"
+                    "type": "value_error.number.not_ge",
                 },
                 {
-                    "ctx": {
-                        "limit_value": 0
-                    },
-                    "loc": [
-                        "body",
-                        "redemption_value"
-                    ],
+                    "ctx": {"limit_value": 0},
+                    "loc": ["body", "redemption_value"],
                     "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge"
+                    "type": "value_error.number.not_ge",
                 },
                 {
-                    "ctx": {
-                        "limit_value": 0.0
-                    },
-                    "loc": [
-                        "body",
-                        "interest_rate"
-                    ],
+                    "ctx": {"limit_value": 0.0},
+                    "loc": ["body", "interest_rate"],
                     "msg": "ensure this value is greater than or equal to 0.0",
-                    "type": "value_error.number.not_ge"
+                    "type": "value_error.number.not_ge",
                 },
-            ]
+            ],
         }
 
     # <Error_2_6>
@@ -768,80 +696,75 @@ class TestAppRoutersBondTokensPOST:
         resp = client.post(
             self.apiurl,
             json=req_param,
-            headers={
-                "issuer-address": test_account["address"]
-            }
+            headers={"issuer-address": test_account["address"]},
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "loc": ["body", "name"], 
+                    "loc": ["body", "name"],
                     "msg": "ensure this value has at most 100 characters",
-                    "type": "value_error.any_str.max_length", 
-                    "ctx": {"limit_value": 100}
+                    "type": "value_error.any_str.max_length",
+                    "ctx": {"limit_value": 100},
                 },
                 {
-                    "loc": ["body", "total_supply"], 
+                    "loc": ["body", "total_supply"],
                     "msg": "ensure this value is less than or equal to 1000000000000",
-                    "type": "value_error.number.not_le", 
-                    "ctx": {"limit_value": 1000000000000}
+                    "type": "value_error.number.not_le",
+                    "ctx": {"limit_value": 1000000000000},
                 },
                 {
-                    "loc": ["body", "face_value"], 
+                    "loc": ["body", "face_value"],
                     "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le", 
-                    "ctx": {"limit_value": 5000000000}
+                    "type": "value_error.number.not_le",
+                    "ctx": {"limit_value": 5000000000},
                 },
                 {
                     "loc": ["body", "purpose"],
                     "msg": "ensure this value has at most 2000 characters",
                     "type": "value_error.any_str.max_length",
-                    "ctx": {"limit_value": 2000}
+                    "ctx": {"limit_value": 2000},
                 },
                 {
-                    "loc": ["body", "symbol"], 
+                    "loc": ["body", "symbol"],
                     "msg": "ensure this value has at most 100 characters",
-                    "type": "value_error.any_str.max_length", 
-                    "ctx": {"limit_value": 100}
+                    "type": "value_error.any_str.max_length",
+                    "ctx": {"limit_value": 100},
                 },
                 {
                     "loc": ["body", "redemption_value"],
                     "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le", 
-                    "ctx": {"limit_value": 5000000000}
+                    "type": "value_error.number.not_le",
+                    "ctx": {"limit_value": 5000000000},
                 },
                 {
-                    "loc": ["body", "return_amount"], 
+                    "loc": ["body", "return_amount"],
                     "msg": "ensure this value has at most 2000 characters",
-                    "type": "value_error.any_str.max_length", 
-                    "ctx": {"limit_value": 2000}
+                    "type": "value_error.any_str.max_length",
+                    "ctx": {"limit_value": 2000},
                 },
                 {
-                    "loc": ["body", "interest_rate"], 
+                    "loc": ["body", "interest_rate"],
                     "msg": "ensure this value is less than or equal to 100.0",
-                    "type": "value_error.number.not_le", 
-                    "ctx": {"limit_value": 100.0}
+                    "type": "value_error.number.not_le",
+                    "ctx": {"limit_value": 100.0},
                 },
                 {
-                    "loc": ["body", "contact_information"], 
+                    "loc": ["body", "contact_information"],
                     "msg": "ensure this value has at most 2000 characters",
-                    "type": "value_error.any_str.max_length", 
-                    "ctx": {"limit_value": 2000}
+                    "type": "value_error.any_str.max_length",
+                    "ctx": {"limit_value": 2000},
                 },
                 {
-                    "loc": ["body", "privacy_policy"], 
+                    "loc": ["body", "privacy_policy"],
                     "msg": "ensure this value has at most 5000 characters",
-                    "type": "value_error.any_str.max_length", 
-                    "ctx": {"limit_value": 5000}
-                }
-            ]
+                    "type": "value_error.any_str.max_length",
+                    "ctx": {"limit_value": 5000},
+                },
+            ],
         }
 
     # <Error_2_7>
@@ -862,40 +785,37 @@ class TestAppRoutersBondTokensPOST:
             "interest_payment_date": ["invalid_date"],  # update
         }
         resp = client.post(
-            self.apiurl,
-            json=req_param,
-            headers={
-                "issuer-address": "issuer-address"
-            }
+            self.apiurl, json=req_param, headers={"issuer-address": "issuer-address"}
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    'loc': ['body', 'redemption_date'],
-                    'msg': 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
-                    'type': 'value_error.str.regex',
-                    'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                    "loc": ["body", "redemption_date"],
+                    "msg": 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    "type": "value_error.str.regex",
+                    "ctx": {
+                        "pattern": "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"
+                    },
                 },
                 {
-                    'loc': ['body', 'return_date'],
-                    'msg': 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
-                    'type': 'value_error.str.regex',
-                    'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                    "loc": ["body", "return_date"],
+                    "msg": 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    "type": "value_error.str.regex",
+                    "ctx": {
+                        "pattern": "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"
+                    },
                 },
                 {
-                    'loc': ['body', 'interest_payment_date', 0],
-                    'msg': 'string does not match regex "^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
-                    'type': 'value_error.str.regex',
-                    'ctx': {'pattern': '^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
-                }
-            ]
+                    "loc": ["body", "interest_payment_date", 0],
+                    "msg": 'string does not match regex "^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    "type": "value_error.str.regex",
+                    "ctx": {"pattern": "^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"},
+                },
+            ],
         }
 
     # <Error_3_1>
@@ -928,18 +848,15 @@ class TestAppRoutersBondTokensPOST:
             json=req_param,
             headers={
                 "issuer-address": test_account_2["address"],
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 401
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "AuthorizationError"
-            },
-            "detail": "issuer does not exist, or password mismatch"
+            "meta": {"code": 1, "title": "AuthorizationError"},
+            "detail": "issuer does not exist, or password mismatch",
         }
 
     # <Error_3_2>
@@ -971,18 +888,15 @@ class TestAppRoutersBondTokensPOST:
             json=req_param,
             headers={
                 "issuer-address": test_account_1["address"],
-                "eoa-password": E2EEUtils.encrypt("password_test")
-            }
+                "eoa-password": E2EEUtils.encrypt("password_test"),
+            },
         )
 
         # assertion
         assert resp.status_code == 401
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "AuthorizationError"
-            },
-            "detail": "issuer does not exist, or password mismatch"
+            "meta": {"code": 1, "title": "AuthorizationError"},
+            "detail": "issuer does not exist, or password mismatch",
         }
 
     # <Error_4_1>
@@ -1002,7 +916,7 @@ class TestAppRoutersBondTokensPOST:
         # mock
         IbetStraightBondContract_create = patch(
             target="app.model.blockchain.token.IbetStraightBondContract.create",
-            side_effect=SendTransactionError()
+            side_effect=SendTransactionError(),
         )
 
         with IbetStraightBondContract_create:
@@ -1023,18 +937,15 @@ class TestAppRoutersBondTokensPOST:
                 json=req_param,
                 headers={
                     "issuer-address": test_account_1["address"],
-                    "eoa-password": E2EEUtils.encrypt("password")
-                }
+                    "eoa-password": E2EEUtils.encrypt("password"),
+                },
             )
 
             # assertion
             assert resp.status_code == 400
             assert resp.json() == {
-                "meta": {
-                    "code": 2,
-                    "title": "SendTransactionError"
-                },
-                "detail": "failed to send transaction"
+                "meta": {"code": 2, "title": "SendTransactionError"},
+                "detail": "failed to send transaction",
             }
 
     # <Error_5>
@@ -1053,15 +964,14 @@ class TestAppRoutersBondTokensPOST:
         # mock
         IbetStraightBondContract_create = patch(
             target="app.model.blockchain.token.IbetStraightBondContract.create",
-            return_value=("contract_address_test1", "abi_test1", "tx_hash_test1")
+            return_value=("contract_address_test1", "abi_test1", "tx_hash_test1"),
         )
         TokenListContract_register = patch(
             target="app.model.blockchain.token_list.TokenListContract.register",
-            side_effect=SendTransactionError()
+            side_effect=SendTransactionError(),
         )
 
-        with IbetStraightBondContract_create, \
-                TokenListContract_register:
+        with IbetStraightBondContract_create, TokenListContract_register:
             # request target api
             req_param = {
                 "name": "name_test1",
@@ -1079,21 +989,18 @@ class TestAppRoutersBondTokensPOST:
                 json=req_param,
                 headers={
                     "issuer-address": test_account["address"],
-                    "eoa-password": E2EEUtils.encrypt("password")
-                }
+                    "eoa-password": E2EEUtils.encrypt("password"),
+                },
             )
 
             # assertion
             assert resp.status_code == 400
             assert resp.json() == {
-                "meta": {
-                    "code": 2,
-                    "title": "SendTransactionError"
-                },
-                "detail": "failed to register token address token list"
+                "meta": {"code": 2, "title": "SendTransactionError"},
+                "detail": "failed to register token address token list",
             }
 
 
 def GetRandomStr(num):
     dat = string.digits + string.ascii_lowercase + string.ascii_uppercase
-    return ''.join([random.choice(dat) for i in range(num)])
+    return "".join([random.choice(dat) for i in range(num)])

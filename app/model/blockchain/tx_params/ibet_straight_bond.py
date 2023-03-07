@@ -16,26 +16,25 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import (
-    Optional, List
-)
 import math
+from typing import List, Optional
 
-from pydantic import (
-    validator,
-    BaseModel
-)
+from pydantic import BaseModel, validator
 from web3 import Web3
 
 from .ibet_security_token import (
-    TransferParams as IbetSecurityTokenTransferParams,
     AdditionalIssueParams as IbetSecurityTokenAdditionalIssueParams,
-    RedeemParams as IbetSecurityTokenRedeemParams,
-    ApproveTransferParams as IbetSecurityTokenApproveTransferParams,
-    CancelTransferParams as IbetSecurityTokenCancelTransferParams,
-    LockParams as IbetSecurityTokenLockParams,
-    ForceUnlockParams as IbetSecurityTokenForceUnlockParams
 )
+from .ibet_security_token import (
+    ApproveTransferParams as IbetSecurityTokenApproveTransferParams,
+)
+from .ibet_security_token import (
+    CancelTransferParams as IbetSecurityTokenCancelTransferParams,
+)
+from .ibet_security_token import ForceUnlockParams as IbetSecurityTokenForceUnlockParams
+from .ibet_security_token import LockParams as IbetSecurityTokenLockParams
+from .ibet_security_token import RedeemParams as IbetSecurityTokenRedeemParams
+from .ibet_security_token import TransferParams as IbetSecurityTokenTransferParams
 
 
 class UpdateParams(BaseModel):
@@ -57,8 +56,8 @@ class UpdateParams(BaseModel):
     @validator("interest_rate")
     def interest_rate_4_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10 ** 4)
-            int_data = int(v * 10 ** 4)
+            float_data = float(v * 10**4)
+            int_data = int(v * 10**4)
             if not math.isclose(int_data, float_data):
                 raise ValueError("interest_rate must be rounded to 4 decimal places")
         return v
@@ -66,13 +65,17 @@ class UpdateParams(BaseModel):
     @validator("interest_payment_date")
     def interest_payment_date_list_length_less_than_13(cls, v):
         if v is not None and len(v) >= 13:
-            raise ValueError("list length of interest_payment_date must be less than 13")
+            raise ValueError(
+                "list length of interest_payment_date must be less than 13"
+            )
         return v
 
     @validator("tradable_exchange_contract_address")
     def tradable_exchange_contract_address_is_valid_address(cls, v):
         if v is not None and not Web3.isAddress(v):
-            raise ValueError("tradable_exchange_contract_address is not a valid address")
+            raise ValueError(
+                "tradable_exchange_contract_address is not a valid address"
+            )
         return v
 
     @validator("personal_info_contract_address")

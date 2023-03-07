@@ -18,18 +18,14 @@ SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
 
-from sqlalchemy import (
-    Column,
-    String,
-    Integer,
-    DateTime
-)
+from sqlalchemy import Column, DateTime, Integer, String
 
 from .base import Base
 
 
 class AuthToken(Base):
     """Authentication Token"""
+
     __tablename__ = "auth_token"
 
     # issuer address

@@ -17,34 +17,25 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
-from typing import (
-    List,
-    Optional
-)
+from typing import List, Optional
 
 from fastapi import Query
-from pydantic import (
-    BaseModel,
-    Field,
-    PositiveInt,
-    validator
-)
+from pydantic import BaseModel, Field, PositiveInt, validator
 from pydantic.dataclasses import dataclass
 from web3 import Web3
 
-from .types import (
-    ResultSet,
-    SortOrder
-)
 from app.model.db import TokenType
 
+from .types import ResultSet, SortOrder
 
 ############################
 # COMMON
 ############################
 
+
 class Position(BaseModel):
     """Position"""
+
     issuer_address: str = Field(description="Issuer address")
     token_address: str = Field(description="Token address")
     token_type: TokenType = Field(description="Token type")
@@ -58,6 +49,7 @@ class Position(BaseModel):
 
 class LockedPosition(BaseModel):
     """Locked Position"""
+
     issuer_address: str = Field(description="Issuer address")
     token_address: str = Field(description="Token address")
     token_type: TokenType = Field(description="Token type")
@@ -80,15 +72,20 @@ class LockEvent(BaseModel):
     token_name: str = Field(description="Token name")
     lock_address: str = Field(description="Lock address")
     account_address: str = Field(description="Account address")
-    recipient_address: Optional[str] = Field(default=None, description="Recipient address")
+    recipient_address: Optional[str] = Field(
+        default=None, description="Recipient address"
+    )
     value: int = Field(description="Lock/Unlock amount")
     data: dict = Field(description="Message at lock/unlock")
-    block_timestamp: str = Field(description="block_timestamp when Lock log was emitted")
+    block_timestamp: str = Field(
+        description="block_timestamp when Lock log was emitted"
+    )
 
 
 ############################
 # REQUEST
 ############################
+
 
 class ListAllLockEventsSortItem(str, Enum):
     token_address = "token_address"
@@ -106,11 +103,19 @@ class ListAllLockEventsQuery:
     token_address: Optional[str] = Query(default=None, description="Token address")
     token_type: Optional[TokenType] = Query(default=None, description="Token type")
     lock_address: Optional[str] = Query(default=None, description="Lock address")
-    recipient_address: Optional[str] = Query(default=None, description="Recipient address")
-    category: Optional[LockEventCategory] = Query(default=None, description="Event category")
+    recipient_address: Optional[str] = Query(
+        default=None, description="Recipient address"
+    )
+    category: Optional[LockEventCategory] = Query(
+        default=None, description="Event category"
+    )
 
-    sort_item: ListAllLockEventsSortItem = Query(default=ListAllLockEventsSortItem.block_timestamp, description="Sort item")
-    sort_order: SortOrder = Query(default=SortOrder.DESC, description="Sort order(0: ASC, 1: DESC)")
+    sort_item: ListAllLockEventsSortItem = Query(
+        default=ListAllLockEventsSortItem.block_timestamp, description="Sort item"
+    )
+    sort_order: SortOrder = Query(
+        default=SortOrder.DESC, description="Sort order(0: ASC, 1: DESC)"
+    )
 
 
 class ForceUnlockRequest(BaseModel):
@@ -149,24 +154,29 @@ class ForceUnlockRequest(BaseModel):
 # RESPONSE
 ############################
 
+
 class PositionResponse(BaseModel):
     """Position schema (Response)"""
+
     __root__: Position
 
 
 class ListAllPositionResponse(BaseModel):
     """List All Position schema (Response)"""
+
     result_set: ResultSet
     positions: List[Position] = Field(description="Position list")
 
 
 class ListAllLockedPositionResponse(BaseModel):
     """List All Locked Position schema (Response)"""
+
     result_set: ResultSet
     locked_positions: List[LockedPosition] = Field(description="Locked position list")
 
 
 class ListAllLockEventsResponse(BaseModel):
     """List All Lock/Unlock events (Response)"""
+
     result_set: ResultSet
     events: List[LockEvent] = Field(description="Lock/Unlock event list")

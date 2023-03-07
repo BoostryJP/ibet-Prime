@@ -50,7 +50,7 @@ class TestAppRoutersAccountsGET:
                 "issuer_address": _admin_account["address"],
                 "rsa_public_key": None,
                 "rsa_status": AccountRsaStatus.UNSET.value,
-                "is_deleted": False
+                "is_deleted": False,
             }
         ]
 
@@ -78,7 +78,7 @@ class TestAppRoutersAccountsGET:
                 "issuer_address": _admin_account["address"],
                 "rsa_public_key": _admin_account["rsa_public_key"],
                 "rsa_status": AccountRsaStatus.CHANGING.value,
-                "is_deleted": False
+                "is_deleted": False,
             }
         ]
 

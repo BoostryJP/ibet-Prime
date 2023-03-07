@@ -21,14 +21,9 @@ from datetime import datetime
 
 from pytz import timezone
 
-from config import TZ
-from app.model.db import (
-    Account,
-    TokenType,
-    ScheduledEvents,
-    ScheduledEventType
-)
+from app.model.db import Account, ScheduledEvents, ScheduledEventType, TokenType
 from app.utils.e2ee_utils import E2EEUtils
+from config import TZ
 from tests.account_config import config_eth_account
 
 
@@ -56,7 +51,12 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
         db.add(account)
 
         datetime_now_utc = datetime.utcnow()
-        datetime_now_str = timezone("UTC").localize(datetime_now_utc).astimezone(self.local_tz).isoformat()
+        datetime_now_str = (
+            timezone("UTC")
+            .localize(datetime_now_utc)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
         data = {
             "face_value": 10000,
             "interest_rate": 0.5,
@@ -91,8 +91,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
             self.base_url.format(_token_address, event_id),
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
@@ -105,9 +105,13 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
             "event_type": ScheduledEventType.UPDATE.value,
             "status": 0,
             "data": data,
-            "created": datetime_now_str
+            "created": datetime_now_str,
         }
-        token_event = db.query(ScheduledEvents).filter(ScheduledEvents.event_id == event_id).first()
+        token_event = (
+            db.query(ScheduledEvents)
+            .filter(ScheduledEvents.event_id == event_id)
+            .first()
+        )
         assert token_event is None
 
     #########################################################################
@@ -127,8 +131,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
             self.base_url.format(_token_address, "test_event_id"),
             headers={
                 "issuer-address": _issuer_address[:-1],  # too short
-                "eoa-password": "password"  # not encrypted
-            }
+                "eoa-password": "password",  # not encrypted
+            },
         )
 
         # assertion
@@ -138,12 +142,13 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
             {
                 "loc": ["header", "issuer-address"],
                 "msg": "issuer-address is not a valid address",
-                "type": "value_error"
-            }, {
+                "type": "value_error",
+            },
+            {
                 "loc": ["header", "eoa-password"],
                 "msg": "eoa-password is not a Base64-encoded encrypted data",
-                "type": "value_error"
-            }
+                "type": "value_error",
+            },
         ]
 
     # <Error_2>
@@ -159,8 +164,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
             self.base_url.format(_token_address, "test_event_id"),
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
@@ -189,8 +194,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
             self.base_url.format(_token_address, "test_event_id"),
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("mismatch_password")
-            }
+                "eoa-password": E2EEUtils.encrypt("mismatch_password"),
+            },
         )
 
         # assertion
@@ -219,8 +224,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdDELETE:
             self.base_url.format(_token_address, "test_event_id"),
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion

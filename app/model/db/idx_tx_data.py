@@ -16,19 +16,14 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import (
-    Column,
-    String,
-    BigInteger,
-    Integer,
-    Text
-)
+from sqlalchemy import BigInteger, Column, Integer, String, Text
 
 from .base import Base
 
 
 class IDXTxData(Base):
     """Transaction data (INDEX)"""
+
     __tablename__ = "tx_data"
 
     hash = Column(String(66), primary_key=True)

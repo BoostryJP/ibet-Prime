@@ -19,12 +19,9 @@ SPDX-License-Identifier: Apache-2.0
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
 
-from config import PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG
-from app.model.db import (
-    Account,
-    AccountRsaStatus
-)
+from app.model.db import Account, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
+from config import PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG
 from tests.account_config import config_eth_account
 
 
@@ -62,10 +59,7 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
             "old_rsa_passphrase": E2EEUtils.encrypt(_old_password),
             "rsa_passphrase": E2EEUtils.encrypt(_new_password),
         }
-        resp = client.post(
-            self.base_url.format(_issuer_address),
-            json=req_param
-        )
+        resp = client.post(self.base_url.format(_issuer_address), json=req_param)
 
         # assertion
         assert resp.status_code == 200
@@ -81,7 +75,9 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
         pub_rsa_key = RSA.importKey(_rsa_public_key)
         pub_cipher = PKCS1_OAEP.new(pub_rsa_key)
         encrypt_data = pub_cipher.encrypt(test_data.encode("utf-8"))
-        pri_rsa_key = RSA.importKey(_account_rsa_private_key, passphrase=_account_rsa_passphrase)
+        pri_rsa_key = RSA.importKey(
+            _account_rsa_private_key, passphrase=_account_rsa_passphrase
+        )
         pri_cipher = PKCS1_OAEP.new(pri_rsa_key)
         decrypt_data = pri_cipher.decrypt(encrypt_data).decode()
         assert decrypt_data == test_data
@@ -97,24 +93,19 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
         _issuer_address = _account["address"]
 
         # request target API
-        resp = client.post(
-            self.base_url.format(_issuer_address)
-        )
+        resp = client.post(self.base_url.format(_issuer_address))
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
-            ]
+            ],
         }
 
     # <Error_2>
@@ -127,30 +118,24 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
         req_param = {
             "dummy": "dummy",
         }
-        resp = client.post(
-            self.base_url.format(_issuer_address),
-            json=req_param
-        )
+        resp = client.post(self.base_url.format(_issuer_address), json=req_param)
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "old_rsa_passphrase"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
                 {
                     "loc": ["body", "rsa_passphrase"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
-            ]
+            ],
         }
 
     # <Error_3>
@@ -166,30 +151,24 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
             "old_rsa_passphrase": _old_password,
             "rsa_passphrase": _new_password,
         }
-        resp = client.post(
-            self.base_url.format(_issuer_address),
-            json=req_param
-        )
+        resp = client.post(self.base_url.format(_issuer_address), json=req_param)
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "old_rsa_passphrase"],
                     "msg": "old_rsa_passphrase is not a Base64-encoded encrypted data",
-                    "type": "value_error"
+                    "type": "value_error",
                 },
                 {
                     "loc": ["body", "rsa_passphrase"],
                     "msg": "rsa_passphrase is not a Base64-encoded encrypted data",
-                    "type": "value_error"
+                    "type": "value_error",
                 },
-            ]
+            ],
         }
 
     # <Error_4>
@@ -204,17 +183,14 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
             "rsa_passphrase": E2EEUtils.encrypt(_new_password),
         }
         resp = client.post(
-            self.base_url.format("non_existent_issuer_address"),
-            json=req_param
+            self.base_url.format("non_existent_issuer_address"), json=req_param
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1, "title": "NotFound"
-            },
-            "detail": "issuer does not exist"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "issuer does not exist",
         }
 
     # <Error_5>
@@ -241,18 +217,13 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
             "old_rsa_passphrase": E2EEUtils.encrypt("passwordtest"),
             "rsa_passphrase": E2EEUtils.encrypt(_new_password),
         }
-        resp = client.post(
-            self.base_url.format(_issuer_address),
-            json=req_param
-        )
+        resp = client.post(self.base_url.format(_issuer_address), json=req_param)
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1, "title": "InvalidParameterError"
-            },
-            "detail": "old passphrase mismatch"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "old passphrase mismatch",
         }
 
     # <Error_6>
@@ -279,16 +250,11 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
             "old_rsa_passphrase": E2EEUtils.encrypt(_old_password),
             "rsa_passphrase": E2EEUtils.encrypt(_new_password),
         }
-        resp = client.post(
-            self.base_url.format(_issuer_address),
-            json=req_param
-        )
+        resp = client.post(self.base_url.format(_issuer_address), json=req_param)
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1, "title": "InvalidParameterError"
-            },
-            "detail": PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG,
         }

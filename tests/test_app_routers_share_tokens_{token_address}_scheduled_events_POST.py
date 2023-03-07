@@ -16,20 +16,11 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from datetime import (
-    datetime,
-    timezone
-)
+from datetime import datetime, timezone
 
 from pytz import timezone as tz
 
-from app.model.db import (
-    Account,
-    Token,
-    TokenType,
-    ScheduledEvents,
-    ScheduledEventType
-)
+from app.model.db import Account, ScheduledEvents, ScheduledEventType, Token, TokenType
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
@@ -83,33 +74,37 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
             "transfer_approval_required": False,
             "principal_value": 900,
             "is_canceled": False,
-            "memo": "memo_test1"
+            "memo": "memo_test1",
         }
 
         # request target API
         req_param = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
-            "data": update_data
+            "data": update_data,
         }
         resp_1 = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
-        _scheduled_event = db.query(ScheduledEvents). \
-            filter(ScheduledEvents.issuer_address == _issuer_address). \
-            filter(ScheduledEvents.token_address == _token_address). \
-            first()
+        _scheduled_event = (
+            db.query(ScheduledEvents)
+            .filter(ScheduledEvents.issuer_address == _issuer_address)
+            .filter(ScheduledEvents.token_address == _token_address)
+            .first()
+        )
         assert resp_1.status_code == 200
         assert resp_1.json() == {"scheduled_event_id": _scheduled_event.event_id}
         assert _scheduled_event.token_type == TokenType.IBET_SHARE.value
-        assert _scheduled_event.scheduled_datetime == datetime_now_utc.replace(tzinfo=None)
+        assert _scheduled_event.scheduled_datetime == datetime_now_utc.replace(
+            tzinfo=None
+        )
         assert _scheduled_event.event_type == ScheduledEventType.UPDATE.value
         assert _scheduled_event.status == 0
         assert _scheduled_event.data == update_data
@@ -155,33 +150,37 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
             "transfer_approval_required": True,
             "principal_value": 900,
             "is_canceled": False,
-            "memo": "memo_test1"
+            "memo": "memo_test1",
         }
 
         # request target API
         req_param = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
-            "data": update_data
+            "data": update_data,
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
-        _scheduled_event = db.query(ScheduledEvents). \
-            filter(ScheduledEvents.issuer_address == _issuer_address). \
-            filter(ScheduledEvents.token_address == _token_address). \
-            first()
+        _scheduled_event = (
+            db.query(ScheduledEvents)
+            .filter(ScheduledEvents.issuer_address == _issuer_address)
+            .filter(ScheduledEvents.token_address == _token_address)
+            .first()
+        )
         assert resp.status_code == 200
         assert resp.json() == {"scheduled_event_id": _scheduled_event.event_id}
         assert _scheduled_event.token_type == TokenType.IBET_SHARE.value
-        assert _scheduled_event.scheduled_datetime == datetime_now_jst.astimezone(timezone.utc).replace(tzinfo=None)
+        assert _scheduled_event.scheduled_datetime == datetime_now_jst.astimezone(
+            timezone.utc
+        ).replace(tzinfo=None)
         assert _scheduled_event.event_type == ScheduledEventType.UPDATE.value
         assert _scheduled_event.status == 0
         assert _scheduled_event.data == update_data
@@ -207,15 +206,15 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         req_param = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
-            "data": update_data
+            "data": update_data,
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address[:-1],  # too short
-                "eoa-password": "password"  # not encrypted
-            }
+                "eoa-password": "password",  # not encrypted
+            },
         )
 
         # assertion
@@ -225,12 +224,13 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
             {
                 "loc": ["header", "issuer-address"],
                 "msg": "issuer-address is not a valid address",
-                "type": "value_error"
-            }, {
+                "type": "value_error",
+            },
+            {
                 "loc": ["header", "eoa-password"],
                 "msg": "eoa-password is not a Base64-encoded encrypted data",
-                "type": "value_error"
-            }
+                "type": "value_error",
+            },
         ]
 
     # <Error_2>
@@ -250,15 +250,15 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         req_param = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
-            "data": update_data
+            "data": update_data,
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
@@ -299,15 +299,15 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         req_param = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
-            "data": update_data
+            "data": update_data,
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("mismatch-password")
-            }
+                "eoa-password": E2EEUtils.encrypt("mismatch-password"),
+            },
         )
 
         # assertion
@@ -340,22 +340,22 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         req_param = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
-            "data": update_data
+            "data": update_data,
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json()["meta"] == {"code": 1, "title": "NotFound"}
         assert resp.json()["detail"] == "token not found"
-        
+
     # <Error_5>
     # RequestValidationError
     # event_data
@@ -363,22 +363,22 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
-        
+
         # request target API
         req_param = {
             "scheduled_datetime": "this is not time format",
             "event_type": "aUpdateb",
             "data": {
                 "dividends": "must be integer, but string",
-            }
+            },
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
@@ -388,17 +388,19 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
             {
                 "loc": ["body", "scheduled_datetime"],
                 "msg": "invalid datetime format",
-                "type": "value_error.datetime"
-            }, {
+                "type": "value_error.datetime",
+            },
+            {
                 "ctx": {"enum_values": ["Update"]},
                 "loc": ["body", "event_type"],
                 "msg": "value is not a valid enumeration member; permitted: 'Update'",
-                "type": "type_error.enum"
-            }, {
+                "type": "type_error.enum",
+            },
+            {
                 "loc": ["body", "data", "dividends"],
                 "msg": "value is not a valid float",
-                "type": "type_error.float"
-            }
+                "type": "type_error.float",
+            },
         ]
 
     # <Error_6>
@@ -435,23 +437,20 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         req_param = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
-            "data": update_data
+            "data": update_data,
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }

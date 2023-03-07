@@ -18,18 +18,15 @@ SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
 
-from sqlalchemy import (
-    BigInteger,
-    Column,
-    String
-)
+from sqlalchemy import BigInteger, Column, String
 
 from .base import Base
 
 
 class TransferApprovalHistory(Base):
     """Token Transfer Approval Operation History"""
-    __tablename__ = 'transfer_approval_history'
+
+    __tablename__ = "transfer_approval_history"
 
     # Sequence Id
     id = Column(BigInteger, primary_key=True, autoincrement=True)

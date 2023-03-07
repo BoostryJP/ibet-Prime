@@ -18,16 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 from unittest import mock
 
-from app.model.db import (
-    IDXPosition,
-    IDXLockedPosition,
-    Token,
-    TokenType
-)
-from app.model.blockchain import (
-    IbetStraightBondContract,
-    IbetShareContract
-)
+from app.model.blockchain import IbetShareContract, IbetStraightBondContract
+from app.model.db import IDXLockedPosition, IDXPosition, Token, TokenType
 
 
 class TestAppRoutersPositionsAccountAddressTokenAddressGET:
@@ -70,14 +62,18 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         # prepare data: Locked Position
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address
-        _locked_position.lock_address = "0x1234567890123456789012345678900000000001"  # lock address 1
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
         _locked_position.account_address = account_address
         _locked_position.value = 5
         db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address
-        _locked_position.lock_address = "0x1234567890123456789012345678900000000002"  # lock address 2
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
         _locked_position.account_address = account_address
         _locked_position.value = 5
         db.add(_locked_position)
@@ -96,8 +92,10 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address=account_address, token_address=token_address),
-            headers={"issuer-address": issuer_address}
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
@@ -111,7 +109,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
             "exchange_balance": 11,
             "exchange_commitment": 12,
             "pending_transfer": 13,
-            "locked": 10
+            "locked": 10,
         }
 
     # <Normal_1_2>
@@ -146,14 +144,18 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         # prepare data: Locked Position
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address
-        _locked_position.lock_address = "0x1234567890123456789012345678900000000001"  # lock address 1
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
         _locked_position.account_address = account_address
         _locked_position.value = 5
         db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address
-        _locked_position.lock_address = "0x1234567890123456789012345678900000000002"  # lock address 2
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
         _locked_position.account_address = account_address
         _locked_position.value = 5
         db.add(_locked_position)
@@ -172,8 +174,10 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address=account_address, token_address=token_address),
-            headers={"issuer-address": issuer_address}
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
@@ -187,7 +191,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
             "exchange_balance": 11,
             "exchange_commitment": 12,
             "pending_transfer": 13,
-            "locked": 10
+            "locked": 10,
         }
 
     # <Normal_2>
@@ -224,7 +228,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address=account_address, token_address=token_address),
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
         )
 
         # assertion
@@ -238,7 +244,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
             "exchange_balance": 0,
             "exchange_commitment": 12,
             "pending_transfer": 13,
-            "locked": 0
+            "locked": 0,
         }
 
     # <Normal_3_1>
@@ -262,7 +268,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         # prepare data: Locked Position
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address
-        _locked_position.lock_address = "0x1234567890123456789012345678900000000001"  # lock address 1
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
         _locked_position.account_address = account_address
         _locked_position.value = 5  # not zero
         db.add(_locked_position)
@@ -274,8 +282,10 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address=account_address, token_address=token_address),
-            headers={"issuer-address": issuer_address}
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
@@ -289,7 +299,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
             "exchange_balance": 0,
             "exchange_commitment": 0,
             "pending_transfer": 0,
-            "locked": 0
+            "locked": 0,
         }
 
     # <Normal_3_2>
@@ -322,7 +332,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         # prepare data: Locked Position
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address
-        _locked_position.lock_address = "0x1234567890123456789012345678900000000001"  # lock address 1
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
         _locked_position.account_address = account_address
         _locked_position.value = 5
         db.add(_locked_position)
@@ -334,8 +346,10 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address=account_address, token_address=token_address),
-            headers={"issuer-address": issuer_address}
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
@@ -349,7 +363,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
             "exchange_balance": 0,
             "exchange_commitment": 0,
             "pending_transfer": 0,
-            "locked": 5
+            "locked": 5,
         }
 
     # <Normal_3_3>
@@ -387,8 +401,10 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address=account_address, token_address=token_address),
-            headers={"issuer-address": issuer_address}
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
@@ -402,7 +418,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
             "exchange_balance": 10,
             "exchange_commitment": 15,
             "pending_transfer": 20,
-            "locked": 0
+            "locked": 0,
         }
 
     # <Normal_3_4>
@@ -435,7 +451,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         # prepare data: Locked Position
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = token_address
-        _locked_position.lock_address = "0x1234567890123456789012345678900000000001"  # lock address 1
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
         _locked_position.account_address = account_address
         _locked_position.value = 0
         db.add(_locked_position)
@@ -447,8 +465,10 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address=account_address, token_address=token_address),
-            headers={"issuer-address": issuer_address}
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
@@ -462,7 +482,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
             "exchange_balance": 10,
             "exchange_commitment": 15,
             "pending_transfer": 20,
-            "locked": 0
+            "locked": 0,
         }
 
     ###########################################################################
@@ -478,24 +498,23 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address=account_address, token_address=token_address),
-            headers={"issuer-address": "test"}
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
+            headers={"issuer-address": "test"},
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_2_1>
@@ -507,17 +526,16 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address=account_address, token_address=token_address),
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token not found",
         }
 
     # <Error_2_2>
@@ -531,7 +549,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         # prepare data: Token
         _token = Token()
         _token.token_address = token_address
-        _token.issuer_address = "0x1234567890123456789012345678900000000101"  # not target
+        _token.issuer_address = (
+            "0x1234567890123456789012345678900000000101"  # not target
+        )
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
@@ -549,18 +569,17 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address=account_address, token_address=token_address),
-            headers={"issuer-address": issuer_address}
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token not found",
         }
 
     # <Error_3>
@@ -592,16 +611,15 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address=account_address, token_address=token_address),
-            headers={"issuer-address": issuer_address}
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }

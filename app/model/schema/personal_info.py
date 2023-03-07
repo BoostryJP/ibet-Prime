@@ -16,12 +16,9 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import Optional, List
-from pydantic import (
-    BaseModel,
-    validator,
-    Field
-)
+from typing import List, Optional
+
+from pydantic import BaseModel, Field, validator
 from web3 import Web3
 
 from app.model.db import BatchRegisterPersonalInfoUploadStatus
@@ -30,6 +27,7 @@ from app.model.schema.types import ResultSet
 
 class PersonalInfo(BaseModel):
     """Personal Information schema"""
+
     name: Optional[str]
     postal_code: Optional[str]
     address: Optional[str]
@@ -43,8 +41,10 @@ class PersonalInfo(BaseModel):
 # REQUEST
 ############################
 
+
 class RegisterPersonalInfoRequest(PersonalInfo):
     """Register Personal Information schema (REQUEST)"""
+
     account_address: str
     key_manager: str
 
@@ -54,9 +54,11 @@ class RegisterPersonalInfoRequest(PersonalInfo):
             raise ValueError("account_address is not a valid address")
         return v
 
+
 ############################
 # RESPONSE
 ############################
+
 
 class BatchRegisterPersonalInfoUploadResponse(BaseModel):
     """Batch Register PersonalInfo schema (RESPONSE)"""
@@ -70,19 +72,21 @@ class BatchRegisterPersonalInfoUploadResponse(BaseModel):
             "example": {
                 "batch_id": "cfd83622-34dc-4efe-a68b-2cc275d3d824",
                 "status": "pending",
-                "created": "2022-09-02T19:49:33.370874+09:00"
+                "created": "2022-09-02T19:49:33.370874+09:00",
             }
         }
 
 
 class ListBatchRegisterPersonalInfoUploadResponse(BaseModel):
     """List All Batch Register PersonalInfo Upload (Response)"""
+
     result_set: ResultSet
     uploads: List[BatchRegisterPersonalInfoUploadResponse]
 
 
 class BatchRegisterPersonalInfoResult(BaseModel):
     """Result of Creating Batch Register PersonalInfo schema (RESPONSE)"""
+
     status: int  # (pending:0, succeeded:1, failed:2)
 
     account_address: str

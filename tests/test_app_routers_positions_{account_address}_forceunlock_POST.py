@@ -20,22 +20,13 @@ import hashlib
 from unittest import mock
 from unittest.mock import ANY, MagicMock
 
-from app.model.db import (
-    Account,
-    AuthToken,
-    Token,
-    TokenType
-)
+from app.exceptions import ContractRevertError, SendTransactionError
+from app.model.db import Account, AuthToken, Token, TokenType
 from app.utils.e2ee_utils import E2EEUtils
-from app.exceptions import (
-    SendTransactionError,
-    ContractRevertError
-)
 from tests.account_config import config_eth_account
 
 
 class TestAppRoutersForceUnlockPOST:
-
     # target API endpoint
     test_url = "/positions/{account_address}/force_unlock"
 
@@ -80,15 +71,15 @@ class TestAppRoutersForceUnlockPOST:
             "lock_address": _lock_address,
             "account_address": _admin_address,
             "recipient_address": _recipient_address,
-            "value": 10
+            "value": 10,
         }
         resp = client.post(
             self.test_url,
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
@@ -98,10 +89,10 @@ class TestAppRoutersForceUnlockPOST:
                 "account_address": _admin_address,
                 "recipient_address": _recipient_address,
                 "value": 10,
-                "data": ""
+                "data": "",
             },
             tx_from=_admin_address,
-            private_key=ANY
+            private_key=ANY,
         )
 
         assert resp.status_code == 200
@@ -150,15 +141,12 @@ class TestAppRoutersForceUnlockPOST:
             "lock_address": _lock_address,
             "account_address": _admin_address,
             "recipient_address": _recipient_address,
-            "value": 10
+            "value": 10,
         }
         resp = client.post(
             self.test_url,
             json=req_param,
-            headers={
-                "issuer-address": _admin_address,
-                "auth-token": "test_auth_token"
-            }
+            headers={"issuer-address": _admin_address, "auth-token": "test_auth_token"},
         )
 
         # assertion
@@ -168,10 +156,10 @@ class TestAppRoutersForceUnlockPOST:
                 "account_address": _admin_address,
                 "recipient_address": _recipient_address,
                 "value": 10,
-                "data": ""
+                "data": "",
             },
             tx_from=_admin_address,
-            private_key=ANY
+            private_key=ANY,
         )
 
         assert resp.status_code == 200
@@ -188,47 +176,40 @@ class TestAppRoutersForceUnlockPOST:
         # request target API
         req_param = {}
         resp = client.post(
-            self.test_url,
-            json=req_param,
-            headers={
-                "issuer-address": "issuer-address"
-            }
+            self.test_url, json=req_param, headers={"issuer-address": "issuer-address"}
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['body', 'token_address'],
-                    'msg': 'field required',
-                    'type': 'value_error.missing'
+                    "loc": ["body", "token_address"],
+                    "msg": "field required",
+                    "type": "value_error.missing",
                 },
                 {
-                    'loc': ['body', 'lock_address'],
-                    'msg': 'field required',
-                    'type': 'value_error.missing'
+                    "loc": ["body", "lock_address"],
+                    "msg": "field required",
+                    "type": "value_error.missing",
                 },
                 {
-                    'loc': ['body', 'account_address'],
-                    'msg': 'field required',
-                    'type': 'value_error.missing'
+                    "loc": ["body", "account_address"],
+                    "msg": "field required",
+                    "type": "value_error.missing",
                 },
                 {
-                    'loc': ['body', 'recipient_address'],
-                    'msg': 'field required',
-                    'type': 'value_error.missing'
+                    "loc": ["body", "recipient_address"],
+                    "msg": "field required",
+                    "type": "value_error.missing",
                 },
                 {
-                    'loc': ['body', 'value'],
-                    'msg': 'field required',
-                    'type': 'value_error.missing'
-                }
-            ]
+                    "loc": ["body", "value"],
+                    "msg": "field required",
+                    "type": "value_error.missing",
+                },
+            ],
         }
 
     # <Error_1_2>
@@ -239,7 +220,9 @@ class TestAppRoutersForceUnlockPOST:
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
         _lock_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
         _admin_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
-        _recipient_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
+        _recipient_address = (
+            "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
+        )
 
         # request target API
         req_param = {
@@ -247,51 +230,44 @@ class TestAppRoutersForceUnlockPOST:
             "lock_address": _lock_address,
             "account_address": _admin_address,
             "recipient_address": _recipient_address,
-            "value": 0
+            "value": 0,
         }
         resp = client.post(
-            self.test_url,
-            json=req_param,
-            headers={
-                "issuer-address": "issuer-address"
-            }
+            self.test_url, json=req_param, headers={"issuer-address": "issuer-address"}
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['body', 'token_address'],
-                    'msg': 'token_address is not a valid address',
-                    'type': 'value_error'
+                    "loc": ["body", "token_address"],
+                    "msg": "token_address is not a valid address",
+                    "type": "value_error",
                 },
                 {
-                    'loc': ['body', 'lock_address'],
-                    'msg': 'lock_address is not a valid address',
-                    'type': 'value_error'
+                    "loc": ["body", "lock_address"],
+                    "msg": "lock_address is not a valid address",
+                    "type": "value_error",
                 },
                 {
-                    'loc': ['body', 'account_address'],
-                    'msg': 'account_address is not a valid address',
-                    'type': 'value_error'
+                    "loc": ["body", "account_address"],
+                    "msg": "account_address is not a valid address",
+                    "type": "value_error",
                 },
                 {
-                    'loc': ['body', 'recipient_address'],
-                    'msg': 'recipient_address is not a valid address',
-                    'type': 'value_error'
+                    "loc": ["body", "recipient_address"],
+                    "msg": "recipient_address is not a valid address",
+                    "type": "value_error",
                 },
                 {
-                    'loc': ['body', 'value'],
-                    'msg': 'ensure this value is greater than 0',
-                    'type': 'value_error.number.not_gt',
-                    'ctx': {'limit_value': 0}
-                }
-            ]
+                    "loc": ["body", "value"],
+                    "msg": "ensure this value is greater than 0",
+                    "type": "value_error.number.not_gt",
+                    "ctx": {"limit_value": 0},
+                },
+            ],
         }
 
     # <Error_3>
@@ -299,29 +275,24 @@ class TestAppRoutersForceUnlockPOST:
     # Header and body are required
     def test_error_1_3(self, client, db):
         # request target API
-        resp = client.post(
-            self.test_url
-        )
+        resp = client.post(self.test_url)
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
                 {
                     "loc": ["body"],
                     "msg": "field required",
-                    "type": "value_error.missing"
-                }
-            ]
+                    "type": "value_error.missing",
+                },
+            ],
         }
 
     # <Error_4>
@@ -343,30 +314,25 @@ class TestAppRoutersForceUnlockPOST:
             "lock_address": _lock_address,
             "account_address": _admin_address,
             "recipient_address": _recipient_address,
-            "value": 10
+            "value": 10,
         }
         resp = client.post(
             self.test_url,
             json=req_param,
-            headers={
-                "issuer-address": "issuer-address"  # dummy address
-            }
+            headers={"issuer-address": "issuer-address"},  # dummy address
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_1_5>
@@ -388,29 +354,28 @@ class TestAppRoutersForceUnlockPOST:
             "lock_address": _lock_address,
             "account_address": _admin_address,
             "recipient_address": _recipient_address,
-            "value": 10
+            "value": 10,
         }
         resp = client.post(
             self.test_url,
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
-                "eoa-password": "password" # not encrypted
-            }
+                "eoa-password": "password",  # not encrypted
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
-            "detail": [{
-                "loc": ["header", "eoa-password"],
-                "msg": "eoa-password is not a Base64-encoded encrypted data",
-                "type": "value_error"
-            }]
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "loc": ["header", "eoa-password"],
+                    "msg": "eoa-password is not a Base64-encoded encrypted data",
+                    "type": "value_error",
+                }
+            ],
         }
 
     # <Error_2_1>
@@ -432,25 +397,22 @@ class TestAppRoutersForceUnlockPOST:
             "lock_address": _lock_address,
             "account_address": _admin_address,
             "recipient_address": _recipient_address,
-            "value": 10
+            "value": 10,
         }
         resp = client.post(
             self.test_url,
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 401
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "AuthorizationError"
-            },
-            "detail": "issuer does not exist, or password mismatch"
+            "meta": {"code": 1, "title": "AuthorizationError"},
+            "detail": "issuer does not exist, or password mismatch",
         }
 
     # <Error_2_2>
@@ -479,25 +441,22 @@ class TestAppRoutersForceUnlockPOST:
             "lock_address": _lock_address,
             "account_address": _admin_address,
             "recipient_address": _recipient_address,
-            "value": 10
+            "value": 10,
         }
         resp = client.post(
             self.test_url,
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
-                "eoa-password": E2EEUtils.encrypt("password_test")
-            }
+                "eoa-password": E2EEUtils.encrypt("password_test"),
+            },
         )
 
         # assertion
         assert resp.status_code == 401
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "AuthorizationError"
-            },
-            "detail": "issuer does not exist, or password mismatch"
+            "meta": {"code": 1, "title": "AuthorizationError"},
+            "detail": "issuer does not exist, or password mismatch",
         }
 
     # <Error_3_1>
@@ -526,25 +485,22 @@ class TestAppRoutersForceUnlockPOST:
             "lock_address": _lock_address,
             "account_address": _admin_address,
             "recipient_address": _recipient_address,
-            "value": 10
+            "value": 10,
         }
         resp = client.post(
             self.test_url,
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "token not found"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "token not found",
         }
 
     # <Error_3_2>
@@ -582,31 +538,30 @@ class TestAppRoutersForceUnlockPOST:
             "lock_address": _lock_address,
             "account_address": _admin_address,
             "recipient_address": _recipient_address,
-            "value": 10
+            "value": 10,
         }
         resp = client.post(
             self.test_url,
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }
 
     # <Error_4>
     # ContractRevertError
-    @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock",
-                MagicMock(side_effect=ContractRevertError(code_msg="111201")))
+    @mock.patch(
+        "app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock",
+        MagicMock(side_effect=ContractRevertError(code_msg="111201")),
+    )
     def test_error_4(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
@@ -638,31 +593,30 @@ class TestAppRoutersForceUnlockPOST:
             "lock_address": _lock_address,
             "account_address": _admin_address,
             "recipient_address": _recipient_address,
-            "value": 10
+            "value": 10,
         }
         resp = client.post(
             self.test_url,
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            'meta': {
-                'code': 111201,
-                'title': 'ContractRevertError'
-            },
-            'detail': 'Unlock amount is greater than locked amount.'
+            "meta": {"code": 111201, "title": "ContractRevertError"},
+            "detail": "Unlock amount is greater than locked amount.",
         }
 
     # <Error_5>
     # SendTransactionError
-    @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock",
-                MagicMock(side_effect=SendTransactionError()))
+    @mock.patch(
+        "app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock",
+        MagicMock(side_effect=SendTransactionError()),
+    )
     def test_error_5(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
@@ -694,23 +648,20 @@ class TestAppRoutersForceUnlockPOST:
             "lock_address": _lock_address,
             "account_address": _admin_address,
             "recipient_address": _recipient_address,
-            "value": 10
+            "value": 10,
         }
         resp = client.post(
             self.test_url,
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 2,
-                "title": "SendTransactionError"
-            },
-            "detail": "failed to send transaction"
+            "meta": {"code": 2, "title": "SendTransactionError"},
+            "detail": "failed to send transaction",
         }

@@ -18,11 +18,11 @@ SPDX-License-Identifier: Apache-2.0
 """
 from app.model.db import (
     Account,
+    IDXLockedPosition,
+    IDXPersonalInfo,
+    IDXPosition,
     Token,
     TokenType,
-    IDXPosition,
-    IDXLockedPosition,
-    IDXPersonalInfo
 )
 from tests.account_config import config_eth_account
 
@@ -70,16 +70,14 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
             "email": "email_test1",
             "birth": "birth_test1",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
         db.add(idx_personal_info_1)
 
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, _account_address_1),
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         # assertion
@@ -94,13 +92,13 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
                 "email": "email_test1",
                 "birth": "birth_test1",
                 "is_corporate": False,
-                "tax_category": 10
+                "tax_category": 10,
             },
             "balance": 0,
             "exchange_balance": 0,
             "exchange_commitment": 0,
             "pending_transfer": 0,
-            "locked": 0
+            "locked": 0,
         }
 
     # <Normal_1_2>
@@ -148,16 +146,14 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
             "email": "email_test1",
             "birth": "birth_test1",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
         db.add(idx_personal_info_1)
 
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, _account_address_1),
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         # assertion
@@ -172,13 +168,13 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
                 "email": "email_test1",
                 "birth": "birth_test1",
                 "is_corporate": False,
-                "tax_category": 10
+                "tax_category": 10,
             },
             "balance": 10,
             "exchange_balance": 11,
             "exchange_commitment": 12,
             "pending_transfer": 5,
-            "locked": 0
+            "locked": 0,
         }
 
     # <Normal_1_3>
@@ -217,14 +213,18 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         # prepare data: Locked Position
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = _token_address
-        _locked_position.lock_address = "0x1234567890123456789012345678900000000001"  # lock address 1
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
         _locked_position.account_address = _account_address_1
         _locked_position.value = 5
         db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
         _locked_position.token_address = _token_address
-        _locked_position.lock_address = "0x1234567890123456789012345678900000000002"  # lock address 2
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
         _locked_position.account_address = _account_address_1
         _locked_position.value = 5
         db.add(_locked_position)
@@ -241,16 +241,14 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
             "email": "email_test1",
             "birth": "birth_test1",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
         db.add(idx_personal_info_1)
 
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, _account_address_1),
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         # assertion
@@ -265,13 +263,13 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
                 "email": "email_test1",
                 "birth": "birth_test1",
                 "is_corporate": False,
-                "tax_category": 10
+                "tax_category": 10,
             },
             "balance": 10,
             "exchange_balance": 11,
             "exchange_commitment": 12,
             "pending_transfer": 5,
-            "locked": 10
+            "locked": 10,
         }
 
     # <Normal_2_1>
@@ -307,9 +305,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, _account_address_1),
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         # assertion
@@ -324,13 +320,13 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
                 "email": None,
                 "birth": None,
                 "is_corporate": None,
-                "tax_category": None
+                "tax_category": None,
             },
             "balance": 10,
             "exchange_balance": 11,
             "exchange_commitment": 12,
             "pending_transfer": 5,
-            "locked": 0
+            "locked": 0,
         }
 
     # <Normal_2_2>
@@ -380,9 +376,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, _account_address_1),
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         # assertion
@@ -397,13 +391,13 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
                 "email": "email_test1",
                 "birth": "birth_test1",
                 "is_corporate": None,
-                "tax_category": None
+                "tax_category": None,
             },
             "balance": 10,
             "exchange_balance": 11,
             "exchange_commitment": 12,
             "pending_transfer": 5,
-            "locked": 0
+            "locked": 0,
         }
 
     ###########################################################################
@@ -419,23 +413,20 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, _account_address_1),
-            headers={
-                "issuer-address": "0x0"
-            }
+            headers={"issuer-address": "0x0"},
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
-            "detail": [{
-                "loc": ["header", "issuer-address"],
-                "msg": "issuer-address is not a valid address",
-                "type": "value_error"
-            }]
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "loc": ["header", "issuer-address"],
+                    "msg": "issuer-address is not a valid address",
+                    "type": "value_error",
+                }
+            ],
         }
 
     # <Error_2>
@@ -449,19 +440,14 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, _account_address_1),
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "issuer does not exist"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "issuer does not exist",
         }
 
     # <Error_3>
@@ -480,19 +466,14 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, _account_address_1),
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token not found",
         }
 
     # <Error_4>
@@ -520,17 +501,12 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, _account_address_1),
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }

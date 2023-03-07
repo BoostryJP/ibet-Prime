@@ -20,12 +20,12 @@ import time
 from typing import Iterable
 
 from rich.progress_bar import ProgressBar
+from src.utils.time import human_time
 from textual.binding import Binding
 from textual.coordinate import Coordinate
 from textual.reactive import reactive
 from textual.widgets import DataTable
 
-from src.utils.time import human_time
 from app.model.schema.bc_explorer import BlockData
 
 

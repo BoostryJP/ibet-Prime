@@ -19,12 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import uuid
 from unittest import mock
 
-from app.model.db import (
-    Token,
-    TokenType,
-    TokenHoldersList,
-    TokenHolderBatchStatus
-)
+from app.model.db import Token, TokenHolderBatchStatus, TokenHoldersList, TokenType
 from tests.account_config import config_eth_account
 
 
@@ -53,21 +48,13 @@ class TestAppRoutersTokenHoldersGET:
         db.add(token)
 
         # request target API
-        resp = client.get(
-            self.base_url.format(token_address),
-            headers={}
-        )
+        resp = client.get(self.base_url.format(token_address), headers={})
 
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 0,
-                "limit": None,
-                "offset": None,
-                "total": 0
-            },
-            "collections": []
-         }
+            "result_set": {"count": 0, "limit": None, "offset": None, "total": 0},
+            "collections": [],
+        }
 
     # <Normal Case 2>
     # 1 record
@@ -93,27 +80,19 @@ class TestAppRoutersTokenHoldersGET:
         db.add(token_holder_list1)
 
         # request target API
-        resp = client.get(
-            self.base_url.format(token_address),
-            headers={}
-        )
+        resp = client.get(self.base_url.format(token_address), headers={})
 
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 1,
-                "limit": None,
-                "offset": None,
-                "total": 1
-            },
+            "result_set": {"count": 1, "limit": None, "offset": None, "total": 1},
             "collections": [
                 {
                     "token_address": token_address,
                     "block_number": 100,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.PENDING.value
+                    "status": TokenHolderBatchStatus.PENDING.value,
                 }
-            ]
+            ],
         }
 
     # <Normal_3_1>
@@ -169,51 +148,43 @@ class TestAppRoutersTokenHoldersGET:
         db.add(token_holder_list5)
 
         # request target API
-        resp = client.get(
-            self.base_url.format(token_address),
-            headers={}
-        )
+        resp = client.get(self.base_url.format(token_address), headers={})
 
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 5,
-                "limit": None,
-                "offset": None,
-                "total": 5
-            },
+            "result_set": {"count": 5, "limit": None, "offset": None, "total": 5},
             "collections": [
                 {
                     "token_address": token_address,
                     "block_number": 500,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.DONE.value
+                    "status": TokenHolderBatchStatus.DONE.value,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 400,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.DONE.value
+                    "status": TokenHolderBatchStatus.DONE.value,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 300,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.FAILED.value
+                    "status": TokenHolderBatchStatus.FAILED.value,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 200,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.FAILED.value
+                    "status": TokenHolderBatchStatus.FAILED.value,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 100,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.PENDING.value
-                }
-            ]
+                    "status": TokenHolderBatchStatus.PENDING.value,
+                },
+            ],
         }
 
     # <Normal_3_2>
@@ -270,51 +241,44 @@ class TestAppRoutersTokenHoldersGET:
         # request target API
         resp = client.get(
             self.base_url.format(token_address),
-            headers={
-                "issuer-address": issuer_address
-            }
+            headers={"issuer-address": issuer_address},
         )
 
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 5,
-                "limit": None,
-                "offset": None,
-                "total": 5
-            },
+            "result_set": {"count": 5, "limit": None, "offset": None, "total": 5},
             "collections": [
                 {
                     "token_address": token_address,
                     "block_number": 500,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.DONE.value
+                    "status": TokenHolderBatchStatus.DONE.value,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 400,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.DONE.value
+                    "status": TokenHolderBatchStatus.DONE.value,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 300,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.FAILED.value
+                    "status": TokenHolderBatchStatus.FAILED.value,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 200,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.FAILED.value
+                    "status": TokenHolderBatchStatus.FAILED.value,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 100,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.PENDING.value
-                }
-            ]
+                    "status": TokenHolderBatchStatus.PENDING.value,
+                },
+            ],
         }
 
     # <Normal_3_3>
@@ -371,30 +335,21 @@ class TestAppRoutersTokenHoldersGET:
         # request target API
         resp = client.get(
             self.base_url.format(token_address),
-            headers={
-                "issuer-address": issuer_address
-            },
-            params={
-                "status": str(TokenHolderBatchStatus.PENDING.value)
-            }
+            headers={"issuer-address": issuer_address},
+            params={"status": str(TokenHolderBatchStatus.PENDING.value)},
         )
 
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 1,
-                "limit": None,
-                "offset": None,
-                "total": 5
-            },
+            "result_set": {"count": 1, "limit": None, "offset": None, "total": 5},
             "collections": [
                 {
                     "token_address": token_address,
                     "block_number": 100,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.PENDING.value
+                    "status": TokenHolderBatchStatus.PENDING.value,
                 }
-            ]
+            ],
         }
 
     # <Normal_4>
@@ -449,37 +404,26 @@ class TestAppRoutersTokenHoldersGET:
         db.add(token_holder_list5)
 
         # request target API
-        req_param = {
-            "limit": 2,
-            "offset": 2
-        }
-        resp = client.get(
-            self.base_url.format(token_address),
-            params=req_param
-        )
+        req_param = {"limit": 2, "offset": 2}
+        resp = client.get(self.base_url.format(token_address), params=req_param)
 
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 5,
-                "limit": 2,
-                "offset": 2,
-                "total": 5
-            },
+            "result_set": {"count": 5, "limit": 2, "offset": 2, "total": 5},
             "collections": [
                 {
                     "token_address": token_address,
                     "block_number": 300,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.FAILED.value
+                    "status": TokenHolderBatchStatus.FAILED.value,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 200,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.FAILED.value
-                }
-            ]
+                    "status": TokenHolderBatchStatus.FAILED.value,
+                },
+            ],
         }
 
     # <Normal_5>
@@ -534,54 +478,44 @@ class TestAppRoutersTokenHoldersGET:
         db.add(token_holder_list5)
 
         # request target API
-        req_param = {
-            "sort_order": 0
-        }
-        resp = client.get(
-            self.base_url.format(token_address),
-            params=req_param
-        )
+        req_param = {"sort_order": 0}
+        resp = client.get(self.base_url.format(token_address), params=req_param)
 
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 5,
-                "limit": None,
-                "offset": None,
-                "total": 5
-            },
+            "result_set": {"count": 5, "limit": None, "offset": None, "total": 5},
             "collections": [
                 {
                     "token_address": token_address,
                     "block_number": 100,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.PENDING.value
+                    "status": TokenHolderBatchStatus.PENDING.value,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 200,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.FAILED.value
+                    "status": TokenHolderBatchStatus.FAILED.value,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 300,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.FAILED.value
+                    "status": TokenHolderBatchStatus.FAILED.value,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 400,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.DONE.value
+                    "status": TokenHolderBatchStatus.DONE.value,
                 },
                 {
                     "token_address": token_address,
                     "block_number": 500,
                     "list_id": mock.ANY,
-                    "status": TokenHolderBatchStatus.DONE.value
-                }
-            ]
+                    "status": TokenHolderBatchStatus.DONE.value,
+                },
+            ],
         }
 
     ###########################################################################
@@ -596,23 +530,20 @@ class TestAppRoutersTokenHoldersGET:
             self.base_url,
             headers={
                 "issuer-address": "test",
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_2>
@@ -624,18 +555,14 @@ class TestAppRoutersTokenHoldersGET:
         # request target API
         resp = client.get(
             self.base_url.format("invalid_address"),
-            headers={
-                "issuer-address": issuer_address
-            }
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "detail": "token not found", 
-            "meta": {
-                "code": 1, "title": "NotFound"
-            }
+            "detail": "token not found",
+            "meta": {"code": 1, "title": "NotFound"},
         }
 
     # <Error_3>
@@ -658,16 +585,12 @@ class TestAppRoutersTokenHoldersGET:
         # request target API
         resp = client.get(
             self.base_url.format(token_address),
-            headers={
-                "issuer-address": issuer_address
-            }
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
             "detail": "this token is temporarily unavailable",
-            "meta": {
-                "code": 1, "title": "InvalidParameterError"
-            }
+            "meta": {"code": 1, "title": "InvalidParameterError"},
         }

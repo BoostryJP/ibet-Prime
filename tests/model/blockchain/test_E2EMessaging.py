@@ -16,29 +16,25 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import pytest
 import base64
 import json
 import os
 from unittest import mock
 from unittest.mock import MagicMock
 
-from Crypto.Cipher import (
-    AES,
-    PKCS1_OAEP
-)
+import pytest
+from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from Crypto.Util.Padding import unpad
 from eth_keyfile import decode_keyfile_json
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
 from web3.exceptions import TimeExhausted
+from web3.middleware import geth_poa_middleware
 
+from app.exceptions import SendTransactionError
 from app.model.blockchain import E2EMessaging
 from app.utils.contract_utils import ContractUtils
 from config import WEB3_HTTP_PROVIDER
-from app.exceptions import SendTransactionError
-
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
@@ -46,7 +42,6 @@ web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
 class TestSendMessage:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -56,8 +51,7 @@ class TestSendMessage:
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
@@ -68,13 +62,15 @@ class TestSendMessage:
             to_address=user_address_2,
             message=message,
             tx_from=user_address_1,
-            private_key=user_private_key_1
+            private_key=user_private_key_1,
         )
 
         # Assertion
         assert isinstance(tx_hash, str)
         assert tx_receipt["status"] == 1
-        last_message = e2e_messaging_contract.functions.getLastMessage(user_address_2).call()
+        last_message = e2e_messaging_contract.functions.getLastMessage(
+            user_address_2
+        ).call()
         block = ContractUtils.get_block_by_transaction_hash(tx_hash)
         assert last_message[0] == user_address_1
         assert last_message[1] == message
@@ -90,22 +86,23 @@ class TestSendMessage:
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         message = "test message"
 
         with pytest.raises(SendTransactionError) as exc_info:
-            with mock.patch("app.utils.contract_utils.ContractUtils.send_transaction",
-                            MagicMock(side_effect=Exception("tx error"))):
+            with mock.patch(
+                "app.utils.contract_utils.ContractUtils.send_transaction",
+                MagicMock(side_effect=Exception("tx error")),
+            ):
                 # Run Test
                 E2EMessaging(e2e_messaging_contract.address).send_message(
                     to_address=user_address_2,
                     message=message,
                     tx_from=user_address_1,
-                    private_key=user_private_key_1
+                    private_key=user_private_key_1,
                 )
 
         # Assertion
@@ -119,22 +116,23 @@ class TestSendMessage:
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         message = "test message"
 
         with pytest.raises(SendTransactionError) as exc_info:
-            with mock.patch("app.utils.contract_utils.ContractUtils.send_transaction",
-                            MagicMock(side_effect=TimeExhausted("Timeout Error test"))):
+            with mock.patch(
+                "app.utils.contract_utils.ContractUtils.send_transaction",
+                MagicMock(side_effect=TimeExhausted("Timeout Error test")),
+            ):
                 # Run Test
                 E2EMessaging(e2e_messaging_contract.address).send_message(
                     to_address=user_address_2,
                     message=message,
                     tx_from=user_address_1,
-                    private_key=user_private_key_1
+                    private_key=user_private_key_1,
                 )
 
         # Assertion
@@ -223,8 +221,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
@@ -232,19 +229,23 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _type = "test_type"
 
         # Run Test
-        tx_hash, tx_receipt = E2EMessaging(e2e_messaging_contract.address).send_message_external(
+        tx_hash, tx_receipt = E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message_external(
             to_address=user_address_2,
             _type=_type,
             message_org=message_org,
             to_rsa_public_key=self.rsa_public_key,
             tx_from=user_address_1,
-            private_key=user_private_key_1
+            private_key=user_private_key_1,
         )
 
         # Assertion
         assert isinstance(tx_hash, str)
         assert tx_receipt["status"] == 1
-        last_message = e2e_messaging_contract.functions.getLastMessage(user_address_2).call()
+        last_message = e2e_messaging_contract.functions.getLastMessage(
+            user_address_2
+        ).call()
         block = ContractUtils.get_block_by_transaction_hash(tx_hash)
         assert last_message[0] == user_address_1
         message_dict = json.loads(last_message[1])
@@ -255,23 +256,24 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         aes_key = rsa_cipher.decrypt(base64.decodebytes(cipher_key.encode("utf-8")))
         assert len(aes_key) == AES.block_size * 2
         encrypt_message = base64.b64decode(message_dict["text"]["message"])
-        aes_iv = encrypt_message[:AES.block_size]
+        aes_iv = encrypt_message[: AES.block_size]
         aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
-        pad_message = aes_cipher.decrypt(encrypt_message[AES.block_size:])
+        pad_message = aes_cipher.decrypt(encrypt_message[AES.block_size :])
         decrypt_message = unpad(pad_message, AES.block_size).decode()
         assert decrypt_message == message_org
         assert last_message[2] == block["timestamp"]
 
     # <Normal_2>
     # use AWS KMS
-    @mock.patch("app.model.blockchain.e2e_messaging.AWS_KMS_GENERATE_RANDOM_ENABLED", True)
+    @mock.patch(
+        "app.model.blockchain.e2e_messaging.AWS_KMS_GENERATE_RANDOM_ENABLED", True
+    )
     @mock.patch("boto3.client")
     def test_normal_2(self, boto3_mock, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
@@ -290,28 +292,28 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                     assert NumberOfBytes == 16
                 random_byte = os.urandom(NumberOfBytes)
                 self.call_cnt += 1
-                return {
-                    "Plaintext": random_byte
-                }
+                return {"Plaintext": random_byte}
 
-        boto3_mock.side_effect = [
-            KMSClientMock()
-        ]
+        boto3_mock.side_effect = [KMSClientMock()]
 
         # Run Test
-        tx_hash, tx_receipt = E2EMessaging(e2e_messaging_contract.address).send_message_external(
+        tx_hash, tx_receipt = E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message_external(
             to_address=user_address_2,
             _type=_type,
             message_org=message_org,
             to_rsa_public_key=self.rsa_public_key,
             tx_from=user_address_1,
-            private_key=user_private_key_1
+            private_key=user_private_key_1,
         )
 
         # Assertion
         assert isinstance(tx_hash, str)
         assert tx_receipt["status"] == 1
-        last_message = e2e_messaging_contract.functions.getLastMessage(user_address_2).call()
+        last_message = e2e_messaging_contract.functions.getLastMessage(
+            user_address_2
+        ).call()
         block = ContractUtils.get_block_by_transaction_hash(tx_hash)
         assert last_message[0] == user_address_1
         message_dict = json.loads(last_message[1])
@@ -322,9 +324,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         aes_key = rsa_cipher.decrypt(base64.decodebytes(cipher_key.encode("utf-8")))
         assert len(aes_key) == AES.block_size * 2
         encrypt_message = base64.b64decode(message_dict["text"]["message"])
-        aes_iv = encrypt_message[:AES.block_size]
+        aes_iv = encrypt_message[: AES.block_size]
         aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
-        pad_message = aes_cipher.decrypt(encrypt_message[AES.block_size:])
+        pad_message = aes_cipher.decrypt(encrypt_message[AES.block_size :])
         decrypt_message = unpad(pad_message, AES.block_size).decode()
         assert decrypt_message == message_org
         assert last_message[2] == block["timestamp"]
@@ -339,8 +341,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
@@ -349,8 +350,10 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         # Run Test
         with pytest.raises(SendTransactionError) as exc_info:
-            with mock.patch("app.utils.contract_utils.ContractUtils.send_transaction",
-                            MagicMock(side_effect=Exception("tx error"))):
+            with mock.patch(
+                "app.utils.contract_utils.ContractUtils.send_transaction",
+                MagicMock(side_effect=Exception("tx error")),
+            ):
                 # Run Test
                 E2EMessaging(e2e_messaging_contract.address).send_message_external(
                     to_address=user_address_2,
@@ -358,7 +361,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                     message_org=message_org,
                     to_rsa_public_key=self.rsa_public_key,
                     tx_from=user_address_1,
-                    private_key=user_private_key_1
+                    private_key=user_private_key_1,
                 )
 
         # Assertion
@@ -372,8 +375,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
@@ -381,8 +383,10 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _type = "test_type"
 
         with pytest.raises(SendTransactionError) as exc_info:
-            with mock.patch("app.utils.contract_utils.ContractUtils.send_transaction",
-                            MagicMock(side_effect=TimeExhausted("Timeout Error test"))):
+            with mock.patch(
+                "app.utils.contract_utils.ContractUtils.send_transaction",
+                MagicMock(side_effect=TimeExhausted("Timeout Error test")),
+            ):
                 # Run Test
                 E2EMessaging(e2e_messaging_contract.address).send_message_external(
                     to_address=user_address_2,
@@ -390,7 +394,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                     message_org=message_org,
                     to_rsa_public_key=self.rsa_public_key,
                     tx_from=user_address_1,
-                    private_key=user_private_key_1
+                    private_key=user_private_key_1,
                 )
 
         # Assertion
@@ -425,23 +429,26 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         key_type = "RSA4098"
 
         # Run Test
-        tx_hash, tx_receipt = E2EMessaging(e2e_messaging_contract.address).set_public_key(
+        tx_hash, tx_receipt = E2EMessaging(
+            e2e_messaging_contract.address
+        ).set_public_key(
             public_key=self.rsa_public_key,
             key_type=key_type,
             tx_from=user_address_1,
-            private_key=user_private_key_1
+            private_key=user_private_key_1,
         )
 
         # Assertion
         assert isinstance(tx_hash, str)
         assert tx_receipt["status"] == 1
-        public_key = e2e_messaging_contract.functions.getPublicKey(user_address_1).call()
+        public_key = e2e_messaging_contract.functions.getPublicKey(
+            user_address_1
+        ).call()
         assert public_key[0] == self.rsa_public_key
         assert public_key[1] == key_type
 
@@ -455,21 +462,22 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         key_type = "RSA4098"
 
         # Run Test
         with pytest.raises(SendTransactionError) as exc_info:
-            with mock.patch("app.utils.contract_utils.ContractUtils.send_transaction",
-                            MagicMock(side_effect=Exception("tx error"))):
+            with mock.patch(
+                "app.utils.contract_utils.ContractUtils.send_transaction",
+                MagicMock(side_effect=Exception("tx error")),
+            ):
                 # Run Test
                 E2EMessaging(e2e_messaging_contract.address).set_public_key(
                     public_key=self.rsa_public_key,
                     key_type=key_type,
                     tx_from=user_address_1,
-                    private_key=user_private_key_1
+                    private_key=user_private_key_1,
                 )
 
         # Assertion
@@ -483,20 +491,21 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         key_type = "RSA4098"
 
         with pytest.raises(SendTransactionError) as exc_info:
-            with mock.patch("app.utils.contract_utils.ContractUtils.send_transaction",
-                            MagicMock(side_effect=TimeExhausted("Timeout Error test"))):
+            with mock.patch(
+                "app.utils.contract_utils.ContractUtils.send_transaction",
+                MagicMock(side_effect=TimeExhausted("Timeout Error test")),
+            ):
                 # Run Test
                 E2EMessaging(e2e_messaging_contract.address).set_public_key(
                     public_key=self.rsa_public_key,
                     key_type=key_type,
                     tx_from=user_address_1,
-                    private_key=user_private_key_1
+                    private_key=user_private_key_1,
                 )
 
         # Assertion

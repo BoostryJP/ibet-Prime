@@ -18,20 +18,20 @@ SPDX-License-Identifier: Apache-2.0
 """
 from typing import TYPE_CHECKING, cast
 
-from app.model.schema import ListBlockDataQuery
-from app.model.schema.types import SortOrder
 from rich.markdown import Markdown
+from src.gui.consts import ID
+from src.gui.widget.base import TuiWidget
+from src.gui.widget.block_list_table import BlockListTable
+from src.gui.widget.block_list_view import BlockListQueryPanel
+from src.gui.widget.choice import Choices
 from textual import events
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.message import Message
 from textual.widgets import Button, Input, Label
 
-from src.gui.consts import ID
-from src.gui.widget.base import TuiWidget
-from src.gui.widget.block_list_table import BlockListTable
-from src.gui.widget.block_list_view import BlockListQueryPanel
-from src.gui.widget.choice import Choices
+from app.model.schema import ListBlockDataQuery
+from app.model.schema.types import SortOrder
 
 if TYPE_CHECKING:
     from src.gui.explorer import ExplorerApp
@@ -147,7 +147,10 @@ class ToBlockInput(Input):
                     self.value = self.value[:-1]
                     self.cursor_position -= 1
                 else:
-                    new_value = self.value[: self.cursor_position - 1] + self.value[self.cursor_position :]
+                    new_value = (
+                        self.value[: self.cursor_position - 1]
+                        + self.value[self.cursor_position :]
+                    )
                     if new_value != "":
                         self.value = new_value
                         self.cursor_position -= 1
@@ -157,7 +160,9 @@ class QuerySetting(TuiWidget):
     BINDINGS = [
         Binding("c,q,escape", "cancel()", "Cancel", key_display="Q, C", priority=True),
         Binding("tab", "focus_next", "Focus Next", show=True, priority=True),
-        Binding("shift+tab", "focus_previous", "Focus Previous", show=True, priority=True),
+        Binding(
+            "shift+tab", "focus_previous", "Focus Previous", show=True, priority=True
+        ),
         Binding("enter", "enter()", "Enter", priority=True),
         Binding("e", "", "", show=False),
         Binding("ctrl+c", "", "", show=False),
@@ -169,9 +174,13 @@ class QuerySetting(TuiWidget):
     def compose(self) -> ComposeResult:
         yield Label(Markdown("# Query Setting"))
         yield Label(Markdown("#### To Block"))
-        yield ToBlockInput(placeholder="100", name="to_block", id=ID.QUERY_PANEL_TO_BLOCK_INPUT)
+        yield ToBlockInput(
+            placeholder="100", name="to_block", id=ID.QUERY_PANEL_TO_BLOCK_INPUT
+        )
         yield Label(Markdown("#### From Block(Auto set)"))
-        yield Input(placeholder="0", name="from_block", id=ID.QUERY_PANEL_FROM_BLOCK_INPUT)
+        yield Input(
+            placeholder="0", name="from_block", id=ID.QUERY_PANEL_FROM_BLOCK_INPUT
+        )
         yield Label(Markdown("#### Sort Order"))
         yield Choices(["DESC", "ASC"], id=ID.QUERY_PANEL_SORT_ORDER_CHOICE)
         yield Button("Enter", id=ID.QUERY_PANEL_ENTER)
@@ -183,13 +192,21 @@ class QuerySetting(TuiWidget):
 
         if self.tui.state.block_list_query is not None:
             query = self.tui.state.block_list_query
-            self.query_one(f"#{ID.QUERY_PANEL_FROM_BLOCK_INPUT}", Input).value = str(query.from_block_number)
-            self.query_one(f"#{ID.QUERY_PANEL_TO_BLOCK_INPUT}", Input).value = str(query.to_block_number)
+            self.query_one(f"#{ID.QUERY_PANEL_FROM_BLOCK_INPUT}", Input).value = str(
+                query.from_block_number
+            )
+            self.query_one(f"#{ID.QUERY_PANEL_TO_BLOCK_INPUT}", Input).value = str(
+                query.to_block_number
+            )
 
             item = "ASC" if query.sort_order.value == 0 else "DESC"
-            self.query_one(f"#{ID.QUERY_PANEL_SORT_ORDER_CHOICE}", Choices).index = self.query_one(
+            self.query_one(
                 f"#{ID.QUERY_PANEL_SORT_ORDER_CHOICE}", Choices
-            ).choices.index(item)
+            ).index = self.query_one(
+                f"#{ID.QUERY_PANEL_SORT_ORDER_CHOICE}", Choices
+            ).choices.index(
+                item
+            )
 
     def hide(self) -> None:
         self.remove_class("visible")
@@ -202,9 +219,13 @@ class QuerySetting(TuiWidget):
         """
         if event.key == "Enter":
             self.action_enter()
-            from_block = self.query_one(f"#{ID.QUERY_PANEL_FROM_BLOCK_INPUT}", Input).value
+            from_block = self.query_one(
+                f"#{ID.QUERY_PANEL_FROM_BLOCK_INPUT}", Input
+            ).value
             to_block = self.query_one(f"#{ID.QUERY_PANEL_TO_BLOCK_INPUT}", Input).value
-            sort_order = self.query_one(f"#{ID.QUERY_PANEL_SORT_ORDER_CHOICE}", Choices).current_value()
+            sort_order = self.query_one(
+                f"#{ID.QUERY_PANEL_SORT_ORDER_CHOICE}", Choices
+            ).current_value()
 
             query = ListBlockDataQuery(
                 from_block_number=int(from_block),
@@ -249,7 +270,9 @@ class QuerySetting(TuiWidget):
         """
         from_block = self.query_one(f"#{ID.QUERY_PANEL_FROM_BLOCK_INPUT}", Input).value
         to_block = self.query_one(f"#{ID.QUERY_PANEL_TO_BLOCK_INPUT}", Input).value
-        sort_order = self.query_one(f"#{ID.QUERY_PANEL_SORT_ORDER_CHOICE}", Choices).current_value()
+        sort_order = self.query_one(
+            f"#{ID.QUERY_PANEL_SORT_ORDER_CHOICE}", Choices
+        ).current_value()
 
         query = ListBlockDataQuery(
             from_block_number=int(from_block),

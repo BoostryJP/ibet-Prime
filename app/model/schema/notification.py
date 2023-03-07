@@ -17,23 +17,13 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from typing import (
-    List,
-    Dict,
-    Any,
-    Union,
-    Optional,
-    Literal
-)
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, conint
 
+from app.model.db import BatchIssueRedeemProcessingCategory, NotificationType, TokenType
+
 from .types import ResultSet
-from app.model.db import (
-    NotificationType,
-    BatchIssueRedeemProcessingCategory,
-    TokenType
-)
 
 
 class IssueErrorMetaInfo(BaseModel):
@@ -115,9 +105,11 @@ class IssueErrorNotification(Notification):
         @staticmethod
         def schema_extra(schema: Dict[str, Any], _) -> None:
             notice_code_schema = schema["properties"]["notice_code"]
-            notice_code_schema["description"] = " - 0: Issuer does not exist\n" \
-                                                " - 1: Could not get the private key of the issuer\n" \
-                                                " - 2: Failed to send transaction\n"
+            notice_code_schema["description"] = (
+                " - 0: Issuer does not exist\n"
+                " - 1: Could not get the private key of the issuer\n"
+                " - 2: Failed to send transaction\n"
+            )
 
 
 class BulkTransferErrorNotification(Notification):
@@ -129,10 +121,11 @@ class BulkTransferErrorNotification(Notification):
         @staticmethod
         def schema_extra(schema: Dict[str, Any], _) -> None:
             notice_code_schema = schema["properties"]["notice_code"]
-            notice_code_schema["description"] = " - 0: Issuer does not exist\n" \
-                                                " - 1: Could not get the private key of the issuer\n" \
-                                                " - 2: Failed to send transaction\n" \
-
+            notice_code_schema["description"] = (
+                " - 0: Issuer does not exist\n"
+                " - 1: Could not get the private key of the issuer\n"
+                " - 2: Failed to send transaction\n"
+            )
 
 
 class ScheduleEventErrorNotification(Notification):
@@ -144,10 +137,11 @@ class ScheduleEventErrorNotification(Notification):
         @staticmethod
         def schema_extra(schema: Dict[str, Any], _) -> None:
             notice_code_schema = schema["properties"]["notice_code"]
-            notice_code_schema["description"] = " - 0: Issuer does not exist\n" \
-                                                " - 1: Could not get the private key of the issuer\n" \
-                                                " - 2: Failed to send transaction\n" \
-
+            notice_code_schema["description"] = (
+                " - 0: Issuer does not exist\n"
+                " - 1: Could not get the private key of the issuer\n"
+                " - 2: Failed to send transaction\n"
+            )
 
 
 class TransferApprovalInfoNotification(Notification):
@@ -159,10 +153,12 @@ class TransferApprovalInfoNotification(Notification):
         @staticmethod
         def schema_extra(schema: Dict[str, Any], _) -> None:
             notice_code_schema = schema["properties"]["notice_code"]
-            notice_code_schema["description"] = " - 0: Apply for transfer\n" \
-                                                " - 1: Cancel transfer\n" \
-                                                " - 2: Approve transfer\n" \
-                                                " - 3: Escrow finished (Only occurs in security token escrow)\n"
+            notice_code_schema["description"] = (
+                " - 0: Apply for transfer\n"
+                " - 1: Cancel transfer\n"
+                " - 2: Approve transfer\n"
+                " - 3: Escrow finished (Only occurs in security token escrow)\n"
+            )
 
 
 class CreateLedgerInfoNotification(Notification):
@@ -174,7 +170,9 @@ class CreateLedgerInfoNotification(Notification):
         @staticmethod
         def schema_extra(schema: Dict[str, Any], _) -> None:
             notice_code_schema = schema["properties"]["notice_code"]
-            notice_code_schema["description"] = " - 0: Created ledger info successfully\n"
+            notice_code_schema[
+                "description"
+            ] = " - 0: Created ledger info successfully\n"
 
 
 class BatchRegisterPersonalInfoErrorNotification(Notification):
@@ -186,8 +184,9 @@ class BatchRegisterPersonalInfoErrorNotification(Notification):
         @staticmethod
         def schema_extra(schema: Dict[str, Any], _) -> None:
             notice_code_schema = schema["properties"]["notice_code"]
-            notice_code_schema["description"] = " - 0: Issuer does not exist\n" \
-                                                " - 1: Failed to send transaction\n"
+            notice_code_schema["description"] = (
+                " - 0: Issuer does not exist\n" " - 1: Failed to send transaction\n"
+            )
 
 
 class BatchIssueRedeemProcessedNotification(Notification):
@@ -199,10 +198,12 @@ class BatchIssueRedeemProcessedNotification(Notification):
         @staticmethod
         def schema_extra(schema: Dict[str, Any], _) -> None:
             notice_code_schema = schema["properties"]["notice_code"]
-            notice_code_schema["description"] = " - 0: All records successfully processed\n" \
-                                                " - 1: Issuer does not exist\n" \
-                                                " - 2: Failed to decode keyfile\n" \
-                                                " - 3: Some records are failed to send transaction"
+            notice_code_schema["description"] = (
+                " - 0: All records successfully processed\n"
+                " - 1: Issuer does not exist\n"
+                " - 2: Failed to decode keyfile\n"
+                " - 3: Some records are failed to send transaction"
+            )
 
 
 class LockInfoNotification(Notification):
@@ -228,6 +229,7 @@ class UnlockInfoNotification(Notification):
             notice_code_schema = schema["properties"]["notice_code"]
             notice_code_schema["description"] = " - 0: Balance is unlocked\n"
 
+
 ############################
 # REQUEST
 ############################
@@ -237,8 +239,10 @@ class UnlockInfoNotification(Notification):
 # RESPONSE
 ############################
 
+
 class NotificationsListResponse(BaseModel):
     """Notifications List schema (Response)"""
+
     __root__: Union[
         IssueErrorNotification,
         BulkTransferErrorNotification,
@@ -248,11 +252,12 @@ class NotificationsListResponse(BaseModel):
         BatchRegisterPersonalInfoErrorNotification,
         BatchIssueRedeemProcessedNotification,
         LockInfoNotification,
-        UnlockInfoNotification
+        UnlockInfoNotification,
     ]
 
 
 class ListAllNotificationsResponse(BaseModel):
     """List All Notifications schema (Response)"""
+
     result_set: ResultSet
     notifications: List[NotificationsListResponse]

@@ -17,41 +17,40 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import pytest
-
+from eth_keyfile import decode_keyfile_json
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
-from eth_keyfile import decode_keyfile_json
 
-from config import (
-    WEB3_HTTP_PROVIDER,
-    CHAIN_ID,
-    TX_GAS_LIMIT
-)
 from app.model.blockchain import (
-    IbetStraightBondContract,
     IbetShareContract,
-    PersonalInfoContract
+    IbetStraightBondContract,
+    PersonalInfoContract,
 )
-from app.model.blockchain.tx_params.ibet_straight_bond import UpdateParams as IbetStraightBondUpdateParams
-from app.model.blockchain.tx_params.ibet_share import UpdateParams as IbetShareUpdateParams
-from app.utils.contract_utils import ContractUtils
+from app.model.blockchain.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams,
+)
 from app.model.db import (
     Account,
     AccountRsaKeyTemporary,
     AccountRsaStatus,
+    IDXPersonalInfo,
     Token,
     TokenType,
-    IDXPersonalInfo
 )
+from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_modify_personal_info import Processor
+from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def processor(db):
     return Processor()
 
@@ -62,10 +61,11 @@ def deploy_personal_info_contract(issuer_user):
     eoa_password = "password"
 
     private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile,
-        password=eoa_password.encode("utf-8")
+        raw_keyfile_json=keyfile, password=eoa_password.encode("utf-8")
     )
-    contract_address, _, _ = ContractUtils.deploy_contract("PersonalInfo", [], address, private_key)
+    contract_address, _, _ = ContractUtils.deploy_contract(
+        "PersonalInfo", [], address, private_key
+    )
     return contract_address
 
 
@@ -73,16 +73,18 @@ def set_personal_info_contract(db, contract_address, issuer_address, sender_list
     contract = ContractUtils.get_contract("PersonalInfo", contract_address)
 
     for sender in sender_list:
-        tx = contract.functions.register(issuer_address, "").build_transaction({
-            "nonce": web3.eth.get_transaction_count(sender["user"]["address"]),
-            "chainId": CHAIN_ID,
-            "from": sender["user"]["address"],
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+        tx = contract.functions.register(issuer_address, "").build_transaction(
+            {
+                "nonce": web3.eth.get_transaction_count(sender["user"]["address"]),
+                "chainId": CHAIN_ID,
+                "from": sender["user"]["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         private_key = decode_keyfile_json(
             raw_keyfile_json=sender["user"]["keyfile_json"],
-            password="password".encode("utf-8")
+            password="password".encode("utf-8"),
         )
         ContractUtils.send_transaction(tx, private_key)
 
@@ -105,12 +107,11 @@ def deploy_bond_token_contract(issuer_user, personal_info_contract_address):
         30,
         "token.return_date",
         "token.return_amount",
-        "token.purpose"
+        "token.purpose",
     ]
 
     private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile,
-        password=eoa_password.encode("utf-8")
+        raw_keyfile_json=keyfile, password=eoa_password.encode("utf-8")
     )
 
     bond_contract = IbetStraightBondContract()
@@ -138,12 +139,11 @@ def deploy_share_token_contract(issuer_user, personal_info_contract_address):
         "token.dividend_record_date",
         "token.dividend_payment_date",
         "token.cancellation_date",
-        10
+        10,
     ]
 
     private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile,
-        password=eoa_password.encode("utf-8")
+        raw_keyfile_json=keyfile, password=eoa_password.encode("utf-8")
     )
 
     share_contract = IbetShareContract()
@@ -158,7 +158,6 @@ def deploy_share_token_contract(issuer_user, personal_info_contract_address):
 
 
 class TestProcessor:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -194,7 +193,9 @@ class TestProcessor:
 
         # token
         personal_info_contract_address_1 = deploy_personal_info_contract(user_1)
-        token_contract_address_1 = deploy_bond_token_contract(user_1, personal_info_contract_address_1)
+        token_contract_address_1 = deploy_bond_token_contract(
+            user_1, personal_info_contract_address_1
+        )
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         token_1.tx_hash = "tx_hash"
@@ -204,7 +205,9 @@ class TestProcessor:
         db.add(token_1)
 
         personal_info_contract_address_2 = deploy_personal_info_contract(user_1)
-        token_contract_address_2 = deploy_share_token_contract(user_1, personal_info_contract_address_2)
+        token_contract_address_2 = deploy_share_token_contract(
+            user_1, personal_info_contract_address_2
+        )
         token_2 = Token()
         token_2.type = TokenType.IBET_SHARE.value
         token_2.tx_hash = "tx_hash"
@@ -264,14 +267,11 @@ class TestProcessor:
                         "email": "email_user1",
                         "birth": "birth_user1",
                         "is_corporate": False,
-                        "tax_category": 10
-                    }
+                        "tax_category": 10,
+                    },
                 },
-                {
-                    "user": personal_user_2,
-                    "data": ""
-                }
-            ]
+                {"user": personal_user_2, "data": ""},
+            ],
         )
 
         idx_3 = IDXPersonalInfo()
@@ -288,12 +288,10 @@ class TestProcessor:
 
         set_personal_info_contract(
             db,
-            personal_info_contract_address_2, user_1["address"],
+            personal_info_contract_address_2,
+            user_1["address"],
             [
-                {
-                    "user": personal_user_3,
-                    "data": ""
-                },
+                {"user": personal_user_3, "data": ""},
                 {
                     "user": personal_user_4,
                     "data": {
@@ -304,10 +302,10 @@ class TestProcessor:
                         "email": "email_user4",
                         "birth": "birth_user4",
                         "is_corporate": True,
-                        "tax_category": 20
-                    }
-                }
-            ]
+                        "tax_category": 20,
+                    },
+                },
+            ],
         )
 
         db.commit()
@@ -330,8 +328,12 @@ class TestProcessor:
         assert temporary.rsa_private_key == user_1["rsa_private_key"]
         assert temporary.rsa_public_key == user_1["rsa_public_key"]
         assert temporary.rsa_passphrase == rsa_passphrase
-        _personal_info_1 = PersonalInfoContract(db, user_1["address"], personal_info_contract_address_1)
-        assert _personal_info_1.get_info(personal_user_1["address"]) == {  # Previous RSA Decrypt
+        _personal_info_1 = PersonalInfoContract(
+            db, user_1["address"], personal_info_contract_address_1
+        )
+        assert _personal_info_1.get_info(
+            personal_user_1["address"]
+        ) == {  # Previous RSA Decrypt
             "key_manager": "key_manager_user1",
             "name": "name_user1",
             "postal_code": "postal_code_user1",
@@ -339,7 +341,7 @@ class TestProcessor:
             "email": "email_user1",
             "birth": "birth_user1",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
         assert _personal_info_1.get_info(personal_user_2["address"]) == {
             "key_manager": None,
@@ -349,9 +351,11 @@ class TestProcessor:
             "email": None,
             "birth": None,
             "is_corporate": None,
-            "tax_category": None
+            "tax_category": None,
         }
-        _personal_info_2 = PersonalInfoContract(db, user_1["address"], personal_info_contract_address_2)
+        _personal_info_2 = PersonalInfoContract(
+            db, user_1["address"], personal_info_contract_address_2
+        )
         assert _personal_info_2.get_info(personal_user_3["address"]) == {
             "key_manager": None,
             "name": None,
@@ -360,9 +364,11 @@ class TestProcessor:
             "email": None,
             "birth": None,
             "is_corporate": None,
-            "tax_category": None
+            "tax_category": None,
         }
-        assert _personal_info_2.get_info(personal_user_4["address"]) == {  # Previous RSA Decrypt
+        assert _personal_info_2.get_info(
+            personal_user_4["address"]
+        ) == {  # Previous RSA Decrypt
             "key_manager": "key_manager_user4",
             "name": "name_user4",
             "postal_code": "postal_code_user4",
@@ -370,7 +376,7 @@ class TestProcessor:
             "email": "email_user4",
             "birth": "birth_user4",
             "is_corporate": True,
-            "tax_category": 20
+            "tax_category": 20,
         }
 
         # RSA Key Change Completed
@@ -400,8 +406,12 @@ class TestProcessor:
         assert temporary.rsa_private_key == user_1["rsa_private_key"]
         assert temporary.rsa_public_key == user_1["rsa_public_key"]
         assert temporary.rsa_passphrase == rsa_passphrase
-        _personal_info_1 = PersonalInfoContract(db, user_1["address"], personal_info_contract_address_1)
-        assert _personal_info_1.get_info(personal_user_1["address"]) == {  # New RSA Decrypt
+        _personal_info_1 = PersonalInfoContract(
+            db, user_1["address"], personal_info_contract_address_1
+        )
+        assert _personal_info_1.get_info(
+            personal_user_1["address"]
+        ) == {  # New RSA Decrypt
             "key_manager": "key_manager_user1",
             "name": "name_user1",
             "postal_code": "postal_code_user1",
@@ -409,7 +419,7 @@ class TestProcessor:
             "email": "email_user1",
             "birth": "birth_user1",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
         assert _personal_info_1.get_info(personal_user_2["address"]) == {
             "key_manager": None,
@@ -419,10 +429,11 @@ class TestProcessor:
             "email": None,
             "birth": None,
             "is_corporate": None,
-            "tax_category": None
-
+            "tax_category": None,
         }
-        _personal_info_2 = PersonalInfoContract(db, user_1["address"], personal_info_contract_address_2)
+        _personal_info_2 = PersonalInfoContract(
+            db, user_1["address"], personal_info_contract_address_2
+        )
         assert _personal_info_2.get_info(personal_user_3["address"]) == {
             "key_manager": None,
             "name": None,
@@ -431,9 +442,11 @@ class TestProcessor:
             "email": None,
             "birth": None,
             "is_corporate": None,
-            "tax_category": None
+            "tax_category": None,
         }
-        assert _personal_info_2.get_info(personal_user_4["address"]) == {  # New RSA Decrypt
+        assert _personal_info_2.get_info(
+            personal_user_4["address"]
+        ) == {  # New RSA Decrypt
             "key_manager": "key_manager_user4",
             "name": "name_user4",
             "postal_code": "postal_code_user4",
@@ -441,7 +454,7 @@ class TestProcessor:
             "email": "email_user4",
             "birth": "birth_user4",
             "is_corporate": True,
-            "tax_category": 20
+            "tax_category": 20,
         }
 
         # Execute batch(Run 3rd)
@@ -460,8 +473,12 @@ class TestProcessor:
         assert _account.rsa_status == AccountRsaStatus.SET.value
         _temporary_count = db.query(AccountRsaKeyTemporary).count()
         assert _temporary_count == 0
-        _personal_info_1 = PersonalInfoContract(db, user_1["address"], personal_info_contract_address_1)
-        assert _personal_info_1.get_info(personal_user_1["address"]) == {  # New RSA Decrypt
+        _personal_info_1 = PersonalInfoContract(
+            db, user_1["address"], personal_info_contract_address_1
+        )
+        assert _personal_info_1.get_info(
+            personal_user_1["address"]
+        ) == {  # New RSA Decrypt
             "key_manager": "key_manager_user1",
             "name": "name_user1",
             "postal_code": "postal_code_user1",
@@ -469,7 +486,7 @@ class TestProcessor:
             "email": "email_user1",
             "birth": "birth_user1",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
         assert _personal_info_1.get_info(personal_user_2["address"]) == {
             "key_manager": None,
@@ -479,9 +496,11 @@ class TestProcessor:
             "email": None,
             "birth": None,
             "is_corporate": None,
-            "tax_category": None
+            "tax_category": None,
         }
-        _personal_info_2 = PersonalInfoContract(db, user_1["address"], personal_info_contract_address_2)
+        _personal_info_2 = PersonalInfoContract(
+            db, user_1["address"], personal_info_contract_address_2
+        )
         assert _personal_info_2.get_info(personal_user_3["address"]) == {
             "key_manager": None,
             "name": None,
@@ -490,9 +509,11 @@ class TestProcessor:
             "email": None,
             "birth": None,
             "is_corporate": None,
-            "tax_category": None
+            "tax_category": None,
         }
-        assert _personal_info_2.get_info(personal_user_4["address"]) == {  # New RSA Decrypt
+        assert _personal_info_2.get_info(
+            personal_user_4["address"]
+        ) == {  # New RSA Decrypt
             "key_manager": "key_manager_user4",
             "name": "name_user4",
             "postal_code": "postal_code_user4",
@@ -500,7 +521,7 @@ class TestProcessor:
             "email": "email_user4",
             "birth": "birth_user4",
             "is_corporate": True,
-            "tax_category": 20
+            "tax_category": 20,
         }
 
     ###########################################################################

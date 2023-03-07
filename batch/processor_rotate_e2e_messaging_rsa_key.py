@@ -22,38 +22,33 @@ import time
 from datetime import datetime
 from typing import Type
 
-from eth_keyfile import decode_keyfile_json
 from Crypto import Random
 from Crypto.PublicKey import RSA
-from sqlalchemy import (
-    create_engine,
-    desc
-)
-from sqlalchemy.orm import Session
+from eth_keyfile import decode_keyfile_json
+from sqlalchemy import create_engine, desc
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
-from config import (
-    DATABASE_URL,
-    ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL,
-    E2E_MESSAGING_CONTRACT_ADDRESS
+import batch_log
+
+from app.exceptions import (
+    ContractRevertError,
+    SendTransactionError,
+    ServiceUnavailableError,
 )
 from app.model.blockchain import E2EMessaging
-from app.model.db import (
-    E2EMessagingAccount,
-    E2EMessagingAccountRsaKey
-)
+from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.web3_utils import Web3Wrapper
-from app.exceptions import (
-    SendTransactionError,
-    ServiceUnavailableError,
-    ContractRevertError
+from config import (
+    DATABASE_URL,
+    E2E_MESSAGING_CONTRACT_ADDRESS,
+    ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL,
 )
-import batch_log
 
 """
 [PROCESSOR-Rotate-E2E-Messaging-RSA-Key]
@@ -73,43 +68,55 @@ class Processor:
     def __init__(self):
         self.e2e_messaging_contract = ContractUtils.get_contract(
             contract_name="E2EMessaging",
-            contract_address=E2E_MESSAGING_CONTRACT_ADDRESS)
+            contract_address=E2E_MESSAGING_CONTRACT_ADDRESS,
+        )
 
     def process(self):
         db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
         try:
             base_time = int(time.time())
-            e2e_messaging_account_list = self.__get_e2e_messaging_account_list(db_session=db_session)
+            e2e_messaging_account_list = self.__get_e2e_messaging_account_list(
+                db_session=db_session
+            )
             for _e2e_messaging_account in e2e_messaging_account_list:
                 self.__auto_generate_rsa_key(
                     db_session=db_session,
                     base_time=base_time,
-                    e2e_messaging_account=_e2e_messaging_account
+                    e2e_messaging_account=_e2e_messaging_account,
                 )
                 self.__rotate_rsa_key(
-                    db_session=db_session,
-                    e2e_messaging_account=_e2e_messaging_account
+                    db_session=db_session, e2e_messaging_account=_e2e_messaging_account
                 )
                 db_session.commit()
         finally:
             db_session.close()
 
     def __get_e2e_messaging_account_list(self, db_session: Session):
-        e2e_messaging_account_list = db_session.query(E2EMessagingAccount). \
-            filter(E2EMessagingAccount.is_deleted == False). \
-            order_by(E2EMessagingAccount.account_address). \
-            all()
+        e2e_messaging_account_list = (
+            db_session.query(E2EMessagingAccount)
+            .filter(E2EMessagingAccount.is_deleted == False)
+            .order_by(E2EMessagingAccount.account_address)
+            .all()
+        )
         return e2e_messaging_account_list
 
-    def __auto_generate_rsa_key(self, db_session: Session, base_time: int, e2e_messaging_account: Type[E2EMessagingAccount]):
-
+    def __auto_generate_rsa_key(
+        self,
+        db_session: Session,
+        base_time: int,
+        e2e_messaging_account: Type[E2EMessagingAccount],
+    ):
         if e2e_messaging_account.rsa_key_generate_interval > 0:
-
             # Get latest RSA key
-            _account_rsa_key = db_session.query(E2EMessagingAccountRsaKey). \
-                filter(E2EMessagingAccountRsaKey.account_address == e2e_messaging_account.account_address). \
-                order_by(desc(E2EMessagingAccountRsaKey.block_timestamp)). \
-                first()
+            _account_rsa_key = (
+                db_session.query(E2EMessagingAccountRsaKey)
+                .filter(
+                    E2EMessagingAccountRsaKey.account_address
+                    == e2e_messaging_account.account_address
+                )
+                .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
+                .first()
+            )
             latest_time = int(_account_rsa_key.block_timestamp.timestamp())
             interval = e2e_messaging_account.rsa_key_generate_interval * 3600
             if base_time - latest_time < interval:
@@ -120,7 +127,9 @@ class Processor:
             # Generate RSA key
             random_func = Random.new().read
             rsa = RSA.generate(4096, random_func)
-            rsa_private_key = rsa.exportKey(format="PEM", passphrase=pass_phrase).decode()
+            rsa_private_key = rsa.exportKey(
+                format="PEM", passphrase=pass_phrase
+            ).decode()
             rsa_public_key = rsa.publickey().exportKey().decode()
 
             # Register RSA Public key to Blockchain
@@ -128,25 +137,35 @@ class Processor:
                 eoa_password = E2EEUtils.decrypt(e2e_messaging_account.eoa_password)
                 private_key = decode_keyfile_json(
                     raw_keyfile_json=e2e_messaging_account.keyfile,
-                    password=eoa_password.encode("utf-8")
+                    password=eoa_password.encode("utf-8"),
                 )
             except Exception:
-                LOG.exception(f"Could not get the EOA private key: "
-                              f"account_address={e2e_messaging_account.account_address}")
+                LOG.exception(
+                    f"Could not get the EOA private key: "
+                    f"account_address={e2e_messaging_account.account_address}"
+                )
                 return
             try:
-                tx_hash, _ = E2EMessaging(E2E_MESSAGING_CONTRACT_ADDRESS).set_public_key(
+                tx_hash, _ = E2EMessaging(
+                    E2E_MESSAGING_CONTRACT_ADDRESS
+                ).set_public_key(
                     public_key=rsa_public_key,
                     key_type="RSA4096",
                     tx_from=e2e_messaging_account.account_address,
-                    private_key=private_key
+                    private_key=private_key,
                 )
-                LOG.info(f"New RSA key created: account_address={e2e_messaging_account.account_address}")
+                LOG.info(
+                    f"New RSA key created: account_address={e2e_messaging_account.account_address}"
+                )
             except ContractRevertError as e:
-                LOG.warning(f"Transaction reverted: account_address=<{e2e_messaging_account.account_address}> error_code:<{e.code}> error_msg:<{e.message}>")
+                LOG.warning(
+                    f"Transaction reverted: account_address=<{e2e_messaging_account.account_address}> error_code:<{e.code}> error_msg:<{e.message}>"
+                )
                 return
             except SendTransactionError:
-                LOG.warning(f"Failed to send transaction: account_address={e2e_messaging_account.account_address}")
+                LOG.warning(
+                    f"Failed to send transaction: account_address={e2e_messaging_account.account_address}"
+                )
                 return
 
             # Register RSA key to DB
@@ -157,19 +176,26 @@ class Processor:
             _account_rsa_key.rsa_private_key = rsa_private_key
             _account_rsa_key.rsa_public_key = rsa_public_key
             _account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(pass_phrase)
-            _account_rsa_key.block_timestamp = datetime.utcfromtimestamp(block["timestamp"])
+            _account_rsa_key.block_timestamp = datetime.utcfromtimestamp(
+                block["timestamp"]
+            )
             db_session.add(_account_rsa_key)
 
-    def __rotate_rsa_key(self, db_session: Session, e2e_messaging_account: Type[E2EMessagingAccount]):
-
+    def __rotate_rsa_key(
+        self, db_session: Session, e2e_messaging_account: Type[E2EMessagingAccount]
+    ):
         if e2e_messaging_account.rsa_generation > 0:
-
             # Delete RSA key that exceeds the number of generations
-            _account_rsa_key_over_generation_list = db_session.query(E2EMessagingAccountRsaKey). \
-                filter(E2EMessagingAccountRsaKey.account_address == e2e_messaging_account.account_address). \
-                order_by(desc(E2EMessagingAccountRsaKey.block_timestamp)). \
-                offset(e2e_messaging_account.rsa_generation). \
-                all()
+            _account_rsa_key_over_generation_list = (
+                db_session.query(E2EMessagingAccountRsaKey)
+                .filter(
+                    E2EMessagingAccountRsaKey.account_address
+                    == e2e_messaging_account.account_address
+                )
+                .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
+                .offset(e2e_messaging_account.rsa_generation)
+                .all()
+            )
             for _account_rsa_key in _account_rsa_key_over_generation_list:
                 db_session.delete(_account_rsa_key)
 

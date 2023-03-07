@@ -22,18 +22,17 @@ from pytz import timezone
 
 import config
 from app.model.db import (
+    IDXTransferApproval,
     Token,
     TokenType,
-    IDXTransferApproval,
     TransferApprovalHistory,
-    TransferApprovalOperationType
+    TransferApprovalOperationType,
 )
 
 local_tz = timezone(config.TZ)
 
 
 class TestAppRoutersBondTransferApprovalsTokenAddressGET:
-
     # target API endpoint
     base_url = "/bond/transfer_approvals/{}"
 
@@ -45,17 +44,47 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
     test_from_address = "test_from_address"
     test_to_address = "test_to_address"
     test_application_datetime = datetime(year=2019, month=9, day=1)
-    test_application_datetime_str = timezone("UTC").localize(test_application_datetime).astimezone(local_tz).isoformat()
+    test_application_datetime_str = (
+        timezone("UTC")
+        .localize(test_application_datetime)
+        .astimezone(local_tz)
+        .isoformat()
+    )
     test_application_datetime_2 = datetime(year=2019, month=10, day=1)
-    test_application_datetime_str_2 = timezone("UTC").localize(test_application_datetime_2).astimezone(local_tz).isoformat()
+    test_application_datetime_str_2 = (
+        timezone("UTC")
+        .localize(test_application_datetime_2)
+        .astimezone(local_tz)
+        .isoformat()
+    )
     test_application_blocktimestamp = datetime(year=2019, month=9, day=2)
-    test_application_blocktimestamp_str = timezone("UTC").localize(test_application_blocktimestamp).astimezone(local_tz).isoformat()
+    test_application_blocktimestamp_str = (
+        timezone("UTC")
+        .localize(test_application_blocktimestamp)
+        .astimezone(local_tz)
+        .isoformat()
+    )
     test_approval_datetime = datetime(year=2019, month=9, day=3)
-    test_approval_datetime_str = timezone("UTC").localize(test_approval_datetime).astimezone(local_tz).isoformat()
+    test_approval_datetime_str = (
+        timezone("UTC")
+        .localize(test_approval_datetime)
+        .astimezone(local_tz)
+        .isoformat()
+    )
     test_approval_datetime_2 = datetime(year=2019, month=10, day=3)
-    test_approval_datetime_str_2 = timezone("UTC").localize(test_approval_datetime_2).astimezone(local_tz).isoformat()
+    test_approval_datetime_str_2 = (
+        timezone("UTC")
+        .localize(test_approval_datetime_2)
+        .astimezone(local_tz)
+        .isoformat()
+    )
     test_approval_blocktimestamp = datetime(year=2019, month=9, day=4)
-    test_approval_blocktimestamp_str = timezone("UTC").localize(test_approval_blocktimestamp).astimezone(local_tz).isoformat()
+    test_approval_blocktimestamp_str = (
+        timezone("UTC")
+        .localize(test_approval_blocktimestamp)
+        .astimezone(local_tz)
+        .isoformat()
+    )
 
     ###########################################################################
     # Normal Case
@@ -74,20 +103,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         db.add(_token)
 
         # request target API
-        resp = client.get(
-            self.base_url.format(self.test_token_address)
-        )
+        resp = client.get(self.base_url.format(self.test_token_address))
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 0,
-                "offset": None,
-                "limit": None,
-                "total": 0
-            },
-            "transfer_approval_history": []
+            "result_set": {"count": 0, "offset": None, "limit": None, "total": 0},
+            "transfer_approval_history": [],
         }
         assert resp.json() == assumed_response
 
@@ -113,7 +135,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.to_address = self.test_to_address
             _idx_transfer_approval.amount = i
             _idx_transfer_approval.application_datetime = self.test_application_datetime
-            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.application_blocktimestamp = (
+                self.test_application_blocktimestamp
+            )
             _idx_transfer_approval.approval_datetime = None
             _idx_transfer_approval.approval_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
@@ -121,19 +145,12 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             db.add(_idx_transfer_approval)
 
         # request target API
-        resp = client.get(
-            self.base_url.format(self.test_token_address)
-        )
+        resp = client.get(self.base_url.format(self.test_token_address))
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 3,
-                "offset": None,
-                "limit": None,
-                "total": 3
-            },
+            "result_set": {"count": 3, "offset": None, "limit": None, "total": 3},
             "transfer_approval_history": [
                 {
                     "id": 3,
@@ -189,7 +206,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "status": 0,
                     "issuer_cancelable": True,
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -215,9 +232,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.to_address = self.test_to_address
             _idx_transfer_approval.amount = i
             _idx_transfer_approval.application_datetime = self.test_application_datetime
-            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.application_blocktimestamp = (
+                self.test_application_blocktimestamp
+            )
             _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-            _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+            _idx_transfer_approval.approval_blocktimestamp = (
+                self.test_approval_blocktimestamp
+            )
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -230,12 +251,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 3,
-                "offset": 1,
-                "limit": 1,
-                "total": 3
-            },
+            "result_set": {"count": 3, "offset": 1, "limit": 1, "total": 3},
             "transfer_approval_history": [
                 {
                     "id": 2,
@@ -255,7 +271,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "status": 0,
                     "issuer_cancelable": True,
                 }
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -276,35 +292,36 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval = IDXTransferApproval()
             _idx_transfer_approval.token_address = self.test_token_address
             if i == 1:
-                _idx_transfer_approval.exchange_address = self.test_exchange_address + "0"
+                _idx_transfer_approval.exchange_address = (
+                    self.test_exchange_address + "0"
+                )
             else:
-                _idx_transfer_approval.exchange_address = self.test_exchange_address + "1"
+                _idx_transfer_approval.exchange_address = (
+                    self.test_exchange_address + "1"
+                )
             _idx_transfer_approval.application_id = i
             _idx_transfer_approval.from_address = self.test_from_address
             _idx_transfer_approval.to_address = self.test_to_address
             _idx_transfer_approval.amount = i
             _idx_transfer_approval.application_datetime = self.test_application_datetime
-            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.application_blocktimestamp = (
+                self.test_application_blocktimestamp
+            )
             _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-            _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+            _idx_transfer_approval.approval_blocktimestamp = (
+                self.test_approval_blocktimestamp
+            )
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
 
         # request target API
-        resp = client.get(
-            self.base_url.format(self.test_token_address)
-        )
+        resp = client.get(self.base_url.format(self.test_token_address))
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 3,
-                "offset": None,
-                "limit": None,
-                "total": 3
-            },
+            "result_set": {"count": 3, "offset": None, "limit": None, "total": 3},
             "transfer_approval_history": [
                 {
                     "id": 3,
@@ -360,7 +377,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "status": 0,
                     "issuer_cancelable": False,
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -387,9 +404,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.to_address = self.test_to_address
             _idx_transfer_approval.amount = i
             _idx_transfer_approval.application_datetime = self.test_application_datetime
-            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.application_blocktimestamp = (
+                self.test_application_blocktimestamp
+            )
             _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-            _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+            _idx_transfer_approval.approval_blocktimestamp = (
+                self.test_approval_blocktimestamp
+            )
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -397,20 +418,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
-            params={
-                "from_address": self.test_from_address + "1"
-            }
+            params={"from_address": self.test_from_address + "1"},
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 1,
-                "offset": None,
-                "limit": None,
-                "total": 3
-            },
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 3},
             "transfer_approval_history": [
                 {
                     "id": 2,
@@ -430,7 +444,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "status": 0,
                     "issuer_cancelable": True,
                 }
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -457,9 +471,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.to_address = self.test_to_address + str(i)
             _idx_transfer_approval.amount = i
             _idx_transfer_approval.application_datetime = self.test_application_datetime
-            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.application_blocktimestamp = (
+                self.test_application_blocktimestamp
+            )
             _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-            _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+            _idx_transfer_approval.approval_blocktimestamp = (
+                self.test_approval_blocktimestamp
+            )
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -467,20 +485,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
-            params={
-                "to_address": self.test_to_address + "1"
-            }
+            params={"to_address": self.test_to_address + "1"},
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 1,
-                "offset": None,
-                "limit": None,
-                "total": 3
-            },
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 3},
             "transfer_approval_history": [
                 {
                     "id": 2,
@@ -500,7 +511,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "status": 0,
                     "issuer_cancelable": True,
                 }
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -527,7 +538,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.to_address = self.test_to_address
             _idx_transfer_approval.amount = i
             _idx_transfer_approval.application_datetime = self.test_application_datetime
-            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.application_blocktimestamp = (
+                self.test_application_blocktimestamp
+            )
             if i == 0:  # unapproved
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
                 _idx_transfer_approval.cancelled = None
@@ -557,21 +570,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
 
         # request target API
         resp = client.get(
-            self.base_url.format(self.test_token_address),
-            params={
-                "status": 0
-            }
+            self.base_url.format(self.test_token_address), params={"status": 0}
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 1,
-                "offset": None,
-                "limit": None,
-                "total": 5
-            },
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 5},
             "transfer_approval_history": [
                 {
                     "id": 1,
@@ -591,7 +596,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "status": 0,
                     "issuer_cancelable": True,
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -618,7 +623,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.to_address = self.test_to_address
             _idx_transfer_approval.amount = i
             _idx_transfer_approval.application_datetime = self.test_application_datetime
-            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.application_blocktimestamp = (
+                self.test_application_blocktimestamp
+            )
             if i == 0:  # unapproved
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
                 _idx_transfer_approval.cancelled = None
@@ -648,21 +655,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
 
         # request target API
         resp = client.get(
-            self.base_url.format(self.test_token_address),
-            params={
-                "status": 1
-            }
+            self.base_url.format(self.test_token_address), params={"status": 1}
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 1,
-                "offset": None,
-                "limit": None,
-                "total": 5
-            },
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 5},
             "transfer_approval_history": [
                 {
                     "id": 2,
@@ -682,7 +681,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "status": 1,
                     "issuer_cancelable": True,
                 }
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -709,7 +708,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.to_address = self.test_to_address
             _idx_transfer_approval.amount = i
             _idx_transfer_approval.application_datetime = self.test_application_datetime
-            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.application_blocktimestamp = (
+                self.test_application_blocktimestamp
+            )
             if i == 0:  # unapproved
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
                 _idx_transfer_approval.cancelled = None
@@ -726,7 +727,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                 _idx_transfer_approval.escrow_finished = True
                 _idx_transfer_approval.transfer_approved = True
                 _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-                _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+                _idx_transfer_approval.approval_blocktimestamp = (
+                    self.test_approval_blocktimestamp
+                )
             elif i == 3:  # transferred_2
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
                 _idx_transfer_approval.cancelled = None
@@ -736,7 +739,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                 _transfer_approval_history.token_address = self.test_token_address
                 _transfer_approval_history.exchange_address = config.ZERO_ADDRESS
                 _transfer_approval_history.application_id = i
-                _transfer_approval_history.operation_type = TransferApprovalOperationType.APPROVE.value
+                _transfer_approval_history.operation_type = (
+                    TransferApprovalOperationType.APPROVE.value
+                )
                 db.add(_transfer_approval_history)
             elif i == 4:  # transferred_3
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
@@ -744,7 +749,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = True
                 _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-                _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+                _idx_transfer_approval.approval_blocktimestamp = (
+                    self.test_approval_blocktimestamp
+                )
             elif i == 5:  # canceled-1
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
                 _idx_transfer_approval.cancelled = None
@@ -754,7 +761,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                 _transfer_approval_history.token_address = self.test_token_address
                 _transfer_approval_history.exchange_address = config.ZERO_ADDRESS
                 _transfer_approval_history.application_id = i
-                _transfer_approval_history.operation_type = TransferApprovalOperationType.CANCEL.value
+                _transfer_approval_history.operation_type = (
+                    TransferApprovalOperationType.CANCEL.value
+                )
                 db.add(_transfer_approval_history)
             elif i == 6:  # canceled-2
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
@@ -765,21 +774,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
 
         # request target API
         resp = client.get(
-            self.base_url.format(self.test_token_address),
-            params={
-                "status": 2
-            }
+            self.base_url.format(self.test_token_address), params={"status": 2}
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 3,
-                "offset": None,
-                "limit": None,
-                "total": 7
-            },
+            "result_set": {"count": 3, "offset": None, "limit": None, "total": 7},
             "transfer_approval_history": [
                 {
                     "id": 5,
@@ -834,8 +835,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "transfer_approved": True,
                     "status": 2,
                     "issuer_cancelable": False,
-                }
-            ]
+                },
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -862,7 +863,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.to_address = self.test_to_address
             _idx_transfer_approval.amount = i
             _idx_transfer_approval.application_datetime = self.test_application_datetime
-            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.application_blocktimestamp = (
+                self.test_application_blocktimestamp
+            )
             if i == 0:  # unapproved
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
                 _idx_transfer_approval.cancelled = None
@@ -892,7 +895,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                 _transfer_approval_history.token_address = self.test_token_address
                 _transfer_approval_history.exchange_address = config.ZERO_ADDRESS
                 _transfer_approval_history.application_id = i
-                _transfer_approval_history.operation_type = TransferApprovalOperationType.CANCEL.value
+                _transfer_approval_history.operation_type = (
+                    TransferApprovalOperationType.CANCEL.value
+                )
                 db.add(_transfer_approval_history)
             elif i == 5:  # canceled-2
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
@@ -904,21 +909,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
 
         # request target API
         resp = client.get(
-            self.base_url.format(self.test_token_address),
-            params={
-                "status": 3
-            }
+            self.base_url.format(self.test_token_address), params={"status": 3}
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 2,
-                "offset": None,
-                "limit": None,
-                "total": 6
-            },
+            "result_set": {"count": 2, "offset": None, "limit": None, "total": 6},
             "transfer_approval_history": [
                 {
                     "id": 6,
@@ -955,8 +952,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "transfer_approved": False,
                     "status": 3,
                     "issuer_cancelable": True,
-                }
-            ]
+                },
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -983,7 +980,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.to_address = self.test_to_address
             _idx_transfer_approval.amount = i
             _idx_transfer_approval.application_datetime = self.test_application_datetime
-            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.application_blocktimestamp = (
+                self.test_application_blocktimestamp
+            )
             if i == 0:  # unapproved
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
                 _idx_transfer_approval.cancelled = None
@@ -1008,7 +1007,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                 _transfer_approval_history.token_address = self.test_token_address
                 _transfer_approval_history.exchange_address = config.ZERO_ADDRESS
                 _transfer_approval_history.application_id = i
-                _transfer_approval_history.operation_type = TransferApprovalOperationType.APPROVE.value
+                _transfer_approval_history.operation_type = (
+                    TransferApprovalOperationType.APPROVE.value
+                )
                 db.add(_transfer_approval_history)
             elif i == 4:  # transferred_3
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
@@ -1024,7 +1025,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                 _transfer_approval_history.token_address = self.test_token_address
                 _transfer_approval_history.exchange_address = config.ZERO_ADDRESS
                 _transfer_approval_history.application_id = i
-                _transfer_approval_history.operation_type = TransferApprovalOperationType.CANCEL.value
+                _transfer_approval_history.operation_type = (
+                    TransferApprovalOperationType.CANCEL.value
+                )
                 db.add(_transfer_approval_history)
             elif i == 6:  # canceled-2
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
@@ -1035,21 +1038,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
 
         # request target API
         resp = client.get(
-            self.base_url.format(self.test_token_address),
-            params={
-                "status": [0, 1]
-            }
+            self.base_url.format(self.test_token_address), params={"status": [0, 1]}
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 2,
-                "offset": None,
-                "limit": None,
-                "total": 7
-            },
+            "result_set": {"count": 2, "offset": None, "limit": None, "total": 7},
             "transfer_approval_history": [
                 {
                     "id": 2,
@@ -1087,7 +1082,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "status": 0,
                     "issuer_cancelable": True,
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -1114,9 +1109,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.to_address = self.test_to_address
             _idx_transfer_approval.amount = i
             _idx_transfer_approval.application_datetime = self.test_application_datetime
-            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.application_blocktimestamp = (
+                self.test_application_blocktimestamp
+            )
             _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-            _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+            _idx_transfer_approval.approval_blocktimestamp = (
+                self.test_approval_blocktimestamp
+            )
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -1124,21 +1123,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
-            params={
-                "sort_item": "id",
-                "sort_order": 0
-            }
+            params={"sort_item": "id", "sort_order": 0},
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 3,
-                "offset": None,
-                "limit": None,
-                "total": 3
-            },
+            "result_set": {"count": 3, "offset": None, "limit": None, "total": 3},
             "transfer_approval_history": [
                 {
                     "id": 1,
@@ -1194,7 +1185,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "status": 0,
                     "issuer_cancelable": False,
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -1222,9 +1213,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.to_address = self.test_to_address
             _idx_transfer_approval.amount = i
             _idx_transfer_approval.application_datetime = self.test_application_datetime
-            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.application_blocktimestamp = (
+                self.test_application_blocktimestamp
+            )
             _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-            _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+            _idx_transfer_approval.approval_blocktimestamp = (
+                self.test_approval_blocktimestamp
+            )
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -1232,21 +1227,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
-            params={
-                "sort_item": "exchange_address",
-                "sort_order": 1
-            }
+            params={"sort_item": "exchange_address", "sort_order": 1},
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 4,
-                "offset": None,
-                "limit": None,
-                "total": 4
-            },
+            "result_set": {"count": 4, "offset": None, "limit": None, "total": 4},
             "transfer_approval_history": [
                 {
                     "id": 3,
@@ -1320,7 +1307,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "status": 0,
                     "issuer_cancelable": True,
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -1348,9 +1335,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.to_address = self.test_to_address
             _idx_transfer_approval.amount = i
             _idx_transfer_approval.application_datetime = self.test_application_datetime
-            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.application_blocktimestamp = (
+                self.test_application_blocktimestamp
+            )
             _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-            _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+            _idx_transfer_approval.approval_blocktimestamp = (
+                self.test_approval_blocktimestamp
+            )
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -1358,21 +1349,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
-            params={
-                "sort_item": "application_id",
-                "sort_order": 0
-            }
+            params={"sort_item": "application_id", "sort_order": 0},
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 4,
-                "offset": None,
-                "limit": None,
-                "total": 4
-            },
+            "result_set": {"count": 4, "offset": None, "limit": None, "total": 4},
             "transfer_approval_history": [
                 {
                     "id": 2,
@@ -1446,7 +1429,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "status": 0,
                     "issuer_cancelable": False,
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -1469,13 +1452,19 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.token_address = self.test_token_address
             _idx_transfer_approval.exchange_address = self.test_exchange_address
             _idx_transfer_approval.application_id = i
-            _idx_transfer_approval.from_address = self.test_from_address + str(int((3 - i) / 2))
+            _idx_transfer_approval.from_address = self.test_from_address + str(
+                int((3 - i) / 2)
+            )
             _idx_transfer_approval.to_address = self.test_to_address
             _idx_transfer_approval.amount = i
             _idx_transfer_approval.application_datetime = self.test_application_datetime
-            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.application_blocktimestamp = (
+                self.test_application_blocktimestamp
+            )
             _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-            _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+            _idx_transfer_approval.approval_blocktimestamp = (
+                self.test_approval_blocktimestamp
+            )
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -1483,21 +1472,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
-            params={
-                "sort_item": "from_address",
-                "sort_order": 1
-            }
+            params={"sort_item": "from_address", "sort_order": 1},
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 4,
-                "offset": None,
-                "limit": None,
-                "total": 4
-            },
+            "result_set": {"count": 4, "offset": None, "limit": None, "total": 4},
             "transfer_approval_history": [
                 {
                     "id": 2,
@@ -1571,7 +1552,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "status": 0,
                     "issuer_cancelable": False,
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -1598,9 +1579,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.to_address = self.test_to_address + str(int(i / 2))
             _idx_transfer_approval.amount = i
             _idx_transfer_approval.application_datetime = self.test_application_datetime
-            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.application_blocktimestamp = (
+                self.test_application_blocktimestamp
+            )
             _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-            _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+            _idx_transfer_approval.approval_blocktimestamp = (
+                self.test_approval_blocktimestamp
+            )
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -1608,21 +1593,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
-            params={
-                "sort_item": "to_address",
-                "sort_order": 0
-            }
+            params={"sort_item": "to_address", "sort_order": 0},
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 4,
-                "offset": None,
-                "limit": None,
-                "total": 4
-            },
+            "result_set": {"count": 4, "offset": None, "limit": None, "total": 4},
             "transfer_approval_history": [
                 {
                     "id": 2,
@@ -1696,7 +1673,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "status": 0,
                     "issuer_cancelable": False,
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -1723,9 +1700,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.to_address = self.test_to_address
             _idx_transfer_approval.amount = int((3 - i) / 2)
             _idx_transfer_approval.application_datetime = self.test_application_datetime
-            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.application_blocktimestamp = (
+                self.test_application_blocktimestamp
+            )
             _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-            _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+            _idx_transfer_approval.approval_blocktimestamp = (
+                self.test_approval_blocktimestamp
+            )
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -1733,21 +1714,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
-            params={
-                "sort_item": "amount",
-                "sort_order": 1
-            }
+            params={"sort_item": "amount", "sort_order": 1},
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 4,
-                "offset": None,
-                "limit": None,
-                "total": 4
-            },
+            "result_set": {"count": 4, "offset": None, "limit": None, "total": 4},
             "transfer_approval_history": [
                 {
                     "id": 2,
@@ -1821,7 +1794,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "status": 0,
                     "issuer_cancelable": False,
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -1848,12 +1821,20 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.to_address = self.test_to_address
             _idx_transfer_approval.amount = i
             if i % 2 == 0:
-                _idx_transfer_approval.application_datetime = self.test_application_datetime
+                _idx_transfer_approval.application_datetime = (
+                    self.test_application_datetime
+                )
             else:
-                _idx_transfer_approval.application_datetime = self.test_application_datetime_2
-            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+                _idx_transfer_approval.application_datetime = (
+                    self.test_application_datetime_2
+                )
+            _idx_transfer_approval.application_blocktimestamp = (
+                self.test_application_blocktimestamp
+            )
             _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-            _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+            _idx_transfer_approval.approval_blocktimestamp = (
+                self.test_approval_blocktimestamp
+            )
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -1861,21 +1842,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
-            params={
-                "sort_item": "application_datetime",
-                "sort_order": 0
-            }
+            params={"sort_item": "application_datetime", "sort_order": 0},
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 4,
-                "offset": None,
-                "limit": None,
-                "total": 4
-            },
+            "result_set": {"count": 4, "offset": None, "limit": None, "total": 4},
             "transfer_approval_history": [
                 {
                     "id": 3,
@@ -1949,7 +1922,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "status": 0,
                     "issuer_cancelable": False,
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -1976,12 +1949,16 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.to_address = self.test_to_address
             _idx_transfer_approval.amount = i
             _idx_transfer_approval.application_datetime = self.test_application_datetime
-            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.application_blocktimestamp = (
+                self.test_application_blocktimestamp
+            )
             if i % 2 == 0:
                 _idx_transfer_approval.approval_datetime = self.test_approval_datetime
             else:
                 _idx_transfer_approval.approval_datetime = self.test_approval_datetime_2
-            _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+            _idx_transfer_approval.approval_blocktimestamp = (
+                self.test_approval_blocktimestamp
+            )
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -1989,21 +1966,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
-            params={
-                "sort_item": "approval_datetime",
-                "sort_order": 1
-            }
+            params={"sort_item": "approval_datetime", "sort_order": 1},
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 4,
-                "offset": None,
-                "limit": None,
-                "total": 4
-            },
+            "result_set": {"count": 4, "offset": None, "limit": None, "total": 4},
             "transfer_approval_history": [
                 {
                     "id": 4,
@@ -2077,7 +2046,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "status": 0,
                     "issuer_cancelable": False,
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -2103,7 +2072,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.to_address = self.test_to_address
             _idx_transfer_approval.amount = i
             _idx_transfer_approval.application_datetime = self.test_application_datetime
-            _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+            _idx_transfer_approval.application_blocktimestamp = (
+                self.test_application_blocktimestamp
+            )
             if i == 0 or i == 1:
                 # unapproved
                 _idx_transfer_approval.approval_datetime = None
@@ -2126,7 +2097,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = True
                 _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-                _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+                _idx_transfer_approval.approval_blocktimestamp = (
+                    self.test_approval_blocktimestamp
+                )
             else:
                 # canceled
                 _idx_transfer_approval.approval_datetime = None
@@ -2139,21 +2112,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
-            params={
-                "sort_item": "status",
-                "sort_order": 0
-            }
+            params={"sort_item": "status", "sort_order": 0},
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 8,
-                "offset": None,
-                "limit": None,
-                "total": 8
-            },
+            "result_set": {"count": 8, "offset": None, "limit": None, "total": 8},
             "transfer_approval_history": [
                 {
                     "id": 2,
@@ -2299,7 +2264,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "status": 3,
                     "issuer_cancelable": True,
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -2318,16 +2283,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                 "status": "a",
                 "offset": "c",
                 "limit": "d",
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assumed_response = {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["query", "status", 0],
@@ -2344,7 +2306,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "msg": "value is not a valid integer",
                     "type": "type_error.integer",
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -2357,16 +2319,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             self.base_url.format(self.test_token_address),
             params={
                 "status": -1,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assumed_response = {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["query", "status", 0],
@@ -2374,7 +2333,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "msg": "ensure this value is greater than or equal to 0",
                     "type": "value_error.number.not_ge",
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -2387,16 +2346,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             self.base_url.format(self.test_token_address),
             params={
                 "status": 4,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assumed_response = {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["query", "status", 0],
@@ -2404,7 +2360,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                     "msg": "ensure this value is less than or equal to 3",
                     "type": "value_error.number.not_le",
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -2412,18 +2368,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
     # token not found
     def test_error_1(self, client, db):
         # request target API
-        resp = client.get(
-            self.base_url.format(self.test_token_address)
-        )
+        resp = client.get(self.base_url.format(self.test_token_address))
 
         # assertion
         assert resp.status_code == 404
         assumed_response = {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token not found",
         }
         assert resp.json() == assumed_response
 
@@ -2441,16 +2392,11 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         db.add(_token)
 
         # request target API
-        resp = client.get(
-            self.base_url.format(self.test_token_address)
-        )
+        resp = client.get(self.base_url.format(self.test_token_address))
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }

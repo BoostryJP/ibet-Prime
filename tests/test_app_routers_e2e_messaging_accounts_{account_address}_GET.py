@@ -19,10 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import time
 from datetime import datetime
 
-from app.model.db import (
-    E2EMessagingAccount,
-    E2EMessagingAccountRsaKey
-)
+from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
 
 
 class TestAppRoutersE2EMessagingAccountsAccountAddressGET:
@@ -65,7 +62,9 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address="0x1234567890123456789012345678900000000000"),
+            self.base_url.format(
+                account_address="0x1234567890123456789012345678900000000000"
+            ),
         )
 
         # assertion
@@ -89,7 +88,9 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address="0x1234567890123456789012345678900000000000"),
+            self.base_url.format(
+                account_address="0x1234567890123456789012345678900000000000"
+            ),
         )
 
         # assertion
@@ -117,8 +118,6 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressGET:
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1, "title": "NotFound"
-            },
-            "detail": "e2e messaging account is not exists"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "e2e messaging account is not exists",
         }

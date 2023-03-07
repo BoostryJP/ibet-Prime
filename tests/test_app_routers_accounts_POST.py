@@ -17,12 +17,11 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import base64
-
 from unittest import mock
 
-from config import EOA_PASSWORD_PATTERN_MSG
 from app.model.db import Account, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
+from config import EOA_PASSWORD_PATTERN_MSG
 
 
 class TestAppRoutersAccountsPOST:
@@ -41,9 +40,7 @@ class TestAppRoutersAccountsPOST:
         accounts_before = db.query(Account).all()
 
         password = self.valid_password
-        req_param = {
-            "eoa_password": E2EEUtils.encrypt(password)
-        }
+        req_param = {"eoa_password": E2EEUtils.encrypt(password)}
 
         resp = client.post(self.apiurl, json=req_param)
 
@@ -76,21 +73,15 @@ class TestAppRoutersAccountsPOST:
         accounts_before = db.query(Account).all()
 
         password = self.valid_password
-        req_param = {
-            "eoa_password": E2EEUtils.encrypt(password)
-        }
+        req_param = {"eoa_password": E2EEUtils.encrypt(password)}
 
         # mock
         class KMSClientMock:
             def generate_random(self, NumberOfBytes):
                 assert NumberOfBytes == 32
-                return {
-                    "Plaintext": b"12345678901234567890123456789012"
-                }
+                return {"Plaintext": b"12345678901234567890123456789012"}
 
-        boto3_mock.side_effect = [
-            KMSClientMock()
-        ]
+        boto3_mock.side_effect = [KMSClientMock()]
 
         resp = client.post(self.apiurl, json=req_param)
 
@@ -131,32 +122,26 @@ class TestAppRoutersAccountsPOST:
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
-            "detail": [{
-                "loc": ["body", "eoa_password"],
-                "msg": "eoa_password is not a Base64-encoded encrypted data",
-                "type": "value_error"
-            }]
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "loc": ["body", "eoa_password"],
+                    "msg": "eoa_password is not a Base64-encoded encrypted data",
+                    "type": "value_error",
+                }
+            ],
         }
 
     # <Error_2>
     # Invalid Password
     def test_error_2(self, client, db):
-        req_param = {
-            "eoa_password": E2EEUtils.encrypt(self.invalid_password)
-        }
+        req_param = {"eoa_password": E2EEUtils.encrypt(self.invalid_password)}
 
         resp = client.post(self.apiurl, json=req_param)
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": EOA_PASSWORD_PATTERN_MSG
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": EOA_PASSWORD_PATTERN_MSG,
         }

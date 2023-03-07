@@ -16,32 +16,28 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import pytest
 import time
 from unittest import mock
 from unittest.mock import MagicMock
 
+import pytest
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
-from config import (
-    BLOCK_SYNC_STATUS_SLEEP_INTERVAL,
-    WEB3_HTTP_PROVIDER
-)
 from app.model.db import Node
 from batch.processor_monitor_block_sync import Processor
+from config import BLOCK_SYNC_STATUS_SLEEP_INTERVAL, WEB3_HTTP_PROVIDER
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def processor(db):
     return Processor()
 
 
 class TestProcessor:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -66,7 +62,9 @@ class TestProcessor:
         time.sleep(BLOCK_SYNC_STATUS_SLEEP_INTERVAL)
 
         # Run 2nd: block generation speed down(same the previous)
-        with mock.patch("batch.processor_monitor_block_sync.BLOCK_GENERATION_SPEED_THRESHOLD", 100):
+        with mock.patch(
+            "batch.processor_monitor_block_sync.BLOCK_GENERATION_SPEED_THRESHOLD", 100
+        ):
             processor.process()
 
         # assertion
@@ -90,10 +88,7 @@ class TestProcessor:
         block_number = web3.eth.block_number
         with mock.patch("web3.eth.BaseEth._is_syncing") as mock_is_syncing:
             mock_is_syncing.side_effect = [
-                {
-                    "highestBlock": block_number,
-                    "currentBlock": block_number - 3
-                }
+                {"highestBlock": block_number, "currentBlock": block_number - 3}
             ]
             processor.process()
 
@@ -108,10 +103,7 @@ class TestProcessor:
         block_number = web3.eth.block_number
         with mock.patch("web3.eth.BaseEth._is_syncing") as mock_is_syncing:
             mock_is_syncing.side_effect = [
-                {
-                    "highestBlock": block_number,
-                    "currentBlock": block_number - 2
-                }
+                {"highestBlock": block_number, "currentBlock": block_number - 2}
             ]
             processor.process()
 
@@ -122,7 +114,10 @@ class TestProcessor:
 
     # <Normal_2>
     # standby node is down to sync
-    @mock.patch("batch.processor_monitor_block_sync.WEB3_HTTP_PROVIDER_STANDBY", ["http://test1:1000"])
+    @mock.patch(
+        "batch.processor_monitor_block_sync.WEB3_HTTP_PROVIDER_STANDBY",
+        ["http://test1:1000"],
+    )
     def test_normal_2(self, db):
         processor = Processor()
 
@@ -135,10 +130,16 @@ class TestProcessor:
         assert _node.is_synced == False
 
         # node sync(processing)
-        org_value = processor.node_info["http://test1:1000"]["web3"].manager.provider.endpoint_uri
-        processor.node_info["http://test1:1000"]["web3"].manager.provider.endpoint_uri = WEB3_HTTP_PROVIDER
+        org_value = processor.node_info["http://test1:1000"][
+            "web3"
+        ].manager.provider.endpoint_uri
+        processor.node_info["http://test1:1000"][
+            "web3"
+        ].manager.provider.endpoint_uri = WEB3_HTTP_PROVIDER
         processor.process()
-        processor.node_info["http://test1:1000"]["web3"].manager.provider.endpoint_uri = org_value
+        processor.node_info["http://test1:1000"][
+            "web3"
+        ].manager.provider.endpoint_uri = org_value
 
         # assertion
         db.rollback()
@@ -159,9 +160,11 @@ class TestProcessor:
         processor = Processor()
 
         # assertion-1
-        old_node = db.query(Node).\
-            filter(Node.endpoint_uri.not_in(list(WEB3_HTTP_PROVIDER))).\
-            all()
+        old_node = (
+            db.query(Node)
+            .filter(Node.endpoint_uri.not_in(list(WEB3_HTTP_PROVIDER)))
+            .all()
+        )
         assert len(old_node) == 0
 
         # process
@@ -181,9 +184,14 @@ class TestProcessor:
 
     # <Error_1>
     # node down(initialize)
-    @mock.patch("batch.processor_monitor_block_sync.WEB3_HTTP_PROVIDER_STANDBY",
-                ["http://test1:1000", "http://test2:2000"])
-    @mock.patch("web3.providers.rpc.HTTPProvider.make_request", MagicMock(side_effect=Exception()))
+    @mock.patch(
+        "batch.processor_monitor_block_sync.WEB3_HTTP_PROVIDER_STANDBY",
+        ["http://test1:1000", "http://test2:2000"],
+    )
+    @mock.patch(
+        "web3.providers.rpc.HTTPProvider.make_request",
+        MagicMock(side_effect=Exception()),
+    )
     def test_error_1(self, db):
         Processor()
 
@@ -221,10 +229,16 @@ class TestProcessor:
         assert _node.is_synced == True
 
         # node down(processing)
-        org_value = processor.node_info[WEB3_HTTP_PROVIDER]["web3"].manager.provider.endpoint_uri
-        processor.node_info[WEB3_HTTP_PROVIDER]["web3"].manager.provider.endpoint_uri = "http://hogehoge"
+        org_value = processor.node_info[WEB3_HTTP_PROVIDER][
+            "web3"
+        ].manager.provider.endpoint_uri
+        processor.node_info[WEB3_HTTP_PROVIDER][
+            "web3"
+        ].manager.provider.endpoint_uri = "http://hogehoge"
         processor.process()
-        processor.node_info[WEB3_HTTP_PROVIDER]["web3"].manager.provider.endpoint_uri = org_value
+        processor.node_info[WEB3_HTTP_PROVIDER][
+            "web3"
+        ].manager.provider.endpoint_uri = org_value
 
         # assertion
         db.rollback()

@@ -21,52 +21,47 @@ import sys
 import threading
 import time
 import uuid
-from typing import (
-    List,
-    Set,
-    Optional
-)
+from typing import List, Optional, Set
 
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
 from datetime import datetime
-from config import (
-    DATABASE_URL,
-    SCHEDULED_EVENTS_INTERVAL,
-    SCHEDULED_EVENTS_WORKER_COUNT
+
+import batch_log
+
+from app.exceptions import (
+    ContractRevertError,
+    SendTransactionError,
+    ServiceUnavailableError,
 )
-from app.utils.e2ee_utils import E2EEUtils
-from app.utils.web3_utils import Web3Wrapper
+from app.model.blockchain import IbetShareContract, IbetStraightBondContract
+from app.model.blockchain.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams,
+)
 from app.model.db import (
     Account,
+    Notification,
+    NotificationType,
     ScheduledEvents,
     ScheduledEventType,
     TokenType,
-    Notification,
-    NotificationType
 )
-from app.model.blockchain import (
-    IbetStraightBondContract,
-    IbetShareContract
+from app.utils.e2ee_utils import E2EEUtils
+from app.utils.web3_utils import Web3Wrapper
+from config import (
+    DATABASE_URL,
+    SCHEDULED_EVENTS_INTERVAL,
+    SCHEDULED_EVENTS_WORKER_COUNT,
 )
-from app.model.blockchain.tx_params.ibet_share import (
-    UpdateParams as IbetShareUpdateParams
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
-    UpdateParams as IbetStraightBondUpdateParams
-)
-from app.exceptions import (
-    SendTransactionError,
-    ServiceUnavailableError,
-    ContractRevertError
-)
-import batch_log
 
 """
 [PROCESSOR-Scheduled-Events]
@@ -95,8 +90,7 @@ class Processor:
             process_start_time = datetime.utcnow()
             while True:
                 events_list = self.__get_events_of_one_issuer(
-                    db_session=db_session,
-                    filter_time=process_start_time
+                    db_session=db_session, filter_time=process_start_time
                 )
                 if len(events_list) < 1:
                     return
@@ -110,25 +104,31 @@ class Processor:
         finally:
             db_session.close()
 
-    def __get_events_of_one_issuer(self, db_session: Session, filter_time: datetime) -> List[ScheduledEvents]:
+    def __get_events_of_one_issuer(
+        self, db_session: Session, filter_time: datetime
+    ) -> List[ScheduledEvents]:
         with lock:
-            event: Optional[ScheduledEvents] = db_session.query(ScheduledEvents). \
-                filter(ScheduledEvents.status == 0). \
-                filter(ScheduledEvents.scheduled_datetime <= filter_time). \
-                filter(ScheduledEvents.issuer_address.notin_(processing_issuers)). \
-                order_by(ScheduledEvents.scheduled_datetime, ScheduledEvents.id). \
-                first()
+            event: Optional[ScheduledEvents] = (
+                db_session.query(ScheduledEvents)
+                .filter(ScheduledEvents.status == 0)
+                .filter(ScheduledEvents.scheduled_datetime <= filter_time)
+                .filter(ScheduledEvents.issuer_address.notin_(processing_issuers))
+                .order_by(ScheduledEvents.scheduled_datetime, ScheduledEvents.id)
+                .first()
+            )
             if event is None:
                 return []
             issuer_address = event.issuer_address
             processing_issuers.add(issuer_address)
 
-        events_list: List[ScheduledEvents] = db_session.query(ScheduledEvents). \
-            filter(ScheduledEvents.status == 0). \
-            filter(ScheduledEvents.scheduled_datetime <= filter_time). \
-            filter(ScheduledEvents.issuer_address == issuer_address). \
-            order_by(ScheduledEvents.scheduled_datetime, ScheduledEvents.id). \
-            all()
+        events_list: List[ScheduledEvents] = (
+            db_session.query(ScheduledEvents)
+            .filter(ScheduledEvents.status == 0)
+            .filter(ScheduledEvents.scheduled_datetime <= filter_time)
+            .filter(ScheduledEvents.issuer_address == issuer_address)
+            .order_by(ScheduledEvents.scheduled_datetime, ScheduledEvents.id)
+            .all()
+        )
         return events_list
 
     def __release_processing_issuer(self, issuer_address: str):
@@ -143,22 +143,25 @@ class Processor:
 
             # Get issuer's private key
             try:
-                _account = db_session.query(Account). \
-                    filter(Account.issuer_address == _event.issuer_address). \
-                    first()
-                if _account is None:  # If issuer does not exist, update the status of the upload to ERROR
+                _account = (
+                    db_session.query(Account)
+                    .filter(Account.issuer_address == _event.issuer_address)
+                    .first()
+                )
+                if (
+                    _account is None
+                ):  # If issuer does not exist, update the status of the upload to ERROR
                     LOG.warning(f"Issuer of the event_id:{_event.id} does not exist")
                     self.__sink_on_finish_event_process(
-                        db_session=db_session,
-                        record_id=_event.id,
-                        status=2
+                        db_session=db_session, record_id=_event.id, status=2
                     )
                     self.__sink_on_error_notification(
                         db_session=db_session,
-                        issuer_address=_event.issuer_address, code=0,
+                        issuer_address=_event.issuer_address,
+                        code=0,
                         scheduled_event_id=_event.event_id,
                         token_type=_event.token_type,
-                        token_address=_event.token_address
+                        token_address=_event.token_address,
                     )
                     db_session.commit()
                     continue
@@ -166,21 +169,22 @@ class Processor:
                 decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
                 private_key = decode_keyfile_json(
                     raw_keyfile_json=keyfile_json,
-                    password=decrypt_password.encode("utf-8")
+                    password=decrypt_password.encode("utf-8"),
                 )
             except Exception:
-                LOG.exception(f"Could not get the private key of the issuer of id:{_event.id}")
+                LOG.exception(
+                    f"Could not get the private key of the issuer of id:{_event.id}"
+                )
                 self.__sink_on_finish_event_process(
-                    db_session=db_session,
-                    record_id=_event.id,
-                    status=2
+                    db_session=db_session, record_id=_event.id, status=2
                 )
                 self.__sink_on_error_notification(
                     db_session=db_session,
-                    issuer_address=_event.issuer_address, code=1,
+                    issuer_address=_event.issuer_address,
+                    code=1,
                     scheduled_event_id=_event.event_id,
                     token_type=_event.token_type,
-                    token_address=_event.token_address
+                    token_address=_event.token_address,
                 )
                 db_session.commit()
                 continue
@@ -194,7 +198,7 @@ class Processor:
                         IbetShareContract(_event.token_address).update(
                             data=_update_data,
                             tx_from=_event.issuer_address,
-                            private_key=private_key
+                            private_key=private_key,
                         )
                 elif _event.token_type == TokenType.IBET_STRAIGHT_BOND.value:
                     # Update
@@ -203,20 +207,18 @@ class Processor:
                         IbetStraightBondContract(_event.token_address).update(
                             data=_update_data,
                             tx_from=_event.issuer_address,
-                            private_key=private_key
+                            private_key=private_key,
                         )
 
                 self.__sink_on_finish_event_process(
-                    db_session=db_session,
-                    record_id=_event.id,
-                    status=1
+                    db_session=db_session, record_id=_event.id, status=1
                 )
             except ContractRevertError as e:
-                LOG.warning(f"Transaction reverted: id=<{_event.id}> error_code:<{e.code}> error_msg:<{e.message}>")
+                LOG.warning(
+                    f"Transaction reverted: id=<{_event.id}> error_code:<{e.code}> error_msg:<{e.message}>"
+                )
                 self.__sink_on_finish_event_process(
-                    db_session=db_session,
-                    record_id=_event.id,
-                    status=2
+                    db_session=db_session, record_id=_event.id, status=2
                 )
                 self.__sink_on_error_notification(
                     db_session=db_session,
@@ -224,14 +226,12 @@ class Processor:
                     code=2,
                     scheduled_event_id=_event.event_id,
                     token_type=_event.token_type,
-                    token_address=_event.token_address
+                    token_address=_event.token_address,
                 )
             except SendTransactionError:
                 LOG.warning(f"Failed to send transaction: id=<{_event.id}>")
                 self.__sink_on_finish_event_process(
-                    db_session=db_session,
-                    record_id=_event.id,
-                    status=2
+                    db_session=db_session, record_id=_event.id, status=2
                 )
                 self.__sink_on_error_notification(
                     db_session=db_session,
@@ -239,28 +239,34 @@ class Processor:
                     code=2,
                     scheduled_event_id=_event.event_id,
                     token_type=_event.token_type,
-                    token_address=_event.token_address
+                    token_address=_event.token_address,
                 )
             db_session.commit()
 
             LOG.info(f"<{self.thread_num}> Process end: upload_id={_event.id}")
 
     @staticmethod
-    def __sink_on_finish_event_process(db_session: Session, record_id: int, status: int):
-        scheduled_event_record = db_session.query(ScheduledEvents). \
-            filter(ScheduledEvents.id == record_id). \
-            first()
+    def __sink_on_finish_event_process(
+        db_session: Session, record_id: int, status: int
+    ):
+        scheduled_event_record = (
+            db_session.query(ScheduledEvents)
+            .filter(ScheduledEvents.id == record_id)
+            .first()
+        )
         if scheduled_event_record is not None:
             scheduled_event_record.status = status
             db_session.merge(scheduled_event_record)
 
     @staticmethod
-    def __sink_on_error_notification(db_session: Session,
-                                     issuer_address: str,
-                                     code: int,
-                                     scheduled_event_id: str,
-                                     token_type: str,
-                                     token_address: str):
+    def __sink_on_error_notification(
+        db_session: Session,
+        issuer_address: str,
+        code: int,
+        scheduled_event_id: str,
+        token_type: str,
+        token_address: str,
+    ):
         notification = Notification()
         notification.notice_id = uuid.uuid4()
         notification.issuer_address = issuer_address
@@ -270,19 +276,17 @@ class Processor:
         notification.metainfo = {
             "scheduled_event_id": scheduled_event_id,
             "token_type": token_type,
-            "token_address": token_address
+            "token_address": token_address,
         }
         db_session.add(notification)
 
 
 class Worker:
-
     def __init__(self, thread_num: int):
         processor = Processor(thread_num=thread_num)
         self.processor = processor
 
     def run(self):
-
         while True:
             started_at = time.time()
             try:
@@ -290,10 +294,14 @@ class Worker:
             except ServiceUnavailableError:
                 LOG.warning("An external service was unavailable")
             except SQLAlchemyError as sa_err:
-                LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
+                LOG.error(
+                    f"A database error has occurred: code={sa_err.code}\n{sa_err}"
+                )
             except Exception as ex:
                 LOG.error(ex)
-            sleeping_time = max(0, SCHEDULED_EVENTS_INTERVAL - (time.time() - started_at))
+            sleeping_time = max(
+                0, SCHEDULED_EVENTS_INTERVAL - (time.time() - started_at)
+            )
             time.sleep(sleeping_time)
 
 

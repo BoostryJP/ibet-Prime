@@ -16,19 +16,14 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import (
-    Column,
-    String,
-    BigInteger,
-    JSON,
-    DateTime
-)
+from sqlalchemy import JSON, BigInteger, Column, DateTime, String
 
 from .base import Base
 
 
 class IDXLock(Base):
     """Token Lock Event (INDEX)"""
+
     __tablename__ = "idx_lock"
 
     # Sequence Id
@@ -53,6 +48,7 @@ class IDXLock(Base):
 
 class IDXUnlock(Base):
     """Token Unlock Event (INDEX)"""
+
     __tablename__ = "idx_unlock"
 
     # Sequence Id

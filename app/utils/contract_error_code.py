@@ -38,7 +38,7 @@ def error_code_msg(code_str: str) -> Tuple[int, str]:
         100101: "The address has not been registered.",
         100102: "Message sender must be the token owner.",
         # IbetShare (11XXXX)
-        110001:	"Lock address is invalid.",  # < v22.12
+        110001: "Lock address is invalid.",  # < v22.12
         110002: "Lock amount is greater than message sender balance.",
         110101: "Unlock address is invalid.",  # < v22.12
         110102: "Unlock amount is greater than locked amount.",

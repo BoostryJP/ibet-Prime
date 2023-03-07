@@ -16,32 +16,29 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import pytest
-import os
 import base64
 import json
+import os
 import time
 from datetime import datetime
 
-from eth_keyfile import decode_keyfile_json
+import pytest
 from Crypto import Random
-from Crypto.Cipher import (
-    AES,
-    PKCS1_OAEP
-)
+from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from Crypto.Util.Padding import pad
+from eth_keyfile import decode_keyfile_json
 
+import batch.indexer_e2e_messaging as indexer_e2e_messaging
 from app.model.blockchain import E2EMessaging
 from app.model.db import (
     E2EMessagingAccount,
     E2EMessagingAccountRsaKey,
     IDXE2EMessaging,
-    IDXE2EMessagingBlockNumber
+    IDXE2EMessagingBlockNumber,
 )
-from app.utils.web3_utils import Web3Wrapper
 from app.utils.e2ee_utils import E2EEUtils
-import batch.indexer_e2e_messaging as indexer_e2e_messaging
+from app.utils.web3_utils import Web3Wrapper
 from batch.indexer_e2e_messaging import Processor
 from tests.account_config import config_eth_account
 
@@ -50,7 +47,9 @@ web3 = Web3Wrapper()
 
 @pytest.fixture(scope="function")
 def processor(db, e2e_messaging_contract):
-    indexer_e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS = e2e_messaging_contract.address
+    indexer_e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS = (
+        e2e_messaging_contract.address
+    )
     return Processor()
 
 
@@ -144,7 +143,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        _e2e_messaging_list = (
+            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        )
         assert len(_e2e_messaging_list) == 0
         _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
         assert _idx_e2e_messaging_block_number.id == 1
@@ -159,8 +160,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : E2EMessagingAccount
@@ -188,7 +188,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str = json.dumps(message)
-        sending_tx_hash, sending_tx_receipt = E2EMessaging(e2e_messaging_contract.address).send_message_external(
+        sending_tx_hash, sending_tx_receipt = E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message_external(
             user_address_1,
             _type,
             message_message_str,
@@ -204,7 +206,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        _e2e_messaging_list = (
+            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        )
         assert len(_e2e_messaging_list) == 1
         _e2e_messaging = _e2e_messaging_list[0]
         assert _e2e_messaging.id == 1
@@ -228,8 +232,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : E2EMessagingAccount
@@ -275,7 +278,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str = json.dumps(message)
-        sending_tx_hash, sending_tx_receipt = E2EMessaging(e2e_messaging_contract.address).send_message_external(
+        sending_tx_hash, sending_tx_receipt = E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message_external(
             user_address_1,
             _type,
             message_message_str,
@@ -313,7 +318,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        _e2e_messaging_list = (
+            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        )
         assert len(_e2e_messaging_list) == 1
         _e2e_messaging = _e2e_messaging_list[0]
         assert _e2e_messaging.id == 1
@@ -338,8 +345,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_3 = config_eth_account("user3")
         user_address_3 = user_3["address"]
         user_private_key_3 = decode_keyfile_json(
-            raw_keyfile_json=user_3["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : E2EMessagingAccount
@@ -383,7 +389,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str_1 = json.dumps(message)
-        sending_tx_hash_1, sending_tx_receipt = E2EMessaging(e2e_messaging_contract.address).send_message_external(
+        sending_tx_hash_1, sending_tx_receipt = E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message_external(
             user_address_1,
             _type_1,
             message_message_str_1,
@@ -392,13 +400,17 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_private_key_3,
         )
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-        sending_block_timestamp_1 = datetime.utcfromtimestamp(sending_block["timestamp"])
+        sending_block_timestamp_1 = datetime.utcfromtimestamp(
+            sending_block["timestamp"]
+        )
 
         # Send Message(user3 -> user2)
         _type_2 = "test_type2"
         message = ["テスト太郎2", "東京都2"]
         message_message_str_2 = json.dumps(message)
-        sending_tx_hash_2, sending_tx_receipt = E2EMessaging(e2e_messaging_contract.address).send_message_external(
+        sending_tx_hash_2, sending_tx_receipt = E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message_external(
             user_address_2,
             _type_2,
             message_message_str_2,
@@ -407,12 +419,16 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_private_key_3,
         )
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-        sending_block_timestamp_2 = datetime.utcfromtimestamp(sending_block["timestamp"])
+        sending_block_timestamp_2 = datetime.utcfromtimestamp(
+            sending_block["timestamp"]
+        )
 
         # Send Message(user3 -> user1)
         _type_3 = "test_type3"
         message_message_str_3 = "テスト太郎1,東京都1"
-        sending_tx_hash_3, sending_tx_receipt = E2EMessaging(e2e_messaging_contract.address).send_message_external(
+        sending_tx_hash_3, sending_tx_receipt = E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message_external(
             user_address_1,
             _type_3,
             message_message_str_3,
@@ -421,12 +437,16 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_private_key_3,
         )
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-        sending_block_timestamp_3 = datetime.utcfromtimestamp(sending_block["timestamp"])
+        sending_block_timestamp_3 = datetime.utcfromtimestamp(
+            sending_block["timestamp"]
+        )
 
         # Send Message(user3 -> user2)
         _type_4 = "a" * 50
         message_message_str_4 = "a" * 5000
-        sending_tx_hash_4, sending_tx_receipt = E2EMessaging(e2e_messaging_contract.address).send_message_external(
+        sending_tx_hash_4, sending_tx_receipt = E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message_external(
             user_address_2,
             _type_4,
             message_message_str_4,
@@ -435,14 +455,18 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             user_private_key_3,
         )
         sending_block = web3.eth.get_block(sending_tx_receipt["blockNumber"])
-        sending_block_timestamp_4 = datetime.utcfromtimestamp(sending_block["timestamp"])
+        sending_block_timestamp_4 = datetime.utcfromtimestamp(
+            sending_block["timestamp"]
+        )
 
         # Run target process
         block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        _e2e_messaging_list = (
+            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        )
         assert len(_e2e_messaging_list) == 4
         _e2e_messaging = _e2e_messaging_list[0]
         assert _e2e_messaging.id == 1
@@ -492,8 +516,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
         user_3 = config_eth_account("user3")
         user_address_3 = user_3["address"]
@@ -537,7 +560,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        _e2e_messaging_list = (
+            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        )
         assert len(_e2e_messaging_list) == 0
         _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
         assert _idx_e2e_messaging_block_number.id == 1
@@ -556,8 +581,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : E2EMessagingAccount
@@ -580,15 +604,18 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         # Send Message
         message = "test"
-        E2EMessaging(e2e_messaging_contract.address).\
-            send_message(user_address_1, message, user_address_2, user_private_key_2)
+        E2EMessaging(e2e_messaging_contract.address).send_message(
+            user_address_1, message, user_address_2, user_private_key_2
+        )
 
         # Run target process
         block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        _e2e_messaging_list = (
+            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        )
         assert len(_e2e_messaging_list) == 0
         _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
         assert _idx_e2e_messaging_block_number.id == 1
@@ -603,8 +630,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : E2EMessagingAccount
@@ -630,25 +656,32 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         aes_iv = os.urandom(16)
         aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
         pad_message = pad("test_message".encode("utf-8"), AES.block_size)
-        encrypted_message = base64.b64encode(aes_iv + aes_cipher.encrypt(pad_message)).decode()
+        encrypted_message = base64.b64encode(
+            aes_iv + aes_cipher.encrypt(pad_message)
+        ).decode()
         rsa_key = RSA.import_key(self.rsa_public_key)
         rsa_cipher = PKCS1_OAEP.new(rsa_key)
         cipher_key = base64.b64encode(rsa_cipher.encrypt(aes_key)).decode()
-        message = json.dumps({
-            "text": {
-                "cipher_key": cipher_key,
-                "message": encrypted_message,
+        message = json.dumps(
+            {
+                "text": {
+                    "cipher_key": cipher_key,
+                    "message": encrypted_message,
+                }
             }
-        })
-        E2EMessaging(e2e_messaging_contract.address).\
-            send_message(user_address_1, message, user_address_2, user_private_key_2)
+        )
+        E2EMessaging(e2e_messaging_contract.address).send_message(
+            user_address_1, message, user_address_2, user_private_key_2
+        )
 
         # Run target process
         block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        _e2e_messaging_list = (
+            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        )
         assert len(_e2e_messaging_list) == 0
         _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
         assert _idx_e2e_messaging_block_number.id == 1
@@ -663,8 +696,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : E2EMessagingAccount
@@ -686,18 +718,23 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         db.commit()
 
         # Send Message
-        message = json.dumps({
-            "type": "test_type",
-        })
-        E2EMessaging(e2e_messaging_contract.address).\
-            send_message(user_address_1, message, user_address_2, user_private_key_2)
+        message = json.dumps(
+            {
+                "type": "test_type",
+            }
+        )
+        E2EMessaging(e2e_messaging_contract.address).send_message(
+            user_address_1, message, user_address_2, user_private_key_2
+        )
 
         # Run target process
         block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        _e2e_messaging_list = (
+            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        )
         assert len(_e2e_messaging_list) == 0
         _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
         assert _idx_e2e_messaging_block_number.id == 1
@@ -712,8 +749,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : E2EMessagingAccount
@@ -739,26 +775,30 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         aes_iv = os.urandom(16)
         aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
         pad_message = pad("test_message".encode("utf-8"), AES.block_size)
-        encrypted_message = base64.b64encode(aes_iv + aes_cipher.encrypt(pad_message)).decode()
+        encrypted_message = base64.b64encode(
+            aes_iv + aes_cipher.encrypt(pad_message)
+        ).decode()
         rsa_key = RSA.import_key(self.rsa_public_key)
         rsa_cipher = PKCS1_OAEP.new(rsa_key)
         cipher_key = base64.b64encode(rsa_cipher.encrypt(aes_key)).decode()
-        message = json.dumps({
-            "type": "a" * 51,
-            "text": {
-                "cipher_key": cipher_key,
-                "message": encrypted_message
+        message = json.dumps(
+            {
+                "type": "a" * 51,
+                "text": {"cipher_key": cipher_key, "message": encrypted_message},
             }
-        })
-        E2EMessaging(e2e_messaging_contract.address).\
-            send_message(user_address_1, message, user_address_2, user_private_key_2)
+        )
+        E2EMessaging(e2e_messaging_contract.address).send_message(
+            user_address_1, message, user_address_2, user_private_key_2
+        )
 
         # Run target process
         block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        _e2e_messaging_list = (
+            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        )
         assert len(_e2e_messaging_list) == 0
         _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
         assert _idx_e2e_messaging_block_number.id == 1
@@ -773,8 +813,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : E2EMessagingAccount
@@ -800,22 +839,29 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         aes_iv = os.urandom(16)
         aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
         pad_message = pad("test_message".encode("utf-8"), AES.block_size)
-        encrypted_message = base64.b64encode(aes_iv + aes_cipher.encrypt(pad_message)).decode()
-        message = json.dumps({
-            "type": "test_type",
-            "text": {
-                "message": encrypted_message,
+        encrypted_message = base64.b64encode(
+            aes_iv + aes_cipher.encrypt(pad_message)
+        ).decode()
+        message = json.dumps(
+            {
+                "type": "test_type",
+                "text": {
+                    "message": encrypted_message,
+                },
             }
-        })
-        E2EMessaging(e2e_messaging_contract.address).\
-            send_message(user_address_1, message, user_address_2, user_private_key_2)
+        )
+        E2EMessaging(e2e_messaging_contract.address).send_message(
+            user_address_1, message, user_address_2, user_private_key_2
+        )
 
         # Run target process
         block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        _e2e_messaging_list = (
+            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        )
         assert len(_e2e_messaging_list) == 0
         _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
         assert _idx_e2e_messaging_block_number.id == 1
@@ -830,8 +876,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : E2EMessagingAccount
@@ -857,21 +902,26 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         rsa_key = RSA.import_key(self.rsa_public_key)
         rsa_cipher = PKCS1_OAEP.new(rsa_key)
         cipher_key = base64.b64encode(rsa_cipher.encrypt(aes_key)).decode()
-        message = json.dumps({
-            "type": "test_type",
-            "text": {
-                "cipher_key": cipher_key,
+        message = json.dumps(
+            {
+                "type": "test_type",
+                "text": {
+                    "cipher_key": cipher_key,
+                },
             }
-        })
-        E2EMessaging(e2e_messaging_contract.address).\
-            send_message(user_address_1, message, user_address_2, user_private_key_2)
+        )
+        E2EMessaging(e2e_messaging_contract.address).send_message(
+            user_address_1, message, user_address_2, user_private_key_2
+        )
 
         # Run target process
         block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        _e2e_messaging_list = (
+            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        )
         assert len(_e2e_messaging_list) == 0
         _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
         assert _idx_e2e_messaging_block_number.id == 1
@@ -886,8 +936,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : E2EMessagingAccount
@@ -913,26 +962,30 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         aes_iv = os.urandom(16)
         aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
         pad_message = pad(("a" * 5001).encode("utf-8"), AES.block_size)
-        encrypted_message = base64.b64encode(aes_iv + aes_cipher.encrypt(pad_message)).decode()
+        encrypted_message = base64.b64encode(
+            aes_iv + aes_cipher.encrypt(pad_message)
+        ).decode()
         rsa_key = RSA.import_key(self.rsa_public_key)
         rsa_cipher = PKCS1_OAEP.new(rsa_key)
         cipher_key = base64.b64encode(rsa_cipher.encrypt(aes_key)).decode()
-        message = json.dumps({
-            "type": "test_type",
-            "text": {
-                "cipher_key": cipher_key,
-                "message": encrypted_message
+        message = json.dumps(
+            {
+                "type": "test_type",
+                "text": {"cipher_key": cipher_key, "message": encrypted_message},
             }
-        })
-        E2EMessaging(e2e_messaging_contract.address). \
-            send_message(user_address_1, message, user_address_2, user_private_key_2)
+        )
+        E2EMessaging(e2e_messaging_contract.address).send_message(
+            user_address_1, message, user_address_2, user_private_key_2
+        )
 
         # Run target process
         block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        _e2e_messaging_list = (
+            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        )
         assert len(_e2e_messaging_list) == 0
         _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
         assert _idx_e2e_messaging_block_number.id == 1
@@ -946,8 +999,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : E2EMessagingAccount
@@ -979,7 +1031,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
-        _e2e_account_rsa_key.block_timestamp = datetime.utcnow()  # Registry after send message
+        _e2e_account_rsa_key.block_timestamp = (
+            datetime.utcnow()
+        )  # Registry after send message
         db.add(_e2e_account_rsa_key)
 
         db.commit()
@@ -989,7 +1043,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        _e2e_messaging_list = (
+            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        )
         assert len(_e2e_messaging_list) == 0
         _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
         assert _idx_e2e_messaging_block_number.id == 1
@@ -1004,8 +1060,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : E2EMessagingAccount
@@ -1031,23 +1086,27 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         aes_iv = os.urandom(16)
         aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
         pad_message = pad("test_message".encode("utf-8"), AES.block_size)
-        encrypted_message = base64.b64encode(aes_iv + aes_cipher.encrypt(pad_message)).decode()
-        message = json.dumps({
-            "type": "test_type",
-            "text": {
-                "cipher_key": "cipher_key",
-                "message": encrypted_message
+        encrypted_message = base64.b64encode(
+            aes_iv + aes_cipher.encrypt(pad_message)
+        ).decode()
+        message = json.dumps(
+            {
+                "type": "test_type",
+                "text": {"cipher_key": "cipher_key", "message": encrypted_message},
             }
-        })
-        E2EMessaging(e2e_messaging_contract.address). \
-            send_message(user_address_1, message, user_address_2, user_private_key_2)
+        )
+        E2EMessaging(e2e_messaging_contract.address).send_message(
+            user_address_1, message, user_address_2, user_private_key_2
+        )
 
         # Run target process
         block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        _e2e_messaging_list = (
+            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        )
         assert len(_e2e_messaging_list) == 0
         _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
         assert _idx_e2e_messaging_block_number.id == 1
@@ -1062,8 +1121,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : E2EMessagingAccount
@@ -1089,24 +1147,28 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         aes_iv = os.urandom(16)
         aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
         pad_message = pad("test_message".encode("utf-8"), AES.block_size)
-        encrypted_message = base64.b64encode(aes_iv + aes_cipher.encrypt(pad_message)).decode()
+        encrypted_message = base64.b64encode(
+            aes_iv + aes_cipher.encrypt(pad_message)
+        ).decode()
         cipher_key = base64.b64encode(aes_key).decode()
-        message = json.dumps({
-            "type": "test_type",
-            "text": {
-                "cipher_key": cipher_key,
-                "message": encrypted_message
+        message = json.dumps(
+            {
+                "type": "test_type",
+                "text": {"cipher_key": cipher_key, "message": encrypted_message},
             }
-        })
-        E2EMessaging(e2e_messaging_contract.address). \
-            send_message(user_address_1, message, user_address_2, user_private_key_2)
+        )
+        E2EMessaging(e2e_messaging_contract.address).send_message(
+            user_address_1, message, user_address_2, user_private_key_2
+        )
 
         # Run target process
         block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        _e2e_messaging_list = (
+            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        )
         assert len(_e2e_messaging_list) == 0
         _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
         assert _idx_e2e_messaging_block_number.id == 1
@@ -1121,8 +1183,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : E2EMessagingAccount
@@ -1151,26 +1212,30 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         aes_iv = os.urandom(16)
         aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
         pad_message = pad("test_message".encode("utf-8"), AES.block_size)
-        encrypted_message = base64.b64encode(aes_iv + aes_cipher.encrypt(pad_message)).decode()
+        encrypted_message = base64.b64encode(
+            aes_iv + aes_cipher.encrypt(pad_message)
+        ).decode()
         rsa_key = RSA.import_key(other_rsa_public_key)
         rsa_cipher = PKCS1_OAEP.new(rsa_key)
         cipher_key = base64.b64encode(rsa_cipher.encrypt(aes_key)).decode()
-        message = json.dumps({
-            "type": "test_type",
-            "text": {
-                "cipher_key": cipher_key,
-                "message": encrypted_message
+        message = json.dumps(
+            {
+                "type": "test_type",
+                "text": {"cipher_key": cipher_key, "message": encrypted_message},
             }
-        })
-        E2EMessaging(e2e_messaging_contract.address). \
-            send_message(user_address_1, message, user_address_2, user_private_key_2)
+        )
+        E2EMessaging(e2e_messaging_contract.address).send_message(
+            user_address_1, message, user_address_2, user_private_key_2
+        )
 
         # Run target process
         block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        _e2e_messaging_list = (
+            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        )
         assert len(_e2e_messaging_list) == 0
         _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
         assert _idx_e2e_messaging_block_number.id == 1
@@ -1185,8 +1250,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : E2EMessagingAccount
@@ -1212,22 +1276,24 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         rsa_key = RSA.import_key(self.rsa_public_key)
         rsa_cipher = PKCS1_OAEP.new(rsa_key)
         cipher_key = base64.b64encode(rsa_cipher.encrypt(aes_key)).decode()
-        message = json.dumps({
-            "type": "test_type",
-            "text": {
-                "cipher_key": cipher_key,
-                "message": "test_message"
+        message = json.dumps(
+            {
+                "type": "test_type",
+                "text": {"cipher_key": cipher_key, "message": "test_message"},
             }
-        })
-        E2EMessaging(e2e_messaging_contract.address). \
-            send_message(user_address_1, message, user_address_2, user_private_key_2)
+        )
+        E2EMessaging(e2e_messaging_contract.address).send_message(
+            user_address_1, message, user_address_2, user_private_key_2
+        )
 
         # Run target process
         block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        _e2e_messaging_list = (
+            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        )
         assert len(_e2e_messaging_list) == 0
         _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
         assert _idx_e2e_messaging_block_number.id == 1
@@ -1242,8 +1308,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : E2EMessagingAccount
@@ -1269,27 +1334,31 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         aes_iv = os.urandom(16)
         aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
         pad_message = pad("test_message".encode("utf-8"), AES.block_size)
-        encrypted_message = base64.b64encode(aes_iv + aes_cipher.encrypt(pad_message)).decode()
+        encrypted_message = base64.b64encode(
+            aes_iv + aes_cipher.encrypt(pad_message)
+        ).decode()
         rsa_key = RSA.import_key(self.rsa_public_key)
         rsa_cipher = PKCS1_OAEP.new(rsa_key)
         other_aes_key = os.urandom(32)
         cipher_key = base64.b64encode(rsa_cipher.encrypt(other_aes_key)).decode()
-        message = json.dumps({
-            "type": "test_type",
-            "text": {
-                "cipher_key": cipher_key,
-                "message": encrypted_message
+        message = json.dumps(
+            {
+                "type": "test_type",
+                "text": {"cipher_key": cipher_key, "message": encrypted_message},
             }
-        })
-        E2EMessaging(e2e_messaging_contract.address). \
-            send_message(user_address_1, message, user_address_2, user_private_key_2)
+        )
+        E2EMessaging(e2e_messaging_contract.address).send_message(
+            user_address_1, message, user_address_2, user_private_key_2
+        )
 
         # Run target process
         block_number = web3.eth.block_number
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        _e2e_messaging_list = (
+            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
+        )
         assert len(_e2e_messaging_list) == 0
         _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
         assert _idx_e2e_messaging_block_number.id == 1

@@ -24,25 +24,17 @@ import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+from utils.contract_utils import IbetStandardTokenUtils
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from web3.types import RPCEndpoint
 
-from config import (
-    CHAIN_ID,
-    WEB3_HTTP_PROVIDER,
-    ZERO_ADDRESS
-)
 from app.exceptions import ServiceUnavailableError
-from app.model.db import (
-    IDXBlockData,
-    IDXBlockDataBlockNumber,
-    IDXTxData
-)
+from app.model.db import IDXBlockData, IDXBlockDataBlockNumber, IDXTxData
 from batch import indexer_block_tx_data
 from batch.indexer_block_tx_data import LOG
+from config import CHAIN_ID, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
 from tests.account_config import config_eth_account
-from utils.contract_utils import IbetStandardTokenUtils
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
@@ -59,9 +51,7 @@ def processor(db, caplog: pytest.LogCaptureFixture):
     LOG.setLevel(default_log_level)
 
 
-
 class TestProcessor:
-
     @staticmethod
     def set_block_number(db, block_number):
         indexed_block_number = IDXBlockDataBlockNumber()
@@ -84,9 +74,11 @@ class TestProcessor:
         processor.process()
 
         # Assertion
-        indexed_block = db.query(IDXBlockDataBlockNumber).\
-            filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID)).\
-            first()
+        indexed_block = (
+            db.query(IDXBlockDataBlockNumber)
+            .filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
+            .first()
+        )
         assert indexed_block.latest_block_number == before_block_number
 
         block_data = db.query(IDXBlockData).all()
@@ -95,11 +87,9 @@ class TestProcessor:
         tx_data = db.query(IDXTxData).all()
         assert len(tx_data) == 0
 
-        assert 1 == caplog.record_tuples.count((
-            LOG.name,
-            logging.INFO,
-            "skip process: from_block > latest_block"
-        ))
+        assert 1 == caplog.record_tuples.count(
+            (LOG.name, logging.INFO, "skip process: from_block > latest_block")
+        )
 
     # Normal_2
     # BlockData: Empty block is generated
@@ -115,9 +105,11 @@ class TestProcessor:
         after_block_number = web3.eth.block_number
 
         # Assertion: Data
-        indexed_block = db.query(IDXBlockDataBlockNumber).\
-            filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID)).\
-            first()
+        indexed_block = (
+            db.query(IDXBlockDataBlockNumber)
+            .filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
+            .first()
+        )
         assert indexed_block.latest_block_number == after_block_number
 
         block_data: list[IDXBlockData] = db.query(IDXBlockData).all()
@@ -128,16 +120,16 @@ class TestProcessor:
         assert len(tx_data) == 0
 
         # Assertion: Log
-        assert 1 == caplog.record_tuples.count((
-            LOG.name,
-            logging.INFO,
-            f"syncing from={before_block_number + 1}, to={after_block_number}"
-        ))
-        assert 1 == caplog.record_tuples.count((
-            LOG.name,
-            logging.INFO,
-            "sync process has been completed"
-        ))
+        assert 1 == caplog.record_tuples.count(
+            (
+                LOG.name,
+                logging.INFO,
+                f"syncing from={before_block_number + 1}, to={after_block_number}",
+            )
+        )
+        assert 1 == caplog.record_tuples.count(
+            (LOG.name, logging.INFO, "sync process has been completed")
+        )
 
     # Normal_3_1
     # TxData: Contract deployment
@@ -145,7 +137,7 @@ class TestProcessor:
         deployer = config_eth_account("user1")
         deployer_pk = decode_keyfile_json(
             raw_keyfile_json=deployer["keyfile_json"],
-            password="password".encode("utf-8")
+            password="password".encode("utf-8"),
         )
 
         before_block_number = web3.eth.block_number
@@ -161,8 +153,8 @@ class TestProcessor:
                 "totalSupply": 1000,
                 "tradableExchange": ZERO_ADDRESS,
                 "contactInformation": "test_contact_info",
-                "privacyPolicy": "test_privacy_policy"
-            }
+                "privacyPolicy": "test_privacy_policy",
+            },
         )
 
         # Execute batch processing
@@ -170,9 +162,11 @@ class TestProcessor:
         after_block_number = web3.eth.block_number
 
         # Assertion
-        indexed_block = db.query(IDXBlockDataBlockNumber).\
-            filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID)).\
-            first()
+        indexed_block = (
+            db.query(IDXBlockDataBlockNumber)
+            .filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
+            .first()
+        )
         assert indexed_block.latest_block_number == after_block_number
 
         block_data: list[IDXBlockData] = db.query(IDXBlockData).all()
@@ -194,7 +188,7 @@ class TestProcessor:
         deployer = config_eth_account("user1")
         deployer_pk = decode_keyfile_json(
             raw_keyfile_json=deployer["keyfile_json"],
-            password="password".encode("utf-8")
+            password="password".encode("utf-8"),
         )
         to_address = config_eth_account("user2")["address"]
 
@@ -211,14 +205,14 @@ class TestProcessor:
                 "totalSupply": 1000,
                 "tradableExchange": ZERO_ADDRESS,
                 "contactInformation": "test_contact_info",
-                "privacyPolicy": "test_privacy_policy"
-            }
+                "privacyPolicy": "test_privacy_policy",
+            },
         )
         tx_hash = IbetStandardTokenUtils.transfer(
             contract_address=token_contract.address,
             tx_from=deployer["address"],
             private_key=deployer_pk,
-            args=[to_address, 1]
+            args=[to_address, 1],
         )
 
         # Execute batch processing
@@ -226,12 +220,16 @@ class TestProcessor:
         after_block_number = web3.eth.block_number
 
         # Assertion
-        indexed_block = db.query(IDXBlockDataBlockNumber).\
-            filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID)).\
-            first()
+        indexed_block = (
+            db.query(IDXBlockDataBlockNumber)
+            .filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
+            .first()
+        )
         assert indexed_block.latest_block_number == after_block_number
 
-        block_data: list[IDXBlockData] = db.query(IDXBlockData).order_by(IDXBlockData.number).all()
+        block_data: list[IDXBlockData] = (
+            db.query(IDXBlockData).order_by(IDXBlockData.number).all()
+        )
         assert len(block_data) == 2
 
         assert block_data[0].number == before_block_number + 1
@@ -266,14 +264,18 @@ class TestProcessor:
         self.set_block_number(db, before_block_number)
 
         # Execute batch processing
-        with mock.patch("web3.providers.rpc.HTTPProvider.make_request", MagicMock(side_effect=ServiceUnavailableError())), \
-                pytest.raises(ServiceUnavailableError):
+        with mock.patch(
+            "web3.providers.rpc.HTTPProvider.make_request",
+            MagicMock(side_effect=ServiceUnavailableError()),
+        ), pytest.raises(ServiceUnavailableError):
             processor.process()
 
         # Assertion
-        indexed_block = db.query(IDXBlockDataBlockNumber). \
-            filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID)). \
-            first()
+        indexed_block = (
+            db.query(IDXBlockDataBlockNumber)
+            .filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
+            .first()
+        )
         assert indexed_block.latest_block_number == before_block_number
 
         block_data = db.query(IDXBlockData).all()
@@ -291,14 +293,17 @@ class TestProcessor:
         web3.provider.make_request(RPCEndpoint("evm_mine"), [])
 
         # Execute batch processing
-        with mock.patch.object(Session, "commit", side_effect=SQLAlchemyError()), \
-                pytest.raises(SQLAlchemyError):
+        with mock.patch.object(
+            Session, "commit", side_effect=SQLAlchemyError()
+        ), pytest.raises(SQLAlchemyError):
             processor.process()
 
         # Assertion
-        indexed_block = db.query(IDXBlockDataBlockNumber). \
-            filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID)). \
-            first()
+        indexed_block = (
+            db.query(IDXBlockDataBlockNumber)
+            .filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
+            .first()
+        )
         assert indexed_block.latest_block_number == before_block_number
 
         block_data = db.query(IDXBlockData).all()

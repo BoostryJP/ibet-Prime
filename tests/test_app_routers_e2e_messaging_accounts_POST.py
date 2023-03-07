@@ -17,28 +17,20 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import base64
+from datetime import datetime, timezone
 from unittest import mock
-from unittest.mock import MagicMock
-from unittest.mock import ANY
-from datetime import (
-    datetime,
-    timezone
-)
+from unittest.mock import ANY, MagicMock
 
-from config import (
-    EOA_PASSWORD_PATTERN_MSG,
-    E2E_MESSAGING_RSA_DEFAULT_PASSPHRASE,
-    E2E_MESSAGING_RSA_PASSPHRASE_PATTERN_MSG
-)
+from app.exceptions import SendTransactionError
 from app.model.blockchain import E2EMessaging
-from app.model.db import (
-    E2EMessagingAccount,
-    E2EMessagingAccountRsaKey,
-    TransactionLock
-)
+from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey, TransactionLock
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-from app.exceptions import SendTransactionError
+from config import (
+    E2E_MESSAGING_RSA_DEFAULT_PASSPHRASE,
+    E2E_MESSAGING_RSA_PASSPHRASE_PATTERN_MSG,
+    EOA_PASSWORD_PATTERN_MSG,
+)
 
 
 class TestAppRoutersE2EMessagingAccountsPOST:
@@ -62,25 +54,28 @@ class TestAppRoutersE2EMessagingAccountsPOST:
         # mock
         mock_E2EMessaging_set_public_key = mock.patch(
             target="app.model.blockchain.e2e_messaging.E2EMessaging.set_public_key",
-            side_effect=[("tx_1", {"blockNumber": 12345})]
+            side_effect=[("tx_1", {"blockNumber": 12345})],
         )
         mock_ContractUtils_get_block_by_transaction_hash = mock.patch(
             target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
             side_effect=[
                 {
                     "number": 12345,
-                    "timestamp": datetime(2099, 4, 27, 12, 34, 56, tzinfo=timezone.utc).timestamp()
+                    "timestamp": datetime(
+                        2099, 4, 27, 12, 34, 56, tzinfo=timezone.utc
+                    ).timestamp(),
                 },
-            ]
+            ],
         )
 
-        with mock.patch("app.routers.e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS",
-                        e2e_messaging_contract.address), \
-             mock_E2EMessaging_set_public_key, mock_ContractUtils_get_block_by_transaction_hash:
+        with mock.patch(
+            "app.routers.e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS",
+            e2e_messaging_contract.address,
+        ), (
+            mock_E2EMessaging_set_public_key
+        ), mock_ContractUtils_get_block_by_transaction_hash:
             # request target api
-            req_param = {
-                "eoa_password": E2EEUtils.encrypt(self.valid_password)
-            }
+            req_param = {"eoa_password": E2EEUtils.encrypt(self.valid_password)}
             resp = client.post(self.base_url, json=req_param)
 
             # assertion
@@ -88,7 +83,7 @@ class TestAppRoutersE2EMessagingAccountsPOST:
                 public_key=ANY,
                 key_type="RSA4096",
                 tx_from=resp.json()["account_address"],
-                private_key=ANY
+                private_key=ANY,
             )
             ContractUtils.get_block_by_transaction_hash.assert_called_with(
                 tx_hash="tx_1",
@@ -125,7 +120,10 @@ class TestAppRoutersE2EMessagingAccountsPOST:
         assert _rsa_key.account_address == resp.json()["account_address"]
         assert _rsa_key.rsa_private_key == ANY
         assert _rsa_key.rsa_public_key == resp.json()["rsa_public_key"]
-        assert E2EEUtils.decrypt(_rsa_key.rsa_passphrase) == E2E_MESSAGING_RSA_DEFAULT_PASSPHRASE
+        assert (
+            E2EEUtils.decrypt(_rsa_key.rsa_passphrase)
+            == E2E_MESSAGING_RSA_DEFAULT_PASSPHRASE
+        )
         assert _rsa_key.block_timestamp == datetime(2099, 4, 27, 12, 34, 56)
         assert 0 == len(_transaction_before)
         assert 1 == len(_transaction_after)
@@ -143,32 +141,37 @@ class TestAppRoutersE2EMessagingAccountsPOST:
         class KMSClientMock:
             def generate_random(self, NumberOfBytes):
                 assert NumberOfBytes == 32
-                return {
-                    "Plaintext": b"12345678901234567890123456789012"
-                }
+                return {"Plaintext": b"12345678901234567890123456789012"}
 
         mock_boto3_client = mock.patch(
-            target="boto3.client",
-            side_effect=[KMSClientMock()]
+            target="boto3.client", side_effect=[KMSClientMock()]
         )
         mock_E2EMessaging_set_public_key = mock.patch(
             target="app.model.blockchain.e2e_messaging.E2EMessaging.set_public_key",
-            side_effect=[("tx_1", {"blockNumber": 12345})]
+            side_effect=[("tx_1", {"blockNumber": 12345})],
         )
         mock_ContractUtils_get_block_by_transaction_hash = mock.patch(
             target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
             side_effect=[
                 {
                     "number": 12345,
-                    "timestamp": datetime(2099, 4, 27, 12, 34, 56, tzinfo=timezone.utc).timestamp()
+                    "timestamp": datetime(
+                        2099, 4, 27, 12, 34, 56, tzinfo=timezone.utc
+                    ).timestamp(),
                 },
-            ]
+            ],
         )
 
-        with mock.patch("app.routers.e2e_messaging.AWS_KMS_GENERATE_RANDOM_ENABLED", True), \
-             mock.patch("app.routers.e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS",
-                        e2e_messaging_contract.address), \
-             mock_boto3_client, mock_E2EMessaging_set_public_key, mock_ContractUtils_get_block_by_transaction_hash:
+        with mock.patch(
+            "app.routers.e2e_messaging.AWS_KMS_GENERATE_RANDOM_ENABLED", True
+        ), mock.patch(
+            "app.routers.e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS",
+            e2e_messaging_contract.address,
+        ), (
+            mock_boto3_client
+        ), (
+            mock_E2EMessaging_set_public_key
+        ), mock_ContractUtils_get_block_by_transaction_hash:
             # request target api
             req_param = {
                 "eoa_password": E2EEUtils.encrypt(self.valid_password),
@@ -183,7 +186,7 @@ class TestAppRoutersE2EMessagingAccountsPOST:
                 public_key=ANY,
                 key_type="RSA4096",
                 tx_from=resp.json()["account_address"],
-                private_key=ANY
+                private_key=ANY,
             )
             ContractUtils.get_block_by_transaction_hash.assert_called_with(
                 tx_hash="tx_1",
@@ -240,17 +243,14 @@ class TestAppRoutersE2EMessagingAccountsPOST:
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 }
-            ]
+            ],
         }
 
     # <Error_1_2>
@@ -263,17 +263,14 @@ class TestAppRoutersE2EMessagingAccountsPOST:
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "eoa_password"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
-            ]
+            ],
         }
 
     # <Error_1_3>
@@ -282,7 +279,9 @@ class TestAppRoutersE2EMessagingAccountsPOST:
     def test_error_1_3(self, client, db):
         req_param = {
             "eoa_password": base64.encodebytes("password".encode("utf-8")).decode(),
-            "rsa_passphrase": base64.encodebytes("password_rsa".encode("utf-8")).decode(),
+            "rsa_passphrase": base64.encodebytes(
+                "password_rsa".encode("utf-8")
+            ).decode(),
             "rsa_key_generate_interval": -1,
             "rsa_generation": -1,
         }
@@ -292,34 +291,31 @@ class TestAppRoutersE2EMessagingAccountsPOST:
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "eoa_password"],
                     "msg": "eoa_password is not a Base64-encoded encrypted data",
-                    "type": "value_error"
+                    "type": "value_error",
                 },
                 {
                     "loc": ["body", "rsa_passphrase"],
                     "msg": "rsa_passphrase is not a Base64-encoded encrypted data",
-                    "type": "value_error"
+                    "type": "value_error",
                 },
                 {
                     "loc": ["body", "rsa_key_generate_interval"],
                     "ctx": {"limit_value": 0},
                     "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge"
+                    "type": "value_error.number.not_ge",
                 },
                 {
                     "loc": ["body", "rsa_generation"],
                     "ctx": {"limit_value": 0},
                     "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge"
+                    "type": "value_error.number.not_ge",
                 },
-            ]
+            ],
         }
 
     # <Error_1_4>
@@ -338,44 +334,36 @@ class TestAppRoutersE2EMessagingAccountsPOST:
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "rsa_key_generate_interval"],
                     "ctx": {"limit_value": 10_000},
                     "msg": "ensure this value is less than or equal to 10000",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le",
                 },
                 {
                     "loc": ["body", "rsa_generation"],
                     "ctx": {"limit_value": 100},
                     "msg": "ensure this value is less than or equal to 100",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le",
                 },
-            ]
+            ],
         }
 
     # <Error_2_1>
     # Passphrase Policy Violation
     # eoa_password
     def test_error_2_1(self, client, db):
-        req_param = {
-            "eoa_password": E2EEUtils.encrypt(self.invalid_password)
-        }
+        req_param = {"eoa_password": E2EEUtils.encrypt(self.invalid_password)}
 
         resp = client.post(self.base_url, json=req_param)
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": EOA_PASSWORD_PATTERN_MSG
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": EOA_PASSWORD_PATTERN_MSG,
         }
 
     # <Error_2_2>
@@ -384,7 +372,7 @@ class TestAppRoutersE2EMessagingAccountsPOST:
     def test_error_2_2(self, client, db):
         req_param = {
             "eoa_password": E2EEUtils.encrypt(self.valid_password),
-            "rsa_passphrase": E2EEUtils.encrypt(self.invalid_password)
+            "rsa_passphrase": E2EEUtils.encrypt(self.invalid_password),
         }
 
         resp = client.post(self.base_url, json=req_param)
@@ -392,30 +380,24 @@ class TestAppRoutersE2EMessagingAccountsPOST:
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": E2E_MESSAGING_RSA_PASSPHRASE_PATTERN_MSG
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": E2E_MESSAGING_RSA_PASSPHRASE_PATTERN_MSG,
         }
 
     # <Error_3>
     # Send Transaction Error
-    @mock.patch("app.model.blockchain.e2e_messaging.E2EMessaging.set_public_key",
-                MagicMock(side_effect=SendTransactionError))
+    @mock.patch(
+        "app.model.blockchain.e2e_messaging.E2EMessaging.set_public_key",
+        MagicMock(side_effect=SendTransactionError),
+    )
     def test_error_3(self, client, db, e2e_messaging_contract):
         # request target api
-        req_param = {
-            "eoa_password": E2EEUtils.encrypt(self.valid_password)
-        }
+        req_param = {"eoa_password": E2EEUtils.encrypt(self.valid_password)}
         resp = client.post(self.base_url, json=req_param)
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 2,
-                "title": "SendTransactionError"
-            },
-            "detail": "failed to send transaction"
+            "meta": {"code": 2, "title": "SendTransactionError"},
+            "detail": "failed to send transaction",
         }

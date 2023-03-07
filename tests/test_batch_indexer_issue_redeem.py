@@ -16,33 +16,37 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from datetime import datetime
-from eth_keyfile import decode_keyfile_json
 import logging
-import pytest
-from sqlalchemy.exc import InvalidRequestError
-from sqlalchemy.orm import Session
+from datetime import datetime
 from unittest import mock
 from unittest.mock import patch
 
+import pytest
+from eth_keyfile import decode_keyfile_json
+from sqlalchemy.exc import InvalidRequestError
+from sqlalchemy.orm import Session
+
 import config
 from app.exceptions import ServiceUnavailableError
+from app.model.blockchain import IbetShareContract, IbetStraightBondContract
+from app.model.blockchain.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams,
+)
 from app.model.db import (
+    IDXIssueRedeem,
+    IDXIssueRedeemBlockNumber,
+    IDXIssueRedeemEventType,
     Token,
     TokenType,
-    IDXIssueRedeem,
-    IDXIssueRedeemEventType,
-    IDXIssueRedeemBlockNumber
 )
-from app.model.blockchain import IbetStraightBondContract, IbetShareContract
-from app.model.blockchain.tx_params.ibet_straight_bond import UpdateParams as IbetStraightBondUpdateParams
-from app.model.blockchain.tx_params.ibet_share import UpdateParams as IbetShareUpdateParams
-from app.utils.web3_utils import Web3Wrapper
 from app.utils.contract_utils import ContractUtils
-from batch.indexer_issue_redeem import Processor, LOG, main
+from app.utils.web3_utils import Web3Wrapper
+from batch.indexer_issue_redeem import LOG, Processor, main
 from config import CHAIN_ID, TX_GAS_LIMIT
 from tests.account_config import config_eth_account
-
 
 web3 = Web3Wrapper()
 
@@ -69,11 +73,13 @@ def processor(db, caplog: pytest.LogCaptureFixture):
     LOG.setLevel(default_log_level)
 
 
-def deploy_bond_token_contract(address,
-                               private_key,
-                               personal_info_contract_address,
-                               tradable_exchange_contract_address=None,
-                               transfer_approval_required=None):
+def deploy_bond_token_contract(
+    address,
+    private_key,
+    personal_info_contract_address,
+    tradable_exchange_contract_address=None,
+    transfer_approval_required=None,
+):
     arguments = [
         "token.name",
         "token.symbol",
@@ -83,7 +89,7 @@ def deploy_bond_token_contract(address,
         30,
         "token.return_date",
         "token.return_amount",
-        "token.purpose"
+        "token.purpose",
     ]
     bond_contrat = IbetStraightBondContract()
     token_address, _, _ = bond_contrat.create(arguments, address, private_key)
@@ -92,20 +98,22 @@ def deploy_bond_token_contract(address,
             transferable=True,
             personal_info_contract_address=personal_info_contract_address,
             tradable_exchange_contract_address=tradable_exchange_contract_address,
-            transfer_approval_required=transfer_approval_required
+            transfer_approval_required=transfer_approval_required,
         ),
         tx_from=address,
-        private_key=private_key
+        private_key=private_key,
     )
 
     return ContractUtils.get_contract("IbetStraightBond", token_address)
 
 
-def deploy_share_token_contract(address,
-                                private_key,
-                                personal_info_contract_address,
-                                tradable_exchange_contract_address=None,
-                                transfer_approval_required=None):
+def deploy_share_token_contract(
+    address,
+    private_key,
+    personal_info_contract_address,
+    tradable_exchange_contract_address=None,
+    transfer_approval_required=None,
+):
     arguments = [
         "token.name",
         "token.symbol",
@@ -115,7 +123,7 @@ def deploy_share_token_contract(address,
         "token.dividend_record_date",
         "token.dividend_payment_date",
         "token.cancellation_date",
-        30
+        30,
     ]
     share_contract = IbetShareContract()
     token_address, _, _ = share_contract.create(arguments, address, private_key)
@@ -124,17 +132,16 @@ def deploy_share_token_contract(address,
             transferable=True,
             personal_info_contract_address=personal_info_contract_address,
             tradable_exchange_contract_address=tradable_exchange_contract_address,
-            transfer_approval_required=transfer_approval_required
+            transfer_approval_required=transfer_approval_required,
         ),
         tx_from=address,
-        private_key=private_key
+        private_key=private_key,
     )
 
     return ContractUtils.get_contract("IbetShare", token_address)
 
 
 class TestProcessor:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -174,15 +181,14 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : Token
         token_contract_1 = deploy_bond_token_contract(
             address=issuer_address,
             private_key=issuer_private_key,
-            personal_info_contract_address=personal_info_contract.address
+            personal_info_contract_address=personal_info_contract.address,
         )
 
         token_address_1 = token_contract_1.address
@@ -215,15 +221,14 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : Token
         token_contract_1 = deploy_bond_token_contract(
             address=issuer_address,
             private_key=issuer_private_key,
-            personal_info_contract_address=personal_info_contract.address
+            personal_info_contract_address=personal_info_contract.address,
         )
 
         token_address_1 = token_contract_1.address
@@ -239,15 +244,15 @@ class TestProcessor:
 
         # issueFrom
         tx = token_contract_1.functions.issueFrom(
-            issuer_address,
-            config.ZERO_ADDRESS,
-            40
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            issuer_address, config.ZERO_ADDRESS, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
@@ -279,15 +284,14 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : Token
         token_contract_1 = deploy_share_token_contract(
             address=issuer_address,
             private_key=issuer_private_key,
-            personal_info_contract_address=personal_info_contract.address
+            personal_info_contract_address=personal_info_contract.address,
         )
 
         token_address_1 = token_contract_1.address
@@ -303,15 +307,15 @@ class TestProcessor:
 
         # issueFrom
         tx = token_contract_1.functions.issueFrom(
-            issuer_address,
-            config.ZERO_ADDRESS,
-            40
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            issuer_address, config.ZERO_ADDRESS, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
@@ -343,15 +347,14 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : Token
         token_contract_1 = deploy_bond_token_contract(
             address=issuer_address,
             private_key=issuer_private_key,
-            personal_info_contract_address=personal_info_contract.address
+            personal_info_contract_address=personal_info_contract.address,
         )
 
         token_address_1 = token_contract_1.address
@@ -367,15 +370,15 @@ class TestProcessor:
 
         # redeemFrom
         tx = token_contract_1.functions.redeemFrom(
-            issuer_address,
-            config.ZERO_ADDRESS,
-            10
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            issuer_address, config.ZERO_ADDRESS, 10
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
@@ -407,15 +410,14 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : Token
         token_contract_1 = deploy_share_token_contract(
             address=issuer_address,
             private_key=issuer_private_key,
-            personal_info_contract_address=personal_info_contract.address
+            personal_info_contract_address=personal_info_contract.address,
         )
 
         token_address_1 = token_contract_1.address
@@ -431,15 +433,15 @@ class TestProcessor:
 
         # redeemFrom
         tx = token_contract_1.functions.redeemFrom(
-            issuer_address,
-            config.ZERO_ADDRESS,
-            10
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            issuer_address, config.ZERO_ADDRESS, 10
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
@@ -470,15 +472,14 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : Token
         token_contract_1 = deploy_bond_token_contract(
             address=issuer_address,
             private_key=issuer_private_key,
-            personal_info_contract_address=personal_info_contract.address
+            personal_info_contract_address=personal_info_contract.address,
         )
 
         token_address_1 = token_contract_1.address
@@ -494,27 +495,27 @@ class TestProcessor:
 
         # issueFrom * 2
         tx = token_contract_1.functions.issueFrom(
-            issuer_address,
-            config.ZERO_ADDRESS,
-            10
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            issuer_address, config.ZERO_ADDRESS, 10
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         tx = token_contract_1.functions.issueFrom(
-            issuer_address,
-            config.ZERO_ADDRESS,
-            20
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            issuer_address, config.ZERO_ADDRESS, 20
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
@@ -553,19 +554,24 @@ class TestProcessor:
 
     # Normal_6
     # If DB session fails in phase sinking each event, batch outputs logs exception occurred.
-    def test_normal_6(self, processor: Processor, db: Session, personal_info_contract, caplog: pytest.LogCaptureFixture):
+    def test_normal_6(
+        self,
+        processor: Processor,
+        db: Session,
+        personal_info_contract,
+        caplog: pytest.LogCaptureFixture,
+    ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : Token
         token_contract_1 = deploy_bond_token_contract(
             address=issuer_address,
             private_key=issuer_private_key,
-            personal_info_contract_address=personal_info_contract.address
+            personal_info_contract_address=personal_info_contract.address,
         )
 
         token_address_1 = token_contract_1.address
@@ -581,31 +587,35 @@ class TestProcessor:
 
         # issueFrom
         tx = token_contract_1.functions.issueFrom(
-            issuer_address,
-            config.ZERO_ADDRESS,
-            10
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            issuer_address, config.ZERO_ADDRESS, 10
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         with patch.object(Session, "add", side_effect=Exception()):
             processor.sync_new_logs()
 
-        assert 1 == caplog.record_tuples.count((
-            LOG.name,
-            logging.ERROR,
-            "An exception occurred during event synchronization"
-        ))
+        assert 1 == caplog.record_tuples.count(
+            (
+                LOG.name,
+                logging.ERROR,
+                "An exception occurred during event synchronization",
+            )
+        )
 
     # Normal_7
     # If block number processed in batch is equal or greater than current block number,
     # batch logs "skip process".
     @mock.patch("web3.eth.Eth.block_number", 100)
-    def test_normal_7(self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture):
+    def test_normal_7(
+        self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture
+    ):
         _idx_position_bond_block_number = IDXIssueRedeemBlockNumber()
         _idx_position_bond_block_number.id = 1
         _idx_position_bond_block_number.latest_block_number = 1000
@@ -613,7 +623,9 @@ class TestProcessor:
         db.commit()
 
         processor.sync_new_logs()
-        assert 1 == caplog.record_tuples.count((LOG.name, logging.DEBUG, "skip process"))
+        assert 1 == caplog.record_tuples.count(
+            (LOG.name, logging.DEBUG, "skip process")
+        )
 
     # Normal_8
     # Newly tokens added
@@ -621,15 +633,14 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : Token
         token_contract_1 = deploy_bond_token_contract(
             address=issuer_address,
             private_key=issuer_private_key,
-            personal_info_contract_address=personal_info_contract.address
+            personal_info_contract_address=personal_info_contract.address,
         )
 
         token_address_1 = token_contract_1.address
@@ -653,7 +664,7 @@ class TestProcessor:
         token_contract_2 = deploy_share_token_contract(
             address=issuer_address,
             private_key=issuer_private_key,
-            personal_info_contract_address=personal_info_contract.address
+            personal_info_contract_address=personal_info_contract.address,
         )
 
         token_address_2 = token_contract_2.address
@@ -680,19 +691,24 @@ class TestProcessor:
 
     # Error_1
     # If each error occurs, batch will output logs and continue next sync.
-    def test_error_1(self, main_func, db: Session, personal_info_contract, caplog: pytest.LogCaptureFixture):
+    def test_error_1(
+        self,
+        main_func,
+        db: Session,
+        personal_info_contract,
+        caplog: pytest.LogCaptureFixture,
+    ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : Token
         token_contract_1 = deploy_bond_token_contract(
             address=issuer_address,
             private_key=issuer_private_key,
-            personal_info_contract_address=personal_info_contract.address
+            personal_info_contract_address=personal_info_contract.address,
         )
 
         token_address_1 = token_contract_1.address
@@ -707,17 +723,27 @@ class TestProcessor:
         db.commit()
 
         # Run mainloop once and fail with web3 utils error
-        with patch("batch.indexer_issue_redeem.INDEXER_SYNC_INTERVAL", None),\
-            patch.object(web3.eth, "contract", side_effect=ServiceUnavailableError()), \
-                pytest.raises(TypeError):
+        with patch(
+            "batch.indexer_issue_redeem.INDEXER_SYNC_INTERVAL", None
+        ), patch.object(
+            web3.eth, "contract", side_effect=ServiceUnavailableError()
+        ), pytest.raises(
+            TypeError
+        ):
             main_func()
-        assert 1 == caplog.record_tuples.count((LOG.name, logging.WARNING, "An external service was unavailable"))
+        assert 1 == caplog.record_tuples.count(
+            (LOG.name, logging.WARNING, "An external service was unavailable")
+        )
         caplog.clear()
 
         # Run mainloop once and fail with sqlalchemy InvalidRequestError
-        with patch("batch.indexer_issue_redeem.INDEXER_SYNC_INTERVAL", None),\
-            patch.object(Session, "query", side_effect=InvalidRequestError()), \
-                pytest.raises(TypeError):
+        with patch(
+            "batch.indexer_issue_redeem.INDEXER_SYNC_INTERVAL", None
+        ), patch.object(
+            Session, "query", side_effect=InvalidRequestError()
+        ), pytest.raises(
+            TypeError
+        ):
             main_func()
         assert 1 == caplog.text.count("A database error has occurred")
         caplog.clear()

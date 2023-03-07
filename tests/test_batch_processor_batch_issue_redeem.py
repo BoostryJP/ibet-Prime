@@ -18,36 +18,35 @@ SPDX-License-Identifier: Apache-2.0
 """
 import logging
 import uuid
-from sqlalchemy.orm import Session
 from typing import List
-from unittest.mock import patch, ANY
+from unittest.mock import ANY, patch
 
 import pytest
-
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy.orm import Session
 
-from app.exceptions import SendTransactionError, ContractRevertError
+from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import (
     Account,
-    BatchIssueRedeemUpload,
-    BatchIssueRedeemProcessingCategory,
     BatchIssueRedeem,
-    TokenType,
+    BatchIssueRedeemProcessingCategory,
+    BatchIssueRedeemUpload,
     Notification,
-    NotificationType
+    NotificationType,
+    TokenType,
 )
 from app.model.schema import (
+    IbetShareAdditionalIssue,
+    IbetShareRedeem,
     IbetStraightBondAdditionalIssue,
     IbetStraightBondRedeem,
-    IbetShareAdditionalIssue,
-    IbetShareRedeem
 )
 from app.utils.e2ee_utils import E2EEUtils
-from batch.processor_batch_issue_redeem import Processor, LOG
+from batch.processor_batch_issue_redeem import LOG, Processor
 from tests.account_config import config_eth_account
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def processor(db, caplog: pytest.LogCaptureFixture):
     log = logging.getLogger("background")
     default_log_level = LOG.level
@@ -59,7 +58,6 @@ def processor(db, caplog: pytest.LogCaptureFixture):
 
 
 class TestProcessor:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -75,7 +73,7 @@ class TestProcessor:
         issuer_eoa_password = E2EEUtils.encrypt("password")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer_keyfile,
-            password=E2EEUtils.decrypt(issuer_eoa_password).encode("utf-8")
+            password=E2EEUtils.decrypt(issuer_eoa_password).encode("utf-8"),
         )
 
         token_address = "test_token_address"
@@ -114,38 +112,43 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-                target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
-                return_value="mock_tx_hash") as IbetStraightBondContract_additional_issue:
+            target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+            return_value="mock_tx_hash",
+        ) as IbetStraightBondContract_additional_issue:
             processor.process()
 
             # Assertion: contract
             IbetStraightBondContract_additional_issue.assert_called_with(
                 data=IbetStraightBondAdditionalIssue(
-                    account_address=target_address,
-                    amount=target_amount
+                    account_address=target_address, amount=target_amount
                 ),
                 tx_from=issuer_address,
-                private_key=issuer_pk
+                private_key=issuer_pk,
             )
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
-            filter(BatchIssueRedeemUpload.upload_id == upload_id). \
-            first()
+        _upload_after: BatchIssueRedeemUpload = (
+            db.query(BatchIssueRedeemUpload)
+            .filter(BatchIssueRedeemUpload.upload_id == upload_id)
+            .first()
+        )
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
-            filter(BatchIssueRedeem.upload_id == upload_id). \
-            all()
+        _upload_data_after: List[BatchIssueRedeem] = (
+            db.query(BatchIssueRedeem)
+            .filter(BatchIssueRedeem.upload_id == upload_id)
+            .all()
+        )
         assert len(_upload_data_after) == 1
         assert _upload_data_after[0].status == 1
 
         # Assertion: Log
-        assert caplog.record_tuples.count((
-            LOG.name,
-            logging.DEBUG,
-            "Transaction sent successfully: mock_tx_hash"
-        )) == 1
+        assert (
+            caplog.record_tuples.count(
+                (LOG.name, logging.DEBUG, "Transaction sent successfully: mock_tx_hash")
+            )
+            == 1
+        )
 
         _notification_list = db.query(Notification).all()
         for _notification in _notification_list:
@@ -159,7 +162,7 @@ class TestProcessor:
                 "upload_id": upload_id,
                 "error_data_id": [],
                 "token_address": token_address,
-                "token_type": TokenType.IBET_STRAIGHT_BOND
+                "token_type": TokenType.IBET_STRAIGHT_BOND,
             }
 
     # Normal_2
@@ -173,7 +176,7 @@ class TestProcessor:
         issuer_eoa_password = E2EEUtils.encrypt("password")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer_keyfile,
-            password=E2EEUtils.decrypt(issuer_eoa_password).encode("utf-8")
+            password=E2EEUtils.decrypt(issuer_eoa_password).encode("utf-8"),
         )
 
         token_address = "test_token_address"
@@ -212,38 +215,43 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-                target="app.model.blockchain.token.IbetStraightBondContract.redeem",
-                return_value="mock_tx_hash") as IbetStraightBondContract_redeem:
+            target="app.model.blockchain.token.IbetStraightBondContract.redeem",
+            return_value="mock_tx_hash",
+        ) as IbetStraightBondContract_redeem:
             processor.process()
 
         # Assertion: contract
         IbetStraightBondContract_redeem.assert_called_with(
             data=IbetStraightBondRedeem(
-                account_address=target_address,
-                amount=target_amount
+                account_address=target_address, amount=target_amount
             ),
             tx_from=issuer_address,
-            private_key=issuer_pk
+            private_key=issuer_pk,
         )
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
-            filter(BatchIssueRedeemUpload.upload_id == upload_id). \
-            first()
+        _upload_after: BatchIssueRedeemUpload = (
+            db.query(BatchIssueRedeemUpload)
+            .filter(BatchIssueRedeemUpload.upload_id == upload_id)
+            .first()
+        )
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
-            filter(BatchIssueRedeem.upload_id == upload_id). \
-            all()
+        _upload_data_after: List[BatchIssueRedeem] = (
+            db.query(BatchIssueRedeem)
+            .filter(BatchIssueRedeem.upload_id == upload_id)
+            .all()
+        )
         assert len(_upload_data_after) == 1
         assert _upload_data_after[0].status == 1
 
         # Assertion: Log
-        assert caplog.record_tuples.count((
-            LOG.name,
-            logging.DEBUG,
-            "Transaction sent successfully: mock_tx_hash"
-        )) == 1
+        assert (
+            caplog.record_tuples.count(
+                (LOG.name, logging.DEBUG, "Transaction sent successfully: mock_tx_hash")
+            )
+            == 1
+        )
 
         _notification_list = db.query(Notification).all()
         for _notification in _notification_list:
@@ -257,7 +265,7 @@ class TestProcessor:
                 "upload_id": upload_id,
                 "error_data_id": [],
                 "token_address": token_address,
-                "token_type": TokenType.IBET_STRAIGHT_BOND
+                "token_type": TokenType.IBET_STRAIGHT_BOND,
             }
 
     # Normal_3
@@ -271,7 +279,7 @@ class TestProcessor:
         issuer_eoa_password = E2EEUtils.encrypt("password")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer_keyfile,
-            password=E2EEUtils.decrypt(issuer_eoa_password).encode("utf-8")
+            password=E2EEUtils.decrypt(issuer_eoa_password).encode("utf-8"),
         )
 
         token_address = "test_token_address"
@@ -310,38 +318,43 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-                target="app.model.blockchain.token.IbetShareContract.additional_issue",
-                return_value="mock_tx_hash") as IbetShareContract_additional_issue:
+            target="app.model.blockchain.token.IbetShareContract.additional_issue",
+            return_value="mock_tx_hash",
+        ) as IbetShareContract_additional_issue:
             processor.process()
 
         # Assertion: contract
         IbetShareContract_additional_issue.assert_called_with(
             data=IbetShareAdditionalIssue(
-                account_address=target_address,
-                amount=target_amount
+                account_address=target_address, amount=target_amount
             ),
             tx_from=issuer_address,
-            private_key=issuer_pk
+            private_key=issuer_pk,
         )
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
-            filter(BatchIssueRedeemUpload.upload_id == upload_id). \
-            first()
+        _upload_after: BatchIssueRedeemUpload = (
+            db.query(BatchIssueRedeemUpload)
+            .filter(BatchIssueRedeemUpload.upload_id == upload_id)
+            .first()
+        )
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
-            filter(BatchIssueRedeem.upload_id == upload_id). \
-            all()
+        _upload_data_after: List[BatchIssueRedeem] = (
+            db.query(BatchIssueRedeem)
+            .filter(BatchIssueRedeem.upload_id == upload_id)
+            .all()
+        )
         assert len(_upload_data_after) == 1
         assert _upload_data_after[0].status == 1
 
         # Assertion: Log
-        assert caplog.record_tuples.count((
-            LOG.name,
-            logging.DEBUG,
-            "Transaction sent successfully: mock_tx_hash"
-        )) == 1
+        assert (
+            caplog.record_tuples.count(
+                (LOG.name, logging.DEBUG, "Transaction sent successfully: mock_tx_hash")
+            )
+            == 1
+        )
 
         _notification_list = db.query(Notification).all()
         for _notification in _notification_list:
@@ -355,7 +368,7 @@ class TestProcessor:
                 "upload_id": upload_id,
                 "error_data_id": [],
                 "token_address": token_address,
-                "token_type": TokenType.IBET_SHARE
+                "token_type": TokenType.IBET_SHARE,
             }
 
     # Normal_4
@@ -369,7 +382,7 @@ class TestProcessor:
         issuer_eoa_password = E2EEUtils.encrypt("password")
         issuer_pk = decode_keyfile_json(
             raw_keyfile_json=issuer_keyfile,
-            password=E2EEUtils.decrypt(issuer_eoa_password).encode("utf-8")
+            password=E2EEUtils.decrypt(issuer_eoa_password).encode("utf-8"),
         )
 
         token_address = "test_token_address"
@@ -408,38 +421,41 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-                target="app.model.blockchain.token.IbetShareContract.redeem",
-                return_value="mock_tx_hash") as IbetShareContract_redeem:
+            target="app.model.blockchain.token.IbetShareContract.redeem",
+            return_value="mock_tx_hash",
+        ) as IbetShareContract_redeem:
             processor.process()
 
         # Assertion: contract
         IbetShareContract_redeem.assert_called_with(
-            data=IbetShareRedeem(
-                account_address=target_address,
-                amount=target_amount
-            ),
+            data=IbetShareRedeem(account_address=target_address, amount=target_amount),
             tx_from=issuer_address,
-            private_key=issuer_pk
+            private_key=issuer_pk,
         )
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
-            filter(BatchIssueRedeemUpload.upload_id == upload_id). \
-            first()
+        _upload_after: BatchIssueRedeemUpload = (
+            db.query(BatchIssueRedeemUpload)
+            .filter(BatchIssueRedeemUpload.upload_id == upload_id)
+            .first()
+        )
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
-            filter(BatchIssueRedeem.upload_id == upload_id). \
-            all()
+        _upload_data_after: List[BatchIssueRedeem] = (
+            db.query(BatchIssueRedeem)
+            .filter(BatchIssueRedeem.upload_id == upload_id)
+            .all()
+        )
         assert len(_upload_data_after) == 1
         assert _upload_data_after[0].status == 1
 
         # Assertion: Log
-        assert caplog.record_tuples.count((
-            LOG.name,
-            logging.DEBUG,
-            "Transaction sent successfully: mock_tx_hash"
-        )) == 1
+        assert (
+            caplog.record_tuples.count(
+                (LOG.name, logging.DEBUG, "Transaction sent successfully: mock_tx_hash")
+            )
+            == 1
+        )
 
         _notification_list = db.query(Notification).all()
         for _notification in _notification_list:
@@ -453,7 +469,7 @@ class TestProcessor:
                 "upload_id": upload_id,
                 "error_data_id": [],
                 "token_address": token_address,
-                "token_type": TokenType.IBET_SHARE
+                "token_type": TokenType.IBET_SHARE,
             }
 
     ###########################################################################
@@ -496,31 +512,37 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-                target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
-                return_value="mock_tx_hash") as IbetStraightBondContract_additional_issue:
+            target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+            return_value="mock_tx_hash",
+        ) as IbetStraightBondContract_additional_issue:
             processor.process()
 
         # Assertion: contract
         IbetStraightBondContract_additional_issue.assert_not_called()
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
-            filter(BatchIssueRedeemUpload.upload_id == upload_id). \
-            first()
+        _upload_after: BatchIssueRedeemUpload = (
+            db.query(BatchIssueRedeemUpload)
+            .filter(BatchIssueRedeemUpload.upload_id == upload_id)
+            .first()
+        )
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
-            filter(BatchIssueRedeem.upload_id == upload_id). \
-            all()
+        _upload_data_after: List[BatchIssueRedeem] = (
+            db.query(BatchIssueRedeem)
+            .filter(BatchIssueRedeem.upload_id == upload_id)
+            .all()
+        )
         assert len(_upload_data_after) == 1
         assert _upload_data_after[0].status == 0
 
         # Assertion: Log
-        assert caplog.record_tuples.count((
-            LOG.name,
-            logging.ERROR,
-            "Issuer account does not exist"
-        )) == 1
+        assert (
+            caplog.record_tuples.count(
+                (LOG.name, logging.ERROR, "Issuer account does not exist")
+            )
+            == 1
+        )
 
         _notification_list = db.query(Notification).all()
         for _notification in _notification_list:
@@ -534,7 +556,7 @@ class TestProcessor:
                 "upload_id": upload_id,
                 "error_data_id": [],
                 "token_address": token_address,
-                "token_type": TokenType.IBET_STRAIGHT_BOND
+                "token_type": TokenType.IBET_STRAIGHT_BOND,
             }
 
     # Error_2
@@ -582,31 +604,37 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-                target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
-                return_value="mock_tx_hash") as IbetStraightBondContract_additional_issue:
+            target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+            return_value="mock_tx_hash",
+        ) as IbetStraightBondContract_additional_issue:
             processor.process()
 
         # Assertion: contract
         IbetStraightBondContract_additional_issue.assert_not_called()
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
-            filter(BatchIssueRedeemUpload.upload_id == upload_id). \
-            first()
+        _upload_after: BatchIssueRedeemUpload = (
+            db.query(BatchIssueRedeemUpload)
+            .filter(BatchIssueRedeemUpload.upload_id == upload_id)
+            .first()
+        )
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
-            filter(BatchIssueRedeem.upload_id == upload_id). \
-            all()
+        _upload_data_after: List[BatchIssueRedeem] = (
+            db.query(BatchIssueRedeem)
+            .filter(BatchIssueRedeem.upload_id == upload_id)
+            .all()
+        )
         assert len(_upload_data_after) == 1
         assert _upload_data_after[0].status == 0
 
         # Assertion: Log
-        assert caplog.record_tuples.count((
-            LOG.name,
-            logging.ERROR,
-            "Failed to decode keyfile"
-        )) == 1
+        assert (
+            caplog.record_tuples.count(
+                (LOG.name, logging.ERROR, "Failed to decode keyfile")
+            )
+            == 1
+        )
 
         _notification_list = db.query(Notification).all()
         for _notification in _notification_list:
@@ -620,7 +648,7 @@ class TestProcessor:
                 "upload_id": upload_id,
                 "error_data_id": [],
                 "token_address": token_address,
-                "token_type": TokenType.IBET_STRAIGHT_BOND
+                "token_type": TokenType.IBET_STRAIGHT_BOND,
             }
 
     # Error_3
@@ -675,29 +703,35 @@ class TestProcessor:
 
         # Execute batch
         with patch(
-                target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
-                side_effect=SendTransactionError()) as IbetStraightBondContract_additional_issue:
+            target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+            side_effect=SendTransactionError(),
+        ) as IbetStraightBondContract_additional_issue:
             processor.process()
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
-            filter(BatchIssueRedeemUpload.upload_id == upload_id). \
-            first()
+        _upload_after: BatchIssueRedeemUpload = (
+            db.query(BatchIssueRedeemUpload)
+            .filter(BatchIssueRedeemUpload.upload_id == upload_id)
+            .first()
+        )
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
-            filter(BatchIssueRedeem.upload_id == upload_id). \
-            all()
+        _upload_data_after: List[BatchIssueRedeem] = (
+            db.query(BatchIssueRedeem)
+            .filter(BatchIssueRedeem.upload_id == upload_id)
+            .all()
+        )
         assert len(_upload_data_after) == 2
         assert _upload_data_after[0].status == 2
         assert _upload_data_after[1].status == 2
 
         # Assertion: Log
-        assert caplog.record_tuples.count((
-            LOG.name,
-            logging.WARNING,
-            "Failed to send transaction: -"
-        )) == 2
+        assert (
+            caplog.record_tuples.count(
+                (LOG.name, logging.WARNING, "Failed to send transaction: -")
+            )
+            == 2
+        )
 
         _notification_list = db.query(Notification).all()
         for _notification in _notification_list:
@@ -711,13 +745,15 @@ class TestProcessor:
                 "upload_id": upload_id,
                 "error_data_id": ANY,
                 "token_address": token_address,
-                "token_type": TokenType.IBET_STRAIGHT_BOND
+                "token_type": TokenType.IBET_STRAIGHT_BOND,
             }
             assert len(_notification.metainfo["error_data_id"]) == 2
 
     # <Error_4>
     # ContractRevertError
-    def test_error_4(self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture):
+    def test_error_4(
+        self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture
+    ):
         # Test settings
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -777,78 +813,97 @@ class TestProcessor:
         db.commit()
 
         # mock
-        with (
-            patch(
-                target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
-                side_effect=ContractRevertError("999999")
-            ),
-            patch(
-                target="app.model.blockchain.token.IbetShareContract.additional_issue",
-                side_effect=ContractRevertError("999999")
-            )
+        with patch(
+            target="app.model.blockchain.token.IbetStraightBondContract.additional_issue",
+            side_effect=ContractRevertError("999999"),
+        ), patch(
+            target="app.model.blockchain.token.IbetShareContract.additional_issue",
+            side_effect=ContractRevertError("999999"),
         ):
             processor.process()
 
         # Assertion: DB
-        _upload_1_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
-            filter(BatchIssueRedeemUpload.upload_id == upload_1_id). \
-            first()
+        _upload_1_after: BatchIssueRedeemUpload = (
+            db.query(BatchIssueRedeemUpload)
+            .filter(BatchIssueRedeemUpload.upload_id == upload_1_id)
+            .first()
+        )
         assert _upload_1_after.processed == True
 
-        _upload_1_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
-            filter(BatchIssueRedeem.upload_id == upload_1_id). \
-            all()
+        _upload_1_data_after: List[BatchIssueRedeem] = (
+            db.query(BatchIssueRedeem)
+            .filter(BatchIssueRedeem.upload_id == upload_1_id)
+            .all()
+        )
         assert len(_upload_1_data_after) == 1
         assert _upload_1_data_after[0].status == 2
 
-        _upload_2_after: BatchIssueRedeemUpload = db.query(BatchIssueRedeemUpload). \
-            filter(BatchIssueRedeemUpload.upload_id == upload_2_id). \
-            first()
+        _upload_2_after: BatchIssueRedeemUpload = (
+            db.query(BatchIssueRedeemUpload)
+            .filter(BatchIssueRedeemUpload.upload_id == upload_2_id)
+            .first()
+        )
         assert _upload_2_after.processed == True
 
-        _upload_2_data_after: List[BatchIssueRedeem] = db.query(BatchIssueRedeem). \
-            filter(BatchIssueRedeem.upload_id == upload_2_id). \
-            all()
+        _upload_2_data_after: List[BatchIssueRedeem] = (
+            db.query(BatchIssueRedeem)
+            .filter(BatchIssueRedeem.upload_id == upload_2_id)
+            .all()
+        )
         assert len(_upload_2_data_after) == 1
         assert _upload_2_data_after[0].status == 2
 
         # Assertion: Log
-        assert caplog.record_tuples.count((
-            LOG.name,
-            logging.WARNING,
-            f"Transaction reverted: upload_id=<{_upload_1_after.upload_id}> error_code:<999999> error_msg:<>"
-        )) == 1
-        assert caplog.record_tuples.count((
-            LOG.name,
-            logging.WARNING,
-            f"Transaction reverted: upload_id=<{_upload_2_after.upload_id}> error_code:<999999> error_msg:<>"
-        )) == 1
+        assert (
+            caplog.record_tuples.count(
+                (
+                    LOG.name,
+                    logging.WARNING,
+                    f"Transaction reverted: upload_id=<{_upload_1_after.upload_id}> error_code:<999999> error_msg:<>",
+                )
+            )
+            == 1
+        )
+        assert (
+            caplog.record_tuples.count(
+                (
+                    LOG.name,
+                    logging.WARNING,
+                    f"Transaction reverted: upload_id=<{_upload_2_after.upload_id}> error_code:<999999> error_msg:<>",
+                )
+            )
+            == 1
+        )
 
         _notification_list = db.query(Notification).all()
         assert _notification_list[0].notice_id is not None
         assert _notification_list[0].issuer_address == issuer_address
         assert _notification_list[0].priority == 1
-        assert _notification_list[0].type == NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
+        assert (
+            _notification_list[0].type == NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
+        )
         assert _notification_list[0].code == 3  # Failed
         assert _notification_list[0].metainfo == {
             "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
             "upload_id": upload_1_id,
             "error_data_id": ANY,
             "token_address": token_address,
-            "token_type": TokenType.IBET_STRAIGHT_BOND
+            "token_type": TokenType.IBET_STRAIGHT_BOND,
         }
         assert len(_notification_list[0].metainfo["error_data_id"]) == 1
 
         assert _notification_list[1].notice_id is not None
         assert _notification_list[1].issuer_address == issuer_address
         assert _notification_list[1].priority == 1
-        assert _notification_list[1].type == NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
+        assert (
+            _notification_list[1].type == NotificationType.BATCH_ISSUE_REDEEM_PROCESSED
+        )
         assert _notification_list[1].code == 3  # Failed
         assert _notification_list[1].metainfo == {
             "category": BatchIssueRedeemProcessingCategory.ISSUE.value,
             "upload_id": upload_2_id,
             "error_data_id": ANY,
             "token_address": token_address,
-            "token_type": TokenType.IBET_SHARE
+            "token_type": TokenType.IBET_SHARE,
         }
         assert len(_notification_list[1].metainfo["error_data_id"]) == 1

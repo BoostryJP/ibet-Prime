@@ -21,7 +21,6 @@ from tests.account_config import config_eth_account
 
 
 class TestAppRoutersAccountsIssuerAddressDELETE:
-
     # target API endpoint
     base_url = "/accounts/{}"
 
@@ -52,7 +51,7 @@ class TestAppRoutersAccountsIssuerAddressDELETE:
             "issuer_address": _admin_account["address"],
             "rsa_public_key": None,
             "rsa_status": AccountRsaStatus.UNSET.value,
-            "is_deleted": True
+            "is_deleted": True,
         }
         _account_after = db.query(Account).first()
         assert _account_after.issuer_address == _admin_account["address"]
@@ -71,8 +70,6 @@ class TestAppRoutersAccountsIssuerAddressDELETE:
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1, "title": "NotFound"
-            },
-            "detail": "issuer does not exist"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "issuer does not exist",
         }

@@ -19,18 +19,10 @@ SPDX-License-Identifier: Apache-2.0
 import hashlib
 from unittest.mock import patch
 
-from app.model.db import (
-    Account,
-    AuthToken,
-    Token,
-    TokenType
-)
-from app.utils.e2ee_utils import E2EEUtils
-from app.model.blockchain import (
-    IbetShareContract,
-    PersonalInfoContract
-)
 from app.exceptions import SendTransactionError
+from app.model.blockchain import IbetShareContract, PersonalInfoContract
+from app.model.db import Account, AuthToken, Token, TokenType
+from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
 
@@ -70,21 +62,25 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
 
         # mock
         ibet_share_contract = IbetShareContract()
-        ibet_share_contract.personal_info_contract_address = "personal_info_contract_address"
+        ibet_share_contract.personal_info_contract_address = (
+            "personal_info_contract_address"
+        )
         IbetShareContract_get = patch(
             target="app.model.blockchain.token.IbetShareContract.get",
-            return_value=ibet_share_contract
+            return_value=ibet_share_contract,
         )
         PersonalInfoContract_init = patch(
             target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
-            return_value=None
+            return_value=None,
         )
         PersonalInfoContract_register_info = patch(
             target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
-            return_value=None
+            return_value=None,
         )
 
-        with IbetShareContract_get, PersonalInfoContract_init, PersonalInfoContract_register_info:
+        with (
+            IbetShareContract_get
+        ), PersonalInfoContract_init, PersonalInfoContract_register_info:
             # request target API
             req_param = {
                 "account_address": _test_account_address,
@@ -95,15 +91,15 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
                 "email": "test_email",
                 "birth": "test_birth",
                 "is_corporate": False,
-                "tax_category": 10
+                "tax_category": 10,
             }
             resp = client.post(
                 self.test_url.format(_token_address),
                 json=req_param,
                 headers={
                     "issuer-address": _issuer_address,
-                    "eoa-password": E2EEUtils.encrypt("password")
-                }
+                    "eoa-password": E2EEUtils.encrypt("password"),
+                },
             )
 
             # assertion
@@ -112,12 +108,12 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             PersonalInfoContract.__init__.assert_called_with(
                 db=db,
                 issuer_address=_issuer_address,
-                contract_address="personal_info_contract_address"
+                contract_address="personal_info_contract_address",
             )
             PersonalInfoContract.register_info.assert_called_with(
                 account_address=_test_account_address,
                 data=req_param,
-                default_value=None
+                default_value=None,
             )
 
     # <Normal_2>
@@ -149,21 +145,25 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
 
         # mock
         ibet_share_contract = IbetShareContract()
-        ibet_share_contract.personal_info_contract_address = "personal_info_contract_address"
+        ibet_share_contract.personal_info_contract_address = (
+            "personal_info_contract_address"
+        )
         IbetShareContract_get = patch(
             target="app.model.blockchain.token.IbetShareContract.get",
-            return_value=ibet_share_contract
+            return_value=ibet_share_contract,
         )
         PersonalInfoContract_init = patch(
             target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
-            return_value=None
+            return_value=None,
         )
         PersonalInfoContract_register_info = patch(
             target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
-            return_value=None
+            return_value=None,
         )
 
-        with IbetShareContract_get, PersonalInfoContract_init, PersonalInfoContract_register_info:
+        with (
+            IbetShareContract_get
+        ), PersonalInfoContract_init, PersonalInfoContract_register_info:
             # request target API
             req_param = {
                 "account_address": _test_account_address,
@@ -174,15 +174,15 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
                 "email": None,
                 "birth": None,
                 "is_corporate": None,
-                "tax_category": None
+                "tax_category": None,
             }
             resp = client.post(
                 self.test_url.format(_token_address),
                 json=req_param,
                 headers={
                     "issuer-address": _issuer_address,
-                    "eoa-password": E2EEUtils.encrypt("password")
-                }
+                    "eoa-password": E2EEUtils.encrypt("password"),
+                },
             )
 
             # assertion
@@ -191,12 +191,12 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             PersonalInfoContract.__init__.assert_called_with(
                 db=db,
                 issuer_address=_issuer_address,
-                contract_address="personal_info_contract_address"
+                contract_address="personal_info_contract_address",
             )
             PersonalInfoContract.register_info.assert_called_with(
                 account_address=_test_account_address,
                 data=req_param,
-                default_value=None
+                default_value=None,
             )
 
     # <Normal_3>
@@ -234,21 +234,25 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
 
         # mock
         ibet_share_contract = IbetShareContract()
-        ibet_share_contract.personal_info_contract_address = "personal_info_contract_address"
+        ibet_share_contract.personal_info_contract_address = (
+            "personal_info_contract_address"
+        )
         IbetShareContract_get = patch(
             target="app.model.blockchain.token.IbetShareContract.get",
-            return_value=ibet_share_contract
+            return_value=ibet_share_contract,
         )
         PersonalInfoContract_init = patch(
             target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
-            return_value=None
+            return_value=None,
         )
         PersonalInfoContract_register_info = patch(
             target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
-            return_value=None
+            return_value=None,
         )
 
-        with IbetShareContract_get, PersonalInfoContract_init, PersonalInfoContract_register_info:
+        with (
+            IbetShareContract_get
+        ), PersonalInfoContract_init, PersonalInfoContract_register_info:
             # request target API
             req_param = {
                 "account_address": _test_account_address,
@@ -259,15 +263,15 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
                 "email": "test_email",
                 "birth": "test_birth",
                 "is_corporate": False,
-                "tax_category": 10
+                "tax_category": 10,
             }
             resp = client.post(
                 self.test_url.format(_token_address),
                 json=req_param,
                 headers={
                     "issuer-address": _issuer_address,
-                    "auth-token": "test_auth_token"
-                }
+                    "auth-token": "test_auth_token",
+                },
             )
 
             # assertion
@@ -276,12 +280,12 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             PersonalInfoContract.__init__.assert_called_with(
                 db=db,
                 issuer_address=_issuer_address,
-                contract_address="personal_info_contract_address"
+                contract_address="personal_info_contract_address",
             )
             PersonalInfoContract.register_info.assert_called_with(
                 account_address=_test_account_address,
                 data=req_param,
-                default_value=None
+                default_value=None,
             )
 
     ###########################################################################
@@ -302,28 +306,24 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
         # request target API
-        resp = client.post(
-            self.test_url.format(_token_address)
-        )
+        resp = client.post(self.test_url.format(_token_address))
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "field required",
-                    "type": "value_error.missing"
-                }, {
+                    "type": "value_error.missing",
+                },
+                {
                     "loc": ["body"],
                     "msg": "field required",
-                    "type": "value_error.missing"
-                }
-            ]
+                    "type": "value_error.missing",
+                },
+            ],
         }
 
     # <Error_1_2>
@@ -349,35 +349,33 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "email": None,
             "birth": None,
             "is_corporate": None,
-            "tax_category": None
+            "tax_category": None,
         }
         resp = client.post(
             self.test_url.format(_token_address, _test_account_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "account_address"],
                     "msg": "none is not an allowed value",
-                    "type": "type_error.none.not_allowed"
-                }, {
+                    "type": "type_error.none.not_allowed",
+                },
+                {
                     "loc": ["body", "key_manager"],
                     "msg": "none is not an allowed value",
-                    "type": "type_error.none.not_allowed"
-                }
-            ]
+                    "type": "type_error.none.not_allowed",
+                },
+            ],
         }
 
     # <Error_1_3>
@@ -403,34 +401,28 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "email": "test_email",
             "birth": "test_birth",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
         resp = client.post(
             self.test_url.format(_token_address, _test_account_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "loc": [
-                        "body",
-                        "account_address"
-                    ],
+                    "loc": ["body", "account_address"],
                     "msg": "account_address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_1_4>
@@ -452,31 +444,28 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "email": "test_email",
             "birth": "test_birth",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
         resp = client.post(
             self.test_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": "test_issuer_address",
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_1_5>
@@ -502,31 +491,28 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "email": "test_email",
             "birth": "test_birth",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
         resp = client.post(
             self.test_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": "not_encrypted_password"
-            }
+                "eoa-password": "not_encrypted_password",
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "eoa-password"],
                     "msg": "eoa-password is not a Base64-encoded encrypted data",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_2_1>
@@ -552,25 +538,22 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "email": "test_email",
             "birth": "test_birth",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
         resp = client.post(
             self.test_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 401
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "AuthorizationError"
-            },
-            "detail": "issuer does not exist, or password mismatch"
+            "meta": {"code": 1, "title": "AuthorizationError"},
+            "detail": "issuer does not exist, or password mismatch",
         }
 
     # <Error_2_2>
@@ -603,25 +586,22 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "email": "test_email",
             "birth": "test_birth",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
         resp = client.post(
             self.test_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("mismatch_password")
-            }
+                "eoa-password": E2EEUtils.encrypt("mismatch_password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 401
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "AuthorizationError"
-            },
-            "detail": "issuer does not exist, or password mismatch"
+            "meta": {"code": 1, "title": "AuthorizationError"},
+            "detail": "issuer does not exist, or password mismatch",
         }
 
     # <Error_3>
@@ -654,25 +634,22 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "email": "test_email",
             "birth": "test_birth",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
         resp = client.post(
             self.test_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token not found",
         }
 
     # <Error_4>
@@ -714,25 +691,22 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "email": "test_email",
             "birth": "test_birth",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
         resp = client.post(
             self.test_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }
 
     # <Error_5>
@@ -764,21 +738,25 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
 
         # mock
         ibet_share_contract = IbetShareContract()
-        ibet_share_contract.personal_info_contract_address = "personal_info_contract_address"
+        ibet_share_contract.personal_info_contract_address = (
+            "personal_info_contract_address"
+        )
         IbetShareContract_get = patch(
             target="app.model.blockchain.token.IbetShareContract.get",
-            return_value=ibet_share_contract
+            return_value=ibet_share_contract,
         )
         PersonalInfoContract_init = patch(
             target="app.model.blockchain.personal_info.PersonalInfoContract.__init__",
-            return_value=None
+            return_value=None,
         )
         PersonalInfoContract_register_info = patch(
             target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
-            side_effect=SendTransactionError()
+            side_effect=SendTransactionError(),
         )
 
-        with IbetShareContract_get, PersonalInfoContract_init, PersonalInfoContract_register_info:
+        with (
+            IbetShareContract_get
+        ), PersonalInfoContract_init, PersonalInfoContract_register_info:
             # request target API
             req_param = {
                 "account_address": _test_account_address,
@@ -789,23 +767,20 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
                 "email": "test_email",
                 "birth": "test_birth",
                 "is_corporate": False,
-                "tax_category": 10
+                "tax_category": 10,
             }
             resp = client.post(
                 self.test_url.format(_token_address, _test_account_address),
                 json=req_param,
                 headers={
                     "issuer-address": _issuer_address,
-                    "eoa-password": E2EEUtils.encrypt("password")
-                }
+                    "eoa-password": E2EEUtils.encrypt("password"),
+                },
             )
 
             # assertion
             assert resp.status_code == 400
             assert resp.json() == {
-                "meta": {
-                    "code": 2,
-                    "title": "SendTransactionError"
-                },
-                "detail": "failed to register personal information"
+                "meta": {"code": 2, "title": "SendTransactionError"},
+                "detail": "failed to register personal information",
             }

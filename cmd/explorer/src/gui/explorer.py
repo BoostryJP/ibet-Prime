@@ -19,14 +19,13 @@ SPDX-License-Identifier: Apache-2.0
 import os
 
 from pydantic import ValidationError
-from textual.app import App, ReturnType
-from textual.binding import Binding
-
 from src.connector import ApiNotEnabledException
+from src.gui.error import Error
 from src.gui.screen.block import BlockScreen
 from src.gui.screen.traceback import TracebackScreen
 from src.gui.screen.transaction import TransactionScreen
-from src.gui.error import Error
+from textual.app import App, ReturnType
+from textual.binding import Binding
 
 from app.model.schema import ListBlockDataQuery, ListTxDataQuery
 
@@ -44,7 +43,10 @@ class ExplorerApp(App):
     # Base App Setting
     BINDINGS = [Binding("ctrl+c", "quit", "Quit")]
     CSS_PATH = f"{os.path.dirname(os.path.abspath(__file__))}/explorer.css"
-    SCREENS = {"transaction_screen": TransactionScreen, "traceback_screen": TracebackScreen}
+    SCREENS = {
+        "transaction_screen": TransactionScreen,
+        "traceback_screen": TracebackScreen,
+    }
 
     # Injectable App Setting
     url: str
@@ -65,7 +67,9 @@ class ExplorerApp(App):
     ) -> ReturnType | None:
         self.url = url
         self.lot_size = lot_size
-        return await super().run_async(headless=headless, size=size, auto_pilot=auto_pilot)
+        return await super().run_async(
+            headless=headless, size=size, auto_pilot=auto_pilot
+        )
 
     ##################################################
     # Event

@@ -22,7 +22,6 @@ from rich.align import Align
 from rich.panel import Panel
 from rich.style import Style
 from rich.traceback import Traceback
-
 from src.gui import styles
 from src.gui.widget.base import TuiWidget
 

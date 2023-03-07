@@ -45,13 +45,8 @@ abc def"""
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 0,
-                "offset": None,
-                "limit": None,
-                "total": 0
-            },
-            "files": []
+            "result_set": {"count": 0, "offset": None, "limit": None, "total": 0},
+            "files": [],
         }
 
     # <Normal_2>
@@ -69,7 +64,9 @@ abc def"""
         _upload_file.content_size = len(file_content_1_bin)
         _upload_file.description = "description_1"
         _upload_file.label = "label_1"
-        _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        _upload_file.created = datetime.strptime(
+            "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/02
         db.add(_upload_file)
 
         # request target api
@@ -80,12 +77,7 @@ abc def"""
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 1,
-                "offset": None,
-                "limit": None,
-                "total": 1
-            },
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 1},
             "files": [
                 {
                     "file_id": "file_id_1",
@@ -97,7 +89,7 @@ abc def"""
                     "label": "label_1",
                     "created": "2022-01-02T00:20:30.000001+09:00",
                 },
-            ]
+            ],
         }
 
     # <Normal_3>
@@ -115,7 +107,9 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
         _upload_file.label = "label_1"
-        _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        _upload_file.created = datetime.strptime(
+            "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/02
         db.add(_upload_file)
 
         _upload_file = UploadFile()
@@ -127,7 +121,9 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_2"
         _upload_file.label = "label_2"
-        _upload_file.created = datetime.strptime("2022/01/02 00:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        _upload_file.created = datetime.strptime(
+            "2022/01/02 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/02
         db.add(_upload_file)
 
         # request target api
@@ -138,12 +134,7 @@ abc def"""
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 2,
-                "offset": None,
-                "limit": None,
-                "total": 2
-            },
+            "result_set": {"count": 2, "offset": None, "limit": None, "total": 2},
             "files": [
                 {
                     "file_id": "file_id_2",
@@ -165,7 +156,7 @@ abc def"""
                     "label": "label_1",
                     "created": "2022-01-02T00:20:30.000001+09:00",
                 },
-            ]
+            ],
         }
 
     # <Normal_4_1>
@@ -184,19 +175,25 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
         _upload_file.label = "label_1"
-        _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        _upload_file.created = datetime.strptime(
+            "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/02
         db.add(_upload_file)
 
         _upload_file = UploadFile()
         _upload_file.file_id = "file_id_2"
-        _upload_file.issuer_address = "0x1234567890123456789012345678900000000002"  # not target
+        _upload_file.issuer_address = (
+            "0x1234567890123456789012345678900000000002"  # not target
+        )
         _upload_file.relation = self.token_address
         _upload_file.file_name = "file_name_2"
         _upload_file.content = file_content_bin
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_2"
         _upload_file.label = "label_2"
-        _upload_file.created = datetime.strptime("2022/01/02 00:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        _upload_file.created = datetime.strptime(
+            "2022/01/02 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/02
         db.add(_upload_file)
 
         # request target api
@@ -210,12 +207,7 @@ abc def"""
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 1,
-                "offset": None,
-                "limit": None,
-                "total": 2
-            },
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 2},
             "files": [
                 {
                     "file_id": "file_id_1",
@@ -227,7 +219,7 @@ abc def"""
                     "label": "label_1",
                     "created": "2022-01-02T00:20:30.000001+09:00",
                 },
-            ]
+            ],
         }
 
     # <Normal_4_2>
@@ -246,7 +238,9 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
         _upload_file.label = "label_1"
-        _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        _upload_file.created = datetime.strptime(
+            "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/02
         db.add(_upload_file)
 
         _upload_file = UploadFile()
@@ -258,7 +252,9 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_2"
         _upload_file.label = "label_2"
-        _upload_file.created = datetime.strptime("2022/01/02 00:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        _upload_file.created = datetime.strptime(
+            "2022/01/02 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/02
         db.add(_upload_file)
 
         # request target api
@@ -272,12 +268,7 @@ abc def"""
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 1,
-                "offset": None,
-                "limit": None,
-                "total": 2
-            },
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 2},
             "files": [
                 {
                     "file_id": "file_id_1",
@@ -289,7 +280,7 @@ abc def"""
                     "label": "label_1",
                     "created": "2022-01-02T00:20:30.000001+09:00",
                 },
-            ]
+            ],
         }
 
     # <Normal_4_3>
@@ -308,7 +299,9 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
         _upload_file.label = "label_1"
-        _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        _upload_file.created = datetime.strptime(
+            "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/02
         db.add(_upload_file)
 
         _upload_file = UploadFile()
@@ -320,7 +313,9 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_2"
         _upload_file.label = "label_2"
-        _upload_file.created = datetime.strptime("2022/01/02 00:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        _upload_file.created = datetime.strptime(
+            "2022/01/02 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/02
         db.add(_upload_file)
 
         # request target api
@@ -334,12 +329,7 @@ abc def"""
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 1,
-                "offset": None,
-                "limit": None,
-                "total": 2
-            },
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 2},
             "files": [
                 {
                     "file_id": "file_id_1",
@@ -351,7 +341,7 @@ abc def"""
                     "label": "label_1",
                     "created": "2022-01-02T00:20:30.000001+09:00",
                 },
-            ]
+            ],
         }
 
     # <Normal_4_4_1>
@@ -370,7 +360,9 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
         _upload_file.label = ""
-        _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        _upload_file.created = datetime.strptime(
+            "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/02
         db.add(_upload_file)
 
         _upload_file = UploadFile()
@@ -382,7 +374,9 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_2"
         _upload_file.label = "label_2"  # not null
-        _upload_file.created = datetime.strptime("2022/01/02 00:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        _upload_file.created = datetime.strptime(
+            "2022/01/02 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/02
         db.add(_upload_file)
 
         _upload_file = UploadFile()
@@ -394,7 +388,9 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_3"
         _upload_file.label = " "  # half-width space
-        _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        _upload_file.created = datetime.strptime(
+            "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/02
         db.add(_upload_file)
 
         _upload_file = UploadFile()
@@ -406,7 +402,9 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_4"
         _upload_file.label = "　"  # full-width space
-        _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        _upload_file.created = datetime.strptime(
+            "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/02
         db.add(_upload_file)
 
         # request target api
@@ -420,12 +418,7 @@ abc def"""
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 1,
-                "offset": None,
-                "limit": None,
-                "total": 4
-            },
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 4},
             "files": [
                 {
                     "file_id": "file_id_1",
@@ -437,7 +430,7 @@ abc def"""
                     "label": "",
                     "created": "2022-01-02T00:20:30.000001+09:00",
                 },
-            ]
+            ],
         }
 
     # <Normal_4_4_2>
@@ -456,7 +449,9 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
         _upload_file.label = "単語label_1"
-        _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        _upload_file.created = datetime.strptime(
+            "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/02
         db.add(_upload_file)
 
         _upload_file = UploadFile()
@@ -468,7 +463,9 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_2"
         _upload_file.label = "label_2"  # not target
-        _upload_file.created = datetime.strptime("2022/01/02 00:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        _upload_file.created = datetime.strptime(
+            "2022/01/02 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/02
         db.add(_upload_file)
 
         _upload_file = UploadFile()
@@ -480,7 +477,9 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_3"
         _upload_file.label = "label単語_3"
-        _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        _upload_file.created = datetime.strptime(
+            "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/02
         db.add(_upload_file)
 
         _upload_file = UploadFile()
@@ -492,7 +491,9 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_4"
         _upload_file.label = "label_4単語"
-        _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        _upload_file.created = datetime.strptime(
+            "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/02
         db.add(_upload_file)
 
         # request target api
@@ -506,12 +507,7 @@ abc def"""
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 3,
-                "offset": None,
-                "limit": None,
-                "total": 4
-            },
+            "result_set": {"count": 3, "offset": None, "limit": None, "total": 4},
             "files": [
                 {
                     "file_id": "file_id_4",
@@ -543,7 +539,7 @@ abc def"""
                     "label": "単語label_1",
                     "created": "2022-01-02T00:20:30.000001+09:00",
                 },
-            ]
+            ],
         }
 
     # <Normal_5>
@@ -561,7 +557,9 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_1"
         _upload_file.label = "label_1"
-        _upload_file.created = datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        _upload_file.created = datetime.strptime(
+            "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/02
         db.add(_upload_file)
 
         _upload_file = UploadFile()
@@ -573,7 +571,9 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_2"
         _upload_file.label = "label_2"
-        _upload_file.created = datetime.strptime("2022/01/02 00:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/02
+        _upload_file.created = datetime.strptime(
+            "2022/01/02 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/02
         db.add(_upload_file)
 
         _upload_file = UploadFile()
@@ -585,7 +585,9 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_3"
         _upload_file.label = "label_3"
-        _upload_file.created = datetime.strptime("2022/01/02 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/03
+        _upload_file.created = datetime.strptime(
+            "2022/01/02 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/03
         db.add(_upload_file)
 
         _upload_file = UploadFile()
@@ -597,27 +599,21 @@ abc def"""
         _upload_file.content_size = len(file_content_bin)
         _upload_file.description = "description_4"
         _upload_file.label = "label_4"
-        _upload_file.created = datetime.strptime("2022/01/03 00:20:30.000001", '%Y/%m/%d %H:%M:%S.%f')  # JST 2022/01/03
+        _upload_file.created = datetime.strptime(
+            "2022/01/03 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+        )  # JST 2022/01/03
         db.add(_upload_file)
 
         # request target api
         resp = client.get(
             self.base_url,
-            params={
-                "offset": 1,
-                "limit": 2
-            },
+            params={"offset": 1, "limit": 2},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 4,
-                "offset": 1,
-                "limit": 2,
-                "total": 4
-            },
+            "result_set": {"count": 4, "offset": 1, "limit": 2, "total": 4},
             "files": [
                 {
                     "file_id": "file_id_3",
@@ -639,7 +635,7 @@ abc def"""
                     "label": "label_2",
                     "created": "2022-01-02T09:20:30.000001+09:00",
                 },
-            ]
+            ],
         }
 
     ###########################################################################
@@ -650,42 +646,34 @@ abc def"""
     # Parameter Error
     # Query
     def test_error_1(self, client, db):
-
         # request target API
         resp = client.get(
             self.base_url,
-            params={
-                "offset": "test",
-                "limit": "test"
-            },
+            params={"offset": "test", "limit": "test"},
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["query", "offset"],
                     "msg": "value is not a valid integer",
-                    "type": "type_error.integer"
+                    "type": "type_error.integer",
                 },
                 {
                     "loc": ["query", "limit"],
                     "msg": "value is not a valid integer",
-                    "type": "type_error.integer"
+                    "type": "type_error.integer",
                 },
-            ]
+            ],
         }
 
     # <Error_2>
     # Parameter Error
     # Header
     def test_error_2(self, client, db):
-
         # request target API
         resp = client.get(
             self.base_url,
@@ -697,15 +685,12 @@ abc def"""
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }

@@ -45,15 +45,21 @@ class TxDetailInfo:
         common_table.add_row("Gas Price:", str(self.tx_detail.gas_price))
         common_table.add_row("Gas:", str(self.tx_detail.gas))
 
-        contract_table = Table(box=None, expand=False, show_header=False, show_edge=False)
+        contract_table = Table(
+            box=None, expand=False, show_header=False, show_edge=False
+        )
         contract_table.add_column(style="deep_pink2 bold")
         contract_table.add_row("Contract Name:", self.tx_detail.contract_name)
         contract_table.add_row("Contract Function:", self.tx_detail.contract_function)
         if self.tx_detail.contract_parameters is not None:
-            function_arguments_table = Table(box=None, expand=False, show_header=False, show_edge=False)
+            function_arguments_table = Table(
+                box=None, expand=False, show_header=False, show_edge=False
+            )
             for k, v in self.tx_detail.contract_parameters.items():
                 function_arguments_table.add_row(f"{k}: ", str(v))
-            contract_table.add_row("Contract Function Arguments:", Panel(function_arguments_table))
+            contract_table.add_row(
+                "Contract Function Arguments:", Panel(function_arguments_table)
+            )
 
         return Group(
             Panel(common_table, expand=True, title="Common", title_align="left"),

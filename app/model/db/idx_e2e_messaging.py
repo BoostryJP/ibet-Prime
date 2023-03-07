@@ -16,19 +16,15 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import Column
-from sqlalchemy import (
-    BigInteger,
-    String,
-    DateTime
-)
+from sqlalchemy import BigInteger, Column, DateTime, String
 
 from .base import Base
 
 
 class IDXE2EMessaging(Base):
     """INDEX E2E Message"""
-    __tablename__ = 'idx_e2e_messaging'
+
+    __tablename__ = "idx_e2e_messaging"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     # transaction hash
@@ -49,10 +45,9 @@ class IDXE2EMessaging(Base):
 
 class IDXE2EMessagingBlockNumber(Base):
     """Synchronized blockNumber of IDXE2EMessaging"""
+
     __tablename__ = "idx_e2e_messaging_block_number"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     # latest blockNumber
     latest_block_number = Column(BigInteger)
-
-

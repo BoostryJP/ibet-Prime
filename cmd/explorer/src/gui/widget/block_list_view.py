@@ -21,16 +21,16 @@ from datetime import datetime
 from rich.panel import Panel
 from rich.spinner import Spinner
 from rich.table import Table
+from src.gui import styles
+from src.gui.consts import ID
+from src.gui.widget.base import TuiStatic, TuiWidget
+from src.gui.widget.block_list_table import BlockListTable
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal
 from textual.reactive import Reactive, reactive
 from textual.timer import Timer
 
-from src.gui import styles
-from src.gui.consts import ID
-from src.gui.widget.base import TuiStatic, TuiWidget
-from src.gui.widget.block_list_table import BlockListTable
 from app.model.schema import ListBlockDataQuery
 
 
@@ -44,7 +44,9 @@ class BlockListQueryPanel(TuiStatic):
         self.render()
 
     def render(self) -> Panel:
-        content = Table(show_header=True, header_style="bold", show_edge=False, show_lines=False)
+        content = Table(
+            show_header=True, header_style="bold", show_edge=False, show_lines=False
+        )
         content.add_column("From", justify="center", width=10)
         content.add_column("To", justify="center", width=10)
         content.add_column("Sort", justify="center", width=7)
@@ -114,7 +116,9 @@ class BlockListSummaryPanel(TuiStatic):
         self.refresh()
 
     def render(self) -> Panel:
-        content = Table(show_header=True, header_style="bold", show_edge=False, show_lines=False)
+        content = Table(
+            show_header=True, header_style="bold", show_edge=False, show_lines=False
+        )
         content.add_column("Loading", justify="center")
         content.add_column("Only Blocks Including Tx", style="dim", justify="center")
         content.add_column("Loaded Time", style="dim", justify="center")
@@ -122,7 +126,9 @@ class BlockListSummaryPanel(TuiStatic):
         content.add_row(
             self._spinner if self.loading else "",
             f"{self.only_block_filter}",
-            f"{self.loaded_time.strftime('%Y/%m/%d %H:%M:%S')}" if self.loaded_time is not None else "",
+            f"{self.loaded_time.strftime('%Y/%m/%d %H:%M:%S')}"
+            if self.loaded_time is not None
+            else "",
         )
 
         style = "none"
@@ -149,7 +155,9 @@ class BlockListView(TuiWidget):
             BlockListSummaryPanel(classes="column"),
             id=ID.BLOCK_LIST_DESCRIPTION,
         )
-        yield BlockListTable(name="blocks", complete_refresh=True, id=ID.BLOCK_LIST_TABLE)
+        yield BlockListTable(
+            name="blocks", complete_refresh=True, id=ID.BLOCK_LIST_TABLE
+        )
 
     def action_filter(self):
         """

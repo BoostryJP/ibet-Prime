@@ -16,56 +16,51 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import (
-    List,
-    Type
-)
 import os
 import sys
+import threading
 import time
 import uuid
-import threading
+from typing import List, Type
 
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
-from config import (
-    DATABASE_URL,
-    BULK_TRANSFER_INTERVAL,
-    BULK_TRANSFER_WORKER_COUNT,
-    BULK_TRANSFER_WORKER_LOT_SIZE
-)
-from app.utils.e2ee_utils import E2EEUtils
-from app.model.db import (
-    Account,
-    BulkTransferUpload,
-    BulkTransfer,
-    TokenType,
-    Notification,
-    NotificationType
-)
-from app.model.blockchain import (
-    IbetStraightBondContract,
-    IbetShareContract
-)
-from app.model.blockchain.tx_params.ibet_share import (
-    TransferParams as IbetShareTransferParams
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
-    TransferParams as IbetStraightBondTransferParams
-)
-from app.utils.web3_utils import Web3Wrapper
+import batch_log
+
 from app.exceptions import (
+    ContractRevertError,
     SendTransactionError,
     ServiceUnavailableError,
-    ContractRevertError
 )
-import batch_log
+from app.model.blockchain import IbetShareContract, IbetStraightBondContract
+from app.model.blockchain.tx_params.ibet_share import (
+    TransferParams as IbetShareTransferParams,
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    TransferParams as IbetStraightBondTransferParams,
+)
+from app.model.db import (
+    Account,
+    BulkTransfer,
+    BulkTransferUpload,
+    Notification,
+    NotificationType,
+    TokenType,
+)
+from app.utils.e2ee_utils import E2EEUtils
+from app.utils.web3_utils import Web3Wrapper
+from config import (
+    BULK_TRANSFER_INTERVAL,
+    BULK_TRANSFER_WORKER_COUNT,
+    BULK_TRANSFER_WORKER_LOT_SIZE,
+    DATABASE_URL,
+)
 
 """
 [PROCESSOR-Bulk-Transfer]
@@ -92,19 +87,25 @@ class Processor:
                 return
 
             for _upload in upload_list:
-                LOG.info(f"<{self.thread_num}> Process start: upload_id={_upload.upload_id}")
+                LOG.info(
+                    f"<{self.thread_num}> Process start: upload_id={_upload.upload_id}"
+                )
 
                 # Get issuer's private key
                 try:
-                    _account = db_session.query(Account). \
-                        filter(Account.issuer_address == _upload.issuer_address). \
-                        first()
-                    if _account is None:  # If issuer does not exist, update the status of the upload to ERROR
-                        LOG.warning(f"Issuer of the upload_id:{_upload.upload_id} does not exist")
+                    _account = (
+                        db_session.query(Account)
+                        .filter(Account.issuer_address == _upload.issuer_address)
+                        .first()
+                    )
+                    if (
+                        _account is None
+                    ):  # If issuer does not exist, update the status of the upload to ERROR
+                        LOG.warning(
+                            f"Issuer of the upload_id:{_upload.upload_id} does not exist"
+                        )
                         self.__sink_on_finish_upload_process(
-                            db_session=db_session,
-                            upload_id=_upload.upload_id,
-                            status=2
+                            db_session=db_session, upload_id=_upload.upload_id, status=2
                         )
                         self.__sink_on_error_notification(
                             db_session=db_session,
@@ -112,7 +113,7 @@ class Processor:
                             code=0,
                             upload_id=_upload.upload_id,
                             token_type=_upload.token_type,
-                            error_transfer_id=[]
+                            error_transfer_id=[],
                         )
                         db_session.commit()
                         self.__release_processing_issuer(_upload.upload_id)
@@ -121,16 +122,15 @@ class Processor:
                     decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
                     private_key = decode_keyfile_json(
                         raw_keyfile_json=keyfile_json,
-                        password=decrypt_password.encode("utf-8")
+                        password=decrypt_password.encode("utf-8"),
                     )
                 except Exception as err:
                     LOG.exception(
                         f"Could not get the private key of the issuer of upload_id:{_upload.upload_id}",
-                        err)
+                        err,
+                    )
                     self.__sink_on_finish_upload_process(
-                        db_session=db_session,
-                        upload_id=_upload.upload_id,
-                        status=2
+                        db_session=db_session, upload_id=_upload.upload_id, status=2
                     )
                     self.__sink_on_error_notification(
                         db_session=db_session,
@@ -138,7 +138,7 @@ class Processor:
                         code=1,
                         upload_id=_upload.upload_id,
                         token_type=_upload.token_type,
-                        error_transfer_id=[]
+                        error_transfer_id=[],
                     )
                     db_session.commit()
                     self.__release_processing_issuer(_upload.upload_id)
@@ -146,16 +146,14 @@ class Processor:
 
                 # Transfer
                 transfer_list = self.__get_transfer_data(
-                    db_session=db_session,
-                    upload_id=_upload.upload_id,
-                    status=0
+                    db_session=db_session, upload_id=_upload.upload_id, status=0
                 )
                 for _transfer in transfer_list:
                     token = {
                         "token_address": _transfer.token_address,
                         "from_address": _transfer.from_address,
                         "to_address": _transfer.to_address,
-                        "amount": _transfer.amount
+                        "amount": _transfer.amount,
                     }
                     try:
                         if _transfer.token_type == TokenType.IBET_SHARE.value:
@@ -163,66 +161,64 @@ class Processor:
                             IbetShareContract(_transfer.token_address).transfer(
                                 data=_transfer_data,
                                 tx_from=_transfer.issuer_address,
-                                private_key=private_key
+                                private_key=private_key,
                             )
                         elif _transfer.token_type == TokenType.IBET_STRAIGHT_BOND.value:
                             _transfer_data = IbetStraightBondTransferParams(**token)
                             IbetStraightBondContract(_transfer.token_address).transfer(
                                 data=_transfer_data,
                                 tx_from=_transfer.issuer_address,
-                                private_key=private_key
+                                private_key=private_key,
                             )
                         self.__sink_on_finish_transfer_process(
-                            db_session=db_session,
-                            record_id=_transfer.id,
-                            status=1
+                            db_session=db_session, record_id=_transfer.id, status=1
                         )
                     except ContractRevertError as e:
-                        LOG.warning(f"Transaction reverted: id=<{_transfer.id}> error_code:<{e.code}> error_msg:<{e.message}>")
+                        LOG.warning(
+                            f"Transaction reverted: id=<{_transfer.id}> error_code:<{e.code}> error_msg:<{e.message}>"
+                        )
                         self.__sink_on_finish_transfer_process(
-                            db_session=db_session,
-                            record_id=_transfer.id,
-                            status=2
+                            db_session=db_session, record_id=_transfer.id, status=2
                         )
                     except SendTransactionError:
                         LOG.warning(f"Failed to send transaction: id=<{_transfer.id}>")
                         self.__sink_on_finish_transfer_process(
-                            db_session=db_session,
-                            record_id=_transfer.id,
-                            status=2
+                            db_session=db_session, record_id=_transfer.id, status=2
                         )
                     db_session.commit()
 
                 error_transfer_list = self.__get_transfer_data(
-                    db_session=db_session,
-                    upload_id=_upload.upload_id,
-                    status=2
+                    db_session=db_session, upload_id=_upload.upload_id, status=2
                 )
                 if len(error_transfer_list) == 0:
                     self.__sink_on_finish_upload_process(
                         db_session=db_session,
                         upload_id=_upload.upload_id,
-                        status=1  # succeeded
+                        status=1,  # succeeded
                     )
                 else:
                     self.__sink_on_finish_upload_process(
                         db_session=db_session,
                         upload_id=_upload.upload_id,
-                        status=2  # error
+                        status=2,  # error
                     )
-                    error_transfer_id = [_error_transfer.id for _error_transfer in error_transfer_list]
+                    error_transfer_id = [
+                        _error_transfer.id for _error_transfer in error_transfer_list
+                    ]
                     self.__sink_on_error_notification(
                         db_session=db_session,
                         issuer_address=_upload.issuer_address,
                         code=2,
                         upload_id=_upload.upload_id,
                         token_type=_upload.token_type,
-                        error_transfer_id=error_transfer_id
+                        error_transfer_id=error_transfer_id,
                     )
 
                 db_session.commit()
                 self.__release_processing_issuer(_upload.upload_id)
-                LOG.info(f"<{self.thread_num}> Process end: upload_id={_upload.upload_id}")
+                LOG.info(
+                    f"<{self.thread_num}> Process end: upload_id={_upload.upload_id}"
+                )
         finally:
             db_session.close()
 
@@ -244,19 +240,23 @@ class Processor:
 
             # Retrieve one target data
             # NOTE: Priority is given to non-issuers that are being processed by other threads.
-            upload_1 = db_session.query(BulkTransferUpload). \
-                filter(BulkTransferUpload.upload_id.notin_(locked_update_id)). \
-                filter(BulkTransferUpload.status == 0). \
-                filter(BulkTransferUpload.issuer_address.notin_(exclude_issuer)). \
-                order_by(BulkTransferUpload.created). \
-                first()
+            upload_1 = (
+                db_session.query(BulkTransferUpload)
+                .filter(BulkTransferUpload.upload_id.notin_(locked_update_id))
+                .filter(BulkTransferUpload.status == 0)
+                .filter(BulkTransferUpload.issuer_address.notin_(exclude_issuer))
+                .order_by(BulkTransferUpload.created)
+                .first()
+            )
             if upload_1 is None:
                 # Retrieve again for all issuers
-                upload_1 = db_session.query(BulkTransferUpload). \
-                    filter(BulkTransferUpload.upload_id.notin_(locked_update_id)). \
-                    filter(BulkTransferUpload.status == 0). \
-                    order_by(BulkTransferUpload.created). \
-                    first()
+                upload_1 = (
+                    db_session.query(BulkTransferUpload)
+                    .filter(BulkTransferUpload.upload_id.notin_(locked_update_id))
+                    .filter(BulkTransferUpload.status == 0)
+                    .order_by(BulkTransferUpload.created)
+                    .first()
+                )
 
             # Issuer to be processed => upload_1.issuer_address
             # Retrieve the data of the Issuer to be processed
@@ -264,25 +264,36 @@ class Processor:
             if upload_1 is not None:
                 upload_list = [upload_1]
                 if BULK_TRANSFER_WORKER_LOT_SIZE > 1:
-                    upload_list = upload_list + db_session.query(BulkTransferUpload). \
-                        filter(BulkTransferUpload.upload_id.notin_(locked_update_id)). \
-                        filter(BulkTransferUpload.status == 0). \
-                        filter(BulkTransferUpload.issuer_address == upload_1.issuer_address). \
-                        order_by(BulkTransferUpload.created). \
-                        offset(1). \
-                        limit(BULK_TRANSFER_WORKER_LOT_SIZE - 1). \
-                        all()
+                    upload_list = (
+                        upload_list
+                        + db_session.query(BulkTransferUpload)
+                        .filter(BulkTransferUpload.upload_id.notin_(locked_update_id))
+                        .filter(BulkTransferUpload.status == 0)
+                        .filter(
+                            BulkTransferUpload.issuer_address == upload_1.issuer_address
+                        )
+                        .order_by(BulkTransferUpload.created)
+                        .offset(1)
+                        .limit(BULK_TRANSFER_WORKER_LOT_SIZE - 1)
+                        .all()
+                    )
 
             processing_issuer[self.thread_num] = {}
             for upload in upload_list:
-                processing_issuer[self.thread_num][upload.upload_id] = upload.issuer_address
+                processing_issuer[self.thread_num][
+                    upload.upload_id
+                ] = upload.issuer_address
         return upload_list
 
-    def __get_transfer_data(self, db_session: Session, upload_id: str, status: int) -> List[Type[BulkTransfer]]:
-        transfer_list = db_session.query(BulkTransfer). \
-            filter(BulkTransfer.upload_id == upload_id). \
-            filter(BulkTransfer.status == status). \
-            all()
+    def __get_transfer_data(
+        self, db_session: Session, upload_id: str, status: int
+    ) -> List[Type[BulkTransfer]]:
+        transfer_list = (
+            db_session.query(BulkTransfer)
+            .filter(BulkTransfer.upload_id == upload_id)
+            .filter(BulkTransfer.status == status)
+            .all()
+        )
         return transfer_list
 
     def __release_processing_issuer(self, upload_id):
@@ -290,30 +301,38 @@ class Processor:
             processing_issuer[self.thread_num].pop(upload_id, None)
 
     @staticmethod
-    def __sink_on_finish_upload_process(db_session: Session, upload_id: str, status: int):
-        transfer_upload_record = db_session.query(BulkTransferUpload). \
-            filter(BulkTransferUpload.upload_id == upload_id). \
-            first()
+    def __sink_on_finish_upload_process(
+        db_session: Session, upload_id: str, status: int
+    ):
+        transfer_upload_record = (
+            db_session.query(BulkTransferUpload)
+            .filter(BulkTransferUpload.upload_id == upload_id)
+            .first()
+        )
         if transfer_upload_record is not None:
             transfer_upload_record.status = status
             db_session.merge(transfer_upload_record)
 
     @staticmethod
-    def __sink_on_finish_transfer_process(db_session: Session, record_id: int, status: int):
-        transfer_record = db_session.query(BulkTransfer). \
-            filter(BulkTransfer.id == record_id). \
-            first()
+    def __sink_on_finish_transfer_process(
+        db_session: Session, record_id: int, status: int
+    ):
+        transfer_record = (
+            db_session.query(BulkTransfer).filter(BulkTransfer.id == record_id).first()
+        )
         if transfer_record is not None:
             transfer_record.status = status
             db_session.merge(transfer_record)
 
     @staticmethod
-    def __sink_on_error_notification(db_session: Session,
-                                     issuer_address: str,
-                                     code: int,
-                                     upload_id: str,
-                                     token_type: str,
-                                     error_transfer_id: List[int]):
+    def __sink_on_error_notification(
+        db_session: Session,
+        issuer_address: str,
+        code: int,
+        upload_id: str,
+        token_type: str,
+        error_transfer_id: List[int],
+    ):
         notification = Notification()
         notification.notice_id = uuid.uuid4()
         notification.issuer_address = issuer_address
@@ -323,7 +342,7 @@ class Processor:
         notification.metainfo = {
             "upload_id": upload_id,
             "token_type": token_type,
-            "error_transfer_id": error_transfer_id
+            "error_transfer_id": error_transfer_id,
         }
         db_session.add(notification)
 
@@ -337,20 +356,20 @@ processing_issuer = {}
 
 
 class Worker:
-
     def __init__(self, thread_num: int):
         processor = Processor(thread_num=thread_num)
         self.processor = processor
 
     def run(self):
-
         while True:
             try:
                 self.processor.process()
             except ServiceUnavailableError:
                 LOG.warning("An external service was unavailable")
             except SQLAlchemyError as sa_err:
-                LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
+                LOG.error(
+                    f"A database error has occurred: code={sa_err.code}\n{sa_err}"
+                )
             except Exception as ex:
                 LOG.error(ex)
                 err_bucket.append(ex)

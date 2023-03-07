@@ -18,25 +18,21 @@ SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
 
-from sqlalchemy import (
-    Column,
-    BigInteger,
-    String,
-    DateTime,
-    JSON
-)
+from sqlalchemy import JSON, BigInteger, Column, DateTime, String
 
 from .base import Base
 
 
 class IDXTransferSourceEventType(str, Enum):
     """Transfer source event type"""
+
     TRANSFER = "Transfer"
     UNLOCK = "Unlock"
 
 
 class IDXTransfer(Base):
     """INDEX Transfer"""
+
     __tablename__ = "idx_transfer"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
@@ -60,6 +56,7 @@ class IDXTransfer(Base):
 
 class IDXTransferBlockNumber(Base):
     """Synchronized blockNumber of IDXTransfer"""
+
     __tablename__ = "idx_transfer_block_number"
 
     # sequence id

@@ -18,10 +18,11 @@ SPDX-License-Identifier: Apache-2.0
 """
 from typing import Iterable
 
-from app.model.schema.bc_explorer import TxData
 from textual.binding import Binding
 from textual.reactive import reactive
 from textual.widgets import DataTable
+
+from app.model.schema.bc_explorer import TxData
 
 
 class TxListTable(DataTable):

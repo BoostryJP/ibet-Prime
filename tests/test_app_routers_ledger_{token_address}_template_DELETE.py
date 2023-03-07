@@ -17,17 +17,16 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from app.model.db import (
+    LedgerDetailsDataType,
+    LedgerDetailsTemplate,
+    LedgerTemplate,
     Token,
     TokenType,
-    LedgerTemplate,
-    LedgerDetailsTemplate,
-    LedgerDetailsDataType
 )
 from tests.account_config import config_eth_account
 
 
 class TestAppRoutersLedgerTokenAddressTemplateDELETE:
-
     # target API endpoint
     base_url = "/ledger/{token_address}/template"
 
@@ -62,7 +61,7 @@ class TestAppRoutersLedgerTokenAddressTemplateDELETE:
             {
                 "hoge": "aaaa",
                 "fuga": "bbbb",
-            }
+            },
         ]
         _template.footers = [
             {
@@ -72,7 +71,7 @@ class TestAppRoutersLedgerTokenAddressTemplateDELETE:
             {
                 "f-hoge": "f-aaaa",
                 "f-fuga": "f-bbbb",
-            }
+            },
         ]
         db.add(_template)
 
@@ -84,20 +83,14 @@ class TestAppRoutersLedgerTokenAddressTemplateDELETE:
                 "key": "aaa",
                 "value": "bbb",
             },
-            {
-                "test1": "a",
-                "test2": "b"
-            }
+            {"test1": "a", "test2": "b"},
         ]
         _details_1.footers = [
             {
                 "key": "aaa",
                 "value": "bbb",
             },
-            {
-                "f-test1": "a",
-                "f-test2": "b"
-            }
+            {"f-test1": "a", "f-test2": "b"},
         ]
         _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
         _details_1.data_source = token_address
@@ -111,20 +104,14 @@ class TestAppRoutersLedgerTokenAddressTemplateDELETE:
                 "key": "aaa",
                 "value": "bbb",
             },
-            {
-                "test3": "a",
-                "test4": "b"
-            }
+            {"test3": "a", "test4": "b"},
         ]
         _details_2.footers = [
             {
                 "key": "aaa",
                 "value": "bbb",
             },
-            {
-                "f-test3": "a",
-                "f-test4": "b"
-            }
+            {"f-test3": "a", "f-test4": "b"},
         ]
         _details_2.data_type = LedgerDetailsDataType.DB.value
         _details_2.data_source = "data_id_2"
@@ -135,7 +122,7 @@ class TestAppRoutersLedgerTokenAddressTemplateDELETE:
             self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
@@ -163,17 +150,14 @@ class TestAppRoutersLedgerTokenAddressTemplateDELETE:
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 }
-            ]
+            ],
         }
 
     # <Error_2>
@@ -186,23 +170,20 @@ class TestAppRoutersLedgerTokenAddressTemplateDELETE:
             self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": "test",
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_3>
@@ -217,17 +198,14 @@ class TestAppRoutersLedgerTokenAddressTemplateDELETE:
             self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token does not exist"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token does not exist",
         }
 
     # <Error_4>
@@ -252,17 +230,14 @@ class TestAppRoutersLedgerTokenAddressTemplateDELETE:
             self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }
 
     # <Error_5>
@@ -286,15 +261,12 @@ class TestAppRoutersLedgerTokenAddressTemplateDELETE:
             self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "ledger template does not exist"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "ledger template does not exist",
         }

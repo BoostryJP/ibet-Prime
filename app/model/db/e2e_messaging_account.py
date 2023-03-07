@@ -16,22 +16,15 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import Column
-from sqlalchemy import (
-    String,
-    JSON,
-    Integer,
-    Boolean,
-    BigInteger,
-    DateTime
-)
+from sqlalchemy import JSON, BigInteger, Boolean, Column, DateTime, Integer, String
 
 from .base import Base
 
 
 class E2EMessagingAccount(Base):
     """E2E Messaging Account"""
-    __tablename__ = 'e2e_messaging_account'
+
+    __tablename__ = "e2e_messaging_account"
 
     # account address
     account_address = Column(String(42), primary_key=True)
@@ -49,7 +42,8 @@ class E2EMessagingAccount(Base):
 
 class E2EMessagingAccountRsaKey(Base):
     """E2E Messaging Account Rsa Key"""
-    __tablename__ = 'e2e_messaging_account_rsa_key'
+
+    __tablename__ = "e2e_messaging_account_rsa_key"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     # transaction hash

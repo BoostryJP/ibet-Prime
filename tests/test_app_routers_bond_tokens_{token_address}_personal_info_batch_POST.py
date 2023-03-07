@@ -23,11 +23,11 @@ from unittest.mock import ANY
 from app.model.db import (
     Account,
     AuthToken,
-    Token,
-    TokenType,
     BatchRegisterPersonalInfo,
     BatchRegisterPersonalInfoUpload,
-    BatchRegisterPersonalInfoUploadStatus
+    BatchRegisterPersonalInfoUploadStatus,
+    Token,
+    TokenType,
 )
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
@@ -77,7 +77,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
             "email": "test_email",
             "birth": "test_birth",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
         # request target API
         req_param = [personal_info for _ in range(0, 10)]
@@ -86,8 +86,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
@@ -95,14 +95,18 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
         assert resp.json() == {
             "batch_id": ANY,
             "status": BatchRegisterPersonalInfoUploadStatus.PENDING.value,
-            "created": ANY
+            "created": ANY,
         }
 
-        _upload: Optional[BatchRegisterPersonalInfoUpload] = db.query(BatchRegisterPersonalInfoUpload).first()
+        _upload: Optional[BatchRegisterPersonalInfoUpload] = db.query(
+            BatchRegisterPersonalInfoUpload
+        ).first()
         assert _upload.status == BatchRegisterPersonalInfoUploadStatus.PENDING.value
         assert _upload.issuer_address == _issuer_address
 
-        _register_list: list[BatchRegisterPersonalInfo] = db.query(BatchRegisterPersonalInfo).all()
+        _register_list: list[BatchRegisterPersonalInfo] = db.query(
+            BatchRegisterPersonalInfo
+        ).all()
         assert len(_register_list) == 10
 
     # <Normal_2>
@@ -147,7 +151,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
             "email": "test_email",
             "birth": "test_birth",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
         # request target API
         req_param = [personal_info for _ in range(0, 10)]
@@ -156,8 +160,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "auth-token": "test_auth_token"
-            }
+                "auth-token": "test_auth_token",
+            },
         )
 
         # assertion
@@ -165,14 +169,18 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
         assert resp.json() == {
             "batch_id": ANY,
             "status": BatchRegisterPersonalInfoUploadStatus.PENDING.value,
-            "created": ANY
+            "created": ANY,
         }
 
-        _upload: Optional[BatchRegisterPersonalInfoUpload] = db.query(BatchRegisterPersonalInfoUpload).first()
+        _upload: Optional[BatchRegisterPersonalInfoUpload] = db.query(
+            BatchRegisterPersonalInfoUpload
+        ).first()
         assert _upload.status == BatchRegisterPersonalInfoUploadStatus.PENDING.value
         assert _upload.issuer_address == _issuer_address
 
-        _register_list: list[BatchRegisterPersonalInfo] = db.query(BatchRegisterPersonalInfo).all()
+        _register_list: list[BatchRegisterPersonalInfo] = db.query(
+            BatchRegisterPersonalInfo
+        ).all()
         assert len(_register_list) == 10
 
     ###########################################################################
@@ -193,28 +201,24 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
         # request target API
-        resp = client.post(
-            self.test_url.format(_token_address)
-        )
+        resp = client.post(self.test_url.format(_token_address))
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "field required",
-                    "type": "value_error.missing"
-                }, {
+                    "type": "value_error.missing",
+                },
+                {
                     "loc": ["body"],
                     "msg": "field required",
-                    "type": "value_error.missing"
-                }
-            ]
+                    "type": "value_error.missing",
+                },
+            ],
         }
 
     # <Error_1_2>
@@ -239,7 +243,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
             "email": None,
             "birth": None,
             "is_corporate": None,
-            "tax_category": None
+            "tax_category": None,
         }
         # request target API
         req_param = [personal_info for _ in range(0, 10)]
@@ -248,8 +252,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         details = []
@@ -258,21 +262,21 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
                 {
                     "loc": ["body", i, "account_address"],
                     "msg": "none is not an allowed value",
-                    "type": "type_error.none.not_allowed"
-                })
-            details.append({
+                    "type": "type_error.none.not_allowed",
+                }
+            )
+            details.append(
+                {
                     "loc": ["body", i, "key_manager"],
                     "msg": "none is not an allowed value",
-                    "type": "type_error.none.not_allowed"
-                })
+                    "type": "type_error.none.not_allowed",
+                }
+            )
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
-            "detail": details
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": details,
         }
 
     # <Error_1_3>
@@ -297,7 +301,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
             "email": "test_email",
             "birth": "test_birth",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
         # request target API
         req_param = [personal_info for _ in range(0, 10)]
@@ -306,29 +310,22 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "loc": [
-                        "body",
-                        i,
-                        "account_address"
-                    ],
+                    "loc": ["body", i, "account_address"],
                     "msg": "account_address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
                 for i in range(0, 10)
-            ]
+            ],
         }
 
     # <Error_1_4>
@@ -341,40 +338,39 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
         # request target API
-        req_param = [{
-            "account_address": _test_account_address,
-            "key_manager": "test_key_manager",
-            "name": "test_name",
-            "postal_code": "test_postal_code",
-            "address": "test_address",
-            "email": "test_email",
-            "birth": "test_birth",
-            "is_corporate": False,
-            "tax_category": 10
-        }]
+        req_param = [
+            {
+                "account_address": _test_account_address,
+                "key_manager": "test_key_manager",
+                "name": "test_name",
+                "postal_code": "test_postal_code",
+                "address": "test_address",
+                "email": "test_email",
+                "birth": "test_birth",
+                "is_corporate": False,
+                "tax_category": 10,
+            }
+        ]
         resp = client.post(
             self.test_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": "test_issuer_address",
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_1_5>
@@ -391,40 +387,39 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
         # request target API
-        req_param = [{
-            "account_address": _test_account_address,
-            "key_manager": "test_key_manager",
-            "name": "test_name",
-            "postal_code": "test_postal_code",
-            "address": "test_address",
-            "email": "test_email",
-            "birth": "test_birth",
-            "is_corporate": False,
-            "tax_category": 10
-        }]
+        req_param = [
+            {
+                "account_address": _test_account_address,
+                "key_manager": "test_key_manager",
+                "name": "test_name",
+                "postal_code": "test_postal_code",
+                "address": "test_address",
+                "email": "test_email",
+                "birth": "test_birth",
+                "is_corporate": False,
+                "tax_category": 10,
+            }
+        ]
         resp = client.post(
             self.test_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": "not_encrypted_password"
-            }
+                "eoa-password": "not_encrypted_password",
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "eoa-password"],
                     "msg": "eoa-password is not a Base64-encoded encrypted data",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_2_1>
@@ -441,34 +436,33 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
         # request target API
-        req_param = [{
-            "account_address": _test_account_address,
-            "key_manager": "test_key_manager",
-            "name": "test_name",
-            "postal_code": "test_postal_code",
-            "address": "test_address",
-            "email": "test_email",
-            "birth": "test_birth",
-            "is_corporate": False,
-            "tax_category": 10
-        }]
+        req_param = [
+            {
+                "account_address": _test_account_address,
+                "key_manager": "test_key_manager",
+                "name": "test_name",
+                "postal_code": "test_postal_code",
+                "address": "test_address",
+                "email": "test_email",
+                "birth": "test_birth",
+                "is_corporate": False,
+                "tax_category": 10,
+            }
+        ]
         resp = client.post(
             self.test_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 401
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "AuthorizationError"
-            },
-            "detail": "issuer does not exist, or password mismatch"
+            "meta": {"code": 1, "title": "AuthorizationError"},
+            "detail": "issuer does not exist, or password mismatch",
         }
 
     # <Error_2_2>
@@ -492,34 +486,33 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
         db.add(account)
 
         # request target API
-        req_param = [{
-            "account_address": _test_account_address,
-            "key_manager": "test_key_manager",
-            "name": "test_name",
-            "postal_code": "test_postal_code",
-            "address": "test_address",
-            "email": "test_email",
-            "birth": "test_birth",
-            "is_corporate": False,
-            "tax_category": 10
-        }]
+        req_param = [
+            {
+                "account_address": _test_account_address,
+                "key_manager": "test_key_manager",
+                "name": "test_name",
+                "postal_code": "test_postal_code",
+                "address": "test_address",
+                "email": "test_email",
+                "birth": "test_birth",
+                "is_corporate": False,
+                "tax_category": 10,
+            }
+        ]
         resp = client.post(
             self.test_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("mismatch_password")
-            }
+                "eoa-password": E2EEUtils.encrypt("mismatch_password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 401
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "AuthorizationError"
-            },
-            "detail": "issuer does not exist, or password mismatch"
+            "meta": {"code": 1, "title": "AuthorizationError"},
+            "detail": "issuer does not exist, or password mismatch",
         }
 
     # <Error_3>
@@ -543,34 +536,33 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
         db.add(account)
 
         # request target API
-        req_param = [{
-            "account_address": _test_account_address,
-            "key_manager": "test_key_manager",
-            "name": "test_name",
-            "postal_code": "test_postal_code",
-            "address": "test_address",
-            "email": "test_email",
-            "birth": "test_birth",
-            "is_corporate": False,
-            "tax_category": 10
-        }]
+        req_param = [
+            {
+                "account_address": _test_account_address,
+                "key_manager": "test_key_manager",
+                "name": "test_name",
+                "postal_code": "test_postal_code",
+                "address": "test_address",
+                "email": "test_email",
+                "birth": "test_birth",
+                "is_corporate": False,
+                "tax_category": 10,
+            }
+        ]
         resp = client.post(
             self.test_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token not found",
         }
 
     # <Error_4_1>
@@ -603,34 +595,33 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
         db.add(token)
 
         # request target API
-        req_param = [{
-            "account_address": _test_account_address,
-            "key_manager": "test_key_manager",
-            "name": "test_name",
-            "postal_code": "test_postal_code",
-            "address": "test_address",
-            "email": "test_email",
-            "birth": "test_birth",
-            "is_corporate": False,
-            "tax_category": 10
-        }]
+        req_param = [
+            {
+                "account_address": _test_account_address,
+                "key_manager": "test_key_manager",
+                "name": "test_name",
+                "postal_code": "test_postal_code",
+                "address": "test_address",
+                "email": "test_email",
+                "birth": "test_birth",
+                "is_corporate": False,
+                "tax_category": 10,
+            }
+        ]
         resp = client.post(
             self.test_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }
 
     # <Error_4_2>
@@ -669,16 +660,13 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "personal information list must not be empty"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "personal information list must not be empty",
         }

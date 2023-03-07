@@ -18,10 +18,11 @@ SPDX-License-Identifier: Apache-2.0
 """
 import base64
 from unittest import mock
+
 import pytz
 
-from config import TZ
 from app.model.db import UploadFile
+from config import TZ
 
 local_tz = pytz.timezone(TZ)
 utc_tz = pytz.timezone("UTC")
@@ -54,7 +55,7 @@ abc def"""
             "file_name": "file_name_1",
             "content": base64.b64encode(file_content_bin).decode(),
             "description": "description_1",
-            "label": "label_1"
+            "label": "label_1",
         }
         resp = client.post(
             self.base_url,
@@ -85,13 +86,15 @@ abc def"""
             "content_size": len(file_content_bin),
             "description": req_param["description"],
             "label": req_param["label"],
-            "created": utc_tz.localize(_upload_file.created).astimezone(local_tz).isoformat()
+            "created": utc_tz.localize(_upload_file.created)
+            .astimezone(local_tz)
+            .isoformat(),
         }
 
     # <Normal_2>
     # binary file
     def test_normal_2(self, client, db):
-        file_content_bin = b'x00x01x02x03x04x05x06x07'
+        file_content_bin = b"x00x01x02x03x04x05x06x07"
 
         # request target api
         req_param = {
@@ -99,7 +102,7 @@ abc def"""
             "file_name": "file_name_1",
             "content": base64.b64encode(file_content_bin).decode(),
             "description": "description_1",
-            "label": "label_1"
+            "label": "label_1",
         }
         resp = client.post(
             self.base_url,
@@ -130,7 +133,9 @@ abc def"""
             "content_size": len(file_content_bin),
             "description": req_param["description"],
             "label": req_param["label"],
-            "created": utc_tz.localize(_upload_file.created).astimezone(local_tz).isoformat()
+            "created": utc_tz.localize(_upload_file.created)
+            .astimezone(local_tz)
+            .isoformat(),
         }
 
     # <Normal_3>
@@ -144,7 +149,7 @@ abc def"""
             "relation": self.token_address,
             "file_name": "file_name_1",
             "content": base64.b64encode(file_content_bin).decode(),
-            "description": "description_1"
+            "description": "description_1",
         }
         resp = client.post(
             self.base_url,
@@ -175,7 +180,9 @@ abc def"""
             "content_size": len(file_content_bin),
             "description": req_param["description"],
             "label": "",
-            "created": utc_tz.localize(_upload_file.created).astimezone(local_tz).isoformat()
+            "created": utc_tz.localize(_upload_file.created)
+            .astimezone(local_tz)
+            .isoformat(),
         }
 
     ###########################################################################
@@ -195,22 +202,19 @@ abc def"""
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
                 {
                     "loc": ["body"],
                     "msg": "field required",
-                    "type": "value_error.missing"
-                }
-            ]
+                    "type": "value_error.missing",
+                },
+            ],
         }
 
     # <Error_2>
@@ -230,22 +234,19 @@ abc def"""
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "file_name"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
                 {
                     "loc": ["body", "content"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
-            ]
+            ],
         }
 
     # <Error_3>
@@ -254,7 +255,7 @@ abc def"""
     # Body
     @mock.patch("app.model.schema.file.MAX_UPLOAD_FILE_SIZE", 6)
     def test_error_3(self, client, db):
-        file_content_bin = b'x00x01x02x03x04x05x06x07'
+        file_content_bin = b"x00x01x02x03x04x05x06x07"
 
         # request target api
         resp = client.post(
@@ -262,35 +263,35 @@ abc def"""
             json={
                 "relation": "123456789012345678901234567890123456789012345678901",
                 "file_name": "12345678901234567890123456789012345678901234567890"
-                             "12345678901234567890123456789012345678901234567890"
-                             "12345678901234567890123456789012345678901234567890"
-                             "12345678901234567890123456789012345678901234567890"
-                             "123456789012345678901234567890123456789012345678901234567",
+                "12345678901234567890123456789012345678901234567890"
+                "12345678901234567890123456789012345678901234567890"
+                "12345678901234567890123456789012345678901234567890"
+                "123456789012345678901234567890123456789012345678901234567",
                 "content": base64.b64encode(file_content_bin).decode(),
                 "description": "12345678901234567890123456789012345678901234567890"
-                               "12345678901234567890123456789012345678901234567890"
-                               "12345678901234567890123456789012345678901234567890"
-                               "12345678901234567890123456789012345678901234567890"
-                               "12345678901234567890123456789012345678901234567890"
-                               "12345678901234567890123456789012345678901234567890"
-                               "12345678901234567890123456789012345678901234567890"
-                               "12345678901234567890123456789012345678901234567890"
-                               "12345678901234567890123456789012345678901234567890"
-                               "12345678901234567890123456789012345678901234567890"
-                               "12345678901234567890123456789012345678901234567890"
-                               "12345678901234567890123456789012345678901234567890"
-                               "12345678901234567890123456789012345678901234567890"
-                               "12345678901234567890123456789012345678901234567890"
-                               "12345678901234567890123456789012345678901234567890"
-                               "12345678901234567890123456789012345678901234567890"
-                               "12345678901234567890123456789012345678901234567890"
-                               "12345678901234567890123456789012345678901234567890"
-                               "12345678901234567890123456789012345678901234567890"
-                               "123456789012345678901234567890123456789012345678901",
+                "12345678901234567890123456789012345678901234567890"
+                "12345678901234567890123456789012345678901234567890"
+                "12345678901234567890123456789012345678901234567890"
+                "12345678901234567890123456789012345678901234567890"
+                "12345678901234567890123456789012345678901234567890"
+                "12345678901234567890123456789012345678901234567890"
+                "12345678901234567890123456789012345678901234567890"
+                "12345678901234567890123456789012345678901234567890"
+                "12345678901234567890123456789012345678901234567890"
+                "12345678901234567890123456789012345678901234567890"
+                "12345678901234567890123456789012345678901234567890"
+                "12345678901234567890123456789012345678901234567890"
+                "12345678901234567890123456789012345678901234567890"
+                "12345678901234567890123456789012345678901234567890"
+                "12345678901234567890123456789012345678901234567890"
+                "12345678901234567890123456789012345678901234567890"
+                "12345678901234567890123456789012345678901234567890"
+                "12345678901234567890123456789012345678901234567890"
+                "123456789012345678901234567890123456789012345678901",
                 "label": "12345678901234567890123456789012345678901234567890"
-                         "12345678901234567890123456789012345678901234567890"
-                         "12345678901234567890123456789012345678901234567890"
-                         "123456789012345678901234567890123456789012345678901"
+                "12345678901234567890123456789012345678901234567890"
+                "12345678901234567890123456789012345678901234567890"
+                "123456789012345678901234567890123456789012345678901",
             },
             headers={
                 "issuer-address": self.issuer_address,
@@ -300,22 +301,19 @@ abc def"""
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "relation"],
                     "msg": "ensure this value has at most 50 characters",
                     "type": "value_error.any_str.max_length",
-                    "ctx": {"limit_value": 50}
+                    "ctx": {"limit_value": 50},
                 },
                 {
                     "loc": ["body", "file_name"],
                     "msg": "ensure this value has at most 256 characters",
                     "type": "value_error.any_str.max_length",
-                    "ctx": {"limit_value": 256}
+                    "ctx": {"limit_value": 256},
                 },
                 {
                     "loc": ["body", "content"],
@@ -326,22 +324,21 @@ abc def"""
                     "loc": ["body", "description"],
                     "msg": "ensure this value has at most 1000 characters",
                     "type": "value_error.any_str.max_length",
-                    "ctx": {"limit_value": 1000}
+                    "ctx": {"limit_value": 1000},
                 },
                 {
                     "loc": ["body", "label"],
                     "msg": "ensure this value has at most 200 characters",
                     "type": "value_error.any_str.max_length",
-                    "ctx": {"limit_value": 200}
+                    "ctx": {"limit_value": 200},
                 },
-            ]
+            ],
         }
 
     # <Error_4>
     # Parameter Error
     # Not Base64
     def test_error_4(self, client, db):
-
         # request target api
         req_param = {
             "relation": self.token_address,
@@ -361,15 +358,12 @@ abc def"""
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "content"],
                     "msg": "content is not a Base64-encoded string",
                     "type": "value_error",
                 },
-            ]
+            ],
         }

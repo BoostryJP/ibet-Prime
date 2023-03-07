@@ -17,8 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import json
-import yaml
 
+import yaml
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
@@ -31,5 +31,7 @@ web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 # Account Address(from local config)
 def config_eth_account(name):
     account_config = yaml.safe_load(open(f"tests/data/account_config.yml", "r"))
-    account_config[name]["keyfile_json"] = json.loads(account_config[name]["keyfile_json"])
+    account_config[name]["keyfile_json"] = json.loads(
+        account_config[name]["keyfile_json"]
+    )
     return account_config[name]

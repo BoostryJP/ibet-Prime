@@ -57,15 +57,17 @@ class TestAppRoutersAccountsAuthTokenDELETE:
         # request target api
         resp = client.delete(
             self.apiurl.format(test_account["address"]),
-            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)}
+            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
 
         # assertion
         assert resp.status_code == 200
 
-        auth_token: AuthToken = db.query(AuthToken). \
-            filter(AuthToken.issuer_address == test_account["address"]). \
-            first()
+        auth_token: AuthToken = (
+            db.query(AuthToken)
+            .filter(AuthToken.issuer_address == test_account["address"])
+            .first()
+        )
         assert auth_token is None
 
     # Normal_2
@@ -89,15 +91,17 @@ class TestAppRoutersAccountsAuthTokenDELETE:
         # request target api
         resp = client.delete(
             self.apiurl.format(test_account["address"]),
-            headers={"auth-token": self.auth_token}
+            headers={"auth-token": self.auth_token},
         )
 
         # assertion
         assert resp.status_code == 200
 
-        auth_token: AuthToken = db.query(AuthToken). \
-            filter(AuthToken.issuer_address == test_account["address"]). \
-            first()
+        auth_token: AuthToken = (
+            db.query(AuthToken)
+            .filter(AuthToken.issuer_address == test_account["address"])
+            .first()
+        )
         assert auth_token is None
 
     ###########################################################################
@@ -127,28 +131,27 @@ class TestAppRoutersAccountsAuthTokenDELETE:
         # request target api
         resp = client.delete(
             self.apiurl.format(test_account["address"][::-1]),  # invalid issue address
-            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)}
+            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['header', 'issuer-address'],
-                    'msg': 'issuer-address is not a valid address',
-                    'type': 'value_error'
+                    "loc": ["header", "issuer-address"],
+                    "msg": "issuer-address is not a valid address",
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
-        auth_token: AuthToken = db.query(AuthToken). \
-            filter(AuthToken.issuer_address == test_account["address"]). \
-            first()
+        auth_token: AuthToken = (
+            db.query(AuthToken)
+            .filter(AuthToken.issuer_address == test_account["address"])
+            .first()
+        )
         assert auth_token is not None
 
     # Error_2
@@ -174,28 +177,27 @@ class TestAppRoutersAccountsAuthTokenDELETE:
         # request target api
         resp = client.delete(
             self.apiurl.format(test_account["address"]),
-            headers={"eoa-password": self.eoa_password}
+            headers={"eoa-password": self.eoa_password},
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['header', 'eoa-password'],
-                    'msg': 'eoa-password is not a Base64-encoded encrypted data',
-                    'type': 'value_error'
+                    "loc": ["header", "eoa-password"],
+                    "msg": "eoa-password is not a Base64-encoded encrypted data",
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
-        auth_token: AuthToken = db.query(AuthToken). \
-            filter(AuthToken.issuer_address == test_account["address"]). \
-            first()
+        auth_token: AuthToken = (
+            db.query(AuthToken)
+            .filter(AuthToken.issuer_address == test_account["address"])
+            .first()
+        )
         assert auth_token is not None
 
     # Error_3_1
@@ -226,16 +228,15 @@ class TestAppRoutersAccountsAuthTokenDELETE:
         # assertion
         assert resp.status_code == 401
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'AuthorizationError'
-            },
-            'detail': 'issuer does not exist, or password mismatch'
+            "meta": {"code": 1, "title": "AuthorizationError"},
+            "detail": "issuer does not exist, or password mismatch",
         }
 
-        auth_token: AuthToken = db.query(AuthToken). \
-            filter(AuthToken.issuer_address == test_account["address"]). \
-            first()
+        auth_token: AuthToken = (
+            db.query(AuthToken)
+            .filter(AuthToken.issuer_address == test_account["address"])
+            .first()
+        )
         assert auth_token is not None
 
     # Error_3_2
@@ -261,22 +262,23 @@ class TestAppRoutersAccountsAuthTokenDELETE:
         # request target api
         resp = client.delete(
             self.apiurl.format(test_account["address"]),
-            headers={"eoa-password": E2EEUtils.encrypt("incorrect_password")}  # incorrect password
+            headers={
+                "eoa-password": E2EEUtils.encrypt("incorrect_password")
+            },  # incorrect password
         )
 
         # assertion
         assert resp.status_code == 401
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'AuthorizationError'
-            },
-            'detail': 'issuer does not exist, or password mismatch'
+            "meta": {"code": 1, "title": "AuthorizationError"},
+            "detail": "issuer does not exist, or password mismatch",
         }
 
-        auth_token: AuthToken = db.query(AuthToken). \
-            filter(AuthToken.issuer_address == test_account["address"]). \
-            first()
+        auth_token: AuthToken = (
+            db.query(AuthToken)
+            .filter(AuthToken.issuer_address == test_account["address"])
+            .first()
+        )
         assert auth_token is not None
 
     # Error_4
@@ -294,15 +296,12 @@ class TestAppRoutersAccountsAuthTokenDELETE:
         # request target api
         resp = client.delete(
             self.apiurl.format(test_account["address"]),
-            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)}
+            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'NotFound'
-            },
-            'detail': 'auth token does not exist'
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "auth token does not exist",
         }

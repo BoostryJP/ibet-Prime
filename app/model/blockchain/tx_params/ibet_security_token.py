@@ -16,11 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from pydantic import (
-    validator,
-    BaseModel,
-    PositiveInt
-)
+from pydantic import BaseModel, PositiveInt, validator
 from web3 import Web3
 
 
