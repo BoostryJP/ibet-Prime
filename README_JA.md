@@ -54,6 +54,11 @@
 $ poetry install --no-root --only main -E explorer
 ```
 
+### pre-commit hookのインストール
+```bash
+$ poetry run pre-commit install
+```
+
 ### 環境変数の設定
 
 主要な環境変数は以下の通りです。

@@ -2,7 +2,14 @@ name: Unit Test
 on: [pull_request]
 
 jobs:
+  lint-black:
+    name: 'Lint check (black)'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: psf/black@stable
   unit-test-postgres:
+    name: 'Unit tests (PostgreSQL)'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
