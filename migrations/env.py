@@ -111,9 +111,7 @@ if "--autogenerate" in argv:
                 if "schema=" not in new_line:
                     new_line = re.sub("\)$", ", schema=get_db_schema())", line)
                 else:  # If local environment has a schema set
-                    new_line = re.sub(
-                        "schema=(.)*\)$", "schema=get_db_schema())", line
-                    )
+                    new_line = re.sub("schema=(.)*\)$", "schema=get_db_schema())", line)
             new_lines.append(new_line)
         return new_lines
 
