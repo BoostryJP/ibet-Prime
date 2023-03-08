@@ -17,23 +17,14 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
-from typing import (
-    Optional,
-    List,
-    Union,
-    Dict,
-    Any
-)
+from typing import Any, Dict, List, Optional, Union
 
-from pydantic import (
-    BaseModel,
-    validator,
-    Field
-)
+from pydantic import BaseModel, Field, validator
+
+from app.utils.check_utils import check_value_is_encrypted
+from config import E2EE_REQUEST_ENABLED
 
 from .types import ResultSet
-from config import E2EE_REQUEST_ENABLED
-from app.utils.check_utils import check_value_is_encrypted
 
 
 ############################
@@ -41,6 +32,7 @@ from app.utils.check_utils import check_value_is_encrypted
 ############################
 class E2EMessagingAccountCreateRequest(BaseModel):
     """E2E Messaging Account Create schema (REQUEST)"""
+
     eoa_password: str
     rsa_passphrase: Optional[str]
     rsa_key_generate_interval: Optional[int] = Field(24, ge=0, le=10_000)
@@ -61,28 +53,38 @@ class E2EMessagingAccountCreateRequest(BaseModel):
     class Config:
         @staticmethod
         def schema_extra(schema: Dict[str, Any], _) -> None:
-            rsa_key_generate_interval_schema = schema["properties"]["rsa_key_generate_interval"]
-            rsa_key_generate_interval_schema["description"] = "0 disables auto-generate(Unit is hour)"
+            rsa_key_generate_interval_schema = schema["properties"][
+                "rsa_key_generate_interval"
+            ]
+            rsa_key_generate_interval_schema[
+                "description"
+            ] = "0 disables auto-generate(Unit is hour)"
             rsa_generation_schema = schema["properties"]["rsa_generation"]
             rsa_generation_schema["description"] = "0 disables generation"
 
 
 class E2EMessagingAccountUpdateRsaKeyRequest(BaseModel):
     """E2E Messaging Account Rsa Key Update schema (REQUEST)"""
+
     rsa_key_generate_interval: Optional[int] = Field(24, ge=0, le=10_000)
     rsa_generation: Optional[int] = Field(7, ge=0, le=100)
 
     class Config:
         @staticmethod
         def schema_extra(schema: Dict[str, Any], _) -> None:
-            rsa_key_generate_interval_schema = schema["properties"]["rsa_key_generate_interval"]
-            rsa_key_generate_interval_schema["description"] = "0 disables auto-generate(Unit is hour)"
+            rsa_key_generate_interval_schema = schema["properties"][
+                "rsa_key_generate_interval"
+            ]
+            rsa_key_generate_interval_schema[
+                "description"
+            ] = "0 disables auto-generate(Unit is hour)"
             rsa_generation_schema = schema["properties"]["rsa_generation"]
             rsa_generation_schema["description"] = "0 disables generation"
 
 
 class E2EMessagingAccountChangeEOAPasswordRequest(BaseModel):
     """E2E Messaging Account Change EOA Password schema (REQUEST)"""
+
     old_eoa_password: str
     eoa_password: str
 
@@ -101,6 +103,7 @@ class E2EMessagingAccountChangeEOAPasswordRequest(BaseModel):
 
 class E2EMessagingAccountChangeRSAPassphraseRequest(BaseModel):
     """E2E Messaging Account Change RSA Passphrase schema (REQUEST)"""
+
     old_rsa_passphrase: str
     rsa_passphrase: str
 
@@ -122,6 +125,7 @@ class E2EMessagingAccountChangeRSAPassphraseRequest(BaseModel):
 ############################
 class E2EMessagingAccountResponse(BaseModel):
     """E2E Messaging Account schema (Response)"""
+
     account_address: str
     rsa_key_generate_interval: Optional[int]
     rsa_generation: Optional[int]
@@ -131,6 +135,7 @@ class E2EMessagingAccountResponse(BaseModel):
 
 class E2EMessagingResponse(BaseModel):
     """E2E Messaging schema (Response)"""
+
     id: int
     from_address: str
     to_address: str
@@ -141,5 +146,6 @@ class E2EMessagingResponse(BaseModel):
 
 class ListAllE2EMessagingResponse(BaseModel):
     """List All E2E Messaging schema (Response)"""
+
     result_set: ResultSet
     e2e_messages: List[E2EMessagingResponse]

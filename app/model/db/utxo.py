@@ -16,18 +16,14 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import (
-    Column,
-    String,
-    BigInteger,
-    DateTime
-)
+from sqlalchemy import BigInteger, Column, DateTime, String
 
 from .base import Base
 
 
 class UTXO(Base):
     """UTXO"""
+
     # NOTE: When consuming amount, consume(subtract) in order from old records.
 
     __tablename__ = "utxo"
@@ -48,6 +44,7 @@ class UTXO(Base):
 
 class UTXOBlockNumber(Base):
     """Synchronized blockNumber of UTXO"""
+
     __tablename__ = "utxo_block_number"
 
     # sequence id

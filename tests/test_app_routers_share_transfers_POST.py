@@ -20,14 +20,9 @@ import hashlib
 from unittest import mock
 from unittest.mock import ANY, MagicMock
 
-from app.model.db import (
-    Account,
-    AuthToken,
-    Token,
-    TokenType
-)
-from app.utils.e2ee_utils import E2EEUtils
 from app.exceptions import SendTransactionError
+from app.model.db import Account, AuthToken, Token, TokenType
+from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
 
@@ -78,15 +73,15 @@ class TestAppRoutersShareTransfersPOST:
             "token_address": _token_address,
             "from_address": _from_address,
             "to_address": _to_address,
-            "amount": 10
+            "amount": 10,
         }
         resp = client.post(
             self.test_url,
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
@@ -94,10 +89,10 @@ class TestAppRoutersShareTransfersPOST:
             data={
                 "from_address": _from_address,
                 "to_address": _to_address,
-                "amount": 10
+                "amount": 10,
             },
             tx_from=_admin_address,
-            private_key=ANY
+            private_key=ANY,
         )
 
         assert resp.status_code == 200
@@ -148,15 +143,12 @@ class TestAppRoutersShareTransfersPOST:
             "token_address": _token_address,
             "from_address": _from_address,
             "to_address": _to_address,
-            "amount": 10
+            "amount": 10,
         }
         resp = client.post(
             self.test_url,
             json=req_param,
-            headers={
-                "issuer-address": _admin_address,
-                "auth-token": "test_auth_token"
-            }
+            headers={"issuer-address": _admin_address, "auth-token": "test_auth_token"},
         )
 
         # assertion
@@ -164,10 +156,10 @@ class TestAppRoutersShareTransfersPOST:
             data={
                 "from_address": _from_address,
                 "to_address": _to_address,
-                "amount": 10
+                "amount": 10,
             },
             tx_from=_admin_address,
-            private_key=ANY
+            private_key=ANY,
         )
 
         assert resp.status_code == 200
@@ -191,51 +183,39 @@ class TestAppRoutersShareTransfersPOST:
             "token_address": _token_address,
             "from_address": _from_address,
             "to_address": _to_address,
-            "amount": 0
+            "amount": 0,
         }
         resp = client.post(
-            self.test_url,
-            json=req_param,
-            headers={
-                "issuer-address": _admin_address
-            }
+            self.test_url, json=req_param, headers={"issuer-address": _admin_address}
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "token_address"],
                     "msg": "token_address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 },
                 {
                     "loc": ["body", "from_address"],
                     "msg": "from_address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 },
                 {
                     "loc": ["body", "to_address"],
                     "msg": "to_address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 },
                 {
-                    "ctx": {
-                        "limit_value": 1
-                    },
-                    "loc": [
-                        "body",
-                        "amount"
-                    ],
+                    "ctx": {"limit_value": 1},
+                    "loc": ["body", "amount"],
                     "msg": "ensure this value is greater than or equal to 1",
-                    "type": "value_error.number.not_ge"
+                    "type": "value_error.number.not_ge",
                 },
-            ]
+            ],
         }
 
     # <Error_2>
@@ -258,65 +238,48 @@ class TestAppRoutersShareTransfersPOST:
             "token_address": _token_address,
             "from_address": _from_address,
             "to_address": _to_address,
-            "amount": 1_000_000_000_001
+            "amount": 1_000_000_000_001,
         }
         resp = client.post(
-            self.test_url,
-            json=req_param,
-            headers={
-                "issuer-address": _admin_address
-            }
+            self.test_url, json=req_param, headers={"issuer-address": _admin_address}
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {
-                        "limit_value": 1_000_000_000_000
-                    },
-                    "loc": [
-                        "body",
-                        "amount"
-                    ],
+                    "ctx": {"limit_value": 1_000_000_000_000},
+                    "loc": ["body", "amount"],
                     "msg": "ensure this value is less than or equal to 1000000000000",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le",
                 },
-            ]
+            ],
         }
 
     # <Error_3>
     # RequestValidationError: headers and body required
     def test_error_3(self, client, db):
         # request target API
-        resp = client.post(
-            self.test_url
-        )
+        resp = client.post(self.test_url)
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
                 {
                     "loc": ["body"],
                     "msg": "field required",
-                    "type": "value_error.missing"
-                }
-            ]
+                    "type": "value_error.missing",
+                },
+            ],
         }
 
     # <Error_4>
@@ -339,30 +302,23 @@ class TestAppRoutersShareTransfersPOST:
             "token_address": _token_address,
             "from_address": _from_address,
             "to_address": _to_address,
-            "amount": 10
+            "amount": 10,
         }
         resp = client.post(
-            self.test_url,
-            json=req_param,
-            headers={
-                "issuer-address": "issuer-address"
-            }
+            self.test_url, json=req_param, headers={"issuer-address": "issuer-address"}
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_5>
@@ -385,29 +341,25 @@ class TestAppRoutersShareTransfersPOST:
             "token_address": _token_address,
             "from_address": _from_address,
             "to_address": _to_address,
-            "amount": 10
+            "amount": 10,
         }
         resp = client.post(
             self.test_url,
             json=req_param,
-            headers={
-                "issuer-address": _admin_address,
-                "eoa-password": "password"
-            }
+            headers={"issuer-address": _admin_address, "eoa-password": "password"},
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
-            "detail": [{
-                "loc": ["header", "eoa-password"],
-                "msg": "eoa-password is not a Base64-encoded encrypted data",
-                "type": "value_error"
-            }]
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "loc": ["header", "eoa-password"],
+                    "msg": "eoa-password is not a Base64-encoded encrypted data",
+                    "type": "value_error",
+                }
+            ],
         }
 
     # <Error_6>
@@ -430,25 +382,22 @@ class TestAppRoutersShareTransfersPOST:
             "token_address": _token_address,
             "from_address": _from_address,
             "to_address": _to_address,
-            "amount": 10
+            "amount": 10,
         }
         resp = client.post(
             self.test_url,
             json=req_param,
             headers={
                 "issuer-address": _admin_address,  # Non-existent issuer
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 401
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "AuthorizationError"
-            },
-            "detail": "issuer does not exist, or password mismatch"
+            "meta": {"code": 1, "title": "AuthorizationError"},
+            "detail": "issuer does not exist, or password mismatch",
         }
 
     # <Error_7>
@@ -478,25 +427,22 @@ class TestAppRoutersShareTransfersPOST:
             "token_address": _token_address,
             "from_address": _from_address,
             "to_address": _to_address,
-            "amount": 10
+            "amount": 10,
         }
         resp = client.post(
             self.test_url,
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
-                "eoa-password": E2EEUtils.encrypt("password_test")
-            }
+                "eoa-password": E2EEUtils.encrypt("password_test"),
+            },
         )
 
         # assertion
         assert resp.status_code == 401
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "AuthorizationError"
-            },
-            "detail": "issuer does not exist, or password mismatch"
+            "meta": {"code": 1, "title": "AuthorizationError"},
+            "detail": "issuer does not exist, or password mismatch",
         }
 
     # <Error_8>
@@ -526,25 +472,22 @@ class TestAppRoutersShareTransfersPOST:
             "token_address": _token_address,
             "from_address": _from_address,
             "to_address": _to_address,
-            "amount": 10
+            "amount": 10,
         }
         resp = client.post(
             self.test_url,
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token not found",
         }
 
     # <Error_9>
@@ -583,31 +526,30 @@ class TestAppRoutersShareTransfersPOST:
             "token_address": _token_address,
             "from_address": _from_address,
             "to_address": _to_address,
-            "amount": 10
+            "amount": 10,
         }
         resp = client.post(
             self.test_url,
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }
 
     # <Error_10>
     # Send Transaction Error
-    @mock.patch("app.model.blockchain.token.IbetShareContract.transfer",
-                MagicMock(side_effect=SendTransactionError()))
+    @mock.patch(
+        "app.model.blockchain.token.IbetShareContract.transfer",
+        MagicMock(side_effect=SendTransactionError()),
+    )
     def test_error_10(self, client, db):
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
@@ -641,23 +583,20 @@ class TestAppRoutersShareTransfersPOST:
             "token_address": _token_address,
             "from_address": _from_address,
             "to_address": _to_address,
-            "amount": 10
+            "amount": 10,
         }
         resp = client.post(
             self.test_url,
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 2,
-                "title": "SendTransactionError"
-            },
-            "detail": "failed to send transaction"
+            "meta": {"code": 2, "title": "SendTransactionError"},
+            "detail": "failed to send transaction",
         }

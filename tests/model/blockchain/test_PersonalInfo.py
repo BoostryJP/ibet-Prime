@@ -16,26 +16,25 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import pytest
 import base64
 import json
+from unittest import mock
+from unittest.mock import MagicMock
 
+import pytest
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from eth_keyfile import decode_keyfile_json
 from web3 import Web3
+from web3.exceptions import ContractLogicError, TimeExhausted
 from web3.middleware import geth_poa_middleware
-from web3.exceptions import TimeExhausted, ContractLogicError
-from unittest.mock import MagicMock
-from unittest import mock
 
-from config import WEB3_HTTP_PROVIDER, TX_GAS_LIMIT, CHAIN_ID
+from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.blockchain import PersonalInfoContract
-from app.utils.contract_utils import ContractUtils
-from app.exceptions import SendTransactionError, ContractRevertError
 from app.model.db import Account
+from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-
+from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
@@ -56,17 +55,19 @@ def initialize(issuer, db):
     db.commit()
 
     private_key = decode_keyfile_json(
-        raw_keyfile_json=issuer["keyfile_json"],
-        password=eoa_password.encode("utf-8")
+        raw_keyfile_json=issuer["keyfile_json"], password=eoa_password.encode("utf-8")
     )
-    contract_address, _, _ = ContractUtils.deploy_contract("PersonalInfo", [], issuer["address"], private_key)
+    contract_address, _, _ = ContractUtils.deploy_contract(
+        "PersonalInfo", [], issuer["address"], private_key
+    )
 
-    personal_info_contract = PersonalInfoContract(db, issuer["address"], contract_address)
+    personal_info_contract = PersonalInfoContract(
+        db, issuer["address"], contract_address
+    )
     return personal_info_contract
 
 
 class TestGetInfo:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -79,7 +80,9 @@ class TestGetInfo:
         # Set personal information data
         setting_user = config_eth_account("user2")
         rsa_password = "password"
-        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password)
+        rsa = RSA.importKey(
+            personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
+        )
         cipher = PKCS1_OAEP.new(rsa)
         data = {
             "key_manager": "1234567890",
@@ -89,21 +92,27 @@ class TestGetInfo:
             "email": "sample@test.test",
             "birth": "19801231",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
-        ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
+        ciphertext = base64.encodebytes(
+            cipher.encrypt(json.dumps(data).encode("utf-8"))
+        )
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], ciphertext).build_transaction({
-            "nonce": web3.eth.get_transaction_count(setting_user["address"]),
-            "from": setting_user["address"],
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0,
-            "chainId": CHAIN_ID
-        })
+        tx = contract.functions.register(
+            issuer["address"], ciphertext
+        ).build_transaction(
+            {
+                "nonce": web3.eth.get_transaction_count(setting_user["address"]),
+                "from": setting_user["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+                "chainId": CHAIN_ID,
+            }
+        )
         eoa_password = "password"
         private_key = decode_keyfile_json(
             raw_keyfile_json=setting_user["keyfile_json"],
-            password=eoa_password.encode("utf-8")
+            password=eoa_password.encode("utf-8"),
         )
         ContractUtils.send_transaction(tx, private_key)
 
@@ -121,22 +130,26 @@ class TestGetInfo:
         # Set personal information data
         setting_user = config_eth_account("user2")
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], "").build_transaction({
-            "nonce": web3.eth.get_transaction_count(setting_user["address"]),
-            "from": setting_user["address"],
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0,
-            "chainId": CHAIN_ID
-        })
+        tx = contract.functions.register(issuer["address"], "").build_transaction(
+            {
+                "nonce": web3.eth.get_transaction_count(setting_user["address"]),
+                "from": setting_user["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+                "chainId": CHAIN_ID,
+            }
+        )
         eoa_password = "password"
         private_key = decode_keyfile_json(
             raw_keyfile_json=setting_user["keyfile_json"],
-            password=eoa_password.encode("utf-8")
+            password=eoa_password.encode("utf-8"),
         )
         ContractUtils.send_transaction(tx, private_key)
 
         # Run Test
-        get_info = personal_info_contract.get_info(setting_user["address"], default_value="test")
+        get_info = personal_info_contract.get_info(
+            setting_user["address"], default_value="test"
+        )
 
         assert get_info == {
             "key_manager": "test",
@@ -146,7 +159,7 @@ class TestGetInfo:
             "email": "test",
             "birth": "test",
             "is_corporate": "test",
-            "tax_category": "test"
+            "tax_category": "test",
         }
 
     ###########################################################################
@@ -162,7 +175,9 @@ class TestGetInfo:
         # Set personal information data
         setting_user = config_eth_account("user2")
         rsa_password = "password"
-        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password)
+        rsa = RSA.importKey(
+            personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
+        )
         cipher = PKCS1_OAEP.new(rsa)
         data = {
             "key_manager": "1234567890",
@@ -172,21 +187,27 @@ class TestGetInfo:
             "email": "sample@test.test",
             "birth": "19801231",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
-        ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
+        ciphertext = base64.encodebytes(
+            cipher.encrypt(json.dumps(data).encode("utf-8"))
+        )
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], ciphertext).build_transaction({
-            "nonce": web3.eth.get_transaction_count(setting_user["address"]),
-            "from": setting_user["address"],
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0,
-            "chainId": CHAIN_ID
-        })
+        tx = contract.functions.register(
+            issuer["address"], ciphertext
+        ).build_transaction(
+            {
+                "nonce": web3.eth.get_transaction_count(setting_user["address"]),
+                "from": setting_user["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+                "chainId": CHAIN_ID,
+            }
+        )
         eoa_password = "password"
         private_key = decode_keyfile_json(
             raw_keyfile_json=setting_user["keyfile_json"],
-            password=eoa_password.encode("utf-8")
+            password=eoa_password.encode("utf-8"),
         )
         ContractUtils.send_transaction(tx, private_key)
 
@@ -194,7 +215,9 @@ class TestGetInfo:
         personal_info_contract.issuer.rsa_private_key = "testtest"
 
         # Run Test
-        get_info = personal_info_contract.get_info(setting_user["address"], default_value="test")
+        get_info = personal_info_contract.get_info(
+            setting_user["address"], default_value="test"
+        )
 
         assert get_info == {
             "key_manager": "test",
@@ -204,7 +227,7 @@ class TestGetInfo:
             "email": "test",
             "birth": "test",
             "is_corporate": "test",
-            "tax_category": "test"
+            "tax_category": "test",
         }
 
     # <Error_2>
@@ -216,23 +239,28 @@ class TestGetInfo:
         # Set personal information data
         setting_user = config_eth_account("user2")
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], "testtest").build_transaction({
-            "nonce": web3.eth.get_transaction_count(setting_user["address"]),
-            "from": setting_user["address"],
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0,
-            "chainId": CHAIN_ID
-
-        })
+        tx = contract.functions.register(
+            issuer["address"], "testtest"
+        ).build_transaction(
+            {
+                "nonce": web3.eth.get_transaction_count(setting_user["address"]),
+                "from": setting_user["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+                "chainId": CHAIN_ID,
+            }
+        )
         eoa_password = "password"
         private_key = decode_keyfile_json(
             raw_keyfile_json=setting_user["keyfile_json"],
-            password=eoa_password.encode("utf-8")
+            password=eoa_password.encode("utf-8"),
         )
         ContractUtils.send_transaction(tx, private_key)
 
         # Run Test
-        get_info = personal_info_contract.get_info(setting_user["address"], default_value="test")
+        get_info = personal_info_contract.get_info(
+            setting_user["address"], default_value="test"
+        )
 
         assert get_info == {
             "key_manager": "test",
@@ -242,12 +270,11 @@ class TestGetInfo:
             "email": "test",
             "birth": "test",
             "is_corporate": "test",
-            "tax_category": "test"
+            "tax_category": "test",
         }
 
 
 class TestRegisterInfo:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -268,7 +295,7 @@ class TestRegisterInfo:
             "email": "sample@test.test2",
             "birth": "19800101",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
         personal_info_contract.register_info(setting_user["address"], register_data)
 
@@ -285,7 +312,9 @@ class TestRegisterInfo:
         # Set personal information data
         setting_user = config_eth_account("user2")
         rsa_password = "password"
-        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password)
+        rsa = RSA.importKey(
+            personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
+        )
         cipher = PKCS1_OAEP.new(rsa)
         data = {
             "key_manager": "1234567890",
@@ -295,21 +324,27 @@ class TestRegisterInfo:
             "email": "sample@test.test",
             "birth": "19801231",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
-        ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
+        ciphertext = base64.encodebytes(
+            cipher.encrypt(json.dumps(data).encode("utf-8"))
+        )
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], ciphertext).build_transaction({
-            "nonce": web3.eth.get_transaction_count(setting_user["address"]),
-            "from": setting_user["address"],
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0,
-            "chainId": CHAIN_ID
-        })
+        tx = contract.functions.register(
+            issuer["address"], ciphertext
+        ).build_transaction(
+            {
+                "nonce": web3.eth.get_transaction_count(setting_user["address"]),
+                "from": setting_user["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+                "chainId": CHAIN_ID,
+            }
+        )
         eoa_password = "password"
         private_key = decode_keyfile_json(
             raw_keyfile_json=setting_user["keyfile_json"],
-            password=eoa_password.encode("utf-8")
+            password=eoa_password.encode("utf-8"),
         )
         ContractUtils.send_transaction(tx, private_key)
 
@@ -322,7 +357,7 @@ class TestRegisterInfo:
             "email": "sample@test.test2",
             "birth": "19800101",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
         personal_info_contract.register_info(setting_user["address"], update_data)
 
@@ -350,11 +385,16 @@ class TestRegisterInfo:
             "email": "sample@test.test2",
             "birth": "19800101",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
-        with mock.patch("web3.eth.Eth.wait_for_transaction_receipt", MagicMock(side_effect=TimeExhausted())):
+        with mock.patch(
+            "web3.eth.Eth.wait_for_transaction_receipt",
+            MagicMock(side_effect=TimeExhausted()),
+        ):
             with pytest.raises(SendTransactionError):
-                personal_info_contract.register_info(setting_user["address"], register_data)
+                personal_info_contract.register_info(
+                    setting_user["address"], register_data
+                )
 
     # <Error_2>
     # SendTransactionError(Other Error)
@@ -372,11 +412,16 @@ class TestRegisterInfo:
             "email": "sample@test.test2",
             "birth": "19800101",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
-        with mock.patch("web3.eth.Eth.wait_for_transaction_receipt", MagicMock(side_effect=TypeError())):
+        with mock.patch(
+            "web3.eth.Eth.wait_for_transaction_receipt",
+            MagicMock(side_effect=TypeError()),
+        ):
             with pytest.raises(SendTransactionError):
-                personal_info_contract.register_info(setting_user["address"], register_data)
+                personal_info_contract.register_info(
+                    setting_user["address"], register_data
+                )
 
     # <Error_3>
     # Transaction REVERT
@@ -386,7 +431,6 @@ class TestRegisterInfo:
 
 
 class TestModifyInfo:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -399,7 +443,9 @@ class TestModifyInfo:
         # Set personal information data
         setting_user = config_eth_account("user2")
         rsa_password = "password"
-        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password)
+        rsa = RSA.importKey(
+            personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
+        )
         cipher = PKCS1_OAEP.new(rsa)
         data = {
             "key_manager": "1234567890",
@@ -409,21 +455,27 @@ class TestModifyInfo:
             "email": "sample@test.test",
             "birth": "19801231",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
-        ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
+        ciphertext = base64.encodebytes(
+            cipher.encrypt(json.dumps(data).encode("utf-8"))
+        )
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], ciphertext).build_transaction({
-            "nonce": web3.eth.get_transaction_count(setting_user["address"]),
-            "from": setting_user["address"],
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0,
-            "chainId": CHAIN_ID
-        })
+        tx = contract.functions.register(
+            issuer["address"], ciphertext
+        ).build_transaction(
+            {
+                "nonce": web3.eth.get_transaction_count(setting_user["address"]),
+                "from": setting_user["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+                "chainId": CHAIN_ID,
+            }
+        )
         eoa_password = "password"
         private_key = decode_keyfile_json(
             raw_keyfile_json=setting_user["keyfile_json"],
-            password=eoa_password.encode("utf-8")
+            password=eoa_password.encode("utf-8"),
         )
         ContractUtils.send_transaction(tx, private_key)
 
@@ -436,7 +488,7 @@ class TestModifyInfo:
             "email": "sample@test.test2",
             "birth": "19800101",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
         personal_info_contract.modify_info(setting_user["address"], update_data)
 
@@ -457,7 +509,9 @@ class TestModifyInfo:
         # Set personal information data
         setting_user = config_eth_account("user2")
         rsa_password = "password"
-        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password)
+        rsa = RSA.importKey(
+            personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
+        )
         cipher = PKCS1_OAEP.new(rsa)
         data = {
             "key_manager": "1234567890",
@@ -467,21 +521,27 @@ class TestModifyInfo:
             "email": "sample@test.test",
             "birth": "19801231",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
-        ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
+        ciphertext = base64.encodebytes(
+            cipher.encrypt(json.dumps(data).encode("utf-8"))
+        )
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], ciphertext).build_transaction({
-            "nonce": web3.eth.get_transaction_count(setting_user["address"]),
-            "from": setting_user["address"],
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0,
-            "chainId": CHAIN_ID
-        })
+        tx = contract.functions.register(
+            issuer["address"], ciphertext
+        ).build_transaction(
+            {
+                "nonce": web3.eth.get_transaction_count(setting_user["address"]),
+                "from": setting_user["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+                "chainId": CHAIN_ID,
+            }
+        )
         eoa_password = "password"
         private_key = decode_keyfile_json(
             raw_keyfile_json=setting_user["keyfile_json"],
-            password=eoa_password.encode("utf-8")
+            password=eoa_password.encode("utf-8"),
         )
         ContractUtils.send_transaction(tx, private_key)
 
@@ -494,9 +554,12 @@ class TestModifyInfo:
             "email": "sample@test.test2",
             "birth": "19800101",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
-        with mock.patch("web3.eth.Eth.wait_for_transaction_receipt", MagicMock(side_effect=TimeExhausted())):
+        with mock.patch(
+            "web3.eth.Eth.wait_for_transaction_receipt",
+            MagicMock(side_effect=TimeExhausted()),
+        ):
             with pytest.raises(SendTransactionError):
                 personal_info_contract.modify_info(setting_user["address"], update_data)
 
@@ -509,7 +572,9 @@ class TestModifyInfo:
         # Set personal information data
         setting_user = config_eth_account("user2")
         rsa_password = "password"
-        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password)
+        rsa = RSA.importKey(
+            personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
+        )
         cipher = PKCS1_OAEP.new(rsa)
         data = {
             "key_manager": "1234567890",
@@ -519,21 +584,27 @@ class TestModifyInfo:
             "email": "sample@test.test",
             "birth": "19801231",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
-        ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
+        ciphertext = base64.encodebytes(
+            cipher.encrypt(json.dumps(data).encode("utf-8"))
+        )
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], ciphertext).build_transaction({
-            "nonce": web3.eth.get_transaction_count(setting_user["address"]),
-            "from": setting_user["address"],
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0,
-            "chainId": CHAIN_ID
-        })
+        tx = contract.functions.register(
+            issuer["address"], ciphertext
+        ).build_transaction(
+            {
+                "nonce": web3.eth.get_transaction_count(setting_user["address"]),
+                "from": setting_user["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+                "chainId": CHAIN_ID,
+            }
+        )
         eoa_password = "password"
         private_key = decode_keyfile_json(
             raw_keyfile_json=setting_user["keyfile_json"],
-            password=eoa_password.encode("utf-8")
+            password=eoa_password.encode("utf-8"),
         )
         ContractUtils.send_transaction(tx, private_key)
 
@@ -546,9 +617,12 @@ class TestModifyInfo:
             "email": "sample@test.test2",
             "birth": "19800101",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
-        with mock.patch("web3.eth.Eth.wait_for_transaction_receipt", MagicMock(side_effect=TypeError())):
+        with mock.patch(
+            "web3.eth.Eth.wait_for_transaction_receipt",
+            MagicMock(side_effect=TypeError()),
+        ):
             with pytest.raises(SendTransactionError):
                 personal_info_contract.modify_info(setting_user["address"], update_data)
 
@@ -570,7 +644,7 @@ class TestModifyInfo:
             "email": "sample@test.test2",
             "birth": "19800101",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
 
         # mock
@@ -579,7 +653,7 @@ class TestModifyInfo:
         #         geth: ContractLogicError("execution reverted")
         InspectionMock = mock.patch(
             "web3.eth.Eth.call",
-            MagicMock(side_effect=ContractLogicError("execution reverted"))
+            MagicMock(side_effect=ContractLogicError("execution reverted")),
         )
         # test IbetSecurityTokenEscrow.approve_transfer
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
@@ -589,7 +663,6 @@ class TestModifyInfo:
 
 
 class TestGetRegisterEvent:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -604,7 +677,9 @@ class TestGetRegisterEvent:
         # Set personal information data(Register)
         setting_user = config_eth_account("user2")
         rsa_password = "password"
-        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password)
+        rsa = RSA.importKey(
+            personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
+        )
         cipher = PKCS1_OAEP.new(rsa)
         data = {
             "key_manager": "1234567890",
@@ -614,27 +689,35 @@ class TestGetRegisterEvent:
             "email": "sample@test.test",
             "birth": "19801231",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
-        ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
+        ciphertext = base64.encodebytes(
+            cipher.encrypt(json.dumps(data).encode("utf-8"))
+        )
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], ciphertext).build_transaction({
-            "nonce": web3.eth.get_transaction_count(setting_user["address"]),
-            "from": setting_user["address"],
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0,
-            "chainId": CHAIN_ID
-        })
+        tx = contract.functions.register(
+            issuer["address"], ciphertext
+        ).build_transaction(
+            {
+                "nonce": web3.eth.get_transaction_count(setting_user["address"]),
+                "from": setting_user["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+                "chainId": CHAIN_ID,
+            }
+        )
         eoa_password = "password"
         private_key = decode_keyfile_json(
             raw_keyfile_json=setting_user["keyfile_json"],
-            password=eoa_password.encode("utf-8")
+            password=eoa_password.encode("utf-8"),
         )
         ContractUtils.send_transaction(tx, private_key)
 
         block_number_after = web3.eth.block_number
 
-        events = personal_info_contract.get_register_event(block_number_before, block_number_after)
+        events = personal_info_contract.get_register_event(
+            block_number_before, block_number_after
+        )
 
         args = events[0]["args"]
         assert args["account_address"] == setting_user["address"]
@@ -642,7 +725,6 @@ class TestGetRegisterEvent:
 
 
 class TestGetModifyEvent:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -655,7 +737,9 @@ class TestGetModifyEvent:
         # Set personal information data
         setting_user = config_eth_account("user2")
         rsa_password = "password"
-        rsa = RSA.importKey(personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password)
+        rsa = RSA.importKey(
+            personal_info_contract.issuer.rsa_public_key, passphrase=rsa_password
+        )
         cipher = PKCS1_OAEP.new(rsa)
         data = {
             "key_manager": "1234567890",
@@ -665,21 +749,27 @@ class TestGetModifyEvent:
             "email": "sample@test.test",
             "birth": "19801231",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
-        ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(data).encode('utf-8')))
+        ciphertext = base64.encodebytes(
+            cipher.encrypt(json.dumps(data).encode("utf-8"))
+        )
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.register(issuer["address"], ciphertext).build_transaction({
-            "nonce": web3.eth.get_transaction_count(setting_user["address"]),
-            "from": setting_user["address"],
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0,
-            "chainId": CHAIN_ID
-        })
+        tx = contract.functions.register(
+            issuer["address"], ciphertext
+        ).build_transaction(
+            {
+                "nonce": web3.eth.get_transaction_count(setting_user["address"]),
+                "from": setting_user["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+                "chainId": CHAIN_ID,
+            }
+        )
         eoa_password = "password"
         private_key = decode_keyfile_json(
             raw_keyfile_json=setting_user["keyfile_json"],
-            password=eoa_password.encode("utf-8")
+            password=eoa_password.encode("utf-8"),
         )
         ContractUtils.send_transaction(tx, private_key)
 
@@ -694,26 +784,34 @@ class TestGetModifyEvent:
             "email": "sample@test.test2",
             "birth": "19800101",
             "is_corporate": False,
-            "tax_category": 10
+            "tax_category": 10,
         }
-        ciphertext = base64.encodebytes(cipher.encrypt(json.dumps(update_data).encode('utf-8')))
+        ciphertext = base64.encodebytes(
+            cipher.encrypt(json.dumps(update_data).encode("utf-8"))
+        )
         contract = personal_info_contract.personal_info_contract
-        tx = contract.functions.modify(setting_user["address"], ciphertext).build_transaction({
-            "nonce": web3.eth.get_transaction_count(issuer["address"]),
-            "from": issuer["address"],
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0,
-            "chainId": CHAIN_ID
-        })
+        tx = contract.functions.modify(
+            setting_user["address"], ciphertext
+        ).build_transaction(
+            {
+                "nonce": web3.eth.get_transaction_count(issuer["address"]),
+                "from": issuer["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+                "chainId": CHAIN_ID,
+            }
+        )
         private_key = decode_keyfile_json(
             raw_keyfile_json=issuer["keyfile_json"],
-            password=eoa_password.encode("utf-8")
+            password=eoa_password.encode("utf-8"),
         )
         ContractUtils.send_transaction(tx, private_key)
 
         block_number_after = web3.eth.block_number
 
-        events = personal_info_contract.get_modify_event(block_number_before, block_number_after)
+        events = personal_info_contract.get_modify_event(
+            block_number_before, block_number_after
+        )
 
         args = events[0]["args"]
         assert args["account_address"] == setting_user["address"]

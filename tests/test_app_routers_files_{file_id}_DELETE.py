@@ -85,17 +85,14 @@ abc def"""
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
-            ]
+            ],
         }
 
     # <Error_2>
@@ -113,17 +110,14 @@ abc def"""
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_3>
@@ -140,7 +134,9 @@ abc def"""
         # prepare data
         _upload_file = UploadFile()
         _upload_file.file_id = "file_id_1"
-        _upload_file.issuer_address = "0x1234567890123456789012345678900000000002"  # not target
+        _upload_file.issuer_address = (
+            "0x1234567890123456789012345678900000000002"  # not target
+        )
         _upload_file.relation = self.token_address
         _upload_file.file_name = "file_name_1"
         _upload_file.content = file_content_bin
@@ -160,9 +156,6 @@ abc def"""
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "file not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "file not found",
         }

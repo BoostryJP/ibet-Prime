@@ -17,156 +17,120 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from .account import (
-    # Request
-    AccountCreateKeyRequest,
-    AccountGenerateRsaKeyRequest,
+    AccountAuthTokenRequest,
+    AccountAuthTokenResponse,
     AccountChangeEOAPasswordRequest,
     AccountChangeRSAPassphraseRequest,
-    AccountAuthTokenRequest,
-    # Response
+    AccountCreateKeyRequest,
+    AccountGenerateRsaKeyRequest,
     AccountResponse,
-    AccountAuthTokenResponse
 )
 from .batch_issue_redeem import (
-    # Response
     BatchIssueRedeemUploadIdResponse,
     GetBatchIssueRedeemResponse,
     GetBatchIssueRedeemResult,
-    ListBatchIssueRedeemUploadResponse
+    ListBatchIssueRedeemUploadResponse,
 )
 from .bc_explorer import (
-    # Request
+    BlockDataDetail,
+    BlockDataListResponse,
+    BlockDataResponse,
     ListBlockDataQuery,
     ListTxDataQuery,
-    # Response
-    BlockDataResponse,
-    BlockDataListResponse,
-    BlockDataDetail,
-    TxDataResponse,
+    TxDataDetail,
     TxDataListResponse,
-    TxDataDetail
+    TxDataResponse,
 )
 from .bulk_transfer import (
-    # Response
+    BulkTransferResponse,
     BulkTransferUploadIdResponse,
     BulkTransferUploadResponse,
-    BulkTransferResponse
 )
 from .e2e_messaging import (
-    # Request
-    E2EMessagingAccountCreateRequest,
-    E2EMessagingAccountUpdateRsaKeyRequest,
     E2EMessagingAccountChangeEOAPasswordRequest,
     E2EMessagingAccountChangeRSAPassphraseRequest,
-    # Response
+    E2EMessagingAccountCreateRequest,
     E2EMessagingAccountResponse,
+    E2EMessagingAccountUpdateRsaKeyRequest,
     E2EMessagingResponse,
-    ListAllE2EMessagingResponse
+    ListAllE2EMessagingResponse,
 )
 from .file import (
-    # Request
-    UploadFileRequest,
-    # Response
+    DownloadFileResponse,
     FileResponse,
     ListAllFilesResponse,
-    DownloadFileResponse
+    UploadFileRequest,
 )
-from .holder import (
-    # Response
-    HolderResponse,
-    HolderCountResponse
-)
-from .index import (
-    # Response
-    E2EEResponse,
-    BlockNumberResponse
-)
-from .issue_redeem import (
-    # Response
-    IssueRedeemEvent,
-    IssueRedeemHistoryResponse
-)
+from .holder import HolderCountResponse, HolderResponse
+from .index import BlockNumberResponse, E2EEResponse
+from .issue_redeem import IssueRedeemEvent, IssueRedeemHistoryResponse
 from .ledger import (
-    # Request
-    CreateUpdateLedgerTemplateRequest,
     CreateUpdateLedgerDetailsDataRequest,
-    # Response
-    ListAllLedgerHistoryResponse,
-    RetrieveLedgerHistoryResponse,
+    CreateUpdateLedgerTemplateRequest,
+    LedgerDetailsDataResponse,
     LedgerTemplateResponse,
     ListAllLedgerDetailsDataResponse,
-    LedgerDetailsDataResponse,
-    RetrieveLedgerDetailsDataResponse
+    ListAllLedgerHistoryResponse,
+    RetrieveLedgerDetailsDataResponse,
+    RetrieveLedgerHistoryResponse,
 )
 from .notification import ListAllNotificationsResponse
 from .personal_info import (
-    # Request
-    RegisterPersonalInfoRequest,
-    # Response
+    BatchRegisterPersonalInfoResult,
     BatchRegisterPersonalInfoUploadResponse,
-    ListBatchRegisterPersonalInfoUploadResponse,
     GetBatchRegisterPersonalInfoResponse,
-    BatchRegisterPersonalInfoResult
+    ListBatchRegisterPersonalInfoUploadResponse,
+    RegisterPersonalInfoRequest,
 )
 from .position import (
-    # Request
-    LockEventCategory,
-    ListAllLockEventsSortItem,
-    ListAllLockEventsQuery,
     ForceUnlockRequest,
-    # Response
-    PositionResponse,
-    ListAllPositionResponse,
     ListAllLockedPositionResponse,
-    ListAllLockEventsResponse
+    ListAllLockEventsQuery,
+    ListAllLockEventsResponse,
+    ListAllLockEventsSortItem,
+    ListAllPositionResponse,
+    LockEventCategory,
+    PositionResponse,
 )
 from .scheduled_events import (
-    # Request
-    IbetStraightBondScheduledUpdate,
     IbetShareScheduledUpdate,
-    # Response
+    IbetStraightBondScheduledUpdate,
     ScheduledEventIdResponse,
-    ScheduledEventResponse
+    ScheduledEventResponse,
 )
 from .token import (
-    # Request
-    IbetStraightBondCreate,
-    IbetStraightBondUpdate,
-    IbetStraightBondTransfer,
-    IbetStraightBondAdditionalIssue,
-    IbetStraightBondRedeem,
-    IbetShareCreate,
-    IbetShareUpdate,
-    IbetShareTransfer,
     IbetShareAdditionalIssue,
+    IbetShareCreate,
     IbetShareRedeem,
-    ListAllTokenLockEventsQuery,
-    ListAllTokenLockEventsSortItem,
-    # Response
-    TokenAddressResponse,
-    IbetStraightBondResponse,
     IbetShareResponse,
-    ListAllTokenLockEventsResponse
+    IbetShareTransfer,
+    IbetShareUpdate,
+    IbetStraightBondAdditionalIssue,
+    IbetStraightBondCreate,
+    IbetStraightBondRedeem,
+    IbetStraightBondResponse,
+    IbetStraightBondTransfer,
+    IbetStraightBondUpdate,
+    ListAllTokenLockEventsQuery,
+    ListAllTokenLockEventsResponse,
+    ListAllTokenLockEventsSortItem,
+    TokenAddressResponse,
 )
 from .token_holders import (
-    # Request
     CreateTokenHoldersListRequest,
-    # Response
     CreateTokenHoldersListResponse,
+    ListAllTokenHolderCollectionsResponse,
     RetrieveTokenHoldersListResponse,
-    ListAllTokenHolderCollectionsResponse
 )
 from .transfer import (
-    # Request
-    UpdateTransferApprovalRequest,
-    UpdateTransferApprovalOperationType,
-    ListTransferHistorySortItem,
     ListTransferHistoryQuery,
-    # Response
-    TransferResponse,
-    TransferHistoryResponse,
+    ListTransferHistorySortItem,
+    TransferApprovalHistoryResponse,
     TransferApprovalsResponse,
     TransferApprovalTokenResponse,
-    TransferApprovalHistoryResponse
+    TransferHistoryResponse,
+    TransferResponse,
+    UpdateTransferApprovalOperationType,
+    UpdateTransferApprovalRequest,
 )
 from .types import ResultSet

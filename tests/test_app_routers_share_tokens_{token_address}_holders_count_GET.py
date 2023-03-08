@@ -16,13 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from app.model.db import (
-    Account,
-    Token,
-    TokenType,
-    IDXPosition,
-    IDXLockedPosition
-)
+from app.model.db import Account, IDXLockedPosition, IDXPosition, Token, TokenType
 from tests.account_config import config_eth_account
 
 
@@ -58,14 +52,12 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
         # request target API
         resp = client.get(
             self.base_url.format(_token_address),
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         # assertion
         assert resp.status_code == 200
-        assert resp.json() == {'count': 0}
+        assert resp.json() == {"count": 0}
 
     # <Normal_1_2>
     # position is not None
@@ -101,14 +93,12 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
         # request target API
         resp = client.get(
             self.base_url.format(_token_address),
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         # assertion
         assert resp.status_code == 200
-        assert resp.json() == {'count': 1}
+        assert resp.json() == {"count": 1}
 
     # <Normal_1_3>
     # position is not None
@@ -143,14 +133,18 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
 
         idx_locked_position = IDXLockedPosition()
         idx_locked_position.token_address = _token_address
-        idx_locked_position.lock_address = "0x1234567890123456789012345678900000000001"  # lock address 1
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
         idx_locked_position.account_address = _account_address_1
         idx_locked_position.value = 5
         db.add(idx_locked_position)
 
         idx_locked_position = IDXLockedPosition()
         idx_locked_position.token_address = _token_address
-        idx_locked_position.lock_address = "0x1234567890123456789012345678900000000002"  # lock address 2
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
         idx_locked_position.account_address = _account_address_1
         idx_locked_position.value = 5
         db.add(idx_locked_position)
@@ -158,14 +152,12 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
         # request target API
         resp = client.get(
             self.base_url.format(_token_address),
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         # assertion
         assert resp.status_code == 200
-        assert resp.json() == {'count': 1}
+        assert resp.json() == {"count": 1}
 
     # <Normal_1_4>
     # position is not None (but zero)
@@ -200,7 +192,9 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
 
         idx_locked_position = IDXLockedPosition()
         idx_locked_position.token_address = _token_address
-        idx_locked_position.lock_address = "0x1234567890123456789012345678900000000001"  # lock address 1
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
         idx_locked_position.account_address = _account_address_1
         idx_locked_position.value = 0
         db.add(idx_locked_position)
@@ -208,14 +202,12 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
         # request target API
         resp = client.get(
             self.base_url.format(_token_address),
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         # assertion
         assert resp.status_code == 200
-        assert resp.json() == {'count': 0}
+        assert resp.json() == {"count": 0}
 
     # <Normal_2>
     # Multiple records
@@ -251,7 +243,9 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
 
         idx_locked_position = IDXLockedPosition()
         idx_locked_position.token_address = _token_address
-        idx_locked_position.lock_address = "0x1234567890123456789012345678900000000001"  # lock address 1
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
         idx_locked_position.account_address = _account_address_1
         idx_locked_position.value = 5
         db.add(idx_locked_position)
@@ -267,7 +261,9 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
 
         idx_locked_position = IDXLockedPosition()
         idx_locked_position.token_address = _token_address
-        idx_locked_position.lock_address = "0x1234567890123456789012345678900000000001"  # lock address 1
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
         idx_locked_position.account_address = _account_address_2
         idx_locked_position.value = 5
         db.add(idx_locked_position)
@@ -283,7 +279,9 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
 
         idx_locked_position = IDXLockedPosition()
         idx_locked_position.token_address = _token_address
-        idx_locked_position.lock_address = "0x1234567890123456789012345678900000000001"  # lock address 1
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
         idx_locked_position.account_address = _account_address_3
         idx_locked_position.value = 5
         db.add(idx_locked_position)
@@ -291,14 +289,12 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
         # request target API
         resp = client.get(
             self.base_url.format(_token_address),
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         # assertion
         assert resp.status_code == 200
-        assert resp.json() == {'count': 3}
+        assert resp.json() == {"count": 3}
 
     ###########################################################################
     # Error Case
@@ -312,24 +308,20 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
 
         # request target API
         resp = client.get(
-            self.base_url.format(_token_address),
-            headers={
-                "issuer-address": "0x0"
-            }
+            self.base_url.format(_token_address), headers={"issuer-address": "0x0"}
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
-            "detail": [{
-                "loc": ["header", "issuer-address"],
-                "msg": "issuer-address is not a valid address",
-                "type": "value_error"
-            }]
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "loc": ["header", "issuer-address"],
+                    "msg": "issuer-address is not a valid address",
+                    "type": "value_error",
+                }
+            ],
         }
 
     # <Error_2>
@@ -343,19 +335,14 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
         # request target API
         resp = client.get(
             self.base_url.format(_token_address),
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "issuer does not exist"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "issuer does not exist",
         }
 
     # <Error_3>
@@ -374,19 +361,14 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
         # request target API
         resp = client.get(
             self.base_url.format(_token_address),
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token not found",
         }
 
     # <Error_4>
@@ -414,17 +396,12 @@ class TestAppRoutersShareTokensTokenAddressHoldersCountGET:
         # request target API
         resp = client.get(
             self.base_url.format(_token_address),
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }

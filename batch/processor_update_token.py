@@ -16,59 +16,52 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from datetime import datetime
-from typing import (
-    List,
-    Type
-)
 import os
 import sys
 import time
 import uuid
+from datetime import datetime
+from typing import List, Type
 
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
-from config import (
-    DATABASE_URL,
-    UPDATE_TOKEN_INTERVAL,
-    TOKEN_LIST_CONTRACT_ADDRESS
+import batch_log
+
+from app.exceptions import (
+    ContractRevertError,
+    SendTransactionError,
+    ServiceUnavailableError,
 )
-from app.utils.contract_utils import ContractUtils
-from app.utils.e2ee_utils import E2EEUtils
+from app.model.blockchain import (
+    IbetShareContract,
+    IbetStraightBondContract,
+    TokenListContract,
+)
+from app.model.blockchain.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams,
+)
 from app.model.db import (
+    UTXO,
     Account,
+    IDXPosition,
+    Notification,
+    NotificationType,
     Token,
     TokenType,
     UpdateToken,
-    Notification,
-    NotificationType,
-    IDXPosition,
-    UTXO
 )
-from app.model.blockchain import (
-    IbetStraightBondContract,
-    IbetShareContract,
-    TokenListContract
-)
-from app.model.blockchain.tx_params.ibet_share import (
-    UpdateParams as IbetShareUpdateParams
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
-    UpdateParams as IbetStraightBondUpdateParams
-)
-
-from app.exceptions import (
-    SendTransactionError,
-    ServiceUnavailableError,
-    ContractRevertError
-)
-import batch_log
+from app.utils.contract_utils import ContractUtils
+from app.utils.e2ee_utils import E2EEUtils
+from config import DATABASE_URL, TOKEN_LIST_CONTRACT_ADDRESS, UPDATE_TOKEN_INTERVAL
 
 """
 [PROCESSOR-Update-token]
@@ -83,7 +76,6 @@ db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 
 class Processor:
-
     def process(self):
         db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
         try:
@@ -97,15 +89,19 @@ class Processor:
 
                 # Get issuer's private key
                 try:
-                    _account = db_session.query(Account). \
-                        filter(Account.issuer_address == _update_token.issuer_address). \
-                        first()
-                    if _account is None:  # If issuer does not exist, update the status of the upload to ERROR
-                        LOG.warning(f"Issuer of the event_id:{_update_token.id} does not exist")
+                    _account = (
+                        db_session.query(Account)
+                        .filter(Account.issuer_address == _update_token.issuer_address)
+                        .first()
+                    )
+                    if (
+                        _account is None
+                    ):  # If issuer does not exist, update the status of the upload to ERROR
+                        LOG.warning(
+                            f"Issuer of the event_id:{_update_token.id} does not exist"
+                        )
                         self.__sink_on_finish_update_process(
-                            db_session=db_session,
-                            record_id=_update_token.id,
-                            status=2
+                            db_session=db_session, record_id=_update_token.id, status=2
                         )
                         self.__sink_on_error_notification(
                             db_session=db_session,
@@ -114,21 +110,23 @@ class Processor:
                             code=0,
                             token_address=_update_token.token_address,
                             token_type=_update_token.type,
-                            arguments=_update_token.arguments)
+                            arguments=_update_token.arguments,
+                        )
                         db_session.commit()
                         continue
                     keyfile_json = _account.keyfile
                     decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
                     private_key = decode_keyfile_json(
                         raw_keyfile_json=keyfile_json,
-                        password=decrypt_password.encode("utf-8")
+                        password=decrypt_password.encode("utf-8"),
                     )
                 except Exception as err:
-                    LOG.exception(f"Could not get the private key of the issuer of id:{_update_token.id}", err)
+                    LOG.exception(
+                        f"Could not get the private key of the issuer of id:{_update_token.id}",
+                        err,
+                    )
                     self.__sink_on_finish_update_process(
-                        db_session=db_session,
-                        record_id=_update_token.id,
-                        status=2
+                        db_session=db_session, record_id=_update_token.id, status=2
                     )
                     self.__sink_on_error_notification(
                         db_session=db_session,
@@ -137,7 +135,8 @@ class Processor:
                         code=1,
                         token_address=_update_token.token_address,
                         token_type=_update_token.type,
-                        arguments=_update_token.arguments)
+                        arguments=_update_token.arguments,
+                    )
                     db_session.commit()
                     continue
 
@@ -148,12 +147,12 @@ class Processor:
                         _update_data = self.__create_update_data(
                             trigger=_update_token.trigger,
                             token_type=TokenType.IBET_SHARE.value,
-                            arguments=_update_token.arguments
+                            arguments=_update_token.arguments,
                         )
                         IbetShareContract(_update_token.token_address).update(
                             data=_update_data,
                             tx_from=_update_token.issuer_address,
-                            private_key=private_key
+                            private_key=private_key,
                         )
                         token_template = TokenType.IBET_SHARE.value
 
@@ -161,23 +160,22 @@ class Processor:
                         _update_data = self.__create_update_data(
                             trigger=_update_token.trigger,
                             token_type=TokenType.IBET_STRAIGHT_BOND.value,
-                            arguments=_update_token.arguments
+                            arguments=_update_token.arguments,
                         )
                         IbetStraightBondContract(_update_token.token_address).update(
                             data=_update_data,
                             tx_from=_update_token.issuer_address,
-                            private_key=private_key
+                            private_key=private_key,
                         )
                         token_template = TokenType.IBET_STRAIGHT_BOND.value
 
                     if _update_token.trigger == "Issue":
-
                         # Register token_address token list
                         TokenListContract(TOKEN_LIST_CONTRACT_ADDRESS).register(
                             token_address=_update_token.token_address,
                             token_template=token_template,
                             tx_from=_update_token.issuer_address,
-                            private_key=private_key
+                            private_key=private_key,
                         )
 
                         # Insert initial position data
@@ -191,30 +189,34 @@ class Processor:
                         db_session.add(_position)
 
                         # Insert issuer's UTXO data
-                        _token = db_session.query(Token). \
-                            filter(Token.token_address == _update_token.token_address). \
-                            first()
-                        block = ContractUtils.get_block_by_transaction_hash(_token.tx_hash)
+                        _token = (
+                            db_session.query(Token)
+                            .filter(Token.token_address == _update_token.token_address)
+                            .first()
+                        )
+                        block = ContractUtils.get_block_by_transaction_hash(
+                            _token.tx_hash
+                        )
                         _utxo = UTXO()
                         _utxo.transaction_hash = _token.tx_hash
                         _utxo.account_address = _update_token.issuer_address
                         _utxo.token_address = _update_token.token_address
                         _utxo.amount = _update_token.arguments.get("total_supply")
                         _utxo.block_number = block["number"]
-                        _utxo.block_timestamp = datetime.utcfromtimestamp(block["timestamp"])
+                        _utxo.block_timestamp = datetime.utcfromtimestamp(
+                            block["timestamp"]
+                        )
                         db_session.add(_utxo)
 
                     self.__sink_on_finish_update_process(
-                        db_session=db_session,
-                        record_id=_update_token.id,
-                        status=1
+                        db_session=db_session, record_id=_update_token.id, status=1
                     )
                 except ContractRevertError as e:
-                    LOG.warning(f"Transaction reverted: id=<{_update_token.id}> error_code:<{e.code}> error_msg:<{e.message}>")
+                    LOG.warning(
+                        f"Transaction reverted: id=<{_update_token.id}> error_code:<{e.code}> error_msg:<{e.message}>"
+                    )
                     self.__sink_on_finish_update_process(
-                        db_session=db_session,
-                        record_id=_update_token.id,
-                        status=2
+                        db_session=db_session, record_id=_update_token.id, status=2
                     )
                     self.__sink_on_error_notification(
                         db_session=db_session,
@@ -223,14 +225,13 @@ class Processor:
                         code=2,
                         token_address=_update_token.token_address,
                         token_type=_update_token.type,
-                        arguments=_update_token.arguments)
+                        arguments=_update_token.arguments,
+                    )
                 except SendTransactionError as tx_err:
                     LOG.warning(f"Failed to send transaction: id=<{_update_token.id}>")
                     LOG.exception(tx_err)
                     self.__sink_on_finish_update_process(
-                        db_session=db_session,
-                        record_id=_update_token.id,
-                        status=2
+                        db_session=db_session, record_id=_update_token.id, status=2
                     )
                     self.__sink_on_error_notification(
                         db_session=db_session,
@@ -239,7 +240,8 @@ class Processor:
                         code=2,
                         token_address=_update_token.token_address,
                         token_type=_update_token.type,
-                        arguments=_update_token.arguments)
+                        arguments=_update_token.arguments,
+                    )
 
                 db_session.commit()
                 LOG.info(f"Process end: upload_id={_update_token.token_address}")
@@ -247,10 +249,12 @@ class Processor:
             db_session.close()
 
     def __get_update_token_list(self, db_session: Session) -> List[Type[UpdateToken]]:
-        _update_token_list = db_session.query(UpdateToken). \
-            filter(UpdateToken.status == 0). \
-            order_by(UpdateToken.id). \
-            all()
+        _update_token_list = (
+            db_session.query(UpdateToken)
+            .filter(UpdateToken.status == 0)
+            .order_by(UpdateToken.id)
+            .all()
+        )
         return _update_token_list
 
     def __create_update_data(self, trigger, token_type, arguments):
@@ -258,15 +262,21 @@ class Processor:
             # NOTE: Items set at the time of issue do not need to be updated.
             if token_type == TokenType.IBET_SHARE.value:
                 update_data = {
-                    "tradable_exchange_contract_address": arguments.get("tradable_exchange_contract_address"),
-                    "personal_info_contract_address": arguments.get("personal_info_contract_address"),
+                    "tradable_exchange_contract_address": arguments.get(
+                        "tradable_exchange_contract_address"
+                    ),
+                    "personal_info_contract_address": arguments.get(
+                        "personal_info_contract_address"
+                    ),
                     "transferable": arguments.get("transferable"),
                     "status": arguments.get("status"),
                     "is_offering": arguments.get("is_offering"),
                     "contact_information": arguments.get("contact_information"),
                     "privacy_policy": arguments.get("privacy_policy"),
-                    "transfer_approval_required": arguments.get("transfer_approval_required"),
-                    "is_canceled": arguments.get("is_canceled")
+                    "transfer_approval_required": arguments.get(
+                        "transfer_approval_required"
+                    ),
+                    "is_canceled": arguments.get("is_canceled"),
                 }
                 return IbetShareUpdateParams(**update_data)
             elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
@@ -277,41 +287,52 @@ class Processor:
                     "status": arguments.get("status"),
                     "is_offering": arguments.get("is_offering"),
                     "is_redeemed": arguments.get("is_redeemed"),
-                    "tradable_exchange_contract_address": arguments.get("tradable_exchange_contract_address"),
-                    "personal_info_contract_address": arguments.get("personal_info_contract_address"),
+                    "tradable_exchange_contract_address": arguments.get(
+                        "tradable_exchange_contract_address"
+                    ),
+                    "personal_info_contract_address": arguments.get(
+                        "personal_info_contract_address"
+                    ),
                     "contact_information": arguments.get("contact_information"),
                     "privacy_policy": arguments.get("privacy_policy"),
-                    "transfer_approval_required": arguments.get("transfer_approval_required"),
+                    "transfer_approval_required": arguments.get(
+                        "transfer_approval_required"
+                    ),
                 }
                 return IbetStraightBondUpdateParams(**update_data)
         return
 
     @staticmethod
-    def __sink_on_finish_update_process(db_session: Session, record_id: int, status: int):
-
-        _update_token = db_session.query(UpdateToken). \
-            filter(UpdateToken.id == record_id). \
-            first()
+    def __sink_on_finish_update_process(
+        db_session: Session, record_id: int, status: int
+    ):
+        _update_token = (
+            db_session.query(UpdateToken).filter(UpdateToken.id == record_id).first()
+        )
         if _update_token is not None:
             _update_token.status = status
             db_session.merge(_update_token)
 
             if _update_token.trigger == "Issue":
-                _token = db_session.query(Token). \
-                    filter(Token.token_address == _update_token.token_address). \
-                    first()
+                _token = (
+                    db_session.query(Token)
+                    .filter(Token.token_address == _update_token.token_address)
+                    .first()
+                )
                 if _token is not None:
                     _token.token_status = status
                     db_session.merge(_token)
 
     @staticmethod
-    def __sink_on_error_notification(db_session: Session,
-                                     issuer_address: str,
-                                     notice_type: str,
-                                     code: int,
-                                     token_address: str,
-                                     token_type: str,
-                                     arguments: dict):
+    def __sink_on_error_notification(
+        db_session: Session,
+        issuer_address: str,
+        notice_type: str,
+        code: int,
+        token_address: str,
+        token_type: str,
+        arguments: dict,
+    ):
         notification = Notification()
         notification.notice_id = uuid.uuid4()
         notification.issuer_address = issuer_address
@@ -321,7 +342,7 @@ class Processor:
         notification.metainfo = {
             "token_address": token_address,
             "token_type": token_type,
-            "arguments": arguments
+            "arguments": arguments,
         }
         db_session.add(notification)
 

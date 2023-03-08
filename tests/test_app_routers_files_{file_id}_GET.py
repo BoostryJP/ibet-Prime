@@ -121,8 +121,7 @@ abc def"""
     # <Normal_2>
     # binary file
     def test_normal_2(self, client, db):
-
-        file_content_bin = b'x00x01x02x03x04x05x06x07'
+        file_content_bin = b"x00x01x02x03x04x05x06x07"
 
         # prepare data
         _upload_file = UploadFile()
@@ -162,7 +161,6 @@ abc def"""
     # Parameter Error
     # Invalid
     def test_error_1(self, client, db):
-
         # request target API
         resp = client.get(
             self.base_url.format(file_id="file_id_1"),
@@ -174,24 +172,20 @@ abc def"""
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_2_1>
     # Not Found
     # unset header
     def test_error_2_1(self, client, db):
-
         # request target API
         resp = client.get(
             self.base_url.format(file_id="file_id_1"),
@@ -200,24 +194,22 @@ abc def"""
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "file not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "file not found",
         }
 
     # <Error_2_2>
     # Not Found
     # set header
     def test_error_2_2(self, client, db):
-
-        file_content_bin = b'x00x01x02x03x04x05x06x07'
+        file_content_bin = b"x00x01x02x03x04x05x06x07"
 
         # prepare data
         _upload_file = UploadFile()
         _upload_file.file_id = "file_id_1"
-        _upload_file.issuer_address = "0x1234567890123456789012345678900000000002"  # not target
+        _upload_file.issuer_address = (
+            "0x1234567890123456789012345678900000000002"  # not target
+        )
         _upload_file.relation = self.token_address
         _upload_file.file_name = "file_name_1"
         _upload_file.content = file_content_bin
@@ -237,9 +229,6 @@ abc def"""
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "file not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "file not found",
         }

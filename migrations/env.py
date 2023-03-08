@@ -1,16 +1,14 @@
-import sys
 import re
+import sys
 from logging.config import fileConfig
 
-from alembic.autogenerate import render
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 from alembic import context
+from alembic.autogenerate import render
+from sqlalchemy import engine_from_config, pool
 
-from config import DATABASE_URL
 from app.database import engine, get_db_schema
 from app.model.db import Base
+from config import DATABASE_URL
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -58,7 +56,7 @@ def run_migrations_offline():
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={"paramstyle": "named"}
+        dialect_opts={"paramstyle": "named"},
     )
 
     with context.begin_transaction():
@@ -92,7 +90,7 @@ def run_migrations_online():
             compare_type=True,
             version_table_schema=get_db_schema(),
             include_schemas=include_schemas,
-            include_name=include_name
+            include_name=include_name,
         )
 
         with context.begin_transaction():
@@ -103,21 +101,19 @@ argv = sys.argv
 if "--autogenerate" in argv:
     _render_op_org = getattr(render, "render_op")
 
-
     def render_op_wrapper(autogen_context, op):
         lines = _render_op_org(autogen_context, op)
         new_lines = []
         for line in lines:
             new_line = line
-            if 'get_db_schema())' not in new_line:
+            if "get_db_schema())" not in new_line:
                 # Set schema of migration exec-environment
-                if 'schema=' not in new_line:
-                    new_line = re.sub('\)$', ', schema=get_db_schema())', line)
+                if "schema=" not in new_line:
+                    new_line = re.sub("\)$", ", schema=get_db_schema())", line)
                 else:  # If local environment has a schema set
-                    new_line = re.sub('schema=(.|\s)*\)$', 'schema=get_db_schema())', line)
+                    new_line = re.sub("schema=(.)*\)$", "schema=get_db_schema())", line)
             new_lines.append(new_line)
         return new_lines
-
 
     setattr(render, "render_op", render_op_wrapper)
 

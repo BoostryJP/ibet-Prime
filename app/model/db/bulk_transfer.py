@@ -16,19 +16,15 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    BigInteger
-)
+from sqlalchemy import BigInteger, Column, Integer, String
 
 from .base import Base
 
 
 class BulkTransferUpload(Base):
     """Bulk Transfer Upload"""
-    __tablename__ = 'bulk_transfer_upload'
+
+    __tablename__ = "bulk_transfer_upload"
 
     # upload id (UUID)
     upload_id = Column(String(36), primary_key=True)
@@ -42,6 +38,7 @@ class BulkTransferUpload(Base):
 
 class BulkTransfer(Base):
     """Bulk Transfer"""
+
     __tablename__ = "bulk_transfer"
 
     # sequence id

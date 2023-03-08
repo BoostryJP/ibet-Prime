@@ -16,65 +16,66 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import pytest
-from unittest import mock
-from unittest.mock import (
-    call,
-    MagicMock,
-    ANY
-)
 import time
+from unittest import mock
+from unittest.mock import ANY, MagicMock, call
 
+import pytest
+from eth_keyfile import decode_keyfile_json
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
-from eth_keyfile import decode_keyfile_json
 
-from config import (
-    WEB3_HTTP_PROVIDER,
-    CHAIN_ID,
-    TX_GAS_LIMIT
+from app.model.blockchain import IbetShareContract, IbetStraightBondContract
+from app.model.blockchain.tx_params.ibet_share import (
+    AdditionalIssueParams as IbetShareAdditionalIssueParams,
 )
-from app.model.blockchain import (
-    IbetShareContract,
-    IbetStraightBondContract
+from app.model.blockchain.tx_params.ibet_share import (
+    RedeemParams as IbetShareRedeemParams,
+)
+from app.model.blockchain.tx_params.ibet_share import (
+    TransferParams as IbetShareTransferParams,
 )
 from app.model.blockchain.tx_params.ibet_share import (
     UpdateParams as IbetShareUpdateParams,
-    TransferParams as IbetShareTransferParams,
-    AdditionalIssueParams as IbetShareAdditionalIssueParams,
-    RedeemParams as IbetShareRedeemParams
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    RedeemParams as IbetStraightBondRedeemParams,
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    TransferParams as IbetStraightBondTransferParams,
 )
 from app.model.blockchain.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
-    TransferParams as IbetStraightBondTransferParams,
-    AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
-    RedeemParams as IbetStraightBondRedeemParams
 )
-from app.model.db import (
-    Token,
-    TokenType,
-    UTXO,
-    UTXOBlockNumber
-)
+from app.model.db import UTXO, Token, TokenType, UTXOBlockNumber
 from app.utils.contract_utils import ContractUtils
 from batch.processor_create_utxo import Processor
+from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
+from tests.utils.contract_utils import IbetExchangeContractTestUtils
 from tests.utils.contract_utils import (
     IbetSecurityTokenContractTestUtils as STContractUtils,
-    PersonalInfoContractTestUtils,
-    IbetExchangeContractTestUtils
 )
+from tests.utils.contract_utils import PersonalInfoContractTestUtils
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def processor(db):
     return Processor()
 
 
-def deploy_bond_token_contract(address, private_key, personal_info_contract_address=None, tradable_exchange_contract_address=None):
+def deploy_bond_token_contract(
+    address,
+    private_key,
+    personal_info_contract_address=None,
+    tradable_exchange_contract_address=None,
+):
     arguments = [
         "token.name",
         "token.symbol",
@@ -84,7 +85,7 @@ def deploy_bond_token_contract(address, private_key, personal_info_contract_addr
         30,
         "token.return_date",
         "token.return_amount",
-        "token.purpose"
+        "token.purpose",
     ]
     bond_contrat = IbetStraightBondContract()
     contract_address, _, _ = bond_contrat.create(arguments, address, private_key)
@@ -95,7 +96,7 @@ def deploy_bond_token_contract(address, private_key, personal_info_contract_addr
             tradable_exchange_contract_address=tradable_exchange_contract_address,
         ),
         address,
-        private_key
+        private_key,
     )
 
     return contract_address
@@ -111,21 +112,18 @@ def deploy_share_token_contract(address, private_key):
         "token.dividend_record_date",
         "token.dividend_payment_date",
         "token.cancellation_date",
-        30
+        30,
     ]
     share_contract = IbetShareContract()
     contract_address, _, _ = share_contract.create(arguments, address, private_key)
     share_contract.update(
-        IbetShareUpdateParams(transferable=True),
-        address,
-        private_key
+        IbetShareUpdateParams(transferable=True), address, private_key
     )
 
     return contract_address
 
 
 class TestProcessor:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -138,8 +136,7 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
@@ -156,7 +153,9 @@ class TestProcessor:
         _token_1.abi = {}
         db.add(_token_1)
 
-        token_address_2 = deploy_share_token_contract(issuer_address, issuer_private_key)
+        token_address_2 = deploy_share_token_contract(
+            issuer_address, issuer_private_key
+        )
         _token_2 = Token()
         _token_2.type = TokenType.IBET_SHARE.value
         _token_2.tx_hash = ""
@@ -181,38 +180,38 @@ class TestProcessor:
         # Execute Transfer Event
         # Share:issuer -> user1
         _transfer_1 = IbetShareTransferParams(
-            from_address=issuer_address,
-            to_address=user_address_1,
-            amount=70
+            from_address=issuer_address, to_address=user_address_1, amount=70
         )
-        IbetShareContract(token_address_2).transfer(_transfer_1, issuer_address, issuer_private_key)
+        IbetShareContract(token_address_2).transfer(
+            _transfer_1, issuer_address, issuer_private_key
+        )
         time.sleep(1)
 
         # Bond:issuer -> user1
         _transfer_2 = IbetStraightBondTransferParams(
-            from_address=issuer_address,
-            to_address=user_address_1,
-            amount=40
+            from_address=issuer_address, to_address=user_address_1, amount=40
         )
-        IbetStraightBondContract(token_address_1).transfer(_transfer_2, issuer_address, issuer_private_key)
+        IbetStraightBondContract(token_address_1).transfer(
+            _transfer_2, issuer_address, issuer_private_key
+        )
         time.sleep(1)
 
         # Bond:issuer -> user2
         _transfer_3 = IbetStraightBondTransferParams(
-            from_address=issuer_address,
-            to_address=user_address_2,
-            amount=20
+            from_address=issuer_address, to_address=user_address_2, amount=20
         )
-        IbetStraightBondContract(token_address_1).transfer(_transfer_3, issuer_address, issuer_private_key)
+        IbetStraightBondContract(token_address_1).transfer(
+            _transfer_3, issuer_address, issuer_private_key
+        )
         time.sleep(1)
 
         # Share:user1 -> user2
         _transfer_4 = IbetShareTransferParams(
-            from_address=user_address_1,
-            to_address=user_address_2,
-            amount=10
+            from_address=user_address_1, to_address=user_address_2, amount=10
         )
-        IbetShareContract(token_address_2).transfer(_transfer_4, issuer_address, issuer_private_key)
+        IbetShareContract(token_address_2).transfer(
+            _transfer_4, issuer_address, issuer_private_key
+        )
         time.sleep(1)
 
         # Execute batch(Run 2nd)
@@ -258,10 +257,12 @@ class TestProcessor:
         _utox_block_number = db.query(UTXOBlockNumber).first()
         assert _utox_block_number.latest_block_number == _utox_list[3].block_number
 
-        mock_func.assert_has_calls([
-            call(token_address=token_address_1, db=ANY),
-            call(token_address=token_address_2, db=ANY)
-        ])
+        mock_func.assert_has_calls(
+            [
+                call(token_address=token_address_1, db=ANY),
+                call(token_address=token_address_2, db=ANY),
+            ]
+        )
 
     # <Normal_2>
     # Over max block lot
@@ -271,8 +272,7 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
@@ -298,26 +298,34 @@ class TestProcessor:
 
         # Transfer event 6 times
         _transfer = IbetStraightBondTransferParams(
-            from_address=issuer_address,
-            to_address=user_address_1,
-            amount=60
+            from_address=issuer_address, to_address=user_address_1, amount=60
         )
-        IbetStraightBondContract(token_address_1).transfer(_transfer, issuer_address, issuer_private_key)
+        IbetStraightBondContract(token_address_1).transfer(
+            _transfer, issuer_address, issuer_private_key
+        )
         time.sleep(1)
         _transfer = IbetStraightBondTransferParams(
-            from_address=user_address_1,
-            to_address=user_address_2,
-            amount=10
+            from_address=user_address_1, to_address=user_address_2, amount=10
         )
-        IbetStraightBondContract(token_address_1).transfer(_transfer, issuer_address, issuer_private_key)
+        IbetStraightBondContract(token_address_1).transfer(
+            _transfer, issuer_address, issuer_private_key
+        )
         time.sleep(1)
-        IbetStraightBondContract(token_address_1).transfer(_transfer, issuer_address, issuer_private_key)
+        IbetStraightBondContract(token_address_1).transfer(
+            _transfer, issuer_address, issuer_private_key
+        )
         time.sleep(1)
-        IbetStraightBondContract(token_address_1).transfer(_transfer, issuer_address, issuer_private_key)
+        IbetStraightBondContract(token_address_1).transfer(
+            _transfer, issuer_address, issuer_private_key
+        )
         time.sleep(1)
-        IbetStraightBondContract(token_address_1).transfer(_transfer, issuer_address, issuer_private_key)
+        IbetStraightBondContract(token_address_1).transfer(
+            _transfer, issuer_address, issuer_private_key
+        )
         time.sleep(1)
-        IbetStraightBondContract(token_address_1).transfer(_transfer, issuer_address, issuer_private_key)
+        IbetStraightBondContract(token_address_1).transfer(
+            _transfer, issuer_address, issuer_private_key
+        )
         time.sleep(1)
 
         # Execute batch
@@ -366,20 +374,17 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
         user_1_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
         user_3 = config_eth_account("user3")
         user_address_2 = user_3["address"]
         user_2_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_3["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
 
         # prepare data
@@ -398,19 +403,24 @@ class TestProcessor:
 
         # set personal info
         personal_contract_address, _, _ = ContractUtils.deploy_contract(
-            "PersonalInfo", [], issuer_address, issuer_private_key)
-        IbetStraightBondContract(token_address_1).update(
-            IbetStraightBondUpdateParams(personal_info_contract_address=personal_contract_address),
-            issuer_address,
-            issuer_private_key
+            "PersonalInfo", [], issuer_address, issuer_private_key
         )
-        personal_contract = ContractUtils.get_contract("PersonalInfo", personal_contract_address)
+        IbetStraightBondContract(token_address_1).update(
+            IbetStraightBondUpdateParams(
+                personal_info_contract_address=personal_contract_address
+            ),
+            issuer_address,
+            issuer_private_key,
+        )
+        personal_contract = ContractUtils.get_contract(
+            "PersonalInfo", personal_contract_address
+        )
         tx = personal_contract.functions.register(issuer_address, "").build_transaction(
             {
                 "chainId": CHAIN_ID,
                 "from": user_address_1,
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0
+                "gasPrice": 0,
             }
         )
         ContractUtils.send_transaction(tx, user_1_private_key)
@@ -419,21 +429,20 @@ class TestProcessor:
                 "chainId": CHAIN_ID,
                 "from": user_address_2,
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0
+                "gasPrice": 0,
             }
         )
         ContractUtils.send_transaction(tx, user_2_private_key)
 
         # bulk transfer
         tx = token_contract.functions.bulkTransfer(
-            [user_address_1, user_address_2, user_address_1],
-            [10, 20, 40]
+            [user_address_1, user_address_2, user_address_1], [10, 20, 40]
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
                 "from": issuer_address,
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0
+                "gasPrice": 0,
             }
         )
         ContractUtils.send_transaction(tx, issuer_private_key)
@@ -462,8 +471,7 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
         # prepare data
@@ -479,29 +487,39 @@ class TestProcessor:
         db.commit()
 
         # set exchange address
-        storage_address, _, _ = \
-            ContractUtils.deploy_contract("EscrowStorage", [], issuer_address, issuer_private_key)
-        exchange_address, _, _ = \
-            ContractUtils.deploy_contract("IbetEscrow", [storage_address], issuer_address, issuer_private_key)
+        storage_address, _, _ = ContractUtils.deploy_contract(
+            "EscrowStorage", [], issuer_address, issuer_private_key
+        )
+        exchange_address, _, _ = ContractUtils.deploy_contract(
+            "IbetEscrow", [storage_address], issuer_address, issuer_private_key
+        )
         storage_contract = ContractUtils.get_contract("EscrowStorage", storage_address)
-        tx = storage_contract.functions.upgradeVersion(exchange_address).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+        tx = storage_contract.functions.upgradeVersion(
+            exchange_address
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         ContractUtils.send_transaction(tx, issuer_private_key)
-        update_data = IbetStraightBondUpdateParams(tradable_exchange_contract_address=exchange_address)
-        IbetStraightBondContract(token_address_1).update(update_data, issuer_address, issuer_private_key)
+        update_data = IbetStraightBondUpdateParams(
+            tradable_exchange_contract_address=exchange_address
+        )
+        IbetStraightBondContract(token_address_1).update(
+            update_data, issuer_address, issuer_private_key
+        )
 
         # Execute Transfer Event
         # Bond:issuer -> Exchange
         _transfer_1 = IbetStraightBondTransferParams(
-            from_address=issuer_address,
-            to_address=exchange_address,
-            amount=100
+            from_address=issuer_address, to_address=exchange_address, amount=100
         )
-        IbetStraightBondContract(token_address_1).transfer(_transfer_1, issuer_address, issuer_private_key)
+        IbetStraightBondContract(token_address_1).transfer(
+            _transfer_1, issuer_address, issuer_private_key
+        )
 
         # Execute batch
         # Assume: Not Create UTXO and Ledger
@@ -515,22 +533,31 @@ class TestProcessor:
     # <Normal_5>
     # Holder Changed
     @mock.patch("batch.processor_create_utxo.create_ledger")
-    def test_normal_5(self, mock_func, processor, db, personal_info_contract, ibet_exchange_contract):
+    def test_normal_5(
+        self, mock_func, processor, db, personal_info_contract, ibet_exchange_contract
+    ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8"))
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_pk_1 = decode_keyfile_json(raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8"))
+        user_pk_1 = decode_keyfile_json(
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
+        )
         user_3 = config_eth_account("user3")
         user_address_2 = user_3["address"]
-        user_pk_2 = decode_keyfile_json(raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8"))
+        user_pk_2 = decode_keyfile_json(
+            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
+        )
 
         # prepare data
         token_address_1 = deploy_bond_token_contract(
-            issuer_address, issuer_private_key,
+            issuer_address,
+            issuer_private_key,
             personal_info_contract_address=personal_info_contract.address,
-            tradable_exchange_contract_address=ibet_exchange_contract.address
+            tradable_exchange_contract_address=ibet_exchange_contract.address,
         )
         _token_1 = Token()
         _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -540,43 +567,118 @@ class TestProcessor:
         _token_1.abi = {}
         db.add(_token_1)
 
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_1, user_pk_1, [issuer_address, ""])
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_2, user_pk_2, [issuer_address, ""])
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, issuer_address, issuer_private_key, [issuer_address, ""])
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            user_address_1,
+            user_pk_1,
+            [issuer_address, ""],
+        )
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            user_address_2,
+            user_pk_2,
+            [issuer_address, ""],
+        )
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [issuer_address, ""],
+        )
 
-        STContractUtils.transfer(token_address_1, issuer_address, issuer_private_key, [user_address_1, 10])
-        STContractUtils.transfer(token_address_1, issuer_address, issuer_private_key, [user_address_2, 10])
-        STContractUtils.transfer(token_address_1, user_address_1, user_pk_1, [ibet_exchange_contract.address, 10])
-        STContractUtils.transfer(token_address_1, issuer_address, issuer_private_key, [ibet_exchange_contract.address, 10])
+        STContractUtils.transfer(
+            token_address_1, issuer_address, issuer_private_key, [user_address_1, 10]
+        )
+        STContractUtils.transfer(
+            token_address_1, issuer_address, issuer_private_key, [user_address_2, 10]
+        )
+        STContractUtils.transfer(
+            token_address_1,
+            user_address_1,
+            user_pk_1,
+            [ibet_exchange_contract.address, 10],
+        )
+        STContractUtils.transfer(
+            token_address_1,
+            issuer_address,
+            issuer_private_key,
+            [ibet_exchange_contract.address, 10],
+        )
 
         IbetExchangeContractTestUtils.create_order(
-            ibet_exchange_contract.address, user_address_1, user_pk_1, [token_address_1, 10, 100, False, issuer_address]
+            ibet_exchange_contract.address,
+            user_address_1,
+            user_pk_1,
+            [token_address_1, 10, 100, False, issuer_address],
         )
-        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(ibet_exchange_contract.address)
-        IbetExchangeContractTestUtils.execute_order(ibet_exchange_contract.address, user_address_2, user_pk_2, [latest_order_id, 10, True])
-        latest_agreement_id = IbetExchangeContractTestUtils.get_latest_agreementid(ibet_exchange_contract.address, latest_order_id)
+        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(
+            ibet_exchange_contract.address
+        )
+        IbetExchangeContractTestUtils.execute_order(
+            ibet_exchange_contract.address,
+            user_address_2,
+            user_pk_2,
+            [latest_order_id, 10, True],
+        )
+        latest_agreement_id = IbetExchangeContractTestUtils.get_latest_agreementid(
+            ibet_exchange_contract.address, latest_order_id
+        )
         IbetExchangeContractTestUtils.confirm_agreement(
-            ibet_exchange_contract.address, issuer_address, issuer_private_key, [latest_order_id, latest_agreement_id]
+            ibet_exchange_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [latest_order_id, latest_agreement_id],
         )
 
         # prepare other data
         other_token_address = deploy_bond_token_contract(
-            issuer_address, issuer_private_key,
+            issuer_address,
+            issuer_private_key,
             personal_info_contract_address=personal_info_contract.address,
-            tradable_exchange_contract_address=ibet_exchange_contract.address
+            tradable_exchange_contract_address=ibet_exchange_contract.address,
         )
-        STContractUtils.transfer(other_token_address, issuer_address, issuer_private_key, [user_address_1, 10])
-        STContractUtils.transfer(other_token_address, user_address_1, user_pk_1, [ibet_exchange_contract.address, 10])
-        STContractUtils.transfer(other_token_address, issuer_address, issuer_private_key, [ibet_exchange_contract.address, 10])
+        STContractUtils.transfer(
+            other_token_address,
+            issuer_address,
+            issuer_private_key,
+            [user_address_1, 10],
+        )
+        STContractUtils.transfer(
+            other_token_address,
+            user_address_1,
+            user_pk_1,
+            [ibet_exchange_contract.address, 10],
+        )
+        STContractUtils.transfer(
+            other_token_address,
+            issuer_address,
+            issuer_private_key,
+            [ibet_exchange_contract.address, 10],
+        )
 
         IbetExchangeContractTestUtils.create_order(
-            ibet_exchange_contract.address, user_address_1, user_pk_1, [other_token_address, 10, 100, False, issuer_address]
+            ibet_exchange_contract.address,
+            user_address_1,
+            user_pk_1,
+            [other_token_address, 10, 100, False, issuer_address],
         )
-        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(ibet_exchange_contract.address)
-        IbetExchangeContractTestUtils.execute_order(ibet_exchange_contract.address, user_address_2, user_pk_2, [latest_order_id, 10, True])
-        latest_agreement_id = IbetExchangeContractTestUtils.get_latest_agreementid(ibet_exchange_contract.address, latest_order_id)
+        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(
+            ibet_exchange_contract.address
+        )
+        IbetExchangeContractTestUtils.execute_order(
+            ibet_exchange_contract.address,
+            user_address_2,
+            user_pk_2,
+            [latest_order_id, 10, True],
+        )
+        latest_agreement_id = IbetExchangeContractTestUtils.get_latest_agreementid(
+            ibet_exchange_contract.address, latest_order_id
+        )
         IbetExchangeContractTestUtils.confirm_agreement(
-            ibet_exchange_contract.address, issuer_address, issuer_private_key, [latest_order_id, latest_agreement_id]
+            ibet_exchange_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [latest_order_id, latest_agreement_id],
         )
 
         db.commit()
@@ -613,9 +715,7 @@ class TestProcessor:
         _utox_block_number = db.query(UTXOBlockNumber).first()
         assert _utox_block_number.latest_block_number >= _utox_list[1].block_number
 
-        mock_func.assert_has_calls([
-            call(token_address=token_address_1, db=ANY)
-        ])
+        mock_func.assert_has_calls([call(token_address=token_address_1, db=ANY)])
 
     # <Normal_6>
     # Additional Issue
@@ -624,8 +724,7 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
@@ -642,7 +741,9 @@ class TestProcessor:
         _token_1.abi = {}
         db.add(_token_1)
 
-        token_address_2 = deploy_share_token_contract(issuer_address, issuer_private_key)
+        token_address_2 = deploy_share_token_contract(
+            issuer_address, issuer_private_key
+        )
         _token_2 = Token()
         _token_2.type = TokenType.IBET_SHARE.value
         _token_2.tx_hash = ""
@@ -656,18 +757,20 @@ class TestProcessor:
         # Execute Issue Event
         # Share
         _additional_issue_1 = IbetShareAdditionalIssueParams(
-            account_address=user_address_1,
-            amount=70
+            account_address=user_address_1, amount=70
         )
-        IbetShareContract(token_address_1).additional_issue(_additional_issue_1, issuer_address, issuer_private_key)
+        IbetShareContract(token_address_1).additional_issue(
+            _additional_issue_1, issuer_address, issuer_private_key
+        )
         time.sleep(1)
 
         # Bond
         _additional_issue_2 = IbetStraightBondAdditionalIssueParams(
-            account_address=user_address_2,
-            amount=80
+            account_address=user_address_2, amount=80
         )
-        IbetStraightBondContract(token_address_2).additional_issue(_additional_issue_2, issuer_address, issuer_private_key)
+        IbetStraightBondContract(token_address_2).additional_issue(
+            _additional_issue_2, issuer_address, issuer_private_key
+        )
         time.sleep(1)
 
         # Execute batch
@@ -698,8 +801,7 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
@@ -716,7 +818,9 @@ class TestProcessor:
         _token_1.abi = {}
         db.add(_token_1)
 
-        token_address_2 = deploy_share_token_contract(issuer_address, issuer_private_key)
+        token_address_2 = deploy_share_token_contract(
+            issuer_address, issuer_private_key
+        )
         _token_2 = Token()
         _token_2.type = TokenType.IBET_SHARE.value
         _token_2.tx_hash = ""
@@ -730,30 +834,34 @@ class TestProcessor:
         # Execute Issue Event
         # Share
         _additional_issue_1 = IbetShareAdditionalIssueParams(
-            account_address=user_address_1,
-            amount=10
+            account_address=user_address_1, amount=10
         )
-        IbetShareContract(token_address_1).additional_issue(_additional_issue_1, issuer_address, issuer_private_key)
+        IbetShareContract(token_address_1).additional_issue(
+            _additional_issue_1, issuer_address, issuer_private_key
+        )
         time.sleep(1)
         _additional_issue_2 = IbetShareAdditionalIssueParams(
-            account_address=user_address_1,
-            amount=20
+            account_address=user_address_1, amount=20
         )
-        IbetShareContract(token_address_1).additional_issue(_additional_issue_2, issuer_address, issuer_private_key)
+        IbetShareContract(token_address_1).additional_issue(
+            _additional_issue_2, issuer_address, issuer_private_key
+        )
         time.sleep(1)
 
         # Bond
         _additional_issue_3 = IbetStraightBondAdditionalIssueParams(
-            account_address=user_address_2,
-            amount=30
+            account_address=user_address_2, amount=30
         )
-        IbetStraightBondContract(token_address_2).additional_issue(_additional_issue_3, issuer_address, issuer_private_key)
+        IbetStraightBondContract(token_address_2).additional_issue(
+            _additional_issue_3, issuer_address, issuer_private_key
+        )
         time.sleep(1)
         _additional_issue_4 = IbetStraightBondAdditionalIssueParams(
-            account_address=user_address_2,
-            amount=40
+            account_address=user_address_2, amount=40
         )
-        IbetStraightBondContract(token_address_2).additional_issue(_additional_issue_4, issuer_address, issuer_private_key)
+        IbetStraightBondContract(token_address_2).additional_issue(
+            _additional_issue_4, issuer_address, issuer_private_key
+        )
         time.sleep(1)
 
         # Before execute
@@ -783,19 +891,19 @@ class TestProcessor:
 
         # Execute Redeem Event
         # Share
-        _redeem_1 = IbetShareRedeemParams(
-            account_address=user_address_1,
-            amount=20
+        _redeem_1 = IbetShareRedeemParams(account_address=user_address_1, amount=20)
+        IbetShareContract(token_address_1).redeem(
+            _redeem_1, issuer_address, issuer_private_key
         )
-        IbetShareContract(token_address_1).redeem(_redeem_1, issuer_address, issuer_private_key)
         time.sleep(1)
 
         # Bond
         _redeem_2 = IbetStraightBondRedeemParams(
-            account_address=user_address_2,
-            amount=40
+            account_address=user_address_2, amount=40
         )
-        IbetStraightBondContract(token_address_2).redeem(_redeem_2, issuer_address, issuer_private_key)
+        IbetStraightBondContract(token_address_2).redeem(
+            _redeem_2, issuer_address, issuer_private_key
+        )
         time.sleep(1)
 
         # Execute batch
@@ -836,8 +944,7 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
         # prepare data
@@ -854,7 +961,10 @@ class TestProcessor:
 
         # Execute batch
         latest_block = web3.eth.block_number
-        with mock.patch("web3.eth.Eth.uninstallFilter", MagicMock(side_effect=Exception("mock test"))) as web3_mock:
+        with mock.patch(
+            "web3.eth.Eth.uninstallFilter",
+            MagicMock(side_effect=Exception("mock test")),
+        ) as web3_mock:
             processor.process()
 
         _utox_list = db.query(UTXO).all()

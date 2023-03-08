@@ -21,27 +21,8 @@ from asyncio import Event, Lock
 from datetime import datetime
 from typing import Optional
 
-from aiohttp import (
-    ClientSession,
-    ClientTimeout,
-    TCPConnector
-)
+from aiohttp import ClientSession, ClientTimeout, TCPConnector
 from rich.text import Text
-from textual.app import ComposeResult
-from textual.binding import Binding
-from textual.containers import (
-    Horizontal,
-    Vertical
-)
-from textual.reactive import Reactive
-from textual.widgets import (
-    Button,
-    DataTable,
-    Footer,
-    Label,
-    Static
-)
-
 from src import connector
 from src.gui.consts import ID
 from src.gui.error import Error
@@ -51,13 +32,15 @@ from src.gui.widget.block_list_table import BlockListTable
 from src.gui.widget.block_list_view import (
     BlockListQueryPanel,
     BlockListSummaryPanel,
-    BlockListView
+    BlockListView,
 )
-from src.gui.widget.menu import (
-    Menu,
-    MenuInstruction
-)
+from src.gui.widget.menu import Menu, MenuInstruction
 from src.gui.widget.query_panel import QuerySetting
+from textual.app import ComposeResult
+from textual.binding import Binding
+from textual.containers import Horizontal, Vertical
+from textual.reactive import Reactive
+from textual.widgets import Button, DataTable, Footer, Label, Static
 
 from app.model.schema import (
     BlockDataDetail,
@@ -77,7 +60,9 @@ class BlockScreen(TuiScreen):
     mutex_reload_block = Reactive(Lock())
     background_lock: Optional[Event] = None
 
-    def __init__(self, name: str | None = None, id: str | None = None, classes: str | None = None):
+    def __init__(
+        self, name: str | None = None, id: str | None = None, classes: str | None = None
+    ):
         super().__init__(name=name, id=id, classes=classes)
         self.base_url = self.tui.url
         self.refresh_rate = 5.0
@@ -87,16 +72,20 @@ class BlockScreen(TuiScreen):
         yield Horizontal(
             Vertical(
                 Horizontal(
-                    Label(Text.from_markup(" [bold]ibet-Wallet-API BC Explorer[/bold]")),
+                    Label(Text.from_markup(" [bold]ibet-Prime BC Explorer[/bold]")),
                     Label(" | "),
-                    Label("Fetching current block...", id=ID.BLOCK_CURRENT_BLOCK_NUMBER),
+                    Label(
+                        "Fetching current block...", id=ID.BLOCK_CURRENT_BLOCK_NUMBER
+                    ),
                     Label(" | "),
                     Label("Fetching current status...", id=ID.BLOCK_IS_SYNCED),
                     Label(" | "),
                     Label("Loading...", id=ID.BLOCK_NOTION),
                     id=ID.BLOCK_SCREEN_HEADER,
                 ),
-                Horizontal(BlockListView(classes="column"), self.block_detail_header_widget),
+                Horizontal(
+                    BlockListView(classes="column"), self.block_detail_header_widget
+                ),
                 classes="column",
             )
         )
@@ -167,17 +156,22 @@ class BlockScreen(TuiScreen):
             MenuInstruction(
                 block_number=selected_row[0],
                 block_hash=selected_row[3],
-                selected_row=event.cursor_row
+                selected_row=event.cursor_row,
             )
         )
         self.add_class("menu")
         self.query(BlockListTable)[0].can_focus = False
 
     def reload_block(self) -> None:
-        if self.tui.state.current_block_number is None or self.tui.state.block_list_query is None:
+        if (
+            self.tui.state.current_block_number is None
+            or self.tui.state.block_list_query is None
+        ):
             return
 
-        self.query_one(BlockListQueryPanel).block_list_query = self.tui.state.block_list_query
+        self.query_one(
+            BlockListQueryPanel
+        ).block_list_query = self.tui.state.block_list_query
         asyncio.create_task(self.fetch_block_list())
 
     ##################################################
@@ -188,7 +182,10 @@ class BlockScreen(TuiScreen):
         """
         Occurs when keybind related to `edit_query` is called.
         """
-        if self.tui.state.current_block_number is None or self.tui.state.block_list_query is None:
+        if (
+            self.tui.state.current_block_number is None
+            or self.tui.state.block_list_query is None
+        ):
             return
 
         self.query_one(QuerySetting).show()
@@ -200,9 +197,13 @@ class BlockScreen(TuiScreen):
 
     async def fetch_sync_status(self):
         async with TCPConnector(limit=2, keepalive_timeout=0) as tcp_connector:
-            async with ClientSession(connector=tcp_connector, timeout=ClientTimeout(30)) as session:
+            async with ClientSession(
+                connector=tcp_connector, timeout=ClientTimeout(30)
+            ) as session:
                 try:
-                    block_number_response: BlockNumberResponse = await connector.get_block_number(session, self.base_url)
+                    block_number_response: BlockNumberResponse = (
+                        await connector.get_block_number(session, self.base_url)
+                    )
                     block_number = block_number_response.block_number
                 except Exception as e:
                     if hasattr(self, "emit_no_wait"):
@@ -210,11 +211,16 @@ class BlockScreen(TuiScreen):
                     return
                 self.update_current_block(block_number)
                 self.update_is_synced(True)
-                if self.tui.state.current_block_number is None and self.tui.state.block_list_query is None:
+                if (
+                    self.tui.state.current_block_number is None
+                    and self.tui.state.block_list_query is None
+                ):
                     # initialize block list query
                     query = ListBlockDataQuery()
                     query.to_block_number = block_number
-                    query.from_block_number = max(block_number - self.tui.lot_size - 1, 0)
+                    query.from_block_number = max(
+                        block_number - self.tui.lot_size - 1, 0
+                    )
                     query.sort_order = SortOrder.DESC
                     self.tui.state.block_list_query = query
                     self.query_one(BlockListQueryPanel).block_list_query = query
@@ -228,16 +234,22 @@ class BlockScreen(TuiScreen):
             self.query_one(BlockListSummaryPanel).loading = True
             await asyncio.sleep(5)
             async with TCPConnector(limit=1, keepalive_timeout=0) as tcp_connector:
-                async with ClientSession(connector=tcp_connector, timeout=ClientTimeout(30)) as session:
+                async with ClientSession(
+                    connector=tcp_connector, timeout=ClientTimeout(30)
+                ) as session:
                     try:
-                        block_data_list: BlockDataListResponse = await connector.list_block_data(
-                            session, self.base_url, self.tui.state.block_list_query
+                        block_data_list: BlockDataListResponse = (
+                            await connector.list_block_data(
+                                session, self.base_url, self.tui.state.block_list_query
+                            )
                         )
                     except Exception as e:
                         if hasattr(self, "emit_no_wait"):
                             self.emit_no_wait(Error(e, self))
                         return
-                    self.query_one(BlockListTable).update_rows(block_data_list.block_data)
+                    self.query_one(BlockListTable).update_rows(
+                        block_data_list.block_data
+                    )
                     self.query_one(BlockListSummaryPanel).loaded_time = datetime.now()
 
         finally:
@@ -245,7 +257,9 @@ class BlockScreen(TuiScreen):
 
     async def fetch_block_detail(self, block_number: int):
         async with TCPConnector(limit=1, keepalive_timeout=0) as tcp_connector:
-            async with ClientSession(connector=tcp_connector, timeout=ClientTimeout(30)) as session:
+            async with ClientSession(
+                connector=tcp_connector, timeout=ClientTimeout(30)
+            ) as session:
                 try:
                     block_detail: BlockDataDetail = await connector.get_block_data(
                         session,
@@ -259,8 +273,14 @@ class BlockScreen(TuiScreen):
                 self.query_one(BlockDetailView).block_detail = block_detail
 
     def update_current_block(self, latest_block_number: int):
-        self.query_one(f"#{ID.BLOCK_CURRENT_BLOCK_NUMBER}", Static).update(f"Current Block: {latest_block_number}")
+        self.query_one(f"#{ID.BLOCK_CURRENT_BLOCK_NUMBER}", Static).update(
+            f"Current Block: {latest_block_number}"
+        )
 
     def update_is_synced(self, is_synced: bool):
-        self.query_one(f"#{ID.BLOCK_IS_SYNCED}", Static).update(f"Is Synced: {is_synced}")
-        self.query_one(f"#{ID.BLOCK_NOTION}", Static).update(f"Press [E] To Load Block List")
+        self.query_one(f"#{ID.BLOCK_IS_SYNCED}", Static).update(
+            f"Is Synced: {is_synced}"
+        )
+        self.query_one(f"#{ID.BLOCK_NOTION}", Static).update(
+            f"Press [E] To Load Block List"
+        )

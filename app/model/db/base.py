@@ -17,12 +17,11 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from datetime import datetime
-from datetime import date as datetime_date
 import time
+from datetime import date as datetime_date
+from datetime import datetime
 
-from sqlalchemy import Column
-from sqlalchemy import DateTime
+from sqlalchemy import Column, DateTime
 from sqlalchemy.orm import declarative_base
 
 from app.database import get_db_schema

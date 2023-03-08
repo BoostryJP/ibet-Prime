@@ -48,25 +48,30 @@ class TestAppRoutersAccountsAuthTokenPOST:
         db.add(account)
 
         # request target api
-        freezer.move_to('2022-07-15 12:34:56')
+        freezer.move_to("2022-07-15 12:34:56")
         resp = client.post(
             self.apiurl.format(test_account["address"]),
             json={"valid_duration": 120},
-            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)}
+            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
 
         # assertion
-        auth_token: AuthToken = db.query(AuthToken). \
-            filter(AuthToken.issuer_address == test_account["address"]). \
-            first()
+        auth_token: AuthToken = (
+            db.query(AuthToken)
+            .filter(AuthToken.issuer_address == test_account["address"])
+            .first()
+        )
         assert auth_token.issuer_address == test_account["address"]
         assert auth_token.usage_start == datetime(2022, 7, 15, 12, 34, 56)
         assert auth_token.valid_duration == 120
 
         assert resp.status_code == 200
         response = resp.json()
-        assert hashlib.sha256(response["auth_token"].encode()).hexdigest() == auth_token.auth_token
-        assert response["usage_start"] == '2022-07-15T21:34:56+09:00'
+        assert (
+            hashlib.sha256(response["auth_token"].encode()).hexdigest()
+            == auth_token.auth_token
+        )
+        assert response["usage_start"] == "2022-07-15T21:34:56+09:00"
         assert response["valid_duration"] == 120
 
     # Normal_2
@@ -84,30 +89,37 @@ class TestAppRoutersAccountsAuthTokenPOST:
         auth_token = AuthToken()
         auth_token.issuer_address = test_account["address"]
         auth_token.auth_token = "hashed_token"
-        auth_token.usage_start = datetime(2022, 7, 15, 12, 32, 55)  # 2022-07-15 12:34:56 - 121sec
+        auth_token.usage_start = datetime(
+            2022, 7, 15, 12, 32, 55
+        )  # 2022-07-15 12:34:56 - 121sec
         auth_token.valid_duration = 120
         db.add(auth_token)
 
         # request target api
-        freezer.move_to('2022-07-15 12:34:56')
+        freezer.move_to("2022-07-15 12:34:56")
         resp = client.post(
             self.apiurl.format(test_account["address"]),
             json={"valid_duration": 120},
-            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)}
+            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
 
         # assertion
-        auth_token: AuthToken = db.query(AuthToken). \
-            filter(AuthToken.issuer_address == test_account["address"]). \
-            first()
+        auth_token: AuthToken = (
+            db.query(AuthToken)
+            .filter(AuthToken.issuer_address == test_account["address"])
+            .first()
+        )
         assert auth_token.issuer_address == test_account["address"]
         assert auth_token.usage_start == datetime(2022, 7, 15, 12, 34, 56)
         assert auth_token.valid_duration == 120
 
         assert resp.status_code == 200
         response = resp.json()
-        assert hashlib.sha256(response["auth_token"].encode()).hexdigest() == auth_token.auth_token
-        assert response["usage_start"] == '2022-07-15T21:34:56+09:00'
+        assert (
+            hashlib.sha256(response["auth_token"].encode()).hexdigest()
+            == auth_token.auth_token
+        )
+        assert response["usage_start"] == "2022-07-15T21:34:56+09:00"
         assert response["valid_duration"] == 120
 
     ###########################################################################
@@ -128,31 +140,29 @@ class TestAppRoutersAccountsAuthTokenPOST:
         db.add(account)
 
         # request target api
-        freezer.move_to('2022-07-15 12:34:56')
+        freezer.move_to("2022-07-15 12:34:56")
         resp = client.post(
-            self.apiurl.format(test_account["address"]),
-            json={"valid_duration": 120}
+            self.apiurl.format(test_account["address"]), json={"valid_duration": 120}
         )
 
         # assertion
-        auth_token = db.query(AuthToken). \
-            filter(AuthToken.issuer_address == test_account["address"]). \
-            first()
+        auth_token = (
+            db.query(AuthToken)
+            .filter(AuthToken.issuer_address == test_account["address"])
+            .first()
+        )
         assert auth_token is None
 
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['header', 'eoa-password'],
-                    'msg': 'field required',
-                    'type': 'value_error.missing'
+                    "loc": ["header", "eoa-password"],
+                    "msg": "field required",
+                    "type": "value_error.missing",
                 }
-            ]
+            ],
         }
 
     # Error_1_2
@@ -169,31 +179,30 @@ class TestAppRoutersAccountsAuthTokenPOST:
         db.add(account)
 
         # request target api
-        freezer.move_to('2022-07-15 12:34:56')
+        freezer.move_to("2022-07-15 12:34:56")
         resp = client.post(
             self.apiurl.format(test_account["address"]),
-            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)}
+            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
 
         # assertion
-        auth_token = db.query(AuthToken). \
-            filter(AuthToken.issuer_address == test_account["address"]). \
-            first()
+        auth_token = (
+            db.query(AuthToken)
+            .filter(AuthToken.issuer_address == test_account["address"])
+            .first()
+        )
         assert auth_token is None
 
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['body'],
-                    'msg': 'field required',
-                    'type': 'value_error.missing'
+                    "loc": ["body"],
+                    "msg": "field required",
+                    "type": "value_error.missing",
                 }
-            ]
+            ],
         }
 
     # Error_2
@@ -210,32 +219,31 @@ class TestAppRoutersAccountsAuthTokenPOST:
         db.add(account)
 
         # request target api
-        freezer.move_to('2022-07-15 12:34:56')
+        freezer.move_to("2022-07-15 12:34:56")
         resp = client.post(
             self.apiurl.format(test_account["address"][::-1]),  # invalid address
             json={"valid_duration": 120},
-            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)}
+            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
 
         # assertion
-        auth_token = db.query(AuthToken). \
-            filter(AuthToken.issuer_address == test_account["address"]). \
-            first()
+        auth_token = (
+            db.query(AuthToken)
+            .filter(AuthToken.issuer_address == test_account["address"])
+            .first()
+        )
         assert auth_token is None
 
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['header', 'issuer-address'],
-                    'msg': 'issuer-address is not a valid address',
-                    'type': 'value_error'
+                    "loc": ["header", "issuer-address"],
+                    "msg": "issuer-address is not a valid address",
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # Error_3
@@ -252,32 +260,33 @@ class TestAppRoutersAccountsAuthTokenPOST:
         db.add(account)
 
         # request target api
-        freezer.move_to('2022-07-15 12:34:56')
+        freezer.move_to("2022-07-15 12:34:56")
         resp = client.post(
             self.apiurl.format(test_account["address"]),
             json={"valid_duration": 120},
-            headers={"eoa-password": "not_encrypted_password"}  # not encrypted password
+            headers={
+                "eoa-password": "not_encrypted_password"
+            },  # not encrypted password
         )
 
         # assertion
-        auth_token = db.query(AuthToken). \
-            filter(AuthToken.issuer_address == test_account["address"]). \
-            first()
+        auth_token = (
+            db.query(AuthToken)
+            .filter(AuthToken.issuer_address == test_account["address"])
+            .first()
+        )
         assert auth_token is None
 
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['header', 'eoa-password'],
-                    'msg': 'eoa-password is not a Base64-encoded encrypted data',
-                    'type': 'value_error'
+                    "loc": ["header", "eoa-password"],
+                    "msg": "eoa-password is not a Base64-encoded encrypted data",
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # Error_4_1
@@ -294,32 +303,31 @@ class TestAppRoutersAccountsAuthTokenPOST:
         db.add(account)
 
         # request target api
-        freezer.move_to('2022-07-15 12:34:56')
+        freezer.move_to("2022-07-15 12:34:56")
         resp = client.post(
             self.apiurl.format(test_account["address"]),
             json={"valid_duration": "invalid_duration"},
-            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)}
+            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
 
         # assertion
-        auth_token = db.query(AuthToken). \
-            filter(AuthToken.issuer_address == test_account["address"]). \
-            first()
+        auth_token = (
+            db.query(AuthToken)
+            .filter(AuthToken.issuer_address == test_account["address"])
+            .first()
+        )
         assert auth_token is None
 
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['body', 'valid_duration'],
-                    'msg': 'value is not a valid integer',
-                    'type': 'type_error.integer'
+                    "loc": ["body", "valid_duration"],
+                    "msg": "value is not a valid integer",
+                    "type": "type_error.integer",
                 }
-            ]
+            ],
         }
 
     # Error_4_2
@@ -336,33 +344,32 @@ class TestAppRoutersAccountsAuthTokenPOST:
         db.add(account)
 
         # request target api
-        freezer.move_to('2022-07-15 12:34:56')
+        freezer.move_to("2022-07-15 12:34:56")
         resp = client.post(
             self.apiurl.format(test_account["address"]),
             json={"valid_duration": -1},
-            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)}
+            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
 
         # assertion
-        auth_token = db.query(AuthToken). \
-            filter(AuthToken.issuer_address == test_account["address"]). \
-            first()
+        auth_token = (
+            db.query(AuthToken)
+            .filter(AuthToken.issuer_address == test_account["address"])
+            .first()
+        )
         assert auth_token is None
 
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['body', 'valid_duration'],
-                    'msg': 'ensure this value is greater than or equal to 0',
-                    'type': 'value_error.number.not_ge',
-                    'ctx': {'limit_value': 0}
+                    "loc": ["body", "valid_duration"],
+                    "msg": "ensure this value is greater than or equal to 0",
+                    "type": "value_error.number.not_ge",
+                    "ctx": {"limit_value": 0},
                 }
-            ]
+            ],
         }
 
     # Error_4_3
@@ -379,33 +386,32 @@ class TestAppRoutersAccountsAuthTokenPOST:
         db.add(account)
 
         # request target api
-        freezer.move_to('2022-07-15 12:34:56')
+        freezer.move_to("2022-07-15 12:34:56")
         resp = client.post(
             self.apiurl.format(test_account["address"]),
             json={"valid_duration": 259201},
-            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)}
+            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
 
         # assertion
-        auth_token = db.query(AuthToken). \
-            filter(AuthToken.issuer_address == test_account["address"]). \
-            first()
+        auth_token = (
+            db.query(AuthToken)
+            .filter(AuthToken.issuer_address == test_account["address"])
+            .first()
+        )
         assert auth_token is None
 
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['body', 'valid_duration'],
-                    'msg': 'ensure this value is less than or equal to 259200',
-                    'type': 'value_error.number.not_le',
-                    'ctx': {'limit_value': 259200}
+                    "loc": ["body", "valid_duration"],
+                    "msg": "ensure this value is less than or equal to 259200",
+                    "type": "value_error.number.not_le",
+                    "ctx": {"limit_value": 259200},
                 }
-            ]
+            ],
         }
 
     # Error_5
@@ -421,26 +427,27 @@ class TestAppRoutersAccountsAuthTokenPOST:
         db.add(account)
 
         # request target api
-        freezer.move_to('2022-07-15 12:34:56')
+        freezer.move_to("2022-07-15 12:34:56")
         resp = client.post(
             self.apiurl.format(test_account["address"]),
             json={"valid_duration": 120},
-            headers={"eoa-password": E2EEUtils.encrypt("mismatch_password")}  # incorrect password
+            headers={
+                "eoa-password": E2EEUtils.encrypt("mismatch_password")
+            },  # incorrect password
         )
 
         # assertion
-        auth_token = db.query(AuthToken). \
-            filter(AuthToken.issuer_address == test_account["address"]). \
-            first()
+        auth_token = (
+            db.query(AuthToken)
+            .filter(AuthToken.issuer_address == test_account["address"])
+            .first()
+        )
         assert auth_token is None
 
         assert resp.status_code == 401
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'AuthorizationError'
-            },
-            'detail': 'issuer does not exist, or password mismatch'
+            "meta": {"code": 1, "title": "AuthorizationError"},
+            "detail": "issuer does not exist, or password mismatch",
         }
 
     # Error_6_1
@@ -464,20 +471,17 @@ class TestAppRoutersAccountsAuthTokenPOST:
         db.add(auth_token)
 
         # request target api
-        freezer.move_to('2022-07-15 12:34:56')
+        freezer.move_to("2022-07-15 12:34:56")
         resp = client.post(
             self.apiurl.format(test_account["address"]),
             json={"valid_duration": 120},
-            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)}
+            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            'meta': {
-                'code': 3,
-                'title': 'AuthTokenAlreadyExistsError'
-            }
+            "meta": {"code": 3, "title": "AuthTokenAlreadyExistsError"}
         }
 
     # Error_6_2
@@ -496,23 +500,22 @@ class TestAppRoutersAccountsAuthTokenPOST:
         auth_token = AuthToken()
         auth_token.issuer_address = test_account["address"]
         auth_token.auth_token = "hashed_token"
-        auth_token.usage_start = datetime(2022, 7, 15, 12, 32, 56)  # 2022-07-15 12:34:56 - 120sec
+        auth_token.usage_start = datetime(
+            2022, 7, 15, 12, 32, 56
+        )  # 2022-07-15 12:34:56 - 120sec
         auth_token.valid_duration = 120
         db.add(auth_token)
 
         # request target api
-        freezer.move_to('2022-07-15 12:34:56')
+        freezer.move_to("2022-07-15 12:34:56")
         resp = client.post(
             self.apiurl.format(test_account["address"]),
             json={"valid_duration": 120},
-            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)}
+            headers={"eoa-password": E2EEUtils.encrypt(self.eoa_password)},
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            'meta': {
-                'code': 3,
-                'title': 'AuthTokenAlreadyExistsError'
-            }
+            "meta": {"code": 3, "title": "AuthTokenAlreadyExistsError"}
         }

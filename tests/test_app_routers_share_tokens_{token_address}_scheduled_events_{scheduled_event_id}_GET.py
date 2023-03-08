@@ -18,14 +18,11 @@ SPDX-License-Identifier: Apache-2.0
 """
 import uuid
 from datetime import datetime
+
 from pytz import timezone
 
+from app.model.db import ScheduledEvents, ScheduledEventType, TokenType
 from config import TZ
-from app.model.db import (
-    TokenType,
-    ScheduledEvents,
-    ScheduledEventType
-)
 from tests.account_config import config_eth_account
 
 
@@ -48,7 +45,12 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdGET:
 
         # prepare data
         datetime_now_utc = datetime.utcnow()
-        datetime_now_str = timezone("UTC").localize(datetime_now_utc).astimezone(self.local_tz).isoformat()
+        datetime_now_str = (
+            timezone("UTC")
+            .localize(datetime_now_utc)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
         update_data = {
             "cancellation_date": "20221231",
             "dividends": 345.67,
@@ -62,7 +64,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdGET:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "is_canceled": False,
-            "memo": "memo_test1"
+            "memo": "memo_test1",
         }
         event_id = str(uuid.uuid4())
 
@@ -83,7 +85,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdGET:
             self.base_url.format(_token_address, event_id),
             headers={
                 "issuer-address": _issuer_address,
-            }
+            },
         )
 
         # assertion
@@ -109,7 +111,12 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdGET:
 
         # prepare data
         datetime_now_utc = datetime.utcnow()
-        datetime_now_str = timezone("UTC").localize(datetime_now_utc).astimezone(self.local_tz).isoformat()
+        datetime_now_str = (
+            timezone("UTC")
+            .localize(datetime_now_utc)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
         update_data = {
             "cancellation_date": "20221231",
             "dividends": 345.67,
@@ -123,7 +130,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdGET:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "is_canceled": False,
-            "memo": "memo_test1"
+            "memo": "memo_test1",
         }
         event_id = str(uuid.uuid4())
 
@@ -154,7 +161,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdGET:
             "event_type": ScheduledEventType.UPDATE.value,
             "status": 0,
             "data": update_data,
-            "created": datetime_now_str
+            "created": datetime_now_str,
         }
 
     #########################################################################
@@ -173,14 +180,12 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdGET:
             self.base_url.format(_token_address, "test_event_id"),
             headers={
                 "issuer-address": _issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1, "title": "NotFound"
-            },
-            "detail": "event not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "event not found",
         }

@@ -17,15 +17,12 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from .e2e_messaging import E2EMessaging
-from .exchange import (
-    IbetExchangeInterface,
-    IbetSecurityTokenEscrow
-)
+from .exchange import IbetExchangeInterface, IbetSecurityTokenEscrow
+from .personal_info import PersonalInfoContract
 from .token import (
-    IbetStandardTokenInterface,
     IbetSecurityTokenInterface,
+    IbetShareContract,
+    IbetStandardTokenInterface,
     IbetStraightBondContract,
-    IbetShareContract
 )
 from .token_list import TokenListContract
-from .personal_info import PersonalInfoContract

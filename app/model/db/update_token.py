@@ -16,18 +16,14 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    JSON
-)
+from sqlalchemy import JSON, Column, Integer, String
 
 from .base import Base
 
 
 class UpdateToken(Base):
     """Update Token"""
+
     __tablename__ = "update_token"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

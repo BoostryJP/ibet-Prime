@@ -19,19 +19,14 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    JSON,
-    DateTime
-)
+from sqlalchemy import JSON, Column, DateTime, Integer, String
 
 from .base import Base
 
 
 class Token(Base):
     """Issued Token"""
+
     __tablename__ = "token"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -51,6 +46,7 @@ class Token(Base):
 
 class TokenAttrUpdate(Base):
     """Managed Token Attribute Update"""
+
     __tablename__ = "token_attr_update"
 
     # sequence id
@@ -68,6 +64,7 @@ class TokenType(str, Enum):
 
 class TokenCache(Base):
     """Token Cache"""
+
     __tablename__ = "token_cache"
 
     # token address

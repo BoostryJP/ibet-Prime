@@ -25,29 +25,30 @@ from typing import Type
 
 from eth_utils import to_checksum_address
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 from web3.eth import Contract
 
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
-from config import (
-    INDEXER_SYNC_INTERVAL,
-    INDEXER_BLOCK_LOT_MAX_SIZE,
-    DATABASE_URL,
-    ZERO_ADDRESS
-)
+import batch_log
+
+from app.exceptions import ServiceUnavailableError
 from app.model.db import (
-    Token,
     IDXTransfer,
     IDXTransferBlockNumber,
-    IDXTransferSourceEventType
+    IDXTransferSourceEventType,
+    Token,
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
-from app.exceptions import ServiceUnavailableError
-import batch_log
+from config import (
+    DATABASE_URL,
+    INDEXER_BLOCK_LOT_MAX_SIZE,
+    INDEXER_SYNC_INTERVAL,
+    ZERO_ADDRESS,
+)
 
 process_name = "INDEXER-Transfer"
 LOG = batch_log.get_logger(process_name=process_name)
@@ -90,18 +91,17 @@ class Processor:
                 self.__sync_all(
                     db_session=db_session,
                     block_from=_from_block + 1,
-                    block_to=latest_block
+                    block_to=latest_block,
                 )
             else:
                 self.__sync_all(
                     db_session=db_session,
                     block_from=_from_block + 1,
-                    block_to=latest_block
+                    block_to=latest_block,
                 )
 
             self.__set_idx_transfer_block_number(
-                db_session=db_session,
-                block_number=latest_block
+                db_session=db_session, block_number=latest_block
             )
             db_session.commit()
         except Exception:
@@ -114,41 +114,44 @@ class Processor:
     def __get_token_list(self, db_session: Session):
         issued_token_address_list: tuple[str, ...] = tuple(
             [
-                record[0] for record in (
-                    db_session.query(Token.token_address).filter(Token.token_status == 1).all()
+                record[0]
+                for record in (
+                    db_session.query(Token.token_address)
+                    .filter(Token.token_status == 1)
+                    .all()
                 )
             ]
         )
         loaded_token_address_list: tuple[str, ...] = tuple(self.token_list.keys())
-        load_required_address_list = list(set(issued_token_address_list) ^ set(loaded_token_address_list))
+        load_required_address_list = list(
+            set(issued_token_address_list) ^ set(loaded_token_address_list)
+        )
 
         if not load_required_address_list:
             # If there are no additional tokens to load, skip process
             return
 
         load_required_token_list: list[Type[Token]] = (
-            db_session.query(Token).
-            filter(Token.token_status == 1).
-            filter(Token.token_address.in_(load_required_address_list)).all()
+            db_session.query(Token)
+            .filter(Token.token_status == 1)
+            .filter(Token.token_address.in_(load_required_address_list))
+            .all()
         )
         for load_required_token in load_required_token_list:
             token_contract = web3.eth.contract(
-                address=load_required_token.token_address,
-                abi=load_required_token.abi
+                address=load_required_token.token_address, abi=load_required_token.abi
             )
             self.token_list[load_required_token.token_address] = token_contract
 
     def __get_idx_transfer_block_number(self, db_session: Session):
-        _idx_transfer_block_number = db_session.query(IDXTransferBlockNumber). \
-            first()
+        _idx_transfer_block_number = db_session.query(IDXTransferBlockNumber).first()
         if _idx_transfer_block_number is None:
             return 0
         else:
             return _idx_transfer_block_number.latest_block_number
 
     def __set_idx_transfer_block_number(self, db_session: Session, block_number: int):
-        _idx_transfer_block_number = db_session.query(IDXTransferBlockNumber). \
-            first()
+        _idx_transfer_block_number = db_session.query(IDXTransferBlockNumber).first()
         if _idx_transfer_block_number is None:
             _idx_transfer_block_number = IDXTransferBlockNumber()
 
@@ -174,12 +177,14 @@ class Processor:
                     contract=token,
                     event="Transfer",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
                 for event in events:
                     args = event["args"]
                     transaction_hash = event["transactionHash"].hex()
-                    block_timestamp = datetime.utcfromtimestamp(web3.eth.get_block(event["blockNumber"])["timestamp"])
+                    block_timestamp = datetime.utcfromtimestamp(
+                        web3.eth.get_block(event["blockNumber"])["timestamp"]
+                    )
                     if args["value"] > sys.maxsize:
                         pass
                     else:
@@ -192,7 +197,7 @@ class Processor:
                             amount=args["value"],
                             source_event=IDXTransferSourceEventType.TRANSFER,
                             data_str=None,
-                            block_timestamp=block_timestamp
+                            block_timestamp=block_timestamp,
                         )
             except Exception:
                 raise
@@ -211,12 +216,14 @@ class Processor:
                     contract=token,
                     event="Unlock",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
                 for event in events:
                     args = event["args"]
                     transaction_hash = event["transactionHash"].hex()
-                    block_timestamp = datetime.utcfromtimestamp(web3.eth.get_block(event["blockNumber"])["timestamp"])
+                    block_timestamp = datetime.utcfromtimestamp(
+                        web3.eth.get_block(event["blockNumber"])["timestamp"]
+                    )
                     if args["value"] > sys.maxsize:
                         pass
                     else:
@@ -233,21 +240,23 @@ class Processor:
                                 amount=args["value"],
                                 source_event=IDXTransferSourceEventType.UNLOCK,
                                 data_str=data_str,
-                                block_timestamp=block_timestamp
+                                block_timestamp=block_timestamp,
                             )
             except Exception:
                 raise
 
     @staticmethod
-    def __sink_on_transfer(db_session: Session,
-                           transaction_hash: str,
-                           token_address: str,
-                           from_address: str,
-                           to_address: str,
-                           amount: int,
-                           source_event: IDXTransferSourceEventType,
-                           data_str: str | None,
-                           block_timestamp: datetime):
+    def __sink_on_transfer(
+        db_session: Session,
+        transaction_hash: str,
+        token_address: str,
+        from_address: str,
+        to_address: str,
+        amount: int,
+        source_event: IDXTransferSourceEventType,
+        data_str: str | None,
+        block_timestamp: datetime,
+    ):
         if data_str is not None:
             try:
                 data = json.loads(data_str)

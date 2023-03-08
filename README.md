@@ -53,6 +53,11 @@ Install python packages with:
 $ poetry install --no-root --only main -E explorer
 ```
 
+### Install pre-commit hook
+```bash
+$ poetry run pre-commit install
+```
+
 ### Setting environment variables
 
 The main environment variables are as follows. 

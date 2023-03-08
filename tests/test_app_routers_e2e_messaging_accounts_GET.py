@@ -19,10 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import time
 from datetime import datetime
 
-from app.model.db import (
-    E2EMessagingAccount,
-    E2EMessagingAccountRsaKey
-)
+from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
 
 
 class TestAppRoutersE2EMessagingAccountsGET:
@@ -75,7 +72,7 @@ class TestAppRoutersE2EMessagingAccountsGET:
                 "rsa_key_generate_interval": 1,
                 "rsa_generation": 2,
                 "rsa_public_key": "rsa_public_key_1_1",
-                "is_deleted": False
+                "is_deleted": False,
             },
         ]
 
@@ -152,28 +149,28 @@ class TestAppRoutersE2EMessagingAccountsGET:
                 "rsa_key_generate_interval": 0,
                 "rsa_generation": 0,
                 "rsa_public_key": "rsa_public_key_1_1",
-                "is_deleted": False
+                "is_deleted": False,
             },
             {
                 "account_address": "0x1234567890123456789012345678900000000001",
                 "rsa_key_generate_interval": 1,
                 "rsa_generation": 2,
                 "rsa_public_key": None,
-                "is_deleted": True
+                "is_deleted": True,
             },
             {
                 "account_address": "0x1234567890123456789012345678900000000002",
                 "rsa_key_generate_interval": 3,
                 "rsa_generation": 4,
                 "rsa_public_key": "rsa_public_key_2_1",
-                "is_deleted": False
+                "is_deleted": False,
             },
             {
                 "account_address": "0x1234567890123456789012345678900000000003",
                 "rsa_key_generate_interval": 0,
                 "rsa_generation": 0,
                 "rsa_public_key": "rsa_public_key_3_3",
-                "is_deleted": False
+                "is_deleted": False,
             },
         ]
 

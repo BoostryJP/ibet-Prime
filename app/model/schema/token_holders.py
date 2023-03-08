@@ -17,11 +17,12 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import uuid
-from typing import List, Dict, Union
+from typing import Dict, List, Union
+
 from pydantic import BaseModel, Field, validator
+
 from app.model.db import TokenHolderBatchStatus
 from app.model.schema.types import ResultSet
-
 
 ############################
 # REQUEST
@@ -82,14 +83,17 @@ class RetrieveTokenHolderCollectionResponse(BaseModel):
 
 class ListAllTokenHolderCollectionsResponse(BaseModel):
     """List All Token Holders Collections schema (RESPONSE)"""
+
     result_set: ResultSet
     collections: List[RetrieveTokenHolderCollectionResponse]
 
 
 class TokenHoldersCollectionHolder(BaseModel):
     account_address: str = Field(description="Account address of token holder.")
-    hold_balance: int = Field(description="Amount of balance."
-                                          "This includes balance/pending_transfer/exchange_balance/exchange_commitment.")
+    hold_balance: int = Field(
+        description="Amount of balance."
+        "This includes balance/pending_transfer/exchange_balance/exchange_commitment."
+    )
     locked_balance: int = Field(description="Amount of locked balance.")
 
 
@@ -107,7 +111,7 @@ class RetrieveTokenHoldersListResponse(BaseModel):
                     {
                         "account_address": "0x85a8b8887a4bD76859751b10C8aC8EC5f3aA1bDB",
                         "hold_balance": 30000,
-                        "locked_balance": 0
+                        "locked_balance": 0,
                     }
                 ],
             }

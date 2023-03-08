@@ -17,36 +17,29 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import hashlib
+from datetime import datetime
+from unittest import mock
+from unittest.mock import ANY, MagicMock
 
 import pytest
-from unittest import mock
-from unittest.mock import (
-    ANY,
-    MagicMock
-)
-from datetime import datetime
-
 from pytz import timezone
 
 import config
-from app.model.db import (
-    Account,
-    AuthToken,
-    Token,
-    TokenType,
-    IDXTransferApproval,
-    TransferApprovalHistory,
-    TransferApprovalOperationType
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
-    ApproveTransferParams,
-)
+from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.blockchain.tx_params.ibet_security_token_escrow import (
     ApproveTransferParams as EscrowApproveTransferParams,
 )
+from app.model.blockchain.tx_params.ibet_straight_bond import ApproveTransferParams
+from app.model.db import (
+    Account,
+    AuthToken,
+    IDXTransferApproval,
+    Token,
+    TokenType,
+    TransferApprovalHistory,
+    TransferApprovalOperationType,
+)
 from app.utils.e2ee_utils import E2EEUtils
-from app.exceptions import SendTransactionError, ContractRevertError
-
 from tests.account_config import config_eth_account
 
 local_tz = timezone(config.TZ)
@@ -63,10 +56,19 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
     test_from_address = "test_from_address"
     test_to_address = "test_to_address"
     test_application_datetime = datetime(year=2019, month=9, day=1)
-    test_application_datetime_str = timezone("UTC").localize(test_application_datetime).astimezone(local_tz).isoformat()
+    test_application_datetime_str = (
+        timezone("UTC")
+        .localize(test_application_datetime)
+        .astimezone(local_tz)
+        .isoformat()
+    )
     test_application_blocktimestamp = datetime(year=2019, month=9, day=2)
-    test_application_blocktimestamp_str = timezone("UTC").localize(test_application_blocktimestamp).astimezone(
-        local_tz).isoformat()
+    test_application_blocktimestamp_str = (
+        timezone("UTC")
+        .localize(test_application_blocktimestamp)
+        .astimezone(local_tz)
+        .isoformat()
+    )
     test_approval_datetime = datetime(year=2019, month=9, day=3)
     test_approval_blocktimestamp = datetime(year=2019, month=9, day=4)
 
@@ -77,7 +79,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
     # <Normal_1_1>
     # APPROVE
     # token
-    @pytest.mark.freeze_time('2021-04-27 12:34:56')
+    @pytest.mark.freeze_time("2021-04-27 12:34:56")
     def test_normal_1_1(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -107,7 +109,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 200
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -116,38 +120,35 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
-            return_value=("test_tx_hash", {"status": 1})
+            return_value=("test_tx_hash", {"status": 1}),
         )
 
         # request target API
         with IbetSecurityTokenContract_approve_transfer as mock_transfer:
             resp = client.post(
                 self.base_url.format(self.test_token_address, id),
-                json={
-                    "operation_type": "approve"
-                },
+                json={"operation_type": "approve"},
                 headers={
                     "issuer-address": issuer_address,
-                    "eoa-password": E2EEUtils.encrypt("password")
-                }
+                    "eoa-password": E2EEUtils.encrypt("password"),
+                },
             )
 
         # Assertion
         assert resp.status_code == 200
         assert resp.json() is None
 
-        _expected = {
-            "application_id": 100,
-            "data": str(datetime.utcnow().timestamp())
-        }
+        _expected = {"application_id": 100, "data": str(datetime.utcnow().timestamp())}
 
         mock_transfer.assert_called_once_with(
             data=ApproveTransferParams(**_expected),
             tx_from=issuer_address,
-            private_key=ANY
+            private_key=ANY,
         )
 
-        approval_op_list: list[TransferApprovalHistory] = db.query(TransferApprovalHistory).all()
+        approval_op_list: list[TransferApprovalHistory] = db.query(
+            TransferApprovalHistory
+        ).all()
         assert len(approval_op_list) == 1
         approval_op = approval_op_list[0]
         assert approval_op.token_address == self.test_token_address
@@ -158,7 +159,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
     # <Normal_1_2>
     # APPROVE
     # exchange
-    @pytest.mark.freeze_time('2021-04-27 12:34:56')
+    @pytest.mark.freeze_time("2021-04-27 12:34:56")
     def test_normal_1_2(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -188,7 +189,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 200
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -198,38 +201,35 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # mock
         IbetSecurityTokenEscrow_approve_transfer = mock.patch(
             target="app.model.blockchain.exchange.IbetSecurityTokenEscrow.approve_transfer",
-            return_value=("test_tx_hash", {"status": 1})
+            return_value=("test_tx_hash", {"status": 1}),
         )
 
         # request target API
         with IbetSecurityTokenEscrow_approve_transfer as mock_transfer:
             resp = client.post(
                 self.base_url.format(self.test_token_address, id),
-                json={
-                    "operation_type": "approve"
-                },
+                json={"operation_type": "approve"},
                 headers={
                     "issuer-address": issuer_address,
-                    "eoa-password": E2EEUtils.encrypt("password")
-                }
+                    "eoa-password": E2EEUtils.encrypt("password"),
+                },
             )
 
         # Assertion
         assert resp.status_code == 200
         assert resp.json() is None
 
-        _expected = {
-            "escrow_id": 100,
-            "data": str(datetime.utcnow().timestamp())
-        }
+        _expected = {"escrow_id": 100, "data": str(datetime.utcnow().timestamp())}
 
         mock_transfer.assert_called_once_with(
             data=EscrowApproveTransferParams(**_expected),
             tx_from=issuer_address,
-            private_key=ANY
+            private_key=ANY,
         )
 
-        approval_op_list: list[TransferApprovalHistory] = db.query(TransferApprovalHistory).all()
+        approval_op_list: list[TransferApprovalHistory] = db.query(
+            TransferApprovalHistory
+        ).all()
         assert len(approval_op_list) == 1
         approval_op = approval_op_list[0]
         assert approval_op.token_address == self.test_token_address
@@ -240,7 +240,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
     # <Normal_2_1>
     # CANCEL
     # token
-    @pytest.mark.freeze_time('2021-04-27 12:34:56')
+    @pytest.mark.freeze_time("2021-04-27 12:34:56")
     def test_normal_2_1(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -270,7 +270,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 200
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -279,7 +281,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # mock
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
-            return_value=("test_tx_hash", {"status": 1})
+            return_value=("test_tx_hash", {"status": 1}),
         )
 
         # request target API
@@ -288,29 +290,26 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
                 self.base_url.format(self.test_token_address, id),
                 headers={
                     "issuer-address": issuer_address,
-                    "eoa-password": E2EEUtils.encrypt("password")
+                    "eoa-password": E2EEUtils.encrypt("password"),
                 },
-                json={
-                    "operation_type": "cancel"
-                }
+                json={"operation_type": "cancel"},
             )
 
         # Assertion
         assert resp.status_code == 200
         assert resp.json() is None
 
-        _expected = {
-            "application_id": 100,
-            "data": str(datetime.utcnow().timestamp())
-        }
+        _expected = {"application_id": 100, "data": str(datetime.utcnow().timestamp())}
 
         mock_transfer.assert_called_once_with(
             data=ApproveTransferParams(**_expected),
             tx_from=issuer_address,
-            private_key=ANY
+            private_key=ANY,
         )
 
-        cancel_op_list: list[TransferApprovalHistory] = db.query(TransferApprovalHistory).all()
+        cancel_op_list: list[TransferApprovalHistory] = db.query(
+            TransferApprovalHistory
+        ).all()
         assert len(cancel_op_list) == 1
         cancel_op = cancel_op_list[0]
         assert cancel_op.token_address == self.test_token_address
@@ -320,7 +319,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
 
     # <Normal_3>
     # Authorization by auth-token
-    @pytest.mark.freeze_time('2021-04-27 12:34:56')
+    @pytest.mark.freeze_time("2021-04-27 12:34:56")
     def test_normal_3(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -356,7 +355,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 200
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -365,35 +366,30 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
-            return_value=("test_tx_hash", {"status": 1})
+            return_value=("test_tx_hash", {"status": 1}),
         )
 
         # request target API
         with IbetSecurityTokenContract_approve_transfer as mock_transfer:
             resp = client.post(
                 self.base_url.format(self.test_token_address, id),
-                json={
-                    "operation_type": "approve"
-                },
+                json={"operation_type": "approve"},
                 headers={
                     "issuer-address": issuer_address,
-                    "auth-token": "test_auth_token"
-                }
+                    "auth-token": "test_auth_token",
+                },
             )
 
         # Assertion
         assert resp.status_code == 200
         assert resp.json() is None
 
-        _expected = {
-            "application_id": 100,
-            "data": str(datetime.utcnow().timestamp())
-        }
+        _expected = {"application_id": 100, "data": str(datetime.utcnow().timestamp())}
 
         mock_transfer.assert_called_once_with(
             data=ApproveTransferParams(**_expected),
             tx_from=issuer_address,
-            private_key=ANY
+            private_key=ANY,
         )
 
     ###########################################################################
@@ -414,22 +410,19 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
                 {
                     "loc": ["body"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
-            ]
+            ],
         }
 
     # <Error_1_2>
@@ -446,23 +439,20 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             json={},
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "operation_type"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
-            ]
+            ],
         }
 
     # <Error_1_3>
@@ -476,30 +466,25 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
-            json={
-                "operation_type": "test"
-            },
+            json={"operation_type": "test"},
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "operation_type"],
                     "ctx": {"enum_values": ["approve", "cancel"]},
                     "msg": "value is not a valid enumeration member; permitted: 'approve', 'cancel'",
-                    "type": "type_error.enum"
+                    "type": "type_error.enum",
                 },
-            ]
+            ],
         }
 
     # <Error_1_4>
@@ -511,34 +496,26 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
-            json={
-                "operation_type": "approve"
-            },
-            headers={
-                "issuer-address": "issuer_address",
-                "eoa-password": "password"
-            }
+            json={"operation_type": "approve"},
+            headers={"issuer-address": "issuer_address", "eoa-password": "password"},
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 },
                 {
                     "loc": ["header", "eoa-password"],
                     "msg": "eoa-password is not a Base64-encoded encrypted data",
-                    "type": "value_error"
-                }
-            ]
+                    "type": "value_error",
+                },
+            ],
         }
 
     # <Error_2_1>
@@ -553,23 +530,18 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
-            json={
-                "operation_type": "approve"
-            },
+            json={"operation_type": "approve"},
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 401
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "AuthorizationError"
-            },
-            "detail": "issuer does not exist, or password mismatch"
+            "meta": {"code": 1, "title": "AuthorizationError"},
+            "detail": "issuer does not exist, or password mismatch",
         }
 
     # <Error_2_2>
@@ -591,23 +563,18 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
-            json={
-                "operation_type": "approve"
-            },
+            json={"operation_type": "approve"},
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password_test")
-            }
+                "eoa-password": E2EEUtils.encrypt("password_test"),
+            },
         )
 
         # assertion
         assert resp.status_code == 401
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "AuthorizationError"
-            },
-            "detail": "issuer does not exist, or password mismatch"
+            "meta": {"code": 1, "title": "AuthorizationError"},
+            "detail": "issuer does not exist, or password mismatch",
         }
 
     # <Error_3_1>
@@ -629,23 +596,18 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
-            json={
-                "operation_type": "approve"
-            },
+            json={"operation_type": "approve"},
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token not found",
         }
 
     # <Error_3_2>
@@ -675,23 +637,18 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
-            json={
-                "operation_type": "approve"
-            },
+            json={"operation_type": "approve"},
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "transfer approval not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "transfer approval not found",
         }
 
     # <Error_4_1>
@@ -722,23 +679,18 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
-            json={
-                "operation_type": "approve"
-            },
+            json={"operation_type": "approve"},
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }
 
     # <Error_4_2>
@@ -773,9 +725,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 200
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-        _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+        _idx_transfer_approval.approval_blocktimestamp = (
+            self.test_approval_blocktimestamp
+        )
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = True
@@ -784,23 +740,18 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
-            json={
-                "operation_type": "approve"
-            },
+            json={"operation_type": "approve"},
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "already approved"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "already approved",
         }
 
     # <Error_4_3>
@@ -835,7 +786,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 200
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = True
@@ -846,23 +799,18 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
-            json={
-                "operation_type": "approve"
-            },
+            json={"operation_type": "approve"},
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "canceled application"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "canceled application",
         }
 
     # <Error_4_4>
@@ -897,7 +845,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 200
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = False
@@ -910,21 +860,16 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             self.base_url.format(self.test_token_address, id),
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
+                "eoa-password": E2EEUtils.encrypt("password"),
             },
-            json={
-                "operation_type": "cancel"
-            }
+            json={"operation_type": "cancel"},
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "escrow has not been finished yet"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "escrow has not been finished yet",
         }
 
     # <Error_4_5>
@@ -959,7 +904,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 200
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = False
@@ -972,21 +919,16 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             self.base_url.format(self.test_token_address, id),
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
+                "eoa-password": E2EEUtils.encrypt("password"),
             },
-            json={
-                "operation_type": "cancel"
-            }
+            json={"operation_type": "cancel"},
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "application that cannot be canceled"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "application that cannot be canceled",
         }
 
     # <Error_4_6>
@@ -1021,7 +963,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 200
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = False
@@ -1041,21 +985,16 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             self.base_url.format(self.test_token_address, id),
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
+                "eoa-password": E2EEUtils.encrypt("password"),
             },
-            json={
-                "operation_type": "cancel"
-            }
+            json={"operation_type": "cancel"},
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "duplicate operation"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "duplicate operation",
         }
 
     # <Error_5_1>
@@ -1065,7 +1004,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
     # raise SendTransactionError
     @mock.patch(
         "app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
-        MagicMock(side_effect=SendTransactionError()))
+        MagicMock(side_effect=SendTransactionError()),
+    )
     def test_error_5_1(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -1095,7 +1035,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 200
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -1104,23 +1046,18 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # request target API
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
-            json={
-                "operation_type": "approve"
-            },
+            json={"operation_type": "approve"},
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 2,
-                "title": "SendTransactionError"
-            },
-            "detail": "failed to send transaction"
+            "meta": {"code": 2, "title": "SendTransactionError"},
+            "detail": "failed to send transaction",
         }
 
     # <Error_5_2>
@@ -1157,7 +1094,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 200
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -1166,34 +1105,31 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
-            side_effect=ContractRevertError("120902")
+            side_effect=ContractRevertError("120902"),
         )
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
-            return_value=("test_tx_hash", {"status": 1})
+            return_value=("test_tx_hash", {"status": 1}),
         )
 
         # request target API
-        with IbetSecurityTokenContract_approve_transfer, IbetSecurityTokenContract_cancel_transfer:
+        with (
+            IbetSecurityTokenContract_approve_transfer
+        ), IbetSecurityTokenContract_cancel_transfer:
             resp = client.post(
                 self.base_url.format(self.test_token_address, id),
-                json={
-                    "operation_type": "approve"
-                },
+                json={"operation_type": "approve"},
                 headers={
                     "issuer-address": issuer_address,
-                    "eoa-password": E2EEUtils.encrypt("password")
-                }
+                    "eoa-password": E2EEUtils.encrypt("password"),
+                },
             )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 120902,
-                "title": "ContractRevertError"
-            },
-            "detail": "Application is invalid."
+            "meta": {"code": 120902, "title": "ContractRevertError"},
+            "detail": "Application is invalid.",
         }
 
     # <Error_5_3>
@@ -1203,7 +1139,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
     # raise SendTransactionError
     @mock.patch(
         "app.model.blockchain.exchange.IbetSecurityTokenEscrow.approve_transfer",
-        MagicMock(side_effect=SendTransactionError()))
+        MagicMock(side_effect=SendTransactionError()),
+    )
     def test_error_5_3(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -1233,7 +1170,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 200
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -1243,23 +1182,18 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # request target API
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
-            json={
-                "operation_type": "approve"
-            },
+            json={"operation_type": "approve"},
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 2,
-                "title": "SendTransactionError"
-            },
-            "detail": "failed to send transaction"
+            "meta": {"code": 2, "title": "SendTransactionError"},
+            "detail": "failed to send transaction",
         }
 
     # <Error_5_4>
@@ -1296,7 +1230,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 200
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -1306,30 +1242,25 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # mock
         IbetSecurityTokenEscrow_approve_transfer = mock.patch(
             target="app.model.blockchain.exchange.IbetSecurityTokenEscrow.approve_transfer",
-            side_effect=ContractRevertError("120902")
+            side_effect=ContractRevertError("120902"),
         )
 
         # request target API
         with IbetSecurityTokenEscrow_approve_transfer:
             resp = client.post(
                 self.base_url.format(self.test_token_address, id),
-                json={
-                    "operation_type": "approve"
-                },
+                json={"operation_type": "approve"},
                 headers={
                     "issuer-address": issuer_address,
-                    "eoa-password": E2EEUtils.encrypt("password")
-                }
+                    "eoa-password": E2EEUtils.encrypt("password"),
+                },
             )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 120902,
-                "title": "ContractRevertError"
-            },
-            "detail": "Application is invalid."
+            "meta": {"code": 120902, "title": "ContractRevertError"},
+            "detail": "Application is invalid.",
         }
 
     # <Error_6_1>
@@ -1339,7 +1270,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
     # raise SendTransactionError
     @mock.patch(
         "app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
-        MagicMock(side_effect=SendTransactionError()))
+        MagicMock(side_effect=SendTransactionError()),
+    )
     def test_error_6_1(self, client, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer["address"]
@@ -1369,7 +1301,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 200
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -1380,21 +1314,16 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             self.base_url.format(self.test_token_address, id),
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
+                "eoa-password": E2EEUtils.encrypt("password"),
             },
-            json={
-                "operation_type": "cancel"
-            }
+            json={"operation_type": "cancel"},
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 2,
-                "title": "SendTransactionError"
-            },
-            "detail": "failed to send transaction"
+            "meta": {"code": 2, "title": "SendTransactionError"},
+            "detail": "failed to send transaction",
         }
 
     # <Error_6_2>
@@ -1431,7 +1360,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 200
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -1440,7 +1371,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
         # mock
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
-            side_effect=ContractRevertError("120802")
+            side_effect=ContractRevertError("120802"),
         )
 
         # request target API
@@ -1449,19 +1380,14 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
                 self.base_url.format(self.test_token_address, id),
                 headers={
                     "issuer-address": issuer_address,
-                    "eoa-password": E2EEUtils.encrypt("password")
+                    "eoa-password": E2EEUtils.encrypt("password"),
                 },
-                json={
-                    "operation_type": "cancel"
-                }
+                json={"operation_type": "cancel"},
             )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 120802,
-                "title": "ContractRevertError"
-            },
-            "detail": "Application is invalid."
+            "meta": {"code": 120802, "title": "ContractRevertError"},
+            "detail": "Application is invalid.",
         }

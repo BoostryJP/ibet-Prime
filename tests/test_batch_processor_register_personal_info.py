@@ -18,28 +18,30 @@ SPDX-License-Identifier: Apache-2.0
 """
 import logging
 from typing import Optional
+from unittest.mock import patch
+
 import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy.orm import Session
-from unittest.mock import patch
 
+from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.blockchain import IbetShareContract
-from app.model.blockchain.tx_params.ibet_share import UpdateParams as IbetShareUpdateParams
+from app.model.blockchain.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+)
 from app.model.db import (
     Account,
-    TokenType,
+    BatchRegisterPersonalInfo,
+    BatchRegisterPersonalInfoUpload,
+    BatchRegisterPersonalInfoUploadStatus,
     Notification,
     NotificationType,
-    BatchRegisterPersonalInfoUpload,
-    BatchRegisterPersonalInfo,
-    BatchRegisterPersonalInfoUploadStatus,
-    Token
+    Token,
+    TokenType,
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-from app.exceptions import SendTransactionError, ContractRevertError
-from batch.processor_batch_register_personal_info import Processor, LOG
-
+from batch.processor_batch_register_personal_info import LOG, Processor
 from tests.account_config import config_eth_account
 
 
@@ -58,20 +60,24 @@ class TestProcessor:
     account_list = [
         {
             "address": config_eth_account("user1")["address"],
-            "keyfile": config_eth_account("user1")["keyfile_json"]
-        }, {
+            "keyfile": config_eth_account("user1")["keyfile_json"],
+        },
+        {
             "address": config_eth_account("user2")["address"],
-            "keyfile": config_eth_account("user2")["keyfile_json"]
-        }, {
+            "keyfile": config_eth_account("user2")["keyfile_json"],
+        },
+        {
             "address": config_eth_account("user3")["address"],
-            "keyfile": config_eth_account("user3")["keyfile_json"]
-        }, {
+            "keyfile": config_eth_account("user3")["keyfile_json"],
+        },
+        {
             "address": config_eth_account("user4")["address"],
-            "keyfile": config_eth_account("user4")["keyfile_json"]
-        }, {
+            "keyfile": config_eth_account("user4")["keyfile_json"],
+        },
+        {
             "address": config_eth_account("user5")["address"],
-            "keyfile": config_eth_account("user5")["keyfile_json"]
-        }
+            "keyfile": config_eth_account("user5")["keyfile_json"],
+        },
     ]
 
     upload_id_list = [
@@ -80,7 +86,7 @@ class TestProcessor:
         "0f33d48f-9e6e-4a36-a55e-5bbcbda69c80",
         "1c961f7d-e1ad-40e5-988b-cca3d6009643",
         "1e778f46-864e-4ec0-b566-21bd31cf63ff",
-        "1f33d48f-9e6e-4a36-a55e-5bbcbda69c80"
+        "1f33d48f-9e6e-4a36-a55e-5bbcbda69c80",
     ]
 
     register_personal_info_token = [
@@ -93,11 +99,13 @@ class TestProcessor:
     ]
 
     @staticmethod
-    def deploy_share_token_contract(address,
-                                    private_key,
-                                    personal_info_contract_address,
-                                    tradable_exchange_contract_address=None,
-                                    transfer_approval_required=None):
+    def deploy_share_token_contract(
+        address,
+        private_key,
+        personal_info_contract_address,
+        tradable_exchange_contract_address=None,
+        transfer_approval_required=None,
+    ):
         arguments = [
             "token.name",
             "token.symbol",
@@ -107,7 +115,7 @@ class TestProcessor:
             "token.dividend_record_date",
             "token.dividend_payment_date",
             "token.cancellation_date",
-            30
+            30,
         ]
         share_contract = IbetShareContract()
         token_address, _, _ = share_contract.create(arguments, address, private_key)
@@ -116,10 +124,10 @@ class TestProcessor:
                 transferable=True,
                 personal_info_contract_address=personal_info_contract_address,
                 tradable_exchange_contract_address=tradable_exchange_contract_address,
-                transfer_approval_required=transfer_approval_required
+                transfer_approval_required=transfer_approval_required,
             ),
             tx_from=address,
-            private_key=private_key
+            private_key=private_key,
         )
 
         return ContractUtils.get_contract("IbetShare", token_address)
@@ -133,8 +141,7 @@ class TestProcessor:
     def test_normal_1(self, processor: Processor, db: Session, personal_info_contract):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=_account["keyfile"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=_account["keyfile"], password="password".encode("utf-8")
         )
 
         # Prepare data : Account
@@ -145,9 +152,9 @@ class TestProcessor:
         db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = self.deploy_share_token_contract(_account["address"],
-                                                            issuer_private_key,
-                                                            personal_info_contract.address)
+        token_contract_1 = self.deploy_share_token_contract(
+            _account["address"], issuer_private_key, personal_info_contract.address
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_SHARE.value
@@ -162,7 +169,7 @@ class TestProcessor:
         # mock
         PersonalInfoContract_register_info = patch(
             target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
-            return_value="mock_tx_hash"
+            return_value="mock_tx_hash",
         )
 
         with PersonalInfoContract_register_info as mock:
@@ -175,8 +182,7 @@ class TestProcessor:
     def test_normal_2(self, processor: Processor, db: Session, personal_info_contract):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=_account["keyfile"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=_account["keyfile"], password="password".encode("utf-8")
         )
 
         # Prepare data : Account
@@ -187,9 +193,9 @@ class TestProcessor:
         db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = self.deploy_share_token_contract(_account["address"],
-                                                            issuer_private_key,
-                                                            personal_info_contract.address)
+        token_contract_1 = self.deploy_share_token_contract(
+            _account["address"], issuer_private_key, personal_info_contract.address
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_SHARE.value
@@ -205,7 +211,9 @@ class TestProcessor:
             batch_register_upload = BatchRegisterPersonalInfoUpload()
             batch_register_upload.issuer_address = _account["address"]
             batch_register_upload.upload_id = self.upload_id_list[i]
-            batch_register_upload.status = [s.value for s in BatchRegisterPersonalInfoUploadStatus][i % 3]
+            batch_register_upload.status = [
+                s.value for s in BatchRegisterPersonalInfoUploadStatus
+            ][i % 3]
             db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
@@ -224,7 +232,7 @@ class TestProcessor:
                     "email": "test_value@a.test",
                     "birth": "19900101",
                     "is_corporate": True,
-                    "tax_category": 3
+                    "tax_category": 3,
                 }
                 db.add(batch_register)
 
@@ -233,7 +241,7 @@ class TestProcessor:
         # mock
         PersonalInfoContract_register_info = patch(
             target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
-            return_value="mock_tx_hash"
+            return_value="mock_tx_hash",
         )
 
         with PersonalInfoContract_register_info:
@@ -241,26 +249,42 @@ class TestProcessor:
             processor.process()
 
             # Assertion
-            _batch_register_upload_list = db.query(BatchRegisterPersonalInfoUpload). \
-                filter(BatchRegisterPersonalInfoUpload.upload_id.in_([self.upload_id_list[0], self.upload_id_list[4]])). \
-                all()
+            _batch_register_upload_list = (
+                db.query(BatchRegisterPersonalInfoUpload)
+                .filter(
+                    BatchRegisterPersonalInfoUpload.upload_id.in_(
+                        [self.upload_id_list[0], self.upload_id_list[4]]
+                    )
+                )
+                .all()
+            )
             for _upload in _batch_register_upload_list:
-                assert _upload.status == BatchRegisterPersonalInfoUploadStatus.DONE.value
+                assert (
+                    _upload.status == BatchRegisterPersonalInfoUploadStatus.DONE.value
+                )
 
-            _batch_register_list = db.query(BatchRegisterPersonalInfo). \
-                filter(BatchRegisterPersonalInfo.upload_id.in_([self.upload_id_list[0], self.upload_id_list[4]])). \
-                all()
+            _batch_register_list = (
+                db.query(BatchRegisterPersonalInfo)
+                .filter(
+                    BatchRegisterPersonalInfo.upload_id.in_(
+                        [self.upload_id_list[0], self.upload_id_list[4]]
+                    )
+                )
+                .all()
+            )
             for _batch_register in _batch_register_list:
                 assert _batch_register.status == 1
 
     # <Normal_3>
     # Skip other thread processed issuer
-    @patch("batch.processor_batch_register_personal_info.BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE", 2)
+    @patch(
+        "batch.processor_batch_register_personal_info.BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE",
+        2,
+    )
     def test_normal_3(self, processor: Processor, db: Session, personal_info_contract):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=_account["keyfile"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=_account["keyfile"], password="password".encode("utf-8")
         )
         _other_issuer = self.account_list[1]
 
@@ -272,9 +296,9 @@ class TestProcessor:
         db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = self.deploy_share_token_contract(_account["address"],
-                                                            issuer_private_key,
-                                                            personal_info_contract.address)
+        token_contract_1 = self.deploy_share_token_contract(
+            _account["address"], issuer_private_key, personal_info_contract.address
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_SHARE.value
@@ -288,9 +312,13 @@ class TestProcessor:
         # Only record with "pending" status should be processed
         for i in range(0, 6):
             batch_register_upload = BatchRegisterPersonalInfoUpload()
-            batch_register_upload.issuer_address = _account["address"] if i % 3 == 0 else _other_issuer["address"]
+            batch_register_upload.issuer_address = (
+                _account["address"] if i % 3 == 0 else _other_issuer["address"]
+            )
             batch_register_upload.upload_id = self.upload_id_list[i]
-            batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING.value
+            batch_register_upload.status = (
+                BatchRegisterPersonalInfoUploadStatus.PENDING.value
+            )
             db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
@@ -309,7 +337,7 @@ class TestProcessor:
                     "email": "test_value@a.test",
                     "birth": "19900101",
                     "is_corporate": True,
-                    "tax_category": 3
+                    "tax_category": 3,
                 }
                 db.add(batch_register)
 
@@ -318,7 +346,7 @@ class TestProcessor:
         # mock
         PersonalInfoContract_register_info = patch(
             target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
-            return_value="mock_tx_hash"
+            return_value="mock_tx_hash",
         )
         processing_issuer = patch(
             "batch.processor_batch_register_personal_info.processing_issuer",
@@ -327,9 +355,9 @@ class TestProcessor:
                     self.upload_id_list[1]: _other_issuer["address"],
                     self.upload_id_list[2]: _other_issuer["address"],
                     self.upload_id_list[4]: _other_issuer["address"],
-                    self.upload_id_list[5]: _other_issuer["address"]
+                    self.upload_id_list[5]: _other_issuer["address"],
                 }
-            }
+            },
         )
 
         with PersonalInfoContract_register_info, processing_issuer:
@@ -337,45 +365,83 @@ class TestProcessor:
             processor.process()
 
             # Assertion
-            _batch_register_upload_list: list[BatchRegisterPersonalInfoUpload] = db.query(BatchRegisterPersonalInfoUpload). \
-                filter(BatchRegisterPersonalInfoUpload.status == BatchRegisterPersonalInfoUploadStatus.DONE.value). \
-                order_by(BatchRegisterPersonalInfoUpload.created).all()
+            _batch_register_upload_list: list[BatchRegisterPersonalInfoUpload] = (
+                db.query(BatchRegisterPersonalInfoUpload)
+                .filter(
+                    BatchRegisterPersonalInfoUpload.status
+                    == BatchRegisterPersonalInfoUploadStatus.DONE.value
+                )
+                .order_by(BatchRegisterPersonalInfoUpload.created)
+                .all()
+            )
             assert len(_batch_register_upload_list) == 2
 
             assert _batch_register_upload_list[0].issuer_address == _account["address"]
             assert _batch_register_upload_list[1].issuer_address == _account["address"]
 
-            _batch_register_list = db.query(BatchRegisterPersonalInfo). \
-                filter(BatchRegisterPersonalInfo.upload_id.in_([r.upload_id for r in _batch_register_upload_list])). \
-                all()
+            _batch_register_list = (
+                db.query(BatchRegisterPersonalInfo)
+                .filter(
+                    BatchRegisterPersonalInfo.upload_id.in_(
+                        [r.upload_id for r in _batch_register_upload_list]
+                    )
+                )
+                .all()
+            )
             for _batch_register in _batch_register_list:
                 assert _batch_register.status == 1
 
-            _batch_register_upload_list: list[BatchRegisterPersonalInfoUpload] = db.query(BatchRegisterPersonalInfoUpload). \
-                filter(BatchRegisterPersonalInfoUpload.status == BatchRegisterPersonalInfoUploadStatus.PENDING.value). \
-                order_by(BatchRegisterPersonalInfoUpload.created).all()
+            _batch_register_upload_list: list[BatchRegisterPersonalInfoUpload] = (
+                db.query(BatchRegisterPersonalInfoUpload)
+                .filter(
+                    BatchRegisterPersonalInfoUpload.status
+                    == BatchRegisterPersonalInfoUploadStatus.PENDING.value
+                )
+                .order_by(BatchRegisterPersonalInfoUpload.created)
+                .all()
+            )
 
             assert len(_batch_register_upload_list) == 4
 
-            assert _batch_register_upload_list[0].issuer_address == _other_issuer["address"]
-            assert _batch_register_upload_list[1].issuer_address == _other_issuer["address"]
-            assert _batch_register_upload_list[2].issuer_address == _other_issuer["address"]
-            assert _batch_register_upload_list[3].issuer_address == _other_issuer["address"]
+            assert (
+                _batch_register_upload_list[0].issuer_address
+                == _other_issuer["address"]
+            )
+            assert (
+                _batch_register_upload_list[1].issuer_address
+                == _other_issuer["address"]
+            )
+            assert (
+                _batch_register_upload_list[2].issuer_address
+                == _other_issuer["address"]
+            )
+            assert (
+                _batch_register_upload_list[3].issuer_address
+                == _other_issuer["address"]
+            )
 
-            _batch_register_list = db.query(BatchRegisterPersonalInfo). \
-                filter(BatchRegisterPersonalInfo.upload_id.in_([r.upload_id for r in _batch_register_upload_list])). \
-                all()
+            _batch_register_list = (
+                db.query(BatchRegisterPersonalInfo)
+                .filter(
+                    BatchRegisterPersonalInfo.upload_id.in_(
+                        [r.upload_id for r in _batch_register_upload_list]
+                    )
+                )
+                .all()
+            )
             for _batch_register in _batch_register_list:
                 assert _batch_register.status == 0
 
     # <Normal_4>
     # other thread processed issuer(all same issuer)
-    @patch("batch.processor_batch_register_personal_info.BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE", 2)
+    @patch(
+        "batch.processor_batch_register_personal_info.BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE",
+        2,
+    )
     def test_normal_4(self, processor: Processor, db: Session, personal_info_contract):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=_account["keyfile"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=_account["keyfile"], password="password".encode("utf-8")
         )
         _other_issuer = self.account_list[1]
 
@@ -387,9 +453,9 @@ class TestProcessor:
         db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = self.deploy_share_token_contract(_account["address"],
-                                                            issuer_private_key,
-                                                            personal_info_contract.address)
+        token_contract_1 = self.deploy_share_token_contract(
+            _account["address"], issuer_private_key, personal_info_contract.address
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_SHARE.value
@@ -405,7 +471,9 @@ class TestProcessor:
             batch_register_upload = BatchRegisterPersonalInfoUpload()
             batch_register_upload.issuer_address = _account["address"]
             batch_register_upload.upload_id = self.upload_id_list[i]
-            batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING.value
+            batch_register_upload.status = (
+                BatchRegisterPersonalInfoUploadStatus.PENDING.value
+            )
             db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
@@ -424,7 +492,7 @@ class TestProcessor:
                     "email": "test_value@a.test",
                     "birth": "19900101",
                     "is_corporate": True,
-                    "tax_category": 3
+                    "tax_category": 3,
                 }
                 db.add(batch_register)
 
@@ -433,7 +501,7 @@ class TestProcessor:
         # mock
         PersonalInfoContract_register_info = patch(
             target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
-            return_value="mock_tx_hash"
+            return_value="mock_tx_hash",
         )
         processing_issuer = patch(
             "batch.processor_batch_register_personal_info.processing_issuer",
@@ -441,9 +509,9 @@ class TestProcessor:
                 1: {
                     self.upload_id_list[3]: _account["address"],
                     self.upload_id_list[4]: _account["address"],
-                    self.upload_id_list[5]: _account["address"]
+                    self.upload_id_list[5]: _account["address"],
                 }
-            }
+            },
         )
 
         with PersonalInfoContract_register_info, processing_issuer:
@@ -451,23 +519,41 @@ class TestProcessor:
             processor.process()
 
             # Assertion
-            _batch_register_upload_list: list[BatchRegisterPersonalInfoUpload] = db.query(BatchRegisterPersonalInfoUpload). \
-                filter(BatchRegisterPersonalInfoUpload.status == BatchRegisterPersonalInfoUploadStatus.DONE.value). \
-                order_by(BatchRegisterPersonalInfoUpload.created).all()
+            _batch_register_upload_list: list[BatchRegisterPersonalInfoUpload] = (
+                db.query(BatchRegisterPersonalInfoUpload)
+                .filter(
+                    BatchRegisterPersonalInfoUpload.status
+                    == BatchRegisterPersonalInfoUploadStatus.DONE.value
+                )
+                .order_by(BatchRegisterPersonalInfoUpload.created)
+                .all()
+            )
             assert len(_batch_register_upload_list) == 2
 
             assert _batch_register_upload_list[0].issuer_address == _account["address"]
             assert _batch_register_upload_list[1].issuer_address == _account["address"]
 
-            _batch_register_list = db.query(BatchRegisterPersonalInfo). \
-                filter(BatchRegisterPersonalInfo.upload_id.in_([r.upload_id for r in _batch_register_upload_list])). \
-                all()
+            _batch_register_list = (
+                db.query(BatchRegisterPersonalInfo)
+                .filter(
+                    BatchRegisterPersonalInfo.upload_id.in_(
+                        [r.upload_id for r in _batch_register_upload_list]
+                    )
+                )
+                .all()
+            )
             for _batch_register in _batch_register_list:
                 assert _batch_register.status == 1
 
-            _batch_register_upload_list: list[BatchRegisterPersonalInfoUpload] = db.query(BatchRegisterPersonalInfoUpload). \
-                filter(BatchRegisterPersonalInfoUpload.status == BatchRegisterPersonalInfoUploadStatus.PENDING.value). \
-                order_by(BatchRegisterPersonalInfoUpload.created).all()
+            _batch_register_upload_list: list[BatchRegisterPersonalInfoUpload] = (
+                db.query(BatchRegisterPersonalInfoUpload)
+                .filter(
+                    BatchRegisterPersonalInfoUpload.status
+                    == BatchRegisterPersonalInfoUploadStatus.PENDING.value
+                )
+                .order_by(BatchRegisterPersonalInfoUpload.created)
+                .all()
+            )
 
             assert len(_batch_register_upload_list) == 4
 
@@ -476,9 +562,15 @@ class TestProcessor:
             assert _batch_register_upload_list[2].issuer_address == _account["address"]
             assert _batch_register_upload_list[3].issuer_address == _account["address"]
 
-            _batch_register_list = db.query(BatchRegisterPersonalInfo). \
-                filter(BatchRegisterPersonalInfo.upload_id.in_([r.upload_id for r in _batch_register_upload_list[0:3]])). \
-                all()
+            _batch_register_list = (
+                db.query(BatchRegisterPersonalInfo)
+                .filter(
+                    BatchRegisterPersonalInfo.upload_id.in_(
+                        [r.upload_id for r in _batch_register_upload_list[0:3]]
+                    )
+                )
+                .all()
+            )
             for _batch_register in _batch_register_list:
                 assert _batch_register.status == 0
 
@@ -488,17 +580,22 @@ class TestProcessor:
 
     # <Error_1>
     # 1 Batch Task but no issuer
-    def test_error_1(self, processor: Processor, db: Session, personal_info_contract, caplog: pytest.LogCaptureFixture):
+    def test_error_1(
+        self,
+        processor: Processor,
+        db: Session,
+        personal_info_contract,
+        caplog: pytest.LogCaptureFixture,
+    ):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=_account["keyfile"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=_account["keyfile"], password="password".encode("utf-8")
         )
 
         # Prepare data : Token
-        token_contract_1 = self.deploy_share_token_contract(_account["address"],
-                                                            issuer_private_key,
-                                                            personal_info_contract.address)
+        token_contract_1 = self.deploy_share_token_contract(
+            _account["address"], issuer_private_key, personal_info_contract.address
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_SHARE.value
@@ -512,7 +609,9 @@ class TestProcessor:
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _account["address"]
         batch_register_upload.upload_id = self.upload_id_list[0]
-        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING.value
+        batch_register_upload.status = (
+            BatchRegisterPersonalInfoUploadStatus.PENDING.value
+        )
         db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
@@ -529,7 +628,7 @@ class TestProcessor:
             "email": "test_value@a.test",
             "birth": "19900101",
             "is_corporate": True,
-            "tax_category": 3
+            "tax_category": 3,
         }
         db.add(batch_register)
 
@@ -538,7 +637,7 @@ class TestProcessor:
         # mock
         PersonalInfoContract_register_info = patch(
             target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
-            return_value="mock_tx_hash"
+            return_value="mock_tx_hash",
         )
 
         with PersonalInfoContract_register_info as mock:
@@ -547,12 +646,25 @@ class TestProcessor:
             mock.assert_not_called()
 
             # Assertion
-            _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = db.query(BatchRegisterPersonalInfoUpload).\
-                filter(BatchRegisterPersonalInfoUpload.issuer_address == _account["address"]).first()
-            assert _batch_register_upload.status == BatchRegisterPersonalInfoUploadStatus.FAILED.value
+            _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = (
+                db.query(BatchRegisterPersonalInfoUpload)
+                .filter(
+                    BatchRegisterPersonalInfoUpload.issuer_address
+                    == _account["address"]
+                )
+                .first()
+            )
+            assert (
+                _batch_register_upload.status
+                == BatchRegisterPersonalInfoUploadStatus.FAILED.value
+            )
 
             assert 1 == caplog.record_tuples.count(
-                (LOG.name, logging.WARN, f"Issuer of the upload_id:{_batch_register_upload.upload_id} does not exist")
+                (
+                    LOG.name,
+                    logging.WARN,
+                    f"Issuer of the upload_id:{_batch_register_upload.upload_id} does not exist",
+                )
             )
 
             _notification_list = db.query(Notification).all()
@@ -560,20 +672,28 @@ class TestProcessor:
                 assert _notification.notice_id is not None
                 assert _notification.issuer_address == _account["address"]
                 assert _notification.priority == 1
-                assert _notification.type == NotificationType.BATCH_REGISTER_PERSONAL_INFO_ERROR
+                assert (
+                    _notification.type
+                    == NotificationType.BATCH_REGISTER_PERSONAL_INFO_ERROR
+                )
                 assert _notification.code == 0
                 assert _notification.metainfo == {
                     "upload_id": batch_register_upload.upload_id,
-                    "error_registration_id": []
+                    "error_registration_id": [],
                 }
 
     # <Error_2>
     # fail to get the private key
-    def test_error_2(self, processor: Processor, db: Session, personal_info_contract, caplog: pytest.LogCaptureFixture):
+    def test_error_2(
+        self,
+        processor: Processor,
+        db: Session,
+        personal_info_contract,
+        caplog: pytest.LogCaptureFixture,
+    ):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=_account["keyfile"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=_account["keyfile"], password="password".encode("utf-8")
         )
 
         # Prepare data : Account
@@ -584,9 +704,9 @@ class TestProcessor:
         db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = self.deploy_share_token_contract(_account["address"],
-                                                            issuer_private_key,
-                                                            personal_info_contract.address)
+        token_contract_1 = self.deploy_share_token_contract(
+            _account["address"], issuer_private_key, personal_info_contract.address
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_SHARE.value
@@ -600,7 +720,9 @@ class TestProcessor:
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _account["address"]
         batch_register_upload.upload_id = self.upload_id_list[0]
-        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING.value
+        batch_register_upload.status = (
+            BatchRegisterPersonalInfoUploadStatus.PENDING.value
+        )
         db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
@@ -619,7 +741,7 @@ class TestProcessor:
                 "email": "test_value@a.test",
                 "birth": "19900101",
                 "is_corporate": True,
-                "tax_category": 3
+                "tax_category": 3,
             }
             db.add(batch_register)
             batch_register_list.append(batch_register)
@@ -629,7 +751,7 @@ class TestProcessor:
         # mock
         PersonalInfoContract_register_info = patch(
             target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
-            side_effect=SendTransactionError()
+            side_effect=SendTransactionError(),
         )
 
         with PersonalInfoContract_register_info:
@@ -637,18 +759,39 @@ class TestProcessor:
             processor.process()
 
             # Assertion
-            _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = db.query(BatchRegisterPersonalInfoUpload).\
-                filter(BatchRegisterPersonalInfoUpload.issuer_address == _account["address"]).first()
-            assert _batch_register_upload.status == BatchRegisterPersonalInfoUploadStatus.FAILED.value
+            _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = (
+                db.query(BatchRegisterPersonalInfoUpload)
+                .filter(
+                    BatchRegisterPersonalInfoUpload.issuer_address
+                    == _account["address"]
+                )
+                .first()
+            )
+            assert (
+                _batch_register_upload.status
+                == BatchRegisterPersonalInfoUploadStatus.FAILED.value
+            )
 
             assert 1 == caplog.record_tuples.count(
-                (LOG.name, logging.WARN, f"Failed to send transaction: id=<{batch_register_list[0].id}>")
+                (
+                    LOG.name,
+                    logging.WARN,
+                    f"Failed to send transaction: id=<{batch_register_list[0].id}>",
+                )
             )
             assert 1 == caplog.record_tuples.count(
-                (LOG.name, logging.WARN, f"Failed to send transaction: id=<{batch_register_list[1].id}>")
+                (
+                    LOG.name,
+                    logging.WARN,
+                    f"Failed to send transaction: id=<{batch_register_list[1].id}>",
+                )
             )
             assert 1 == caplog.record_tuples.count(
-                (LOG.name, logging.WARN, f"Failed to send transaction: id=<{batch_register_list[2].id}>")
+                (
+                    LOG.name,
+                    logging.WARN,
+                    f"Failed to send transaction: id=<{batch_register_list[2].id}>",
+                )
             )
 
             _notification_list = db.query(Notification).all()
@@ -656,20 +799,30 @@ class TestProcessor:
                 assert _notification.notice_id is not None
                 assert _notification.issuer_address == _account["address"]
                 assert _notification.priority == 1
-                assert _notification.type == NotificationType.BATCH_REGISTER_PERSONAL_INFO_ERROR
+                assert (
+                    _notification.type
+                    == NotificationType.BATCH_REGISTER_PERSONAL_INFO_ERROR
+                )
                 assert _notification.code == 2
                 assert _notification.metainfo == {
                     "upload_id": batch_register_upload.upload_id,
-                    "error_registration_id": [batch_register.id for batch_register in batch_register_list]
+                    "error_registration_id": [
+                        batch_register.id for batch_register in batch_register_list
+                    ],
                 }
 
     # <Error_3>
     # ContractRevertError
-    def test_error_3(self, processor: Processor, db: Session, personal_info_contract, caplog: pytest.LogCaptureFixture):
+    def test_error_3(
+        self,
+        processor: Processor,
+        db: Session,
+        personal_info_contract,
+        caplog: pytest.LogCaptureFixture,
+    ):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=_account["keyfile"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=_account["keyfile"], password="password".encode("utf-8")
         )
 
         # Prepare data : Account
@@ -680,9 +833,9 @@ class TestProcessor:
         db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = self.deploy_share_token_contract(_account["address"],
-                                                            issuer_private_key,
-                                                            personal_info_contract.address)
+        token_contract_1 = self.deploy_share_token_contract(
+            _account["address"], issuer_private_key, personal_info_contract.address
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_SHARE.value
@@ -696,7 +849,9 @@ class TestProcessor:
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _account["address"]
         batch_register_upload.upload_id = self.upload_id_list[0]
-        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING.value
+        batch_register_upload.status = (
+            BatchRegisterPersonalInfoUploadStatus.PENDING.value
+        )
         db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
@@ -715,7 +870,7 @@ class TestProcessor:
                 "email": "test_value@a.test",
                 "birth": "19900101",
                 "is_corporate": True,
-                "tax_category": 3
+                "tax_category": 3,
             }
             db.add(batch_register)
             batch_register_list.append(batch_register)
@@ -725,7 +880,7 @@ class TestProcessor:
         # mock
         PersonalInfoContract_register_info = patch(
             target="app.model.blockchain.personal_info.PersonalInfoContract.register_info",
-            side_effect=ContractRevertError("999999")
+            side_effect=ContractRevertError("999999"),
         )
 
         with PersonalInfoContract_register_info:
@@ -733,18 +888,39 @@ class TestProcessor:
             processor.process()
 
             # Assertion
-            _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = db.query(BatchRegisterPersonalInfoUpload).\
-                filter(BatchRegisterPersonalInfoUpload.issuer_address == _account["address"]).first()
-            assert _batch_register_upload.status == BatchRegisterPersonalInfoUploadStatus.FAILED.value
+            _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = (
+                db.query(BatchRegisterPersonalInfoUpload)
+                .filter(
+                    BatchRegisterPersonalInfoUpload.issuer_address
+                    == _account["address"]
+                )
+                .first()
+            )
+            assert (
+                _batch_register_upload.status
+                == BatchRegisterPersonalInfoUploadStatus.FAILED.value
+            )
 
             assert 1 == caplog.record_tuples.count(
-                (LOG.name, logging.WARN, f"Transaction reverted: id=<{batch_register_list[0].id}> error_code:<999999> error_msg:<>")
+                (
+                    LOG.name,
+                    logging.WARN,
+                    f"Transaction reverted: id=<{batch_register_list[0].id}> error_code:<999999> error_msg:<>",
+                )
             )
             assert 1 == caplog.record_tuples.count(
-                (LOG.name, logging.WARN, f"Transaction reverted: id=<{batch_register_list[1].id}> error_code:<999999> error_msg:<>")
+                (
+                    LOG.name,
+                    logging.WARN,
+                    f"Transaction reverted: id=<{batch_register_list[1].id}> error_code:<999999> error_msg:<>",
+                )
             )
             assert 1 == caplog.record_tuples.count(
-                (LOG.name, logging.WARN, f"Transaction reverted: id=<{batch_register_list[2].id}> error_code:<999999> error_msg:<>")
+                (
+                    LOG.name,
+                    logging.WARN,
+                    f"Transaction reverted: id=<{batch_register_list[2].id}> error_code:<999999> error_msg:<>",
+                )
             )
 
             _notification_list = db.query(Notification).all()
@@ -752,9 +928,14 @@ class TestProcessor:
                 assert _notification.notice_id is not None
                 assert _notification.issuer_address == _account["address"]
                 assert _notification.priority == 1
-                assert _notification.type == NotificationType.BATCH_REGISTER_PERSONAL_INFO_ERROR
+                assert (
+                    _notification.type
+                    == NotificationType.BATCH_REGISTER_PERSONAL_INFO_ERROR
+                )
                 assert _notification.code == 2
                 assert _notification.metainfo == {
                     "upload_id": batch_register_upload.upload_id,
-                    "error_registration_id": [batch_register.id for batch_register in batch_register_list]
+                    "error_registration_id": [
+                        batch_register.id for batch_register in batch_register_list
+                    ],
                 }

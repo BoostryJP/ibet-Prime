@@ -21,11 +21,11 @@ from typing import Literal, Union
 from rich.align import Align
 from rich.panel import Panel
 from rich.style import Style
-from textual.reactive import Reactive, reactive
-
 from src.gui import styles
 from src.gui.rendarable.block_detail_info import BlockDetailInfo
 from src.gui.widget.base import TuiWidget
+from textual.reactive import Reactive, reactive
+
 from app.model.schema import BlockDataDetail
 
 
@@ -39,7 +39,9 @@ class BlockDetailView(TuiWidget):
         self.render()
 
     def render(self) -> Panel:
-        block_detail: Union[Align, BlockDetailInfo] = Align.center("Press [E] to set query", vertical="middle")
+        block_detail: Union[Align, BlockDetailInfo] = Align.center(
+            "Press [E] to set query", vertical="middle"
+        )
         style: Style | Literal["none"] = Style(bgcolor="#004578")
 
         if self.block_detail is not None:

@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -25,9 +26,11 @@ from pydantic import BaseModel
 ############################
 class E2EEResponse(BaseModel):
     """E2EE schema (Response)"""
+
     public_key: Optional[str]
 
 
 class BlockNumberResponse(BaseModel):
     """Block Number schema (Response)"""
+
     block_number: int

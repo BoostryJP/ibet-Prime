@@ -28,7 +28,6 @@ class SendTransactionError(Exception):
 
 
 class ContractRevertError(Exception):
-
     def __init__(self, code_msg: str):
         code, message = error_code_msg(code_msg)
         self.code = code
@@ -49,6 +48,7 @@ class ServiceUnavailableError(Exception):
 
 class AuthTokenAlreadyExistsError(Exception):
     pass
+
 
 class ResponseLimitExceededError(Exception):
     pass

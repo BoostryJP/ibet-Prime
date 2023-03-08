@@ -18,19 +18,11 @@ SPDX-License-Identifier: Apache-2.0
 """
 from unittest import mock
 
-from app.model.db import (
-    IDXLockedPosition,
-    Token,
-    TokenType
-)
-from app.model.blockchain import (
-    IbetStraightBondContract,
-    IbetShareContract
-)
+from app.model.blockchain import IbetShareContract, IbetStraightBondContract
+from app.model.db import IDXLockedPosition, Token, TokenType
 
 
 class TestAppRoutersLockedPositions:
-
     # target API endpoint
     base_url = "/positions/{account_address}/lock"
 
@@ -66,7 +58,7 @@ class TestAppRoutersLockedPositions:
                 "limit": None,
                 "total": 0,
             },
-            "locked_positions": []
+            "locked_positions": [],
         }
 
     # Normal_2_1
@@ -153,7 +145,7 @@ class TestAppRoutersLockedPositions:
                     "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                     "token_name": "test_bond_1",
                     "lock_address": lock_address_1,
-                    "locked": 5
+                    "locked": 5,
                 },
                 {
                     "issuer_address": issuer_address,
@@ -161,9 +153,9 @@ class TestAppRoutersLockedPositions:
                     "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                     "token_name": "test_bond_2",
                     "lock_address": lock_address_2,
-                    "locked": 5
+                    "locked": 5,
                 },
-            ]
+            ],
         }
 
     # Normal_2_2
@@ -250,7 +242,7 @@ class TestAppRoutersLockedPositions:
                     "token_type": TokenType.IBET_SHARE.value,
                     "token_name": "test_share_1",
                     "lock_address": lock_address_1,
-                    "locked": 5
+                    "locked": 5,
                 },
                 {
                     "issuer_address": issuer_address,
@@ -258,9 +250,9 @@ class TestAppRoutersLockedPositions:
                     "token_type": TokenType.IBET_SHARE.value,
                     "token_name": "test_share_2",
                     "lock_address": lock_address_2,
-                    "locked": 5
+                    "locked": 5,
                 },
-            ]
+            ],
         }
 
     # Normal_3_1
@@ -305,7 +297,7 @@ class TestAppRoutersLockedPositions:
                 "limit": None,
                 "total": 0,
             },
-            "locked_positions": []
+            "locked_positions": [],
         }
 
     # Normal_3_2
@@ -384,9 +376,9 @@ class TestAppRoutersLockedPositions:
                     "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                     "token_name": "test_bond_2",
                     "lock_address": lock_address_2,
-                    "locked": 5
+                    "locked": 5,
                 },
-            ]
+            ],
         }
 
     # Normal_4
@@ -448,7 +440,7 @@ class TestAppRoutersLockedPositions:
         # request target api
         resp = client.get(
             self.base_url.format(account_address=account_address),
-            headers={"issuer-address": issuer_address}
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
@@ -467,9 +459,9 @@ class TestAppRoutersLockedPositions:
                     "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                     "token_name": "test_bond_1",
                     "lock_address": lock_address_1,
-                    "locked": 5
+                    "locked": 5,
                 },
-            ]
+            ],
         }
 
     # Normal_5
@@ -528,7 +520,7 @@ class TestAppRoutersLockedPositions:
         # request target api
         resp = client.get(
             self.base_url.format(account_address=account_address),
-            params={"token_type": TokenType.IBET_STRAIGHT_BOND.value}
+            params={"token_type": TokenType.IBET_STRAIGHT_BOND.value},
         )
 
         # assertion
@@ -547,9 +539,9 @@ class TestAppRoutersLockedPositions:
                     "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                     "token_name": "test_bond_1",
                     "lock_address": lock_address_2,
-                    "locked": 5
+                    "locked": 5,
                 },
-            ]
+            ],
         }
 
     # Normal_6
@@ -607,10 +599,7 @@ class TestAppRoutersLockedPositions:
         # request target api
         resp = client.get(
             self.base_url.format(account_address=account_address),
-            params={
-                "offset": 1,
-                "limit": 1
-            }
+            params={"offset": 1, "limit": 1},
         )
 
         # assertion
@@ -629,9 +618,9 @@ class TestAppRoutersLockedPositions:
                     "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                     "token_name": "test_bond_1",
                     "lock_address": lock_address_2,
-                    "locked": 5
+                    "locked": 5,
                 },
-            ]
+            ],
         }
 
     ###########################################################################
@@ -649,23 +638,20 @@ class TestAppRoutersLockedPositions:
             self.base_url.format(account_address=account_address),
             headers={
                 "issuer-address": "test",
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # Error_1_2
@@ -681,32 +667,29 @@ class TestAppRoutersLockedPositions:
                 "token_type": "test",
                 "offset": "test",
                 "limit": "test",
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["query", "token_type"],
                     "ctx": {"enum_values": ["IbetStraightBond", "IbetShare"]},
                     "msg": "value is not a valid enumeration member; permitted: 'IbetStraightBond', 'IbetShare'",
-                    "type": "type_error.enum"
+                    "type": "type_error.enum",
                 },
                 {
                     "loc": ["query", "offset"],
                     "msg": "value is not a valid integer",
-                    "type": "type_error.integer"
+                    "type": "type_error.integer",
                 },
                 {
                     "loc": ["query", "limit"],
                     "msg": "value is not a valid integer",
-                    "type": "type_error.integer"
+                    "type": "type_error.integer",
                 },
-            ]
+            ],
         }

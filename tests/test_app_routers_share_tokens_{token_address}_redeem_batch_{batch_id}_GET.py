@@ -16,16 +16,15 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from app.utils.e2ee_utils import E2EEUtils
-
 from app.model.db import (
-    TokenType,
     Account,
-    Token,
-    BatchIssueRedeemUpload,
+    BatchIssueRedeem,
     BatchIssueRedeemProcessingCategory,
-    BatchIssueRedeem
+    BatchIssueRedeemUpload,
+    Token,
+    TokenType,
 )
+from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
 
@@ -39,13 +38,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchBatchIdGET:
     ]
 
     account_list = [
-        {
-            "address": config_eth_account("user1")["address"],
-            "amount": 1
-        }, {
-            "address": config_eth_account("user2")["address"],
-            "amount": 2
-        }
+        {"address": config_eth_account("user1")["address"], "amount": 1},
+        {"address": config_eth_account("user2")["address"], "amount": 2},
     ]
 
     ###########################################################################
@@ -95,22 +89,20 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchBatchIdGET:
         # request target API
         resp = client.get(
             self.base_url.format(test_token_address, self.upload_id_list[0]),
-            headers={
-                "issuer-address": issuer_address
-            }
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'processed': True,
-            'results': [
+            "processed": True,
+            "results": [
                 {
-                    'account_address': self.account_list[0]["address"],
-                    'amount': self.account_list[0]["amount"],
-                    'status': 1
+                    "account_address": self.account_list[0]["address"],
+                    "amount": self.account_list[0]["amount"],
+                    "status": 1,
                 }
-            ]
+            ],
         }
 
     # Normal_2
@@ -163,27 +155,25 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchBatchIdGET:
         # request target API
         resp = client.get(
             self.base_url.format(test_token_address, self.upload_id_list[0]),
-            headers={
-                "issuer-address": issuer_address
-            }
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'processed': True,
-            'results': [
+            "processed": True,
+            "results": [
                 {
-                    'account_address': self.account_list[0]["address"],
-                    'amount': self.account_list[0]["amount"],
-                    'status': 1
+                    "account_address": self.account_list[0]["address"],
+                    "amount": self.account_list[0]["amount"],
+                    "status": 1,
                 },
                 {
-                    'account_address': self.account_list[1]["address"],
-                    'amount': self.account_list[1]["amount"],
-                    'status': 1
-                }
-            ]
+                    "account_address": self.account_list[1]["address"],
+                    "amount": self.account_list[1]["amount"],
+                    "status": 1,
+                },
+            ],
         }
 
     #########################################################################
@@ -226,17 +216,12 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchBatchIdGET:
         # request target API
         resp = client.get(
             self.base_url.format(test_token_address, self.upload_id_list[0]),
-            headers={
-                "issuer-address": issuer_address
-            }
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "batch not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "batch not found",
         }

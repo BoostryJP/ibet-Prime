@@ -11,10 +11,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
-from fastapi.responses import ORJSONResponse
-from typing import Any
 import decimal
+from typing import Any
+
 import orjson
+from fastapi.responses import ORJSONResponse
 
 from config import RESPONSE_VALIDATION_MODE
 
@@ -24,12 +25,15 @@ def decimal_default(obj):
         return float(obj)
     raise TypeError
 
+
 class CustomORJSONResponse(ORJSONResponse):
     media_type = "application/json"
 
     def render(self, content: Any) -> bytes:
         return orjson.dumps(
-            content, option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SERIALIZE_NUMPY, default=decimal_default
+            content,
+            option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SERIALIZE_NUMPY,
+            default=decimal_default,
         )
 
 

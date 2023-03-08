@@ -25,26 +25,17 @@ from eth_utils import to_checksum_address
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-from web3.types import (
-    BlockData,
-    TxData
-)
+from web3.types import BlockData, TxData
 
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
-from config import (
-    DATABASE_URL,
-    CHAIN_ID
-)
-from app.exceptions import ServiceUnavailableError
-from app.model.db import (
-    IDXBlockData,
-    IDXBlockDataBlockNumber,
-    IDXTxData
-)
-from app.utils.web3_utils import Web3Wrapper
 import batch_log
+
+from app.exceptions import ServiceUnavailableError
+from app.model.db import IDXBlockData, IDXBlockDataBlockNumber, IDXTxData
+from app.utils.web3_utils import Web3Wrapper
+from config import CHAIN_ID, DATABASE_URL
 
 process_name = "INDEXER-BLOCK_TX_DATA"
 LOG = batch_log.get_logger(process_name=process_name)
@@ -72,7 +63,9 @@ class Processor:
 
             LOG.info("syncing from={}, to={}".format(from_block, latest_block))
             for block_number in range(from_block, latest_block + 1):
-                block_data: BlockData = web3.eth.get_block(block_number, full_transactions=True)
+                block_data: BlockData = web3.eth.get_block(
+                    block_number, full_transactions=True
+                )
 
                 # Synchronize block data
                 block_model = IDXBlockData()
@@ -88,7 +81,9 @@ class Processor:
                 block_model.gas_limit = block_data.get("gasLimit")
                 block_model.gas_used = block_data.get("gasUsed")
                 block_model.timestamp = block_data.get("timestamp")
-                block_model.proof_of_authority_data = block_data.get("proofOfAuthorityData").hex()
+                block_model.proof_of_authority_data = block_data.get(
+                    "proofOfAuthorityData"
+                ).hex()
                 block_model.mix_hash = block_data.get("mixHash").hex()
                 block_model.nonce = block_data.get("nonce").hex()
                 block_model.hash = block_data.get("hash").hex()
@@ -104,7 +99,11 @@ class Processor:
                     tx_model.block_number = transaction.get("blockNumber")
                     tx_model.transaction_index = transaction.get("transactionIndex")
                     tx_model.from_address = to_checksum_address(transaction.get("from"))
-                    tx_model.to_address = to_checksum_address(transaction.get("to")) if transaction.get("to") else None
+                    tx_model.to_address = (
+                        to_checksum_address(transaction.get("to"))
+                        if transaction.get("to")
+                        else None
+                    )
                     tx_model.input = transaction.get("input")
                     tx_model.gas = transaction.get("gas")
                     tx_model.gas_price = transaction.get("gasPrice")
@@ -130,9 +129,9 @@ class Processor:
     @staticmethod
     def __get_indexed_block_number(db_session: Session):
         indexed_block_number = (
-            db_session.query(IDXBlockDataBlockNumber).
-            filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID)).
-            first()
+            db_session.query(IDXBlockDataBlockNumber)
+            .filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
+            .first()
         )
         if indexed_block_number is None:
             return -1

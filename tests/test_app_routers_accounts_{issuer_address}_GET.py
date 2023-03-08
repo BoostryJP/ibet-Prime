@@ -49,7 +49,7 @@ class TestAppRoutersAccountsIssuerAddressGET:
             "issuer_address": _admin_account["address"],
             "rsa_public_key": None,
             "rsa_status": AccountRsaStatus.UNSET.value,
-            "is_deleted": False
+            "is_deleted": False,
         }
 
     # <Normal_2>
@@ -75,7 +75,7 @@ class TestAppRoutersAccountsIssuerAddressGET:
             "issuer_address": _admin_account["address"],
             "rsa_public_key": _admin_account["rsa_public_key"],
             "rsa_status": AccountRsaStatus.CHANGING.value,
-            "is_deleted": False
+            "is_deleted": False,
         }
 
     ###########################################################################
@@ -89,8 +89,6 @@ class TestAppRoutersAccountsIssuerAddressGET:
 
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1, "title": "NotFound"
-            },
-            "detail": "issuer does not exist"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "issuer does not exist",
         }

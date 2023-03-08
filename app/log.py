@@ -16,21 +16,14 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import sys
 import logging
+import sys
 import urllib
 from datetime import datetime
-from fastapi import (
-    Request,
-    Response
-)
 
-from config import (
-    LOG_LEVEL,
-    APP_ENV,
-    AUTH_LOGFILE,
-    ACCESS_LOGFILE
-)
+from fastapi import Request, Response
+
+from config import ACCESS_LOGFILE, APP_ENV, AUTH_LOGFILE, LOG_LEVEL
 
 logging.basicConfig(level=LOG_LEVEL)
 LOG = logging.getLogger("issuer_api")
@@ -58,13 +51,17 @@ if APP_ENV == "live":
 
     # Auth Log
     stream_handler_auth = logging.StreamHandler(open(AUTH_LOGFILE, "a"))
-    formatter_auth = logging.Formatter(INFO_FORMAT.format("[AUTH-LOG] "), TIMESTAMP_FORMAT)
+    formatter_auth = logging.Formatter(
+        INFO_FORMAT.format("[AUTH-LOG] "), TIMESTAMP_FORMAT
+    )
     stream_handler_auth.setFormatter(formatter_auth)
     AUTH_LOG.addHandler(stream_handler_auth)
 
     # Access Log
     stream_handler_access = logging.StreamHandler(open(ACCESS_LOGFILE, "a"))
-    formatter_access = logging.Formatter(INFO_FORMAT.format("[ACCESS-LOG] "), TIMESTAMP_FORMAT)
+    formatter_access = logging.Formatter(
+        INFO_FORMAT.format("[ACCESS-LOG] "), TIMESTAMP_FORMAT
+    )
     stream_handler_access.setFormatter(formatter_access)
     ACCESS_LOG.addHandler(stream_handler_access)
 
@@ -77,13 +74,17 @@ if APP_ENV == "dev" or APP_ENV == "local":
 
     # Auth Log
     stream_handler_auth = logging.StreamHandler(open(AUTH_LOGFILE, "a"))
-    formatter_auth = logging.Formatter(DEBUG_FORMAT.format("[AUTH-LOG] "), TIMESTAMP_FORMAT)
+    formatter_auth = logging.Formatter(
+        DEBUG_FORMAT.format("[AUTH-LOG] "), TIMESTAMP_FORMAT
+    )
     stream_handler_auth.setFormatter(formatter_auth)
     AUTH_LOG.addHandler(stream_handler_auth)
 
     # Access Log
     stream_handler_access = logging.StreamHandler(open(ACCESS_LOGFILE, "a"))
-    formatter_access = logging.Formatter(INFO_FORMAT.format("[ACCESS-LOG] "), TIMESTAMP_FORMAT)  # Same live's formatter
+    formatter_access = logging.Formatter(
+        INFO_FORMAT.format("[ACCESS-LOG] "), TIMESTAMP_FORMAT
+    )  # Same live's formatter
     stream_handler_access.setFormatter(formatter_access)
     ACCESS_LOG.addHandler(stream_handler_access)
 
@@ -107,7 +108,13 @@ def output_access_log(req: Request, res: Response, request_start_time: datetime)
         http_version = req.scope.get("http_version", "")
         status_code = res.status_code
         response_time = (datetime.utcnow() - request_start_time).total_seconds()
-        access_msg = ACCESS_FORMAT % (method, url, http_version, status_code, response_time)
+        access_msg = ACCESS_FORMAT % (
+            method,
+            url,
+            http_version,
+            status_code,
+            response_time,
+        )
 
         address = "None"  # Initial value
         headers = req.scope.get("headers", [])

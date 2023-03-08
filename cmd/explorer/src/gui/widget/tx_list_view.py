@@ -16,19 +16,24 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from src.gui.widget.base import TuiWidget
+from src.gui.widget.tx_list_table import TxListTable
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widget import Widget
 from textual.widgets import Static
 
-from src.gui.widget.base import TuiWidget
-from src.gui.widget.tx_list_table import TxListTable
-
 
 class TxListView(TuiWidget):
     BINDINGS = []
 
-    def __init__(self, *children: Widget, name: str | None = None, id: str | None = None, classes: str | None = None):
+    def __init__(
+        self,
+        *children: Widget,
+        name: str | None = None,
+        id: str | None = None,
+        classes: str | None = None
+    ):
         super().__init__(*children, name=name, id=id, classes=classes)
 
     def compose(self) -> ComposeResult:

@@ -16,7 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from app.model.db import Account, TokenType, BulkTransfer, BulkTransferUpload
+from app.model.db import Account, BulkTransfer, BulkTransferUpload, TokenType
 from tests.account_config import config_eth_account
 
 
@@ -27,20 +27,22 @@ class TestAppRoutersShareBulkTransferGET:
     upload_issuer_list = [
         {
             "address": config_eth_account("user1")["address"],
-            "keyfile": config_eth_account("user1")["keyfile_json"]
-        }, {
+            "keyfile": config_eth_account("user1")["keyfile_json"],
+        },
+        {
             "address": config_eth_account("user2")["address"],
-            "keyfile": config_eth_account("user2")["keyfile_json"]
-        }, {
+            "keyfile": config_eth_account("user2")["keyfile_json"],
+        },
+        {
             "address": config_eth_account("user3")["address"],
-            "keyfile": config_eth_account("user3")["keyfile_json"]
-        }
+            "keyfile": config_eth_account("user3")["keyfile_json"],
+        },
     ]
 
     upload_id_list = [
         "0c961f7d-e1ad-40e5-988b-cca3d6009643",  # 0: under progress
         "de778f46-864e-4ec0-b566-21bd31cf63ff",  # 1: succeeded
-        "cf33d48f-9e6e-4a36-a55e-5bbcbda69c80"  # 2: failed
+        "cf33d48f-9e6e-4a36-a55e-5bbcbda69c80",  # 2: failed
     ]
 
     bulk_transfer_token = "0xbB4138520af85fAfdDAACc7F0AabfE188334D0ca"
@@ -82,7 +84,7 @@ class TestAppRoutersShareBulkTransferGET:
         # request target API
         resp = client.get(
             self.test_url.format(self.upload_id_list[1]),
-            headers={"issuer-address": self.upload_issuer_list[1]["address"]}
+            headers={"issuer-address": self.upload_issuer_list[1]["address"]},
         )
 
         # assertion
@@ -96,14 +98,13 @@ class TestAppRoutersShareBulkTransferGET:
                 "from_address": self.upload_issuer_list[1]["address"],
                 "to_address": self.upload_issuer_list[2]["address"],
                 "amount": 11,
-                "status": 1
+                "status": 1,
             }
         ]
         assert resp.json() == assumed_response
 
     # <Normal_2>
     def test_normal_2(self, client, db):
-
         for i in range(0, 3):
             # prepare data : BulkTransferUpload
             bulk_transfer_upload = BulkTransferUpload()
@@ -141,7 +142,7 @@ class TestAppRoutersShareBulkTransferGET:
                 "from_address": self.upload_issuer_list[1]["address"],
                 "to_address": self.upload_issuer_list[2]["address"],
                 "amount": 10,
-                "status": 0
+                "status": 0,
             }
         ]
         assert resp.json() == assumed_response
@@ -157,40 +158,32 @@ class TestAppRoutersShareBulkTransferGET:
         # request target API
         resp = client.get(
             self.test_url.format(self.upload_id_list[0]),
-            headers={"issuer-address": "DUMMY ADDRESS"}
+            headers={"issuer-address": "DUMMY ADDRESS"},
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_2>
     # Upload id Not Found
     def test_error_2(self, client, db):
         # request target API
-        resp = client.get(
-            self.test_url.format("DUMMY UPLOAD ID")
-        )
+        resp = client.get(self.test_url.format("DUMMY UPLOAD ID"))
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
+            "meta": {"code": 1, "title": "NotFound"},
             "detail": "bulk transfer not found",
         }
 
@@ -228,15 +221,12 @@ class TestAppRoutersShareBulkTransferGET:
         # request target API
         resp = client.get(
             self.test_url.format(self.upload_id_list[2]),
-            headers={"issuer-address": self.upload_issuer_list[0]["address"]}
+            headers={"issuer-address": self.upload_issuer_list[0]["address"]},
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "bulk transfer not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "bulk transfer not found",
         }

@@ -18,12 +18,11 @@ SPDX-License-Identifier: Apache-2.0
 """
 from pydantic import BaseModel
 from rich.text import Text
+from src.gui.consts import ID
+from src.gui.widget.base import TuiWidget
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.widgets import Button
-
-from src.gui.consts import ID
-from src.gui.widget.base import TuiWidget
 
 
 class MenuInstruction(BaseModel):
@@ -43,7 +42,11 @@ class Menu(TuiWidget):
     ix: MenuInstruction | None = None
 
     def compose(self) -> ComposeResult:
-        yield Button(Text.from_markup("\[t] Show Transactions :package:"), id=ID.MENU_SHOW_TX, classes="menubutton")
+        yield Button(
+            Text.from_markup("\[t] Show Transactions :package:"),
+            id=ID.MENU_SHOW_TX,
+            classes="menubutton",
+        )
         yield Button("\[c] Cancel", id=ID.MENU_CANCEL, classes="menubutton")
 
     def show(self, ix: MenuInstruction):

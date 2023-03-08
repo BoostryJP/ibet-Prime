@@ -17,11 +17,10 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
-
 from unittest import mock
 from unittest.mock import MagicMock
-from app.exceptions import ServiceUnavailableError
 
+from app.exceptions import ServiceUnavailableError
 from app.model.db import Node
 
 
@@ -41,9 +40,7 @@ class TestAppRoutersBlockNumberGET:
 
         # assertion
         assert resp.status_code == 200
-        assert resp.json() == {
-            "block_number": 100
-        }
+        assert resp.json() == {"block_number": 100}
 
     ###########################################################################
     # Error Case
@@ -51,7 +48,10 @@ class TestAppRoutersBlockNumberGET:
 
     # <Error_1>
     # Unable to connect ibet
-    @mock.patch("web3.eth.BaseEth.get_block_number", MagicMock(side_effect=ServiceUnavailableError("")))
+    @mock.patch(
+        "web3.eth.BaseEth.get_block_number",
+        MagicMock(side_effect=ServiceUnavailableError("")),
+    )
     def test_error_1(self, client, db):
         # request target api
         resp = client.get(self.apiurl)
@@ -59,9 +59,6 @@ class TestAppRoutersBlockNumberGET:
         # assertion
         assert resp.status_code == 503
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "ServiceUnavailableError"
-            },
-            "detail": ""
+            "meta": {"code": 1, "title": "ServiceUnavailableError"},
+            "detail": "",
         }

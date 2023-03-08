@@ -16,11 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from app.model.db import (
-    Token,
-    TokenType,
-    LedgerDetailsData
-)
+from app.model.db import LedgerDetailsData, Token, TokenType
 from tests.account_config import config_eth_account
 
 
@@ -88,7 +84,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdGET:
             self.base_url.format(token_address=token_address, data_id=data_id),
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
@@ -245,7 +241,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdGET:
             self.base_url.format(token_address=token_address, data_id=data_id),
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
@@ -284,23 +280,20 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdGET:
             self.base_url.format(token_address=token_address, data_id=data_id),
             headers={
                 "issuer-address": "test",
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_2_1>
@@ -316,7 +309,9 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdGET:
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
-        _token.issuer_address = "0x1234567890123456789012345678901234567899"  # not target
+        _token.issuer_address = (
+            "0x1234567890123456789012345678901234567899"  # not target
+        )
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 2
@@ -327,17 +322,14 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdGET:
             self.base_url.format(token_address=token_address, data_id=data_id),
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token does not exist"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token does not exist",
         }
 
     # <Error_2_2>
@@ -355,11 +347,8 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdGET:
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token does not exist"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token does not exist",
         }
 
     # <Error_3>
@@ -385,15 +374,12 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdGET:
             self.base_url.format(token_address=token_address, data_id=data_id),
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }

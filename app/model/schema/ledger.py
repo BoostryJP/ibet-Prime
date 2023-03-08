@@ -16,36 +16,30 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import (
-    List,
-    Optional
-)
-from pydantic import (
-    BaseModel,
-    validator,
-    Field
-)
 from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel, Field, validator
+
+from app.model.db import LedgerDetailsDataType, TokenType
 
 from .types import ResultSet
-from app.model.db import (
-    LedgerDetailsDataType,
-    TokenType
-)
-
 
 ############################
 # REQUEST
 ############################
 
+
 class CreateUpdateLedgerDetailsDataTemplateRequest(BaseModel):
     """Create or Update Ledger Details Data Template schema (Request)"""
+
     type: LedgerDetailsDataType = Field(...)
     source: Optional[str] = Field(None, max_length=42)
 
 
 class CreateUpdateLedgerDetailsTemplateRequest(BaseModel):
     """Create or Update Ledger Details Template schema (Request)"""
+
     token_detail_type: str = Field(..., max_length=100)
     headers: Optional[List[dict]]
     data: CreateUpdateLedgerDetailsDataTemplateRequest
@@ -54,6 +48,7 @@ class CreateUpdateLedgerDetailsTemplateRequest(BaseModel):
 
 class CreateUpdateLedgerTemplateRequest(BaseModel):
     """Create or Update Ledger Template schema (Request)"""
+
     token_name: str = Field(..., max_length=200)
     headers: Optional[List[dict]]
     details: List[CreateUpdateLedgerDetailsTemplateRequest]
@@ -68,12 +63,15 @@ class CreateUpdateLedgerTemplateRequest(BaseModel):
 
 class CreateUpdateLedgerDetailsDataRequest(BaseModel):
     """Create or Update Ledger Details Data Structure schema (Request)"""
+
     name: Optional[str] = Field(None, max_length=200)
     address: Optional[str] = Field(None, max_length=200)
     amount: Optional[int] = Field(None, ge=0, le=1_000_000_000_000)
     price: Optional[int] = Field(None, ge=0, le=5_000_000_000)
     balance: Optional[int] = Field(None, ge=0, le=1_000_000_000_000 * 5_000_000_000)
-    acquisition_date: Optional[str] = Field(None, min_length=10, max_length=10, description="YYYY/MM/DD")
+    acquisition_date: Optional[str] = Field(
+        None, min_length=10, max_length=10, description="YYYY/MM/DD"
+    )
 
     @validator("acquisition_date")
     def acquisition_date_format_is_YYYYMMDD_slash(cls, v):
@@ -89,8 +87,10 @@ class CreateUpdateLedgerDetailsDataRequest(BaseModel):
 # RESPONSE
 ############################
 
+
 class LedgerResponse(BaseModel):
     """Ledger schema (Response)"""
+
     id: int
     token_address: str
     token_type: TokenType
@@ -99,12 +99,14 @@ class LedgerResponse(BaseModel):
 
 class ListAllLedgerHistoryResponse(BaseModel):
     """List All Ledger History schema (Response)"""
+
     result_set: ResultSet
     ledgers: List[LedgerResponse]
 
 
 class RetrieveLedgerDetailsDataHistoryResponse(BaseModel):
     """Retrieve Ledger Details Data History schema (Response)"""
+
     account_address: Optional[str]
     name: Optional[str]
     address: Optional[str]
@@ -116,6 +118,7 @@ class RetrieveLedgerDetailsDataHistoryResponse(BaseModel):
 
 class RetrieveLedgerDetailsHistoryResponse(BaseModel):
     """Retrieve Ledger Details History schema (Response)"""
+
     token_detail_type: str
     headers: Optional[List[dict]]
     data: List[RetrieveLedgerDetailsDataHistoryResponse]
@@ -124,6 +127,7 @@ class RetrieveLedgerDetailsHistoryResponse(BaseModel):
 
 class RetrieveLedgerHistoryResponse(BaseModel):
     """Retrieve Ledger History schema (Response)"""
+
     created: str
     token_name: str
     headers: Optional[List[dict]]
@@ -133,12 +137,14 @@ class RetrieveLedgerHistoryResponse(BaseModel):
 
 class LedgerDetailsDataTemplateResponse(BaseModel):
     """Ledger Details Data Template schema (Response)"""
+
     type: LedgerDetailsDataType
     source: Optional[str]
 
 
 class LedgerDetailsTemplateResponse(BaseModel):
     """Ledger Details Template schema (Response)"""
+
     token_detail_type: str
     headers: Optional[List[dict]]
     data: LedgerDetailsDataTemplateResponse
@@ -147,6 +153,7 @@ class LedgerDetailsTemplateResponse(BaseModel):
 
 class LedgerTemplateResponse(BaseModel):
     """Ledger Template schema (Response)"""
+
     token_name: str
     headers: Optional[List[dict]]
     details: List[LedgerDetailsTemplateResponse]
@@ -155,6 +162,7 @@ class LedgerTemplateResponse(BaseModel):
 
 class LedgerDetailsDataListAllResponse(BaseModel):
     """Ledger Details Data(List All) schema (Response)"""
+
     data_id: str
     count: int
     created: datetime
@@ -162,17 +170,20 @@ class LedgerDetailsDataListAllResponse(BaseModel):
 
 class ListAllLedgerDetailsDataResponse(BaseModel):
     """List All Ledger Details Data schema (Response)"""
+
     result_set: ResultSet
     details_data: List[LedgerDetailsDataListAllResponse]
 
 
 class LedgerDetailsDataResponse(BaseModel):
     """Ledger Details Data schema (Response)"""
+
     data_id: str
 
 
 class RetrieveLedgerDetailsDataResponse(BaseModel):
     """Retrieve Ledger Details Data schema (Response)"""
+
     name: Optional[str]
     address: Optional[str]
     amount: int

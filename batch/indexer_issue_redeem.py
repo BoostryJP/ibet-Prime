@@ -24,28 +24,25 @@ from typing import Type
 
 from eth_utils import to_checksum_address
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 from web3.eth import Contract
 
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
-from config import (
-    INDEXER_SYNC_INTERVAL,
-    DATABASE_URL,
-    INDEXER_BLOCK_LOT_MAX_SIZE
-)
+import batch_log
+
+from app.exceptions import ServiceUnavailableError
 from app.model.db import (
-    Token,
     IDXIssueRedeem,
+    IDXIssueRedeemBlockNumber,
     IDXIssueRedeemEventType,
-    IDXIssueRedeemBlockNumber
+    Token,
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
-from app.exceptions import ServiceUnavailableError
-import batch_log
+from config import DATABASE_URL, INDEXER_BLOCK_LOT_MAX_SIZE, INDEXER_SYNC_INTERVAL
 
 process_name = "INDEXER-Issue-Redeem"
 LOG = batch_log.get_logger(process_name=process_name)
@@ -66,7 +63,9 @@ class Processor:
 
             # Get from_block_number and to_block_number for contract event filter
             latest_block = web3.eth.block_number
-            _from_block = self.__get_idx_issue_redeem_block_number(db_session=db_session)
+            _from_block = self.__get_idx_issue_redeem_block_number(
+                db_session=db_session
+            )
             _to_block = _from_block + INDEXER_BLOCK_LOT_MAX_SIZE
 
             # Skip processing if the latest block is not counted up
@@ -88,18 +87,17 @@ class Processor:
                 self.__sync_all(
                     db_session=db_session,
                     block_from=_from_block + 1,
-                    block_to=latest_block
+                    block_to=latest_block,
                 )
             else:
                 self.__sync_all(
                     db_session=db_session,
                     block_from=_from_block + 1,
-                    block_to=latest_block
+                    block_to=latest_block,
                 )
 
             self.__set_idx_transfer_block_number(
-                db_session=db_session,
-                block_number=latest_block
+                db_session=db_session, block_number=latest_block
             )
             db_session.commit()
         finally:
@@ -109,41 +107,44 @@ class Processor:
     def __get_token_list(self, db_session: Session):
         issued_token_address_list: tuple[str, ...] = tuple(
             [
-                record[0] for record in (
-                    db_session.query(Token.token_address).filter(Token.token_status == 1).all()
+                record[0]
+                for record in (
+                    db_session.query(Token.token_address)
+                    .filter(Token.token_status == 1)
+                    .all()
                 )
             ]
         )
         loaded_token_address_list: tuple[str, ...] = tuple(self.token_list.keys())
-        load_required_address_list = list(set(issued_token_address_list) ^ set(loaded_token_address_list))
+        load_required_address_list = list(
+            set(issued_token_address_list) ^ set(loaded_token_address_list)
+        )
 
         if not load_required_address_list:
             # If there are no tokens to load newly, skip process
             return
 
         load_required_token_list: list[Type[Token]] = (
-            db_session.query(Token).
-            filter(Token.token_status == 1).
-            filter(Token.token_address.in_(load_required_address_list)).all()
+            db_session.query(Token)
+            .filter(Token.token_status == 1)
+            .filter(Token.token_address.in_(load_required_address_list))
+            .all()
         )
         for load_required_token in load_required_token_list:
             token_contract = web3.eth.contract(
-                address=load_required_token.token_address,
-                abi=load_required_token.abi
+                address=load_required_token.token_address, abi=load_required_token.abi
             )
             self.token_list[load_required_token.token_address] = token_contract
 
     def __get_idx_issue_redeem_block_number(self, db_session: Session):
-        _idx_transfer_block_number = db_session.query(IDXIssueRedeemBlockNumber). \
-            first()
+        _idx_transfer_block_number = db_session.query(IDXIssueRedeemBlockNumber).first()
         if _idx_transfer_block_number is None:
             return 0
         else:
             return _idx_transfer_block_number.latest_block_number
 
     def __set_idx_transfer_block_number(self, db_session: Session, block_number: int):
-        _idx_transfer_block_number = db_session.query(IDXIssueRedeemBlockNumber). \
-            first()
+        _idx_transfer_block_number = db_session.query(IDXIssueRedeemBlockNumber).first()
         if _idx_transfer_block_number is None:
             _idx_transfer_block_number = IDXIssueRedeemBlockNumber()
 
@@ -169,12 +170,14 @@ class Processor:
                     contract=token,
                     event="Issue",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
                 for event in events:
                     args = event["args"]
                     transaction_hash = event["transactionHash"].hex()
-                    block_timestamp = datetime.utcfromtimestamp(web3.eth.get_block(event["blockNumber"])["timestamp"])
+                    block_timestamp = datetime.utcfromtimestamp(
+                        web3.eth.get_block(event["blockNumber"])["timestamp"]
+                    )
                     if args["amount"] > sys.maxsize:
                         pass
                     else:
@@ -186,7 +189,7 @@ class Processor:
                             locked_address=args["lockAddress"],
                             target_address=args["targetAddress"],
                             amount=args["amount"],
-                            block_timestamp=block_timestamp
+                            block_timestamp=block_timestamp,
                         )
             except Exception:
                 LOG.exception("An exception occurred during event synchronization")
@@ -205,12 +208,14 @@ class Processor:
                     contract=token,
                     event="Redeem",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
                 for event in events:
                     args = event["args"]
                     transaction_hash = event["transactionHash"].hex()
-                    block_timestamp = datetime.utcfromtimestamp(web3.eth.get_block(event["blockNumber"])["timestamp"])
+                    block_timestamp = datetime.utcfromtimestamp(
+                        web3.eth.get_block(event["blockNumber"])["timestamp"]
+                    )
                     if args["amount"] > sys.maxsize:
                         pass
                     else:
@@ -222,20 +227,22 @@ class Processor:
                             locked_address=args["lockAddress"],
                             target_address=args["targetAddress"],
                             amount=args["amount"],
-                            block_timestamp=block_timestamp
+                            block_timestamp=block_timestamp,
                         )
             except Exception:
                 LOG.exception("An exception occurred during event synchronization")
 
     @staticmethod
-    def __insert_index(db_session: Session,
-                       event_type: str,
-                       transaction_hash: str,
-                       token_address: str,
-                       locked_address: str,
-                       target_address: str,
-                       amount: int,
-                       block_timestamp: datetime):
+    def __insert_index(
+        db_session: Session,
+        event_type: str,
+        transaction_hash: str,
+        token_address: str,
+        locked_address: str,
+        target_address: str,
+        amount: int,
+        block_timestamp: datetime,
+    ):
         _record = IDXIssueRedeem()
         _record.event_type = event_type
         _record.transaction_hash = transaction_hash

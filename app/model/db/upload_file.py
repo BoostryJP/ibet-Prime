@@ -16,18 +16,14 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import (
-    Column,
-    String,
-    Integer,
-    LargeBinary
-)
+from sqlalchemy import Column, Integer, LargeBinary, String
 
 from .base import Base
 
 
 class UploadFile(Base):
     """Upload File"""
+
     __tablename__ = "upload_file"
 
     # file id (UUID)

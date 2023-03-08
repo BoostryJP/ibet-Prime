@@ -20,20 +20,11 @@ from datetime import datetime
 from unittest import mock
 from unittest.mock import ANY
 
-from app.model.db import (
-    IDXLock,
-    IDXUnlock,
-    Token,
-    TokenType
-)
-from app.model.blockchain import (
-    IbetStraightBondContract,
-    IbetShareContract
-)
+from app.model.blockchain import IbetShareContract, IbetStraightBondContract
+from app.model.db import IDXLock, IDXUnlock, Token, TokenType
 
 
 class TestAppRoutersLockEvents:
-
     # target API endpoint
     base_url = "/positions/{account_address}/lock/events"
 
@@ -69,7 +60,7 @@ class TestAppRoutersLockEvents:
                 "limit": None,
                 "total": 0,
             },
-            "events": []
+            "events": [],
         }
 
     # Normal_2_1
@@ -134,42 +125,37 @@ class TestAppRoutersLockEvents:
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 2,
-                'offset': None,
-                'limit': None,
-                'total': 2
-            },
-            'events': [
+            "result_set": {"count": 2, "offset": None, "limit": None, "total": 2},
+            "events": [
                 {
-                    'category': 'Unlock',
-                    'transaction_hash': 'tx_hash_2',
-                    'issuer_address': issuer_address,
-                    'token_address': token_address_1,
-                    'token_type': TokenType.IBET_STRAIGHT_BOND.value,
-                    'token_name': token_name_1,
-                    'lock_address': lock_address_1,
-                    'account_address': account_address,
-                    'recipient_address': other_account_address,
-                    'value': 1,
-                    'data': {'message': 'unlocked_1'},
-                    'block_timestamp': ANY
+                    "category": "Unlock",
+                    "transaction_hash": "tx_hash_2",
+                    "issuer_address": issuer_address,
+                    "token_address": token_address_1,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_name": token_name_1,
+                    "lock_address": lock_address_1,
+                    "account_address": account_address,
+                    "recipient_address": other_account_address,
+                    "value": 1,
+                    "data": {"message": "unlocked_1"},
+                    "block_timestamp": ANY,
                 },
                 {
-                    'category': 'Lock',
-                    'transaction_hash': 'tx_hash_1',
-                    'issuer_address': issuer_address,
-                    'token_address': token_address_1,
-                    'token_type': TokenType.IBET_STRAIGHT_BOND.value,
-                    'token_name': token_name_1,
-                    'lock_address': lock_address_1,
-                    'account_address': account_address,
-                    'recipient_address': None,
-                    'value': 1,
-                    'data': {'message': 'locked_1'},
-                    'block_timestamp': ANY
-                }
-            ]
+                    "category": "Lock",
+                    "transaction_hash": "tx_hash_1",
+                    "issuer_address": issuer_address,
+                    "token_address": token_address_1,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_name": token_name_1,
+                    "lock_address": lock_address_1,
+                    "account_address": account_address,
+                    "recipient_address": None,
+                    "value": 1,
+                    "data": {"message": "locked_1"},
+                    "block_timestamp": ANY,
+                },
+            ],
         }
 
     # Normal_2_2
@@ -234,42 +220,37 @@ class TestAppRoutersLockEvents:
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 2,
-                'offset': None,
-                'limit': None,
-                'total': 2
-            },
-            'events': [
+            "result_set": {"count": 2, "offset": None, "limit": None, "total": 2},
+            "events": [
                 {
-                    'category': 'Unlock',
-                    'transaction_hash': 'tx_hash_2',
-                    'issuer_address': issuer_address,
-                    'token_address': token_address_1,
-                    'token_type': TokenType.IBET_SHARE.value,
-                    'token_name': token_name_1,
-                    'lock_address': lock_address_1,
-                    'account_address': account_address,
-                    'recipient_address': other_account_address,
-                    'value': 1,
-                    'data': {'message': 'unlocked_1'},
-                    'block_timestamp': ANY
+                    "category": "Unlock",
+                    "transaction_hash": "tx_hash_2",
+                    "issuer_address": issuer_address,
+                    "token_address": token_address_1,
+                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_name": token_name_1,
+                    "lock_address": lock_address_1,
+                    "account_address": account_address,
+                    "recipient_address": other_account_address,
+                    "value": 1,
+                    "data": {"message": "unlocked_1"},
+                    "block_timestamp": ANY,
                 },
                 {
-                    'category': 'Lock',
-                    'transaction_hash': 'tx_hash_1',
-                    'issuer_address': issuer_address,
-                    'token_address': token_address_1,
-                    'token_type': TokenType.IBET_SHARE.value,
-                    'token_name': token_name_1,
-                    'lock_address': lock_address_1,
-                    'account_address': account_address,
-                    'recipient_address': None,
-                    'value': 1,
-                    'data': {'message': 'locked_1'},
-                    'block_timestamp': ANY
-                }
-            ]
+                    "category": "Lock",
+                    "transaction_hash": "tx_hash_1",
+                    "issuer_address": issuer_address,
+                    "token_address": token_address_1,
+                    "token_type": TokenType.IBET_SHARE.value,
+                    "token_name": token_name_1,
+                    "lock_address": lock_address_1,
+                    "account_address": account_address,
+                    "recipient_address": None,
+                    "value": 1,
+                    "data": {"message": "locked_1"},
+                    "block_timestamp": ANY,
+                },
+            ],
         }
 
     # Normal_3_1
@@ -335,13 +316,8 @@ class TestAppRoutersLockEvents:
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 0,
-                'offset': None,
-                'limit': None,
-                'total': 0
-            },
-            'events': []
+            "result_set": {"count": 0, "offset": None, "limit": None, "total": 0},
+            "events": [],
         }
 
     # Normal_3_2
@@ -408,13 +384,8 @@ class TestAppRoutersLockEvents:
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 0,
-                'offset': None,
-                'limit': None,
-                'total': 0
-            },
-            'events': []
+            "result_set": {"count": 0, "offset": None, "limit": None, "total": 0},
+            "events": [],
         }
 
     # Normal_4
@@ -507,48 +478,43 @@ class TestAppRoutersLockEvents:
         # request target api
         resp = client.get(
             self.base_url.format(account_address=account_address),
-            headers={"issuer-address": issuer_address}
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 2,
-                'offset': None,
-                'limit': None,
-                'total': 2
-            },
-            'events': [
+            "result_set": {"count": 2, "offset": None, "limit": None, "total": 2},
+            "events": [
                 {
-                    'category': 'Unlock',
-                    'transaction_hash': 'tx_hash_2',
-                    'issuer_address': issuer_address,
-                    'token_address': token_address_1,
-                    'token_type': TokenType.IBET_STRAIGHT_BOND.value,
-                    'token_name': token_name_1,
-                    'lock_address': lock_address_1,
-                    'account_address': account_address,
-                    'recipient_address': other_account_address,
-                    'value': 1,
-                    'data': {'message': 'unlocked_1'},
-                    'block_timestamp': ANY
+                    "category": "Unlock",
+                    "transaction_hash": "tx_hash_2",
+                    "issuer_address": issuer_address,
+                    "token_address": token_address_1,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_name": token_name_1,
+                    "lock_address": lock_address_1,
+                    "account_address": account_address,
+                    "recipient_address": other_account_address,
+                    "value": 1,
+                    "data": {"message": "unlocked_1"},
+                    "block_timestamp": ANY,
                 },
                 {
-                    'category': 'Lock',
-                    'transaction_hash': 'tx_hash_1',
-                    'issuer_address': issuer_address,
-                    'token_address': token_address_1,
-                    'token_type': TokenType.IBET_STRAIGHT_BOND.value,
-                    'token_name': token_name_1,
-                    'lock_address': lock_address_1,
-                    'account_address': account_address,
-                    'recipient_address': None,
-                    'value': 1,
-                    'data': {'message': 'locked_1'},
-                    'block_timestamp': ANY
-                }
-            ]
+                    "category": "Lock",
+                    "transaction_hash": "tx_hash_1",
+                    "issuer_address": issuer_address,
+                    "token_address": token_address_1,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_name": token_name_1,
+                    "lock_address": lock_address_1,
+                    "account_address": account_address,
+                    "recipient_address": None,
+                    "value": 1,
+                    "data": {"message": "locked_1"},
+                    "block_timestamp": ANY,
+                },
+            ],
         }
 
     # Normal_5_1
@@ -608,34 +574,29 @@ class TestAppRoutersLockEvents:
         # request target api
         resp = client.get(
             self.base_url.format(account_address=account_address),
-            params={"category": "Unlock"}
+            params={"category": "Unlock"},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 1,
-                'offset': None,
-                'limit': None,
-                'total': 2
-            },
-            'events': [
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 2},
+            "events": [
                 {
-                    'category': 'Unlock',
-                    'transaction_hash': 'tx_hash_2',
-                    'issuer_address': issuer_address,
-                    'token_address': token_address_1,
-                    'token_type': TokenType.IBET_STRAIGHT_BOND.value,
-                    'token_name': token_name_1,
-                    'lock_address': lock_address_1,
-                    'account_address': account_address,
-                    'recipient_address': other_account_address,
-                    'value': 1,
-                    'data': {'message': 'unlocked_1'},
-                    'block_timestamp': ANY
+                    "category": "Unlock",
+                    "transaction_hash": "tx_hash_2",
+                    "issuer_address": issuer_address,
+                    "token_address": token_address_1,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_name": token_name_1,
+                    "lock_address": lock_address_1,
+                    "account_address": account_address,
+                    "recipient_address": other_account_address,
+                    "value": 1,
+                    "data": {"message": "unlocked_1"},
+                    "block_timestamp": ANY,
                 }
-            ]
+            ],
         }
 
     # Normal_5_2
@@ -704,34 +665,29 @@ class TestAppRoutersLockEvents:
         # request target api
         resp = client.get(
             self.base_url.format(account_address=account_address),
-            params={"token_address": token_address_1}
+            params={"token_address": token_address_1},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 1,
-                'offset': None,
-                'limit': None,
-                'total': 2
-            },
-            'events': [
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 2},
+            "events": [
                 {
-                    'category': 'Lock',
-                    'transaction_hash': 'tx_hash_1',
-                    'issuer_address': issuer_address,
-                    'token_address': token_address_1,
-                    'token_type': TokenType.IBET_STRAIGHT_BOND.value,
-                    'token_name': token_name_1,
-                    'lock_address': lock_address_1,
-                    'account_address': account_address,
-                    'recipient_address': None,
-                    'value': 1,
-                    'data': {'message': 'locked_1'},
-                    'block_timestamp': ANY
+                    "category": "Lock",
+                    "transaction_hash": "tx_hash_1",
+                    "issuer_address": issuer_address,
+                    "token_address": token_address_1,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_name": token_name_1,
+                    "lock_address": lock_address_1,
+                    "account_address": account_address,
+                    "recipient_address": None,
+                    "value": 1,
+                    "data": {"message": "locked_1"},
+                    "block_timestamp": ANY,
                 }
-            ]
+            ],
         }
 
     # Normal_5_3
@@ -800,34 +756,29 @@ class TestAppRoutersLockEvents:
         # request target api
         resp = client.get(
             self.base_url.format(account_address=account_address),
-            params={"token_type": TokenType.IBET_STRAIGHT_BOND.value}
+            params={"token_type": TokenType.IBET_STRAIGHT_BOND.value},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 1,
-                'offset': None,
-                'limit': None,
-                'total': 2
-            },
-            'events': [
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 2},
+            "events": [
                 {
-                    'category': 'Lock',
-                    'transaction_hash': 'tx_hash_1',
-                    'issuer_address': issuer_address,
-                    'token_address': token_address_1,
-                    'token_type': TokenType.IBET_STRAIGHT_BOND.value,
-                    'token_name': token_name_1,
-                    'lock_address': lock_address_1,
-                    'account_address': account_address,
-                    'recipient_address': None,
-                    'value': 1,
-                    'data': {'message': 'locked_1'},
-                    'block_timestamp': ANY
+                    "category": "Lock",
+                    "transaction_hash": "tx_hash_1",
+                    "issuer_address": issuer_address,
+                    "token_address": token_address_1,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_name": token_name_1,
+                    "lock_address": lock_address_1,
+                    "account_address": account_address,
+                    "recipient_address": None,
+                    "value": 1,
+                    "data": {"message": "locked_1"},
+                    "block_timestamp": ANY,
                 }
-            ]
+            ],
         }
 
     # Normal_5_4
@@ -886,34 +837,29 @@ class TestAppRoutersLockEvents:
         # request target api
         resp = client.get(
             self.base_url.format(account_address=account_address),
-            params={"lock_address": lock_address_1}
+            params={"lock_address": lock_address_1},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 1,
-                'offset': None,
-                'limit': None,
-                'total': 2
-            },
-            'events': [
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 2},
+            "events": [
                 {
-                    'category': 'Lock',
-                    'transaction_hash': 'tx_hash_1',
-                    'issuer_address': issuer_address,
-                    'token_address': token_address_1,
-                    'token_type': TokenType.IBET_STRAIGHT_BOND.value,
-                    'token_name': token_name_1,
-                    'lock_address': lock_address_1,
-                    'account_address': account_address,
-                    'recipient_address': None,
-                    'value': 1,
-                    'data': {'message': 'locked_1'},
-                    'block_timestamp': ANY
+                    "category": "Lock",
+                    "transaction_hash": "tx_hash_1",
+                    "issuer_address": issuer_address,
+                    "token_address": token_address_1,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_name": token_name_1,
+                    "lock_address": lock_address_1,
+                    "account_address": account_address,
+                    "recipient_address": None,
+                    "value": 1,
+                    "data": {"message": "locked_1"},
+                    "block_timestamp": ANY,
                 }
-            ]
+            ],
         }
 
     # Normal_5_5
@@ -975,34 +921,29 @@ class TestAppRoutersLockEvents:
         # request target api
         resp = client.get(
             self.base_url.format(account_address=account_address),
-            params={"recipient_address": other_account_address_1}
+            params={"recipient_address": other_account_address_1},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 1,
-                'offset': None,
-                'limit': None,
-                'total': 2
-            },
-            'events': [
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 2},
+            "events": [
                 {
-                    'category': 'Unlock',
-                    'transaction_hash': 'tx_hash_1',
-                    'issuer_address': issuer_address,
-                    'token_address': token_address_1,
-                    'token_type': TokenType.IBET_STRAIGHT_BOND.value,
-                    'token_name': token_name_1,
-                    'lock_address': lock_address_1,
-                    'account_address': account_address,
-                    'recipient_address': other_account_address_1,
-                    'value': 1,
-                    'data': {'message': 'unlocked_1'},
-                    'block_timestamp': ANY
+                    "category": "Unlock",
+                    "transaction_hash": "tx_hash_1",
+                    "issuer_address": issuer_address,
+                    "token_address": token_address_1,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_name": token_name_1,
+                    "lock_address": lock_address_1,
+                    "account_address": account_address,
+                    "recipient_address": other_account_address_1,
+                    "value": 1,
+                    "data": {"message": "unlocked_1"},
+                    "block_timestamp": ANY,
                 }
-            ]
+            ],
         }
 
     # Normal_6
@@ -1083,79 +1024,71 @@ class TestAppRoutersLockEvents:
         # request target api
         resp = client.get(
             self.base_url.format(account_address=account_address),
-            params={
-                "sort_item": "lock_address",
-                "sort_order": 0
-            }
+            params={"sort_item": "lock_address", "sort_order": 0},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 4,
-                'offset': None,
-                'limit': None,
-                'total': 4
-            },
-            'events': [
+            "result_set": {"count": 4, "offset": None, "limit": None, "total": 4},
+            "events": [
                 {
-                    'category': 'Lock',
-                    'transaction_hash': 'tx_hash_3',
-                    'issuer_address': issuer_address,
-                    'token_address': token_address_1,
-                    'token_type': TokenType.IBET_STRAIGHT_BOND.value,
-                    'token_name': token_name_1,
-                    'lock_address': lock_address_1,
-                    'account_address': account_address,
-                    'recipient_address': None,
-                    'value': 1,
-                    'data': {'message': 'locked_3'},
-                    'block_timestamp': ANY
+                    "category": "Lock",
+                    "transaction_hash": "tx_hash_3",
+                    "issuer_address": issuer_address,
+                    "token_address": token_address_1,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_name": token_name_1,
+                    "lock_address": lock_address_1,
+                    "account_address": account_address,
+                    "recipient_address": None,
+                    "value": 1,
+                    "data": {"message": "locked_3"},
+                    "block_timestamp": ANY,
                 },
                 {
-                    'category': 'Lock',
-                    'transaction_hash': 'tx_hash_1',
-                    'issuer_address': issuer_address,
-                    'token_address': token_address_1,
-                    'token_type': TokenType.IBET_STRAIGHT_BOND.value,
-                    'token_name': token_name_1,
-                    'lock_address': lock_address_1,
-                    'account_address': account_address,
-                    'recipient_address': None,
-                    'value': 1,
-                    'data': {'message': 'locked_1'},
-                    'block_timestamp': ANY
+                    "category": "Lock",
+                    "transaction_hash": "tx_hash_1",
+                    "issuer_address": issuer_address,
+                    "token_address": token_address_1,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_name": token_name_1,
+                    "lock_address": lock_address_1,
+                    "account_address": account_address,
+                    "recipient_address": None,
+                    "value": 1,
+                    "data": {"message": "locked_1"},
+                    "block_timestamp": ANY,
                 },
                 {
-                    'category': 'Lock',
-                    'transaction_hash': 'tx_hash_4',
-                    'issuer_address': issuer_address,
-                    'token_address': token_address_1,
-                    'token_type': TokenType.IBET_STRAIGHT_BOND.value,
-                    'token_name': token_name_1,
-                    'lock_address': lock_address_2,
-                    'account_address': account_address,
-                    'recipient_address': None,
-                    'value': 1,
-                    'data': {'message': 'locked_4'},
-                    'block_timestamp': ANY
+                    "category": "Lock",
+                    "transaction_hash": "tx_hash_4",
+                    "issuer_address": issuer_address,
+                    "token_address": token_address_1,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_name": token_name_1,
+                    "lock_address": lock_address_2,
+                    "account_address": account_address,
+                    "recipient_address": None,
+                    "value": 1,
+                    "data": {"message": "locked_4"},
+                    "block_timestamp": ANY,
                 },
                 {
-                    'category': 'Lock',
-                    'transaction_hash': 'tx_hash_2',
-                    'issuer_address': issuer_address,
-                    'token_address': token_address_1,
-                    'token_type': TokenType.IBET_STRAIGHT_BOND.value,
-                    'token_name': token_name_1,
-                    'lock_address': lock_address_2,
-                    'account_address': account_address,
-                    'recipient_address': None,
-                    'value': 1,
-                    'data': {'message': 'locked_2'},
-                    'block_timestamp': ANY
-                }
-            ]
+                    "category": "Lock",
+                    "transaction_hash": "tx_hash_2",
+                    "issuer_address": issuer_address,
+                    "token_address": token_address_1,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_name": token_name_1,
+                    "lock_address": lock_address_2,
+                    "account_address": account_address,
+                    "recipient_address": None,
+                    "value": 1,
+                    "data": {"message": "locked_2"},
+                    "block_timestamp": ANY,
+                },
+            ],
         }
 
     # Normal_7
@@ -1224,37 +1157,29 @@ class TestAppRoutersLockEvents:
         # request target api
         resp = client.get(
             self.base_url.format(account_address=account_address),
-            params={
-                "offset": 1,
-                "limit": 1
-            }
+            params={"offset": 1, "limit": 1},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 3,
-                'offset': 1,
-                'limit': 1,
-                'total': 3
-            },
-            'events': [
+            "result_set": {"count": 3, "offset": 1, "limit": 1, "total": 3},
+            "events": [
                 {
-                    'category': 'Lock',
-                    'transaction_hash': 'tx_hash_2',
-                    'issuer_address': issuer_address,
-                    'token_address': token_address_1,
-                    'token_type': TokenType.IBET_STRAIGHT_BOND.value,
-                    'token_name': token_name_1,
-                    'lock_address': lock_address_1,
-                    'account_address': account_address,
-                    'recipient_address': None,
-                    'value': 1,
-                    'data': {'message': 'locked_2'},
-                    'block_timestamp': ANY
+                    "category": "Lock",
+                    "transaction_hash": "tx_hash_2",
+                    "issuer_address": issuer_address,
+                    "token_address": token_address_1,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_name": token_name_1,
+                    "lock_address": lock_address_1,
+                    "account_address": account_address,
+                    "recipient_address": None,
+                    "value": 1,
+                    "data": {"message": "locked_2"},
+                    "block_timestamp": ANY,
                 }
-            ]
+            ],
         }
 
     # ###########################################################################
@@ -1272,23 +1197,20 @@ class TestAppRoutersLockEvents:
             self.base_url.format(account_address=account_address),
             headers={
                 "issuer-address": "test",
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # Error_1_2
@@ -1306,44 +1228,49 @@ class TestAppRoutersLockEvents:
                 "sort_item": "test",
                 "offset": "test",
                 "limit": "test",
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['query', 'offset'],
-                    'msg': 'value is not a valid integer',
-                    'type': 'type_error.integer'
+                    "loc": ["query", "offset"],
+                    "msg": "value is not a valid integer",
+                    "type": "type_error.integer",
                 },
                 {
-                    'loc': ['query', 'limit'],
-                    'msg': 'value is not a valid integer',
-                    'type': 'type_error.integer'
+                    "loc": ["query", "limit"],
+                    "msg": "value is not a valid integer",
+                    "type": "type_error.integer",
                 },
                 {
-                    'loc': ['query', 'token_type'],
-                    'msg': "value is not a valid enumeration member; permitted: 'IbetStraightBond', 'IbetShare'",
-                    'type': 'type_error.enum',
-                    'ctx': {'enum_values': ['IbetStraightBond', 'IbetShare']}
+                    "loc": ["query", "token_type"],
+                    "msg": "value is not a valid enumeration member; permitted: 'IbetStraightBond', 'IbetShare'",
+                    "type": "type_error.enum",
+                    "ctx": {"enum_values": ["IbetStraightBond", "IbetShare"]},
                 },
                 {
-                    'loc': ['query', 'category'],
-                    'msg': "value is not a valid enumeration member; permitted: 'Lock', 'Unlock'",
-                    'type': 'type_error.enum',
-                    'ctx': {'enum_values': ['Lock', 'Unlock']}
+                    "loc": ["query", "category"],
+                    "msg": "value is not a valid enumeration member; permitted: 'Lock', 'Unlock'",
+                    "type": "type_error.enum",
+                    "ctx": {"enum_values": ["Lock", "Unlock"]},
                 },
                 {
-                    'loc': ['query', 'sort_item'],
-                    'msg': "value is not a valid enumeration member; permitted: 'token_address', 'lock_address', 'recipient_address', 'value', 'block_timestamp'",
-                    'type': 'type_error.enum',
-                    'ctx': {'enum_values': ['token_address', 'lock_address', 'recipient_address', 'value', 'block_timestamp']}
-                }
-            ]
+                    "loc": ["query", "sort_item"],
+                    "msg": "value is not a valid enumeration member; permitted: 'token_address', 'lock_address', 'recipient_address', 'value', 'block_timestamp'",
+                    "type": "type_error.enum",
+                    "ctx": {
+                        "enum_values": [
+                            "token_address",
+                            "lock_address",
+                            "recipient_address",
+                            "value",
+                            "block_timestamp",
+                        ]
+                    },
+                },
+            ],
         }

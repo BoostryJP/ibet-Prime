@@ -21,22 +21,19 @@ import json
 import secrets
 
 import boto3
-from Crypto.Cipher import (
-    AES,
-    PKCS1_OAEP
-)
+from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from Crypto.Util.Padding import pad
 from web3.exceptions import TimeExhausted
 
+from app.exceptions import ContractRevertError, SendTransactionError
+from app.utils.contract_utils import ContractUtils
 from config import (
+    AWS_KMS_GENERATE_RANDOM_ENABLED,
+    AWS_REGION_NAME,
     CHAIN_ID,
     TX_GAS_LIMIT,
-    AWS_KMS_GENERATE_RANDOM_ENABLED,
-    AWS_REGION_NAME
 )
-from app.utils.contract_utils import ContractUtils
-from app.exceptions import SendTransactionError, ContractRevertError
 
 
 class E2EMessaging:
@@ -45,24 +42,22 @@ class E2EMessaging:
     def __init__(self, contract_address: str):
         self.contract_address = contract_address
 
-    def send_message(self,
-                     to_address: str, message: str,
-                     tx_from: str, private_key: str):
+    def send_message(
+        self, to_address: str, message: str, tx_from: str, private_key: str
+    ):
         """Send Message"""
         contract = ContractUtils.get_contract(
-            contract_name="E2EMessaging",
-            contract_address=self.contract_address
+            contract_name="E2EMessaging", contract_address=self.contract_address
         )
         try:
-            tx = contract.functions.sendMessage(
-                to_address,
-                message
-            ).build_transaction({
-                "chainId": CHAIN_ID,
-                "from": tx_from,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0
-            })
+            tx = contract.functions.sendMessage(to_address, message).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
             tx_hash, tx_receipt = ContractUtils.send_transaction(tx, private_key)
             return tx_hash, tx_receipt
         except ContractRevertError:
@@ -72,9 +67,15 @@ class E2EMessaging:
         except Exception as err:
             raise SendTransactionError(err)
 
-    def send_message_external(self,
-                              to_address: str, _type: str, message_org: str, to_rsa_public_key: str,
-                              tx_from: str, private_key: str):
+    def send_message_external(
+        self,
+        to_address: str,
+        _type: str,
+        message_org: str,
+        to_rsa_public_key: str,
+        tx_from: str,
+        private_key: str,
+    ):
         """Send Message(Format message for external system)"""
 
         # Encrypt message with AES-256-CBC
@@ -89,7 +90,9 @@ class E2EMessaging:
             aes_iv = secrets.token_bytes(AES.block_size)
         aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
         pad_message = pad(message_org.encode("utf-8"), AES.block_size)
-        encrypted_message = base64.b64encode(aes_iv + aes_cipher.encrypt(pad_message)).decode()
+        encrypted_message = base64.b64encode(
+            aes_iv + aes_cipher.encrypt(pad_message)
+        ).decode()
 
         # Encrypt AES key with RSA
         rsa_key = RSA.import_key(to_rsa_public_key)
@@ -111,28 +114,28 @@ class E2EMessaging:
             to_address=to_address,
             message=message,
             tx_from=tx_from,
-            private_key=private_key
+            private_key=private_key,
         )
         return tx_hash, tx_receipt
 
-    def set_public_key(self,
-                       public_key: str, key_type: str,
-                       tx_from: str, private_key: str):
+    def set_public_key(
+        self, public_key: str, key_type: str, tx_from: str, private_key: str
+    ):
         """Set Public Key"""
         contract = ContractUtils.get_contract(
-            contract_name="E2EMessaging",
-            contract_address=self.contract_address
+            contract_name="E2EMessaging", contract_address=self.contract_address
         )
         try:
             tx = contract.functions.setPublicKey(
-                public_key,
-                key_type
-            ).build_transaction({
-                "chainId": CHAIN_ID,
-                "from": tx_from,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0
-            })
+                public_key, key_type
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
             tx_hash, tx_receipt = ContractUtils.send_transaction(tx, private_key)
             return tx_hash, tx_receipt
         except ContractRevertError:

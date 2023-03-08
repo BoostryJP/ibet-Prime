@@ -19,22 +19,15 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 from unittest import mock
 from unittest.mock import ANY, MagicMock
+
 import pytest
 from sqlalchemy.orm import Session
 
-from app.model.db import (
-    IDXLock,
-    IDXUnlock,
-    Token,
-    TokenType
-)
-from app.model.blockchain import (
-    IbetStraightBondContract
-)
+from app.model.blockchain import IbetStraightBondContract
+from app.model.db import IDXLock, IDXUnlock, Token, TokenType
 
 
 class TestAppRoutersBondLockEvents:
-
     # target API endpoint
     base_url = "/bond/tokens/{token_address}/lock_events"
 
@@ -144,7 +137,7 @@ class TestAppRoutersBondLockEvents:
         "recipient_address": None,
         "value": 1,
         "data": {"message": "locked_1"},
-        "block_timestamp": ANY
+        "block_timestamp": ANY,
     }
     expected_lock_2 = {
         "category": "Lock",
@@ -158,7 +151,7 @@ class TestAppRoutersBondLockEvents:
         "recipient_address": None,
         "value": 1,
         "data": {"message": "locked_2"},
-        "block_timestamp": ANY
+        "block_timestamp": ANY,
     }
     expected_unlock_1 = {
         "category": "Unlock",
@@ -172,7 +165,7 @@ class TestAppRoutersBondLockEvents:
         "recipient_address": other_account_address_1,
         "value": 1,
         "data": {"message": "unlocked_1"},
-        "block_timestamp": ANY
+        "block_timestamp": ANY,
     }
     expected_unlock_2 = {
         "category": "Unlock",
@@ -186,7 +179,7 @@ class TestAppRoutersBondLockEvents:
         "recipient_address": other_account_address_2,
         "value": 1,
         "data": {"message": "unlocked_2"},
-        "block_timestamp": ANY
+        "block_timestamp": ANY,
     }
 
     ###########################################################################
@@ -219,7 +212,7 @@ class TestAppRoutersBondLockEvents:
                 "limit": None,
                 "total": 0,
             },
-            "events": []
+            "events": [],
         }
 
     # Normal_2
@@ -242,18 +235,13 @@ class TestAppRoutersBondLockEvents:
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 4,
-                "offset": None,
-                "limit": None,
-                "total": 4
-            },
+            "result_set": {"count": 4, "offset": None, "limit": None, "total": 4},
             "events": [
                 self.expected_unlock_2,
                 self.expected_unlock_1,
                 self.expected_lock_2,
-                self.expected_lock_1
-            ]
+                self.expected_lock_1,
+            ],
         }
 
     # Normal_3
@@ -272,13 +260,8 @@ class TestAppRoutersBondLockEvents:
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 0,
-                'offset': None,
-                'limit': None,
-                'total': 0
-            },
-            'events': []
+            "result_set": {"count": 0, "offset": None, "limit": None, "total": 0},
+            "events": [],
         }
 
     # Normal_4
@@ -296,24 +279,19 @@ class TestAppRoutersBondLockEvents:
         # request target api
         resp = client.get(
             self.base_url.format(token_address=self.token_address_1),
-            headers={"issuer-address": self.issuer_address}
+            headers={"issuer-address": self.issuer_address},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 4,
-                "offset": None,
-                "limit": None,
-                "total": 4
-            },
+            "result_set": {"count": 4, "offset": None, "limit": None, "total": 4},
             "events": [
                 self.expected_unlock_2,
                 self.expected_unlock_1,
                 self.expected_lock_2,
-                self.expected_lock_1
-            ]
+                self.expected_lock_1,
+            ],
         }
 
     # Normal_5_1
@@ -331,22 +309,14 @@ class TestAppRoutersBondLockEvents:
         # request target api
         resp = client.get(
             self.base_url.format(token_address=self.token_address_1),
-            params={"category": "Lock"}
+            params={"category": "Lock"},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 2,
-                "offset": None,
-                "limit": None,
-                "total": 4
-            },
-            "events": [
-                self.expected_lock_2,
-                self.expected_lock_1
-            ]
+            "result_set": {"count": 2, "offset": None, "limit": None, "total": 4},
+            "events": [self.expected_lock_2, self.expected_lock_1],
         }
 
     # Normal_5_2
@@ -364,22 +334,14 @@ class TestAppRoutersBondLockEvents:
         # request target api
         resp = client.get(
             self.base_url.format(token_address=self.token_address_1),
-            params={"account_address": self.account_address_1}
+            params={"account_address": self.account_address_1},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 2,
-                "offset": None,
-                "limit": None,
-                "total": 4
-            },
-            "events": [
-                self.expected_unlock_1,
-                self.expected_lock_1
-            ]
+            "result_set": {"count": 2, "offset": None, "limit": None, "total": 4},
+            "events": [self.expected_unlock_1, self.expected_lock_1],
         }
 
     # Normal_5_3
@@ -397,22 +359,14 @@ class TestAppRoutersBondLockEvents:
         # request target api
         resp = client.get(
             self.base_url.format(token_address=self.token_address_1),
-            params={"lock_address": self.lock_address_1}
+            params={"lock_address": self.lock_address_1},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 2,
-                'offset': None,
-                'limit': None,
-                'total': 4
-            },
-            'events': [
-                self.expected_unlock_1,
-                self.expected_lock_1
-            ]
+            "result_set": {"count": 2, "offset": None, "limit": None, "total": 4},
+            "events": [self.expected_unlock_1, self.expected_lock_1],
         }
 
     # Normal_5_4
@@ -430,81 +384,112 @@ class TestAppRoutersBondLockEvents:
         # request target api
         resp = client.get(
             self.base_url.format(token_address=self.token_address_1),
-            params={"recipient_address": self.other_account_address_2}
+            params={"recipient_address": self.other_account_address_2},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 1,
-                'offset': None,
-                'limit': None,
-                'total': 4
-            },
-            'events': [
-                self.expected_unlock_2
-            ]
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 4},
+            "events": [self.expected_unlock_2],
         }
 
     # Normal_6
     # Sort
-    @pytest.mark.parametrize("sort_item, sort_order, data, expect", [
-        # (
-        #     "{sort_item}", {sort_order},
-        #     {data used to contract mock},
-        #     {expected result}
-        # ),
-        (
-            "account_address", 0,
-            get_contract_mock_data([token_name_1, token_name_1, token_name_1, token_name_1]),
-            [expected_unlock_1, expected_lock_1, expected_unlock_2, expected_lock_2]
-        ),
-        (
-            "lock_address", 0,
-            get_contract_mock_data([token_name_1, token_name_1, token_name_1, token_name_1]),
-            [expected_unlock_1, expected_lock_1, expected_unlock_2, expected_lock_2]
-        ),
-        (
-            "recipient_address", 0,
-            get_contract_mock_data([token_name_1, token_name_1, token_name_1, token_name_1]),
-            [expected_unlock_1, expected_unlock_2, expected_lock_2, expected_lock_1]
-        ),
-        (
-            "recipient_address", 1,
-            get_contract_mock_data([token_name_1, token_name_1, token_name_1, token_name_1]),
-            [expected_lock_2, expected_lock_1, expected_unlock_2, expected_unlock_1]
-        ),
-        (
-            "value", 0,
-            get_contract_mock_data([token_name_1, token_name_1, token_name_1, token_name_1]),
-            [expected_unlock_2, expected_unlock_1, expected_lock_2, expected_lock_1]
-        ),
-    ])
+    @pytest.mark.parametrize(
+        "sort_item, sort_order, data, expect",
+        [
+            # (
+            #     "{sort_item}", {sort_order},
+            #     {data used to contract mock},
+            #     {expected result}
+            # ),
+            (
+                "account_address",
+                0,
+                get_contract_mock_data(
+                    [token_name_1, token_name_1, token_name_1, token_name_1]
+                ),
+                [
+                    expected_unlock_1,
+                    expected_lock_1,
+                    expected_unlock_2,
+                    expected_lock_2,
+                ],
+            ),
+            (
+                "lock_address",
+                0,
+                get_contract_mock_data(
+                    [token_name_1, token_name_1, token_name_1, token_name_1]
+                ),
+                [
+                    expected_unlock_1,
+                    expected_lock_1,
+                    expected_unlock_2,
+                    expected_lock_2,
+                ],
+            ),
+            (
+                "recipient_address",
+                0,
+                get_contract_mock_data(
+                    [token_name_1, token_name_1, token_name_1, token_name_1]
+                ),
+                [
+                    expected_unlock_1,
+                    expected_unlock_2,
+                    expected_lock_2,
+                    expected_lock_1,
+                ],
+            ),
+            (
+                "recipient_address",
+                1,
+                get_contract_mock_data(
+                    [token_name_1, token_name_1, token_name_1, token_name_1]
+                ),
+                [
+                    expected_lock_2,
+                    expected_lock_1,
+                    expected_unlock_2,
+                    expected_unlock_1,
+                ],
+            ),
+            (
+                "value",
+                0,
+                get_contract_mock_data(
+                    [token_name_1, token_name_1, token_name_1, token_name_1]
+                ),
+                [
+                    expected_unlock_2,
+                    expected_unlock_1,
+                    expected_lock_2,
+                    expected_lock_1,
+                ],
+            ),
+        ],
+    )
     def test_normal_6(self, sort_item, sort_order, data, expect, client, db):
         # prepare data
         self.setup_data(db=db)
 
         # request target api
-        with mock.patch("app.model.blockchain.token.IbetStraightBondContract.get", MagicMock(side_effect=data)):
+        with mock.patch(
+            "app.model.blockchain.token.IbetStraightBondContract.get",
+            MagicMock(side_effect=data),
+        ):
             resp = client.get(
                 self.base_url.format(token_address=self.token_address_1),
-                params={
-                    "sort_item": sort_item,
-                    "sort_order": sort_order
-                }
+                params={"sort_item": sort_item, "sort_order": sort_order},
             )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 4,
-                'offset': None,
-                'limit': None,
-                'total': 4
-            },
-            'events': expect
+            "result_set": {"count": 4, "offset": None, "limit": None, "total": 4},
+            "events": expect,
         }
 
     # Normal_7
@@ -522,24 +507,14 @@ class TestAppRoutersBondLockEvents:
         # request target api
         resp = client.get(
             self.base_url.format(token_address=self.token_address_1),
-            params={
-                "offset": 1,
-                "limit": 1
-            }
+            params={"offset": 1, "limit": 1},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 4,
-                'offset': 1,
-                'limit': 1,
-                'total': 4
-            },
-            'events': [
-                self.expected_unlock_1
-            ]
+            "result_set": {"count": 4, "offset": 1, "limit": 1, "total": 4},
+            "events": [self.expected_unlock_1],
         }
 
     # ###########################################################################
@@ -555,23 +530,20 @@ class TestAppRoutersBondLockEvents:
             self.base_url.format(token_address=self.token_address_1),
             headers={
                 "issuer-address": "test",
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # Error_1_2
@@ -586,38 +558,43 @@ class TestAppRoutersBondLockEvents:
                 "sort_item": "test",
                 "offset": "test",
                 "limit": "test",
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['query', 'offset'],
-                    'msg': 'value is not a valid integer',
-                    'type': 'type_error.integer'
+                    "loc": ["query", "offset"],
+                    "msg": "value is not a valid integer",
+                    "type": "type_error.integer",
                 },
                 {
-                    'loc': ['query', 'limit'],
-                    'msg': 'value is not a valid integer',
-                    'type': 'type_error.integer'
+                    "loc": ["query", "limit"],
+                    "msg": "value is not a valid integer",
+                    "type": "type_error.integer",
                 },
                 {
-                    'loc': ['query', 'category'],
-                    'msg': "value is not a valid enumeration member; permitted: 'Lock', 'Unlock'",
-                    'type': 'type_error.enum',
-                    'ctx': {'enum_values': ['Lock', 'Unlock']}
+                    "loc": ["query", "category"],
+                    "msg": "value is not a valid enumeration member; permitted: 'Lock', 'Unlock'",
+                    "type": "type_error.enum",
+                    "ctx": {"enum_values": ["Lock", "Unlock"]},
                 },
                 {
-                    'loc': ['query', 'sort_item'],
-                    'msg': "value is not a valid enumeration member; permitted: 'account_address', 'lock_address', 'recipient_address', 'value', 'block_timestamp'",
-                    'type': 'type_error.enum',
-                    'ctx': {'enum_values': ['account_address', 'lock_address', 'recipient_address', 'value', 'block_timestamp']}
-                }
-            ]
+                    "loc": ["query", "sort_item"],
+                    "msg": "value is not a valid enumeration member; permitted: 'account_address', 'lock_address', 'recipient_address', 'value', 'block_timestamp'",
+                    "type": "type_error.enum",
+                    "ctx": {
+                        "enum_values": [
+                            "account_address",
+                            "lock_address",
+                            "recipient_address",
+                            "value",
+                            "block_timestamp",
+                        ]
+                    },
+                },
+            ],
         }

@@ -16,20 +16,11 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from datetime import (
-    datetime,
-    timezone
-)
+from datetime import datetime, timezone
 
 from pytz import timezone as tz
 
-from app.model.db import (
-    Account,
-    Token,
-    TokenType,
-    ScheduledEvents,
-    ScheduledEventType
-)
+from app.model.db import Account, ScheduledEvents, ScheduledEventType, Token, TokenType
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
@@ -89,26 +80,30 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         req_param = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
-            "data": update_data
+            "data": update_data,
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
-        _scheduled_event = db.query(ScheduledEvents). \
-            filter(ScheduledEvents.issuer_address == _issuer_address). \
-            filter(ScheduledEvents.token_address == _token_address). \
-            first()
+        _scheduled_event = (
+            db.query(ScheduledEvents)
+            .filter(ScheduledEvents.issuer_address == _issuer_address)
+            .filter(ScheduledEvents.token_address == _token_address)
+            .first()
+        )
         assert resp.status_code == 200
         assert resp.json() == {"scheduled_event_id": _scheduled_event.event_id}
         assert _scheduled_event.token_type == TokenType.IBET_STRAIGHT_BOND.value
-        assert _scheduled_event.scheduled_datetime == datetime_now_utc.replace(tzinfo=None)
+        assert _scheduled_event.scheduled_datetime == datetime_now_utc.replace(
+            tzinfo=None
+        )
         assert _scheduled_event.event_type == ScheduledEventType.UPDATE.value
         assert _scheduled_event.status == 0
         assert _scheduled_event.data == update_data
@@ -160,27 +155,30 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         req_param = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
-            "data": update_data
+            "data": update_data,
         }
         resp_1 = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
-        _scheduled_event = db.query(ScheduledEvents). \
-            filter(ScheduledEvents.issuer_address == _issuer_address). \
-            filter(ScheduledEvents.token_address == _token_address). \
-            first()
+        _scheduled_event = (
+            db.query(ScheduledEvents)
+            .filter(ScheduledEvents.issuer_address == _issuer_address)
+            .filter(ScheduledEvents.token_address == _token_address)
+            .first()
+        )
         assert resp_1.status_code == 200
         assert resp_1.json() == {"scheduled_event_id": _scheduled_event.event_id}
         assert _scheduled_event.token_type == TokenType.IBET_STRAIGHT_BOND.value
-        assert _scheduled_event.scheduled_datetime == \
-               datetime_now_jst.astimezone(timezone.utc).replace(tzinfo=None)
+        assert _scheduled_event.scheduled_datetime == datetime_now_jst.astimezone(
+            timezone.utc
+        ).replace(tzinfo=None)
         assert _scheduled_event.event_type == ScheduledEventType.UPDATE.value
         assert _scheduled_event.status == 0
         assert _scheduled_event.data == update_data
@@ -206,15 +204,15 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         req_param = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
-            "data": update_data
+            "data": update_data,
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address[:-1],  # too short
-                "eoa-password": "password"  # not encrypted
-            }
+                "eoa-password": "password",  # not encrypted
+            },
         )
 
         # assertion
@@ -224,12 +222,13 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
             {
                 "loc": ["header", "issuer-address"],
                 "msg": "issuer-address is not a valid address",
-                "type": "value_error"
-            }, {
+                "type": "value_error",
+            },
+            {
                 "loc": ["header", "eoa-password"],
                 "msg": "eoa-password is not a Base64-encoded encrypted data",
-                "type": "value_error"
-            }
+                "type": "value_error",
+            },
         ]
 
     # <Error_2>
@@ -251,15 +250,15 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         req_param = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
-            "data": update_data
+            "data": update_data,
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
@@ -300,15 +299,15 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         req_param = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
-            "data": update_data
+            "data": update_data,
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("mismatch-password")
-            }
+                "eoa-password": E2EEUtils.encrypt("mismatch-password"),
+            },
         )
 
         # assertion
@@ -341,15 +340,15 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         req_param = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
-            "data": update_data
+            "data": update_data,
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
@@ -371,15 +370,15 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
             "event_type": "aUpdateb",
             "data": {
                 "face_value": "must be integer, but string",
-            }
+            },
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
@@ -389,17 +388,19 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
             {
                 "loc": ["body", "scheduled_datetime"],
                 "msg": "invalid datetime format",
-                "type": "value_error.datetime"
-            }, {
+                "type": "value_error.datetime",
+            },
+            {
                 "ctx": {"enum_values": ["Update"]},
                 "loc": ["body", "event_type"],
                 "msg": "value is not a valid enumeration member; permitted: 'Update'",
-                "type": "type_error.enum"
-            }, {
+                "type": "type_error.enum",
+            },
+            {
                 "loc": ["body", "data", "face_value"],
                 "msg": "value is not a valid integer",
-                "type": "type_error.integer"
-            }
+                "type": "type_error.integer",
+            },
         ]
 
     # <Error_6>
@@ -449,23 +450,20 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         req_param = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
-            "data": update_data
+            "data": update_data,
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }

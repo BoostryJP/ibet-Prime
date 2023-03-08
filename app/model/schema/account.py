@@ -18,15 +18,12 @@ SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
 from typing import Optional
-from pydantic import (
-    BaseModel,
-    validator,
-    Field
-)
 
-from config import E2EE_REQUEST_ENABLED
-from app.utils.check_utils import check_value_is_encrypted
+from pydantic import BaseModel, Field, validator
+
 from app.model.db import AccountRsaStatus
+from app.utils.check_utils import check_value_is_encrypted
+from config import E2EE_REQUEST_ENABLED
 
 
 ############################
@@ -34,6 +31,7 @@ from app.model.db import AccountRsaStatus
 ############################
 class AccountCreateKeyRequest(BaseModel):
     """Account Create Key schema (REQUEST)"""
+
     eoa_password: str
 
     @validator("eoa_password")
@@ -45,6 +43,7 @@ class AccountCreateKeyRequest(BaseModel):
 
 class AccountGenerateRsaKeyRequest(BaseModel):
     """Account Change Rsa Key schema (REQUEST)"""
+
     rsa_passphrase: Optional[str]
 
     @validator("rsa_passphrase")
@@ -56,6 +55,7 @@ class AccountGenerateRsaKeyRequest(BaseModel):
 
 class AccountChangeEOAPasswordRequest(BaseModel):
     """Account Change EOA Password schema (REQUEST)"""
+
     old_eoa_password: str
     eoa_password: str
 
@@ -74,6 +74,7 @@ class AccountChangeEOAPasswordRequest(BaseModel):
 
 class AccountChangeRSAPassphraseRequest(BaseModel):
     """Account Change RSA Passphrase schema (REQUEST)"""
+
     old_rsa_passphrase: str
     rsa_passphrase: str
 
@@ -92,15 +93,20 @@ class AccountChangeRSAPassphraseRequest(BaseModel):
 
 class AccountAuthTokenRequest(BaseModel):
     """Account Create Auth Token schema (REQUEST)"""
-    valid_duration: int = Field(None, ge=0, le=259200)  # The maximum valid duration shall be 3 days.
+
+    valid_duration: int = Field(
+        None, ge=0, le=259200
+    )  # The maximum valid duration shall be 3 days.
 
 
 ############################
 # RESPONSE
 ############################
 
+
 class AccountResponse(BaseModel):
     """Account schema (Response)"""
+
     issuer_address: str
     rsa_public_key: Optional[str]
     rsa_status: AccountRsaStatus
@@ -109,6 +115,7 @@ class AccountResponse(BaseModel):
 
 class AccountAuthTokenResponse(BaseModel):
     """Account Auth Token schema (RESPONSE)"""
+
     auth_token: str
     usage_start: datetime
     valid_duration: int

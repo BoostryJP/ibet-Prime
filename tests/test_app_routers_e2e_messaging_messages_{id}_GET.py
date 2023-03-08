@@ -19,10 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import json
 from datetime import datetime
 
-from app.model.db import (
-    IDXE2EMessaging,
-    E2EMessagingAccount
-)
+from app.model.db import E2EMessagingAccount, IDXE2EMessaging
 
 
 class TestAppRoutersE2EMessagingMessagesIdGET:
@@ -40,9 +37,11 @@ class TestAppRoutersE2EMessagingMessagesIdGET:
         _e2e_messaging.send_timestamp = e2e_messaging["send_timestamp"]
         db.add(_e2e_messaging)
 
-        _account = db.query(E2EMessagingAccount). \
-            filter(E2EMessagingAccount.account_address == e2e_messaging["to_address"]). \
-            first()
+        _account = (
+            db.query(E2EMessagingAccount)
+            .filter(E2EMessagingAccount.account_address == e2e_messaging["to_address"])
+            .first()
+        )
         if _account is None:
             _account = E2EMessagingAccount()
             _account.account_address = e2e_messaging["to_address"]
@@ -62,7 +61,9 @@ class TestAppRoutersE2EMessagingMessagesIdGET:
             "to_address": "0x1234567890123456789012345678900000000000",
             "type": "type_test1",
             "message": "message_test1",
-            "send_timestamp": datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
+            "send_timestamp": datetime.strptime(
+                "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+            ),  # JST 2022/01/02
         }
         self.insert_data(db, e2e_messaging)
 
@@ -92,7 +93,9 @@ class TestAppRoutersE2EMessagingMessagesIdGET:
             "to_address": "0x1234567890123456789012345678900000000000",
             "type": "type_test1",
             "message": json.dumps({"aaa": 1, "bbb": True, "ccc": "hoge"}),
-            "send_timestamp": datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
+            "send_timestamp": datetime.strptime(
+                "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+            ),  # JST 2022/01/02
         }
         self.insert_data(db, e2e_messaging)
 
@@ -108,11 +111,7 @@ class TestAppRoutersE2EMessagingMessagesIdGET:
             "from_address": "0x1234567890123456789012345678900000000010",
             "to_address": "0x1234567890123456789012345678900000000000",
             "type": "type_test1",
-            "message": {
-                "aaa": 1,
-                "bbb": True,
-                "ccc": "hoge"
-            },
+            "message": {"aaa": 1, "bbb": True, "ccc": "hoge"},
             "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
         }
 
@@ -126,7 +125,9 @@ class TestAppRoutersE2EMessagingMessagesIdGET:
             "to_address": "0x1234567890123456789012345678900000000000",
             "type": "type_test1",
             "message": json.dumps(["a", 1, True]),
-            "send_timestamp": datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
+            "send_timestamp": datetime.strptime(
+                "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+            ),  # JST 2022/01/02
         }
         self.insert_data(db, e2e_messaging)
 
@@ -155,8 +156,15 @@ class TestAppRoutersE2EMessagingMessagesIdGET:
             "from_address": "0x1234567890123456789012345678900000000010",
             "to_address": "0x1234567890123456789012345678900000000000",
             "type": "type_test1",
-            "message": json.dumps([{"aaa": 1, "bbb": True, "ccc": "hoge"}, {"aaa": 2, "bbb": False, "ccc": "fuga"}]),
-            "send_timestamp": datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
+            "message": json.dumps(
+                [
+                    {"aaa": 1, "bbb": True, "ccc": "hoge"},
+                    {"aaa": 2, "bbb": False, "ccc": "fuga"},
+                ]
+            ),
+            "send_timestamp": datetime.strptime(
+                "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+            ),  # JST 2022/01/02
         }
         self.insert_data(db, e2e_messaging)
 
@@ -173,16 +181,8 @@ class TestAppRoutersE2EMessagingMessagesIdGET:
             "to_address": "0x1234567890123456789012345678900000000000",
             "type": "type_test1",
             "message": [
-                {
-                    "aaa": 1,
-                    "bbb": True,
-                    "ccc": "hoge"
-                },
-                {
-                    "aaa": 2,
-                    "bbb": False,
-                    "ccc": "fuga"
-                }
+                {"aaa": 1, "bbb": True, "ccc": "hoge"},
+                {"aaa": 2, "bbb": False, "ccc": "fuga"},
             ],
             "send_timestamp": "2022-01-02T00:20:30.000001+09:00",
         }
@@ -196,24 +196,19 @@ class TestAppRoutersE2EMessagingMessagesIdGET:
     # no data
     def test_error_1(self, client, db):
         # request target API
-        resp = client.get(
-            self.base_url.format(id="id")
-        )
+        resp = client.get(self.base_url.format(id="id"))
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['path', 'id'],
-                    'msg': 'value is not a valid integer',
-                    'type': 'type_error.integer'
+                    "loc": ["path", "id"],
+                    "msg": "value is not a valid integer",
+                    "type": "type_error.integer",
                 }
-            ]
+            ],
         }
 
     # <Error_2>
@@ -227,7 +222,9 @@ class TestAppRoutersE2EMessagingMessagesIdGET:
             "to_address": "0x1234567890123456789012345678900000000000",
             "type": "type_test1",
             "message": "test_message1",
-            "send_timestamp": datetime.strptime("2022/01/01 15:20:30.000001", '%Y/%m/%d %H:%M:%S.%f'),  # JST 2022/01/02
+            "send_timestamp": datetime.strptime(
+                "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
+            ),  # JST 2022/01/02
         }
         self.insert_data(db, e2e_messaging)
 
@@ -239,9 +236,6 @@ class TestAppRoutersE2EMessagingMessagesIdGET:
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
+            "meta": {"code": 1, "title": "NotFound"},
             "detail": "e2e messaging not found",
         }

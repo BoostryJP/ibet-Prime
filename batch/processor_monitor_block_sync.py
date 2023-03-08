@@ -22,30 +22,28 @@ import time
 from typing import Any, Callable
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
-from web3.types import (
-    RPCEndpoint,
-    RPCResponse
-)
+from web3.types import RPCEndpoint, RPCResponse
 
-path = os.path.join(os.path.dirname(__file__), '../')
+path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
+import batch_log
+
+from app.exceptions import ServiceUnavailableError
+from app.model.db import Node
 from config import (
+    BLOCK_GENERATION_SPEED_THRESHOLD,
+    BLOCK_SYNC_REMAINING_THRESHOLD,
+    BLOCK_SYNC_STATUS_CALC_PERIOD,
+    BLOCK_SYNC_STATUS_SLEEP_INTERVAL,
     DATABASE_URL,
     WEB3_HTTP_PROVIDER,
     WEB3_HTTP_PROVIDER_STANDBY,
-    BLOCK_SYNC_STATUS_SLEEP_INTERVAL,
-    BLOCK_SYNC_STATUS_CALC_PERIOD,
-    BLOCK_SYNC_REMAINING_THRESHOLD,
-    BLOCK_GENERATION_SPEED_THRESHOLD
 )
-from app.model.db import Node
-from app.exceptions import ServiceUnavailableError
-import batch_log
 
 """
 [PROCESSOR-Monitor-Block-Sync]
@@ -64,7 +62,7 @@ class Web3WrapperException(Exception):
 
 
 def web3_exception_handler_middleware(
-        make_request: Callable[[RPCEndpoint, Any], Any], w3: "Web3"
+    make_request: Callable[[RPCEndpoint, Any], Any], w3: "Web3"
 ) -> Callable[[RPCEndpoint, Any], RPCResponse]:
     METHODS = [
         "eth_blockNumber",
@@ -108,16 +106,21 @@ class Processor:
         db_session = self.__get_db_session()
         try:
             # Delete old node data
-            valid_endpoint_uri_list = list(WEB3_HTTP_PROVIDER) + WEB3_HTTP_PROVIDER_STANDBY
+            valid_endpoint_uri_list = (
+                list(WEB3_HTTP_PROVIDER) + WEB3_HTTP_PROVIDER_STANDBY
+            )
             self.__delete_old_node(
-                db_session=db_session,
-                valid_endpoint_uri_list=valid_endpoint_uri_list
+                db_session=db_session, valid_endpoint_uri_list=valid_endpoint_uri_list
             )
             # Initial setting
             self.node_info = {}
-            self.__set_node_info(db_session=db_session, endpoint_uri=WEB3_HTTP_PROVIDER, priority=0)
+            self.__set_node_info(
+                db_session=db_session, endpoint_uri=WEB3_HTTP_PROVIDER, priority=0
+            )
             for endpoint_uri in WEB3_HTTP_PROVIDER_STANDBY:
-                self.__set_node_info(db_session=db_session, endpoint_uri=endpoint_uri, priority=1)
+                self.__set_node_info(
+                    db_session=db_session, endpoint_uri=endpoint_uri, priority=1
+                )
             db_session.commit()
         finally:
             db_session.close()
@@ -135,9 +138,7 @@ class Processor:
             db_session.close()
 
     def __set_node_info(self, db_session: Session, endpoint_uri: str, priority: int):
-        self.node_info[endpoint_uri] = {
-            "priority": priority
-        }
+        self.node_info[endpoint_uri] = {"priority": priority}
 
         web3 = Web3(Web3.HTTPProvider(endpoint_uri))
         web3.middleware_onion.inject(geth_poa_middleware, layer=0)
@@ -148,19 +149,15 @@ class Processor:
         try:
             # NOTE: Immediately after the processing, the monitoring data is not retained,
             #       so the past block number is acquired.
-            block = web3.eth.get_block(max(web3.eth.block_number - BLOCK_SYNC_STATUS_CALC_PERIOD, 0))
+            block = web3.eth.get_block(
+                max(web3.eth.block_number - BLOCK_SYNC_STATUS_CALC_PERIOD, 0)
+            )
         except Web3WrapperException:
             self.__web3_errors(db_session=db_session, endpoint_uri=endpoint_uri)
             LOG.error(f"Node connection failed: {endpoint_uri}")
-            block = {
-                "timestamp": time.time(),
-                "number": 0
-            }
+            block = {"timestamp": time.time(), "number": 0}
 
-        data = {
-            "time": block["timestamp"],
-            "block_number": block["number"]
-        }
+        data = {"time": block["timestamp"], "block_number": block["number"]}
         history = RingBuffer(BLOCK_SYNC_STATUS_CALC_PERIOD, data)
         self.node_info[endpoint_uri]["history"] = history
 
@@ -177,19 +174,18 @@ class Processor:
             remaining_blocks = syncing["highestBlock"] - syncing["currentBlock"]
             if remaining_blocks > BLOCK_SYNC_REMAINING_THRESHOLD:
                 is_synced = False
-                errors.append(f"highestBlock={syncing['highestBlock']}, currentBlock={syncing['currentBlock']}")
+                errors.append(
+                    f"highestBlock={syncing['highestBlock']}, currentBlock={syncing['currentBlock']}"
+                )
 
         # Check increased block number
-        data = {
-            "time": time.time(),
-            "block_number": web3.eth.block_number
-        }
+        data = {"time": time.time(), "block_number": web3.eth.block_number}
         old_data = history.peek_oldest()
         elapsed_time = data["time"] - old_data["time"]
         generated_block_count = data["block_number"] - old_data["block_number"]
-        generated_block_count_threshold = \
-            (elapsed_time / EXPECTED_BLOCKS_PER_SEC) * \
-            (BLOCK_GENERATION_SPEED_THRESHOLD / 100)  # count of block generation theoretical value
+        generated_block_count_threshold = (elapsed_time / EXPECTED_BLOCKS_PER_SEC) * (
+            BLOCK_GENERATION_SPEED_THRESHOLD / 100
+        )  # count of block generation theoretical value
         if generated_block_count < generated_block_count_threshold:
             is_synced = False
             errors.append(f"{generated_block_count} blocks in {int(elapsed_time)} sec")
@@ -197,12 +193,14 @@ class Processor:
 
         # Update database
         _node = db_session.query(Node).filter(Node.endpoint_uri == endpoint_uri).first()
-        status_changed = False if _node is not None and _node.is_synced == is_synced else True
+        status_changed = (
+            False if _node is not None and _node.is_synced == is_synced else True
+        )
         self.__sink_on_node(
             db_session=db_session,
             endpoint_uri=endpoint_uri,
             priority=priority,
-            is_synced=is_synced
+            is_synced=is_synced,
         )
 
         # Output logs
@@ -225,7 +223,7 @@ class Processor:
                 db_session=db_session,
                 endpoint_uri=endpoint_uri,
                 priority=priority,
-                is_synced=False
+                is_synced=False,
             )
             db_session.commit()
         except Exception as ex:
@@ -238,10 +236,16 @@ class Processor:
 
     @staticmethod
     def __delete_old_node(db_session: Session, valid_endpoint_uri_list: list[str]):
-        _node = db_session.query(Node).filter(Node.endpoint_uri.not_in(valid_endpoint_uri_list)).delete()
+        _node = (
+            db_session.query(Node)
+            .filter(Node.endpoint_uri.not_in(valid_endpoint_uri_list))
+            .delete()
+        )
 
     @staticmethod
-    def __sink_on_node(db_session: Session, endpoint_uri: str, priority: int, is_synced: bool):
+    def __sink_on_node(
+        db_session: Session, endpoint_uri: str, priority: int, is_synced: bool
+    ):
         _node = db_session.query(Node).filter(Node.endpoint_uri == endpoint_uri).first()
         if _node is not None:
             _node.is_synced = is_synced

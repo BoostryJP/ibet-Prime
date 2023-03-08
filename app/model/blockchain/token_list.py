@@ -18,25 +18,21 @@ SPDX-License-Identifier: Apache-2.0
 """
 from web3.exceptions import TimeExhausted
 
-from config import (
-    CHAIN_ID,
-    TX_GAS_LIMIT
-)
-from app.exceptions import SendTransactionError, ContractRevertError
+from app.exceptions import ContractRevertError, SendTransactionError
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
+from config import CHAIN_ID, TX_GAS_LIMIT
 
 web3 = Web3Wrapper()
 
 
 class TokenListContract:
-
     def __init__(self, contract_address: str):
         self.contract_address = contract_address
 
-    def register(self,
-                 token_address: str, token_template: str,
-                 tx_from: str, private_key: str) -> None:
+    def register(
+        self, token_address: str, token_template: str, tx_from: str, private_key: str
+    ) -> None:
         """Register TokenList
 
         :param token_address: token address
@@ -51,18 +47,16 @@ class TokenListContract:
                 contract_address=self.contract_address,
             )
             tx = contract.functions.register(
-                token_address,
-                token_template
-            ).build_transaction({
-                "chainId": CHAIN_ID,
-                "from": tx_from,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0
-            })
-            ContractUtils.send_transaction(
-                transaction=tx,
-                private_key=private_key
+                token_address, token_template
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
             )
+            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
         except ContractRevertError:
             raise
         except TimeExhausted as timeout_error:

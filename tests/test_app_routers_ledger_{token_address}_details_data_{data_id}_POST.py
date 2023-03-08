@@ -18,11 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 from unittest import mock
 
-from app.model.db import (
-    Token,
-    TokenType,
-    LedgerDetailsData
-)
+from app.model.db import LedgerDetailsData, Token, TokenType
 from tests.account_config import config_eth_account
 
 
@@ -86,15 +82,15 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
-        _details_data_list = db.query(LedgerDetailsData). \
-            order_by(LedgerDetailsData.id). \
-            all()
+        _details_data_list = (
+            db.query(LedgerDetailsData).order_by(LedgerDetailsData.id).all()
+        )
         assert len(_details_data_list) == 2
         _details_data = _details_data_list[0]
         assert _details_data.id == 2
@@ -135,22 +131,19 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
                 {
                     "loc": ["body"],
                     "msg": "field required",
-                    "type": "value_error.missing"
-                }
-            ]
+                    "type": "value_error.missing",
+                },
+            ],
         }
 
     # <Error_2>
@@ -183,23 +176,20 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
             json=req_param,
             headers={
                 "issuer-address": "test",
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_3>
@@ -214,8 +204,8 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
         req_param = [
             {
                 "name": "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                        "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                        "1",
+                "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+                "1",
                 "address": "address_test_1",
                 "amount": 1_000_000_000_001,
                 "price": -1,
@@ -225,8 +215,8 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
             {
                 "name": "name_test_2",
                 "address": "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                           "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                           "1",
+                "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+                "1",
                 "amount": -1,
                 "price": 5_000_000_001,
                 "balance": -1,
@@ -238,77 +228,74 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "ctx": {"limit_value": 200},
                     "loc": ["body", 0, "name"],
                     "msg": "ensure this value has at most 200 characters",
-                    "type": "value_error.any_str.max_length"
+                    "type": "value_error.any_str.max_length",
                 },
                 {
                     "ctx": {"limit_value": 1_000_000_000_000},
                     "loc": ["body", 0, "amount"],
                     "msg": "ensure this value is less than or equal to 1000000000000",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le",
                 },
                 {
                     "ctx": {"limit_value": 0},
                     "loc": ["body", 0, "price"],
                     "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge"
+                    "type": "value_error.number.not_ge",
                 },
                 {
                     "ctx": {"limit_value": 5_000_000_000_000_000_000_000},
                     "loc": ["body", 0, "balance"],
                     "msg": "ensure this value is less than or equal to 5000000000000000000000",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le",
                 },
                 {
                     "ctx": {"limit_value": 10},
                     "loc": ["body", 0, "acquisition_date"],
                     "msg": "ensure this value has at most 10 characters",
-                    "type": "value_error.any_str.max_length"
+                    "type": "value_error.any_str.max_length",
                 },
                 {
                     "ctx": {"limit_value": 200},
                     "loc": ["body", 1, "address"],
                     "msg": "ensure this value has at most 200 characters",
-                    "type": "value_error.any_str.max_length"
+                    "type": "value_error.any_str.max_length",
                 },
                 {
                     "ctx": {"limit_value": 0},
                     "loc": ["body", 1, "amount"],
                     "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge"
+                    "type": "value_error.number.not_ge",
                 },
                 {
                     "ctx": {"limit_value": 5000000000},
                     "loc": ["body", 1, "price"],
                     "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le",
                 },
                 {
                     "ctx": {"limit_value": 0},
                     "loc": ["body", 1, "balance"],
                     "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge"
+                    "type": "value_error.number.not_ge",
                 },
                 {
                     "loc": ["body", 1, "acquisition_date"],
                     "msg": "The date format must be YYYY/MM/DD",
-                    "type": "value_error"
-                }
-            ]
+                    "type": "value_error",
+                },
+            ],
         }
 
     # <Error_4>
@@ -343,17 +330,14 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token does not exist"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token does not exist",
         }
 
     # <Error_5>
@@ -398,15 +382,12 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }

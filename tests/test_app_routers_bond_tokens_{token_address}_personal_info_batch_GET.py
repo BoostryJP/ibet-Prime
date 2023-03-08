@@ -19,10 +19,10 @@ SPDX-License-Identifier: Apache-2.0
 from unittest import mock
 
 from app.model.db import (
-    TokenType,
-    Token,
     BatchRegisterPersonalInfoUpload,
-    BatchRegisterPersonalInfoUploadStatus
+    BatchRegisterPersonalInfoUploadStatus,
+    Token,
+    TokenType,
 )
 from tests.account_config import config_eth_account
 
@@ -37,7 +37,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         "0f33d48f-9e6e-4a36-a55e-5bbcbda69c80",
         "1c961f7d-e1ad-40e5-988b-cca3d6009643",
         "1e778f46-864e-4ec0-b566-21bd31cf63ff",
-        "1f33d48f-9e6e-4a36-a55e-5bbcbda69c80"
+        "1f33d48f-9e6e-4a36-a55e-5bbcbda69c80",
     ]
 
     ###########################################################################
@@ -64,21 +64,14 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, self.upload_id_list[0]),
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 0,
-                'offset': None,
-                'limit': None,
-                'total': 0
-            },
-            'uploads': []
+            "result_set": {"count": 0, "offset": None, "limit": None, "total": 0},
+            "uploads": [],
         }
 
     # Normal_2
@@ -108,37 +101,33 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _issuer_address
         batch_register_upload.upload_id = self.upload_id_list[1]
-        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING.value
+        batch_register_upload.status = (
+            BatchRegisterPersonalInfoUploadStatus.PENDING.value
+        )
         db.add(batch_register_upload)
 
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, self.upload_id_list[0]),
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 2,
-                'offset': None,
-                'limit': None,
-                'total': 2
-            },
-            'uploads': [
+            "result_set": {"count": 2, "offset": None, "limit": None, "total": 2},
+            "uploads": [
                 {
-                    'batch_id': self.upload_id_list[1],
-                    'status': BatchRegisterPersonalInfoUploadStatus.PENDING.value,
-                    'created': mock.ANY
-                }, {
-                    'batch_id': self.upload_id_list[0],
-                    'status': BatchRegisterPersonalInfoUploadStatus.DONE.value,
-                    'created': mock.ANY
-                }
-            ]
+                    "batch_id": self.upload_id_list[1],
+                    "status": BatchRegisterPersonalInfoUploadStatus.PENDING.value,
+                    "created": mock.ANY,
+                },
+                {
+                    "batch_id": self.upload_id_list[0],
+                    "status": BatchRegisterPersonalInfoUploadStatus.DONE.value,
+                    "created": mock.ANY,
+                },
+            ],
         }
 
     # Normal_3
@@ -168,36 +157,29 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _issuer_address
         batch_register_upload.upload_id = self.upload_id_list[1]
-        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING.value
+        batch_register_upload.status = (
+            BatchRegisterPersonalInfoUploadStatus.PENDING.value
+        )
         db.add(batch_register_upload)
 
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, self.upload_id_list[0]),
-            headers={
-                "issuer-address": _issuer_address
-            },
-            params={
-                "status": BatchRegisterPersonalInfoUploadStatus.DONE.value
-            }
+            headers={"issuer-address": _issuer_address},
+            params={"status": BatchRegisterPersonalInfoUploadStatus.DONE.value},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 1,
-                'offset': None,
-                'limit': None,
-                'total': 2
-            },
-            'uploads': [
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 2},
+            "uploads": [
                 {
-                    'batch_id': self.upload_id_list[0],
-                    'status': BatchRegisterPersonalInfoUploadStatus.DONE.value,
-                    'created': mock.ANY
+                    "batch_id": self.upload_id_list[0],
+                    "status": BatchRegisterPersonalInfoUploadStatus.DONE.value,
+                    "created": mock.ANY,
                 }
-            ]
+            ],
         }
 
     # Normal_4
@@ -227,37 +209,29 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _issuer_address
         batch_register_upload.upload_id = self.upload_id_list[1]
-        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING.value
+        batch_register_upload.status = (
+            BatchRegisterPersonalInfoUploadStatus.PENDING.value
+        )
         db.add(batch_register_upload)
 
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, self.upload_id_list[0]),
-            headers={
-                "issuer-address": _issuer_address
-            },
-            params={
-                "offset": 0,
-                "limit": 1
-            }
+            headers={"issuer-address": _issuer_address},
+            params={"offset": 0, "limit": 1},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 2,
-                'offset': 0,
-                'limit': 1,
-                'total': 2
-            },
-            'uploads': [
+            "result_set": {"count": 2, "offset": 0, "limit": 1, "total": 2},
+            "uploads": [
                 {
-                    'batch_id': self.upload_id_list[1],
-                    'status': BatchRegisterPersonalInfoUploadStatus.PENDING.value,
-                    'created': mock.ANY
+                    "batch_id": self.upload_id_list[1],
+                    "status": BatchRegisterPersonalInfoUploadStatus.PENDING.value,
+                    "created": mock.ANY,
                 }
-            ]
+            ],
         }
 
     # Normal_5
@@ -287,41 +261,34 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         batch_register_upload = BatchRegisterPersonalInfoUpload()
         batch_register_upload.issuer_address = _issuer_address
         batch_register_upload.upload_id = self.upload_id_list[1]
-        batch_register_upload.status = BatchRegisterPersonalInfoUploadStatus.PENDING.value
+        batch_register_upload.status = (
+            BatchRegisterPersonalInfoUploadStatus.PENDING.value
+        )
         db.add(batch_register_upload)
 
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, self.upload_id_list[0]),
-            headers={
-                "issuer-address": _issuer_address
-            },
-            params={
-                "sort_order": 0
-            }
+            headers={"issuer-address": _issuer_address},
+            params={"sort_order": 0},
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            'result_set': {
-                'count': 2,
-                'offset': None,
-                'limit': None,
-                'total': 2
-            },
-            'uploads': [
+            "result_set": {"count": 2, "offset": None, "limit": None, "total": 2},
+            "uploads": [
                 {
-                    'batch_id': self.upload_id_list[0],
-                    'status': BatchRegisterPersonalInfoUploadStatus.DONE.value,
-                    'created': mock.ANY
+                    "batch_id": self.upload_id_list[0],
+                    "status": BatchRegisterPersonalInfoUploadStatus.DONE.value,
+                    "created": mock.ANY,
                 },
                 {
-                    'batch_id': self.upload_id_list[1],
-                    'status': BatchRegisterPersonalInfoUploadStatus.PENDING.value,
-                    'created': mock.ANY
-                }
-            ]
+                    "batch_id": self.upload_id_list[1],
+                    "status": BatchRegisterPersonalInfoUploadStatus.PENDING.value,
+                    "created": mock.ANY,
+                },
+            ],
         }
 
     #########################################################################
@@ -347,24 +314,20 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
 
         # request target API
         resp = client.get(
-            self.base_url.format(_token_address, self.upload_id_list[0]),
-            headers={}
+            self.base_url.format(_token_address, self.upload_id_list[0]), headers={}
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['header', 'issuer-address'],
-                    'msg': 'field required',
-                    'type': 'value_error.missing'
+                    "loc": ["header", "issuer-address"],
+                    "msg": "field required",
+                    "type": "value_error.missing",
                 }
-            ]
+            ],
         }
 
     # Error_2
@@ -398,17 +361,12 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, self.upload_id_list[0]),
-            headers={
-                "issuer-address": _issuer_address_1
-            }
+            headers={"issuer-address": _issuer_address_1},
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'NotFound'
-            },
-            'detail': 'token not found'
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token not found",
         }

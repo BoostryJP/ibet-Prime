@@ -18,22 +18,14 @@ SPDX-License-Identifier: Apache-2.0
 """
 import hashlib
 from unittest import mock
-from unittest.mock import (
-    MagicMock,
-    ANY
-)
+from unittest.mock import ANY, MagicMock
 
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
 import config
 from app.exceptions import SendTransactionError
-from app.model.db import (
-    Account,
-    AuthToken,
-    Token,
-    TokenType
-)
+from app.model.db import Account, AuthToken, Token, TokenType
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
@@ -91,22 +83,20 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "transfer_approval_required": False,
             "principal_value": 1000,
             "is_canceled": True,
-            "memo": "m" * 10000
+            "memo": "m" * 10000,
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         IbetShareContract_mock.assert_any_call(
-            data=req_param,
-            tx_from=_issuer_address,
-            private_key=ANY
+            data=req_param, tx_from=_issuer_address, private_key=ANY
         )
         assert resp.status_code == 200
         assert resp.json() is None
@@ -145,8 +135,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
@@ -202,22 +192,20 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "transfer_approval_required": False,
             "principal_value": 1000,
             "is_canceled": True,
-            "memo": "memo_test1"
+            "memo": "memo_test1",
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "auth-token": "test_auth_token"
-            }
+                "auth-token": "test_auth_token",
+            },
         )
 
         # assertion
         IbetShareContract_mock.assert_any_call(
-            data=req_param,
-            tx_from=_issuer_address,
-            private_key=ANY
+            data=req_param, tx_from=_issuer_address, private_key=ANY
         )
         assert resp.status_code == 200
         assert resp.json() is None
@@ -254,15 +242,15 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "cancellation_date": "20221231",
             "dividends": 345.67,
             "dividend_record_date": "20211231",
-            "dividend_payment_date": "20211231"
+            "dividend_payment_date": "20211231",
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
@@ -282,10 +270,10 @@ class TestAppRoutersShareTokensTokenAddressPOST:
                 "transfer_approval_required": None,
                 "principal_value": None,
                 "is_canceled": None,
-                "memo": None
+                "memo": None,
             },
             tx_from=_issuer_address,
-            private_key=ANY
+            private_key=ANY,
         )
         assert resp.status_code == 200
         assert resp.json() is None
@@ -322,15 +310,15 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "cancellation_date": "",
             "dividends": 345.67,
             "dividend_record_date": "",
-            "dividend_payment_date": ""
+            "dividend_payment_date": "",
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
@@ -350,10 +338,10 @@ class TestAppRoutersShareTokensTokenAddressPOST:
                 "transfer_approval_required": None,
                 "principal_value": None,
                 "is_canceled": None,
-                "memo": None
+                "memo": None,
             },
             tx_from=_issuer_address,
-            private_key=ANY
+            private_key=ANY,
         )
         assert resp.status_code == 200
         assert resp.json() is None
@@ -376,27 +364,19 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "loc": [
-                        "body",
-                        "dividends"
-                    ],
+                    "loc": ["body", "dividends"],
                     "msg": "dividends must be rounded to 13 decimal places",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_2>
@@ -413,27 +393,19 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "loc": [
-                        "body",
-                        "dividends"
-                    ],
+                    "loc": ["body", "dividends"],
                     "msg": "all items are required to update the dividend information",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_3>
@@ -444,33 +416,23 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
-        req_param = {
-            "tradable_exchange_contract_address": "invalid_address"
-        }
+        req_param = {"tradable_exchange_contract_address": "invalid_address"}
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "loc": [
-                        "body",
-                        "tradable_exchange_contract_address"
-                    ],
+                    "loc": ["body", "tradable_exchange_contract_address"],
                     "msg": "tradable_exchange_contract_address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_4>
@@ -481,33 +443,23 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
-        req_param = {
-            "personal_info_contract_address": "invalid_address"
-        }
+        req_param = {"personal_info_contract_address": "invalid_address"}
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "loc": [
-                        "body",
-                        "personal_info_contract_address"
-                    ],
+                    "loc": ["body", "personal_info_contract_address"],
                     "msg": "personal_info_contract_address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_6>
@@ -516,28 +468,23 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
-        resp = client.post(
-            self.base_url.format(_token_address)
-        )
+        resp = client.post(self.base_url.format(_token_address))
 
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
                 {
                     "loc": ["body"],
                     "msg": "field required",
-                    "type": "value_error.missing"
-                }
-            ]
+                    "type": "value_error.missing",
+                },
+            ],
         }
 
     # <Error_7>
@@ -552,25 +499,20 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={
-                "issuer-address": "issuer_address"
-            }
+            headers={"issuer-address": "issuer_address"},
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_8>
@@ -585,24 +527,20 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={
-                "issuer-address": _issuer_address,
-                "eoa-password": "password"
-            }
+            headers={"issuer-address": _issuer_address, "eoa-password": "password"},
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
-            "detail": [{
-                "loc": ["header", "eoa-password"],
-                "msg": "eoa-password is not a Base64-encoded encrypted data",
-                "type": "value_error"
-            }]
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "loc": ["header", "eoa-password"],
+                    "msg": "eoa-password is not a Base64-encoded encrypted data",
+                    "type": "value_error",
+                }
+            ],
         }
 
     # <Error_9>
@@ -628,48 +566,32 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "transfer_approval_required": False,
             "principal_value": -1,
             "is_canceled": True,
-            "memo": "memo_test1"
+            "memo": "memo_test1",
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={
-                "issuer-address": _issuer_address,
-                "eoa-password": "password"
-            }
+            headers={"issuer-address": _issuer_address, "eoa-password": "password"},
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {
-                        "limit_value": 0.0
-                    },
-                    "loc": [
-                        "body",
-                        "dividends"
-                    ],
+                    "ctx": {"limit_value": 0.0},
+                    "loc": ["body", "dividends"],
                     "msg": "ensure this value is greater than or equal to 0.0",
-                    "type": "value_error.number.not_ge"
+                    "type": "value_error.number.not_ge",
                 },
                 {
-                    "ctx": {
-                        "limit_value": 0
-                    },
-                    "loc": [
-                        "body",
-                        "principal_value"
-                    ],
+                    "ctx": {"limit_value": 0},
+                    "loc": ["body", "principal_value"],
                     "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge"
+                    "type": "value_error.number.not_ge",
                 },
-            ]
+            ],
         }
 
     # <Error_10>
@@ -695,48 +617,32 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "transfer_approval_required": False,
             "principal_value": 5_000_000_001,
             "is_canceled": True,
-            "memo": "memo_test1"
+            "memo": "memo_test1",
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={
-                "issuer-address": _issuer_address,
-                "eoa-password": "password"
-            }
+            headers={"issuer-address": _issuer_address, "eoa-password": "password"},
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {
-                        "limit_value": 5_000_000_000.00
-                    },
-                    "loc": [
-                        "body",
-                        "dividends"
-                    ],
+                    "ctx": {"limit_value": 5_000_000_000.00},
+                    "loc": ["body", "dividends"],
                     "msg": "ensure this value is less than or equal to 5000000000.0",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le",
                 },
                 {
-                    "ctx": {
-                        "limit_value": 5_000_000_000
-                    },
-                    "loc": [
-                        "body",
-                        "principal_value"
-                    ],
+                    "ctx": {"limit_value": 5_000_000_000},
+                    "loc": ["body", "principal_value"],
                     "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le",
                 },
-            ]
+            ],
         }
 
     # <Error_11>
@@ -751,60 +657,61 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         req_param = {
             "cancellation_date": "202112310",
             "dividend_record_date": "202112310",
-            "dividend_payment_date": "202112310"
+            "dividend_payment_date": "202112310",
         }
         resp = client.post(
             self.base_url.format(_token_address),
             json=req_param,
-            headers={
-                "issuer-address": _issuer_address
-            }
+            headers={"issuer-address": _issuer_address},
         )
 
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    'loc': ['body', 'cancellation_date'],
-                    'msg': 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
-                    'type': 'value_error.str.regex',
-                    'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                    "loc": ["body", "cancellation_date"],
+                    "msg": 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    "type": "value_error.str.regex",
+                    "ctx": {
+                        "pattern": "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"
+                    },
                 },
                 {
-                    'loc': ['body', 'cancellation_date'],
-                    'msg': "unexpected value; permitted: ''",
-                    'type': 'value_error.const',
-                    'ctx': {'given': '202112310', 'permitted': ['']}
+                    "loc": ["body", "cancellation_date"],
+                    "msg": "unexpected value; permitted: ''",
+                    "type": "value_error.const",
+                    "ctx": {"given": "202112310", "permitted": [""]},
                 },
                 {
-                    'loc': ['body', 'dividend_record_date'],
-                    'msg': 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
-                    'type': 'value_error.str.regex',
-                    'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                    "loc": ["body", "dividend_record_date"],
+                    "msg": 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    "type": "value_error.str.regex",
+                    "ctx": {
+                        "pattern": "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"
+                    },
                 },
                 {
-                    'loc': ['body', 'dividend_record_date'],
-                    'msg': "unexpected value; permitted: ''",
-                    'type': 'value_error.const',
-                    'ctx': {'given': '202112310', 'permitted': ['']}
+                    "loc": ["body", "dividend_record_date"],
+                    "msg": "unexpected value; permitted: ''",
+                    "type": "value_error.const",
+                    "ctx": {"given": "202112310", "permitted": [""]},
                 },
                 {
-                    'loc': ['body', 'dividend_payment_date'],
-                    'msg': 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
-                    'type': 'value_error.str.regex',
-                    'ctx': {'pattern': '^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'}
+                    "loc": ["body", "dividend_payment_date"],
+                    "msg": 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
+                    "type": "value_error.str.regex",
+                    "ctx": {
+                        "pattern": "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"
+                    },
                 },
                 {
-                    'loc': ['body', 'dividend_payment_date'],
-                    'msg': "unexpected value; permitted: ''",
-                    'type': 'value_error.const',
-                    'ctx': {'given': '202112310', 'permitted': ['']}
-                }
-            ]
+                    "loc": ["body", "dividend_payment_date"],
+                    "msg": "unexpected value; permitted: ''",
+                    "type": "value_error.const",
+                    "ctx": {"given": "202112310", "permitted": [""]},
+                },
+            ],
         }
 
     # <Error_12>
@@ -834,18 +741,15 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 401
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "AuthorizationError"
-            },
-            "detail": "issuer does not exist, or password mismatch"
+            "meta": {"code": 1, "title": "AuthorizationError"},
+            "detail": "issuer does not exist, or password mismatch",
         }
 
     # <Error_13>
@@ -874,18 +778,15 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password_test")
-            }
+                "eoa-password": E2EEUtils.encrypt("password_test"),
+            },
         )
 
         # assertion
         assert resp.status_code == 401
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "AuthorizationError"
-            },
-            "detail": "issuer does not exist, or password mismatch"
+            "meta": {"code": 1, "title": "AuthorizationError"},
+            "detail": "issuer does not exist, or password mismatch",
         }
 
     # <Error_14>
@@ -914,18 +815,15 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token not found",
         }
 
     # <Error_15>
@@ -959,24 +857,23 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }
 
     # <Error_16>
     # Send Transaction Error
-    @mock.patch("app.model.blockchain.token.IbetShareContract.update",
-                MagicMock(side_effect=SendTransactionError()))
+    @mock.patch(
+        "app.model.blockchain.token.IbetShareContract.update",
+        MagicMock(side_effect=SendTransactionError()),
+    )
     def test_error_16(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -1005,16 +902,13 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             json=req_param,
             headers={
                 "issuer-address": _issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 2,
-                "title": "SendTransactionError"
-            },
-            "detail": "failed to send transaction"
+            "meta": {"code": 2, "title": "SendTransactionError"},
+            "detail": "failed to send transaction",
         }

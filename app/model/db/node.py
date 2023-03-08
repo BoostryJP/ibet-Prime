@@ -16,18 +16,14 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Boolean
-)
+from sqlalchemy import Boolean, Column, Integer, String
 
 from .base import Base
 
 
 class Node(Base):
     """Ethereum Node Information"""
+
     __tablename__ = "node"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
