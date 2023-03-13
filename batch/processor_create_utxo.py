@@ -101,6 +101,12 @@ class Processor:
                         block_from=block_from,
                         block_to=block_to,
                     )
+                    event_triggered = event_triggered | self.__process_unlock(
+                        db_session=db_session,
+                        token_contract=token_contract,
+                        block_from=block_from,
+                        block_to=block_to,
+                    )
                     self.__process_event_triggered(
                         db_session=db_session,
                         token_contract=token_contract,
@@ -384,6 +390,83 @@ class Processor:
                         transaction_hash=transaction_hash,
                         token_address=token_contract.address,
                         account_address=account,
+                        amount=amount,
+                        block_number=block_number,
+                        block_timestamp=block_timestamp,
+                    )
+
+            return event_triggered
+        except Exception as e:
+            LOG.exception(e)
+            return False
+
+    def __process_unlock(
+        self,
+        db_session: Session,
+        token_contract: Contract,
+        block_from: int,
+        block_to: int,
+    ):
+        """Process Unlock Event
+
+        - The process of updating UTXO data by capturing the following events
+        - `Unlock` event on Token contracts
+
+        :param db_session: database session
+        :param token_contract: Token contract
+        :param block_from: Block from
+        :param block_to: Block to
+        :return: Whether events have occurred or not
+        """
+        try:
+            # Get "Unlock" events from token contract
+            events = ContractUtils.get_event_logs(
+                contract=token_contract,
+                event="Unlock",
+                block_from=block_from,
+                block_to=block_to,
+            )
+
+            # Sink
+            event_triggered = False
+            for event in events:
+                args = event["args"]
+                from_account = args.get("accountAddress", ZERO_ADDRESS)
+                to_account = args.get("recipientAddress", ZERO_ADDRESS)
+                amount = args.get("value")
+
+                transaction_hash = event["transactionHash"].hex()
+                block_number = event["blockNumber"]
+                block_timestamp = datetime.utcfromtimestamp(
+                    web3.eth.get_block(block_number)["timestamp"]
+                )  # UTC
+
+                if (
+                    amount is not None
+                    and amount <= sys.maxsize
+                    and from_account != to_account
+                ):
+                    event_triggered = True
+
+                    # Update UTXO（from account）
+                    self.__sink_on_utxo(
+                        db_session=db_session,
+                        spent=True,
+                        transaction_hash=transaction_hash,
+                        token_address=token_contract.address,
+                        account_address=from_account,
+                        amount=amount,
+                        block_number=block_number,
+                        block_timestamp=block_timestamp,
+                    )
+
+                    # Update UTXO（to account）
+                    self.__sink_on_utxo(
+                        db_session=db_session,
+                        spent=False,
+                        transaction_hash=transaction_hash,
+                        token_address=token_contract.address,
+                        account_address=to_account,
                         amount=amount,
                         block_number=block_number,
                         block_timestamp=block_timestamp,
