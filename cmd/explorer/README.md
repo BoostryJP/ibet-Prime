@@ -1,4 +1,4 @@
-# ibet-Prime BC-Explorer
+# ibet blockchain explorer
 
 ## Run
 
