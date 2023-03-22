@@ -936,7 +936,9 @@ class TestProcessor:
         )
 
         assert user1_record.hold_balance == 17000
+        assert user1_record.locked_balance == 0
         assert user2_record.hold_balance == 13000
+        assert user2_record.locked_balance == 0
 
         assert (
             len(
@@ -1701,7 +1703,9 @@ class TestProcessor:
         )
 
         assert user1_record.hold_balance == 17000
+        assert user1_record.locked_balance == 0
         assert user2_record.hold_balance == 13000
+        assert user2_record.locked_balance == 0
 
         assert (
             len(
@@ -1916,6 +1920,12 @@ class TestProcessor:
             issuer_private_key,
             [exchange_contract.address, 10000],
         )
+        STContractUtils.lock(
+            token_contract.address,
+            user_address_1,
+            user_pk_1,
+            [issuer_address, 10000, ""],
+        )
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
@@ -1927,6 +1937,12 @@ class TestProcessor:
         db.commit()
         processor.collect()
 
+        STContractUtils.unlock(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [user_address_1, user_address_2, 10000, ""],
+        )
         STContractUtils.transfer(
             token_contract.address,
             issuer_address,
@@ -1969,8 +1985,10 @@ class TestProcessor:
             .first()
         )
 
-        assert user1_record.hold_balance == 40000
-        assert user2_record.hold_balance == 20000
+        assert user1_record.hold_balance == 30000
+        assert user1_record.locked_balance == 0
+        assert user2_record.hold_balance == 30000
+        assert user2_record.locked_balance == 0
 
         assert (
             len(

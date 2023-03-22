@@ -159,7 +159,9 @@ class Processor:
             )
             for holder in _holders:
                 self.balance_book.store(
-                    account_address=holder.account_address, amount=holder.hold_balance
+                    account_address=holder.account_address,
+                    amount=holder.hold_balance,
+                    locked=holder.locked_balance,
                 )
             block_from = _checkpoint.block_number + 1
             return block_from
