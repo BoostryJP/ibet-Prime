@@ -72,7 +72,7 @@ def validate_headers(**kwargs):
 
 def address_is_valid_address(name, value):
     if value:
-        if not Web3.isAddress(value):
+        if not Web3.is_address(value):
             raise ValueError(f"{name} is not a valid address")
 
 

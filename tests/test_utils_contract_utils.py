@@ -268,7 +268,7 @@ class TestSendTransaction:
         assert rtn_receipt["status"] == 1
         assert rtn_receipt["to"] is None
         assert rtn_receipt["from"] == self.test_account["address"]
-        assert web3.isAddress(rtn_receipt["contractAddress"])
+        assert web3.is_address(rtn_receipt["contractAddress"])
 
     ###########################################################################
     # Error Case

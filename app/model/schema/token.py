@@ -80,7 +80,7 @@ class IbetStraightBondCreate(BaseModel):
 
     @validator("tradable_exchange_contract_address")
     def tradable_exchange_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.isAddress(v):
+        if v is not None and not Web3.is_address(v):
             raise ValueError(
                 "tradable_exchange_contract_address is not a valid address"
             )
@@ -88,7 +88,7 @@ class IbetStraightBondCreate(BaseModel):
 
     @validator("personal_info_contract_address")
     def personal_info_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.isAddress(v):
+        if v is not None and not Web3.is_address(v):
             raise ValueError("personal_info_contract_address is not a valid address")
         return v
 
@@ -130,7 +130,7 @@ class IbetStraightBondUpdate(BaseModel):
 
     @validator("tradable_exchange_contract_address")
     def tradable_exchange_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.isAddress(v):
+        if v is not None and not Web3.is_address(v):
             raise ValueError(
                 "tradable_exchange_contract_address is not a valid address"
             )
@@ -138,7 +138,7 @@ class IbetStraightBondUpdate(BaseModel):
 
     @validator("personal_info_contract_address")
     def personal_info_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.isAddress(v):
+        if v is not None and not Web3.is_address(v):
             raise ValueError("personal_info_contract_address is not a valid address")
         return v
 
@@ -151,7 +151,7 @@ class IbetStraightBondAdditionalIssue(BaseModel):
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("account_address is not a valid address")
         return v
 
@@ -164,7 +164,7 @@ class IbetStraightBondRedeem(BaseModel):
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("account_address is not a valid address")
         return v
 
@@ -179,19 +179,19 @@ class IbetStraightBondTransfer(BaseModel):
 
     @validator("token_address")
     def token_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("token_address is not a valid address")
         return v
 
     @validator("from_address")
     def from_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("from_address is not a valid address")
         return v
 
     @validator("to_address")
     def to_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("to_address is not a valid address")
         return v
 
@@ -229,7 +229,7 @@ class IbetShareCreate(BaseModel):
 
     @validator("tradable_exchange_contract_address")
     def tradable_exchange_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.isAddress(v):
+        if v is not None and not Web3.is_address(v):
             raise ValueError(
                 "tradable_exchange_contract_address is not a valid address"
             )
@@ -237,7 +237,7 @@ class IbetShareCreate(BaseModel):
 
     @validator("personal_info_contract_address")
     def personal_info_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.isAddress(v):
+        if v is not None and not Web3.is_address(v):
             raise ValueError("personal_info_contract_address is not a valid address")
         return v
 
@@ -284,7 +284,7 @@ class IbetShareUpdate(BaseModel):
 
     @validator("tradable_exchange_contract_address")
     def tradable_exchange_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.isAddress(v):
+        if v is not None and not Web3.is_address(v):
             raise ValueError(
                 "tradable_exchange_contract_address is not a valid address"
             )
@@ -292,7 +292,7 @@ class IbetShareUpdate(BaseModel):
 
     @validator("personal_info_contract_address")
     def personal_info_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.isAddress(v):
+        if v is not None and not Web3.is_address(v):
             raise ValueError("personal_info_contract_address is not a valid address")
         return v
 
@@ -307,19 +307,19 @@ class IbetShareTransfer(BaseModel):
 
     @validator("token_address")
     def token_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("token_address is not a valid address")
         return v
 
     @validator("from_address")
     def from_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("from_address is not a valid address")
         return v
 
     @validator("to_address")
     def to_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("to_address is not a valid address")
         return v
 
@@ -332,7 +332,7 @@ class IbetShareAdditionalIssue(BaseModel):
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("account_address is not a valid address")
         return v
 
@@ -345,7 +345,7 @@ class IbetShareRedeem(BaseModel):
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("account_address is not a valid address")
         return v
 

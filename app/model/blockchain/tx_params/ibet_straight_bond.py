@@ -72,7 +72,7 @@ class UpdateParams(BaseModel):
 
     @validator("tradable_exchange_contract_address")
     def tradable_exchange_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.isAddress(v):
+        if v is not None and not Web3.is_address(v):
             raise ValueError(
                 "tradable_exchange_contract_address is not a valid address"
             )
@@ -80,7 +80,7 @@ class UpdateParams(BaseModel):
 
     @validator("personal_info_contract_address")
     def personal_info_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.isAddress(v):
+        if v is not None and not Web3.is_address(v):
             raise ValueError("personal_info_contract_address is not a valid address")
         return v
 

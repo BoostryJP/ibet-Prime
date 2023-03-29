@@ -115,14 +115,14 @@ class ListTxDataQuery:
     @validator("from_address")
     def from_address_is_valid_address(cls, v):
         if v is not None:
-            if not Web3.isAddress(v):
+            if not Web3.is_address(v):
                 raise ValueError("from_address is not a valid address")
         return v
 
     @validator("to_address")
     def to_address_is_valid_address(cls, v):
         if v is not None:
-            if not Web3.isAddress(v):
+            if not Web3.is_address(v):
                 raise ValueError("to_address is not a valid address")
         return v
 
