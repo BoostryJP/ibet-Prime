@@ -99,7 +99,7 @@ class TestGetInfo:
         )
         contract = personal_info_contract.personal_info_contract
         tx = contract.functions.register(
-            issuer["address"], ciphertext
+            issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
                 "nonce": web3.eth.get_transaction_count(setting_user["address"]),
@@ -194,7 +194,7 @@ class TestGetInfo:
         )
         contract = personal_info_contract.personal_info_contract
         tx = contract.functions.register(
-            issuer["address"], ciphertext
+            issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
                 "nonce": web3.eth.get_transaction_count(setting_user["address"]),
@@ -331,7 +331,7 @@ class TestRegisterInfo:
         )
         contract = personal_info_contract.personal_info_contract
         tx = contract.functions.register(
-            issuer["address"], ciphertext
+            issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
                 "nonce": web3.eth.get_transaction_count(setting_user["address"]),
@@ -462,7 +462,7 @@ class TestModifyInfo:
         )
         contract = personal_info_contract.personal_info_contract
         tx = contract.functions.register(
-            issuer["address"], ciphertext
+            issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
                 "nonce": web3.eth.get_transaction_count(setting_user["address"]),
@@ -528,7 +528,7 @@ class TestModifyInfo:
         )
         contract = personal_info_contract.personal_info_contract
         tx = contract.functions.register(
-            issuer["address"], ciphertext
+            issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
                 "nonce": web3.eth.get_transaction_count(setting_user["address"]),
@@ -591,7 +591,7 @@ class TestModifyInfo:
         )
         contract = personal_info_contract.personal_info_contract
         tx = contract.functions.register(
-            issuer["address"], ciphertext
+            issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
                 "nonce": web3.eth.get_transaction_count(setting_user["address"]),
@@ -696,7 +696,7 @@ class TestGetRegisterEvent:
         )
         contract = personal_info_contract.personal_info_contract
         tx = contract.functions.register(
-            issuer["address"], ciphertext
+            issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
                 "nonce": web3.eth.get_transaction_count(setting_user["address"]),
@@ -756,7 +756,7 @@ class TestGetModifyEvent:
         )
         contract = personal_info_contract.personal_info_contract
         tx = contract.functions.register(
-            issuer["address"], ciphertext
+            issuer["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
                 "nonce": web3.eth.get_transaction_count(setting_user["address"]),
@@ -791,7 +791,7 @@ class TestGetModifyEvent:
         )
         contract = personal_info_contract.personal_info_contract
         tx = contract.functions.modify(
-            setting_user["address"], ciphertext
+            setting_user["address"], ciphertext.decode("utf-8")
         ).build_transaction(
             {
                 "nonce": web3.eth.get_transaction_count(issuer["address"]),

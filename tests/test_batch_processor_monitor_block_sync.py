@@ -86,7 +86,7 @@ class TestProcessor:
 
         # Run 4th: node syncing(DIFF:over 2)
         block_number = web3.eth.block_number
-        with mock.patch("web3.eth.BaseEth._is_syncing") as mock_is_syncing:
+        with mock.patch("web3.eth.Eth._syncing") as mock_is_syncing:
             mock_is_syncing.side_effect = [
                 {"highestBlock": block_number, "currentBlock": block_number - 3}
             ]
@@ -101,7 +101,7 @@ class TestProcessor:
 
         # Run 5th: node syncing(DIFF:2) == synced
         block_number = web3.eth.block_number
-        with mock.patch("web3.eth.BaseEth._is_syncing") as mock_is_syncing:
+        with mock.patch("web3.eth.Eth._syncing") as mock_is_syncing:
             mock_is_syncing.side_effect = [
                 {"highestBlock": block_number, "currentBlock": block_number - 2}
             ]

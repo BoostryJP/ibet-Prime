@@ -1322,7 +1322,7 @@ class TestProcessor:
         # Execute batch
         latest_block = web3.eth.block_number
         with mock.patch(
-            "web3.eth.Eth.uninstallFilter",
+            "web3.eth.Eth.uninstall_filter",
             MagicMock(side_effect=Exception("mock test")),
         ) as web3_mock:
             processor.process()
