@@ -18,15 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 from unittest import mock
 
-from app.model.db import (
-    IDXPosition,
-    Token,
-    TokenType
-)
-from app.model.blockchain import (
-    IbetStraightBondContract,
-    IbetShareContract
-)
+from app.model.blockchain import IbetShareContract, IbetStraightBondContract
+from app.model.db import IDXLockedPosition, IDXPosition, Token, TokenType
 
 
 class TestAppRoutersPositionsAccountAddressTokenAddressGET:
@@ -43,6 +36,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
     def test_normal_1_1(self, mock_IbetStraightBondContract_get, client, db):
         account_address = "0x1234567890123456789012345678900000000000"
+        other_account_address = "0x1234567890123456789012345678911111111111"
         token_address = "0x1234567890123456789012345678900000000010"
         issuer_address = "0x1234567890123456789012345678900000000100"
 
@@ -65,6 +59,32 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _position.pending_transfer = 13
         db.add(_position)
 
+        # prepare data: Locked Position
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = token_address
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
+        _locked_position.account_address = account_address
+        _locked_position.value = 5
+        db.add(_locked_position)
+
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = token_address
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
+        _locked_position.account_address = account_address
+        _locked_position.value = 5
+        db.add(_locked_position)
+
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = token_address
+        _locked_position.lock_address = "0x1234567890123456789012345678900000000002"
+        _locked_position.account_address = other_account_address  # not to be included
+        _locked_position.value = 5
+        db.add(_locked_position)
+
         # mock
         bond_1 = IbetStraightBondContract()
         bond_1.name = "test_bond_1"
@@ -72,8 +92,10 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address=account_address, token_address=token_address),
-            headers={"issuer-address": issuer_address}
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
@@ -87,6 +109,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
             "exchange_balance": 11,
             "exchange_commitment": 12,
             "pending_transfer": 13,
+            "locked": 10,
         }
 
     # <Normal_1_2>
@@ -95,6 +118,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
     @mock.patch("app.model.blockchain.token.IbetShareContract.get")
     def test_normal_1_2(self, mock_IbetShareContract_get, client, db):
         account_address = "0x1234567890123456789012345678900000000000"
+        other_account_address = "0x1234567890123456789012345678911111111111"
         token_address = "0x1234567890123456789012345678900000000010"
         issuer_address = "0x1234567890123456789012345678900000000100"
 
@@ -117,6 +141,32 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _position.pending_transfer = 13
         db.add(_position)
 
+        # prepare data: Locked Position
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = token_address
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
+        _locked_position.account_address = account_address
+        _locked_position.value = 5
+        db.add(_locked_position)
+
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = token_address
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
+        _locked_position.account_address = account_address
+        _locked_position.value = 5
+        db.add(_locked_position)
+
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = token_address
+        _locked_position.lock_address = "0x1234567890123456789012345678900000000002"
+        _locked_position.account_address = other_account_address  # not to be included
+        _locked_position.value = 5
+        db.add(_locked_position)
+
         # mock
         share_1 = IbetShareContract()
         share_1.name = "test_share_1"
@@ -124,8 +174,10 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address=account_address, token_address=token_address),
-            headers={"issuer-address": issuer_address}
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
@@ -139,6 +191,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
             "exchange_balance": 11,
             "exchange_commitment": 12,
             "pending_transfer": 13,
+            "locked": 10,
         }
 
     # <Normal_2>
@@ -175,7 +228,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address=account_address, token_address=token_address),
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
         )
 
         # assertion
@@ -189,10 +244,12 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
             "exchange_balance": 0,
             "exchange_commitment": 12,
             "pending_transfer": 13,
+            "locked": 0,
         }
 
     # <Normal_3_1>
-    # No Position (no record)
+    # position is None, locked position is not None
+    # - Data sets that do not normally occur -> locked amount = 0
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
     def test_normal_3_1(self, mock_IbetStraightBondContract_get, client, db):
         account_address = "0x1234567890123456789012345678900000000000"
@@ -208,15 +265,15 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.abi = ""
         db.add(_token)
 
-        # prepare data: Position
-        _position = IDXPosition()
-        _position.token_address = token_address
-        _position.account_address = "0x1234567890123456789012345678900000000001"  # not target
-        _position.balance = 10
-        _position.exchange_balance = 11
-        _position.exchange_commitment = 12
-        _position.pending_transfer = 13
-        db.add(_position)
+        # prepare data: Locked Position
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = token_address
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
+        _locked_position.account_address = account_address
+        _locked_position.value = 5  # not zero
+        db.add(_locked_position)
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -225,8 +282,10 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address=account_address, token_address=token_address),
-            headers={"issuer-address": issuer_address}
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
@@ -240,10 +299,11 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
             "exchange_balance": 0,
             "exchange_commitment": 0,
             "pending_transfer": 0,
+            "locked": 0,
         }
 
     # <Normal_3_2>
-    # No Position (record exists but have no balance)
+    # position is not None (but zero), locked position is not None
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
     def test_normal_3_2(self, mock_IbetStraightBondContract_get, client, db):
         account_address = "0x1234567890123456789012345678900000000000"
@@ -269,6 +329,16 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _position.pending_transfer = 0
         db.add(_position)
 
+        # prepare data: Locked Position
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = token_address
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
+        _locked_position.account_address = account_address
+        _locked_position.value = 5
+        db.add(_locked_position)
+
         # mock
         bond_1 = IbetStraightBondContract()
         bond_1.name = "test_bond_1"
@@ -276,8 +346,10 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address=account_address, token_address=token_address),
-            headers={"issuer-address": issuer_address}
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
@@ -291,6 +363,126 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
             "exchange_balance": 0,
             "exchange_commitment": 0,
             "pending_transfer": 0,
+            "locked": 5,
+        }
+
+    # <Normal_3_3>
+    # position is not None, locked position is None
+    # -> locked amount = 0
+    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    def test_normal_3_3(self, mock_IbetStraightBondContract_get, client, db):
+        account_address = "0x1234567890123456789012345678900000000000"
+        token_address = "0x1234567890123456789012345678900000000010"
+        issuer_address = "0x1234567890123456789012345678900000000100"
+
+        # prepare data: Token
+        _token = Token()
+        _token.token_address = token_address
+        _token.issuer_address = issuer_address
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.abi = ""
+        db.add(_token)
+
+        # prepare data: Position
+        _position = IDXPosition()
+        _position.token_address = token_address
+        _position.account_address = account_address
+        _position.balance = 5
+        _position.exchange_balance = 10
+        _position.exchange_commitment = 15
+        _position.pending_transfer = 20
+        db.add(_position)
+
+        # mock
+        bond_1 = IbetStraightBondContract()
+        bond_1.name = "test_bond_1"
+        mock_IbetStraightBondContract_get.side_effect = [bond_1]
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
+            headers={"issuer-address": issuer_address},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "issuer_address": issuer_address,
+            "token_address": token_address,
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_name": "test_bond_1",
+            "balance": 5,
+            "exchange_balance": 10,
+            "exchange_commitment": 15,
+            "pending_transfer": 20,
+            "locked": 0,
+        }
+
+    # <Normal_3_4>
+    # position is not None, locked position is not None (but zero)
+    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    def test_normal_3_4(self, mock_IbetStraightBondContract_get, client, db):
+        account_address = "0x1234567890123456789012345678900000000000"
+        token_address = "0x1234567890123456789012345678900000000010"
+        issuer_address = "0x1234567890123456789012345678900000000100"
+
+        # prepare data: Token
+        _token = Token()
+        _token.token_address = token_address
+        _token.issuer_address = issuer_address
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.abi = ""
+        db.add(_token)
+
+        # prepare data: Position
+        _position = IDXPosition()
+        _position.token_address = token_address
+        _position.account_address = account_address
+        _position.balance = 5
+        _position.exchange_balance = 10
+        _position.exchange_commitment = 15
+        _position.pending_transfer = 20
+        db.add(_position)
+
+        # prepare data: Locked Position
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = token_address
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
+        _locked_position.account_address = account_address
+        _locked_position.value = 0
+        db.add(_locked_position)
+
+        # mock
+        bond_1 = IbetStraightBondContract()
+        bond_1.name = "test_bond_1"
+        mock_IbetStraightBondContract_get.side_effect = [bond_1]
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
+            headers={"issuer-address": issuer_address},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "issuer_address": issuer_address,
+            "token_address": token_address,
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "token_name": "test_bond_1",
+            "balance": 5,
+            "exchange_balance": 10,
+            "exchange_commitment": 15,
+            "pending_transfer": 20,
+            "locked": 0,
         }
 
     ###########################################################################
@@ -306,24 +498,23 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address=account_address, token_address=token_address),
-            headers={"issuer-address": "test"}
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
+            headers={"issuer-address": "test"},
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_2_1>
@@ -335,17 +526,16 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address=account_address, token_address=token_address),
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token not found",
         }
 
     # <Error_2_2>
@@ -359,7 +549,9 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         # prepare data: Token
         _token = Token()
         _token.token_address = token_address
-        _token.issuer_address = "0x1234567890123456789012345678900000000101"  # not target
+        _token.issuer_address = (
+            "0x1234567890123456789012345678900000000101"  # not target
+        )
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
@@ -377,18 +569,17 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address=account_address, token_address=token_address),
-            headers={"issuer-address": issuer_address}
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token not found",
         }
 
     # <Error_3>
@@ -420,16 +611,15 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
 
         # request target api
         resp = client.get(
-            self.base_url.format(account_address=account_address, token_address=token_address),
-            headers={"issuer-address": issuer_address}
+            self.base_url.format(
+                account_address=account_address, token_address=token_address
+            ),
+            headers={"issuer-address": issuer_address},
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }

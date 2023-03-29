@@ -20,18 +20,20 @@ from pydantic import BaseModel
 
 from app.model.db import TokenType
 
-
 ############################
 # RESPONSE
 ############################
 
+
 class BulkTransferUploadIdResponse(BaseModel):
     """bulk transfer upload id"""
+
     upload_id: str
 
 
 class BulkTransferUploadResponse(BaseModel):
     """bulk transfer upload"""
+
     upload_id: str
     issuer_address: str
     token_type: TokenType
@@ -41,6 +43,7 @@ class BulkTransferUploadResponse(BaseModel):
 
 class BulkTransferResponse(BaseModel):
     """bulk transfer data"""
+
     upload_id: str
     issuer_address: str
     token_address: str

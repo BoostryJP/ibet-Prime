@@ -21,11 +21,7 @@ from datetime import datetime
 from pytz import timezone
 
 import config
-from app.model.db import (
-    Token,
-    TokenType,
-    IDXTransfer
-)
+from app.model.db import IDXTransfer, IDXTransferSourceEventType, Token, TokenType
 
 local_tz = timezone(config.TZ)
 
@@ -40,9 +36,9 @@ class TestAppRoutersBondTransfersGET:
     test_from_address = "test_from_address"
     test_to_address = "test_to_address"
     test_block_timestamp = [
-        datetime.strptime("2022/01/02 15:20:30", '%Y/%m/%d %H:%M:%S'),  # JST 2022/01/03
-        datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S'),  # JST 2022/01/02
-        datetime.strptime("2022/01/02 00:20:30", '%Y/%m/%d %H:%M:%S'),  # JST 2022/01/02
+        datetime.strptime("2022/01/02 15:20:30", "%Y/%m/%d %H:%M:%S"),  # JST 2022/01/03
+        datetime.strptime("2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"),  # JST 2022/01/02
+        datetime.strptime("2022/01/02 00:20:30", "%Y/%m/%d %H:%M:%S"),  # JST 2022/01/02
     ]
     test_block_timestamp_str = [
         "2022-01-03T00:20:30+09:00",
@@ -74,23 +70,18 @@ class TestAppRoutersBondTransfersGET:
             _idx_transfer.from_address = self.test_from_address
             _idx_transfer.to_address = self.test_to_address
             _idx_transfer.amount = i
+            _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+            _idx_transfer.data = None
             _idx_transfer.block_timestamp = self.test_block_timestamp[i]
             db.add(_idx_transfer)
 
         # request target API
-        resp = client.get(
-            self.base_url.format(self.test_token_address)
-        )
+        resp = client.get(self.base_url.format(self.test_token_address))
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 3,
-                "offset": None,
-                "limit": None,
-                "total": 3
-            },
+            "result_set": {"count": 3, "offset": None, "limit": None, "total": 3},
             "transfer_history": [
                 {
                     "transaction_hash": self.test_transaction_hash,
@@ -98,7 +89,9 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
                     "amount": 0,
-                    "block_timestamp": self.test_block_timestamp_str[0]
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
+                    "block_timestamp": self.test_block_timestamp_str[0],
                 },
                 {
                     "transaction_hash": self.test_transaction_hash,
@@ -106,7 +99,9 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
                     "amount": 2,
-                    "block_timestamp": self.test_block_timestamp_str[2]
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
+                    "block_timestamp": self.test_block_timestamp_str[2],
                 },
                 {
                     "transaction_hash": self.test_transaction_hash,
@@ -114,16 +109,17 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
                     "amount": 1,
-                    "block_timestamp": self.test_block_timestamp_str[1]
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
+                    "block_timestamp": self.test_block_timestamp_str[1],
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
-    # <Normal_2>
+    # <Normal_2_1>
     # offset, limit
-    # default sort
-    def test_normal_2(self, client, db):
+    def test_normal_2_1(self, client, db):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -141,6 +137,8 @@ class TestAppRoutersBondTransfersGET:
             _idx_transfer.from_address = self.test_from_address
             _idx_transfer.to_address = self.test_to_address
             _idx_transfer.amount = i
+            _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+            _idx_transfer.data = None
             _idx_transfer.block_timestamp = self.test_block_timestamp[i]
             db.add(_idx_transfer)
 
@@ -152,12 +150,7 @@ class TestAppRoutersBondTransfersGET:
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 3,
-                "offset": 1,
-                "limit": 1,
-                "total": 3
-            },
+            "result_set": {"count": 3, "offset": 1, "limit": 1, "total": 3},
             "transfer_history": [
                 {
                     "transaction_hash": self.test_transaction_hash,
@@ -165,9 +158,152 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
                     "amount": 2,
-                    "block_timestamp": self.test_block_timestamp_str[2]
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
+                    "block_timestamp": self.test_block_timestamp_str[2],
                 },
-            ]
+            ],
+        }
+        assert resp.json() == assumed_response
+
+    # <Normal_2_2>
+    # filter: source_event
+    def test_normal_2_2(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        # prepare data: IDXTransfer
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.from_address = "test_from_address_2"
+        _idx_transfer.to_address = self.test_to_address
+        _idx_transfer.amount = 0
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
+        _idx_transfer.block_timestamp = self.test_block_timestamp[0]
+        db.add(_idx_transfer)
+
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.from_address = "test_from_address_2"
+        _idx_transfer.to_address = self.test_to_address
+        _idx_transfer.amount = 1
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
+        _idx_transfer.block_timestamp = self.test_block_timestamp[1]
+        db.add(_idx_transfer)
+
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.from_address = "test_from_address_1"
+        _idx_transfer.to_address = self.test_to_address
+        _idx_transfer.amount = 2
+        _idx_transfer.source_event = IDXTransferSourceEventType.UNLOCK.value
+        _idx_transfer.data = {"message": "unlock"}
+        _idx_transfer.block_timestamp = self.test_block_timestamp[2]
+        db.add(_idx_transfer)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address),
+            params={"source_event": IDXTransferSourceEventType.UNLOCK.value},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = {
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 3},
+            "transfer_history": [
+                {
+                    "transaction_hash": self.test_transaction_hash,
+                    "token_address": self.test_token_address,
+                    "from_address": "test_from_address_1",
+                    "to_address": self.test_to_address,
+                    "amount": 2,
+                    "source_event": IDXTransferSourceEventType.UNLOCK.value,
+                    "data": {"message": "unlock"},
+                    "block_timestamp": self.test_block_timestamp_str[2],
+                }
+            ],
+        }
+        assert resp.json() == assumed_response
+
+    # <Normal_2_3>
+    # filter: data
+    def test_normal_2_3(self, client, db):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        # prepare data: IDXTransfer
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.from_address = "test_from_address_2"
+        _idx_transfer.to_address = self.test_to_address
+        _idx_transfer.amount = 0
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
+        _idx_transfer.block_timestamp = self.test_block_timestamp[0]
+        db.add(_idx_transfer)
+
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.from_address = "test_from_address_2"
+        _idx_transfer.to_address = self.test_to_address
+        _idx_transfer.amount = 1
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
+        _idx_transfer.block_timestamp = self.test_block_timestamp[1]
+        db.add(_idx_transfer)
+
+        _idx_transfer = IDXTransfer()
+        _idx_transfer.transaction_hash = self.test_transaction_hash
+        _idx_transfer.token_address = self.test_token_address
+        _idx_transfer.from_address = "test_from_address_1"
+        _idx_transfer.to_address = self.test_to_address
+        _idx_transfer.amount = 2
+        _idx_transfer.source_event = IDXTransferSourceEventType.UNLOCK.value
+        _idx_transfer.data = {"message": "unlock"}
+        _idx_transfer.block_timestamp = self.test_block_timestamp[2]
+        db.add(_idx_transfer)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(self.test_token_address), params={"data": "unlo"}
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assumed_response = {
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 3},
+            "transfer_history": [
+                {
+                    "transaction_hash": self.test_transaction_hash,
+                    "token_address": self.test_token_address,
+                    "from_address": "test_from_address_1",
+                    "to_address": self.test_to_address,
+                    "amount": 2,
+                    "source_event": IDXTransferSourceEventType.UNLOCK.value,
+                    "data": {"message": "unlock"},
+                    "block_timestamp": self.test_block_timestamp_str[2],
+                }
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -191,6 +327,8 @@ class TestAppRoutersBondTransfersGET:
             _idx_transfer.from_address = self.test_from_address
             _idx_transfer.to_address = self.test_to_address
             _idx_transfer.amount = i
+            _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+            _idx_transfer.data = None
             _idx_transfer.block_timestamp = self.test_block_timestamp[i]
             db.add(_idx_transfer)
 
@@ -200,18 +338,13 @@ class TestAppRoutersBondTransfersGET:
             params={
                 "sort_item": "block_timestamp",
                 "sort_order": 0,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 3,
-                "offset": None,
-                "limit": None,
-                "total": 3
-            },
+            "result_set": {"count": 3, "offset": None, "limit": None, "total": 3},
             "transfer_history": [
                 {
                     "transaction_hash": self.test_transaction_hash,
@@ -219,7 +352,9 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
                     "amount": 1,
-                    "block_timestamp": self.test_block_timestamp_str[1]
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
+                    "block_timestamp": self.test_block_timestamp_str[1],
                 },
                 {
                     "transaction_hash": self.test_transaction_hash,
@@ -227,7 +362,9 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
                     "amount": 2,
-                    "block_timestamp": self.test_block_timestamp_str[2]
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
+                    "block_timestamp": self.test_block_timestamp_str[2],
                 },
                 {
                     "transaction_hash": self.test_transaction_hash,
@@ -235,9 +372,11 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
                     "amount": 0,
-                    "block_timestamp": self.test_block_timestamp_str[0]
-                }
-            ]
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
+                    "block_timestamp": self.test_block_timestamp_str[0],
+                },
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -260,6 +399,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.from_address = "test_from_address_2"
         _idx_transfer.to_address = self.test_to_address
         _idx_transfer.amount = 0
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
         _idx_transfer.block_timestamp = self.test_block_timestamp[0]
         db.add(_idx_transfer)
 
@@ -269,6 +410,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.from_address = "test_from_address_2"
         _idx_transfer.to_address = self.test_to_address
         _idx_transfer.amount = 1
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
         _idx_transfer.block_timestamp = self.test_block_timestamp[1]
         db.add(_idx_transfer)
 
@@ -278,6 +421,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.from_address = "test_from_address_1"
         _idx_transfer.to_address = self.test_to_address
         _idx_transfer.amount = 2
+        _idx_transfer.source_event = IDXTransferSourceEventType.UNLOCK.value
+        _idx_transfer.data = {"message": "unlock"}
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
 
@@ -287,18 +432,13 @@ class TestAppRoutersBondTransfersGET:
             params={
                 "sort_item": "from_address",
                 "sort_order": 0,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 3,
-                "offset": None,
-                "limit": None,
-                "total": 3
-            },
+            "result_set": {"count": 3, "offset": None, "limit": None, "total": 3},
             "transfer_history": [
                 {
                     "transaction_hash": self.test_transaction_hash,
@@ -306,7 +446,9 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": "test_from_address_1",
                     "to_address": self.test_to_address,
                     "amount": 2,
-                    "block_timestamp": self.test_block_timestamp_str[2]
+                    "source_event": IDXTransferSourceEventType.UNLOCK.value,
+                    "data": {"message": "unlock"},
+                    "block_timestamp": self.test_block_timestamp_str[2],
                 },
                 {
                     "transaction_hash": self.test_transaction_hash,
@@ -314,7 +456,9 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": "test_from_address_2",
                     "to_address": self.test_to_address,
                     "amount": 0,
-                    "block_timestamp": self.test_block_timestamp_str[0]
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
+                    "block_timestamp": self.test_block_timestamp_str[0],
                 },
                 {
                     "transaction_hash": self.test_transaction_hash,
@@ -322,9 +466,11 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": "test_from_address_2",
                     "to_address": self.test_to_address,
                     "amount": 1,
-                    "block_timestamp": self.test_block_timestamp_str[1]
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
+                    "block_timestamp": self.test_block_timestamp_str[1],
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -347,6 +493,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.from_address = self.test_from_address
         _idx_transfer.to_address = "test_to_address_2"
         _idx_transfer.amount = 0
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
         _idx_transfer.block_timestamp = self.test_block_timestamp[0]
         db.add(_idx_transfer)
 
@@ -356,6 +504,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.from_address = self.test_from_address
         _idx_transfer.to_address = "test_to_address_1"
         _idx_transfer.amount = 1
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
         _idx_transfer.block_timestamp = self.test_block_timestamp[1]
         db.add(_idx_transfer)
 
@@ -365,6 +515,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.from_address = self.test_from_address
         _idx_transfer.to_address = "test_to_address_1"
         _idx_transfer.amount = 2
+        _idx_transfer.source_event = IDXTransferSourceEventType.UNLOCK.value
+        _idx_transfer.data = {"message": "unlock"}
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
 
@@ -374,18 +526,13 @@ class TestAppRoutersBondTransfersGET:
             params={
                 "sort_item": "to_address",
                 "sort_order": 1,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 3,
-                "offset": None,
-                "limit": None,
-                "total": 3
-            },
+            "result_set": {"count": 3, "offset": None, "limit": None, "total": 3},
             "transfer_history": [
                 {
                     "transaction_hash": self.test_transaction_hash,
@@ -393,7 +540,9 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": "test_to_address_2",
                     "amount": 0,
-                    "block_timestamp": self.test_block_timestamp_str[0]
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
+                    "block_timestamp": self.test_block_timestamp_str[0],
                 },
                 {
                     "transaction_hash": self.test_transaction_hash,
@@ -401,7 +550,9 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": "test_to_address_1",
                     "amount": 2,
-                    "block_timestamp": self.test_block_timestamp_str[2]
+                    "source_event": IDXTransferSourceEventType.UNLOCK.value,
+                    "data": {"message": "unlock"},
+                    "block_timestamp": self.test_block_timestamp_str[2],
                 },
                 {
                     "transaction_hash": self.test_transaction_hash,
@@ -409,9 +560,11 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": "test_to_address_1",
                     "amount": 1,
-                    "block_timestamp": self.test_block_timestamp_str[1]
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
+                    "block_timestamp": self.test_block_timestamp_str[1],
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -434,6 +587,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.from_address = self.test_from_address
         _idx_transfer.to_address = self.test_to_address
         _idx_transfer.amount = 1
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
         _idx_transfer.block_timestamp = self.test_block_timestamp[0]
         db.add(_idx_transfer)
 
@@ -443,6 +598,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.from_address = self.test_from_address
         _idx_transfer.to_address = self.test_to_address
         _idx_transfer.amount = 2
+        _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER.value
+        _idx_transfer.data = None
         _idx_transfer.block_timestamp = self.test_block_timestamp[1]
         db.add(_idx_transfer)
 
@@ -452,6 +609,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.from_address = self.test_from_address
         _idx_transfer.to_address = self.test_to_address
         _idx_transfer.amount = 2
+        _idx_transfer.source_event = IDXTransferSourceEventType.UNLOCK.value
+        _idx_transfer.data = {"message": "unlock"}
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
 
@@ -461,18 +620,13 @@ class TestAppRoutersBondTransfersGET:
             params={
                 "sort_item": "amount",
                 "sort_order": 0,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 3,
-                "offset": None,
-                "limit": None,
-                "total": 3
-            },
+            "result_set": {"count": 3, "offset": None, "limit": None, "total": 3},
             "transfer_history": [
                 {
                     "transaction_hash": self.test_transaction_hash,
@@ -480,7 +634,9 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
                     "amount": 1,
-                    "block_timestamp": self.test_block_timestamp_str[0]
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
+                    "block_timestamp": self.test_block_timestamp_str[0],
                 },
                 {
                     "transaction_hash": self.test_transaction_hash,
@@ -488,7 +644,9 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
                     "amount": 2,
-                    "block_timestamp": self.test_block_timestamp_str[2]
+                    "source_event": IDXTransferSourceEventType.UNLOCK.value,
+                    "data": {"message": "unlock"},
+                    "block_timestamp": self.test_block_timestamp_str[2],
                 },
                 {
                     "transaction_hash": self.test_transaction_hash,
@@ -496,9 +654,11 @@ class TestAppRoutersBondTransfersGET:
                     "from_address": self.test_from_address,
                     "to_address": self.test_to_address,
                     "amount": 2,
-                    "block_timestamp": self.test_block_timestamp_str[1]
+                    "source_event": IDXTransferSourceEventType.TRANSFER.value,
+                    "data": None,
+                    "block_timestamp": self.test_block_timestamp_str[1],
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -510,18 +670,13 @@ class TestAppRoutersBondTransfersGET:
     # token not found
     def test_error_1(self, client, db):
         # request target API
-        resp = client.get(
-            self.base_url.format(self.test_token_address)
-        )
+        resp = client.get(self.base_url.format(self.test_token_address))
 
         # assertion
         assert resp.status_code == 404
         assumed_response = {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token not found",
         }
         assert resp.json() == assumed_response
 
@@ -539,18 +694,13 @@ class TestAppRoutersBondTransfersGET:
         db.add(_token)
 
         # request target API
-        resp = client.get(
-            self.base_url.format(self.test_token_address)
-        )
+        resp = client.get(self.base_url.format(self.test_token_address))
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }
 
     # <Error_3>
@@ -559,27 +709,29 @@ class TestAppRoutersBondTransfersGET:
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
-            params={
-                "sort_item": "block_timestamp12345"
-            }
+            params={"sort_item": "block_timestamp12345"},
         )
 
         # assertion
         assert resp.status_code == 422
         assumed_response = {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"enum_values": ["block_timestamp", "from_address", "to_address", "amount"]},
+                    "ctx": {
+                        "enum_values": [
+                            "block_timestamp",
+                            "from_address",
+                            "to_address",
+                            "amount",
+                        ]
+                    },
                     "loc": ["query", "sort_item"],
                     "msg": "value is not a valid enumeration member; permitted: 'block_timestamp', 'from_address', "
-                           "'to_address', 'amount'",
-                    "type": "type_error.enum"
+                    "'to_address', 'amount'",
+                    "type": "type_error.enum",
                 }
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -588,29 +740,21 @@ class TestAppRoutersBondTransfersGET:
     def test_error_4(self, client, db):
         # request target API
         resp = client.get(
-            self.base_url.format(self.test_token_address),
-            params={
-                "sort_order": -1
-            }
+            self.base_url.format(self.test_token_address), params={"sort_order": -1}
         )
 
         # assertion
         assert resp.status_code == 422
         assumed_response = {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {
-                        "limit_value": 0
-                    },
+                    "ctx": {"limit_value": 0},
                     "loc": ["query", "sort_order"],
                     "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge"
+                    "type": "value_error.number.not_ge",
                 }
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -619,28 +763,20 @@ class TestAppRoutersBondTransfersGET:
     def test_error_5(self, client, db):
         # request target API
         resp = client.get(
-            self.base_url.format(self.test_token_address),
-            params={
-                "sort_order": 2
-            }
+            self.base_url.format(self.test_token_address), params={"sort_order": 2}
         )
 
         # assertion
         assert resp.status_code == 422
         assumed_response = {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {
-                        "limit_value": 1
-                    },
+                    "ctx": {"limit_value": 1},
                     "loc": ["query", "sort_order"],
                     "msg": "ensure this value is less than or equal to 1",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le",
                 }
-            ]
+            ],
         }
         assert resp.json() == assumed_response

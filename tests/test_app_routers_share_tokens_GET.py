@@ -18,14 +18,12 @@ SPDX-License-Identifier: Apache-2.0
 """
 from unittest import mock
 from unittest.mock import call
+
 from pytz import timezone
 
-from config import TZ
 from app.model.blockchain import IbetShareContract
-from app.model.db import (
-    Token,
-    TokenType
-)
+from app.model.db import Token, TokenType
+from config import TZ
 from tests.account_config import config_eth_account
 
 
@@ -61,7 +59,12 @@ class TestAppRoutersShareTokensGET:
         token.abi = "abi_test1"
         db.add(token)
         db.commit()
-        _issue_datetime = timezone("UTC").localize(token.created).astimezone(self.local_tz).isoformat()
+        _issue_datetime = (
+            timezone("UTC")
+            .localize(token.created)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
 
         # request target API
         mock_token = IbetShareContract()
@@ -72,7 +75,9 @@ class TestAppRoutersShareTokensGET:
         mock_token.total_supply = 10000
         mock_token.contact_information = "contactInformation_test1"
         mock_token.privacy_policy = "privacyPolicy_test1"
-        mock_token.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
+        mock_token.tradable_exchange_contract_address = (
+            "0x1234567890abCdFe1234567890ABCdFE12345678"
+        )
         mock_token.status = True
         mock_token.issue_price = 1000
         mock_token.dividends = 123.45
@@ -81,7 +86,9 @@ class TestAppRoutersShareTokensGET:
         mock_token.cancellation_date = "20221231"
         mock_token.transferable = True
         mock_token.is_offering = True
-        mock_token.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token.personal_info_contract_address = (
+            "0x1234567890aBcDFE1234567890abcDFE12345679"
+        )
         mock_token.principal_value = 1000
         mock_token.transfer_approval_required = False
         mock_token.is_canceled = False
@@ -89,9 +96,6 @@ class TestAppRoutersShareTokensGET:
         mock_get.side_effect = [mock_token]
 
         resp = client.get(self.apiurl)
-
-        # assertion mock call arguments
-        mock_get.assert_any_call(contract_address=token.token_address)
 
         assumed_response = [
             {
@@ -141,7 +145,12 @@ class TestAppRoutersShareTokensGET:
         token_1.abi = "abi_test1"
         db.add(token_1)
         db.commit()
-        _issue_datetime_1 = timezone("UTC").localize(token_1.created).astimezone(self.local_tz).isoformat()
+        _issue_datetime_1 = (
+            timezone("UTC")
+            .localize(token_1.created)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
 
         mock_token_1 = IbetShareContract()
         mock_token_1.issuer_address = issuer_address_1
@@ -151,7 +160,9 @@ class TestAppRoutersShareTokensGET:
         mock_token_1.total_supply = 10000
         mock_token_1.contact_information = "contactInformation_test1"
         mock_token_1.privacy_policy = "privacyPolicy_test1"
-        mock_token_1.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
+        mock_token_1.tradable_exchange_contract_address = (
+            "0x1234567890abCdFe1234567890ABCdFE12345678"
+        )
         mock_token_1.status = True
         mock_token_1.issue_price = 1000
         mock_token_1.dividends = 123.45
@@ -160,7 +171,9 @@ class TestAppRoutersShareTokensGET:
         mock_token_1.cancellation_date = "20221231"
         mock_token_1.transferable = True
         mock_token_1.is_offering = True
-        mock_token_1.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token_1.personal_info_contract_address = (
+            "0x1234567890aBcDFE1234567890abcDFE12345679"
+        )
         mock_token_1.principal_value = 1000
         mock_token_1.transfer_approval_required = False
         mock_token_1.is_canceled = False
@@ -176,7 +189,12 @@ class TestAppRoutersShareTokensGET:
         token_2.token_status = 0
         db.add(token_2)
         db.commit()
-        _issue_datetime_2 = timezone("UTC").localize(token_2.created).astimezone(self.local_tz).isoformat()
+        _issue_datetime_2 = (
+            timezone("UTC")
+            .localize(token_2.created)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
 
         mock_token_2 = IbetShareContract()
         mock_token_2.issuer_address = issuer_address_2
@@ -186,7 +204,9 @@ class TestAppRoutersShareTokensGET:
         mock_token_2.total_supply = 10000
         mock_token_2.contact_information = "contactInformation_test2"
         mock_token_2.privacy_policy = "privacyPolicy_test2"
-        mock_token_2.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
+        mock_token_2.tradable_exchange_contract_address = (
+            "0x1234567890abCdFe1234567890ABCdFE12345678"
+        )
         mock_token_2.status = True
         mock_token_2.issue_price = 1000
         mock_token_2.dividends = 123.45
@@ -195,23 +215,17 @@ class TestAppRoutersShareTokensGET:
         mock_token_2.cancellation_date = "20221231"
         mock_token_2.transferable = True
         mock_token_2.is_offering = True
-        mock_token_2.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token_2.personal_info_contract_address = (
+            "0x1234567890aBcDFE1234567890abcDFE12345679"
+        )
         mock_token_2.principal_value = 1000
         mock_token_2.transfer_approval_required = False
         mock_token_2.is_canceled = False
         mock_token_2.memo = "memo_test2"
 
-        mock_get.side_effect = [
-            mock_token_1, mock_token_2
-        ]
+        mock_get.side_effect = [mock_token_1, mock_token_2]
 
         resp = client.get(self.apiurl)
-
-        # assertion mock call arguments
-        mock_get.assert_has_calls([
-            call(contract_address=token_1.token_address),
-            call(contract_address=token_2.token_address)
-        ])
 
         assumed_response = [
             {
@@ -263,7 +277,7 @@ class TestAppRoutersShareTokensGET:
                 "issue_datetime": _issue_datetime_2,
                 "token_status": 0,
                 "memo": "memo_test2",
-            }
+            },
         ]
 
         assert resp.status_code == 200
@@ -305,7 +319,12 @@ class TestAppRoutersShareTokensGET:
         token_1.abi = "abi_test1"
         db.add(token_1)
         db.commit()
-        _issue_datetime = timezone("UTC").localize(token_1.created).astimezone(self.local_tz).isoformat()
+        _issue_datetime = (
+            timezone("UTC")
+            .localize(token_1.created)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
 
         mock_token = IbetShareContract()
         mock_token.issuer_address = issuer_address_1
@@ -315,7 +334,9 @@ class TestAppRoutersShareTokensGET:
         mock_token.total_supply = 10000
         mock_token.contact_information = "contactInformation_test1"
         mock_token.privacy_policy = "privacyPolicy_test1"
-        mock_token.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
+        mock_token.tradable_exchange_contract_address = (
+            "0x1234567890abCdFe1234567890ABCdFE12345678"
+        )
         mock_token.status = True
         mock_token.issue_price = 1000
         mock_token.dividends = 123.45
@@ -324,7 +345,9 @@ class TestAppRoutersShareTokensGET:
         mock_token.cancellation_date = "20221231"
         mock_token.transferable = True
         mock_token.is_offering = True
-        mock_token.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token.personal_info_contract_address = (
+            "0x1234567890aBcDFE1234567890abcDFE12345679"
+        )
         mock_token.principal_value = 1000
         mock_token.transfer_approval_required = False
         mock_token.is_canceled = False
@@ -341,9 +364,6 @@ class TestAppRoutersShareTokensGET:
         db.add(token_2)
 
         resp = client.get(self.apiurl, headers={"issuer-address": issuer_address_1})
-
-        # assertion mock call arguments
-        mock_get.assert_any_call(contract_address=token_1.token_address)
 
         assumed_response = [
             {
@@ -393,7 +413,12 @@ class TestAppRoutersShareTokensGET:
         token_1.abi = "abi_test1"
         db.add(token_1)
         db.commit()
-        _issue_datetime_1 = timezone("UTC").localize(token_1.created).astimezone(self.local_tz).isoformat()
+        _issue_datetime_1 = (
+            timezone("UTC")
+            .localize(token_1.created)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
 
         mock_token_1 = IbetShareContract()
         mock_token_1.issuer_address = issuer_address_1
@@ -403,7 +428,9 @@ class TestAppRoutersShareTokensGET:
         mock_token_1.total_supply = 10000
         mock_token_1.contact_information = "contactInformation_test1"
         mock_token_1.privacy_policy = "privacyPolicy_test1"
-        mock_token_1.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
+        mock_token_1.tradable_exchange_contract_address = (
+            "0x1234567890abCdFe1234567890ABCdFE12345678"
+        )
         mock_token_1.status = True
         mock_token_1.issue_price = 1000
         mock_token_1.dividends = 123.45
@@ -412,7 +439,9 @@ class TestAppRoutersShareTokensGET:
         mock_token_1.cancellation_date = "20221231"
         mock_token_1.transferable = True
         mock_token_1.is_offering = True
-        mock_token_1.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token_1.personal_info_contract_address = (
+            "0x1234567890aBcDFE1234567890abcDFE12345679"
+        )
         mock_token_1.principal_value = 1000
         mock_token_1.transfer_approval_required = False
         mock_token_1.is_canceled = False
@@ -428,7 +457,12 @@ class TestAppRoutersShareTokensGET:
         token_2.token_status = 0
         db.add(token_2)
         db.commit()
-        _issue_datetime_2 = timezone("UTC").localize(token_2.created).astimezone(self.local_tz).isoformat()
+        _issue_datetime_2 = (
+            timezone("UTC")
+            .localize(token_2.created)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
 
         mock_token_2 = IbetShareContract()
         mock_token_2.issuer_address = issuer_address_1
@@ -438,7 +472,9 @@ class TestAppRoutersShareTokensGET:
         mock_token_2.total_supply = 10000
         mock_token_2.contact_information = "contactInformation_test2"
         mock_token_2.privacy_policy = "privacyPolicy_test2"
-        mock_token_2.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
+        mock_token_2.tradable_exchange_contract_address = (
+            "0x1234567890abCdFe1234567890ABCdFE12345678"
+        )
         mock_token_2.status = True
         mock_token_2.issue_price = 1000
         mock_token_2.dividends = 123.45
@@ -447,15 +483,15 @@ class TestAppRoutersShareTokensGET:
         mock_token_2.cancellation_date = "20221231"
         mock_token_2.transferable = True
         mock_token_2.is_offering = True
-        mock_token_2.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token_2.personal_info_contract_address = (
+            "0x1234567890aBcDFE1234567890abcDFE12345679"
+        )
         mock_token_2.principal_value = 1000
         mock_token_2.transfer_approval_required = False
         mock_token_2.is_canceled = False
         mock_token_2.memo = "memo_test2"
 
-        mock_get.side_effect = [
-            mock_token_1, mock_token_2
-        ]
+        mock_get.side_effect = [mock_token_1, mock_token_2]
 
         # No Target Data
         token_3 = Token()
@@ -467,12 +503,6 @@ class TestAppRoutersShareTokensGET:
         db.add(token_3)
 
         resp = client.get(self.apiurl, headers={"issuer-address": issuer_address_1})
-
-        # assertion mock call arguments
-        mock_get.assert_has_calls([
-            call(contract_address=token_1.token_address),
-            call(contract_address=token_2.token_address)
-        ])
 
         assumed_response = [
             {
@@ -524,7 +554,7 @@ class TestAppRoutersShareTokensGET:
                 "issue_datetime": _issue_datetime_2,
                 "token_status": 0,
                 "memo": "memo_test2",
-            }
+            },
         ]
 
         assert resp.status_code == 200
@@ -541,13 +571,12 @@ class TestAppRoutersShareTokensGET:
 
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
-            "detail": [{
-                "loc": ["header", "issuer-address"],
-                "msg": "issuer-address is not a valid address",
-                "type": "value_error"
-            }]
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "loc": ["header", "issuer-address"],
+                    "msg": "issuer-address is not a valid address",
+                    "type": "value_error",
+                }
+            ],
         }

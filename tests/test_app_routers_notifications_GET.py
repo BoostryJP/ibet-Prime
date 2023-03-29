@@ -21,10 +21,10 @@ from datetime import datetime
 from unittest.mock import ANY
 
 from app.model.db import (
+    BatchIssueRedeemProcessingCategory,
     Notification,
     NotificationType,
     TokenType,
-    BatchIssueRedeemProcessingCategory
 )
 from tests.account_config import config_eth_account
 
@@ -55,9 +55,11 @@ class TestAppRoutersNotificationsGET:
         _notification_1.metainfo = {
             "upload_id": str(uuid.uuid4()),
             "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-            "error_transfer_id": []
+            "error_transfer_id": [],
         }
-        _notification_1.created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _notification_1.created = datetime.strptime(
+            "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_notification_1)
 
         _notification_2 = Notification()
@@ -69,9 +71,11 @@ class TestAppRoutersNotificationsGET:
         _notification_2.metainfo = {
             "scheduled_event_id": "1",
             "token_address": "0x0000000000000000000000000000000000000000",
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
         }
-        _notification_2.created = datetime.strptime("2022/01/02 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _notification_2.created = datetime.strptime(
+            "2022/01/02 00:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_notification_2)
 
         _notification_3 = Notification()
@@ -83,9 +87,11 @@ class TestAppRoutersNotificationsGET:
         _notification_3.metainfo = {
             "token_address": "0x0000000000000000000000000000000000000000",
             "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-            "arguments": {}
+            "arguments": {},
         }
-        _notification_3.created = datetime.strptime("2022/01/02 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/03
+        _notification_3.created = datetime.strptime(
+            "2022/01/02 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/03
         db.add(_notification_3)
 
         _notification_4 = Notification()
@@ -97,9 +103,11 @@ class TestAppRoutersNotificationsGET:
         _notification_4.metainfo = {
             "id": 1,
             "token_address": "0x0000000000000000000000000000000000000000",
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
         }
-        _notification_4.created = datetime.strptime("2022/01/03 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/03
+        _notification_4.created = datetime.strptime(
+            "2022/01/03 00:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/03
         db.add(_notification_4)
 
         _notification_5 = Notification()
@@ -111,11 +119,12 @@ class TestAppRoutersNotificationsGET:
         _notification_5.metainfo = {
             "token_address": "0x0000000000000000000000000000000000000000",
             "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-            "ledger_id": 1
+            "ledger_id": 1,
         }
-        _notification_5.created = datetime.strptime("2022/01/05 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/03
+        _notification_5.created = datetime.strptime(
+            "2022/01/05 00:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/03
         db.add(_notification_5)
-
 
         _notification_6 = Notification()
         _notification_6.notice_id = "notice_id_6"
@@ -127,9 +136,10 @@ class TestAppRoutersNotificationsGET:
             "upload_id": str(uuid.uuid4()),
             "error_registration_id": [1, 2, 3],
         }
-        _notification_6.created = datetime.strptime("2022/01/06 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/03
+        _notification_6.created = datetime.strptime(
+            "2022/01/06 00:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/03
         db.add(_notification_6)
-
 
         _notification_7 = Notification()
         _notification_7.notice_id = "notice_id_7"
@@ -142,10 +152,51 @@ class TestAppRoutersNotificationsGET:
             "upload_id": str(uuid.uuid4()),
             "error_data_id": [1, 2, 3],
             "token_address": "0x0000000000000000000000000000000000000000",
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
         }
-        _notification_7.created = datetime.strptime("2022/01/07 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/03
+        _notification_7.created = datetime.strptime(
+            "2022/01/07 00:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/03
         db.add(_notification_7)
+
+        _notification_8 = Notification()
+        _notification_8.notice_id = "notice_id_8"
+        _notification_8.issuer_address = issuer_address_2
+        _notification_8.priority = 0
+        _notification_8.type = NotificationType.LOCK_INFO
+        _notification_8.code = 0
+        _notification_8.metainfo = {
+            "token_address": "0x0000000000000000000000000000000000000000",
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "lock_address": "0x0000000000000000000000000000000000000000",
+            "account_address": "0x0000000000000000000000000000000000000000",
+            "value": 30,
+            "data": {"message": "lock1"},
+        }
+        _notification_8.created = datetime.strptime(
+            "2022/01/08 00:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/03
+        db.add(_notification_8)
+
+        _notification_9 = Notification()
+        _notification_9.notice_id = "notice_id_9"
+        _notification_9.issuer_address = issuer_address_2
+        _notification_9.priority = 0
+        _notification_9.type = NotificationType.UNLOCK_INFO
+        _notification_9.code = 0
+        _notification_9.metainfo = {
+            "token_address": "0x0000000000000000000000000000000000000000",
+            "token_type": TokenType.IBET_SHARE.value,
+            "lock_address": "0x0000000000000000000000000000000000000000",
+            "account_address": "0x0000000000000000000000000000000000000000",
+            "recipient_address": "0x0000000000000000000000000000000000000000",
+            "value": 30,
+            "data": {"message": "unlock1"},
+        }
+        _notification_9.created = datetime.strptime(
+            "2022/01/09 00:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/03
+        db.add(_notification_9)
 
         # request target API
         resp = client.get(
@@ -155,12 +206,7 @@ class TestAppRoutersNotificationsGET:
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 7,
-                "offset": None,
-                "limit": None,
-                "total": 7
-            },
+            "result_set": {"count": 9, "offset": None, "limit": None, "total": 9},
             "notifications": [
                 {
                     "notice_id": "notice_id_1",
@@ -171,9 +217,9 @@ class TestAppRoutersNotificationsGET:
                     "metainfo": {
                         "upload_id": ANY,
                         "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-                        "error_transfer_id": []
+                        "error_transfer_id": [],
                     },
-                    "created": "2022-01-02T00:20:30+09:00"
+                    "created": "2022-01-02T00:20:30+09:00",
                 },
                 {
                     "notice_id": "notice_id_2",
@@ -184,9 +230,9 @@ class TestAppRoutersNotificationsGET:
                     "metainfo": {
                         "scheduled_event_id": "1",
                         "token_address": "0x0000000000000000000000000000000000000000",
-                        "token_type": TokenType.IBET_STRAIGHT_BOND.value
+                        "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                     },
-                    "created": "2022-01-02T09:20:30+09:00"
+                    "created": "2022-01-02T09:20:30+09:00",
                 },
                 {
                     "notice_id": "notice_id_3",
@@ -197,9 +243,9 @@ class TestAppRoutersNotificationsGET:
                     "metainfo": {
                         "token_address": "0x0000000000000000000000000000000000000000",
                         "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-                        "arguments": {}
+                        "arguments": {},
                     },
-                    "created": "2022-01-03T00:20:30+09:00"
+                    "created": "2022-01-03T00:20:30+09:00",
                 },
                 {
                     "notice_id": "notice_id_4",
@@ -210,9 +256,9 @@ class TestAppRoutersNotificationsGET:
                     "metainfo": {
                         "id": 1,
                         "token_address": "0x0000000000000000000000000000000000000000",
-                        "token_type": TokenType.IBET_STRAIGHT_BOND
+                        "token_type": TokenType.IBET_STRAIGHT_BOND,
                     },
-                    "created": "2022-01-03T09:20:30+09:00"
+                    "created": "2022-01-03T09:20:30+09:00",
                 },
                 {
                     "notice_id": "notice_id_5",
@@ -223,9 +269,9 @@ class TestAppRoutersNotificationsGET:
                     "metainfo": {
                         "token_address": "0x0000000000000000000000000000000000000000",
                         "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-                        "ledger_id": 1
+                        "ledger_id": 1,
                     },
-                    "created": "2022-01-05T09:20:30+09:00"
+                    "created": "2022-01-05T09:20:30+09:00",
                 },
                 {
                     "notice_id": "notice_id_6",
@@ -233,11 +279,8 @@ class TestAppRoutersNotificationsGET:
                     "priority": 0,
                     "notice_type": NotificationType.BATCH_REGISTER_PERSONAL_INFO_ERROR,
                     "notice_code": 1,
-                    "metainfo": {
-                        "upload_id": ANY,
-                        "error_registration_id": [1, 2, 3]
-                    },
-                    "created": "2022-01-06T09:20:30+09:00"
+                    "metainfo": {"upload_id": ANY, "error_registration_id": [1, 2, 3]},
+                    "created": "2022-01-06T09:20:30+09:00",
                 },
                 {
                     "notice_id": "notice_id_7",
@@ -250,11 +293,44 @@ class TestAppRoutersNotificationsGET:
                         "upload_id": ANY,
                         "error_data_id": [1, 2, 3],
                         "token_address": "0x0000000000000000000000000000000000000000",
-                        "token_type": TokenType.IBET_STRAIGHT_BOND
+                        "token_type": TokenType.IBET_STRAIGHT_BOND,
                     },
-                    "created": "2022-01-07T09:20:30+09:00"
+                    "created": "2022-01-07T09:20:30+09:00",
                 },
-            ]
+                {
+                    "notice_id": "notice_id_8",
+                    "issuer_address": issuer_address_2,
+                    "priority": 0,
+                    "notice_type": NotificationType.LOCK_INFO,
+                    "notice_code": 0,
+                    "metainfo": {
+                        "token_address": "0x0000000000000000000000000000000000000000",
+                        "token_type": TokenType.IBET_STRAIGHT_BOND,
+                        "lock_address": "0x0000000000000000000000000000000000000000",
+                        "account_address": "0x0000000000000000000000000000000000000000",
+                        "value": 30,
+                        "data": {"message": "lock1"},
+                    },
+                    "created": "2022-01-08T09:20:30+09:00",
+                },
+                {
+                    "notice_id": "notice_id_9",
+                    "issuer_address": issuer_address_2,
+                    "priority": 0,
+                    "notice_type": NotificationType.UNLOCK_INFO,
+                    "notice_code": 0,
+                    "metainfo": {
+                        "token_address": "0x0000000000000000000000000000000000000000",
+                        "token_type": TokenType.IBET_SHARE,
+                        "lock_address": "0x0000000000000000000000000000000000000000",
+                        "account_address": "0x0000000000000000000000000000000000000000",
+                        "recipient_address": "0x0000000000000000000000000000000000000000",
+                        "value": 30,
+                        "data": {"message": "unlock1"},
+                    },
+                    "created": "2022-01-09T09:20:30+09:00",
+                },
+            ],
         }
 
     # <Normal_2>
@@ -275,9 +351,11 @@ class TestAppRoutersNotificationsGET:
         _notification_1.metainfo = {
             "upload_id": str(uuid.uuid4()),
             "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-            "error_transfer_id": []
+            "error_transfer_id": [],
         }
-        _notification_1.created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _notification_1.created = datetime.strptime(
+            "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_notification_1)
 
         _notification_2 = Notification()
@@ -288,9 +366,11 @@ class TestAppRoutersNotificationsGET:
         _notification_2.code = 1
         _notification_2.metainfo = {
             "scheduled_event_id": "1",
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
         }
-        _notification_2.created = datetime.strptime("2022/01/02 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _notification_2.created = datetime.strptime(
+            "2022/01/02 00:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_notification_2)
 
         _notification_3 = Notification()
@@ -302,9 +382,11 @@ class TestAppRoutersNotificationsGET:
         _notification_3.metainfo = {
             "upload_id": str(uuid.uuid4()),
             "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-            "error_transfer_id": []
+            "error_transfer_id": [],
         }
-        _notification_3.created = datetime.strptime("2022/01/02 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/03
+        _notification_3.created = datetime.strptime(
+            "2022/01/02 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/03
         db.add(_notification_3)
 
         _notification_4 = Notification()
@@ -315,46 +397,43 @@ class TestAppRoutersNotificationsGET:
         _notification_4.code = 3
         _notification_4.metainfo = {
             "scheduled_event_id": "1",
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
         }
-        _notification_4.created = datetime.strptime("2022/01/03 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/03
+        _notification_4.created = datetime.strptime(
+            "2022/01/03 00:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/03
         db.add(_notification_4)
 
         # request target API
         resp = client.get(
             self.base_url,
             params={
-                "notice_type": NotificationType.SCHEDULE_EVENT_ERROR,
+                "notice_type": NotificationType.SCHEDULE_EVENT_ERROR.value,
             },
             headers={
                 "issuer-address": issuer_address_1,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 1,
-                "offset": None,
-                "limit": None,
-                "total": 4
-            },
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 4},
             "notifications": [
                 {
                     "notice_id": "notice_id_2",
                     "issuer_address": issuer_address_1,
                     "priority": 1,
-                    "notice_type": NotificationType.SCHEDULE_EVENT_ERROR,
+                    "notice_type": NotificationType.SCHEDULE_EVENT_ERROR.value,
                     "notice_code": 1,
                     "metainfo": {
                         "scheduled_event_id": "1",
+                        "token_address": None,
                         "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-                        "token_address": None
                     },
-                    "created": "2022-01-02T09:20:30+09:00"
+                    "created": "2022-01-02T09:20:30+09:00",
                 },
-            ]
+            ],
         }
 
     # <Normal_3>
@@ -375,9 +454,11 @@ class TestAppRoutersNotificationsGET:
         _notification_1.metainfo = {
             "upload_id": str(uuid.uuid4()),
             "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-            "error_transfer_id": []
+            "error_transfer_id": [],
         }
-        _notification_1.created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _notification_1.created = datetime.strptime(
+            "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_notification_1)
 
         _notification_2 = Notification()
@@ -388,9 +469,11 @@ class TestAppRoutersNotificationsGET:
         _notification_2.code = 1
         _notification_2.metainfo = {
             "scheduled_event_id": "1",
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
         }
-        _notification_2.created = datetime.strptime("2022/01/02 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _notification_2.created = datetime.strptime(
+            "2022/01/02 00:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_notification_2)
 
         _notification_3 = Notification()
@@ -402,9 +485,11 @@ class TestAppRoutersNotificationsGET:
         _notification_3.metainfo = {
             "id": 1,
             "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-            "token_address": "0x0000000000000000000000000000000000000000"
+            "token_address": "0x0000000000000000000000000000000000000000",
         }
-        _notification_3.created = datetime.strptime("2022/01/02 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/03
+        _notification_3.created = datetime.strptime(
+            "2022/01/02 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/03
         db.add(_notification_3)
 
         _notification_4 = Notification()
@@ -415,57 +500,48 @@ class TestAppRoutersNotificationsGET:
         _notification_4.code = 3
         _notification_4.metainfo = {
             "scheduled_event_id": "1",
-            "token_type": TokenType.IBET_STRAIGHT_BOND.value
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
         }
-        _notification_4.created = datetime.strptime("2022/01/03 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/03
+        _notification_4.created = datetime.strptime(
+            "2022/01/03 00:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/03
         db.add(_notification_4)
 
         # request target API
-        resp = client.get(
-            self.base_url,
-            params={
-                "offset": 1,
-                "limit": 2
-            }
-        )
+        resp = client.get(self.base_url, params={"offset": 1, "limit": 2})
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {
-                "count": 4,
-                "offset": 1,
-                "limit": 2,
-                "total": 4
-            },
+            "result_set": {"count": 4, "offset": 1, "limit": 2, "total": 4},
             "notifications": [
                 {
                     "notice_id": "notice_id_2",
                     "issuer_address": issuer_address_1,
                     "priority": 1,
-                    "notice_type": NotificationType.SCHEDULE_EVENT_ERROR,
+                    "notice_type": NotificationType.SCHEDULE_EVENT_ERROR.value,
                     "notice_code": 1,
                     "metainfo": {
                         "scheduled_event_id": "1",
+                        "token_address": None,
                         "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-                        "token_address": None
                     },
-                    "created": "2022-01-02T09:20:30+09:00"
+                    "created": "2022-01-02T09:20:30+09:00",
                 },
                 {
                     "notice_id": "notice_id_3",
                     "issuer_address": issuer_address_2,
                     "priority": 2,
-                    "notice_type": NotificationType.TRANSFER_APPROVAL_INFO,
+                    "notice_type": NotificationType.TRANSFER_APPROVAL_INFO.value,
                     "notice_code": 2,
                     "metainfo": {
                         "id": 1,
                         "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-                        "token_address": "0x0000000000000000000000000000000000000000"
+                        "token_address": "0x0000000000000000000000000000000000000000",
                     },
-                    "created": "2022-01-03T00:20:30+09:00"
+                    "created": "2022-01-03T00:20:30+09:00",
                 },
-            ]
+            ],
         }
 
     ###########################################################################
@@ -480,21 +556,18 @@ class TestAppRoutersNotificationsGET:
             self.base_url,
             headers={
                 "issuer-address": "test",
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }

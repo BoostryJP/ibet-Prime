@@ -16,20 +16,13 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import os
-import sys
 import inspect
-from typing import (
-    Optional,
-    Any,
-    KeysView,
-    ValuesView,
-    ItemsView,
-    Iterator
-)
-import threading
+import os
 import pickle
+import sys
+import threading
 from multiprocessing.shared_memory import SharedMemory
+from typing import Any, ItemsView, Iterator, KeysView, Optional, ValuesView
 
 from shared_memory_dict import SharedMemoryDict
 from shared_memory_dict.lock import lock
@@ -60,13 +53,14 @@ class DictCache:
 
     @staticmethod
     def initialize():
-        if "pytest" in sys.modules or \
-                inspect.getfile(inspect.stack()[-1][0]).startswith("batch/") or \
-                os.environ.get("SHARED_MEMORY_USE_LOCK") != "1":
+        if (
+            "pytest" in sys.modules
+            or inspect.getfile(inspect.stack()[-1][0]).startswith("batch/")
+            or os.environ.get("SHARED_MEMORY_USE_LOCK") != "1"
+        ):
             DictCache.MEMORY_CACHE = True
 
         if DictCache.MEMORY_CACHE is False:
-
             # NOTE: Create an SharedMemoryDict to share the current cache size between processes.
             DictCache.cache_sizes = SharedMemoryDict(name="cache_sizes", size=4096)
 
@@ -80,21 +74,17 @@ class DictCache:
                         DictCache.cache_sizes[k] = v["default_size"]
                         shm_dict = SharedMemoryDict(name=k, size=v["default_size"])
                     else:
-                        shm_dict = SharedMemoryDict(name=k, size=DictCache.cache_sizes[k])
+                        shm_dict = SharedMemoryDict(
+                            name=k, size=DictCache.cache_sizes[k]
+                        )
                 else:
                     shm_dict = SharedMemoryDict(name=k, size=v["default_size"])
                 if is_first_init is True:
                     shm_dict.clear()
-                DictCache.caches[k] = {
-                    "data": shm_dict,
-                    "lock": None
-                }
+                DictCache.caches[k] = {"data": shm_dict, "lock": None}
         else:
             for k in DictCache.USE_CACHE.keys():
-                DictCache.caches[k] = {
-                    "data": {},
-                    "lock": threading.Lock()
-                }
+                DictCache.caches[k] = {"data": {}, "lock": threading.Lock()}
 
     def __init__(self, name: str):
         _ = DictCache.USE_CACHE[name]  # check name
@@ -102,7 +92,10 @@ class DictCache:
         self.cache = DictCache.caches[name]
 
     def get(self, key: str, default: Optional[Any] = None) -> Optional[Any]:
-        if DictCache.MEMORY_CACHE is False and DictCache.USE_CACHE[self.name]["is_extend_size"] is True:
+        if (
+            DictCache.MEMORY_CACHE is False
+            and DictCache.USE_CACHE[self.name]["is_extend_size"] is True
+        ):
             self._extend_size_and_write()
         if key in self.cache["data"]:
             return self.cache["data"][key]
@@ -110,17 +103,26 @@ class DictCache:
             return default
 
     def keys(self) -> KeysView[Any]:
-        if DictCache.MEMORY_CACHE is False and DictCache.USE_CACHE[self.name]["is_extend_size"] is True:
+        if (
+            DictCache.MEMORY_CACHE is False
+            and DictCache.USE_CACHE[self.name]["is_extend_size"] is True
+        ):
             self._extend_size_and_write()
         return self.cache["data"].keys()
 
     def values(self) -> ValuesView[Any]:
-        if DictCache.MEMORY_CACHE is False and DictCache.USE_CACHE[self.name]["is_extend_size"] is True:
+        if (
+            DictCache.MEMORY_CACHE is False
+            and DictCache.USE_CACHE[self.name]["is_extend_size"] is True
+        ):
             self._extend_size_and_write()
         return self.cache["data"].values()
 
     def items(self) -> ItemsView:
-        if DictCache.MEMORY_CACHE is False and DictCache.USE_CACHE[self.name]["is_extend_size"] is True:
+        if (
+            DictCache.MEMORY_CACHE is False
+            and DictCache.USE_CACHE[self.name]["is_extend_size"] is True
+        ):
             self._extend_size_and_write()
         return self.cache["data"].items()
 
@@ -130,6 +132,7 @@ class DictCache:
                 self._extend_size_and_write()
             return self.cache["data"].pop(key, default)  # Lock with SharedMemoryDict
         else:
+
             def _func():
                 return self.cache["data"].pop(key, default)
 
@@ -142,13 +145,17 @@ class DictCache:
             else:
                 self.cache["data"].update(other, **kwargs)  # Lock with SharedMemoryDict
         else:
+
             def _func():
                 self.cache["data"].update(other, **kwargs)
 
             self._thread_safe(_func)
 
     def __getitem__(self, key: str) -> Any:
-        if DictCache.MEMORY_CACHE is False and DictCache.USE_CACHE[self.name]["is_extend_size"] is True:
+        if (
+            DictCache.MEMORY_CACHE is False
+            and DictCache.USE_CACHE[self.name]["is_extend_size"] is True
+        ):
             self._extend_size_and_write()
         return self.cache["data"][key]
 
@@ -159,13 +166,17 @@ class DictCache:
             else:
                 self.cache["data"][key] = value  # Lock with SharedMemoryDict
         else:
+
             def _func():
                 self.cache["data"][key] = value
 
             self._thread_safe(_func)
 
     def __len__(self) -> int:
-        if DictCache.MEMORY_CACHE is False and DictCache.USE_CACHE[self.name]["is_extend_size"] is True:
+        if (
+            DictCache.MEMORY_CACHE is False
+            and DictCache.USE_CACHE[self.name]["is_extend_size"] is True
+        ):
             self._extend_size_and_write()
         return len(self.cache["data"])
 
@@ -175,43 +186,65 @@ class DictCache:
                 self._extend_size_and_write()
             del self.cache["data"][key]  # Lock with SharedMemoryDict
         else:
+
             def _func():
                 del self.cache["data"][key]
 
             return self._thread_safe(_func)
 
     def __iter__(self) -> Iterator:
-        if DictCache.MEMORY_CACHE is False and DictCache.USE_CACHE[self.name]["is_extend_size"] is True:
+        if (
+            DictCache.MEMORY_CACHE is False
+            and DictCache.USE_CACHE[self.name]["is_extend_size"] is True
+        ):
             self._extend_size_and_write()
         return iter(self.cache["data"])
 
     def __reversed__(self):
-        if DictCache.MEMORY_CACHE is False and DictCache.USE_CACHE[self.name]["is_extend_size"] is True:
+        if (
+            DictCache.MEMORY_CACHE is False
+            and DictCache.USE_CACHE[self.name]["is_extend_size"] is True
+        ):
             self._extend_size_and_write()
         return reversed(self.cache["data"])
 
     def __contains__(self, key: str) -> bool:
-        if DictCache.MEMORY_CACHE is False and DictCache.USE_CACHE[self.name]["is_extend_size"] is True:
+        if (
+            DictCache.MEMORY_CACHE is False
+            and DictCache.USE_CACHE[self.name]["is_extend_size"] is True
+        ):
             self._extend_size_and_write()
         return key in self.cache["data"]
 
     def __eq__(self, other: Any) -> bool:
-        if DictCache.MEMORY_CACHE is False and DictCache.USE_CACHE[self.name]["is_extend_size"] is True:
+        if (
+            DictCache.MEMORY_CACHE is False
+            and DictCache.USE_CACHE[self.name]["is_extend_size"] is True
+        ):
             self._extend_size_and_write()
         return self.cache["data"] == other
 
     def __ne__(self, other: Any) -> bool:
-        if DictCache.MEMORY_CACHE is False and DictCache.USE_CACHE[self.name]["is_extend_size"] is True:
+        if (
+            DictCache.MEMORY_CACHE is False
+            and DictCache.USE_CACHE[self.name]["is_extend_size"] is True
+        ):
             self._extend_size_and_write()
         return self.cache["data"] != other
 
     def __str__(self) -> str:
-        if DictCache.MEMORY_CACHE is False and DictCache.USE_CACHE[self.name]["is_extend_size"] is True:
+        if (
+            DictCache.MEMORY_CACHE is False
+            and DictCache.USE_CACHE[self.name]["is_extend_size"] is True
+        ):
             self._extend_size_and_write()
         return str(self.cache["data"])
 
     def __repr__(self) -> str:
-        if DictCache.MEMORY_CACHE is False and DictCache.USE_CACHE[self.name]["is_extend_size"] is True:
+        if (
+            DictCache.MEMORY_CACHE is False
+            and DictCache.USE_CACHE[self.name]["is_extend_size"] is True
+        ):
             self._extend_size_and_write()
         return repr(self.cache["data"])
 
@@ -221,7 +254,9 @@ class DictCache:
         return result
 
     @lock
-    def _extend_size_and_write(self, *, key: str = None, value: Any = None, other=(), **kwargs):
+    def _extend_size_and_write(
+        self, *, key: str = None, value: Any = None, other=(), **kwargs
+    ):
         """
         If the cache size becomes large due to updating by another process, reading or writing may fail,
         so extends the size when accessing the shared memory.
@@ -267,7 +302,9 @@ class DictCache:
         # NOTE: Re-create shared memory object.
         old_shared_memory.close()
         old_shared_memory.unlink()
-        new_shared_memory = SharedMemory(name=MEMORY_NAME.format(name=self.name), create=True, size=mod_size)
+        new_shared_memory = SharedMemory(
+            name=MEMORY_NAME.format(name=self.name), create=True, size=mod_size
+        )
         self.cache["data"]._memory_block = new_shared_memory
         # NOTE: Save update data independent of @lock decorator.(Avoid deadlock)
         self.cache["data"]._save_memory(update_data)

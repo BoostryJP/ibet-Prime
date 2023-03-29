@@ -17,15 +17,11 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
-import pytest
 
+import pytest
 import pytz
 
-from app.model.db import (
-    Account,
-    TokenType,
-    BulkTransferUpload
-)
+from app.model.db import Account, BulkTransferUpload, TokenType
 from config import TZ
 from tests.account_config import config_eth_account
 
@@ -39,20 +35,22 @@ class TestAppRoutersBondBulkTransferGET:
     upload_issuer_list = [
         {
             "address": config_eth_account("user1")["address"],
-            "keyfile": config_eth_account("user1")["keyfile_json"]
-        }, {
+            "keyfile": config_eth_account("user1")["keyfile_json"],
+        },
+        {
             "address": config_eth_account("user2")["address"],
-            "keyfile": config_eth_account("user2")["keyfile_json"]
-        }, {
+            "keyfile": config_eth_account("user2")["keyfile_json"],
+        },
+        {
             "address": config_eth_account("user3")["address"],
-            "keyfile": config_eth_account("user3")["keyfile_json"]
-        }
+            "keyfile": config_eth_account("user3")["keyfile_json"],
+        },
     ]
 
     upload_id_list = [
         "0c961f7d-e1ad-40e5-988b-cca3d6009643",  # 0: under progress
         "de778f46-864e-4ec0-b566-21bd31cf63ff",  # 1: succeeded
-        "cf33d48f-9e6e-4a36-a55e-5bbcbda69c80"  # 2: failed
+        "cf33d48f-9e6e-4a36-a55e-5bbcbda69c80",  # 2: failed
     ]
 
     ###########################################################################
@@ -84,7 +82,7 @@ class TestAppRoutersBondBulkTransferGET:
         # request target API
         resp = client.get(
             self.test_url,
-            headers={"issuer-address": self.upload_issuer_list[1]["address"]}
+            headers={"issuer-address": self.upload_issuer_list[1]["address"]},
         )
 
         # assertion
@@ -95,7 +93,10 @@ class TestAppRoutersBondBulkTransferGET:
                 "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                 "upload_id": self.upload_id_list[1],
                 "status": 1,
-                "created": pytz.timezone("UTC").localize(utc_now).astimezone(local_tz).isoformat()
+                "created": pytz.timezone("UTC")
+                .localize(utc_now)
+                .astimezone(local_tz)
+                .isoformat(),
             }
         ]
         assert resp.json() == assumed_response
@@ -116,24 +117,27 @@ class TestAppRoutersBondBulkTransferGET:
             db.add(bulk_transfer_upload)
 
         # request target API
-        resp = client.get(
-            self.test_url
-        )
+        resp = client.get(self.test_url)
 
         # assertion
         assert resp.status_code == 200
         assumed_response = []
         for i in range(0, 3):
-            assumed_response.append({
-                "issuer_address": self.upload_issuer_list[i]["address"],
-                "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-                "upload_id": self.upload_id_list[i],
-                "status": i,
-                "created": pytz.timezone("UTC").localize(utc_now).astimezone(local_tz).isoformat()
-            })
+            assumed_response.append(
+                {
+                    "issuer_address": self.upload_issuer_list[i]["address"],
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "upload_id": self.upload_id_list[i],
+                    "status": i,
+                    "created": pytz.timezone("UTC")
+                    .localize(utc_now)
+                    .astimezone(local_tz)
+                    .isoformat(),
+                }
+            )
 
-        sorted_resp = sorted(resp.json(), key=lambda x: x['upload_id'])
-        sorted_assumed = sorted(assumed_response, key=lambda x: x['upload_id'])
+        sorted_resp = sorted(resp.json(), key=lambda x: x["upload_id"])
+        sorted_assumed = sorted(assumed_response, key=lambda x: x["upload_id"])
         assert sorted_resp == sorted_assumed
 
     ###########################################################################
@@ -145,23 +149,17 @@ class TestAppRoutersBondBulkTransferGET:
     # invalid type : issuer-address
     def test_error_1(self, client, db):
         # request target API
-        resp = client.get(
-            self.test_url,
-            headers={"issuer-address": "DUMMY ADDRESS"}
-        )
+        resp = client.get(self.test_url, headers={"issuer-address": "DUMMY ADDRESS"})
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }

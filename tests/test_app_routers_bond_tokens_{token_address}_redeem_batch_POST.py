@@ -20,10 +20,11 @@ from typing import Optional
 
 from app.model.db import (
     Account,
+    BatchIssueRedeem,
+    BatchIssueRedeemProcessingCategory,
+    BatchIssueRedeemUpload,
     Token,
     TokenType,
-    BatchIssueRedeemUpload,
-    BatchIssueRedeem, BatchIssueRedeemProcessingCategory
 )
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
@@ -64,23 +65,20 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         db.add(token)
 
         # request target API
-        req_param = [
-            {
-                "account_address": test_account_1,
-                "amount": 10
-            }
-        ]
+        req_param = [{"account_address": test_account_1, "amount": 10}]
         resp = client.post(
             self.base_url.format(token_address),
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
-        upload: Optional[BatchIssueRedeemUpload] = db.query(BatchIssueRedeemUpload).first()
+        upload: Optional[BatchIssueRedeemUpload] = db.query(
+            BatchIssueRedeemUpload
+        ).first()
         assert upload.issuer_address == issuer_address
         assert upload.token_type == TokenType.IBET_STRAIGHT_BOND.value
         assert upload.token_address == token_address
@@ -128,26 +126,22 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
 
         # request target API
         req_param = [
-            {
-                "account_address": test_account_1,
-                "amount": 10
-            },
-            {
-                "account_address": test_account_2,
-                "amount": 20
-            }
+            {"account_address": test_account_1, "amount": 10},
+            {"account_address": test_account_2, "amount": 20},
         ]
         resp = client.post(
             self.base_url.format(token_address),
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
-        upload: Optional[BatchIssueRedeemUpload] = db.query(BatchIssueRedeemUpload).first()
+        upload: Optional[BatchIssueRedeemUpload] = db.query(
+            BatchIssueRedeemUpload
+        ).first()
         assert upload.issuer_address == issuer_address
         assert upload.token_type == TokenType.IBET_STRAIGHT_BOND.value
         assert upload.token_address == token_address
@@ -207,24 +201,21 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['body'],
-                    'msg': 'value is not a valid list',
-                    'type': 'type_error.list'
+                    "loc": ["body"],
+                    "msg": "value is not a valid list",
+                    "type": "type_error.list",
                 }
-            ]
+            ],
         }
 
     # Error_1_2
@@ -252,35 +243,27 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         db.add(token)
 
         # request target API
-        req_param = [
-            {
-                "account_address": "0x0",
-                "amount": 10
-            }
-        ]
+        req_param = [{"account_address": "0x0", "amount": 10}]
         resp = client.post(
             self.base_url.format(token_address),
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['body', 0, 'account_address'],
-                    'msg': 'account_address is not a valid address',
-                    'type': 'value_error'
+                    "loc": ["body", 0, "account_address"],
+                    "msg": "account_address is not a valid address",
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # Error_1_3_1
@@ -310,36 +293,28 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         db.add(token)
 
         # request target API
-        req_param = [
-            {
-                "account_address": test_account_1,
-                "amount": 0
-            }
-        ]
+        req_param = [{"account_address": test_account_1, "amount": 0}]
         resp = client.post(
             self.base_url.format(token_address),
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['body', 0, 'amount'],
-                    'msg': 'ensure this value is greater than or equal to 1',
-                    'type': 'value_error.number.not_ge',
-                    'ctx': {'limit_value': 1}
+                    "loc": ["body", 0, "amount"],
+                    "msg": "ensure this value is greater than or equal to 1",
+                    "type": "value_error.number.not_ge",
+                    "ctx": {"limit_value": 1},
                 }
-            ]
+            ],
         }
 
     # Error_1_3_2
@@ -369,36 +344,28 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         db.add(token)
 
         # request target API
-        req_param = [
-            {
-                "account_address": test_account_1,
-                "amount": 1_000_000_000_001
-            }
-        ]
+        req_param = [{"account_address": test_account_1, "amount": 1_000_000_000_001}]
         resp = client.post(
             self.base_url.format(token_address),
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['body', 0, 'amount'],
-                    'msg': 'ensure this value is less than or equal to 1000000000000',
-                    'type': 'value_error.number.not_le',
-                    'ctx': {'limit_value': 1000000000000}
+                    "loc": ["body", 0, "amount"],
+                    "msg": "ensure this value is less than or equal to 1000000000000",
+                    "type": "value_error.number.not_le",
+                    "ctx": {"limit_value": 1000000000000},
                 }
-            ]
+            ],
         }
 
     # Error_1_4
@@ -428,32 +395,22 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         db.add(token)
 
         # request target API
-        req_param = [
-            {
-                "account_address": test_account_1,
-                "amount": 10
-            }
-        ]
+        req_param = [{"account_address": test_account_1, "amount": 10}]
         resp = client.post(
-            self.base_url.format(token_address),
-            json=req_param,
-            headers=None
+            self.base_url.format(token_address), json=req_param, headers=None
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['header', 'issuer-address'],
-                    'msg': 'field required',
-                    'type': 'value_error.missing'
+                    "loc": ["header", "issuer-address"],
+                    "msg": "field required",
+                    "type": "value_error.missing",
                 }
-            ]
+            ],
         }
 
     # Error_1_5
@@ -483,35 +440,24 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         db.add(token)
 
         # request target API
-        req_param = [
-            {
-                "account_address": test_account_1,
-                "amount": 10
-            }
-        ]
+        req_param = [{"account_address": test_account_1, "amount": 10}]
         resp = client.post(
             self.base_url.format(token_address),
             json=req_param,
-            headers={
-                "issuer-address": issuer_address,
-                "eoa-password": "password"
-            }
+            headers={"issuer-address": issuer_address, "eoa-password": "password"},
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'RequestValidationError'
-            },
-            'detail': [
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
                 {
-                    'loc': ['header', 'eoa-password'],
-                    'msg': 'eoa-password is not a Base64-encoded encrypted data',
-                    'type': 'value_error'
+                    "loc": ["header", "eoa-password"],
+                    "msg": "eoa-password is not a Base64-encoded encrypted data",
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # Error_1_6
@@ -545,18 +491,15 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'InvalidParameterError'
-            },
-            'detail': 'list length must be at least one'
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "list length must be at least one",
         }
 
     # Error_1_7_1
@@ -586,29 +529,21 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         db.add(token)
 
         # request target API
-        req_param = [
-            {
-                "account_address": test_account_1,
-                "amount": 10
-            }
-        ]
+        req_param = [{"account_address": test_account_1, "amount": 10}]
         resp = client.post(
             self.base_url.format(token_address),
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 401
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'AuthorizationError'
-            },
-            'detail': 'issuer does not exist, or password mismatch'
+            "meta": {"code": 1, "title": "AuthorizationError"},
+            "detail": "issuer does not exist, or password mismatch",
         }
 
     # Error_1_7_2
@@ -638,29 +573,21 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         db.add(token)
 
         # request target API
-        req_param = [
-            {
-                "account_address": test_account_1,
-                "amount": 10
-            }
-        ]
+        req_param = [{"account_address": test_account_1, "amount": 10}]
         resp = client.post(
             self.base_url.format(token_address),
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 401
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'AuthorizationError'
-            },
-            'detail': 'issuer does not exist, or password mismatch'
+            "meta": {"code": 1, "title": "AuthorizationError"},
+            "detail": "issuer does not exist, or password mismatch",
         }
 
     # Error_1_8_1
@@ -683,29 +610,21 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         db.add(account)
 
         # request target API
-        req_param = [
-            {
-                "account_address": test_account_1,
-                "amount": 10
-            }
-        ]
+        req_param = [{"account_address": test_account_1, "amount": 10}]
         resp = client.post(
             self.base_url.format(token_address),
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'NotFound'
-            },
-            'detail': 'token not found'
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token not found",
         }
 
     # Error_1_8_2
@@ -737,27 +656,19 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         db.add(token)
 
         # request target API
-        req_param = [
-            {
-                "account_address": test_account_1,
-                "amount": 10
-            }
-        ]
+        req_param = [{"account_address": test_account_1, "amount": 10}]
         resp = client.post(
             self.base_url.format(token_address),
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-                "eoa-password": E2EEUtils.encrypt("password")
-            }
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            'meta': {
-                'code': 1,
-                'title': 'InvalidParameterError'
-            },
-            'detail': 'this token is temporarily unavailable'
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }

@@ -17,30 +17,21 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import hashlib
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
-from pydantic.errors import MissingError
 from pydantic.error_wrappers import ErrorWrapper
+from pydantic.errors import MissingError
 from sqlalchemy.orm import Session
 from web3 import Web3
 
-from config import (
-    EOA_PASSWORD_CHECK_ENABLED,
-    E2EE_REQUEST_ENABLED
-)
 from app.exceptions import AuthorizationError
-from app.log import (
-    auth_info,
-    auth_error
-)
+from app.log import auth_error, auth_info
+from app.model.db import Account, AuthToken
 from app.utils.e2ee_utils import E2EEUtils
-from app.model.db import (
-    Account,
-    AuthToken
-)
+from config import E2EE_REQUEST_ENABLED, EOA_PASSWORD_CHECK_ENABLED
 
 
 def validate_headers(**kwargs):
@@ -104,22 +95,28 @@ def check_value_is_encrypted(name, value):
             raise ValueError(f"{name} is not a Base64-encoded encrypted data")
 
 
-def check_auth(request: Request,
-               db: Session,
-               issuer_address: str,
-               eoa_password: Optional[str] = None,
-               auth_token: Optional[str] = None):
+def check_auth(
+    request: Request,
+    db: Session,
+    issuer_address: str,
+    eoa_password: Optional[str] = None,
+    auth_token: Optional[str] = None,
+):
     # Check for existence of issuer account
     try:
         account, decrypted_eoa_password = check_account_for_auth(db, issuer_address)
     except AuthorizationError:
         auth_error(request, issuer_address, "issuer does not exist")
-        raise AuthorizationError("issuer does not exist, or password mismatch") from None
+        raise AuthorizationError(
+            "issuer does not exist, or password mismatch"
+        ) from None
 
     if EOA_PASSWORD_CHECK_ENABLED:
         if eoa_password is None and auth_token is None:
             auth_error(request, issuer_address, "password mismatch")
-            raise AuthorizationError("issuer does not exist, or password mismatch") from None
+            raise AuthorizationError(
+                "issuer does not exist, or password mismatch"
+            ) from None
         elif eoa_password is not None:
             # Check EOA password
             try:
@@ -129,27 +126,27 @@ def check_auth(request: Request,
                 )
             except AuthorizationError:
                 auth_error(request, issuer_address, "password mismatch")
-                raise AuthorizationError("issuer does not exist, or password mismatch") from None
+                raise AuthorizationError(
+                    "issuer does not exist, or password mismatch"
+                ) from None
         elif auth_token is not None:
             # Check auth token
             try:
                 check_token_for_auth(
-                    db=db,
-                    issuer_address=issuer_address,
-                    auth_token=auth_token
+                    db=db, issuer_address=issuer_address, auth_token=auth_token
                 )
             except AuthorizationError:
                 auth_error(request, issuer_address, "password mismatch")
-                raise AuthorizationError("issuer does not exist, or password mismatch") from None
+                raise AuthorizationError(
+                    "issuer does not exist, or password mismatch"
+                ) from None
 
     auth_info(request, issuer_address, "authentication succeed")
     return account, decrypted_eoa_password
 
 
 def check_account_for_auth(db: Session, issuer_address: str):
-    account = db.query(Account). \
-        filter(Account.issuer_address == issuer_address). \
-        first()
+    account = db.query(Account).filter(Account.issuer_address == issuer_address).first()
     if account is None:
         raise AuthorizationError
     decrypted_eoa_password = E2EEUtils.decrypt(account.eoa_password)
@@ -167,15 +164,19 @@ def check_eoa_password_for_auth(checked_pwd: str, correct_pwd: str):
 
 
 def check_token_for_auth(db: Session, issuer_address: str, auth_token: str):
-    issuer_token: Optional[AuthToken] = db.query(AuthToken). \
-        filter(AuthToken.issuer_address == issuer_address). \
-        first()
+    issuer_token: Optional[AuthToken] = (
+        db.query(AuthToken).filter(AuthToken.issuer_address == issuer_address).first()
+    )
     if issuer_token is None:
         raise AuthorizationError
     else:
         hashed_token = hashlib.sha256(auth_token.encode()).hexdigest()
         if issuer_token.auth_token != hashed_token:
             raise AuthorizationError
-        elif issuer_token.valid_duration != 0 and \
-                issuer_token.usage_start + timedelta(seconds=issuer_token.valid_duration) < datetime.utcnow():
+        elif (
+            issuer_token.valid_duration != 0
+            and issuer_token.usage_start
+            + timedelta(seconds=issuer_token.valid_duration)
+            < datetime.utcnow()
+        ):
             raise AuthorizationError

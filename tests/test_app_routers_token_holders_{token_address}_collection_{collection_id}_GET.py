@@ -18,17 +18,18 @@ SPDX-License-Identifier: Apache-2.0
 """
 import uuid
 from unittest import mock
+
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
+import config
 from app.model.db import (
     Token,
-    TokenType,
+    TokenHolder,
     TokenHolderBatchStatus,
     TokenHoldersList,
-    TokenHolder,
+    TokenType,
 )
-import config
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
@@ -117,7 +118,8 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
             _token_holder.account_address = config_eth_account(user)["address"]
-            _token_holder.hold_balance = 10000 * (i+1)
+            _token_holder.hold_balance = 10000 * (i + 1)
+            _token_holder.locked_balance = 20000 * (i + 1)
             db.add(_token_holder)
             holders.append(_token_holder.json())
 
@@ -127,7 +129,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             headers={"issuer-address": issuer_address},
         )
         db.query(TokenHolder).filter().all()
-        sorted_holders = sorted(holders, key=lambda x: x['account_address'])
+        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
@@ -359,9 +361,9 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    'loc': ['header', 'issuer-address'],
-                    'msg': 'field required',
-                    'type': 'value_error.missing'
+                    "loc": ["header", "issuer-address"],
+                    "msg": "field required",
+                    "type": "value_error.missing",
                 }
-            ]
+            ],
         }

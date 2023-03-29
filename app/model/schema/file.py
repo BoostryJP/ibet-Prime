@@ -18,29 +18,22 @@ SPDX-License-Identifier: Apache-2.0
 """
 import base64
 from datetime import datetime
-from typing import (
-    Optional,
-    List,
-    Dict,
-    Any
-)
+from typing import Any, Dict, List, Optional
 
-from pydantic import (
-    BaseModel,
-    validator,
-    Field
-)
+from pydantic import BaseModel, Field, validator
 
 from config import MAX_UPLOAD_FILE_SIZE
-from .types import ResultSet
 
+from .types import ResultSet
 
 ############################
 # REQUEST
 ############################
 
+
 class UploadFileRequest(BaseModel):
     """Upload File schema (Request)"""
+
     relation: Optional[str] = Field(None, max_length=50)
     file_name: str = Field(..., max_length=256)
     content: str
@@ -55,23 +48,28 @@ class UploadFileRequest(BaseModel):
             raise ValueError("content is not a Base64-encoded string")
         if len(data) >= MAX_UPLOAD_FILE_SIZE:
             raise ValueError(
-                f"file size(Base64-decoded size) must be less than or equal to {MAX_UPLOAD_FILE_SIZE}")
+                f"file size(Base64-decoded size) must be less than or equal to {MAX_UPLOAD_FILE_SIZE}"
+            )
         return v
 
     class Config:
         @staticmethod
         def schema_extra(schema: Dict[str, Any], _) -> None:
             notice_code_schema = schema["properties"]["content"]
-            notice_code_schema["description"] = "Base64-encoded content.\n" \
-                                                f"Max length of binary data before encoding is {MAX_UPLOAD_FILE_SIZE}."
+            notice_code_schema["description"] = (
+                "Base64-encoded content.\n"
+                f"Max length of binary data before encoding is {MAX_UPLOAD_FILE_SIZE}."
+            )
 
 
 ############################
 # RESPONSE
 ############################
 
+
 class FileResponse(BaseModel):
     """File schema (Response)"""
+
     file_id: str
     issuer_address: str
     relation: Optional[str]
@@ -84,12 +82,14 @@ class FileResponse(BaseModel):
 
 class ListAllFilesResponse(BaseModel):
     """List All Files schema (Response)"""
+
     result_set: ResultSet
     files: List[FileResponse]
 
 
 class DownloadFileResponse(BaseModel):
     """Download File schema (Response)"""
+
     file_id: str
     issuer_address: str
     relation: Optional[str]

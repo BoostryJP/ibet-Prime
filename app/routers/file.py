@@ -19,34 +19,27 @@ SPDX-License-Identifier: Apache-2.0
 import base64
 import uuid
 from typing import Optional
-import pytz
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    Header,
-    Query
-)
+import pytz
+from fastapi import APIRouter, Depends, Header, Query
 from fastapi.exceptions import HTTPException
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
-from config import TZ
 from app.database import db_session
 from app.model.db import UploadFile
 from app.model.schema import (
-    UploadFileRequest,
+    DownloadFileResponse,
     FileResponse,
     ListAllFilesResponse,
-    DownloadFileResponse
+    UploadFileRequest,
 )
-from app.utils.check_utils import (
-    validate_headers,
-    address_is_valid_address
-)
+from app.utils.check_utils import address_is_valid_address, validate_headers
 from app.utils.docs_utils import get_routers_responses
+from app.utils.fastapi import json_response
+from config import TZ
 
-router = APIRouter(tags=["file"])
+router = APIRouter(prefix="/files", tags=["utility"])
 
 local_tz = pytz.timezone(TZ)
 utc_tz = pytz.timezone("UTC")
@@ -54,18 +47,17 @@ utc_tz = pytz.timezone("UTC")
 
 # GET: /files
 @router.get(
-    "/files",
-    response_model=ListAllFilesResponse,
-    responses=get_routers_responses(422)
+    "", response_model=ListAllFilesResponse, responses=get_routers_responses(422)
 )
 def list_all_upload_files(
-        issuer_address: Optional[str] = Header(None),
-        relation: Optional[str] = Query(None),
-        file_name: Optional[str] = Query(None, description="partial match"),
-        label: Optional[str] = Query(None, description="partial match"),
-        offset: Optional[int] = Query(None),
-        limit: Optional[int] = Query(None),
-        db: Session = Depends(db_session)):
+    issuer_address: Optional[str] = Header(None),
+    relation: Optional[str] = Query(None),
+    file_name: Optional[str] = Query(None, description="partial match"),
+    label: Optional[str] = Query(None, description="partial match"),
+    offset: Optional[int] = Query(None),
+    limit: Optional[int] = Query(None),
+    db: Session = Depends(db_session),
+):
     """List all files"""
 
     # Validate Headers
@@ -79,11 +71,10 @@ def list_all_upload_files(
         UploadFile.content_size,
         UploadFile.description,
         UploadFile.label,
-        UploadFile.created
+        UploadFile.created,
     ]
 
-    query = db.query(*rows). \
-        order_by(desc(UploadFile.modified))
+    query = db.query(*rows).order_by(desc(UploadFile.modified))
     total = query.count()
 
     # Search Filter
@@ -110,41 +101,42 @@ def list_all_upload_files(
 
     files = []
     for _upload_file in _upload_file_list:
-        created_formatted = utc_tz.localize(_upload_file[7]).astimezone(local_tz).isoformat()
-        files.append({
-            "file_id": _upload_file[0],
-            "issuer_address": _upload_file[1],
-            "relation": _upload_file[2],
-            "file_name": _upload_file[3],
-            "content_size": _upload_file[4],
-            "description": _upload_file[5],
-            "label": _upload_file[6],
-            "created": created_formatted,
-        })
+        created_formatted = (
+            utc_tz.localize(_upload_file[7]).astimezone(local_tz).isoformat()
+        )
+        files.append(
+            {
+                "file_id": _upload_file[0],
+                "issuer_address": _upload_file[1],
+                "relation": _upload_file[2],
+                "file_name": _upload_file[3],
+                "content_size": _upload_file[4],
+                "description": _upload_file[5],
+                "label": _upload_file[6],
+                "created": created_formatted,
+            }
+        )
 
     resp = {
         "result_set": {
             "count": count,
             "offset": offset,
             "limit": limit,
-            "total": total
+            "total": total,
         },
-        "files": files
+        "files": files,
     }
 
-    return resp
+    return json_response(resp)
 
 
 # POST: /files
-@router.post(
-    "/files",
-    response_model=FileResponse,
-    responses=get_routers_responses(422)
-)
+@router.post("", response_model=FileResponse, responses=get_routers_responses(422))
 def upload_file(
-        data: UploadFileRequest,
-        issuer_address: str = Header(...),
-        db: Session = Depends(db_session)):
+    data: UploadFileRequest,
+    issuer_address: str = Header(...),
+    db: Session = Depends(db_session),
+):
     """Upload file"""
 
     # Validate Headers
@@ -174,22 +166,25 @@ def upload_file(
         "content_size": _upload_file.content_size,
         "description": _upload_file.description,
         "label": _upload_file.label,
-        "created": utc_tz.localize(_upload_file.created).astimezone(local_tz).isoformat()
+        "created": utc_tz.localize(_upload_file.created)
+        .astimezone(local_tz)
+        .isoformat(),
     }
 
-    return resp
+    return json_response(resp)
 
 
 # GET: /files/{file_id}
 @router.get(
-    "/files/{file_id}",
+    "/{file_id}",
     response_model=DownloadFileResponse,
-    responses=get_routers_responses(404)
+    responses=get_routers_responses(404),
 )
 def download_file(
-        file_id: str,
-        issuer_address: Optional[str] = Header(None),
-        db: Session = Depends(db_session)):
+    file_id: str,
+    issuer_address: Optional[str] = Header(None),
+    db: Session = Depends(db_session),
+):
     """Download file"""
 
     # Validate Headers
@@ -197,14 +192,16 @@ def download_file(
 
     # Get Upload File
     if issuer_address is None:
-        _upload_file = db.query(UploadFile). \
-            filter(UploadFile.file_id == file_id). \
-            first()
+        _upload_file = (
+            db.query(UploadFile).filter(UploadFile.file_id == file_id).first()
+        )
     else:
-        _upload_file = db.query(UploadFile). \
-            filter(UploadFile.file_id == file_id). \
-            filter(UploadFile.issuer_address == issuer_address). \
-            first()
+        _upload_file = (
+            db.query(UploadFile)
+            .filter(UploadFile.file_id == file_id)
+            .filter(UploadFile.issuer_address == issuer_address)
+            .first()
+        )
     if _upload_file is None:
         raise HTTPException(status_code=404, detail="file not found")
 
@@ -222,29 +219,28 @@ def download_file(
         "label": _upload_file.label,
     }
 
-    return resp
+    return json_response(resp)
 
 
 # DELETE: /files/{file_id}
 @router.delete(
-    "/files/{file_id}",
-    response_model=None,
-    responses=get_routers_responses(422, 404)
+    "/{file_id}", response_model=None, responses=get_routers_responses(422, 404)
 )
 def delete_file(
-        file_id: str,
-        issuer_address: str = Header(...),
-        db: Session = Depends(db_session)):
+    file_id: str, issuer_address: str = Header(...), db: Session = Depends(db_session)
+):
     """Delete file"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get Upload File
-    _upload_file = db.query(UploadFile). \
-        filter(UploadFile.file_id == file_id). \
-        filter(UploadFile.issuer_address == issuer_address). \
-        first()
+    _upload_file = (
+        db.query(UploadFile)
+        .filter(UploadFile.file_id == file_id)
+        .filter(UploadFile.issuer_address == issuer_address)
+        .first()
+    )
     if _upload_file is None:
         raise HTTPException(status_code=404, detail="file not found")
 

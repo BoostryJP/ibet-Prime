@@ -16,12 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import (
-    Column,
-    BigInteger,
-    String,
-    JSON
-)
+from sqlalchemy import JSON, BigInteger, Column, String
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from .base import Base
@@ -29,7 +24,8 @@ from .base import Base
 
 class IDXPersonalInfo(Base):
     """INDEX Personal information of the token holder (decrypted)"""
-    __tablename__ = 'idx_personal_info'
+
+    __tablename__ = "idx_personal_info"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     # account address
@@ -47,7 +43,7 @@ class IDXPersonalInfo(Base):
     #       "is_corporate": "boolean",
     #       "tax_category": "integer"
     #   }
-    _personal_info = Column('personal_info', JSON, nullable=False)
+    _personal_info = Column("personal_info", JSON, nullable=False)
 
     @hybrid_property
     def personal_info(self):
@@ -60,7 +56,7 @@ class IDXPersonalInfo(Base):
                 "email": self._personal_info.get("email", None),
                 "birth": self._personal_info.get("birth", None),
                 "is_corporate": self._personal_info.get("is_corporate", None),
-                "tax_category": self._personal_info.get("tax_category", None)
+                "tax_category": self._personal_info.get("tax_category", None),
             }
         return self._personal_info
 
@@ -74,12 +70,13 @@ class IDXPersonalInfo(Base):
             "email": personal_info_dict.get("email", None),
             "birth": personal_info_dict.get("birth", None),
             "is_corporate": personal_info_dict.get("is_corporate", None),
-            "tax_category": personal_info_dict.get("tax_category", None)
+            "tax_category": personal_info_dict.get("tax_category", None),
         }
 
 
 class IDXPersonalInfoBlockNumber(Base):
     """Synchronized blockNumber of IDXPersonalInfo"""
+
     __tablename__ = "idx_personal_info_block_number"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)

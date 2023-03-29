@@ -18,20 +18,15 @@ SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
 
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Boolean,
-    BigInteger
-)
+from sqlalchemy import BigInteger, Boolean, Column, Integer, String
 
 from .base import Base
 
 
 class BatchIssueRedeemUpload(Base):
     """Batch Issue/Redeem Upload"""
-    __tablename__ = 'batch_issue_redeem_upload'
+
+    __tablename__ = "batch_issue_redeem_upload"
 
     # upload id (UUID)
     upload_id = Column(String(36), primary_key=True)
@@ -49,12 +44,14 @@ class BatchIssueRedeemUpload(Base):
 
 class BatchIssueRedeemProcessingCategory(str, Enum):
     """Batch Issue/Redeem Category"""
+
     ISSUE = "Issue"
     REDEEM = "Redeem"
 
 
 class BatchIssueRedeem(Base):
     """Batch Issue/Redeem Data"""
+
     __tablename__ = "batch_issue_redeem"
 
     # sequence id

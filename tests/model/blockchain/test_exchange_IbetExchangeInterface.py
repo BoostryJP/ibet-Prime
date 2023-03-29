@@ -20,18 +20,9 @@ from eth_keyfile import decode_keyfile_json
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
-from app.model.blockchain import (
-    IbetStraightBondContract,
-    IbetExchangeInterface
-)
+from app.model.blockchain import IbetExchangeInterface, IbetStraightBondContract
 from app.utils.contract_utils import ContractUtils
-from config import (
-    CHAIN_ID,
-    TX_GAS_LIMIT,
-    WEB3_HTTP_PROVIDER,
-    ZERO_ADDRESS
-)
-
+from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
@@ -42,7 +33,7 @@ def deploy_escrow_contract():
     deployer = config_eth_account("user1")
     private_key = decode_keyfile_json(
         raw_keyfile_json=deployer["keyfile_json"],
-        password=deployer["password"].encode("utf-8")
+        password=deployer["password"].encode("utf-8"),
     )
 
     # deploy
@@ -50,37 +41,34 @@ def deploy_escrow_contract():
         contract_name="EscrowStorage",
         args=[],
         deployer=deployer["address"],
-        private_key=private_key
+        private_key=private_key,
     )
 
     escrow_contract_address, _, _ = ContractUtils.deploy_contract(
         contract_name="IbetEscrow",
         args=[escrow_storage_address],
         deployer=deployer["address"],
-        private_key=private_key
+        private_key=private_key,
     )
     escrow_contract = ContractUtils.get_contract(
-        contract_name="IbetEscrow",
-        contract_address=escrow_contract_address
+        contract_name="IbetEscrow", contract_address=escrow_contract_address
     )
 
     # update storage
     storage_contract = ContractUtils.get_contract(
-        contract_name="EscrowStorage",
-        contract_address=escrow_storage_address
+        contract_name="EscrowStorage", contract_address=escrow_storage_address
     )
     tx = storage_contract.functions.upgradeVersion(
         escrow_contract_address
-    ).build_transaction({
-        "chainId": CHAIN_ID,
-        "from": deployer["address"],
-        "gas": TX_GAS_LIMIT,
-        "gasPrice": 0
-    })
-    ContractUtils.send_transaction(
-        transaction=tx,
-        private_key=private_key
+    ).build_transaction(
+        {
+            "chainId": CHAIN_ID,
+            "from": deployer["address"],
+            "gas": TX_GAS_LIMIT,
+            "gasPrice": 0,
+        }
     )
+    ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
     return escrow_contract
 
@@ -89,62 +77,54 @@ def issue_bond_token(issuer: dict, exchange_address: str):
     issuer_address = issuer["address"]
     issuer_pk = decode_keyfile_json(
         raw_keyfile_json=issuer.get("keyfile_json"),
-        password=issuer.get("password").encode("utf-8")
+        password=issuer.get("password").encode("utf-8"),
     )
 
     # deploy token
     arguments = [
         "テスト債券",
         "TEST",
-        2 ** 256 - 1,
+        2**256 - 1,
         10000,
         "20211231",
         10000,
         "20211231",
         "リターン内容",
-        "発行目的"
+        "発行目的",
     ]
-    token_contract_address, abi, tx_hash = IbetStraightBondContract.create(
-        args=arguments,
-        tx_from=issuer_address,
-        private_key=issuer_pk
+    token_contract_address, abi, tx_hash = IbetStraightBondContract().create(
+        args=arguments, tx_from=issuer_address, private_key=issuer_pk
     )
     token_contract = ContractUtils.get_contract(
-        contract_name="IbetStraightBond",
-        contract_address=token_contract_address
+        contract_name="IbetStraightBond", contract_address=token_contract_address
     )
-    tx = token_contract.functions.setTransferable(
-        True
-    ).build_transaction({
-        "chainId": CHAIN_ID,
-        "from": issuer_address,
-        "gas": TX_GAS_LIMIT,
-        "gasPrice": 0
-    })
-    ContractUtils.send_transaction(
-        transaction=tx,
-        private_key=issuer_pk
+    tx = token_contract.functions.setTransferable(True).build_transaction(
+        {
+            "chainId": CHAIN_ID,
+            "from": issuer_address,
+            "gas": TX_GAS_LIMIT,
+            "gasPrice": 0,
+        }
     )
+    ContractUtils.send_transaction(transaction=tx, private_key=issuer_pk)
 
     # set tradable exchange address
     tx = token_contract.functions.setTradableExchange(
         exchange_address
-    ).build_transaction({
-        "chainId": CHAIN_ID,
-        "from": issuer_address,
-        "gas": TX_GAS_LIMIT,
-        "gasPrice": 0
-    })
-    ContractUtils.send_transaction(
-        transaction=tx,
-        private_key=issuer_pk
+    ).build_transaction(
+        {
+            "chainId": CHAIN_ID,
+            "from": issuer_address,
+            "gas": TX_GAS_LIMIT,
+            "gasPrice": 0,
+        }
     )
+    ContractUtils.send_transaction(transaction=tx, private_key=issuer_pk)
 
     return token_contract
 
 
 class TestGetAccountBalance:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -158,15 +138,14 @@ class TestGetAccountBalance:
         # deploy contract
         exchange_contract = deploy_escrow_contract()
         token_contract = issue_bond_token(
-            issuer=user1_account,
-            exchange_address=exchange_contract.address
+            issuer=user1_account, exchange_address=exchange_contract.address
         )
 
         # test IbetExchangeInterface.get_account_balance
         exchange_interface = IbetExchangeInterface(exchange_contract.address)
         exchange_balance = exchange_interface.get_account_balance(
             account_address=user1_account["address"],
-            token_address=token_contract.address
+            token_address=token_contract.address,
         )
 
         # assertion
@@ -178,31 +157,28 @@ class TestGetAccountBalance:
         user1_account = config_eth_account("user1")
         user1_account_pk = decode_keyfile_json(
             raw_keyfile_json=user1_account["keyfile_json"],
-            password=user1_account["password"].encode("utf-8")
+            password=user1_account["password"].encode("utf-8"),
         )
         user2_account = config_eth_account("user2")
 
         # deploy contract
         exchange_contract = deploy_escrow_contract()
         token_contract = issue_bond_token(
-            issuer=user1_account,
-            exchange_address=exchange_contract.address
+            issuer=user1_account, exchange_address=exchange_contract.address
         )
 
         # transfer -> create balance
         tx = token_contract.functions.transfer(
-            exchange_contract.address,
-            100
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": user1_account["address"],
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
-        ContractUtils.send_transaction(
-            transaction=tx,
-            private_key=user1_account_pk
+            exchange_contract.address, 100
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user1_account["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
         )
+        ContractUtils.send_transaction(transaction=tx, private_key=user1_account_pk)
 
         # create commitment
         tx = exchange_contract.functions.createEscrow(
@@ -210,23 +186,22 @@ class TestGetAccountBalance:
             user2_account["address"],
             30,
             user1_account["address"],
-            "test_data"
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": user1_account["address"],
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
-        ContractUtils.send_transaction(
-            transaction=tx,
-            private_key=user1_account_pk
+            "test_data",
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user1_account["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
         )
+        ContractUtils.send_transaction(transaction=tx, private_key=user1_account_pk)
 
         # test IbetExchangeInterface.get_account_balance
         exchange_interface = IbetExchangeInterface(exchange_contract.address)
         exchange_balance = exchange_interface.get_account_balance(
             account_address=user1_account["address"],
-            token_address=token_contract.address
+            token_address=token_contract.address,
         )
 
         # assertion
@@ -241,8 +216,7 @@ class TestGetAccountBalance:
         # test IbetExchangeInterface.get_account_balance
         exchange_interface = IbetExchangeInterface(ZERO_ADDRESS)
         exchange_balance = exchange_interface.get_account_balance(
-            account_address=user1_account["address"],
-            token_address=ZERO_ADDRESS
+            account_address=user1_account["address"], token_address=ZERO_ADDRESS
         )
 
         # assertion

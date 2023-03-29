@@ -17,38 +17,30 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import logging
-import pytest
-from unittest import mock
-from unittest.mock import (
-    ANY,
-    call
-)
 import time
-from datetime import (
-    datetime,
-    timedelta,
-    timezone
-)
+from datetime import datetime, timedelta, timezone
+from unittest import mock
+from unittest.mock import ANY, call
 
+import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy.orm import Session
 
+import batch.processor_rotate_e2e_messaging_rsa_key as processor_rotate_e2e_messaging_rsa_key
+from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.blockchain import E2EMessaging
-from app.model.db import (
-    E2EMessagingAccount,
-    E2EMessagingAccountRsaKey
-)
+from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-from app.exceptions import SendTransactionError, ContractRevertError
-import batch.processor_rotate_e2e_messaging_rsa_key as processor_rotate_e2e_messaging_rsa_key
-from batch.processor_rotate_e2e_messaging_rsa_key import Processor, LOG
+from batch.processor_rotate_e2e_messaging_rsa_key import LOG, Processor
 from tests.account_config import config_eth_account
 
 
 @pytest.fixture(scope="function")
 def processor(db, e2e_messaging_contract):
-    processor_rotate_e2e_messaging_rsa_key.E2E_MESSAGING_CONTRACT_ADDRESS = e2e_messaging_contract.address
+    processor_rotate_e2e_messaging_rsa_key.E2E_MESSAGING_CONTRACT_ADDRESS = (
+        e2e_messaging_contract.address
+    )
     log = logging.getLogger("background")
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
@@ -59,7 +51,6 @@ def processor(db, e2e_messaging_contract):
 
 
 class TestProcessor:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -82,7 +73,11 @@ class TestProcessor:
         processor.process()
 
         # Assertion
-        _rsa_key_list = db.query(E2EMessagingAccountRsaKey).order_by(E2EMessagingAccountRsaKey.block_timestamp).all()
+        _rsa_key_list = (
+            db.query(E2EMessagingAccountRsaKey)
+            .order_by(E2EMessagingAccountRsaKey.block_timestamp)
+            .all()
+        )
         assert len(_rsa_key_list) == 0
 
     # <Normal_1_2>
@@ -114,7 +109,11 @@ class TestProcessor:
         processor.process()
 
         # Assertion
-        _rsa_key_list = db.query(E2EMessagingAccountRsaKey).order_by(E2EMessagingAccountRsaKey.block_timestamp).all()
+        _rsa_key_list = (
+            db.query(E2EMessagingAccountRsaKey)
+            .order_by(E2EMessagingAccountRsaKey.block_timestamp)
+            .all()
+        )
         assert len(_rsa_key_list) == 1
         _rsa_key = _rsa_key_list[0]
         assert _rsa_key.id == 1
@@ -154,7 +153,11 @@ class TestProcessor:
         processor.process()
 
         # Assertion
-        _rsa_key_list = db.query(E2EMessagingAccountRsaKey).order_by(E2EMessagingAccountRsaKey.block_timestamp).all()
+        _rsa_key_list = (
+            db.query(E2EMessagingAccountRsaKey)
+            .order_by(E2EMessagingAccountRsaKey.block_timestamp)
+            .all()
+        )
         assert len(_rsa_key_list) == 1
         _rsa_key = _rsa_key_list[0]
         assert _rsa_key.id == 1
@@ -172,15 +175,13 @@ class TestProcessor:
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         user_keyfile_2 = user_2["keyfile_json"]
         user_private_key_2 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : E2EMessagingAccount
@@ -252,48 +253,63 @@ class TestProcessor:
         # mock
         mock_E2EMessaging_set_public_key = mock.patch(
             target="app.model.blockchain.e2e_messaging.E2EMessaging.set_public_key",
-            side_effect=[("tx_5", {"blockNumber": 12345}), ("tx_6", {"blockNumber": 12350})]
+            side_effect=[
+                ("tx_5", {"blockNumber": 12345}),
+                ("tx_6", {"blockNumber": 12350}),
+            ],
         )
         mock_ContractUtils_get_block_by_transaction_hash = mock.patch(
             target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
             side_effect=[
                 {
                     "number": 12345,
-                    "timestamp": datetime(2099, 4, 27, 12, 34, 56, tzinfo=timezone.utc).timestamp()
+                    "timestamp": datetime(
+                        2099, 4, 27, 12, 34, 56, tzinfo=timezone.utc
+                    ).timestamp(),
                 },
                 {
                     "number": 12350,
-                    "timestamp": datetime(2099, 4, 27, 12, 34, 59, tzinfo=timezone.utc).timestamp()
-                }
-            ]
+                    "timestamp": datetime(
+                        2099, 4, 27, 12, 34, 59, tzinfo=timezone.utc
+                    ).timestamp(),
+                },
+            ],
         )
 
         # Run target process
-        with mock_E2EMessaging_set_public_key, mock_ContractUtils_get_block_by_transaction_hash:
+        with (
+            mock_E2EMessaging_set_public_key
+        ), mock_ContractUtils_get_block_by_transaction_hash:
             processor.process()
 
             # # Assertion
             assert user_address_2 < user_address_1
-            E2EMessaging.set_public_key.assert_has_calls([
-                call(contract_address=e2e_messaging_contract.address,
-                     public_key=ANY,
-                     key_type="RSA4096",
-                     tx_from=user_address_2,
-                     private_key=user_private_key_2),
-                call(contract_address=e2e_messaging_contract.address,
-                     public_key=ANY,
-                     key_type="RSA4096",
-                     tx_from=user_address_1,
-                     private_key=user_private_key_1),
-            ])
+            E2EMessaging.set_public_key.assert_has_calls(
+                [
+                    call(
+                        public_key=ANY,
+                        key_type="RSA4096",
+                        tx_from=user_address_2,
+                        private_key=user_private_key_2,
+                    ),
+                    call(
+                        public_key=ANY,
+                        key_type="RSA4096",
+                        tx_from=user_address_1,
+                        private_key=user_private_key_1,
+                    ),
+                ]
+            )
             ContractUtils.get_block_by_transaction_hash.assert_has_calls(
                 [call(tx_hash="tx_5"), call(tx_hash="tx_6")]
             )
 
-        _rsa_key_list = db.query(E2EMessagingAccountRsaKey). \
-            filter(E2EMessagingAccountRsaKey.account_address == user_address_1). \
-            order_by(E2EMessagingAccountRsaKey.block_timestamp). \
-            all()
+        _rsa_key_list = (
+            db.query(E2EMessagingAccountRsaKey)
+            .filter(E2EMessagingAccountRsaKey.account_address == user_address_1)
+            .order_by(E2EMessagingAccountRsaKey.block_timestamp)
+            .all()
+        )
         assert len(_rsa_key_list) == 2
         _rsa_key = _rsa_key_list[0]
         assert _rsa_key.id == 3
@@ -313,10 +329,12 @@ class TestProcessor:
         assert _rsa_key.rsa_public_key == ANY
         assert E2EEUtils.decrypt(_rsa_key.rsa_passphrase) == "latest_passphrase_1"
         assert _rsa_key.block_timestamp == datetime(2099, 4, 27, 12, 34, 59)
-        _rsa_key_list = db.query(E2EMessagingAccountRsaKey). \
-            filter(E2EMessagingAccountRsaKey.account_address == user_address_2). \
-            order_by(E2EMessagingAccountRsaKey.block_timestamp). \
-            all()
+        _rsa_key_list = (
+            db.query(E2EMessagingAccountRsaKey)
+            .filter(E2EMessagingAccountRsaKey.account_address == user_address_2)
+            .order_by(E2EMessagingAccountRsaKey.block_timestamp)
+            .all()
+        )
         assert len(_rsa_key_list) == 2
         _rsa_key = _rsa_key_list[0]
         assert _rsa_key.id == 4
@@ -376,7 +394,11 @@ class TestProcessor:
         processor.process()
 
         # Assertion
-        _rsa_key_list = db.query(E2EMessagingAccountRsaKey).order_by(E2EMessagingAccountRsaKey.block_timestamp).all()
+        _rsa_key_list = (
+            db.query(E2EMessagingAccountRsaKey)
+            .order_by(E2EMessagingAccountRsaKey.block_timestamp)
+            .all()
+        )
 
     # <Error_2>
     # Failed to send transaction
@@ -385,8 +407,7 @@ class TestProcessor:
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : E2EMessagingAccount
@@ -416,7 +437,7 @@ class TestProcessor:
         # mock
         mock_E2EMessaging_set_public_key = mock.patch(
             target="app.model.blockchain.e2e_messaging.E2EMessaging.set_public_key",
-            side_effect=SendTransactionError()
+            side_effect=SendTransactionError(),
         )
 
         # Run target process
@@ -425,25 +446,33 @@ class TestProcessor:
 
             # Assertion
             E2EMessaging.set_public_key.assert_called_with(
-                contract_address=e2e_messaging_contract.address,
                 public_key=ANY,
                 key_type="RSA4096",
                 tx_from=user_address_1,
-                private_key=user_private_key_1
+                private_key=user_private_key_1,
             )
 
-        _rsa_key_list = db.query(E2EMessagingAccountRsaKey).order_by(E2EMessagingAccountRsaKey.block_timestamp).all()
+        _rsa_key_list = (
+            db.query(E2EMessagingAccountRsaKey)
+            .order_by(E2EMessagingAccountRsaKey.block_timestamp)
+            .all()
+        )
         assert len(_rsa_key_list) == 1
 
     # <Error_3>
     # ContractRevertError
-    def test_error_3(self, processor: Processor, db: Session, e2e_messaging_contract, caplog: pytest.LogCaptureFixture):
+    def test_error_3(
+        self,
+        processor: Processor,
+        db: Session,
+        e2e_messaging_contract,
+        caplog: pytest.LogCaptureFixture,
+    ):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : E2EMessagingAccount
@@ -473,7 +502,7 @@ class TestProcessor:
         # mock
         mock_E2EMessaging_set_public_key = mock.patch(
             target="app.model.blockchain.e2e_messaging.E2EMessaging.set_public_key",
-            side_effect=ContractRevertError("999999")
+            side_effect=ContractRevertError("999999"),
         )
 
         # Run target process
@@ -482,17 +511,25 @@ class TestProcessor:
 
             # Assertion
             E2EMessaging.set_public_key.assert_called_with(
-                contract_address=e2e_messaging_contract.address,
                 public_key=ANY,
                 key_type="RSA4096",
                 tx_from=user_address_1,
-                private_key=user_private_key_1
+                private_key=user_private_key_1,
             )
 
-        _rsa_key_list = db.query(E2EMessagingAccountRsaKey).order_by(E2EMessagingAccountRsaKey.block_timestamp).all()
+        _rsa_key_list = (
+            db.query(E2EMessagingAccountRsaKey)
+            .order_by(E2EMessagingAccountRsaKey.block_timestamp)
+            .all()
+        )
         assert len(_rsa_key_list) == 1
-        assert caplog.record_tuples.count((
-            LOG.name,
-            logging.WARNING,
-            f"Transaction reverted: account_address=<{user_address_1}> error_code:<999999> error_msg:<>"
-        )) == 1
+        assert (
+            caplog.record_tuples.count(
+                (
+                    LOG.name,
+                    logging.WARNING,
+                    f"Transaction reverted: account_address=<{user_address_1}> error_code:<999999> error_msg:<>",
+                )
+            )
+            == 1
+        )

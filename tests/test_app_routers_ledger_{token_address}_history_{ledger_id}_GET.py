@@ -20,15 +20,15 @@ from datetime import datetime
 from unittest import mock
 from unittest.mock import call
 
+from app.model.blockchain import IbetStraightBondContract
 from app.model.db import (
-    Token,
-    TokenType,
     IDXPersonalInfo,
     Ledger,
+    LedgerDetailsDataType,
     LedgerDetailsTemplate,
-    LedgerDetailsDataType
+    Token,
+    TokenType,
 )
-from app.model.blockchain import IbetStraightBondContract
 from tests.account_config import config_eth_account
 
 
@@ -72,7 +72,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 {
                     "hoge": "aaaa",
                     "fuga": "bbbb",
-                }
+                },
             ],
             "details": [
                 {
@@ -82,10 +82,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "test1": "a",
-                            "test2": "b"
-                        }
+                        {"test1": "a", "test2": "b"},
                     ],
                     "data": [
                         {
@@ -95,7 +92,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "amount": 10,
                             "price": 20,
                             "balance": 30,
-                            "acquisition_date": "2022/12/02"
+                            "acquisition_date": "2022/12/02",
                         },
                         {
                             "account_address": account_address_2,
@@ -104,18 +101,15 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "amount": 100,
                             "price": 200,
                             "balance": 300,
-                            "acquisition_date": "2022/12/03"
-                        }
+                            "acquisition_date": "2022/12/03",
+                        },
                     ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "f-test1": "a",
-                            "f-test2": "b"
-                        }
+                        {"f-test1": "a", "f-test2": "b"},
                     ],
                 },
                 {
@@ -125,10 +119,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "test1-1": "a",
-                            "test2-1": "b"
-                        }
+                        {"test1-1": "a", "test2-1": "b"},
                     ],
                     "data": [
                         {
@@ -148,17 +139,14 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "price": 30,
                             "balance": 600,
                             "acquisition_date": "2020/01/02",
-                        }
+                        },
                     ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "f-test1-1": "a",
-                            "f-test2-1": "b"
-                        }
+                        {"f-test1-1": "a", "f-test2-1": "b"},
                     ],
                 },
             ],
@@ -170,10 +158,12 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 {
                     "f-hoge": "aaaa",
                     "f-fuga": "bbbb",
-                }
+                },
             ],
         }
-        _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _ledger_1.ledger_created = datetime.strptime(
+            "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_ledger_1)
 
         # request target AsPI
@@ -184,7 +174,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             },
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
@@ -200,7 +190,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 {
                     "hoge": "aaaa",
                     "fuga": "bbbb",
-                }
+                },
             ],
             "details": [
                 {
@@ -210,10 +200,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "test1": "a",
-                            "test2": "b"
-                        }
+                        {"test1": "a", "test2": "b"},
                     ],
                     "data": [
                         {
@@ -223,7 +210,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "amount": 10,
                             "price": 20,
                             "balance": 30,
-                            "acquisition_date": "2022/12/02"
+                            "acquisition_date": "2022/12/02",
                         },
                         {
                             "account_address": account_address_2,
@@ -232,18 +219,15 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "amount": 100,
                             "price": 200,
                             "balance": 300,
-                            "acquisition_date": "2022/12/03"
-                        }
+                            "acquisition_date": "2022/12/03",
+                        },
                     ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "f-test1": "a",
-                            "f-test2": "b"
-                        }
+                        {"f-test1": "a", "f-test2": "b"},
                     ],
                 },
                 {
@@ -253,10 +237,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "test1-1": "a",
-                            "test2-1": "b"
-                        }
+                        {"test1-1": "a", "test2-1": "b"},
                     ],
                     "data": [
                         {
@@ -276,17 +257,14 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "price": 30,
                             "balance": 600,
                             "acquisition_date": "2020/01/02",
-                        }
+                        },
                     ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "f-test1-1": "a",
-                            "f-test2-1": "b"
-                        }
+                        {"f-test1-1": "a", "f-test2-1": "b"},
                     ],
                 },
             ],
@@ -298,7 +276,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 {
                     "f-hoge": "aaaa",
                     "f-fuga": "bbbb",
-                }
+                },
             ],
         }
 
@@ -334,7 +312,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 {
                     "hoge": "aaaa",
                     "fuga": "bbbb",
-                }
+                },
             ],
             "details": [
                 {
@@ -344,10 +322,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "test1": "a",
-                            "test2": "b"
-                        }
+                        {"test1": "a", "test2": "b"},
                     ],
                     "data": [
                         {
@@ -357,7 +332,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "amount": 10,
                             "price": 20,
                             "balance": 30,
-                            "acquisition_date": "2022/12/02"
+                            "acquisition_date": "2022/12/02",
                         },
                         {
                             "account_address": account_address_2,
@@ -366,18 +341,15 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "amount": 100,
                             "price": 200,
                             "balance": 300,
-                            "acquisition_date": "2022/12/03"
-                        }
+                            "acquisition_date": "2022/12/03",
+                        },
                     ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "f-test1": "a",
-                            "f-test2": "b"
-                        }
+                        {"f-test1": "a", "f-test2": "b"},
                     ],
                 },
                 {
@@ -387,10 +359,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "test1-1": "a",
-                            "test2-1": "b"
-                        }
+                        {"test1-1": "a", "test2-1": "b"},
                     ],
                     "data": [
                         {
@@ -410,17 +379,14 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "price": 30,
                             "balance": 600,
                             "acquisition_date": "2020/01/02",
-                        }
+                        },
                     ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "f-test1-1": "a",
-                            "f-test2-1": "b"
-                        }
+                        {"f-test1-1": "a", "f-test2-1": "b"},
                     ],
                 },
             ],
@@ -432,10 +398,12 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 {
                     "f-hoge": "aaaa",
                     "f-fuga": "bbbb",
-                }
+                },
             ],
         }
-        _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _ledger_1.ledger_created = datetime.strptime(
+            "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_ledger_1)
 
         # request target AsPI
@@ -459,7 +427,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 {
                     "hoge": "aaaa",
                     "fuga": "bbbb",
-                }
+                },
             ],
             "details": [
                 {
@@ -469,10 +437,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "test1": "a",
-                            "test2": "b"
-                        }
+                        {"test1": "a", "test2": "b"},
                     ],
                     "data": [
                         {
@@ -482,7 +447,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "amount": 10,
                             "price": 20,
                             "balance": 30,
-                            "acquisition_date": "2022/12/02"
+                            "acquisition_date": "2022/12/02",
                         },
                         {
                             "account_address": account_address_2,
@@ -491,18 +456,15 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "amount": 100,
                             "price": 200,
                             "balance": 300,
-                            "acquisition_date": "2022/12/03"
-                        }
+                            "acquisition_date": "2022/12/03",
+                        },
                     ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "f-test1": "a",
-                            "f-test2": "b"
-                        }
+                        {"f-test1": "a", "f-test2": "b"},
                     ],
                 },
                 {
@@ -512,10 +474,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "test1-1": "a",
-                            "test2-1": "b"
-                        }
+                        {"test1-1": "a", "test2-1": "b"},
                     ],
                     "data": [
                         {
@@ -535,17 +494,14 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "price": 30,
                             "balance": 600,
                             "acquisition_date": "2020/01/02",
-                        }
+                        },
                     ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "f-test1-1": "a",
-                            "f-test2-1": "b"
-                        }
+                        {"f-test1-1": "a", "f-test2-1": "b"},
                     ],
                 },
             ],
@@ -557,7 +513,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 {
                     "f-hoge": "aaaa",
                     "f-fuga": "bbbb",
-                }
+                },
             ],
         }
 
@@ -596,7 +552,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 {
                     "hoge": "aaaa",
                     "fuga": "bbbb",
-                }
+                },
             ],
             "details": [
                 {
@@ -606,10 +562,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "test1": "a",
-                            "test2": "b"
-                        }
+                        {"test1": "a", "test2": "b"},
                     ],
                     "data": [
                         {
@@ -619,7 +572,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "amount": 10,
                             "price": 20,
                             "balance": 30,
-                            "acquisition_date": "2022/12/02"
+                            "acquisition_date": "2022/12/02",
                         },
                         {
                             "account_address": account_address_2,
@@ -628,18 +581,15 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "amount": 100,
                             "price": 200,
                             "balance": 300,
-                            "acquisition_date": "2022/12/03"
-                        }
+                            "acquisition_date": "2022/12/03",
+                        },
                     ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "f-test1": "a",
-                            "f-test2": "b"
-                        }
+                        {"f-test1": "a", "f-test2": "b"},
                     ],
                 },
                 {
@@ -649,10 +599,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "test1-1": "a",
-                            "test2-1": "b"
-                        }
+                        {"test1-1": "a", "test2-1": "b"},
                     ],
                     "data": [
                         {
@@ -672,17 +619,14 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "price": 30,
                             "balance": 600,
                             "acquisition_date": "2020/01/02",
-                        }
+                        },
                     ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "f-test1-1": "a",
-                            "f-test2-1": "b"
-                        }
+                        {"f-test1-1": "a", "f-test2-1": "b"},
                     ],
                 },
             ],
@@ -694,18 +638,22 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 {
                     "f-hoge": "aaaa",
                     "f-fuga": "bbbb",
-                }
+                },
             ],
         }
-        _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _ledger_1.ledger_created = datetime.strptime(
+            "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_ledger_1)
 
-        _idx_personal_info_1 = IDXPersonalInfo()  # Note: account_address_1 has personal information in DB
+        _idx_personal_info_1 = (
+            IDXPersonalInfo()
+        )  # Note: account_address_1 has personal information in DB
         _idx_personal_info_1.account_address = account_address_1
         _idx_personal_info_1.issuer_address = issuer_address
         _idx_personal_info_1.personal_info = {
             "name": "name_db_1",
-            "address": "address_db_1"
+            "address": "address_db_1",
         }
         db.add(_idx_personal_info_1)
 
@@ -717,20 +665,14 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 "key": "aaa",
                 "value": "aaa",
             },
-            {
-                "test1": "a",
-                "test2": "b"
-            }
+            {"test1": "a", "test2": "b"},
         ]
         _details_1.footers = [
             {
                 "key": "aaa",
                 "value": "aaa",
             },
-            {
-                "f-test1": "a",
-                "f-test2": "b"
-            }
+            {"f-test1": "a", "f-test2": "b"},
         ]
         _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
         _details_1.data_source = token_address
@@ -740,18 +682,24 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         token = IbetStraightBondContract()
         token.personal_info_contract_address = personal_info_contract_address
         token.issuer_address = issuer_address
-        token_get_mock = mock.patch("app.model.blockchain.IbetStraightBondContract.get", return_value=token)
-        personal_get_info_mock = mock.patch("app.model.blockchain.PersonalInfoContract.get_info")
+        token_get_mock = mock.patch(
+            "app.model.blockchain.IbetStraightBondContract.get", return_value=token
+        )
+        personal_get_info_mock = mock.patch(
+            "app.model.blockchain.PersonalInfoContract.get_info"
+        )
 
         # request target API
         with token_get_mock as token_get_mock_patch, personal_get_info_mock as personal_get_info_mock_patch:
             # Note:
             # account_address_2 has no personal information in the DB
             # and gets information from the contract
-            personal_get_info_mock_patch.side_effect = [{
-                "name": "name_contract_2",
-                "address": "address_contract_2",
-            }]
+            personal_get_info_mock_patch.side_effect = [
+                {
+                    "name": "name_contract_2",
+                    "address": "address_contract_2",
+                }
+            ]
 
             resp = client.get(
                 self.base_url.format(token_address=token_address, ledger_id=1),
@@ -760,13 +708,12 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 },
                 headers={
                     "issuer-address": issuer_address,
-                }
+                },
             )
             # assertion
-            token_get_mock_patch.assert_any_call(token_address)
-            personal_get_info_mock_patch.assert_has_calls([
-                call(account_address=account_address_2, default_value=None)
-            ])
+            personal_get_info_mock_patch.assert_has_calls(
+                [call(account_address=account_address_2, default_value=None)]
+            )
 
         # assertion
         assert resp.status_code == 200
@@ -781,7 +728,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 {
                     "hoge": "aaaa",
                     "fuga": "bbbb",
-                }
+                },
             ],
             "details": [
                 {
@@ -791,10 +738,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "test1": "a",
-                            "test2": "b"
-                        }
+                        {"test1": "a", "test2": "b"},
                     ],
                     "data": [
                         {
@@ -804,7 +748,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "amount": 10,
                             "price": 20,
                             "balance": 30,
-                            "acquisition_date": "2022/12/02"
+                            "acquisition_date": "2022/12/02",
                         },
                         {
                             "account_address": account_address_2,
@@ -813,18 +757,15 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "amount": 100,
                             "price": 200,
                             "balance": 300,
-                            "acquisition_date": "2022/12/03"
-                        }
+                            "acquisition_date": "2022/12/03",
+                        },
                     ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "f-test1": "a",
-                            "f-test2": "b"
-                        }
+                        {"f-test1": "a", "f-test2": "b"},
                     ],
                 },
                 {
@@ -834,10 +775,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "test1-1": "a",
-                            "test2-1": "b"
-                        }
+                        {"test1-1": "a", "test2-1": "b"},
                     ],
                     "data": [
                         {
@@ -857,17 +795,14 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "price": 30,
                             "balance": 600,
                             "acquisition_date": "2020/01/02",
-                        }
+                        },
                     ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "f-test1-1": "a",
-                            "f-test2-1": "b"
-                        }
+                        {"f-test1-1": "a", "f-test2-1": "b"},
                     ],
                 },
             ],
@@ -879,7 +814,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 {
                     "f-hoge": "aaaa",
                     "f-fuga": "bbbb",
-                }
+                },
             ],
         }
 
@@ -918,7 +853,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 {
                     "hoge": "aaaa",
                     "fuga": "bbbb",
-                }
+                },
             ],
             "details": [
                 {
@@ -928,10 +863,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "test1": "a",
-                            "test2": "b"
-                        }
+                        {"test1": "a", "test2": "b"},
                     ],
                     "data": [
                         {
@@ -941,7 +873,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "amount": 10,
                             "price": 20,
                             "balance": 30,
-                            "acquisition_date": "2022/12/02"
+                            "acquisition_date": "2022/12/02",
                         },
                         {
                             "account_address": account_address_2,
@@ -950,18 +882,15 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "amount": 100,
                             "price": 200,
                             "balance": 300,
-                            "acquisition_date": "2022/12/03"
-                        }
+                            "acquisition_date": "2022/12/03",
+                        },
                     ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "f-test1": "a",
-                            "f-test2": "b"
-                        }
+                        {"f-test1": "a", "f-test2": "b"},
                     ],
                 },
                 {
@@ -971,10 +900,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "test1-1": "a",
-                            "test2-1": "b"
-                        }
+                        {"test1-1": "a", "test2-1": "b"},
                     ],
                     "data": [
                         {
@@ -994,17 +920,14 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "price": 30,
                             "balance": 600,
                             "acquisition_date": "2020/01/02",
-                        }
+                        },
                     ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "f-test1-1": "a",
-                            "f-test2-1": "b"
-                        }
+                        {"f-test1-1": "a", "f-test2-1": "b"},
                     ],
                 },
             ],
@@ -1016,19 +939,20 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 {
                     "f-hoge": "aaaa",
                     "f-fuga": "bbbb",
-                }
+                },
             ],
         }
-        _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _ledger_1.ledger_created = datetime.strptime(
+            "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_ledger_1)
 
-        _idx_personal_info_1 = IDXPersonalInfo()  # Note: account_address_1 has partial personal information in DB
+        _idx_personal_info_1 = (
+            IDXPersonalInfo()
+        )  # Note: account_address_1 has partial personal information in DB
         _idx_personal_info_1.account_address = account_address_1
         _idx_personal_info_1.issuer_address = issuer_address
-        _idx_personal_info_1.personal_info = {
-            "name": None,
-            "address": None
-        }
+        _idx_personal_info_1.personal_info = {"name": None, "address": None}
         db.add(_idx_personal_info_1)
 
         _details_1 = LedgerDetailsTemplate()
@@ -1039,20 +963,14 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 "key": "aaa",
                 "value": "aaa",
             },
-            {
-                "test1": "a",
-                "test2": "b"
-            }
+            {"test1": "a", "test2": "b"},
         ]
         _details_1.footers = [
             {
                 "key": "aaa",
                 "value": "aaa",
             },
-            {
-                "f-test1": "a",
-                "f-test2": "b"
-            }
+            {"f-test1": "a", "f-test2": "b"},
         ]
         _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
         _details_1.data_source = token_address
@@ -1062,18 +980,24 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         token = IbetStraightBondContract()
         token.personal_info_contract_address = personal_info_contract_address
         token.issuer_address = issuer_address
-        token_get_mock = mock.patch("app.model.blockchain.IbetStraightBondContract.get", return_value=token)
-        personal_get_info_mock = mock.patch("app.model.blockchain.PersonalInfoContract.get_info")
+        token_get_mock = mock.patch(
+            "app.model.blockchain.IbetStraightBondContract.get", return_value=token
+        )
+        personal_get_info_mock = mock.patch(
+            "app.model.blockchain.PersonalInfoContract.get_info"
+        )
 
         # request target API
         with token_get_mock as token_get_mock_patch, personal_get_info_mock as personal_get_info_mock_patch:
             # Note:
             # account_address_2 has no personal information in the DB
             # and gets information from the contract
-            personal_get_info_mock_patch.side_effect = [{
-                "name": "name_contract_2",
-                "address": "address_contract_2",
-            }]
+            personal_get_info_mock_patch.side_effect = [
+                {
+                    "name": "name_contract_2",
+                    "address": "address_contract_2",
+                }
+            ]
 
             resp = client.get(
                 self.base_url.format(token_address=token_address, ledger_id=1),
@@ -1082,13 +1006,12 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 },
                 headers={
                     "issuer-address": issuer_address,
-                }
+                },
             )
             # assertion
-            token_get_mock_patch.assert_any_call(token_address)
-            personal_get_info_mock_patch.assert_has_calls([
-                call(account_address=account_address_2, default_value=None)
-            ])
+            personal_get_info_mock_patch.assert_has_calls(
+                [call(account_address=account_address_2, default_value=None)]
+            )
 
         # assertion
         assert resp.status_code == 200
@@ -1103,7 +1026,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 {
                     "hoge": "aaaa",
                     "fuga": "bbbb",
-                }
+                },
             ],
             "details": [
                 {
@@ -1113,10 +1036,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "test1": "a",
-                            "test2": "b"
-                        }
+                        {"test1": "a", "test2": "b"},
                     ],
                     "data": [
                         {
@@ -1127,7 +1047,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "amount": 10,
                             "price": 20,
                             "balance": 30,
-                            "acquisition_date": "2022/12/02"
+                            "acquisition_date": "2022/12/02",
                         },
                         {
                             "account_address": account_address_2,
@@ -1136,18 +1056,15 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "amount": 100,
                             "price": 200,
                             "balance": 300,
-                            "acquisition_date": "2022/12/03"
-                        }
+                            "acquisition_date": "2022/12/03",
+                        },
                     ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "f-test1": "a",
-                            "f-test2": "b"
-                        }
+                        {"f-test1": "a", "f-test2": "b"},
                     ],
                 },
                 {
@@ -1157,10 +1074,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "test1-1": "a",
-                            "test2-1": "b"
-                        }
+                        {"test1-1": "a", "test2-1": "b"},
                     ],
                     "data": [
                         {
@@ -1180,17 +1094,14 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "price": 30,
                             "balance": 600,
                             "acquisition_date": "2020/01/02",
-                        }
+                        },
                     ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "f-test1-1": "a",
-                            "f-test2-1": "b"
-                        }
+                        {"f-test1-1": "a", "f-test2-1": "b"},
                     ],
                 },
             ],
@@ -1202,7 +1113,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 {
                     "f-hoge": "aaaa",
                     "f-fuga": "bbbb",
-                }
+                },
             ],
         }
 
@@ -1240,7 +1151,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 {
                     "hoge": "aaaa",
                     "fuga": "bbbb",
-                }
+                },
             ],
             "details": [
                 {
@@ -1250,10 +1161,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "test1": "a",
-                            "test2": "b"
-                        }
+                        {"test1": "a", "test2": "b"},
                     ],
                     "data": [
                         {
@@ -1263,7 +1171,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "amount": 10,
                             "price": 20,
                             "balance": 30,
-                            "acquisition_date": "2022/12/02"
+                            "acquisition_date": "2022/12/02",
                         },
                         {
                             "account_address": account_address_2,
@@ -1272,18 +1180,15 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "amount": 100,
                             "price": 200,
                             "balance": 300,
-                            "acquisition_date": "2022/12/03"
-                        }
+                            "acquisition_date": "2022/12/03",
+                        },
                     ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "f-test1": "a",
-                            "f-test2": "b"
-                        }
+                        {"f-test1": "a", "f-test2": "b"},
                     ],
                 },
                 {
@@ -1293,10 +1198,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "test1-1": "a",
-                            "test2-1": "b"
-                        }
+                        {"test1-1": "a", "test2-1": "b"},
                     ],
                     "data": [
                         {
@@ -1316,17 +1218,14 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "price": 30,
                             "balance": 600,
                             "acquisition_date": "2020/01/02",
-                        }
+                        },
                     ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "f-test1-1": "a",
-                            "f-test2-1": "b"
-                        }
+                        {"f-test1-1": "a", "f-test2-1": "b"},
                     ],
                 },
             ],
@@ -1338,10 +1237,12 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 {
                     "f-hoge": "aaaa",
                     "f-fuga": "bbbb",
-                }
+                },
             ],
         }
-        _ledger_1.ledger_created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _ledger_1.ledger_created = datetime.strptime(
+            "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_ledger_1)
 
         _details_1 = LedgerDetailsTemplate()
@@ -1352,20 +1253,14 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 "key": "aaa",
                 "value": "aaa",
             },
-            {
-                "test1": "a",
-                "test2": "b"
-            }
+            {"test1": "a", "test2": "b"},
         ]
         _details_1.footers = [
             {
                 "key": "aaa",
                 "value": "aaa",
             },
-            {
-                "f-test1": "a",
-                "f-test2": "b"
-            }
+            {"f-test1": "a", "f-test2": "b"},
         ]
         _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
         _details_1.data_source = token_address
@@ -1384,7 +1279,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             },
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
@@ -1400,7 +1295,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 {
                     "hoge": "aaaa",
                     "fuga": "bbbb",
-                }
+                },
             ],
             "details": [
                 {
@@ -1410,10 +1305,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "test1": "a",
-                            "test2": "b"
-                        }
+                        {"test1": "a", "test2": "b"},
                     ],
                     "data": [
                         {
@@ -1424,7 +1316,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "amount": 10,
                             "price": 20,
                             "balance": 30,
-                            "acquisition_date": "2022/12/02"
+                            "acquisition_date": "2022/12/02",
                         },
                         {
                             "account_address": account_address_2,
@@ -1433,18 +1325,15 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "amount": 100,
                             "price": 200,
                             "balance": 300,
-                            "acquisition_date": "2022/12/03"
-                        }
+                            "acquisition_date": "2022/12/03",
+                        },
                     ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "f-test1": "a",
-                            "f-test2": "b"
-                        }
+                        {"f-test1": "a", "f-test2": "b"},
                     ],
                 },
                 {
@@ -1454,10 +1343,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "test1-1": "a",
-                            "test2-1": "b"
-                        }
+                        {"test1-1": "a", "test2-1": "b"},
                     ],
                     "data": [
                         {
@@ -1477,17 +1363,14 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                             "price": 30,
                             "balance": 600,
                             "acquisition_date": "2020/01/02",
-                        }
+                        },
                     ],
                     "footers": [
                         {
                             "key": "aaa",
                             "value": "aaa",
                         },
-                        {
-                            "f-test1-1": "a",
-                            "f-test2-1": "b"
-                        }
+                        {"f-test1-1": "a", "f-test2-1": "b"},
                     ],
                 },
             ],
@@ -1499,7 +1382,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
                 {
                     "f-hoge": "aaaa",
                     "f-fuga": "bbbb",
-                }
+                },
             ],
         }
 
@@ -1520,23 +1403,20 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             },
             headers={
                 "issuer-address": "test",
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_2>
@@ -1554,26 +1434,21 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             },
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {
-                        "limit_value": 0
-                    },
+                    "ctx": {"limit_value": 0},
                     "loc": ["query", "latest_flg"],
                     "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge"
+                    "type": "value_error.number.not_ge",
                 }
-            ]
+            ],
         }
 
     # <Error_3>
@@ -1591,26 +1466,21 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             },
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {
-                        "limit_value": 1
-                    },
+                    "ctx": {"limit_value": 1},
                     "loc": ["query", "latest_flg"],
                     "msg": "ensure this value is less than or equal to 1",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le",
                 }
-            ]
+            ],
         }
 
     # <Error_4_1>
@@ -1625,7 +1495,9 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
-        _token.issuer_address = "0x1234567890123456789012345678901234567899"  # not target
+        _token.issuer_address = (
+            "0x1234567890123456789012345678901234567899"  # not target
+        )
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 2
@@ -1639,17 +1511,14 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             },
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token does not exist"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token does not exist",
         }
 
     # <Error_4_2>
@@ -1669,11 +1538,8 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token does not exist"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token does not exist",
         }
 
     # <Error_5>
@@ -1701,17 +1567,14 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             },
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }
 
     # <Error_6>
@@ -1738,16 +1601,12 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             },
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "ledger does not exist"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "ledger does not exist",
         }
-

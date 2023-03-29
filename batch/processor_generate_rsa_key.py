@@ -22,23 +22,18 @@ import time
 
 from Crypto import Random
 from Crypto.PublicKey import RSA
-from sqlalchemy import (
-    create_engine,
-    or_
-)
-from sqlalchemy.orm import Session
+from sqlalchemy import create_engine, or_
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
-path = os.path.join(os.path.dirname(__file__), '../')
+path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
-from config import DATABASE_URL
-from app.model.db import (
-    Account,
-    AccountRsaStatus
-)
-from app.utils.e2ee_utils import E2EEUtils
 import batch_log
+
+from app.model.db import Account, AccountRsaStatus
+from app.utils.e2ee_utils import E2EEUtils
+from config import DATABASE_URL
 
 """
 [PROCESSOR-Generate-RSA-Key]
@@ -53,7 +48,6 @@ db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 
 class Processor:
-
     def process(self):
         db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
         try:
@@ -73,7 +67,7 @@ class Processor:
                     db_session=db_session,
                     issuer_address=account.issuer_address,
                     rsa_private_pem=rsa_private_pem,
-                    rsa_public_pem=rsa_public_pem
+                    rsa_public_pem=rsa_public_pem,
                 )
 
                 db_session.commit()
@@ -83,12 +77,16 @@ class Processor:
             db_session.close()
 
     def __get_account_list(self, db_session: Session):
-        account_list = db_session.query(Account). \
-            filter(
-            or_(
-                Account.rsa_status == AccountRsaStatus.CREATING.value,
-                Account.rsa_status == AccountRsaStatus.CHANGING.value)). \
-            all()
+        account_list = (
+            db_session.query(Account)
+            .filter(
+                or_(
+                    Account.rsa_status == AccountRsaStatus.CREATING.value,
+                    Account.rsa_status == AccountRsaStatus.CHANGING.value,
+                )
+            )
+            .all()
+        )
 
         return account_list
 
@@ -101,10 +99,17 @@ class Processor:
         return rsa_private_pem, rsa_public_pem
 
     @staticmethod
-    def __sink_on_account(db_session: Session, issuer_address: str, rsa_private_pem: str, rsa_public_pem: str):
-        account = db_session.query(Account). \
-            filter(Account.issuer_address == issuer_address). \
-            first()
+    def __sink_on_account(
+        db_session: Session,
+        issuer_address: str,
+        rsa_private_pem: str,
+        rsa_public_pem: str,
+    ):
+        account = (
+            db_session.query(Account)
+            .filter(Account.issuer_address == issuer_address)
+            .first()
+        )
         if account is not None:
             rsa_status = AccountRsaStatus.SET.value
             if account.rsa_status == AccountRsaStatus.CHANGING.value:

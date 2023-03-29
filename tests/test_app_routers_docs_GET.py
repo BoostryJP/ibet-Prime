@@ -21,7 +21,7 @@ from fastapi.testclient import TestClient
 
 class TestOpenAPIDoc:
     # テスト対象API
-    apiurl_base = '/openapi.json'
+    apiurl_base = "/openapi.json"
 
     ###########################################################################
     # Normal

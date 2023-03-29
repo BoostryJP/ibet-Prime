@@ -16,10 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import (
-    Dict,
-    Any
-)
+from typing import Any, Dict
 
 from pydantic import BaseModel
 
@@ -29,14 +26,17 @@ from pydantic import BaseModel
 ############################
 class HolderResponse(BaseModel):
     """Holder schema (Response)"""
+
     account_address: str
     personal_information: Dict[str, Any]
     balance: int
     exchange_balance: int
     exchange_commitment: int
     pending_transfer: int
+    locked: int
 
 
 class HolderCountResponse(BaseModel):
     """Holder count schema (Response)"""
+
     count: int

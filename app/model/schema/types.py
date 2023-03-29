@@ -16,21 +16,27 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import Optional, Literal
+from enum import IntEnum
+from typing import Literal, Optional
 
-from pydantic import (
-    BaseModel,
-    constr
-)
+from pydantic import BaseModel, constr
 
 MMDD_constr = constr(regex="^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$")
-YYYYMMDD_constr = constr(regex="^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$")
+YYYYMMDD_constr = constr(
+    regex="^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"
+)
 EMPTY_str = Literal[""]
 
 
 class ResultSet(BaseModel):
     """result set for pagination"""
+
     count: Optional[int]
     offset: Optional[int]
     limit: Optional[int]
     total: Optional[int]
+
+
+class SortOrder(IntEnum):
+    ASC = 0
+    DESC = 1

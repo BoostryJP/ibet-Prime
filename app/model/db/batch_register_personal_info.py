@@ -17,12 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    JSON
-)
+
+from sqlalchemy import JSON, Column, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from .base import Base
@@ -30,6 +26,7 @@ from .base import Base
 
 class BatchRegisterPersonalInfoUpload(Base):
     """Batch Register PersonalInfo Upload"""
+
     __tablename__ = "batch_register_personal_info_upload"
 
     # upload id (UUID)
@@ -40,8 +37,9 @@ class BatchRegisterPersonalInfoUpload(Base):
     status = Column(String, nullable=False, index=True)
 
 
-class BatchRegisterPersonalInfoUploadStatus(Enum):
+class BatchRegisterPersonalInfoUploadStatus(str, Enum):
     """Batch Register PersonalInfo Upload Status"""
+
     PENDING = "pending"
     DONE = "done"
     FAILED = "failed"
@@ -49,6 +47,7 @@ class BatchRegisterPersonalInfoUploadStatus(Enum):
 
 class BatchRegisterPersonalInfo(Base):
     """Batch Register PersonalInfo"""
+
     __tablename__ = "batch_register_personal_info"
 
     # sequence id
@@ -86,7 +85,7 @@ class BatchRegisterPersonalInfo(Base):
                 "email": self._personal_info.get("email", None),
                 "birth": self._personal_info.get("birth", None),
                 "is_corporate": self._personal_info.get("is_corporate", None),
-                "tax_category": self._personal_info.get("tax_category", None)
+                "tax_category": self._personal_info.get("tax_category", None),
             }
         return self._personal_info
 
@@ -100,5 +99,5 @@ class BatchRegisterPersonalInfo(Base):
             "email": personal_info_dict.get("email", None),
             "birth": personal_info_dict.get("birth", None),
             "is_corporate": personal_info_dict.get("is_corporate", None),
-            "tax_category": personal_info_dict.get("tax_category", None)
+            "tax_category": personal_info_dict.get("tax_category", None),
         }

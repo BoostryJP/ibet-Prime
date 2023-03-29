@@ -16,40 +16,52 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import json
 import os
 import sys
 import time
-from typing import Optional
+import uuid
+from datetime import datetime, timedelta, timezone
 from itertools import groupby
+from typing import Optional, Type
 
 from eth_utils import to_checksum_address
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 from web3.eth import Contract
 
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
+import batch_log
+
+from app.exceptions import ServiceUnavailableError
 from app.model.blockchain import IbetExchangeInterface
 from app.model.db import (
+    IDXLock,
+    IDXLockedPosition,
+    IDXPosition,
+    IDXPositionShareBlockNumber,
+    IDXUnlock,
+    Notification,
+    NotificationType,
     Token,
     TokenType,
-    IDXPosition,
-    IDXPositionShareBlockNumber
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
-from app.exceptions import ServiceUnavailableError
-import batch_log
 from config import (
     DATABASE_URL,
+    INDEXER_BLOCK_LOT_MAX_SIZE,
+    INDEXER_SYNC_INTERVAL,
     ZERO_ADDRESS,
-    INDEXER_SYNC_INTERVAL
 )
 
 process_name = "INDEXER-Position-Share"
 LOG = batch_log.get_logger(process_name=process_name)
+
+UTC = timezone(timedelta(hours=0), "UTC")
 
 web3 = Web3Wrapper()
 
@@ -58,7 +70,6 @@ db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 class Processor:
     def __init__(self):
-        self.latest_block = web3.eth.block_number
         self.token_list: dict[str, Contract] = {}
         self.exchange_address_list: list[str] = []
 
@@ -68,23 +79,45 @@ class Processor:
             self.__get_contract_list(db_session=db_session)
 
             # Get from_block_number and to_block_number for contract event filter
-            idx_position_block_number = self.__get_idx_position_block_number(db_session=db_session)
             latest_block = web3.eth.block_number
+            _from_block = self.__get_idx_position_block_number(db_session=db_session)
+            _to_block = _from_block + INDEXER_BLOCK_LOT_MAX_SIZE
 
-            if idx_position_block_number >= latest_block:
+            # Skip processing if the latest block is not counted up
+            if _from_block >= latest_block:
                 LOG.debug("skip process")
-                pass
+                return
+
+            # Create index data with the upper limit of one process
+            # as INDEXER_BLOCK_LOT_MAX_SIZE(1_000_000 blocks)
+            if latest_block > _to_block:
+                while _to_block < latest_block:
+                    self.__sync_all(
+                        db_session=db_session,
+                        block_from=_from_block + 1,
+                        block_to=_to_block,
+                    )
+                    _to_block += INDEXER_BLOCK_LOT_MAX_SIZE
+                    _from_block += INDEXER_BLOCK_LOT_MAX_SIZE
+                self.__sync_all(
+                    db_session=db_session,
+                    block_from=_from_block + 1,
+                    block_to=latest_block,
+                )
             else:
                 self.__sync_all(
                     db_session=db_session,
-                    block_from=idx_position_block_number + 1,
-                    block_to=latest_block
+                    block_from=_from_block + 1,
+                    block_to=latest_block,
                 )
-                self.__set_idx_position_block_number(
-                    db_session=db_session,
-                    block_number=latest_block
-                )
-                db_session.commit()
+
+            self.__set_idx_position_block_number(
+                db_session=db_session, block_number=latest_block
+            )
+            db_session.commit()
+        except Exception as e:
+            db_session.rollback()
+            raise e
         finally:
             db_session.close()
         LOG.info("Sync job has been completed")
@@ -94,28 +127,31 @@ class Processor:
 
         issued_token_address_list: tuple[str, ...] = tuple(
             [
-                record[0] for record in (
-                    db_session.query(Token.token_address).
-                    filter(Token.type == TokenType.IBET_SHARE.value).
-                    filter(Token.token_status == 1).all()
+                record[0]
+                for record in (
+                    db_session.query(Token.token_address)
+                    .filter(Token.type == TokenType.IBET_SHARE)
+                    .filter(Token.token_status == 1)
+                    .all()
                 )
             ]
         )
         loaded_token_address_list: tuple[str, ...] = tuple(self.token_list.keys())
-        load_required_address_list = list(set(issued_token_address_list) ^ set(loaded_token_address_list))
+        load_required_address_list = list(
+            set(issued_token_address_list) ^ set(loaded_token_address_list)
+        )
 
-        load_required_token_list: list[Token] = (
-            db_session.query(Token).
-            filter(Token.type == TokenType.IBET_SHARE.value).
-            filter(Token.token_status == 1).
-            filter(Token.token_address.in_(load_required_address_list)).
-            all()
+        load_required_token_list: list[Type[Token]] = (
+            db_session.query(Token)
+            .filter(Token.type == TokenType.IBET_SHARE)
+            .filter(Token.token_status == 1)
+            .filter(Token.token_address.in_(load_required_address_list))
+            .all()
         )
 
         for load_required_token in load_required_token_list:
             token_contract = web3.eth.contract(
-                address=load_required_token.token_address,
-                abi=load_required_token.abi
+                address=load_required_token.token_address, abi=load_required_token.abi
             )
             self.token_list[load_required_token.token_address] = token_contract
 
@@ -125,7 +161,7 @@ class Processor:
                 contract=token_contract,
                 function_name="tradableExchange",
                 args=(),
-                default_returns=ZERO_ADDRESS
+                default_returns=ZERO_ADDRESS,
             )
             if tradable_exchange_address != ZERO_ADDRESS:
                 _exchange_list_tmp.append(tradable_exchange_address)
@@ -134,16 +170,18 @@ class Processor:
         self.exchange_address_list = list(set(_exchange_list_tmp))
 
     def __get_idx_position_block_number(self, db_session: Session):
-        _idx_position_block_number = db_session.query(IDXPositionShareBlockNumber). \
-            first()
+        _idx_position_block_number = db_session.query(
+            IDXPositionShareBlockNumber
+        ).first()
         if _idx_position_block_number is None:
             return 0
         else:
             return _idx_position_block_number.latest_block_number
 
     def __set_idx_position_block_number(self, db_session: Session, block_number: int):
-        _idx_position_block_number = db_session.query(IDXPositionShareBlockNumber). \
-            first()
+        _idx_position_block_number = db_session.query(
+            IDXPositionShareBlockNumber
+        ).first()
         if _idx_position_block_number is None:
             _idx_position_block_number = IDXPositionShareBlockNumber()
 
@@ -172,18 +210,20 @@ class Processor:
                     contract=token,
                     function_name="owner",
                     args=(),
-                    default_returns=ZERO_ADDRESS
+                    default_returns=ZERO_ADDRESS,
                 )
-                balance, pending_transfer = self.__get_account_balance_token(token, issuer_address)
+                balance, pending_transfer = self.__get_account_balance_token(
+                    token, issuer_address
+                )
                 self.__sink_on_position(
                     db_session=db_session,
                     token_address=to_checksum_address(token.address),
                     account_address=issuer_address,
                     balance=balance,
-                    pending_transfer=pending_transfer
+                    pending_transfer=pending_transfer,
                 )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+            except Exception as e:
+                raise e
 
     def __sync_issue(self, db_session: Session, block_from: int, block_to: int):
         """Synchronize Issue events
@@ -199,21 +239,23 @@ class Processor:
                     contract=token,
                     event="Issue",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
                 for event in events:
-                    args = event['args']
+                    args = event["args"]
                     account = args.get("targetAddress", ZERO_ADDRESS)
-                    balance, pending_transfer = self.__get_account_balance_token(token, account)
+                    balance, pending_transfer = self.__get_account_balance_token(
+                        token, account
+                    )
                     self.__sink_on_position(
                         db_session=db_session,
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
-                        pending_transfer=pending_transfer
+                        pending_transfer=pending_transfer,
                     )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+            except Exception as e:
+                raise e
 
     def __sync_transfer(self, db_session: Session, block_from: int, block_to: int):
         """Synchronize Transfer events
@@ -230,14 +272,21 @@ class Processor:
                     contract=token,
                     event="Transfer",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
                 for event in events:
                     args = event["args"]
-                    for account in [args.get("from", ZERO_ADDRESS), args.get("to", ZERO_ADDRESS)]:
+                    for account in [
+                        args.get("from", ZERO_ADDRESS),
+                        args.get("to", ZERO_ADDRESS),
+                    ]:
                         if web3.eth.get_code(account).hex() == "0x":
-                            balance, pending_transfer, exchange_balance, exchange_commitment = \
-                                self.__get_account_balance_all(token, account)
+                            (
+                                balance,
+                                pending_transfer,
+                                exchange_balance,
+                                exchange_commitment,
+                            ) = self.__get_account_balance_all(token, account)
                             self.__sink_on_position(
                                 db_session=db_session,
                                 token_address=to_checksum_address(token.address),
@@ -245,10 +294,10 @@ class Processor:
                                 balance=balance,
                                 exchange_balance=exchange_balance,
                                 exchange_commitment=exchange_commitment,
-                                pending_transfer=pending_transfer
+                                pending_transfer=pending_transfer,
                             )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+            except Exception as e:
+                raise e
 
     def __sync_lock(self, db_session: Session, block_from: int, block_to: int):
         """Synchronize Lock events
@@ -264,21 +313,96 @@ class Processor:
                     contract=token,
                     event="Lock",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
+
+                # Update locked positions
+                try:
+                    lock_map: dict[str, dict[str, True]] = {}
+                    for event in events:
+                        args = event["args"]
+                        account_address = args.get("accountAddress", "")
+                        lock_address = args.get("lockAddress", "")
+                        value = args.get("value", 0)
+                        data = args.get("data", "")
+                        event_created = self.__gen_block_timestamp(event=event)
+
+                        # Index Lock event
+                        self.__insert_lock_idx(
+                            db_session=db_session,
+                            transaction_hash=event["transactionHash"].hex(),
+                            block_number=event["blockNumber"],
+                            token_address=token.address,
+                            lock_address=lock_address,
+                            account_address=account_address,
+                            value=value,
+                            data_str=data,
+                            block_timestamp=event_created,
+                        )
+
+                        if lock_address not in lock_map:
+                            lock_map[lock_address] = {}
+                        lock_map[lock_address][account_address] = True
+
+                    for lock_address in lock_map:
+                        for account_address in lock_map[lock_address]:
+                            value = self.__get_account_locked_token(
+                                token_contract=token,
+                                lock_address=lock_address,
+                                account_address=account_address,
+                            )
+                            self.__sink_on_locked_position(
+                                db_session=db_session,
+                                token_address=to_checksum_address(token.address),
+                                lock_address=lock_address,
+                                account_address=account_address,
+                                value=value,
+                            )
+                except Exception:
+                    pass
+
+                # Update positions
                 for event in events:
-                    args = event['args']
+                    args = event["args"]
                     account = args.get("accountAddress", ZERO_ADDRESS)
-                    balance, pending_transfer = self.__get_account_balance_token(token, account)
+                    balance, pending_transfer = self.__get_account_balance_token(
+                        token, account
+                    )
                     self.__sink_on_position(
                         db_session=db_session,
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
-                        pending_transfer=pending_transfer
+                        pending_transfer=pending_transfer,
                     )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+
+                # Insert Notification
+                if len(events) > 0:
+                    issuer_address = ContractUtils.call_function(
+                        contract=token,
+                        function_name="owner",
+                        args=(),
+                        default_returns=ZERO_ADDRESS,
+                    )
+                    for event in events:
+                        args = event["args"]
+                        account_address = args.get("accountAddress", "")
+                        lock_address = args.get("lockAddress", "")
+                        value = args.get("value", 0)
+                        data = args.get("data", "")
+                        self.__sink_on_lock_info_notification(
+                            db_session=db_session,
+                            issuer_address=issuer_address,
+                            token_address=token.address,
+                            token_type=TokenType.IBET_SHARE.value,
+                            account_address=account_address,
+                            lock_address=lock_address,
+                            value=value,
+                            data_str=data,
+                        )
+
+            except Exception as e:
+                raise e
 
     def __sync_unlock(self, db_session: Session, block_from: int, block_to: int):
         """Synchronize Unlock events
@@ -294,21 +418,100 @@ class Processor:
                     contract=token,
                     event="Unlock",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
+
+                # Update locked positions
+                try:
+                    lock_map: dict[str, dict[str, True]] = {}
+                    for event in events:
+                        args = event["args"]
+                        account_address = args.get("accountAddress", "")
+                        lock_address = args.get("lockAddress", "")
+                        recipient_address = args.get("recipientAddress", "")
+                        value = args.get("value", 0)
+                        data = args.get("data", "")
+                        event_created = self.__gen_block_timestamp(event=event)
+
+                        # Index Unlock event
+                        self.__insert_unlock_idx(
+                            db_session=db_session,
+                            transaction_hash=event["transactionHash"].hex(),
+                            block_number=event["blockNumber"],
+                            token_address=token.address,
+                            lock_address=lock_address,
+                            account_address=account_address,
+                            recipient_address=recipient_address,
+                            value=value,
+                            data_str=data,
+                            block_timestamp=event_created,
+                        )
+
+                        if lock_address not in lock_map:
+                            lock_map[lock_address] = {}
+                        lock_map[lock_address][account_address] = True
+
+                    for lock_address in lock_map:
+                        for account_address in lock_map[lock_address]:
+                            value = self.__get_account_locked_token(
+                                token_contract=token,
+                                lock_address=lock_address,
+                                account_address=account_address,
+                            )
+                            self.__sink_on_locked_position(
+                                db_session=db_session,
+                                token_address=to_checksum_address(token.address),
+                                lock_address=lock_address,
+                                account_address=account_address,
+                                value=value,
+                            )
+                except Exception:
+                    pass
+
+                # Update positions
                 for event in events:
-                    args = event['args']
+                    args = event["args"]
                     account = args.get("recipientAddress", ZERO_ADDRESS)
-                    balance, pending_transfer = self.__get_account_balance_token(token, account)
+                    balance, pending_transfer = self.__get_account_balance_token(
+                        token, account
+                    )
                     self.__sink_on_position(
                         db_session=db_session,
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
-                        pending_transfer=pending_transfer
+                        pending_transfer=pending_transfer,
                     )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+
+                # Insert Notification
+                if len(events) > 0:
+                    issuer_address = ContractUtils.call_function(
+                        contract=token,
+                        function_name="owner",
+                        args=(),
+                        default_returns=ZERO_ADDRESS,
+                    )
+                    for event in events:
+                        args = event["args"]
+                        account_address = args.get("accountAddress", "")
+                        lock_address = args.get("lockAddress", "")
+                        recipient_address = args.get("recipientAddress", "")
+                        value = args.get("value", 0)
+                        data = args.get("data", "")
+                        self.__sink_on_unlock_info_notification(
+                            db_session=db_session,
+                            issuer_address=issuer_address,
+                            token_address=token.address,
+                            token_type=TokenType.IBET_SHARE.value,
+                            account_address=account_address,
+                            lock_address=lock_address,
+                            recipient_address=recipient_address,
+                            value=value,
+                            data_str=data,
+                        )
+
+            except Exception as e:
+                raise e
 
     def __sync_redeem(self, db_session: Session, block_from: int, block_to: int):
         """Synchronize Redeem events
@@ -324,23 +527,27 @@ class Processor:
                     contract=token,
                     event="Redeem",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
                 for event in events:
                     args = event["args"]
                     account = args.get("targetAddress", ZERO_ADDRESS)
-                    balance, pending_transfer = self.__get_account_balance_token(token, account)
+                    balance, pending_transfer = self.__get_account_balance_token(
+                        token, account
+                    )
                     self.__sink_on_position(
                         db_session=db_session,
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
-                        pending_transfer=pending_transfer
+                        pending_transfer=pending_transfer,
                     )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+            except Exception as e:
+                raise e
 
-    def __sync_apply_for_transfer(self, db_session: Session, block_from: int, block_to: int):
+    def __sync_apply_for_transfer(
+        self, db_session: Session, block_from: int, block_to: int
+    ):
         """Sync ApplyForTransfer Events
 
         :param db_session: database session
@@ -354,23 +561,27 @@ class Processor:
                     contract=token,
                     event="ApplyForTransfer",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
                 for event in events:
                     args = event["args"]
                     account = args.get("from", ZERO_ADDRESS)
-                    balance, pending_transfer = self.__get_account_balance_token(token, account)
+                    balance, pending_transfer = self.__get_account_balance_token(
+                        token, account
+                    )
                     self.__sink_on_position(
                         db_session=db_session,
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
-                        pending_transfer=pending_transfer
+                        pending_transfer=pending_transfer,
                     )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+            except Exception as e:
+                raise e
 
-    def __sync_cancel_transfer(self, db_session: Session, block_from: int, block_to: int):
+    def __sync_cancel_transfer(
+        self, db_session: Session, block_from: int, block_to: int
+    ):
         """Sync CancelTransfer Events
 
         :param db_session: database session
@@ -384,23 +595,27 @@ class Processor:
                     contract=token,
                     event="CancelTransfer",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
                 for event in events:
                     args = event["args"]
                     account = args.get("from", ZERO_ADDRESS)
-                    balance, pending_transfer = self.__get_account_balance_token(token, account)
+                    balance, pending_transfer = self.__get_account_balance_token(
+                        token, account
+                    )
                     self.__sink_on_position(
                         db_session=db_session,
                         token_address=to_checksum_address(token.address),
                         account_address=account,
                         balance=balance,
-                        pending_transfer=pending_transfer
+                        pending_transfer=pending_transfer,
                     )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+            except Exception as e:
+                raise e
 
-    def __sync_approve_transfer(self, db_session: Session, block_from: int, block_to: int):
+    def __sync_approve_transfer(
+        self, db_session: Session, block_from: int, block_to: int
+    ):
         """Sync ApproveTransfer Events
 
         :param db_session: database session
@@ -414,21 +629,26 @@ class Processor:
                     contract=token,
                     event="ApproveTransfer",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
                 for event in events:
                     args = event["args"]
-                    for account in [args.get("from", ZERO_ADDRESS), args.get("to", ZERO_ADDRESS)]:
-                        balance, pending_transfer = self.__get_account_balance_token(token, account)
+                    for account in [
+                        args.get("from", ZERO_ADDRESS),
+                        args.get("to", ZERO_ADDRESS),
+                    ]:
+                        balance, pending_transfer = self.__get_account_balance_token(
+                            token, account
+                        )
                         self.__sink_on_position(
                             db_session=db_session,
                             token_address=to_checksum_address(token.address),
                             account_address=account,
                             balance=balance,
-                            pending_transfer=pending_transfer
+                            pending_transfer=pending_transfer,
                         )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+            except Exception as e:
+                raise e
 
     def __sync_exchange(self, db_session: Session, block_from: int, block_to: int):
         """Sync Events from IbetExchange
@@ -449,107 +669,159 @@ class Processor:
                     contract=exchange,
                     event="NewOrder",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
                 for _event in _event_list:
-                    account_list_tmp.append({
-                        "token_address": _event["args"].get("tokenAddress", ZERO_ADDRESS),
-                        "account_address": _event["args"].get("accountAddress", ZERO_ADDRESS)
-                    })
+                    account_list_tmp.append(
+                        {
+                            "token_address": _event["args"].get(
+                                "tokenAddress", ZERO_ADDRESS
+                            ),
+                            "account_address": _event["args"].get(
+                                "accountAddress", ZERO_ADDRESS
+                            ),
+                        }
+                    )
 
                 # CancelOrder event
                 _event_list = ContractUtils.get_event_logs(
                     contract=exchange,
                     event="CancelOrder",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
                 for _event in _event_list:
-                    account_list_tmp.append({
-                        "token_address": _event["args"].get("tokenAddress", ZERO_ADDRESS),
-                        "account_address": _event["args"].get("accountAddress", ZERO_ADDRESS)
-                    })
+                    account_list_tmp.append(
+                        {
+                            "token_address": _event["args"].get(
+                                "tokenAddress", ZERO_ADDRESS
+                            ),
+                            "account_address": _event["args"].get(
+                                "accountAddress", ZERO_ADDRESS
+                            ),
+                        }
+                    )
 
                 # ForceCancelOrder event
                 _event_list = ContractUtils.get_event_logs(
                     contract=exchange,
                     event="ForceCancelOrder",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
                 for _event in _event_list:
-                    account_list_tmp.append({
-                        "token_address": _event["args"].get("tokenAddress", ZERO_ADDRESS),
-                        "account_address": _event["args"].get("accountAddress", ZERO_ADDRESS)
-                    })
+                    account_list_tmp.append(
+                        {
+                            "token_address": _event["args"].get(
+                                "tokenAddress", ZERO_ADDRESS
+                            ),
+                            "account_address": _event["args"].get(
+                                "accountAddress", ZERO_ADDRESS
+                            ),
+                        }
+                    )
 
                 # Agree event
                 _event_list = ContractUtils.get_event_logs(
                     contract=exchange,
                     event="Agree",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
                 for _event in _event_list:
-                    account_list_tmp.append({
-                        "token_address": _event["args"].get("tokenAddress", ZERO_ADDRESS),
-                        "account_address": _event["args"].get("sellAddress", ZERO_ADDRESS)  # only seller has changed
-                    })
+                    account_list_tmp.append(
+                        {
+                            "token_address": _event["args"].get(
+                                "tokenAddress", ZERO_ADDRESS
+                            ),
+                            "account_address": _event["args"].get(
+                                "sellAddress", ZERO_ADDRESS
+                            ),  # only seller has changed
+                        }
+                    )
 
                 # SettlementOK event
                 _event_list = ContractUtils.get_event_logs(
                     contract=exchange,
                     event="SettlementOK",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
                 for _event in _event_list:
-                    account_list_tmp.append({
-                        "token_address": _event["args"].get("tokenAddress", ZERO_ADDRESS),
-                        "account_address": _event["args"].get("buyAddress", ZERO_ADDRESS)
-                    })
-                    account_list_tmp.append({
-                        "token_address": _event["args"].get("tokenAddress", ZERO_ADDRESS),
-                        "account_address": _event["args"].get("sellAddress", ZERO_ADDRESS)
-                    })
+                    account_list_tmp.append(
+                        {
+                            "token_address": _event["args"].get(
+                                "tokenAddress", ZERO_ADDRESS
+                            ),
+                            "account_address": _event["args"].get(
+                                "buyAddress", ZERO_ADDRESS
+                            ),
+                        }
+                    )
+                    account_list_tmp.append(
+                        {
+                            "token_address": _event["args"].get(
+                                "tokenAddress", ZERO_ADDRESS
+                            ),
+                            "account_address": _event["args"].get(
+                                "sellAddress", ZERO_ADDRESS
+                            ),
+                        }
+                    )
 
                 # SettlementNG event
                 _event_list = ContractUtils.get_event_logs(
                     contract=exchange,
                     event="SettlementNG",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
                 for _event in _event_list:
-                    account_list_tmp.append({
-                        "token_address": _event["args"].get("tokenAddress", ZERO_ADDRESS),
-                        "account_address": _event["args"].get("sellAddress", ZERO_ADDRESS)  # only seller has changed
-                    })
+                    account_list_tmp.append(
+                        {
+                            "token_address": _event["args"].get(
+                                "tokenAddress", ZERO_ADDRESS
+                            ),
+                            "account_address": _event["args"].get(
+                                "sellAddress", ZERO_ADDRESS
+                            ),  # only seller has changed
+                        }
+                    )
 
                 # Make temporary list unique
-                account_list_tmp.sort(key=lambda x: (x["token_address"], x["account_address"]))
+                account_list_tmp.sort(
+                    key=lambda x: (x["token_address"], x["account_address"])
+                )
                 account_list = []
-                for k, g in groupby(account_list_tmp, lambda x: (x["token_address"], x["account_address"])):
-                    account_list.append({"token_address": k[0], "account_address": k[1]})
+                for k, g in groupby(
+                    account_list_tmp,
+                    lambda x: (x["token_address"], x["account_address"]),
+                ):
+                    account_list.append(
+                        {"token_address": k[0], "account_address": k[1]}
+                    )
 
                 # Update position
                 for _account in account_list:
                     token_address = _account["token_address"]
                     account_address = _account["account_address"]
-                    exchange_balance, exchange_commitment = self.__get_account_balance_exchange(
+                    (
+                        exchange_balance,
+                        exchange_commitment,
+                    ) = self.__get_account_balance_exchange(
                         exchange_address=exchange_address,
                         token_address=token_address,
-                        account_address=account_address
+                        account_address=account_address,
                     )
                     self.__sink_on_position(
                         db_session=db_session,
                         token_address=token_address,
                         account_address=account_address,
                         exchange_balance=exchange_balance,
-                        exchange_commitment=exchange_commitment
+                        exchange_commitment=exchange_commitment,
                     )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+            except Exception as e:
+                raise e
 
     def __sync_escrow(self, db_session: Session, block_from: int, block_to: int):
         """Sync Events from IbetSecurityTokenEscrow
@@ -561,7 +833,9 @@ class Processor:
         """
         for exchange_address in self.exchange_address_list:
             try:
-                escrow = ContractUtils.get_contract("IbetSecurityTokenEscrow", exchange_address)
+                escrow = ContractUtils.get_contract(
+                    "IbetSecurityTokenEscrow", exchange_address
+                )
 
                 account_list_tmp = []
 
@@ -570,77 +844,182 @@ class Processor:
                     contract=escrow,
                     event="EscrowCreated",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
                 for _event in _event_list:
-                    account_list_tmp.append({
-                        "token_address": _event["args"].get("token", ZERO_ADDRESS),
-                        "account_address": _event["args"].get("sender", ZERO_ADDRESS)  # only sender has changed
-                    })
+                    account_list_tmp.append(
+                        {
+                            "token_address": _event["args"].get("token", ZERO_ADDRESS),
+                            "account_address": _event["args"].get(
+                                "sender", ZERO_ADDRESS
+                            ),  # only sender has changed
+                        }
+                    )
 
                 # EscrowCanceled event
                 _event_list = ContractUtils.get_event_logs(
                     contract=escrow,
                     event="EscrowCanceled",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
                 for _event in _event_list:
-                    account_list_tmp.append({
-                        "token_address": _event["args"].get("token", ZERO_ADDRESS),
-                        "account_address": _event["args"].get("sender", ZERO_ADDRESS)  # only sender has changed
-                    })
+                    account_list_tmp.append(
+                        {
+                            "token_address": _event["args"].get("token", ZERO_ADDRESS),
+                            "account_address": _event["args"].get(
+                                "sender", ZERO_ADDRESS
+                            ),  # only sender has changed
+                        }
+                    )
 
                 # HolderChanged event
                 _event_list = ContractUtils.get_event_logs(
                     contract=escrow,
                     event="HolderChanged",
                     block_from=block_from,
-                    block_to=block_to
+                    block_to=block_to,
                 )
                 for _event in _event_list:
-                    account_list_tmp.append({
-                        "token_address": _event["args"].get("token", ZERO_ADDRESS),
-                        "account_address": _event["args"].get("from", ZERO_ADDRESS)
-                    })
-                    account_list_tmp.append({
-                        "token_address": _event["args"].get("token", ZERO_ADDRESS),
-                        "account_address": _event["args"].get("to", ZERO_ADDRESS)
-                    })
+                    account_list_tmp.append(
+                        {
+                            "token_address": _event["args"].get("token", ZERO_ADDRESS),
+                            "account_address": _event["args"].get("from", ZERO_ADDRESS),
+                        }
+                    )
+                    account_list_tmp.append(
+                        {
+                            "token_address": _event["args"].get("token", ZERO_ADDRESS),
+                            "account_address": _event["args"].get("to", ZERO_ADDRESS),
+                        }
+                    )
 
                 # Make temporary list unique
-                account_list_tmp.sort(key=lambda x: (x["token_address"], x["account_address"]))
+                account_list_tmp.sort(
+                    key=lambda x: (x["token_address"], x["account_address"])
+                )
                 account_list = []
-                for k, g in groupby(account_list_tmp, lambda x: (x["token_address"], x["account_address"])):
-                    account_list.append({"token_address": k[0], "account_address": k[1]})
+                for k, g in groupby(
+                    account_list_tmp,
+                    lambda x: (x["token_address"], x["account_address"]),
+                ):
+                    account_list.append(
+                        {"token_address": k[0], "account_address": k[1]}
+                    )
 
                 # Update position
                 for _account in account_list:
                     token_address = _account["token_address"]
                     account_address = _account["account_address"]
-                    exchange_balance, exchange_commitment = self.__get_account_balance_exchange(
+                    (
+                        exchange_balance,
+                        exchange_commitment,
+                    ) = self.__get_account_balance_exchange(
                         exchange_address=exchange_address,
                         token_address=token_address,
-                        account_address=account_address
+                        account_address=account_address,
                     )
                     self.__sink_on_position(
                         db_session=db_session,
                         token_address=token_address,
                         account_address=account_address,
                         exchange_balance=exchange_balance,
-                        exchange_commitment=exchange_commitment
+                        exchange_commitment=exchange_commitment,
                     )
-            except Exception:
-                LOG.exception("An exception occurred during event synchronization")
+            except Exception as e:
+                raise e
 
     @staticmethod
-    def __sink_on_position(db_session: Session,
-                           token_address: str,
-                           account_address: str,
-                           balance: Optional[int] = None,
-                           exchange_balance: Optional[int] = None,
-                           exchange_commitment: Optional[int] = None,
-                           pending_transfer: Optional[int] = None):
+    def __insert_lock_idx(
+        db_session: Session,
+        transaction_hash: str,
+        block_number: int,
+        token_address: str,
+        lock_address: str,
+        account_address: str,
+        value: int,
+        data_str: str,
+        block_timestamp: datetime,
+    ):
+        """Registry Lock event data in DB
+
+        :param transaction_hash: transaction hash
+        :param token_address: token address
+        :param lock_address: lock address
+        :param account_address: account address
+        :param value: amount
+        :param data_str: data string
+        :param block_timestamp: block timestamp
+        :return: None
+        """
+        try:
+            data = json.loads(data_str)
+        except Exception:
+            data = {}
+
+        lock = IDXLock()
+        lock.transaction_hash = transaction_hash
+        lock.block_number = block_number
+        lock.token_address = token_address
+        lock.lock_address = lock_address
+        lock.account_address = account_address
+        lock.value = value
+        lock.data = data
+        lock.block_timestamp = block_timestamp
+        db_session.add(lock)
+
+    @staticmethod
+    def __insert_unlock_idx(
+        db_session: Session,
+        transaction_hash: str,
+        block_number: int,
+        token_address: str,
+        lock_address: str,
+        account_address: str,
+        recipient_address: str,
+        value: int,
+        data_str: str,
+        block_timestamp: datetime,
+    ):
+        """Registry Unlock event data in DB
+
+        :param transaction_hash: transaction hash
+        :param token_address: token address
+        :param lock_address: lock address
+        :param account_address: account address
+        :param recipient_address: recipient address
+        :param value: amount
+        :param data_str: data string
+        :param block_timestamp: block timestamp
+        :return: None
+        """
+        try:
+            data = json.loads(data_str)
+        except Exception:
+            data = {}
+
+        unlock = IDXUnlock()
+        unlock.transaction_hash = transaction_hash
+        unlock.block_number = block_number
+        unlock.token_address = token_address
+        unlock.lock_address = lock_address
+        unlock.account_address = account_address
+        unlock.recipient_address = recipient_address
+        unlock.value = value
+        unlock.data = data
+        unlock.block_timestamp = block_timestamp
+        db_session.add(unlock)
+
+    @staticmethod
+    def __sink_on_position(
+        db_session: Session,
+        token_address: str,
+        account_address: str,
+        balance: Optional[int] = None,
+        exchange_balance: Optional[int] = None,
+        exchange_commitment: Optional[int] = None,
+        pending_transfer: Optional[int] = None,
+    ):
         """Update balance data
 
         :param db_session: database session
@@ -652,10 +1031,12 @@ class Processor:
         :param pending_transfer: pending transfer
         :return: None
         """
-        position = db_session.query(IDXPosition). \
-            filter(IDXPosition.token_address == token_address). \
-            filter(IDXPosition.account_address == account_address). \
-            first()
+        position = (
+            db_session.query(IDXPosition)
+            .filter(IDXPosition.token_address == token_address)
+            .filter(IDXPosition.account_address == account_address)
+            .first()
+        )
         if position is not None:
             if balance is not None:
                 position.balance = balance
@@ -666,9 +1047,18 @@ class Processor:
             if exchange_commitment is not None:
                 position.exchange_commitment = exchange_commitment
             db_session.merge(position)
-        elif any(value is not None and value > 0
-                 for value in [balance, pending_transfer, exchange_balance, exchange_commitment]):
-            LOG.debug(f"Position created (Share): token_address={token_address}, account_address={account_address}")
+        elif any(
+            value is not None and value > 0
+            for value in [
+                balance,
+                pending_transfer,
+                exchange_balance,
+                exchange_commitment,
+            ]
+        ):
+            LOG.debug(
+                f"Position created (Share): token_address={token_address}, account_address={account_address}"
+            )
             position = IDXPosition()
             position.token_address = token_address
             position.account_address = account_address
@@ -679,6 +1069,107 @@ class Processor:
             db_session.add(position)
 
     @staticmethod
+    def __sink_on_locked_position(
+        db_session: Session,
+        token_address: str,
+        lock_address: str,
+        account_address: str,
+        value: int,
+    ):
+        """Update locked balance data
+
+        :param db_session: ORM session
+        :param token_address: token address
+        :param lock_address: account address
+        :param account_address: account address
+        :param value: updated locked amount
+        :return: None
+        """
+        locked = (
+            db_session.query(IDXLockedPosition)
+            .filter(IDXLockedPosition.token_address == token_address)
+            .filter(IDXLockedPosition.lock_address == lock_address)
+            .filter(IDXLockedPosition.account_address == account_address)
+            .first()
+        )
+        if locked is not None:
+            locked.value = value
+            db_session.merge(locked)
+        else:
+            locked = IDXLockedPosition()
+            locked.token_address = token_address
+            locked.lock_address = lock_address
+            locked.account_address = account_address
+            locked.value = value
+            db_session.add(locked)
+
+    @staticmethod
+    def __sink_on_lock_info_notification(
+        db_session: Session,
+        issuer_address: str,
+        token_address: str,
+        token_type: str,
+        account_address: str,
+        lock_address: str,
+        value: int,
+        data_str: str,
+    ):
+        try:
+            data = json.loads(data_str)
+        except Exception:
+            data = {}
+
+        notification = Notification()
+        notification.notice_id = uuid.uuid4()
+        notification.issuer_address = issuer_address
+        notification.priority = 0  # Low
+        notification.type = NotificationType.LOCK_INFO
+        notification.code = 0
+        notification.metainfo = {
+            "token_address": token_address,
+            "token_type": token_type,
+            "account_address": account_address,
+            "lock_address": lock_address,
+            "value": value,
+            "data": data,
+        }
+        db_session.add(notification)
+
+    @staticmethod
+    def __sink_on_unlock_info_notification(
+        db_session: Session,
+        issuer_address: str,
+        token_address: str,
+        token_type: str,
+        account_address: str,
+        lock_address: str,
+        recipient_address: str,
+        value: int,
+        data_str: str,
+    ):
+        try:
+            data = json.loads(data_str)
+        except Exception:
+            data = {}
+
+        notification = Notification()
+        notification.notice_id = uuid.uuid4()
+        notification.issuer_address = issuer_address
+        notification.priority = 0  # Low
+        notification.type = NotificationType.UNLOCK_INFO
+        notification.code = 0
+        notification.metainfo = {
+            "token_address": token_address,
+            "token_type": token_type,
+            "account_address": account_address,
+            "lock_address": lock_address,
+            "recipient_address": recipient_address,
+            "value": value,
+            "data": data,
+        }
+        db_session.add(notification)
+
+    @staticmethod
     def __get_account_balance_all(token_contract, account_address: str):
         """Get balance"""
 
@@ -686,13 +1177,13 @@ class Processor:
             contract=token_contract,
             function_name="balanceOf",
             args=(account_address,),
-            default_returns=0
+            default_returns=0,
         )
         pending_transfer = ContractUtils.call_function(
             contract=token_contract,
             function_name="pendingTransfer",
             args=(account_address,),
-            default_returns=0
+            default_returns=0,
         )
         exchange_balance = 0
         exchange_commitment = 0
@@ -700,13 +1191,12 @@ class Processor:
             contract=token_contract,
             function_name="tradableExchange",
             args=(),
-            default_returns=ZERO_ADDRESS
+            default_returns=ZERO_ADDRESS,
         )
         if tradable_exchange_address != ZERO_ADDRESS:
             exchange_contract = IbetExchangeInterface(tradable_exchange_address)
             exchange_contract_balance = exchange_contract.get_account_balance(
-                account_address=account_address,
-                token_address=token_contract.address
+                account_address=account_address, token_address=token_contract.address
             )
             exchange_balance = exchange_contract_balance["balance"]
             exchange_commitment = exchange_contract_balance["commitment"]
@@ -721,26 +1211,52 @@ class Processor:
             contract=token_contract,
             function_name="balanceOf",
             args=(account_address,),
-            default_returns=0
+            default_returns=0,
         )
         pending_transfer = ContractUtils.call_function(
             contract=token_contract,
             function_name="pendingTransfer",
             args=(account_address,),
-            default_returns=0
+            default_returns=0,
         )
         return balance, pending_transfer
 
     @staticmethod
-    def __get_account_balance_exchange(exchange_address: str, token_address: str, account_address: str):
+    def __get_account_locked_token(
+        token_contract, lock_address: str, account_address: str
+    ):
+        """Get locked balance on token"""
+        value = ContractUtils.call_function(
+            contract=token_contract,
+            function_name="lockedOf",
+            args=(
+                lock_address,
+                account_address,
+            ),
+            default_returns=0,
+        )
+        return value
+
+    @staticmethod
+    def __get_account_balance_exchange(
+        exchange_address: str, token_address: str, account_address: str
+    ):
         """Get balance on exchange"""
 
         exchange_contract = IbetExchangeInterface(exchange_address)
         exchange_contract_balance = exchange_contract.get_account_balance(
-            account_address=account_address,
-            token_address=token_address
+            account_address=account_address, token_address=token_address
         )
-        return exchange_contract_balance["balance"], exchange_contract_balance["commitment"]
+        return (
+            exchange_contract_balance["balance"],
+            exchange_contract_balance["commitment"],
+        )
+
+    @staticmethod
+    def __gen_block_timestamp(event):
+        return datetime.fromtimestamp(
+            web3.eth.get_block(event["blockNumber"])["timestamp"], UTC
+        )
 
 
 def main():

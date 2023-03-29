@@ -16,35 +16,26 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import pytest
-from unittest.mock import (
-    patch,
-    ANY,
-    call
-)
-from datetime import (
-    datetime,
-    timezone
-)
+from datetime import datetime, timezone
+from unittest.mock import ANY, call, patch
 
-from config import TOKEN_LIST_CONTRACT_ADDRESS
-from app.model.schema import (
-    IbetShareUpdate,
-    IbetStraightBondUpdate
-)
+import pytest
+
+from app.exceptions import SendTransactionError
 from app.model.db import (
+    UTXO,
     Account,
-    Token,
-    TokenType,
-    UpdateToken,
     IDXPosition,
     Notification,
     NotificationType,
-    UTXO
+    Token,
+    TokenType,
+    UpdateToken,
 )
+from app.model.schema import IbetShareUpdate, IbetStraightBondUpdate
 from app.utils.e2ee_utils import E2EEUtils
-from app.exceptions import SendTransactionError
 from batch.processor_update_token import Processor
+from config import TOKEN_LIST_CONTRACT_ADDRESS
 from tests.account_config import config_eth_account
 
 
@@ -54,7 +45,6 @@ def processor(db):
 
 
 class TestProcessor:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -108,7 +98,7 @@ class TestProcessor:
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
             "principal_value": 1000,
-            "is_canceled": True  # update
+            "is_canceled": True,  # update
         }
         _update_token_1.status = 0
         _update_token_1.trigger = "Issue"
@@ -177,22 +167,28 @@ class TestProcessor:
 
         mock_block = {
             "number": 12345,
-            "timestamp": datetime(2021, 4, 27, 12, 34, 56, tzinfo=timezone.utc).timestamp()
+            "timestamp": datetime(
+                2021, 4, 27, 12, 34, 56, tzinfo=timezone.utc
+            ).timestamp(),
         }
-        with patch(target="app.model.blockchain.token.IbetShareContract.update",
-                   return_value=None) as IbetShareContract_update, \
-                patch(target="app.model.blockchain.token.IbetStraightBondContract.update",
-                      return_value=None) as IbetStraightBondContract_update, \
-                patch(target="app.model.blockchain.token_list.TokenListContract.register",
-                      return_value=None) as TokenListContract_register, \
-                patch(target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
-                      return_value=mock_block) as ContractUtils_get_block_by_transaction_hash:
+        with patch(
+            target="app.model.blockchain.token.IbetShareContract.update",
+            return_value=None,
+        ) as IbetShareContract_update, patch(
+            target="app.model.blockchain.token.IbetStraightBondContract.update",
+            return_value=None,
+        ) as IbetStraightBondContract_update, patch(
+            target="app.model.blockchain.token_list.TokenListContract.register",
+            return_value=None,
+        ) as TokenListContract_register, patch(
+            target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
+            return_value=mock_block,
+        ) as ContractUtils_get_block_by_transaction_hash:
             # Execute batch
             processor.process()
 
             # assertion(contract)
             IbetShareContract_update.assert_called_with(
-                contract_address=_token_address_1,
                 data=IbetShareUpdate(
                     cancellation_date=None,
                     dividend_record_date=None,
@@ -206,14 +202,13 @@ class TestProcessor:
                     contact_information="contact info test",
                     privacy_policy="privacy policy test",
                     transfer_approval_required=True,
-                    is_canceled=True
+                    is_canceled=True,
                 ),
                 tx_from=_issuer_address,
-                private_key=ANY
+                private_key=ANY,
             )
 
             IbetStraightBondContract_update.assert_called_with(
-                contract_address=_token_address_2,
                 data=IbetStraightBondUpdate(
                     interest_rate=0.0001,
                     interest_payment_date=["0331", "0930"],
@@ -225,29 +220,35 @@ class TestProcessor:
                     personal_info_contract_address="0x0000000000000000000000000000000000000002",
                     contact_information="contact info test",
                     privacy_policy="privacy policy test",
-                    transfer_approval_required=True
+                    transfer_approval_required=True,
                 ),
                 tx_from=_issuer_address,
-                private_key=ANY
+                private_key=ANY,
             )
 
-            TokenListContract_register.assert_has_calls([
-                call(token_list_address=TOKEN_LIST_CONTRACT_ADDRESS,
-                     token_address=_token_address_1,
-                     token_template=TokenType.IBET_SHARE.value,
-                     account_address=_issuer_address,
-                     private_key=ANY),
-                call(token_list_address=TOKEN_LIST_CONTRACT_ADDRESS,
-                     token_address=_token_address_2,
-                     token_template=TokenType.IBET_STRAIGHT_BOND.value,
-                     account_address=_issuer_address,
-                     private_key=ANY),
-            ])
+            TokenListContract_register.assert_has_calls(
+                [
+                    call(
+                        token_address=_token_address_1,
+                        token_template=TokenType.IBET_SHARE.value,
+                        tx_from=_issuer_address,
+                        private_key=ANY,
+                    ),
+                    call(
+                        token_address=_token_address_2,
+                        token_template=TokenType.IBET_STRAIGHT_BOND.value,
+                        tx_from=_issuer_address,
+                        private_key=ANY,
+                    ),
+                ]
+            )
 
-            ContractUtils_get_block_by_transaction_hash.assert_has_calls([
-                call("tx_hash_1"),
-                call("tx_hash_2"),
-            ])
+            ContractUtils_get_block_by_transaction_hash.assert_has_calls(
+                [
+                    call("tx_hash_1"),
+                    call("tx_hash_2"),
+                ]
+            )
 
             # assertion(DB)
             _idx_position_list = db.query(IDXPosition).order_by(IDXPosition.id).all()
@@ -355,7 +356,7 @@ class TestProcessor:
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
             "principal_value": 1000,
-            "is_canceled": True  # update
+            "is_canceled": True,  # update
         }
         _update_token_1.status = 0
         _update_token_1.trigger = "Issue"
@@ -477,8 +478,8 @@ class TestProcessor:
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
                 "principal_value": 1000,
-                "is_canceled": True  # update
-            }
+                "is_canceled": True,  # update
+            },
         }
         _notification = _notification_list[1]
         assert _notification.id == 2
@@ -511,7 +512,7 @@ class TestProcessor:
                 "contact_information": "contact info test",  # update
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
-            }
+            },
         }
 
     # <Error_2>
@@ -563,7 +564,7 @@ class TestProcessor:
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
             "principal_value": 1000,
-            "is_canceled": True  # update
+            "is_canceled": True,  # update
         }
         _update_token_1.status = 0
         _update_token_1.trigger = "Issue"
@@ -685,8 +686,8 @@ class TestProcessor:
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
                 "principal_value": 1000,
-                "is_canceled": True  # update
-            }
+                "is_canceled": True,  # update
+            },
         }
         _notification = _notification_list[1]
         assert _notification.id == 2
@@ -719,7 +720,7 @@ class TestProcessor:
                 "contact_information": "contact info test",  # update
                 "privacy_policy": "privacy policy test",  # update
                 "transfer_approval_required": True,  # update
-            }
+            },
         }
 
     # <Error_3>
@@ -771,7 +772,7 @@ class TestProcessor:
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
             "principal_value": 1000,
-            "is_canceled": True  # update
+            "is_canceled": True,  # update
         }
         _update_token_1.status = 0
         _update_token_1.trigger = "Issue"
@@ -838,10 +839,13 @@ class TestProcessor:
 
         db.commit()
 
-        with patch(target="app.model.blockchain.token.IbetShareContract.update",
-                   rside_effect=SendTransactionError()) as IbetShareContract_update, \
-                patch(target="app.model.blockchain.token.IbetStraightBondContract.update",
-                      side_effect=SendTransactionError()) as IbetStraightBondContract_update:
+        with patch(
+            target="app.model.blockchain.token.IbetShareContract.update",
+            rside_effect=SendTransactionError(),
+        ) as IbetShareContract_update, patch(
+            target="app.model.blockchain.token.IbetStraightBondContract.update",
+            side_effect=SendTransactionError(),
+        ) as IbetStraightBondContract_update:
             # Execute batch
             processor.process()
 
@@ -897,8 +901,8 @@ class TestProcessor:
                     "privacy_policy": "privacy policy test",  # update
                     "transfer_approval_required": True,  # update
                     "principal_value": 1000,
-                    "is_canceled": True  # update
-                }
+                    "is_canceled": True,  # update
+                },
             }
             _notification = _notification_list[1]
             assert _notification.id == 2
@@ -931,7 +935,7 @@ class TestProcessor:
                     "contact_information": "contact info test",  # update
                     "privacy_policy": "privacy policy test",  # update
                     "transfer_approval_required": True,  # update
-                }
+                },
             }
 
     # <Error_4>
@@ -983,7 +987,7 @@ class TestProcessor:
             "privacy_policy": "privacy policy test",  # update
             "transfer_approval_required": True,  # update
             "principal_value": 1000,
-            "is_canceled": True  # update
+            "is_canceled": True,  # update
         }
         _update_token_1.status = 0
         _update_token_1.trigger = "Issue"
@@ -1050,18 +1054,21 @@ class TestProcessor:
 
         db.commit()
 
-        with patch(target="app.model.blockchain.token.IbetShareContract.update",
-                   return_value=None) as IbetShareContract_update, \
-                patch(target="app.model.blockchain.token.IbetStraightBondContract.update",
-                      return_value=None) as IbetStraightBondContract_update, \
-                patch(target="app.model.blockchain.token_list.TokenListContract.register",
-                      side_effect=SendTransactionError()) as TokenListContract_register:
+        with patch(
+            target="app.model.blockchain.token.IbetShareContract.update",
+            return_value=None,
+        ) as IbetShareContract_update, patch(
+            target="app.model.blockchain.token.IbetStraightBondContract.update",
+            return_value=None,
+        ) as IbetStraightBondContract_update, patch(
+            target="app.model.blockchain.token_list.TokenListContract.register",
+            side_effect=SendTransactionError(),
+        ) as TokenListContract_register:
             # Execute batch
             processor.process()
 
             # assertion(contract)
             IbetShareContract_update.assert_called_with(
-                contract_address=_token_address_1,
                 data=IbetShareUpdate(
                     cancellation_date=None,
                     dividend_record_date=None,
@@ -1075,14 +1082,13 @@ class TestProcessor:
                     contact_information="contact info test",
                     privacy_policy="privacy policy test",
                     transfer_approval_required=True,
-                    is_canceled=True
+                    is_canceled=True,
                 ),
                 tx_from=_issuer_address,
-                private_key=ANY
+                private_key=ANY,
             )
 
             IbetStraightBondContract_update.assert_called_with(
-                contract_address=_token_address_2,
                 data=IbetStraightBondUpdate(
                     interest_rate=0.0001,
                     interest_payment_date=["0331", "0930"],
@@ -1094,10 +1100,10 @@ class TestProcessor:
                     personal_info_contract_address="0x0000000000000000000000000000000000000002",
                     contact_information="contact info test",
                     privacy_policy="privacy policy test",
-                    transfer_approval_required=True
+                    transfer_approval_required=True,
                 ),
                 tx_from=_issuer_address,
-                private_key=ANY
+                private_key=ANY,
             )
 
             # assertion(DB)
@@ -1152,8 +1158,8 @@ class TestProcessor:
                     "privacy_policy": "privacy policy test",  # update
                     "transfer_approval_required": True,  # update
                     "principal_value": 1000,
-                    "is_canceled": True  # update
-                }
+                    "is_canceled": True,  # update
+                },
             }
             _notification = _notification_list[1]
             assert _notification.id == 2
@@ -1186,5 +1192,5 @@ class TestProcessor:
                     "contact_information": "contact info test",  # update
                     "privacy_policy": "privacy policy test",  # update
                     "transfer_approval_required": True,  # update
-                }
+                },
             }

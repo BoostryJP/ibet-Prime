@@ -35,14 +35,14 @@ class TestAppRoutersE2EEGET:
         assert resp.status_code == 200
         assert resp.json() == {
             "public_key": "-----BEGIN PUBLIC KEY-----\n"
-                          "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuJ52ArJ9eEGjJdhUHE4c\n"
-                          "jekmlfNYztqPWMMj/JtfCMR/B0BOqWdrwOQ4eNTv0IgW+5pGPszD8KSctCI1vy47\n"
-                          "ZjCTPndZp7ypDqUpyVBqonZ3XCpQrjqwHy3Pn1HT3+xiQzTxFxVOQZ7ftQyziviD\n"
-                          "1vfGzWfZ/Ww5g+y/tEgMbmw8+6XwVMmwPeKtNYM1t9SrPkm27Tvw3upVYL3Pq2hv\n"
-                          "9pBfM60xV834MkL8KWPdQlTHMJvQ8cRjoAO9kycVe3xN2qq5ShiMGSwaEn5FiC2z\n"
-                          "iVfprRkMGXgi02K7XunKcmpr56oDk16ltyqvpWJMdqYLzK50JYh+C7ipgk+S4D9y\n"
-                          "5QIDAQAB\n"
-                          "-----END PUBLIC KEY-----"
+            "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuJ52ArJ9eEGjJdhUHE4c\n"
+            "jekmlfNYztqPWMMj/JtfCMR/B0BOqWdrwOQ4eNTv0IgW+5pGPszD8KSctCI1vy47\n"
+            "ZjCTPndZp7ypDqUpyVBqonZ3XCpQrjqwHy3Pn1HT3+xiQzTxFxVOQZ7ftQyziviD\n"
+            "1vfGzWfZ/Ww5g+y/tEgMbmw8+6XwVMmwPeKtNYM1t9SrPkm27Tvw3upVYL3Pq2hv\n"
+            "9pBfM60xV834MkL8KWPdQlTHMJvQ8cRjoAO9kycVe3xN2qq5ShiMGSwaEn5FiC2z\n"
+            "iVfprRkMGXgi02K7XunKcmpr56oDk16ltyqvpWJMdqYLzK50JYh+C7ipgk+S4D9y\n"
+            "5QIDAQAB\n"
+            "-----END PUBLIC KEY-----"
         }
 
     ###########################################################################

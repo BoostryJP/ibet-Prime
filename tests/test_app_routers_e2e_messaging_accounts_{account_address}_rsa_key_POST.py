@@ -19,10 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import time
 from datetime import datetime
 
-from app.model.db import (
-    E2EMessagingAccount,
-    E2EMessagingAccountRsaKey
-)
+from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
 
 
 class TestAppRoutersE2EMessagingAccountsAccountAddressRSAKeyPOST:
@@ -67,7 +64,9 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressRSAKeyPOST:
             "rsa_generation": 2,
         }
         resp = client.post(
-            self.base_url.format(account_address="0x1234567890123456789012345678900000000000"),
+            self.base_url.format(
+                account_address="0x1234567890123456789012345678900000000000"
+            ),
             json=req_param,
         )
 
@@ -116,7 +115,9 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressRSAKeyPOST:
         # request target api
         req_param = {}
         resp = client.post(
-            self.base_url.format(account_address="0x1234567890123456789012345678900000000000"),
+            self.base_url.format(
+                account_address="0x1234567890123456789012345678900000000000"
+            ),
             json=req_param,
         )
 
@@ -141,22 +142,23 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressRSAKeyPOST:
     # Parameter Error
     # no body
     def test_error_1_1(self, client, db):
-        resp = client.post(self.base_url.format(account_address="0x1234567890123456789012345678900000000000"))
+        resp = client.post(
+            self.base_url.format(
+                account_address="0x1234567890123456789012345678900000000000"
+            )
+        )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 }
-            ]
+            ],
         }
 
     # <Error_1_2>
@@ -168,31 +170,30 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressRSAKeyPOST:
             "rsa_generation": -1,
         }
         resp = client.post(
-            self.base_url.format(account_address="0x1234567890123456789012345678900000000000"),
-            json=req_param
+            self.base_url.format(
+                account_address="0x1234567890123456789012345678900000000000"
+            ),
+            json=req_param,
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "rsa_key_generate_interval"],
                     "ctx": {"limit_value": 0},
                     "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge"
+                    "type": "value_error.number.not_ge",
                 },
                 {
                     "loc": ["body", "rsa_generation"],
                     "ctx": {"limit_value": 0},
                     "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge"
+                    "type": "value_error.number.not_ge",
                 },
-            ]
+            ],
         }
 
     # <Error_1_3>
@@ -204,31 +205,30 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressRSAKeyPOST:
             "rsa_generation": 101,
         }
         resp = client.post(
-            self.base_url.format(account_address="0x1234567890123456789012345678900000000000"),
-            json=req_param
+            self.base_url.format(
+                account_address="0x1234567890123456789012345678900000000000"
+            ),
+            json=req_param,
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "rsa_key_generate_interval"],
                     "ctx": {"limit_value": 10_000},
                     "msg": "ensure this value is less than or equal to 10000",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le",
                 },
                 {
                     "loc": ["body", "rsa_generation"],
                     "ctx": {"limit_value": 100},
                     "msg": "ensure this value is less than or equal to 100",
-                    "type": "value_error.number.not_le"
+                    "type": "value_error.number.not_le",
                 },
-            ]
+            ],
         }
 
     # <Error_2>
@@ -236,15 +236,15 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressRSAKeyPOST:
     def test_error_2(self, client, db):
         req_param = {}
         resp = client.post(
-            self.base_url.format(account_address="0x1234567890123456789012345678900000000000"),
-            json=req_param
+            self.base_url.format(
+                account_address="0x1234567890123456789012345678900000000000"
+            ),
+            json=req_param,
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1, "title": "NotFound"
-            },
-            "detail": "e2e messaging account is not exists"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "e2e messaging account is not exists",
         }

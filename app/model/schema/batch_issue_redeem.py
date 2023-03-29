@@ -17,21 +17,21 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from typing import List
-from pydantic import (
-    BaseModel,
-    Field
-)
 
-from .types import ResultSet
+from pydantic import BaseModel, Field
+
 from app.model.db import TokenType
 
+from .types import ResultSet
 
 ############################
 # RESPONSE
 ############################
 
+
 class BatchIssueRedeemUpload(BaseModel):
     """Batch issue/redeem Upload"""
+
     batch_id: str = Field(description="UUID v4 required")
     issuer_address: str
     token_type: TokenType
@@ -47,24 +47,27 @@ class BatchIssueRedeemUpload(BaseModel):
                 "token_type": "Bond",
                 "token_address": "0x0000000000000000000000000000000000000000",
                 "processed": True,
-                "created": "2022-09-02T19:49:33.370874+09:00"
+                "created": "2022-09-02T19:49:33.370874+09:00",
             }
         }
 
 
 class ListBatchIssueRedeemUploadResponse(BaseModel):
     """List All Batch issue/redeem Upload(RESPONSE)"""
+
     result_set: ResultSet
     uploads: List[BatchIssueRedeemUpload]
 
 
 class BatchIssueRedeemUploadIdResponse(BaseModel):
     """Batch issue/redeem upload id (RESPONSE)"""
+
     batch_id: str
 
 
 class GetBatchIssueRedeemResult(BaseModel):
     """Result of Creating Batch issue/redeem schema (RESPONSE)"""
+
     account_address: str
     amount: int
     status: int
@@ -72,5 +75,6 @@ class GetBatchIssueRedeemResult(BaseModel):
 
 class GetBatchIssueRedeemResponse(BaseModel):
     """Get Batch issue/redeem upload schema (RESPONSE)"""
+
     processed: bool
     results: List[GetBatchIssueRedeemResult]

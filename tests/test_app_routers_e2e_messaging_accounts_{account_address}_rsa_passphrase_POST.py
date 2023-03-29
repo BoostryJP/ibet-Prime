@@ -22,12 +22,9 @@ from datetime import datetime
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
 
-from config import E2E_MESSAGING_RSA_PASSPHRASE_PATTERN_MSG
-from app.model.db import (
-    E2EMessagingAccount,
-    E2EMessagingAccountRsaKey
-)
+from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
 from app.utils.e2ee_utils import E2EEUtils
+from config import E2E_MESSAGING_RSA_PASSPHRASE_PATTERN_MSG
 from tests.account_config import config_eth_account
 
 
@@ -149,14 +146,17 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "rsa_passphrase": E2EEUtils.encrypt(new_passphrase),
         }
         resp = client.post(
-            self.base_url.format(account_address=user_address_1),
-            json=req_param
+            self.base_url.format(account_address=user_address_1), json=req_param
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
-        _rsa_key_list = db.query(E2EMessagingAccountRsaKey).order_by(E2EMessagingAccountRsaKey.block_timestamp).all()
+        _rsa_key_list = (
+            db.query(E2EMessagingAccountRsaKey)
+            .order_by(E2EMessagingAccountRsaKey.block_timestamp)
+            .all()
+        )
         assert len(_rsa_key_list) == 3
         _rsa_key = _rsa_key_list[2]
         assert _rsa_key.rsa_private_key != self.rsa_private_key
@@ -180,22 +180,23 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # Parameter Error
     # no body
     def test_error_1_1(self, client, db):
-        resp = client.post(self.base_url.format(account_address="0x1234567890123456789012345678900000000000"))
+        resp = client.post(
+            self.base_url.format(
+                account_address="0x1234567890123456789012345678900000000000"
+            )
+        )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 }
-            ]
+            ],
         }
 
     # <Error_1_2>
@@ -204,29 +205,28 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     def test_error_1_2(self, client, db):
         req_param = {}
         resp = client.post(
-            self.base_url.format(account_address="0x1234567890123456789012345678900000000000"),
-            json=req_param
+            self.base_url.format(
+                account_address="0x1234567890123456789012345678900000000000"
+            ),
+            json=req_param,
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "old_rsa_passphrase"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
                 {
                     "loc": ["body", "rsa_passphrase"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
-            ]
+            ],
         }
 
     # <Error_1_3>
@@ -241,29 +241,28 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "rsa_passphrase": new_passphrase,
         }
         resp = client.post(
-            self.base_url.format(account_address="0x1234567890123456789012345678900000000000"),
-            json=req_param
+            self.base_url.format(
+                account_address="0x1234567890123456789012345678900000000000"
+            ),
+            json=req_param,
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "old_rsa_passphrase"],
                     "msg": "old_rsa_passphrase is not a Base64-encoded encrypted data",
-                    "type": "value_error"
+                    "type": "value_error",
                 },
                 {
                     "loc": ["body", "rsa_passphrase"],
                     "msg": "rsa_passphrase is not a Base64-encoded encrypted data",
-                    "type": "value_error"
+                    "type": "value_error",
                 },
-            ]
+            ],
         }
 
     # <Error_2_1>
@@ -278,17 +277,17 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "rsa_passphrase": E2EEUtils.encrypt(new_passphrase),
         }
         resp = client.post(
-            self.base_url.format(account_address="0x1234567890123456789012345678900000000000"),
-            json=req_param
+            self.base_url.format(
+                account_address="0x1234567890123456789012345678900000000000"
+            ),
+            json=req_param,
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1, "title": "NotFound"
-            },
-            "detail": "e2e messaging account is not exists"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "e2e messaging account is not exists",
         }
 
     # <Normal_2_2>
@@ -314,17 +313,14 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "rsa_passphrase": E2EEUtils.encrypt(new_passphrase),
         }
         resp = client.post(
-            self.base_url.format(account_address=user_address_1),
-            json=req_param
+            self.base_url.format(account_address=user_address_1), json=req_param
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1, "title": "NotFound"
-            },
-            "detail": "e2e messaging rsa key is not exists"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "e2e messaging rsa key is not exists",
         }
 
     # <Normal_3>
@@ -356,17 +352,14 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "rsa_passphrase": E2EEUtils.encrypt(new_passphrase),
         }
         resp = client.post(
-            self.base_url.format(account_address=user_address_1),
-            json=req_param
+            self.base_url.format(account_address=user_address_1), json=req_param
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1, "title": "InvalidParameterError"
-            },
-            "detail": "old passphrase mismatch"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "old passphrase mismatch",
         }
 
     # <Normal_4>
@@ -398,15 +391,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "rsa_passphrase": E2EEUtils.encrypt(new_passphrase),
         }
         resp = client.post(
-            self.base_url.format(account_address=user_address_1),
-            json=req_param
+            self.base_url.format(account_address=user_address_1), json=req_param
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1, "title": "InvalidParameterError"
-            },
-            "detail": E2E_MESSAGING_RSA_PASSPHRASE_PATTERN_MSG
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": E2E_MESSAGING_RSA_PASSPHRASE_PATTERN_MSG,
         }

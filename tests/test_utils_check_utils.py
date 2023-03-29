@@ -24,10 +24,7 @@ import pytest
 from fastapi import Request
 
 from app.exceptions import AuthorizationError
-from app.model.db import (
-    Account,
-    AuthToken
-)
+from app.model.db import Account, AuthToken
 from app.utils.check_utils import check_auth
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
@@ -58,7 +55,7 @@ class TestCheckAuth:
             request=Request(scope={"type": "http", "client": ("192.168.1.1", 50000)}),
             db=db,
             issuer_address=test_account["address"],
-            eoa_password=E2EEUtils.encrypt(self.eoa_password)
+            eoa_password=E2EEUtils.encrypt(self.eoa_password),
         )
 
         assert account == _account
@@ -82,7 +79,7 @@ class TestCheckAuth:
             request=Request(scope={"type": "http", "client": ("192.168.1.1", 50000)}),
             db=db,
             issuer_address=test_account["address"],
-            eoa_password=self.eoa_password
+            eoa_password=self.eoa_password,
         )
 
         assert account == _account
@@ -112,7 +109,7 @@ class TestCheckAuth:
             request=Request(scope={"type": "http", "client": ("192.168.1.1", 50000)}),
             db=db,
             issuer_address=test_account["address"],
-            auth_token=self.auth_token
+            auth_token=self.auth_token,
         )
 
         assert account == _account
@@ -134,17 +131,19 @@ class TestCheckAuth:
         _auth_token = AuthToken()
         _auth_token.issuer_address = test_account["address"]
         _auth_token.auth_token = hashlib.sha256(self.auth_token.encode()).hexdigest()
-        _auth_token.usage_start = datetime(2022, 7, 15, 12, 32, 56)  # 2022-07-15 12:34:56 - 120sec
+        _auth_token.usage_start = datetime(
+            2022, 7, 15, 12, 32, 56
+        )  # 2022-07-15 12:34:56 - 120sec
         _auth_token.valid_duration = 120
         db.add(_auth_token)
 
         # test function
-        freezer.move_to('2022-07-15 12:34:56')
+        freezer.move_to("2022-07-15 12:34:56")
         account, decrypted_eoa_password = check_auth(
             request=Request(scope={"type": "http", "client": ("192.168.1.1", 50000)}),
             db=db,
             issuer_address=test_account["address"],
-            auth_token=self.auth_token
+            auth_token=self.auth_token,
         )
 
         assert account == _account
@@ -162,10 +161,12 @@ class TestCheckAuth:
         # test function
         with pytest.raises(AuthorizationError):
             check_auth(
-                request=Request(scope={"type": "http", "client": ("192.168.1.1", 50000)}),
+                request=Request(
+                    scope={"type": "http", "client": ("192.168.1.1", 50000)}
+                ),
                 db=db,
                 issuer_address=test_account["address"],
-                eoa_password=E2EEUtils.encrypt(self.eoa_password)
+                eoa_password=E2EEUtils.encrypt(self.eoa_password),
             )
 
     # Error_2
@@ -183,9 +184,11 @@ class TestCheckAuth:
         # test function
         with pytest.raises(AuthorizationError):
             check_auth(
-                request=Request(scope={"type": "http", "client": ("192.168.1.1", 50000)}),
+                request=Request(
+                    scope={"type": "http", "client": ("192.168.1.1", 50000)}
+                ),
                 db=db,
-                issuer_address=test_account["address"]
+                issuer_address=test_account["address"],
             )
 
     # Error_3_1
@@ -203,10 +206,14 @@ class TestCheckAuth:
         # test function
         with pytest.raises(AuthorizationError):
             check_auth(
-                request=Request(scope={"type": "http", "client": ("192.168.1.1", 50000)}),
+                request=Request(
+                    scope={"type": "http", "client": ("192.168.1.1", 50000)}
+                ),
                 db=db,
                 issuer_address=test_account["address"],
-                eoa_password=E2EEUtils.encrypt("incorrect_password")  # incorrect password
+                eoa_password=E2EEUtils.encrypt(
+                    "incorrect_password"
+                ),  # incorrect password
             )
 
     # Error_3_2
@@ -225,10 +232,12 @@ class TestCheckAuth:
         # test function
         with pytest.raises(AuthorizationError):
             check_auth(
-                request=Request(scope={"type": "http", "client": ("192.168.1.1", 50000)}),
+                request=Request(
+                    scope={"type": "http", "client": ("192.168.1.1", 50000)}
+                ),
                 db=db,
                 issuer_address=test_account["address"],
-                eoa_password="incorrect_password"  # incorrect password
+                eoa_password="incorrect_password",  # incorrect password
             )
 
     # Error_4_1
@@ -246,10 +255,12 @@ class TestCheckAuth:
         # test function
         with pytest.raises(AuthorizationError):
             check_auth(
-                request=Request(scope={"type": "http", "client": ("192.168.1.1", 50000)}),
+                request=Request(
+                    scope={"type": "http", "client": ("192.168.1.1", 50000)}
+                ),
                 db=db,
                 issuer_address=test_account["address"],
-                auth_token=self.eoa_password
+                auth_token=self.eoa_password,
             )
 
     # Error_4_2
@@ -273,10 +284,12 @@ class TestCheckAuth:
         # test function
         with pytest.raises(AuthorizationError):
             check_auth(
-                request=Request(scope={"type": "http", "client": ("192.168.1.1", 50000)}),
+                request=Request(
+                    scope={"type": "http", "client": ("192.168.1.1", 50000)}
+                ),
                 db=db,
                 issuer_address=test_account["address"],
-                auth_token="incorrect_token"  # incorrect token
+                auth_token="incorrect_token",  # incorrect token
             )
 
     # Error_4_3
@@ -294,16 +307,20 @@ class TestCheckAuth:
         _auth_token = AuthToken()
         _auth_token.issuer_address = test_account["address"]
         _auth_token.auth_token = hashlib.sha256(self.auth_token.encode()).hexdigest()
-        _auth_token.usage_start = datetime(2022, 7, 15, 12, 32, 55)  # 2022-07-15 12:34:56 - 121sec
+        _auth_token.usage_start = datetime(
+            2022, 7, 15, 12, 32, 55
+        )  # 2022-07-15 12:34:56 - 121sec
         _auth_token.valid_duration = 120
         db.add(_auth_token)
 
         # test function
-        freezer.move_to('2022-07-15 12:34:56')
+        freezer.move_to("2022-07-15 12:34:56")
         with pytest.raises(AuthorizationError):
             check_auth(
-                request=Request(scope={"type": "http", "client": ("192.168.1.1", 50000)}),
+                request=Request(
+                    scope={"type": "http", "client": ("192.168.1.1", 50000)}
+                ),
                 db=db,
                 issuer_address=test_account["address"],
-                auth_token=self.auth_token
+                auth_token=self.auth_token,
             )

@@ -18,19 +18,14 @@ SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
 
-from sqlalchemy import (
-    Column,
-    JSON,
-    String,
-    Integer,
-    Boolean
-)
+from sqlalchemy import JSON, Boolean, Column, Integer, String
 
 from .base import Base
 
 
 class Account(Base):
     """Issuer Account"""
+
     __tablename__ = "account"
 
     # issuer address
@@ -58,6 +53,7 @@ class AccountRsaStatus(int, Enum):
     2:CHANGING
     3:SET
     """
+
     UNSET = 0
     CREATING = 1
     CHANGING = 2
@@ -66,6 +62,7 @@ class AccountRsaStatus(int, Enum):
 
 class AccountRsaKeyTemporary(Base):
     """Issuer Account (RSA Key Temporary Table)"""
+
     __tablename__ = "account_rsa_key_temporary"
 
     # issuer address

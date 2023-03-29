@@ -19,11 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from config import (
-    DATABASE_URL,
-    DATABASE_SCHEMA,
-    DB_ECHO
-)
+from config import DATABASE_SCHEMA, DATABASE_URL, DB_ECHO
 
 options = {
     "pool_recycle": 3600,
@@ -31,7 +27,7 @@ options = {
     "pool_timeout": 30,
     "pool_pre_ping": True,
     "max_overflow": 30,
-    "echo": DB_ECHO
+    "echo": DB_ECHO,
 }
 engine = create_engine(DATABASE_URL, **options)
 SessionLocal = sessionmaker(autocommit=False, autoflush=True, bind=engine)

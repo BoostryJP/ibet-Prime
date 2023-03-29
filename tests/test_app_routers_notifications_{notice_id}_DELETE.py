@@ -18,10 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
 
-from app.model.db import (
-    Notification,
-    NotificationType
-)
+from app.model.db import Notification, NotificationType
 from tests.account_config import config_eth_account
 
 
@@ -48,10 +45,10 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
         _notification_1.priority = 0
         _notification_1.type = NotificationType.BULK_TRANSFER_ERROR
         _notification_1.code = 0
-        _notification_1.metainfo = {
-            "test_1": "test_1"
-        }
-        _notification_1.created = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _notification_1.metainfo = {"test_1": "test_1"}
+        _notification_1.created = datetime.strptime(
+            "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_notification_1)
 
         _notification_2 = Notification()
@@ -60,10 +57,10 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
         _notification_2.priority = 1
         _notification_2.type = NotificationType.SCHEDULE_EVENT_ERROR
         _notification_2.code = 1
-        _notification_2.metainfo = {
-            "test_2": "test_2"
-        }
-        _notification_2.created = datetime.strptime("2022/01/02 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _notification_2.metainfo = {"test_2": "test_2"}
+        _notification_2.created = datetime.strptime(
+            "2022/01/02 00:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_notification_2)
 
         _notification_3 = Notification()
@@ -72,10 +69,10 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
         _notification_3.priority = 2
         _notification_3.type = NotificationType.BULK_TRANSFER_ERROR
         _notification_3.code = 2
-        _notification_3.metainfo = {
-            "test_3": "test_3"
-        }
-        _notification_3.created = datetime.strptime("2022/01/02 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/03
+        _notification_3.metainfo = {"test_3": "test_3"}
+        _notification_3.created = datetime.strptime(
+            "2022/01/02 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/03
         db.add(_notification_3)
 
         _notification_4 = Notification()
@@ -84,10 +81,10 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
         _notification_4.priority = 0
         _notification_4.type = NotificationType.SCHEDULE_EVENT_ERROR
         _notification_4.code = 3
-        _notification_4.metainfo = {
-            "test_4": "test_4"
-        }
-        _notification_4.created = datetime.strptime("2022/01/03 00:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/03
+        _notification_4.metainfo = {"test_4": "test_4"}
+        _notification_4.created = datetime.strptime(
+            "2022/01/03 00:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/03
         db.add(_notification_4)
 
         # request target API
@@ -95,7 +92,7 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
             self.base_url.format(notice_id="notice_id_2"),
             headers={
                 "issuer-address": issuer_address_1,
-            }
+            },
         )
 
         # assertion
@@ -110,9 +107,7 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
         assert _notification.priority == 0
         assert _notification.type == NotificationType.BULK_TRANSFER_ERROR
         assert _notification.code == 0
-        assert _notification.metainfo == {
-            "test_1": "test_1"
-        }
+        assert _notification.metainfo == {"test_1": "test_1"}
         _notification = _notification_list[1]
         assert _notification.id == 3
         assert _notification.notice_id == "notice_id_3"
@@ -120,9 +115,7 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
         assert _notification.priority == 2
         assert _notification.type == NotificationType.BULK_TRANSFER_ERROR
         assert _notification.code == 2
-        assert _notification.metainfo == {
-            "test_3": "test_3"
-        }
+        assert _notification.metainfo == {"test_3": "test_3"}
         _notification = _notification_list[2]
         assert _notification.id == 4
         assert _notification.notice_id == "notice_id_4"
@@ -130,9 +123,7 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
         assert _notification.priority == 0
         assert _notification.type == NotificationType.SCHEDULE_EVENT_ERROR
         assert _notification.code == 3
-        assert _notification.metainfo == {
-            "test_4": "test_4"
-        }
+        assert _notification.metainfo == {"test_4": "test_4"}
 
     ###########################################################################
     # Error Case
@@ -149,17 +140,14 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 }
-            ]
+            ],
         }
 
     # <Error_2>
@@ -170,23 +158,20 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
             self.base_url.format(notice_id="notice_id_2"),
             headers={
                 "issuer-address": "test",
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_3>
@@ -200,15 +185,12 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
             self.base_url.format(notice_id="notice_id_2"),
             headers={
                 "issuer-address": issuer_address_1,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "notification does not exist"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "notification does not exist",
         }

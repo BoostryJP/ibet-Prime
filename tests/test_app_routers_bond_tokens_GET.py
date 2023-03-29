@@ -16,15 +16,13 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import pytz
 from unittest import mock
-from unittest.mock import call
+
+import pytz
+from web3.datastructures import AttributeDict
 
 from app.model.blockchain import IbetStraightBondContract
-from app.model.db import (
-    Token,
-    TokenType
-)
+from app.model.db import Token, TokenType
 from config import TZ
 from tests.account_config import config_eth_account
 
@@ -61,7 +59,12 @@ class TestAppRoutersBondTokensGET:
         token.abi = "abi_test1"
         db.add(token)
         db.commit()
-        _issue_datetime = pytz.timezone("UTC").localize(token.created).astimezone(self.local_tz).isoformat()
+        _issue_datetime = (
+            pytz.timezone("UTC")
+            .localize(token.created)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
 
         mock_token = IbetStraightBondContract()
         mock_token.issuer_address = token.issuer_address
@@ -71,7 +74,9 @@ class TestAppRoutersBondTokensGET:
         mock_token.total_supply = 10000
         mock_token.contact_information = "contactInformation_test1"
         mock_token.privacy_policy = "privacyPolicy_test1"
-        mock_token.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
+        mock_token.tradable_exchange_contract_address = (
+            "0x1234567890abCdFe1234567890ABCdFE12345678"
+        )
         mock_token.status = True
         mock_token.face_value = 200
         mock_token.redemption_date = "redemptionDate_test1"
@@ -83,26 +88,29 @@ class TestAppRoutersBondTokensGET:
         mock_token.transferable = True
         mock_token.is_offering = False
         mock_token.is_redeemed = False
-        mock_token.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token.personal_info_contract_address = (
+            "0x1234567890aBcDFE1234567890abcDFE12345679"
+        )
         mock_token.interest_payment_date = [
-            "interestPaymentDate1_test1", "interestPaymentDate2_test1",
-            "interestPaymentDate3_test1", "interestPaymentDate4_test1",
-            "interestPaymentDate5_test1", "interestPaymentDate6_test1",
-            "interestPaymentDate7_test1", "interestPaymentDate8_test1",
-            "interestPaymentDate9_test1", "interestPaymentDate10_test1",
-            "interestPaymentDate11_test1", "interestPaymentDate12_test1",
+            "interestPaymentDate1_test1",
+            "interestPaymentDate2_test1",
+            "interestPaymentDate3_test1",
+            "interestPaymentDate4_test1",
+            "interestPaymentDate5_test1",
+            "interestPaymentDate6_test1",
+            "interestPaymentDate7_test1",
+            "interestPaymentDate8_test1",
+            "interestPaymentDate9_test1",
+            "interestPaymentDate10_test1",
+            "interestPaymentDate11_test1",
+            "interestPaymentDate12_test1",
         ]
         mock_token.transfer_approval_required = True
         mock_token.memo = "memo_test1"
 
-        mock_get.side_effect = [
-            mock_token
-        ]
+        mock_get.side_effect = [AttributeDict(mock_token.__dict__)]
 
         resp = client.get(self.apiurl)
-
-        # assertion mock call arguments
-        mock_get.assert_any_call(contract_address=token.token_address)
 
         assumed_response = [
             {
@@ -127,12 +135,18 @@ class TestAppRoutersBondTokensGET:
                 "is_redeemed": False,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
                 "interest_payment_date": [
-                    "interestPaymentDate1_test1", "interestPaymentDate2_test1",
-                    "interestPaymentDate3_test1", "interestPaymentDate4_test1",
-                    "interestPaymentDate5_test1", "interestPaymentDate6_test1",
-                    "interestPaymentDate7_test1", "interestPaymentDate8_test1",
-                    "interestPaymentDate9_test1", "interestPaymentDate10_test1",
-                    "interestPaymentDate11_test1", "interestPaymentDate12_test1",
+                    "interestPaymentDate1_test1",
+                    "interestPaymentDate2_test1",
+                    "interestPaymentDate3_test1",
+                    "interestPaymentDate4_test1",
+                    "interestPaymentDate5_test1",
+                    "interestPaymentDate6_test1",
+                    "interestPaymentDate7_test1",
+                    "interestPaymentDate8_test1",
+                    "interestPaymentDate9_test1",
+                    "interestPaymentDate10_test1",
+                    "interestPaymentDate11_test1",
+                    "interestPaymentDate12_test1",
                 ],
                 "issue_datetime": _issue_datetime,
                 "token_status": 1,
@@ -162,7 +176,12 @@ class TestAppRoutersBondTokensGET:
         token_1.abi = "abi_test1"
         db.add(token_1)
         db.commit()
-        _issue_datetime_1 = pytz.timezone("UTC").localize(token_1.created).astimezone(self.local_tz).isoformat()
+        _issue_datetime_1 = (
+            pytz.timezone("UTC")
+            .localize(token_1.created)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
 
         mock_token_1 = IbetStraightBondContract()
         mock_token_1.issuer_address = token_1.issuer_address
@@ -172,7 +191,9 @@ class TestAppRoutersBondTokensGET:
         mock_token_1.total_supply = 10000
         mock_token_1.contact_information = "contactInformation_test1"
         mock_token_1.privacy_policy = "privacyPolicy_test1"
-        mock_token_1.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
+        mock_token_1.tradable_exchange_contract_address = (
+            "0x1234567890abCdFe1234567890ABCdFE12345678"
+        )
         mock_token_1.status = True
         mock_token_1.face_value = 200
         mock_token_1.redemption_date = "redemptionDate_test1"
@@ -184,14 +205,22 @@ class TestAppRoutersBondTokensGET:
         mock_token_1.transferable = True
         mock_token_1.is_offering = False
         mock_token_1.is_redeemed = False
-        mock_token_1.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token_1.personal_info_contract_address = (
+            "0x1234567890aBcDFE1234567890abcDFE12345679"
+        )
         mock_token_1.interest_payment_date = [
-            "interestPaymentDate1_test1", "interestPaymentDate2_test1",
-            "interestPaymentDate3_test1", "interestPaymentDate4_test1",
-            "interestPaymentDate5_test1", "interestPaymentDate6_test1",
-            "interestPaymentDate7_test1", "interestPaymentDate8_test1",
-            "interestPaymentDate9_test1", "interestPaymentDate10_test1",
-            "interestPaymentDate11_test1", "interestPaymentDate12_test1",
+            "interestPaymentDate1_test1",
+            "interestPaymentDate2_test1",
+            "interestPaymentDate3_test1",
+            "interestPaymentDate4_test1",
+            "interestPaymentDate5_test1",
+            "interestPaymentDate6_test1",
+            "interestPaymentDate7_test1",
+            "interestPaymentDate8_test1",
+            "interestPaymentDate9_test1",
+            "interestPaymentDate10_test1",
+            "interestPaymentDate11_test1",
+            "interestPaymentDate12_test1",
         ]
         mock_token_1.transfer_approval_required = True
         mock_token_1.memo = "memo_test1"
@@ -206,7 +235,12 @@ class TestAppRoutersBondTokensGET:
         token_2.token_status = 0
         db.add(token_2)
         db.commit()
-        _issue_datetime_2 = pytz.timezone("UTC").localize(token_2.created).astimezone(self.local_tz).isoformat()
+        _issue_datetime_2 = (
+            pytz.timezone("UTC")
+            .localize(token_2.created)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
 
         mock_token_2 = IbetStraightBondContract()
         mock_token_2.issuer_address = token_2.issuer_address
@@ -216,7 +250,9 @@ class TestAppRoutersBondTokensGET:
         mock_token_2.total_supply = 50000
         mock_token_2.contact_information = "contactInformation_test2"
         mock_token_2.privacy_policy = "privacyPolicy_test2"
-        mock_token_2.tradable_exchange_contract_address = "0x1234567890AbcdfE1234567890abcdfE12345680"
+        mock_token_2.tradable_exchange_contract_address = (
+            "0x1234567890AbcdfE1234567890abcdfE12345680"
+        )
         mock_token_2.status = True
         mock_token_2.face_value = 600
         mock_token_2.redemption_date = "redemptionDate_test2"
@@ -228,27 +264,32 @@ class TestAppRoutersBondTokensGET:
         mock_token_2.transferable = False
         mock_token_2.is_offering = False
         mock_token_2.is_redeemed = False
-        mock_token_2.personal_info_contract_address = "0x1234567890abcdFE1234567890ABcdfE12345681"
+        mock_token_2.personal_info_contract_address = (
+            "0x1234567890abcdFE1234567890ABcdfE12345681"
+        )
         mock_token_2.interest_payment_date = [
-            "interestPaymentDate1_test2", "interestPaymentDate2_test2",
-            "interestPaymentDate3_test2", "interestPaymentDate4_test2",
-            "interestPaymentDate5_test2", "interestPaymentDate6_test2",
-            "interestPaymentDate7_test2", "interestPaymentDate8_test2",
-            "interestPaymentDate9_test2", "interestPaymentDate10_test2",
-            "interestPaymentDate11_test2", "interestPaymentDate12_test2",
+            "interestPaymentDate1_test2",
+            "interestPaymentDate2_test2",
+            "interestPaymentDate3_test2",
+            "interestPaymentDate4_test2",
+            "interestPaymentDate5_test2",
+            "interestPaymentDate6_test2",
+            "interestPaymentDate7_test2",
+            "interestPaymentDate8_test2",
+            "interestPaymentDate9_test2",
+            "interestPaymentDate10_test2",
+            "interestPaymentDate11_test2",
+            "interestPaymentDate12_test2",
         ]
         mock_token_2.transfer_approval_required = False
         mock_token_2.memo = "memo_test2"
 
         mock_get.side_effect = [
-            mock_token_1, mock_token_2
+            AttributeDict(mock_token_1.__dict__),
+            AttributeDict(mock_token_2.__dict__),
         ]
 
         resp = client.get(self.apiurl)
-
-        # assertion mock call arguments
-        mock_get.assert_has_calls(
-            [call(contract_address=token_1.token_address), call(contract_address=token_2.token_address)])
 
         assumed_response = [
             {
@@ -273,12 +314,18 @@ class TestAppRoutersBondTokensGET:
                 "is_redeemed": False,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
                 "interest_payment_date": [
-                    "interestPaymentDate1_test1", "interestPaymentDate2_test1",
-                    "interestPaymentDate3_test1", "interestPaymentDate4_test1",
-                    "interestPaymentDate5_test1", "interestPaymentDate6_test1",
-                    "interestPaymentDate7_test1", "interestPaymentDate8_test1",
-                    "interestPaymentDate9_test1", "interestPaymentDate10_test1",
-                    "interestPaymentDate11_test1", "interestPaymentDate12_test1",
+                    "interestPaymentDate1_test1",
+                    "interestPaymentDate2_test1",
+                    "interestPaymentDate3_test1",
+                    "interestPaymentDate4_test1",
+                    "interestPaymentDate5_test1",
+                    "interestPaymentDate6_test1",
+                    "interestPaymentDate7_test1",
+                    "interestPaymentDate8_test1",
+                    "interestPaymentDate9_test1",
+                    "interestPaymentDate10_test1",
+                    "interestPaymentDate11_test1",
+                    "interestPaymentDate12_test1",
                 ],
                 "issue_datetime": _issue_datetime_1,
                 "token_status": 1,
@@ -307,12 +354,18 @@ class TestAppRoutersBondTokensGET:
                 "is_redeemed": False,
                 "personal_info_contract_address": "0x1234567890abcdFE1234567890ABcdfE12345681",
                 "interest_payment_date": [
-                    "interestPaymentDate1_test2", "interestPaymentDate2_test2",
-                    "interestPaymentDate3_test2", "interestPaymentDate4_test2",
-                    "interestPaymentDate5_test2", "interestPaymentDate6_test2",
-                    "interestPaymentDate7_test2", "interestPaymentDate8_test2",
-                    "interestPaymentDate9_test2", "interestPaymentDate10_test2",
-                    "interestPaymentDate11_test2", "interestPaymentDate12_test2",
+                    "interestPaymentDate1_test2",
+                    "interestPaymentDate2_test2",
+                    "interestPaymentDate3_test2",
+                    "interestPaymentDate4_test2",
+                    "interestPaymentDate5_test2",
+                    "interestPaymentDate6_test2",
+                    "interestPaymentDate7_test2",
+                    "interestPaymentDate8_test2",
+                    "interestPaymentDate9_test2",
+                    "interestPaymentDate10_test2",
+                    "interestPaymentDate11_test2",
+                    "interestPaymentDate12_test2",
                 ],
                 "issue_datetime": _issue_datetime_2,
                 "token_status": 0,
@@ -363,7 +416,12 @@ class TestAppRoutersBondTokensGET:
         token_1.abi = "abi_test1"
         db.add(token_1)
         db.commit()
-        _issue_datetime = pytz.timezone("UTC").localize(token_1.created).astimezone(self.local_tz).isoformat()
+        _issue_datetime = (
+            pytz.timezone("UTC")
+            .localize(token_1.created)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
 
         mock_token = IbetStraightBondContract()
         mock_token.issuer_address = token_1.issuer_address
@@ -373,7 +431,9 @@ class TestAppRoutersBondTokensGET:
         mock_token.total_supply = 10000
         mock_token.contact_information = "contactInformation_test1"
         mock_token.privacy_policy = "privacyPolicy_test1"
-        mock_token.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
+        mock_token.tradable_exchange_contract_address = (
+            "0x1234567890abCdFe1234567890ABCdFE12345678"
+        )
         mock_token.status = True
         mock_token.face_value = 200
         mock_token.redemption_date = "redemptionDate_test1"
@@ -385,21 +445,27 @@ class TestAppRoutersBondTokensGET:
         mock_token.transferable = True
         mock_token.is_offering = False
         mock_token.is_redeemed = False
-        mock_token.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token.personal_info_contract_address = (
+            "0x1234567890aBcDFE1234567890abcDFE12345679"
+        )
         mock_token.interest_payment_date = [
-            "interestPaymentDate1_test1", "interestPaymentDate2_test1",
-            "interestPaymentDate3_test1", "interestPaymentDate4_test1",
-            "interestPaymentDate5_test1", "interestPaymentDate6_test1",
-            "interestPaymentDate7_test1", "interestPaymentDate8_test1",
-            "interestPaymentDate9_test1", "interestPaymentDate10_test1",
-            "interestPaymentDate11_test1", "interestPaymentDate12_test1",
+            "interestPaymentDate1_test1",
+            "interestPaymentDate2_test1",
+            "interestPaymentDate3_test1",
+            "interestPaymentDate4_test1",
+            "interestPaymentDate5_test1",
+            "interestPaymentDate6_test1",
+            "interestPaymentDate7_test1",
+            "interestPaymentDate8_test1",
+            "interestPaymentDate9_test1",
+            "interestPaymentDate10_test1",
+            "interestPaymentDate11_test1",
+            "interestPaymentDate12_test1",
         ]
         mock_token.transfer_approval_required = True
         mock_token.memo = "memo_test1"
 
-        mock_get.side_effect = [
-            mock_token
-        ]
+        mock_get.side_effect = [AttributeDict(mock_token.__dict__)]
 
         # No Target Data
         token_2 = Token()
@@ -411,9 +477,6 @@ class TestAppRoutersBondTokensGET:
         db.add(token_2)
 
         resp = client.get(self.apiurl, headers={"issuer-address": issuer_address_1})
-
-        # assertion mock call arguments
-        mock_get.assert_any_call(contract_address=token_1.token_address)
 
         assumed_response = [
             {
@@ -438,12 +501,18 @@ class TestAppRoutersBondTokensGET:
                 "is_redeemed": False,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
                 "interest_payment_date": [
-                    "interestPaymentDate1_test1", "interestPaymentDate2_test1",
-                    "interestPaymentDate3_test1", "interestPaymentDate4_test1",
-                    "interestPaymentDate5_test1", "interestPaymentDate6_test1",
-                    "interestPaymentDate7_test1", "interestPaymentDate8_test1",
-                    "interestPaymentDate9_test1", "interestPaymentDate10_test1",
-                    "interestPaymentDate11_test1", "interestPaymentDate12_test1",
+                    "interestPaymentDate1_test1",
+                    "interestPaymentDate2_test1",
+                    "interestPaymentDate3_test1",
+                    "interestPaymentDate4_test1",
+                    "interestPaymentDate5_test1",
+                    "interestPaymentDate6_test1",
+                    "interestPaymentDate7_test1",
+                    "interestPaymentDate8_test1",
+                    "interestPaymentDate9_test1",
+                    "interestPaymentDate10_test1",
+                    "interestPaymentDate11_test1",
+                    "interestPaymentDate12_test1",
                 ],
                 "issue_datetime": _issue_datetime,
                 "token_status": 1,
@@ -473,7 +542,12 @@ class TestAppRoutersBondTokensGET:
         token_1.abi = "abi_test1"
         db.add(token_1)
         db.commit()
-        _issue_datetime_1 = pytz.timezone("UTC").localize(token_1.created).astimezone(self.local_tz).isoformat()
+        _issue_datetime_1 = (
+            pytz.timezone("UTC")
+            .localize(token_1.created)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
 
         mock_token_1 = IbetStraightBondContract()
         mock_token_1.issuer_address = token_1.issuer_address
@@ -483,7 +557,9 @@ class TestAppRoutersBondTokensGET:
         mock_token_1.total_supply = 10000
         mock_token_1.contact_information = "contactInformation_test1"
         mock_token_1.privacy_policy = "privacyPolicy_test1"
-        mock_token_1.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
+        mock_token_1.tradable_exchange_contract_address = (
+            "0x1234567890abCdFe1234567890ABCdFE12345678"
+        )
         mock_token_1.status = True
         mock_token_1.face_value = 200
         mock_token_1.redemption_date = "redemptionDate_test1"
@@ -495,14 +571,22 @@ class TestAppRoutersBondTokensGET:
         mock_token_1.transferable = True
         mock_token_1.is_offering = False
         mock_token_1.is_redeemed = False
-        mock_token_1.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token_1.personal_info_contract_address = (
+            "0x1234567890aBcDFE1234567890abcDFE12345679"
+        )
         mock_token_1.interest_payment_date = [
-            "interestPaymentDate1_test1", "interestPaymentDate2_test1",
-            "interestPaymentDate3_test1", "interestPaymentDate4_test1",
-            "interestPaymentDate5_test1", "interestPaymentDate6_test1",
-            "interestPaymentDate7_test1", "interestPaymentDate8_test1",
-            "interestPaymentDate9_test1", "interestPaymentDate10_test1",
-            "interestPaymentDate11_test1", "interestPaymentDate12_test1",
+            "interestPaymentDate1_test1",
+            "interestPaymentDate2_test1",
+            "interestPaymentDate3_test1",
+            "interestPaymentDate4_test1",
+            "interestPaymentDate5_test1",
+            "interestPaymentDate6_test1",
+            "interestPaymentDate7_test1",
+            "interestPaymentDate8_test1",
+            "interestPaymentDate9_test1",
+            "interestPaymentDate10_test1",
+            "interestPaymentDate11_test1",
+            "interestPaymentDate12_test1",
         ]
         mock_token_1.transfer_approval_required = True
         mock_token_1.memo = "memo_test1"
@@ -517,7 +601,12 @@ class TestAppRoutersBondTokensGET:
         token_2.token_status = 0
         db.add(token_2)
         db.commit()
-        _issue_datetime_2 = pytz.timezone("UTC").localize(token_2.created).astimezone(self.local_tz).isoformat()
+        _issue_datetime_2 = (
+            pytz.timezone("UTC")
+            .localize(token_2.created)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
 
         mock_token_2 = IbetStraightBondContract()
         mock_token_2.issuer_address = token_2.issuer_address
@@ -527,7 +616,9 @@ class TestAppRoutersBondTokensGET:
         mock_token_2.total_supply = 50000
         mock_token_2.contact_information = "contactInformation_test2"
         mock_token_2.privacy_policy = "privacyPolicy_test2"
-        mock_token_2.tradable_exchange_contract_address = "0x1234567890AbcdfE1234567890abcdfE12345680"
+        mock_token_2.tradable_exchange_contract_address = (
+            "0x1234567890AbcdfE1234567890abcdfE12345680"
+        )
         mock_token_2.status = True
         mock_token_2.face_value = 600
         mock_token_2.redemption_date = "redemptionDate_test2"
@@ -539,20 +630,29 @@ class TestAppRoutersBondTokensGET:
         mock_token_2.transferable = False
         mock_token_2.is_offering = False
         mock_token_2.is_redeemed = False
-        mock_token_2.personal_info_contract_address = "0x1234567890abcdFE1234567890ABcdfE12345681"
+        mock_token_2.personal_info_contract_address = (
+            "0x1234567890abcdFE1234567890ABcdfE12345681"
+        )
         mock_token_2.interest_payment_date = [
-            "interestPaymentDate1_test2", "interestPaymentDate2_test2",
-            "interestPaymentDate3_test2", "interestPaymentDate4_test2",
-            "interestPaymentDate5_test2", "interestPaymentDate6_test2",
-            "interestPaymentDate7_test2", "interestPaymentDate8_test2",
-            "interestPaymentDate9_test2", "interestPaymentDate10_test2",
-            "interestPaymentDate11_test2", "interestPaymentDate12_test2",
+            "interestPaymentDate1_test2",
+            "interestPaymentDate2_test2",
+            "interestPaymentDate3_test2",
+            "interestPaymentDate4_test2",
+            "interestPaymentDate5_test2",
+            "interestPaymentDate6_test2",
+            "interestPaymentDate7_test2",
+            "interestPaymentDate8_test2",
+            "interestPaymentDate9_test2",
+            "interestPaymentDate10_test2",
+            "interestPaymentDate11_test2",
+            "interestPaymentDate12_test2",
         ]
         mock_token_2.transfer_approval_required = False
         mock_token_2.memo = "memo_test2"
 
         mock_get.side_effect = [
-            mock_token_1, mock_token_2
+            AttributeDict(mock_token_1.__dict__),
+            AttributeDict(mock_token_2.__dict__),
         ]
 
         # No Target Data
@@ -565,10 +665,6 @@ class TestAppRoutersBondTokensGET:
         db.add(token_3)
 
         resp = client.get(self.apiurl, headers={"issuer-address": issuer_address_1})
-
-        # assertion mock call arguments
-        mock_get.assert_has_calls(
-            [call(contract_address=token_1.token_address), call(contract_address=token_2.token_address)])
 
         assumed_response = [
             {
@@ -593,12 +689,18 @@ class TestAppRoutersBondTokensGET:
                 "is_redeemed": False,
                 "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
                 "interest_payment_date": [
-                    "interestPaymentDate1_test1", "interestPaymentDate2_test1",
-                    "interestPaymentDate3_test1", "interestPaymentDate4_test1",
-                    "interestPaymentDate5_test1", "interestPaymentDate6_test1",
-                    "interestPaymentDate7_test1", "interestPaymentDate8_test1",
-                    "interestPaymentDate9_test1", "interestPaymentDate10_test1",
-                    "interestPaymentDate11_test1", "interestPaymentDate12_test1",
+                    "interestPaymentDate1_test1",
+                    "interestPaymentDate2_test1",
+                    "interestPaymentDate3_test1",
+                    "interestPaymentDate4_test1",
+                    "interestPaymentDate5_test1",
+                    "interestPaymentDate6_test1",
+                    "interestPaymentDate7_test1",
+                    "interestPaymentDate8_test1",
+                    "interestPaymentDate9_test1",
+                    "interestPaymentDate10_test1",
+                    "interestPaymentDate11_test1",
+                    "interestPaymentDate12_test1",
                 ],
                 "issue_datetime": _issue_datetime_1,
                 "token_status": 1,
@@ -627,12 +729,18 @@ class TestAppRoutersBondTokensGET:
                 "is_redeemed": False,
                 "personal_info_contract_address": "0x1234567890abcdFE1234567890ABcdfE12345681",
                 "interest_payment_date": [
-                    "interestPaymentDate1_test2", "interestPaymentDate2_test2",
-                    "interestPaymentDate3_test2", "interestPaymentDate4_test2",
-                    "interestPaymentDate5_test2", "interestPaymentDate6_test2",
-                    "interestPaymentDate7_test2", "interestPaymentDate8_test2",
-                    "interestPaymentDate9_test2", "interestPaymentDate10_test2",
-                    "interestPaymentDate11_test2", "interestPaymentDate12_test2",
+                    "interestPaymentDate1_test2",
+                    "interestPaymentDate2_test2",
+                    "interestPaymentDate3_test2",
+                    "interestPaymentDate4_test2",
+                    "interestPaymentDate5_test2",
+                    "interestPaymentDate6_test2",
+                    "interestPaymentDate7_test2",
+                    "interestPaymentDate8_test2",
+                    "interestPaymentDate9_test2",
+                    "interestPaymentDate10_test2",
+                    "interestPaymentDate11_test2",
+                    "interestPaymentDate12_test2",
                 ],
                 "issue_datetime": _issue_datetime_2,
                 "token_status": 0,
@@ -655,13 +763,12 @@ class TestAppRoutersBondTokensGET:
 
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
-            "detail": [{
-                "loc": ["header", "issuer-address"],
-                "msg": "issuer-address is not a valid address",
-                "type": "value_error"
-            }]
+            "meta": {"code": 1, "title": "RequestValidationError"},
+            "detail": [
+                {
+                    "loc": ["header", "issuer-address"],
+                    "msg": "issuer-address is not a valid address",
+                    "type": "value_error",
+                }
+            ],
         }

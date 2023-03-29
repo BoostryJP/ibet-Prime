@@ -18,13 +18,10 @@ SPDX-License-Identifier: Apache-2.0
 """
 import eth_keyfile
 
-from config import EOA_PASSWORD_PATTERN_MSG
 from app.model.blockchain import IbetStraightBondContract
-from app.model.db import (
-    Account,
-    AccountRsaStatus
-)
+from app.model.db import Account, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
+from config import EOA_PASSWORD_PATTERN_MSG
 from tests.account_config import config_eth_account
 
 
@@ -57,10 +54,7 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
             "old_eoa_password": E2EEUtils.encrypt(_old_password),
             "eoa_password": E2EEUtils.encrypt(_new_password),
         }
-        resp = client.post(
-            self.base_url.format(_issuer_address),
-            json=req_param
-        )
+        resp = client.post(self.base_url.format(_issuer_address), json=req_param)
 
         # assertion
         assert resp.status_code == 200
@@ -74,7 +68,7 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
         # deploy test
         private_key = eth_keyfile.decode_keyfile_json(
             raw_keyfile_json=_account_keyfile,
-            password=_account_eoa_password.encode("utf-8")
+            password=_account_eoa_password.encode("utf-8"),
         )
         arguments = [
             "name_test",
@@ -85,12 +79,10 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
             30,
             "return_date_test",
             "return_amount_test",
-            "purpose_test"
+            "purpose_test",
         ]
-        IbetStraightBondContract.create(
-            args=arguments,
-            tx_from=_issuer_address,
-            private_key=private_key
+        IbetStraightBondContract().create(
+            args=arguments, tx_from=_issuer_address, private_key=private_key
         )
 
     ###########################################################################
@@ -104,24 +96,19 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
         _issuer_address = _account["address"]
 
         # request target API
-        resp = client.post(
-            self.base_url.format(_issuer_address)
-        )
+        resp = client.post(self.base_url.format(_issuer_address))
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
-            ]
+            ],
         }
 
     # <Error_2>
@@ -134,30 +121,24 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
         req_param = {
             "dummy": "dummy",
         }
-        resp = client.post(
-            self.base_url.format(_issuer_address),
-            json=req_param
-        )
+        resp = client.post(self.base_url.format(_issuer_address), json=req_param)
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "old_eoa_password"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
                 {
                     "loc": ["body", "eoa_password"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
-            ]
+            ],
         }
 
     # <Error_3>
@@ -173,30 +154,24 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
             "old_eoa_password": _old_password,
             "eoa_password": _new_password,
         }
-        resp = client.post(
-            self.base_url.format(_issuer_address),
-            json=req_param
-        )
+        resp = client.post(self.base_url.format(_issuer_address), json=req_param)
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "old_eoa_password"],
                     "msg": "old_eoa_password is not a Base64-encoded encrypted data",
-                    "type": "value_error"
+                    "type": "value_error",
                 },
                 {
                     "loc": ["body", "eoa_password"],
                     "msg": "eoa_password is not a Base64-encoded encrypted data",
-                    "type": "value_error"
+                    "type": "value_error",
                 },
-            ]
+            ],
         }
 
     # <Error_4>
@@ -211,17 +186,14 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
             "eoa_password": E2EEUtils.encrypt(_new_password),
         }
         resp = client.post(
-            self.base_url.format("non_existent_issuer_address"),
-            json=req_param
+            self.base_url.format("non_existent_issuer_address"), json=req_param
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1, "title": "NotFound"
-            },
-            "detail": "issuer does not exist"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "issuer does not exist",
         }
 
     # <Error_5>
@@ -246,18 +218,13 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
             "old_eoa_password": E2EEUtils.encrypt("passwordtest"),
             "eoa_password": E2EEUtils.encrypt(_new_password),
         }
-        resp = client.post(
-            self.base_url.format(_issuer_address),
-            json=req_param
-        )
+        resp = client.post(self.base_url.format(_issuer_address), json=req_param)
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1, "title": "InvalidParameterError"
-            },
-            "detail": "old password mismatch"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "old password mismatch",
         }
 
     # <Error_6>
@@ -282,16 +249,11 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
             "old_eoa_password": E2EEUtils.encrypt(_old_password),
             "eoa_password": E2EEUtils.encrypt(_new_password),
         }
-        resp = client.post(
-            self.base_url.format(_issuer_address),
-            json=req_param
-        )
+        resp = client.post(self.base_url.format(_issuer_address), json=req_param)
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1, "title": "InvalidParameterError"
-            },
-            "detail": EOA_PASSWORD_PATTERN_MSG
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": EOA_PASSWORD_PATTERN_MSG,
         }

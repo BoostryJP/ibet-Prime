@@ -16,15 +16,9 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from pydantic import BaseModel
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    JSON
-)
-from .token import TokenType
-from .batch_issue_redeem import BatchIssueRedeemProcessingCategory
+from enum import Enum
+
+from sqlalchemy import JSON, Column, Integer, String
 
 from .base import Base
 
@@ -62,11 +56,18 @@ notice_type: TransferApprovalInfo
 
 notice_type: CreateLedgerInfo
 - 0: Created ledger info successfully
+
+notice_type: LockInfo
+- 0: Balance is locked
+
+notice_type: UnlockInfo
+- 0: Balance is unlocked
 """
 
 
 class Notification(Base):
     """Notification"""
+
     __tablename__ = "notification"
 
     # sequence id
@@ -85,7 +86,7 @@ class Notification(Base):
     metainfo = Column(JSON)
 
 
-class NotificationType:
+class NotificationType(str, Enum):
     ISSUE_ERROR = "IssueError"
     BULK_TRANSFER_ERROR = "BulkTransferError"
     BATCH_REGISTER_PERSONAL_INFO_ERROR = "BatchRegisterPersonalInfoError"
@@ -93,3 +94,5 @@ class NotificationType:
     TRANSFER_APPROVAL_INFO = "TransferApprovalInfo"
     CREATE_LEDGER_INFO = "CreateLedgerInfo"
     BATCH_ISSUE_REDEEM_PROCESSED = "BatchIssueProcessed"
+    LOCK_INFO = "LockInfo"
+    UNLOCK_INFO = "UnlockInfo"

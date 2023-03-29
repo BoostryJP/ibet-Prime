@@ -16,18 +16,15 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import (
-    Column,
-    String,
-    BigInteger
-)
+from sqlalchemy import BigInteger, Column, String
 
 from .base import Base
 
 
 class IDXPosition(Base):
     """INDEX Position"""
-    __tablename__ = 'idx_position'
+
+    __tablename__ = "idx_position"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     # token address
@@ -49,12 +46,13 @@ class IDXPosition(Base):
             "balance": self.balance,
             "exchange_balance": self.exchange_balance,
             "exchange_commitment": self.exchange_commitment,
-            "pending_transfer": self.pending_transfer
+            "pending_transfer": self.pending_transfer,
         }
 
 
 class IDXPositionBondBlockNumber(Base):
     """Synchronized blockNumber of IDXPosition(Bond token)"""
+
     __tablename__ = "idx_position_bond_block_number"
 
     # sequence id
@@ -65,9 +63,33 @@ class IDXPositionBondBlockNumber(Base):
 
 class IDXPositionShareBlockNumber(Base):
     """Synchronized blockNumber of IDXPosition(Share token)"""
+
     __tablename__ = "idx_position_share_block_number"
 
     # sequence id
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     # latest blockNumber
     latest_block_number = Column(BigInteger)
+
+
+class IDXLockedPosition(Base):
+    """INDEX Locked Position"""
+
+    __tablename__ = "idx_locked_position"
+
+    # token address
+    token_address = Column(String(42), primary_key=True)
+    # lock address
+    lock_address = Column(String(42), primary_key=True)
+    # account address
+    account_address = Column(String(42), primary_key=True)
+    # locked amount
+    value = Column(BigInteger, nullable=False)
+
+    def json(self):
+        return {
+            "token_address": self.token_address,
+            "lock_address": self.lock_address,
+            "account_address": self.account_address,
+            "value": self.value,
+        }

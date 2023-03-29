@@ -18,11 +18,12 @@ SPDX-License-Identifier: Apache-2.0
 """
 import uuid
 from unittest import mock
+
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
-from app.model.db import Token, TokenType, TokenHolderBatchStatus, TokenHoldersList
 import config
+from app.model.db import Token, TokenHolderBatchStatus, TokenHoldersList, TokenType
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
@@ -67,7 +68,11 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
             headers={"issuer-address": issuer_address},
         )
 
-        stored_data: TokenHoldersList = db.query(TokenHoldersList).filter(TokenHoldersList.list_id == list_id).first()
+        stored_data: TokenHoldersList = (
+            db.query(TokenHoldersList)
+            .filter(TokenHoldersList.list_id == list_id)
+            .first()
+        )
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
@@ -275,7 +280,13 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         assert resp.status_code == 422
         assert resp.json() == {
             "meta": {"code": 1, "title": "RequestValidationError"},
-            "detail": [{"loc": ["body", "list_id"], "msg": "list_id is not UUIDv4.", "type": "value_error"}],
+            "detail": [
+                {
+                    "loc": ["body", "list_id"],
+                    "msg": "list_id is not UUIDv4.",
+                    "type": "value_error",
+                }
+            ],
         }
 
     # Error_4
@@ -446,5 +457,11 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         assert resp.status_code == 422
         assert resp.json() == {
             "meta": {"code": 1, "title": "RequestValidationError"},
-            "detail": [{"loc": ["header", "issuer-address"], "msg": "field required", "type": "value_error.missing"}],
+            "detail": [
+                {
+                    "loc": ["header", "issuer-address"],
+                    "msg": "field required",
+                    "type": "value_error.missing",
+                }
+            ],
         }

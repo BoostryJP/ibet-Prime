@@ -16,8 +16,9 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import pytest
 from unittest import mock
+
+import pytest
 
 from app.model.db import Account, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
@@ -25,13 +26,12 @@ from batch.processor_generate_rsa_key import Processor
 from tests.account_config import config_eth_account
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def processor(db):
     return Processor()
 
 
 class TestProcessor:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -144,8 +144,14 @@ class TestProcessor:
         assert _account.issuer_address == issuer_address_2
         assert _account.keyfile == keyfile_2
         assert _account.eoa_password == eoa_password_2
-        assert _account.rsa_private_key is not None and _account.rsa_private_key != rsa_private_key_2
-        assert _account.rsa_public_key is not None and _account.rsa_private_key != rsa_public_key_2
+        assert (
+            _account.rsa_private_key is not None
+            and _account.rsa_private_key != rsa_private_key_2
+        )
+        assert (
+            _account.rsa_public_key is not None
+            and _account.rsa_private_key != rsa_public_key_2
+        )
         assert _account.rsa_passphrase == rsa_passphrase_2
         assert _account.rsa_status == AccountRsaStatus.CHANGING.value  # don't change
         _account = account_after[2]

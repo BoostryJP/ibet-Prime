@@ -17,14 +17,12 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from unittest import mock
+
 from pytz import timezone
 
-from config import TZ
 from app.model.blockchain import IbetShareContract
-from app.model.db import (
-    Token,
-    TokenType
-)
+from app.model.db import Token, TokenType
+from config import TZ
 
 
 class TestAppRoutersShareTokensTokenAddressGET:
@@ -49,7 +47,12 @@ class TestAppRoutersShareTokensTokenAddressGET:
         token.abi = "abi_test1"
         db.add(token)
         db.commit()
-        _issue_time = timezone("UTC").localize(token.created).astimezone(self.local_tz).isoformat()
+        _issue_time = (
+            timezone("UTC")
+            .localize(token.created)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
 
         # request target API
         mock_token = IbetShareContract()
@@ -60,7 +63,9 @@ class TestAppRoutersShareTokensTokenAddressGET:
         mock_token.total_supply = 10000
         mock_token.contact_information = "contactInformation_test1"
         mock_token.privacy_policy = "privacyPolicy_test1"
-        mock_token.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
+        mock_token.tradable_exchange_contract_address = (
+            "0x1234567890abCdFe1234567890ABCdFE12345678"
+        )
         mock_token.status = True
         mock_token.issue_price = 1000
         mock_token.dividends = 123.45
@@ -69,7 +74,9 @@ class TestAppRoutersShareTokensTokenAddressGET:
         mock_token.cancellation_date = "20221231"
         mock_token.transferable = True
         mock_token.is_offering = True
-        mock_token.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token.personal_info_contract_address = (
+            "0x1234567890aBcDFE1234567890abcDFE12345679"
+        )
         mock_token.principal_value = 1000
         mock_token.transfer_approval_required = False
         mock_token.is_canceled = False
@@ -79,8 +86,6 @@ class TestAppRoutersShareTokensTokenAddressGET:
         resp = client.get(self.base_apiurl + "token_address_test1")
 
         # assertion
-        mock_get.assert_any_call(contract_address="token_address_test1")
-
         assumed_response = {
             "issuer_address": "issuer_address_test1",
             "token_address": "token_address_test1",
@@ -123,7 +128,12 @@ class TestAppRoutersShareTokensTokenAddressGET:
         token.abi = "abi_test1"
         db.add(token)
         db.commit()
-        _issue_time = timezone("UTC").localize(token.created).astimezone(self.local_tz).isoformat()
+        _issue_time = (
+            timezone("UTC")
+            .localize(token.created)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
 
         # request target API
         mock_token = IbetShareContract()
@@ -134,7 +144,9 @@ class TestAppRoutersShareTokensTokenAddressGET:
         mock_token.total_supply = 10000
         mock_token.contact_information = "contactInformation_test1"
         mock_token.privacy_policy = "privacyPolicy_test1"
-        mock_token.tradable_exchange_contract_address = "0x1234567890abCdFe1234567890ABCdFE12345678"
+        mock_token.tradable_exchange_contract_address = (
+            "0x1234567890abCdFe1234567890ABCdFE12345678"
+        )
         mock_token.status = True
         mock_token.issue_price = 1000
         mock_token.dividends = 123.45
@@ -143,7 +155,9 @@ class TestAppRoutersShareTokensTokenAddressGET:
         mock_token.cancellation_date = "20221231"
         mock_token.transferable = True
         mock_token.is_offering = True
-        mock_token.personal_info_contract_address = "0x1234567890aBcDFE1234567890abcDFE12345679"
+        mock_token.personal_info_contract_address = (
+            "0x1234567890aBcDFE1234567890abcDFE12345679"
+        )
         mock_token.principal_value = 1000
         mock_token.transfer_approval_required = False
         mock_token.is_canceled = False
@@ -153,8 +167,6 @@ class TestAppRoutersShareTokensTokenAddressGET:
         resp = client.get(self.base_apiurl + "token_address_test1")
 
         # assertion
-        mock_get.assert_any_call(contract_address="token_address_test1")
-
         assumed_response = {
             "issuer_address": "issuer_address_test1",
             "token_address": "token_address_test1",
@@ -195,11 +207,8 @@ class TestAppRoutersShareTokensTokenAddressGET:
 
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token not found"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token not found",
         }
 
     # <Error_2>
@@ -219,9 +228,6 @@ class TestAppRoutersShareTokensTokenAddressGET:
 
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }

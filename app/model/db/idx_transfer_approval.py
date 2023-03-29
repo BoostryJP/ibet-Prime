@@ -18,28 +18,26 @@ SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
 
-from sqlalchemy import (
-    Boolean,
-    Column,
-    DateTime,
-    String,
-    BigInteger
-)
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, String
 
 import config
+
 from .base import Base
 
 
 class IDXTransferApproval(Base):
     """INDEX Transfer Approval"""
-    __tablename__ = 'idx_transfer_approval'
+
+    __tablename__ = "idx_transfer_approval"
 
     # Sequence Id
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     # Token Address
     token_address = Column(String(42), index=True, nullable=False)
     # Exchange Address (value is set if the event is from exchange)
-    exchange_address = Column(String(42), index=True, nullable=False, default=config.ZERO_ADDRESS)
+    exchange_address = Column(
+        String(42), index=True, nullable=False, default=config.ZERO_ADDRESS
+    )
     # Application ID (escrow id is set if the event is from exchange)
     application_id = Column(BigInteger, index=True, nullable=False)
     # Transfer From
@@ -77,7 +75,7 @@ class IDXTransferApproval(Base):
             "approval_blocktimestamp": self.approval_blocktimestamp,
             "cancelled": self.cancelled,
             "escrow_finished": self.escrow_finished,
-            "transfer_approved": self.transfer_approved
+            "transfer_approved": self.transfer_approved,
         }
 
 
@@ -95,6 +93,7 @@ class IDXTransferApprovalsSortItem(str, Enum):
 
 class IDXTransferApprovalBlockNumber(Base):
     """Synchronized blockNumber of IDXTransferApproval"""
+
     __tablename__ = "idx_transfer_approval_block_number"
 
     # sequence id

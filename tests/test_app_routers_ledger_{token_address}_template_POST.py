@@ -19,11 +19,11 @@ SPDX-License-Identifier: Apache-2.0
 from unittest import mock
 
 from app.model.db import (
+    LedgerDetailsDataType,
+    LedgerDetailsTemplate,
+    LedgerTemplate,
     Token,
     TokenType,
-    LedgerTemplate,
-    LedgerDetailsTemplate,
-    LedgerDetailsDataType
 )
 from tests.account_config import config_eth_account
 
@@ -64,7 +64,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 {
                     "hoge": "aaa",
                     "fuga": "bbb",
-                }
+                },
             ],
             "details": [
                 {
@@ -77,7 +77,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "hoge-1": "aaa-1",
                             "fuga-1": "bbb-1",
-                        }
+                        },
                     ],
                     "data": {
                         "type": LedgerDetailsDataType.IBET_FIN.value,
@@ -91,7 +91,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "f-hoge-1": "aaa-1",
                             "f-fuga-1": "bbb-1",
-                        }
+                        },
                     ],
                 },
                 {
@@ -104,7 +104,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "hoge-2": "aaa-2",
                             "fuga-2": "bbb-2",
-                        }
+                        },
                     ],
                     "data": {
                         "type": LedgerDetailsDataType.DB.value,
@@ -118,9 +118,9 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "f-hoge-2": "aaa-2",
                             "f-fuga-2": "bbb-2",
-                        }
+                        },
                     ],
-                }
+                },
             ],
             "footers": [
                 {
@@ -130,7 +130,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 {
                     "f-hoge": "aaa",
                     "f-fuga": "bbb",
-                }
+                },
             ],
         }
         resp = client.post(
@@ -138,14 +138,13 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
-        _template = db.query(LedgerTemplate). \
-            first()
+        _template = db.query(LedgerTemplate).first()
         assert _template.token_address == token_address
         assert _template.issuer_address == issuer_address
         assert _template.token_name == "テスト原簿"
@@ -157,7 +156,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             {
                 "hoge": "aaa",
                 "fuga": "bbb",
-            }
+            },
         ]
         assert _template.footers == [
             {
@@ -167,11 +166,11 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             {
                 "f-hoge": "aaa",
                 "f-fuga": "bbb",
-            }
+            },
         ]
-        _details_list = db.query(LedgerDetailsTemplate). \
-            order_by(LedgerDetailsTemplate.id). \
-            all()
+        _details_list = (
+            db.query(LedgerDetailsTemplate).order_by(LedgerDetailsTemplate.id).all()
+        )
         assert len(_details_list) == 2
         _details = _details_list[0]
         assert _details.id == 1
@@ -185,7 +184,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             {
                 "hoge-1": "aaa-1",
                 "fuga-1": "bbb-1",
-            }
+            },
         ]
         assert _details.footers == [
             {
@@ -195,7 +194,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             {
                 "f-hoge-1": "aaa-1",
                 "f-fuga-1": "bbb-1",
-            }
+            },
         ]
         assert _details.data_type == LedgerDetailsDataType.IBET_FIN.value
         assert _details.data_source == token_address
@@ -211,7 +210,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             {
                 "hoge-2": "aaa-2",
                 "fuga-2": "bbb-2",
-            }
+            },
         ]
         assert _details.footers == [
             {
@@ -221,7 +220,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             {
                 "f-hoge-2": "aaa-2",
                 "f-fuga-2": "bbb-2",
-            }
+            },
         ]
         assert _details.data_type == LedgerDetailsDataType.DB.value
         assert _details.data_source == "data_id_2"
@@ -257,7 +256,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             {
                 "hoge": "aaa",
                 "fuga": "bbb",
-            }
+            },
         ]
         _template.footers = [
             {
@@ -267,7 +266,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             {
                 "f-hoge": "aaa",
                 "f-fuga": "bbb",
-            }
+            },
         ]
         db.add(_template)
 
@@ -282,7 +281,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             {
                 "hoge-2": "aaa-2",
                 "fuga-2": "bbb-2",
-            }
+            },
         ]
         _details_1.footers = [
             {
@@ -292,7 +291,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             {
                 "f-hoge-2": "aaa-2",
                 "f-fuga-2": "bbb-2",
-            }
+            },
         ]
         _details_1.data_type = LedgerDetailsDataType.DB.value
         _details_1.data_source = "data_id_1"
@@ -309,7 +308,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             {
                 "hoge-3": "aaa-3",
                 "fuga-3": "bbb-3",
-            }
+            },
         ]
         _details_2.footers = [
             {
@@ -319,7 +318,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             {
                 "f-hoge-3": "aaa-3",
                 "f-fuga-3": "bbb-3",
-            }
+            },
         ]
         _details_2.data_type = LedgerDetailsDataType.DB.value
         _details_2.data_source = "data_id_2"
@@ -336,7 +335,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 {
                     "hoge_update": "aaa_update",
                     "fuga_update": "bbb_update",
-                }
+                },
             ],
             "details": [
                 {
@@ -349,7 +348,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "hoge-1": "aaa-1",
                             "fuga-1": "bbb-1",
-                        }
+                        },
                     ],
                     "data": {
                         "type": LedgerDetailsDataType.IBET_FIN.value,
@@ -363,7 +362,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "f-hoge-1": "aaa-1",
                             "f-fuga-1": "bbb-1",
-                        }
+                        },
                     ],
                 },
                 {
@@ -390,9 +389,9 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "f-hoge-2_update": "aaa-2_update",
                             "f-fuga-2_update": "bbb-2_update",
-                        }
+                        },
                     ],
-                }
+                },
             ],
             "footers": [
                 {
@@ -402,7 +401,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 {
                     "f-hoge_update": "aaa_update",
                     "f-fuga_update": "bbb_update",
-                }
+                },
             ],
         }
         resp = client.post(
@@ -410,13 +409,12 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 200
-        _template = db.query(LedgerTemplate). \
-            first()
+        _template = db.query(LedgerTemplate).first()
         assert _template.token_address == token_address
         assert _template.issuer_address == issuer_address
         assert _template.token_name == "テスト原簿_update"
@@ -428,7 +426,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             {
                 "hoge_update": "aaa_update",
                 "fuga_update": "bbb_update",
-            }
+            },
         ]
         assert _template.footers == [
             {
@@ -438,11 +436,11 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             {
                 "f-hoge_update": "aaa_update",
                 "f-fuga_update": "bbb_update",
-            }
+            },
         ]
-        _details_list = db.query(LedgerDetailsTemplate). \
-            order_by(LedgerDetailsTemplate.id). \
-            all()
+        _details_list = (
+            db.query(LedgerDetailsTemplate).order_by(LedgerDetailsTemplate.id).all()
+        )
         assert len(_details_list) == 2
         _details = _details_list[0]
         assert _details.id == 1
@@ -456,7 +454,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             {
                 "hoge-2_update": "aaa-2_update",
                 "fuga-2_update": "bbb-2_update",
-            }
+            },
         ]
         assert _details.footers == [
             {
@@ -466,7 +464,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             {
                 "f-hoge-2_update": "aaa-2_update",
                 "f-fuga-2_update": "bbb-2_update",
-            }
+            },
         ]
         assert _details.data_type == LedgerDetailsDataType.IBET_FIN.value
         assert _details.data_source == token_address
@@ -482,7 +480,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             {
                 "hoge-1": "aaa-1",
                 "fuga-1": "bbb-1",
-            }
+            },
         ]
         assert _details.footers == [
             {
@@ -492,7 +490,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             {
                 "f-hoge-1": "aaa-1",
                 "f-fuga-1": "bbb-1",
-            }
+            },
         ]
         assert _details.data_type == LedgerDetailsDataType.IBET_FIN.value
         assert _details.data_source == token_address
@@ -516,22 +514,19 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
                 {
                     "loc": ["body"],
                     "msg": "field required",
-                    "type": "value_error.missing"
-                }
-            ]
+                    "type": "value_error.missing",
+                },
+            ],
         }
 
     # <Error_2>
@@ -550,7 +545,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 {
                     "hoge": "aaa",
                     "fuga": "bbb",
-                }
+                },
             ],
             "details": [
                 {
@@ -563,7 +558,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "hoge-1": "aaa-1",
                             "fuga-1": "bbb-1",
-                        }
+                        },
                     ],
                     "data": {
                         "type": LedgerDetailsDataType.IBET_FIN.value,
@@ -577,7 +572,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "f-hoge-1": "aaa-1",
                             "f-fuga-1": "bbb-1",
-                        }
+                        },
                     ],
                 },
                 {
@@ -590,7 +585,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "hoge-2": "aaa-2",
                             "fuga-2": "bbb-2",
-                        }
+                        },
                     ],
                     "data": {
                         "type": LedgerDetailsDataType.DB.value,
@@ -604,9 +599,9 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "f-hoge-2": "aaa-2",
                             "f-fuga-2": "bbb-2",
-                        }
+                        },
                     ],
-                }
+                },
             ],
             "footers": [
                 {
@@ -616,7 +611,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 {
                     "f-hoge": "aaa",
                     "f-fuga": "bbb",
-                }
+                },
             ],
         }
         resp = client.post(
@@ -624,23 +619,20 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             json=req_param,
             headers={
                 "issuer-address": "test",
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_3>
@@ -659,28 +651,25 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "token_name"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
                 {
                     "loc": ["body", "details"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
-            ]
+            ],
         }
 
     # <Error_4>
@@ -693,8 +682,8 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         # request target API
         req_param = {
             "token_name": "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                          "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                          "1",
+            "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            "1",
             "headers": [
                 {
                     "key": "aaa",
@@ -703,7 +692,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 {
                     "hoge": "aaa",
                     "fuga": "bbb",
-                }
+                },
             ],
             "details": [],
             "footers": [
@@ -714,7 +703,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 {
                     "hoge": "aaa",
                     "fuga": "bbb",
-                }
+                },
             ],
         }
         resp = client.post(
@@ -722,29 +711,26 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "ctx": {"limit_value": 200},
                     "loc": ["body", "token_name"],
                     "msg": "ensure this value has at most 200 characters",
-                    "type": "value_error.any_str.max_length"
+                    "type": "value_error.any_str.max_length",
                 },
                 {
                     "loc": ["body", "details"],
                     "msg": "The length must be greater than or equal to 1",
-                    "type": "value_error"
-                }
-            ]
+                    "type": "value_error",
+                },
+            ],
         }
 
     # <Error_5>
@@ -765,7 +751,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 {
                     "hoge": "aaa",
                     "fuga": "bbb",
-                }
+                },
             ],
             "details": [
                 {
@@ -778,7 +764,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "hoge-1": "aaa-1",
                             "fuga-1": "bbb-1",
-                        }
+                        },
                     ],
                     "data": {
                         "type": "ibetfina",
@@ -792,7 +778,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "f-hoge-1": "d-aaa-1",
                             "f-fuga-1": "d-bbb-1",
-                        }
+                        },
                     ],
                 },
                 {
@@ -808,7 +794,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "hoge-1": "aaa-1",
                             "fuga-1": "bbb-1",
-                        }
+                        },
                     ],
                     "data": {
                         "dummy": "dummy",
@@ -821,7 +807,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "f-hoge-1": "aaa-1",
                             "f-fuga-1": "bbb-1",
-                        }
+                        },
                     ],
                 },
             ],
@@ -833,7 +819,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 {
                     "hoge": "aaa",
                     "fuga": "bbb",
-                }
+                },
             ],
         }
         resp = client.post(
@@ -841,53 +827,48 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "ctx": {"limit_value": 100},
                     "loc": ["body", "details", 0, "token_detail_type"],
                     "msg": "ensure this value has at most 100 characters",
-                    "type": "value_error.any_str.max_length"
-
+                    "type": "value_error.any_str.max_length",
                 },
                 {
                     "ctx": {"enum_values": ["ibetfin", "db"]},
                     "loc": ["body", "details", 0, "data", "type"],
                     "msg": "value is not a valid enumeration member; permitted: 'ibetfin', 'db'",
-                    "type": "type_error.enum"
+                    "type": "type_error.enum",
                 },
                 {
-
                     "ctx": {"limit_value": 42},
                     "loc": ["body", "details", 0, "data", "source"],
                     "msg": "ensure this value has at most 42 characters",
-                    "type": "value_error.any_str.max_length"
+                    "type": "value_error.any_str.max_length",
                 },
                 {
                     "loc": ["body", "details", 1, "token_detail_type"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
                 {
                     "loc": ["body", "details", 1, "data"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
                 {
                     "loc": ["body", "details", 2, "data", "type"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
-            ]
+            ],
         }
 
     # <Error_6>
@@ -940,38 +921,35 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "headers"],
                     "msg": "value is not a valid list",
-                    "type": "type_error.list"
+                    "type": "type_error.list",
                 },
                 {
                     "loc": ["body", "details", 0, "headers"],
                     "msg": "value is not a valid list",
-                    "type": "type_error.list"
+                    "type": "type_error.list",
                 },
                 {
                     "loc": ["body", "details", 0, "footers"],
                     "msg": "value is not a valid list",
-                    "type": "type_error.list"
+                    "type": "type_error.list",
                 },
                 {
                     "loc": ["body", "footers"],
                     "msg": "value is not a valid list",
-                    "type": "type_error.list"
+                    "type": "type_error.list",
                 },
-            ]
+            ],
         }
 
     # <Error_7>
@@ -992,7 +970,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 {
                     "hoge": "aaa",
                     "fuga": "bbb",
-                }
+                },
             ],
             "details": [
                 {
@@ -1005,7 +983,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "hoge-1": "aaa-1",
                             "fuga-1": "bbb-1",
-                        }
+                        },
                     ],
                     "data": {
                         "type": LedgerDetailsDataType.IBET_FIN.value,
@@ -1019,7 +997,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "f-hoge-1": "aaa-1",
                             "f-fuga-1": "bbb-1",
-                        }
+                        },
                     ],
                 },
                 {
@@ -1032,7 +1010,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "hoge-2": "aaa-2",
                             "fuga-2": "bbb-2",
-                        }
+                        },
                     ],
                     "data": {
                         "type": LedgerDetailsDataType.DB.value,
@@ -1046,9 +1024,9 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "f-hoge-2": "aaa-2",
                             "f-fuga-2": "bbb-2",
-                        }
+                        },
                     ],
-                }
+                },
             ],
             "footers": [
                 {
@@ -1058,7 +1036,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 {
                     "f-hoge": "aaa",
                     "f-fuga": "bbb",
-                }
+                },
             ],
         }
         resp = client.post(
@@ -1066,17 +1044,14 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token does not exist"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token does not exist",
         }
 
     # <Error_8>
@@ -1107,7 +1082,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 {
                     "hoge": "aaa",
                     "fuga": "bbb",
-                }
+                },
             ],
             "details": [
                 {
@@ -1120,7 +1095,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "hoge-1": "aaa-1",
                             "fuga-1": "bbb-1",
-                        }
+                        },
                     ],
                     "data": {
                         "type": LedgerDetailsDataType.IBET_FIN.value,
@@ -1134,7 +1109,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "f-hoge-1": "aaa-1",
                             "f-fuga-1": "bbb-1",
-                        }
+                        },
                     ],
                 },
                 {
@@ -1147,7 +1122,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "hoge-2": "aaa-2",
                             "fuga-2": "bbb-2",
-                        }
+                        },
                     ],
                     "data": {
                         "type": LedgerDetailsDataType.DB.value,
@@ -1161,9 +1136,9 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                         {
                             "f-hoge-2": "aaa-2",
                             "f-fuga-2": "bbb-2",
-                        }
+                        },
                     ],
-                }
+                },
             ],
             "footers": [
                 {
@@ -1173,7 +1148,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 {
                     "f-hoge": "aaa",
                     "f-fuga": "bbb",
-                }
+                },
             ],
         }
         resp = client.post(
@@ -1181,15 +1156,12 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             json=req_param,
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }

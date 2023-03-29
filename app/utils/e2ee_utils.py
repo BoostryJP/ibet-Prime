@@ -18,22 +18,19 @@ SPDX-License-Identifier: Apache-2.0
 """
 import base64
 import binascii
-from datetime import (
-    datetime,
-    timedelta
-)
+from datetime import datetime, timedelta
 
 import boto3
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
 
-from config import (
-    E2EE_RSA_RESOURCE_MODE,
-    E2EE_RSA_RESOURCE,
-    E2EE_RSA_PASSPHRASE,
-    AWS_REGION_NAME
-)
 from app.utils.cache_utils import DictCache
+from config import (
+    AWS_REGION_NAME,
+    E2EE_RSA_PASSPHRASE,
+    E2EE_RSA_RESOURCE,
+    E2EE_RSA_RESOURCE_MODE,
+)
 
 
 class E2EEUtils:
@@ -57,7 +54,9 @@ class E2EEUtils:
         if crypto_data.get("public_key") is None:
             return data
 
-        rsa_key = RSA.importKey(crypto_data.get("public_key"), passphrase=E2EE_RSA_PASSPHRASE)
+        rsa_key = RSA.importKey(
+            crypto_data.get("public_key"), passphrase=E2EE_RSA_PASSPHRASE
+        )
         cipher = PKCS1_OAEP.new(rsa_key)
         encrypt_data = cipher.encrypt(data.encode("utf-8"))
         base64_data = base64.encodebytes(encrypt_data)
@@ -74,7 +73,9 @@ class E2EEUtils:
         if crypto_data.get("private_key") is None:
             return base64_encrypt_data
 
-        rsa_key = RSA.importKey(crypto_data.get("private_key"), passphrase=E2EE_RSA_PASSPHRASE)
+        rsa_key = RSA.importKey(
+            crypto_data.get("private_key"), passphrase=E2EE_RSA_PASSPHRASE
+        )
         cipher = PKCS1_OAEP.new(rsa_key)
 
         try:
@@ -105,14 +106,15 @@ class E2EEUtils:
 
     @staticmethod
     def __get_crypto_data() -> DictCache:
-
         if E2EEUtils.cache.get("expiration_datetime") is None:
-            E2EEUtils.cache.update(**{
-                "private_key": None,
-                "public_key": None,
-                "encrypted_length": None,
-                "expiration_datetime": datetime.min
-            })
+            E2EEUtils.cache.update(
+                **{
+                    "private_key": None,
+                    "public_key": None,
+                    "encrypted_length": None,
+                    "expiration_datetime": datetime.min,
+                }
+            )
 
         # Use Cache
         if E2EEUtils.cache.get("expiration_datetime") > datetime.utcnow():
@@ -125,8 +127,7 @@ class E2EEUtils:
                 private_key = f.read()
         elif E2EE_RSA_RESOURCE_MODE == 1:
             secrets_manager = boto3.client(
-                service_name="secretsmanager",
-                region_name=AWS_REGION_NAME
+                service_name="secretsmanager", region_name=AWS_REGION_NAME
             )
             result = secrets_manager.get_secret_value(SecretId=E2EE_RSA_RESOURCE)
             private_key = result.get("SecretString")
@@ -138,14 +139,16 @@ class E2EEUtils:
 
         # Calculate Encrypted Length
         cipher = PKCS1_OAEP.new(rsa_key)
-        encrypted_length = len(cipher.encrypt(b''))
+        encrypted_length = len(cipher.encrypt(b""))
 
         # Update Cache(expiration for 1 hour)
-        E2EEUtils.cache.update(**{
-            "private_key": private_key,
-            "public_key": public_key,
-            "encrypted_length": encrypted_length,
-            "expiration_datetime": datetime.utcnow() + timedelta(hours=1)
-        })
+        E2EEUtils.cache.update(
+            **{
+                "private_key": private_key,
+                "public_key": public_key,
+                "encrypted_length": encrypted_length,
+                "expiration_datetime": datetime.utcnow() + timedelta(hours=1),
+            }
+        )
 
         return E2EEUtils.cache

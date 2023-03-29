@@ -22,11 +22,11 @@ from pytz import timezone
 
 import config
 from app.model.db import (
+    IDXTransferApproval,
     Token,
     TokenType,
-    IDXTransferApproval,
     TransferApprovalHistory,
-    TransferApprovalOperationType
+    TransferApprovalOperationType,
 )
 
 local_tz = timezone(config.TZ)
@@ -48,13 +48,33 @@ class TestAppRoutersBondTransferApprovalsGET:
     test_from_address = "test_from_address"
     test_to_address = "test_to_address"
     test_application_datetime = datetime(year=2019, month=9, day=1)
-    test_application_datetime_str = timezone("UTC").localize(test_application_datetime).astimezone(local_tz).isoformat()
+    test_application_datetime_str = (
+        timezone("UTC")
+        .localize(test_application_datetime)
+        .astimezone(local_tz)
+        .isoformat()
+    )
     test_application_blocktimestamp = datetime(year=2019, month=9, day=2)
-    test_application_blocktimestamp_str = timezone("UTC").localize(test_application_blocktimestamp).astimezone(local_tz).isoformat()
+    test_application_blocktimestamp_str = (
+        timezone("UTC")
+        .localize(test_application_blocktimestamp)
+        .astimezone(local_tz)
+        .isoformat()
+    )
     test_approval_datetime = datetime(year=2019, month=9, day=3)
-    test_approval_datetime_str = timezone("UTC").localize(test_approval_datetime).astimezone(local_tz).isoformat()
+    test_approval_datetime_str = (
+        timezone("UTC")
+        .localize(test_approval_datetime)
+        .astimezone(local_tz)
+        .isoformat()
+    )
     test_approval_blocktimestamp = datetime(year=2019, month=9, day=4)
-    test_approval_blocktimestamp_str = timezone("UTC").localize(test_approval_blocktimestamp).astimezone(local_tz).isoformat()
+    test_approval_blocktimestamp_str = (
+        timezone("UTC")
+        .localize(test_approval_blocktimestamp)
+        .astimezone(local_tz)
+        .isoformat()
+    )
 
     ###########################################################################
     # Normal Case
@@ -91,9 +111,13 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 1
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-        _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+        _idx_transfer_approval.approval_blocktimestamp = (
+            self.test_approval_blocktimestamp
+        )
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
@@ -107,9 +131,13 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 1
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-        _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+        _idx_transfer_approval.approval_blocktimestamp = (
+            self.test_approval_blocktimestamp
+        )
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
@@ -123,9 +151,13 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 1
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-        _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+        _idx_transfer_approval.approval_blocktimestamp = (
+            self.test_approval_blocktimestamp
+        )
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
@@ -138,13 +170,8 @@ class TestAppRoutersBondTransferApprovalsGET:
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 0,
-                "offset": None,
-                "limit": None,
-                "total": 0
-            },
-            "transfer_approvals": []
+            "result_set": {"count": 0, "offset": None, "limit": None, "total": 0},
+            "transfer_approvals": [],
         }
         assert resp.json() == assumed_response
 
@@ -169,7 +196,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 1
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -186,7 +215,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 11
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -203,9 +234,13 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 21
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-        _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+        _idx_transfer_approval.approval_blocktimestamp = (
+            self.test_approval_blocktimestamp
+        )
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True  # escrow_finished
         _idx_transfer_approval.transfer_approved = None  # event not synchronized
@@ -215,7 +250,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _transfer_approval_history.token_address = self.test_token_address_1
         _transfer_approval_history.exchange_address = config.ZERO_ADDRESS
         _transfer_approval_history.application_id = 21
-        _transfer_approval_history.operation_type = TransferApprovalOperationType.APPROVE.value
+        _transfer_approval_history.operation_type = (
+            TransferApprovalOperationType.APPROVE.value
+        )
         db.add(_transfer_approval_history)
 
         # prepare data: IDXTransferApproval(Approve(transferred))
@@ -227,9 +264,13 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 31
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = self.test_approval_datetime
-        _idx_transfer_approval.approval_blocktimestamp = self.test_approval_blocktimestamp
+        _idx_transfer_approval.approval_blocktimestamp = (
+            self.test_approval_blocktimestamp
+        )
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True  # escrow_finished
         _idx_transfer_approval.transfer_approved = True  # transferred
@@ -244,7 +285,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 41
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None  # event not synchronized
@@ -256,7 +299,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _transfer_approval_history.token_address = self.test_token_address_1
         _transfer_approval_history.exchange_address = config.ZERO_ADDRESS
         _transfer_approval_history.application_id = 41
-        _transfer_approval_history.operation_type = TransferApprovalOperationType.CANCEL.value
+        _transfer_approval_history.operation_type = (
+            TransferApprovalOperationType.CANCEL.value
+        )
         db.add(_transfer_approval_history)
 
         # prepare data: IDXTransferApproval(Cancel(canceled))
@@ -268,7 +313,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 51
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = True  # cancelled
@@ -286,12 +333,7 @@ class TestAppRoutersBondTransferApprovalsGET:
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 1,
-                "offset": None,
-                "limit": None,
-                "total": 1
-            },
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 1},
             "transfer_approvals": [
                 {
                     "issuer_address": self.test_issuer_address_1,
@@ -302,7 +344,7 @@ class TestAppRoutersBondTransferApprovalsGET:
                     "transferred_count": 2,
                     "canceled_count": 2,
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -346,7 +388,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 1
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -362,7 +406,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 11
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -378,7 +424,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 12
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.escrow_finished = True  # escrow_finished
@@ -393,7 +441,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 31
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = True  # cancelled
@@ -410,7 +460,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 1
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -427,7 +479,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 1
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -437,21 +491,13 @@ class TestAppRoutersBondTransferApprovalsGET:
 
         # request target API
         resp = client.get(
-            self.base_url,
-            headers={
-                "issuer-address": self.test_issuer_address_1
-            }
+            self.base_url, headers={"issuer-address": self.test_issuer_address_1}
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 2,
-                "offset": None,
-                "limit": None,
-                "total": 2
-            },
+            "result_set": {"count": 2, "offset": None, "limit": None, "total": 2},
             "transfer_approvals": [
                 {
                     "issuer_address": self.test_issuer_address_1,
@@ -471,7 +517,7 @@ class TestAppRoutersBondTransferApprovalsGET:
                     "transferred_count": 0,
                     "canceled_count": 0,
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -515,7 +561,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 1
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -531,7 +579,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 11
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -547,7 +597,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 12
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.escrow_finished = True  # escrow_finished
@@ -562,7 +614,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 31
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = True  # cancelled
@@ -579,7 +633,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 1
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -596,7 +652,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 1
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -612,12 +670,7 @@ class TestAppRoutersBondTransferApprovalsGET:
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 3,
-                "offset": None,
-                "limit": None,
-                "total": 3
-            },
+            "result_set": {"count": 3, "offset": None, "limit": None, "total": 3},
             "transfer_approvals": [
                 {
                     "issuer_address": self.test_issuer_address_1,
@@ -646,7 +699,7 @@ class TestAppRoutersBondTransferApprovalsGET:
                     "transferred_count": 0,
                     "canceled_count": 0,
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -698,7 +751,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 1
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -715,7 +770,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 1
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -732,7 +789,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 1
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -749,7 +808,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.to_address = self.test_to_address
         _idx_transfer_approval.amount = 1
         _idx_transfer_approval.application_datetime = self.test_application_datetime
-        _idx_transfer_approval.application_blocktimestamp = self.test_application_blocktimestamp
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
@@ -763,18 +824,13 @@ class TestAppRoutersBondTransferApprovalsGET:
             params={
                 "limit": 2,
                 "offset": 1,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 200
         assumed_response = {
-            "result_set": {
-                "count": 4,
-                "offset": 1,
-                "limit": 2,
-                "total": 4
-            },
+            "result_set": {"count": 4, "offset": 1, "limit": 2, "total": 4},
             "transfer_approvals": [
                 {
                     "issuer_address": self.test_issuer_address_1,
@@ -794,7 +850,7 @@ class TestAppRoutersBondTransferApprovalsGET:
                     "transferred_count": 0,
                     "canceled_count": 0,
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response
 
@@ -812,16 +868,13 @@ class TestAppRoutersBondTransferApprovalsGET:
             params={
                 "offset": "c",
                 "limit": "d",
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assumed_response = {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["query", "offset"],
@@ -833,6 +886,6 @@ class TestAppRoutersBondTransferApprovalsGET:
                     "msg": "value is not a valid integer",
                     "type": "type_error.integer",
                 },
-            ]
+            ],
         }
         assert resp.json() == assumed_response

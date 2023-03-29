@@ -17,19 +17,12 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import uuid
-from datetime import (
-    datetime,
-    timedelta
-)
+from datetime import datetime, timedelta
 
 from pytz import timezone
 
+from app.model.db import ScheduledEvents, ScheduledEventType, TokenType
 from config import TZ
-from app.model.db import (
-    TokenType,
-    ScheduledEvents,
-    ScheduledEventType
-)
 from tests.account_config import config_eth_account
 
 
@@ -52,7 +45,12 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
 
         # prepare data
         datetime_now_utc = datetime.utcnow()
-        datetime_now_str = timezone("UTC").localize(datetime_now_utc).astimezone(self.local_tz).isoformat()
+        datetime_now_str = (
+            timezone("UTC")
+            .localize(datetime_now_utc)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
         update_data = {
             "cancellation_date": "20221231",
             "dividends": 345.67,
@@ -66,7 +64,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "is_canceled": False,
-            "memo": "memo_test1"
+            "memo": "memo_test1",
         }
         event_id = str(uuid.uuid4())
 
@@ -87,7 +85,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
             self.base_url.format(_token_address),
             headers={
                 "issuer-address": _issuer_address,
-            }
+            },
         )
 
         # assertion
@@ -101,7 +99,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
                 "event_type": ScheduledEventType.UPDATE.value,
                 "status": 0,
                 "data": update_data,
-                "created": datetime_now_str
+                "created": datetime_now_str,
             }
         ]
 
@@ -136,7 +134,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
             "contact_information": "問い合わせ先test",
             "privacy_policy": "プライバシーポリシーtest",
             "is_canceled": False,
-            "memo": "memo_test1"
+            "memo": "memo_test1",
         }
 
         for i, _datetime in enumerate(datetime_list):
@@ -164,21 +162,34 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
                 "scheduled_event_id": uuid_list[0],
                 "token_address": _token_address,
                 "token_type": TokenType.IBET_SHARE.value,
-                "scheduled_datetime": timezone("UTC").localize(datetime_list[0]).astimezone(self.local_tz).isoformat(),
+                "scheduled_datetime": timezone("UTC")
+                .localize(datetime_list[0])
+                .astimezone(self.local_tz)
+                .isoformat(),
                 "event_type": ScheduledEventType.UPDATE.value,
                 "status": 0,
                 "data": update_data,
-                "created": timezone("UTC").localize(datetime_list[0]).astimezone(self.local_tz).isoformat(),
-            }, {
+                "created": timezone("UTC")
+                .localize(datetime_list[0])
+                .astimezone(self.local_tz)
+                .isoformat(),
+            },
+            {
                 "scheduled_event_id": uuid_list[1],
                 "token_address": _token_address,
                 "token_type": TokenType.IBET_SHARE.value,
-                "scheduled_datetime": timezone("UTC").localize(datetime_list[1]).astimezone(self.local_tz).isoformat(),
+                "scheduled_datetime": timezone("UTC")
+                .localize(datetime_list[1])
+                .astimezone(self.local_tz)
+                .isoformat(),
                 "event_type": ScheduledEventType.UPDATE.value,
                 "status": 0,
                 "data": update_data,
-                "created": timezone("UTC").localize(datetime_list[1]).astimezone(self.local_tz).isoformat(),
-            }
+                "created": timezone("UTC")
+                .localize(datetime_list[1])
+                .astimezone(self.local_tz)
+                .isoformat(),
+            },
         ]
 
     # <Normal_3>
@@ -193,7 +204,7 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsGET:
             self.base_url.format(_token_address),
             headers={
                 "issuer-address": _issuer_address,
-            }
+            },
         )
 
         # assertion

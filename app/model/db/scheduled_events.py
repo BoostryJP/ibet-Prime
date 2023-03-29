@@ -16,19 +16,14 @@
 # SPDX-License-Identifier: Apache-2.0
 from enum import Enum
 
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    DateTime,
-    JSON
-)
+from sqlalchemy import JSON, Column, DateTime, Integer, String
 
 from .base import Base
 
 
 class ScheduledEvents(Base):
     """Scheduled Event"""
+
     __tablename__ = "scheduled_events"
 
     # sequence id

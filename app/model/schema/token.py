@@ -16,32 +16,27 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import (
-    List,
-    Optional
-)
 import math
+from enum import Enum
+from typing import List, Optional
 
-from pydantic import (
-    BaseModel,
-    Field,
-    validator
-)
+from fastapi import Query
+from pydantic import BaseModel, Field, validator
+from pydantic.dataclasses import dataclass
 from web3 import Web3
 
-from .types import (
-    MMDD_constr,
-    YYYYMMDD_constr,
-    EMPTY_str
-)
-
+from . import LockEventCategory
+from .position import LockEvent
+from .types import EMPTY_str, MMDD_constr, ResultSet, SortOrder, YYYYMMDD_constr
 
 ############################
 # REQUEST
 ############################
 
+
 class IbetStraightBondCreate(BaseModel):
     """ibet Straight Bond schema (Create)"""
+
     name: str = Field(max_length=100)
     total_supply: int = Field(..., ge=0, le=1_000_000_000_000)
     face_value: int = Field(..., ge=0, le=5_000_000_000)
@@ -67,22 +62,28 @@ class IbetStraightBondCreate(BaseModel):
     @validator("interest_rate")
     def interest_rate_4_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10 ** 4)
-            int_data = int(v * 10 ** 4)
+            float_data = float(v * 10**4)
+            int_data = int(v * 10**4)
             if not math.isclose(int_data, float_data):
-                raise ValueError("interest_rate must be less than or equal to four decimal places")
+                raise ValueError(
+                    "interest_rate must be less than or equal to four decimal places"
+                )
         return v
 
     @validator("interest_payment_date")
     def interest_payment_date_list_length_less_than_13(cls, v):
         if v is not None and len(v) >= 13:
-            raise ValueError("list length of interest_payment_date must be less than 13")
+            raise ValueError(
+                "list length of interest_payment_date must be less than 13"
+            )
         return v
 
     @validator("tradable_exchange_contract_address")
     def tradable_exchange_contract_address_is_valid_address(cls, v):
         if v is not None and not Web3.isAddress(v):
-            raise ValueError("tradable_exchange_contract_address is not a valid address")
+            raise ValueError(
+                "tradable_exchange_contract_address is not a valid address"
+            )
         return v
 
     @validator("personal_info_contract_address")
@@ -94,6 +95,7 @@ class IbetStraightBondCreate(BaseModel):
 
 class IbetStraightBondUpdate(BaseModel):
     """ibet Straight Bond schema (Update)"""
+
     face_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
     interest_rate: Optional[float] = Field(None, ge=0.0000, le=100.0000)
     interest_payment_date: Optional[List[MMDD_constr]]
@@ -112,8 +114,8 @@ class IbetStraightBondUpdate(BaseModel):
     @validator("interest_rate")
     def interest_rate_4_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10 ** 4)
-            int_data = int(v * 10 ** 4)
+            float_data = float(v * 10**4)
+            int_data = int(v * 10**4)
             if not math.isclose(int_data, float_data):
                 raise ValueError("interest_rate must be rounded to 4 decimal places")
         return v
@@ -121,13 +123,17 @@ class IbetStraightBondUpdate(BaseModel):
     @validator("interest_payment_date")
     def interest_payment_date_list_length_less_than_13(cls, v):
         if v is not None and len(v) >= 13:
-            raise ValueError("list length of interest_payment_date must be less than 13")
+            raise ValueError(
+                "list length of interest_payment_date must be less than 13"
+            )
         return v
 
     @validator("tradable_exchange_contract_address")
     def tradable_exchange_contract_address_is_valid_address(cls, v):
         if v is not None and not Web3.isAddress(v):
-            raise ValueError("tradable_exchange_contract_address is not a valid address")
+            raise ValueError(
+                "tradable_exchange_contract_address is not a valid address"
+            )
         return v
 
     @validator("personal_info_contract_address")
@@ -139,6 +145,7 @@ class IbetStraightBondUpdate(BaseModel):
 
 class IbetStraightBondAdditionalIssue(BaseModel):
     """ibet Straight Bond schema (Additional Issue)"""
+
     account_address: str
     amount: int = Field(..., ge=1, le=1_000_000_000_000)
 
@@ -151,6 +158,7 @@ class IbetStraightBondAdditionalIssue(BaseModel):
 
 class IbetStraightBondRedeem(BaseModel):
     """ibet Straight Bond schema (Redeem)"""
+
     account_address: str
     amount: int = Field(..., ge=1, le=1_000_000_000_000)
 
@@ -163,6 +171,7 @@ class IbetStraightBondRedeem(BaseModel):
 
 class IbetStraightBondTransfer(BaseModel):
     """ibet Straight Bond schema (Transfer)"""
+
     token_address: str
     from_address: str
     to_address: str
@@ -189,6 +198,7 @@ class IbetStraightBondTransfer(BaseModel):
 
 class IbetShareCreate(BaseModel):
     """ibet Share schema (Create)"""
+
     name: str = Field(max_length=100)
     issue_price: int = Field(..., ge=0, le=5_000_000_000)
     principal_value: int = Field(..., ge=0, le=5_000_000_000)
@@ -211,8 +221,8 @@ class IbetShareCreate(BaseModel):
     @validator("dividends")
     def dividends_13_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10 ** 13)
-            int_data = int(v * 10 ** 13)
+            float_data = float(v * 10**13)
+            int_data = int(v * 10**13)
             if not math.isclose(int_data, float_data):
                 raise ValueError("dividends must be rounded to 13 decimal places")
         return v
@@ -220,7 +230,9 @@ class IbetShareCreate(BaseModel):
     @validator("tradable_exchange_contract_address")
     def tradable_exchange_contract_address_is_valid_address(cls, v):
         if v is not None and not Web3.isAddress(v):
-            raise ValueError("tradable_exchange_contract_address is not a valid address")
+            raise ValueError(
+                "tradable_exchange_contract_address is not a valid address"
+            )
         return v
 
     @validator("personal_info_contract_address")
@@ -232,6 +244,7 @@ class IbetShareCreate(BaseModel):
 
 class IbetShareUpdate(BaseModel):
     """ibet Share schema (Update)"""
+
     cancellation_date: Optional[YYYYMMDD_constr | EMPTY_str]
     dividend_record_date: Optional[YYYYMMDD_constr | EMPTY_str]
     dividend_payment_date: Optional[YYYYMMDD_constr | EMPTY_str]
@@ -251,8 +264,8 @@ class IbetShareUpdate(BaseModel):
     @validator("dividends")
     def dividends_13_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10 ** 13)
-            int_data = int(v * 10 ** 13)
+            float_data = float(v * 10**13)
+            int_data = int(v * 10**13)
             if not math.isclose(int_data, float_data):
                 raise ValueError("dividends must be rounded to 13 decimal places")
         return v
@@ -260,14 +273,21 @@ class IbetShareUpdate(BaseModel):
     @validator("dividends")
     def dividend_information_all_required(cls, v, values, **kwargs):
         if v is not None:
-            if values.get("dividend_record_date") is None or values.get("dividend_payment_date") is None:
-                raise ValueError("all items are required to update the dividend information")
+            if (
+                values.get("dividend_record_date") is None
+                or values.get("dividend_payment_date") is None
+            ):
+                raise ValueError(
+                    "all items are required to update the dividend information"
+                )
         return v
 
     @validator("tradable_exchange_contract_address")
     def tradable_exchange_contract_address_is_valid_address(cls, v):
         if v is not None and not Web3.isAddress(v):
-            raise ValueError("tradable_exchange_contract_address is not a valid address")
+            raise ValueError(
+                "tradable_exchange_contract_address is not a valid address"
+            )
         return v
 
     @validator("personal_info_contract_address")
@@ -279,6 +299,7 @@ class IbetShareUpdate(BaseModel):
 
 class IbetShareTransfer(BaseModel):
     """ibet Share schema (Transfer)"""
+
     token_address: str
     from_address: str
     to_address: str
@@ -305,6 +326,7 @@ class IbetShareTransfer(BaseModel):
 
 class IbetShareAdditionalIssue(BaseModel):
     """ibet Share schema (Additional Issue)"""
+
     account_address: str
     amount: int = Field(..., ge=1, le=1_000_000_000_000)
 
@@ -317,6 +339,7 @@ class IbetShareAdditionalIssue(BaseModel):
 
 class IbetShareRedeem(BaseModel):
     """ibet Share schema (Redeem)"""
+
     account_address: str
     amount: int = Field(..., ge=1, le=1_000_000_000_000)
 
@@ -327,36 +350,51 @@ class IbetShareRedeem(BaseModel):
         return v
 
 
-class IbetSecurityTokenApproveTransfer(BaseModel):
-    """ibet SecurityToken schema (ApproveTransfer)"""
-    application_id: int
-    data: str
+class ListAllTokenLockEventsSortItem(str, Enum):
+    account_address = "account_address"
+    lock_address = "lock_address"
+    recipient_address = "recipient_address"
+    value = "value"
+    block_timestamp = "block_timestamp"
 
 
-class IbetSecurityTokenCancelTransfer(BaseModel):
-    """ibet SecurityToken schema (CancelTransfer)"""
-    application_id: int
-    data: str
+@dataclass
+class ListAllTokenLockEventsQuery:
+    offset: Optional[int] = Query(default=None, description="Start position", ge=0)
+    limit: Optional[int] = Query(default=None, description="Number of set", ge=0)
 
+    account_address: Optional[str] = Query(default=None, description="Account address")
+    lock_address: Optional[str] = Query(default=None, description="Lock address")
+    recipient_address: Optional[str] = Query(
+        default=None, description="Recipient address"
+    )
+    category: Optional[LockEventCategory] = Query(
+        default=None, description="Event category"
+    )
 
-class IbetSecurityTokenEscrowApproveTransfer(BaseModel):
-    """ibet SecurityTokenEscrow schema (ApproveTransfer)"""
-    escrow_id: int
-    data: str
+    sort_item: ListAllTokenLockEventsSortItem = Query(
+        default=ListAllTokenLockEventsSortItem.block_timestamp, description="Sort item"
+    )
+    sort_order: SortOrder = Query(
+        default=SortOrder.DESC, description="Sort order(0: ASC, 1: DESC)"
+    )
 
 
 ############################
 # RESPONSE
 ############################
 
+
 class TokenAddressResponse(BaseModel):
     """token address"""
+
     token_address: str
     token_status: int
 
 
 class IbetStraightBondResponse(BaseModel):
     """ibet Straight Bond schema (Response)"""
+
     issuer_address: str
     token_address: str
     name: str
@@ -386,6 +424,7 @@ class IbetStraightBondResponse(BaseModel):
 
 class IbetShareResponse(BaseModel):
     """ibet Share schema (Response)"""
+
     issuer_address: str
     token_address: str
     name: str
@@ -409,3 +448,10 @@ class IbetShareResponse(BaseModel):
     token_status: int
     is_canceled: bool
     memo: str
+
+
+class ListAllTokenLockEventsResponse(BaseModel):
+    """List All Lock/Unlock events (Response)"""
+
+    result_set: ResultSet
+    events: List[LockEvent] = Field(description="Lock/Unlock event list")

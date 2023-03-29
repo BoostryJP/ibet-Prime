@@ -17,22 +17,21 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
-from fastapi import (
-    FastAPI,
-    Request,
-    status
-)
+
+from fastapi import FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from config import SERVER_NAME
+from app.exceptions import *
+from app.log import output_access_log
 from app.routers import (
-    index,
     account,
+    bc_explorer,
     bond,
+    common,
     e2e_messaging,
     file,
     ledger,
@@ -40,15 +39,33 @@ from app.routers import (
     position,
     share,
     token_holders,
-    bc_explorer
 )
 from app.utils.docs_utils import custom_openapi
-from app.exceptions import *
-from app.log import output_access_log
+from config import SERVER_NAME
+
+tags_metadata = [
+    {"name": "root", "description": ""},
+    {"name": "common", "description": "Common functions"},
+    {"name": "account", "description": "Issuer account management"},
+    {"name": "notification", "description": "Notifications for accounts"},
+    {"name": "token_common", "description": "Common functions for tokens"},
+    {"name": "bond", "description": "Bond token management"},
+    {"name": "share", "description": "Share token management"},
+    {"name": "utility", "description": "Utility functions"},
+    {"name": "messaging", "description": "Messaging functions with external systems"},
+    {"name": "blockchain_explorer", "description": "Blockchain explorer"},
+]
 
 app = FastAPI(
     title="ibet Prime",
-    version="22.12.0"
+    description="Security token management system for ibet network",
+    version="23.3.0",
+    contact={"email": "dev@boostry.co.jp"},
+    license_info={
+        "name": "Apache 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.html",
+    },
+    openapi_tags=tags_metadata,
 )
 
 
@@ -67,12 +84,13 @@ app.openapi = custom_openapi(app)
 # ROUTER
 ###############################################################
 
-@app.get("/")
+
+@app.get("/", tags=["root"])
 async def root():
     return {"server": SERVER_NAME}
 
 
-app.include_router(index.router)
+app.include_router(common.router)
 app.include_router(account.router)
 app.include_router(bond.router)
 app.include_router(e2e_messaging.router)
@@ -89,13 +107,11 @@ app.include_router(bc_explorer.router)
 # EXCEPTION
 ###############################################################
 
+
 # 500:InternalServerError
 @app.exception_handler(500)
 async def internal_server_error_handler(request: Request, exc: Exception):
-    meta = {
-        "code": 1,
-        "title": "InternalServerError"
-    }
+    meta = {"code": 1, "title": "InternalServerError"}
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=jsonable_encoder({"meta": meta}),
@@ -105,10 +121,7 @@ async def internal_server_error_handler(request: Request, exc: Exception):
 # 422:RequestValidationError
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    meta = {
-        "code": 1,
-        "title": "RequestValidationError"
-    }
+    meta = {"code": 1, "title": "RequestValidationError"}
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content=jsonable_encoder({"meta": meta, "detail": exc.errors()}),
@@ -119,10 +132,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 # NOTE: for exceptions raised directly from Pydantic validation
 @app.exception_handler(ValidationError)
 async def query_validation_exception_handler(request: Request, exc: ValidationError):
-    meta = {
-        "code": 1,
-        "title": "RequestValidationError"
-    }
+    meta = {"code": 1, "title": "RequestValidationError"}
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content=jsonable_encoder({"meta": meta, "detail": exc.errors()}),
@@ -132,10 +142,7 @@ async def query_validation_exception_handler(request: Request, exc: ValidationEr
 # 400:InvalidParameterError
 @app.exception_handler(InvalidParameterError)
 async def invalid_parameter_error_handler(request: Request, exc: InvalidParameterError):
-    meta = {
-        "code": 1,
-        "title": "InvalidParameterError"
-    }
+    meta = {"code": 1, "title": "InvalidParameterError"}
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
@@ -145,10 +152,7 @@ async def invalid_parameter_error_handler(request: Request, exc: InvalidParamete
 # 400:SendTransactionError
 @app.exception_handler(SendTransactionError)
 async def send_transaction_error_handler(request: Request, exc: SendTransactionError):
-    meta = {
-        "code": 2,
-        "title": "SendTransactionError"
-    }
+    meta = {"code": 2, "title": "SendTransactionError"}
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
@@ -157,11 +161,10 @@ async def send_transaction_error_handler(request: Request, exc: SendTransactionE
 
 # 400:AuthTokenAlreadyExistsError
 @app.exception_handler(AuthTokenAlreadyExistsError)
-async def auth_token_already_exists_error_handler(request: Request, exc: AuthTokenAlreadyExistsError):
-    meta = {
-        "code": 3,
-        "title": "AuthTokenAlreadyExistsError"
-    }
+async def auth_token_already_exists_error_handler(
+    request: Request, exc: AuthTokenAlreadyExistsError
+):
+    meta = {"code": 3, "title": "AuthTokenAlreadyExistsError"}
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content=jsonable_encoder({"meta": meta}),
@@ -170,11 +173,10 @@ async def auth_token_already_exists_error_handler(request: Request, exc: AuthTok
 
 # 400:ResponseLimitExceededError
 @app.exception_handler(ResponseLimitExceededError)
-async def response_limit_exceeded_error_handler(request: Request, exc: ResponseLimitExceededError):
-    meta = {
-        "code": 4,
-        "title": "ResponseLimitExceededError"
-    }
+async def response_limit_exceeded_error_handler(
+    request: Request, exc: ResponseLimitExceededError
+):
+    meta = {"code": 4, "title": "ResponseLimitExceededError"}
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
@@ -184,10 +186,7 @@ async def response_limit_exceeded_error_handler(request: Request, exc: ResponseL
 # 400:ContractRevertError
 @app.exception_handler(ContractRevertError)
 async def contract_revert_error_handler(request: Request, exc: ContractRevertError):
-    meta = {
-        "code": exc.code,
-        "title": "ContractRevertError"
-    }
+    meta = {"code": exc.code, "title": "ContractRevertError"}
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content=jsonable_encoder({"meta": meta, "detail": exc.message}),
@@ -197,10 +196,7 @@ async def contract_revert_error_handler(request: Request, exc: ContractRevertErr
 # 401:AuthorizationError
 @app.exception_handler(AuthorizationError)
 async def authorization_error_handler(request: Request, exc: AuthorizationError):
-    meta = {
-        "code": 1,
-        "title": "AuthorizationError"
-    }
+    meta = {"code": 1, "title": "AuthorizationError"}
     return JSONResponse(
         status_code=status.HTTP_401_UNAUTHORIZED,
         content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
@@ -210,10 +206,7 @@ async def authorization_error_handler(request: Request, exc: AuthorizationError)
 # 404:NotFound
 @app.exception_handler(404)
 async def not_found_error_handler(request: Request, exc: StarletteHTTPException):
-    meta = {
-        "code": 1,
-        "title": "NotFound"
-    }
+    meta = {"code": 1, "title": "NotFound"}
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
         content=jsonable_encoder({"meta": meta, "detail": exc.detail}),
@@ -222,11 +215,10 @@ async def not_found_error_handler(request: Request, exc: StarletteHTTPException)
 
 # 405:MethodNotAllowed
 @app.exception_handler(405)
-async def method_not_allowed_error_handler(request: Request, exc: StarletteHTTPException):
-    meta = {
-        "code": 1,
-        "title": "MethodNotAllowed"
-    }
+async def method_not_allowed_error_handler(
+    request: Request, exc: StarletteHTTPException
+):
+    meta = {"code": 1, "title": "MethodNotAllowed"}
     return JSONResponse(
         status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
         content=jsonable_encoder({"meta": meta}),
@@ -235,11 +227,10 @@ async def method_not_allowed_error_handler(request: Request, exc: StarletteHTTPE
 
 # 503:ServiceUnavailable
 @app.exception_handler(ServiceUnavailableError)
-async def service_unavailable_error_handler(request: Request, exc: ServiceUnavailableError):
-    meta = {
-        "code": 1,
-        "title": "ServiceUnavailableError"
-    }
+async def service_unavailable_error_handler(
+    request: Request, exc: ServiceUnavailableError
+):
+    meta = {"code": 1, "title": "ServiceUnavailableError"}
     return JSONResponse(
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),

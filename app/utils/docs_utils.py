@@ -16,23 +16,18 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import (
-    List,
-    Dict,
-    Union,
-    Any
-)
+from typing import Any, Dict, List, Union
 
-from pydantic import BaseModel
-from fastapi.openapi.utils import get_openapi
 from fastapi.exceptions import RequestValidationError
+from fastapi.openapi.utils import get_openapi
+from pydantic import BaseModel
 
 from app.exceptions import (
+    AuthorizationError,
+    ContractRevertError,
     InvalidParameterError,
     SendTransactionError,
-    AuthorizationError,
     ServiceUnavailableError,
-    ContractRevertError
 )
 
 
@@ -47,7 +42,11 @@ class Error400MetaModel(MetaModel):
         def schema_extra(schema: Dict[str, Any], _) -> None:
             properties = schema["properties"]
             properties["code"]["examples"] = [0, 1, 2, 100001]
-            properties["title"]["examples"] = ["InvalidParameterError", "SendTransactionError", "ContractRevertError"]
+            properties["title"]["examples"] = [
+                "InvalidParameterError",
+                "SendTransactionError",
+                "ContractRevertError",
+            ]
 
 
 class Error400Model(BaseModel):
@@ -61,7 +60,7 @@ class Error400Model(BaseModel):
             properties["detail"]["examples"] = [
                 "this token is temporarily unavailable",
                 "failed to register token address token list",
-                "The address has already been registered."
+                "The address has already been registered.",
             ]
 
 
@@ -152,28 +151,13 @@ class Error503Model(BaseModel):
 DEFAULT_RESPONSE = {
     400: {
         "description": "Invalid Parameter Error / Send Transaction Error / Contract Revert Error",
-        "model": Error400Model
+        "model": Error400Model,
     },
-    401: {
-        "description": "Authorization Error",
-        "model": Error401Model
-    },
-    404: {
-        "description": "Not Found Error",
-        "model": Error404Model
-    },
-    405: {
-        "description": "Method Not Allowed",
-        "model": Error405Model
-    },
-    422: {
-        "description": "Validation Error",
-        "model": Error422Model
-    },
-    503: {
-        "description": "Service Unavailable Error",
-        "model": Error503Model
-    }
+    401: {"description": "Authorization Error", "model": Error401Model},
+    404: {"description": "Not Found Error", "model": Error404Model},
+    405: {"description": "Method Not Allowed", "model": Error405Model},
+    422: {"description": "Validation Error", "model": Error422Model},
+    503: {"description": "Service Unavailable Error", "model": Error503Model},
 }
 
 
@@ -224,7 +208,6 @@ def custom_openapi(app):
         if paths is not None:
             for path_info in paths.values():
                 for router in path_info.values():
-
                     # Remove Default Validation Error Response Structure
                     # NOTE:
                     # HTTPValidationError is automatically added to APIs docs that have path, header, query,
@@ -233,7 +216,9 @@ def custom_openapi(app):
                     # and some APIs do not generate a Validation Error(API with no-required string parameter only, etc).
                     resp_422 = _get(router, "responses", "422")
                     if resp_422 is not None:
-                        ref = _get(resp_422, "content", "application/json", "schema", "$ref")
+                        ref = _get(
+                            resp_422, "content", "application/json", "schema", "$ref"
+                        )
                         if ref == "#/components/schemas/HTTPValidationError":
                             router["responses"].pop("422")
 

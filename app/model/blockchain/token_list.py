@@ -18,50 +18,45 @@ SPDX-License-Identifier: Apache-2.0
 """
 from web3.exceptions import TimeExhausted
 
-from config import (
-    CHAIN_ID,
-    TX_GAS_LIMIT
-)
-from app.exceptions import SendTransactionError, ContractRevertError
+from app.exceptions import ContractRevertError, SendTransactionError
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
+from config import CHAIN_ID, TX_GAS_LIMIT
 
 web3 = Web3Wrapper()
 
 
 class TokenListContract:
+    def __init__(self, contract_address: str):
+        self.contract_address = contract_address
 
-    @staticmethod
     def register(
-            token_list_address: str,
-            token_address: str,
-            token_template: str,
-            account_address: str,
-            private_key: str
+        self, token_address: str, token_template: str, tx_from: str, private_key: str
     ) -> None:
         """Register TokenList
 
-        :param token_list_address: token list contract address
-        :param token_address: token_address
-        :param token_template: TokenType
-        :param account_address: token owner account address
+        :param token_address: token address
+        :param token_template: token type
+        :param tx_from: transaction from
         :param private_key: private_key
         :return: None
         """
         try:
             contract = ContractUtils.get_contract(
                 contract_name="TokenList",
-                contract_address=token_list_address,
+                contract_address=self.contract_address,
             )
-            tx = contract.functions.register(token_address, token_template). \
-                build_transaction({
+            tx = contract.functions.register(
+                token_address, token_template
+            ).build_transaction(
+                {
                     "chainId": CHAIN_ID,
-                    "from": account_address,
+                    "from": tx_from,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0
-                })
+                    "gasPrice": 0,
+                }
+            )
             ContractUtils.send_transaction(transaction=tx, private_key=private_key)
-
         except ContractRevertError:
             raise
         except TimeExhausted as timeout_error:

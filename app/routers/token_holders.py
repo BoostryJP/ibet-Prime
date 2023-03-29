@@ -17,48 +17,32 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import uuid
-from typing import List, Optional
+from typing import List, Optional, Type
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    Header,
-    Path,
-    Query
-)
+from fastapi import APIRouter, Depends, Header, Path, Query
 from fastapi.exceptions import HTTPException
+from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session
-from sqlalchemy import (
-    asc,
-    desc
-)
 
 from app.database import db_session
+from app.exceptions import InvalidParameterError
+from app.model.db import Token, TokenHolder, TokenHolderBatchStatus, TokenHoldersList
 from app.model.schema import (
     CreateTokenHoldersListRequest,
     CreateTokenHoldersListResponse,
+    ListAllTokenHolderCollectionsResponse,
     RetrieveTokenHoldersListResponse,
-    ListAllTokenHolderCollectionsResponse
 )
+from app.utils.check_utils import address_is_valid_address, validate_headers
 from app.utils.docs_utils import get_routers_responses
-from app.utils.check_utils import (
-    validate_headers,
-    address_is_valid_address
-)
-from app.model.db import (
-    Token,
-    TokenHoldersList,
-    TokenHolderBatchStatus,
-    TokenHolder
-)
-from app.exceptions import InvalidParameterError
+from app.utils.fastapi import json_response
 from app.utils.web3_utils import Web3Wrapper
 
 web3 = Web3Wrapper()
 
 router = APIRouter(
     prefix="/token",
-    tags=["token"],
+    tags=["token_common"],
 )
 
 
@@ -109,19 +93,21 @@ def create_collection(
         raise InvalidParameterError("list_id must be unique.")
 
     # Check existing list
-    _same_combi_record: TokenHoldersList = (
+    _same_combi_record: Type[TokenHoldersList] = (
         db.query(TokenHoldersList)
         .filter(TokenHoldersList.block_number == data.block_number)
         .filter(TokenHoldersList.token_address == token_address)
-        .filter(TokenHoldersList.batch_status != TokenHolderBatchStatus.FAILED.value)
+        .filter(TokenHoldersList.batch_status != TokenHolderBatchStatus.FAILED)
         .first()
     )
 
     if _same_combi_record:
-        return {
-            "status": _same_combi_record.batch_status,
-            "list_id": _same_combi_record.list_id,
-        }
+        return json_response(
+            {
+                "status": _same_combi_record.batch_status,
+                "list_id": _same_combi_record.list_id,
+            }
+        )
 
     _token_holders_list = TokenHoldersList()
     _token_holders_list.token_address = token_address
@@ -132,17 +118,19 @@ def create_collection(
     db.add(_token_holders_list)
     db.commit()
 
-    return {
-        "status": _token_holders_list.batch_status,
-        "list_id": _token_holders_list.list_id,
-    }
+    return json_response(
+        {
+            "status": _token_holders_list.batch_status,
+            "list_id": _token_holders_list.list_id,
+        }
+    )
 
 
 # GET: /token/holders/{token_address}/collection
 @router.get(
     "/holders/{token_address}/collection",
     response_model=ListAllTokenHolderCollectionsResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError)
+    responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def list_all_token_holders_collections(
     token_address: str = Path(...),
@@ -151,7 +139,7 @@ def list_all_token_holders_collections(
     sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc (created)"),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
-    db: Session = Depends(db_session)
+    db: Session = Depends(db_session),
 ):
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -172,7 +160,9 @@ def list_all_token_holders_collections(
     if _token.token_status == 0:
         raise InvalidParameterError("this token is temporarily unavailable")
 
-    query = db.query(TokenHoldersList).filter(TokenHoldersList.token_address == token_address)
+    query = db.query(TokenHoldersList).filter(
+        TokenHoldersList.token_address == token_address
+    )
 
     # Total
     total = query.count()
@@ -195,7 +185,7 @@ def list_all_token_holders_collections(
         query = query.offset(offset)
 
     # Get all collections
-    _token_holders_collections: list[TokenHoldersList] = query.all()
+    _token_holders_collections: list[Type[TokenHoldersList]] = query.all()
 
     token_holders_collections = []
     for _collection in _token_holders_collections:
@@ -204,7 +194,7 @@ def list_all_token_holders_collections(
                 "token_address": _collection.token_address,
                 "block_number": _collection.block_number,
                 "list_id": _collection.list_id,
-                "status": _collection.batch_status
+                "status": _collection.batch_status,
             }
         )
 
@@ -213,12 +203,12 @@ def list_all_token_holders_collections(
             "count": count,
             "offset": offset,
             "limit": limit,
-            "total": total
+            "total": total,
         },
-        "collections": token_holders_collections
+        "collections": token_holders_collections,
     }
 
-    return resp
+    return json_response(resp)
 
 
 # GET: /token/holders/{token_address}/collection/{list_id}
@@ -263,7 +253,7 @@ def retrieve_token_holders_list(
         raise InvalidParameterError(description)
 
     # Check existing list
-    _same_list_id_record: TokenHoldersList = (
+    _same_list_id_record: Type[TokenHoldersList] = (
         db.query(TokenHoldersList).filter(TokenHoldersList.list_id == list_id).first()
     )
 
@@ -284,7 +274,9 @@ def retrieve_token_holders_list(
     )
     token_holders = [_token_holder.json() for _token_holder in _token_holders]
 
-    return {
-        "status": _same_list_id_record.batch_status,
-        "holders": token_holders,
-    }
+    return json_response(
+        {
+            "status": _same_list_id_record.batch_status,
+            "holders": token_holders,
+        }
+    )

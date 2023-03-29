@@ -17,21 +17,50 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
-from typing import (
-    List,
-    Optional
-)
-from pydantic import (
-    BaseModel,
-    Field
-)
+from typing import List, Optional
+
+from fastapi import Query
+from pydantic import BaseModel, Field, NonNegativeInt
+from pydantic.dataclasses import dataclass
 
 from .types import ResultSet
+
+############################
+# COMMON
+############################
+
+
+class TransferSourceEventType(str, Enum):
+    Transfer = "Transfer"
+    Unlock = "Unlock"
 
 
 ############################
 # REQUEST
 ############################
+
+
+class ListTransferHistorySortItem(str, Enum):
+    BLOCK_TIMESTAMP = "block_timestamp"
+    FROM_ADDRESS = "from_address"
+    TO_ADDRESS = "to_address"
+    AMOUNT = "amount"
+
+
+@dataclass
+class ListTransferHistoryQuery:
+    source_event: Optional[TransferSourceEventType] = Query(
+        default=None, description="source event of transfer"
+    )
+    data: Optional[str] = Query(default=None, description="source event data")
+
+    sort_item: ListTransferHistorySortItem = Query(
+        default=ListTransferHistorySortItem.BLOCK_TIMESTAMP, description="sort item"
+    )
+    sort_order: int = Query(default=1, ge=0, le=1, description="0:asc, 1:desc")
+    offset: Optional[NonNegativeInt] = Query(default=None, description="start position")
+    limit: Optional[NonNegativeInt] = Query(default=None, description="number of set")
+
 
 class UpdateTransferApprovalOperationType(str, Enum):
     APPROVE = "approve"
@@ -40,6 +69,7 @@ class UpdateTransferApprovalOperationType(str, Enum):
 
 class UpdateTransferApprovalRequest(BaseModel):
     """Update Transfer Approval schema (Request)"""
+
     operation_type: UpdateTransferApprovalOperationType = Field(...)
 
 
@@ -47,24 +77,30 @@ class UpdateTransferApprovalRequest(BaseModel):
 # RESPONSE
 ############################
 
+
 class TransferResponse(BaseModel):
     """transfer data"""
+
     transaction_hash: str
     token_address: str
     from_address: str
     to_address: str
     amount: int
+    source_event: TransferSourceEventType = Field(description="Source Event")
+    data: dict | None = Field(description="Event data")
     block_timestamp: str
 
 
 class TransferHistoryResponse(BaseModel):
     """transfer history"""
+
     result_set: ResultSet
     transfer_history: List[TransferResponse]
 
 
 class TransferApprovalResponse(BaseModel):
     """transfer approval data"""
+
     issuer_address: str
     token_address: str
     application_count: int
@@ -76,12 +112,14 @@ class TransferApprovalResponse(BaseModel):
 
 class TransferApprovalsResponse(BaseModel):
     """transfer approvals"""
+
     result_set: ResultSet
     transfer_approvals: List[TransferApprovalResponse]
 
 
 class TransferApprovalTokenResponse(BaseModel):
     """transfer approval token data"""
+
     id: int
     token_address: str
     exchange_address: str
@@ -102,5 +140,6 @@ class TransferApprovalTokenResponse(BaseModel):
 
 class TransferApprovalHistoryResponse(BaseModel):
     """transfer approval token history"""
+
     result_set: ResultSet
     transfer_approval_history: List[TransferApprovalTokenResponse]

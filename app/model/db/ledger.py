@@ -18,20 +18,14 @@ SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
 
-from sqlalchemy import (
-    Column,
-    Integer,
-    BigInteger,
-    String,
-    JSON,
-    DateTime
-)
+from sqlalchemy import JSON, BigInteger, Column, DateTime, Integer, String
 
 from .base import Base
 
 
 class Ledger(Base):
     """Ledger"""
+
     __tablename__ = "ledger"
 
     # sequence id
@@ -79,6 +73,7 @@ NOTE: Ledger.ledger's JSON structures
 
 class LedgerDetailsData(Base):
     """Ledger Details Data"""
+
     __tablename__ = "ledger_details_data"
 
     # sequence id

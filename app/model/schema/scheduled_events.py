@@ -16,23 +16,15 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import (
-    Dict,
-    Any
-)
-
-from pydantic import (
-    BaseModel,
-    Field
-)
-
 from datetime import datetime
+from typing import Any, Dict
+
+from pydantic import BaseModel, Field
+
 from app.model.db import TokenType
-from .token import (
-    IbetStraightBondUpdate,
-    IbetShareUpdate
-)
 from app.model.db.scheduled_events import ScheduledEventType
+
+from .token import IbetShareUpdate, IbetStraightBondUpdate
 
 
 ############################
@@ -40,6 +32,7 @@ from app.model.db.scheduled_events import ScheduledEventType
 ############################
 class IbetStraightBondScheduledUpdate(BaseModel):
     """scheduled event (Request)"""
+
     scheduled_datetime: datetime
     event_type: ScheduledEventType = Field(...)
     data: IbetStraightBondUpdate
@@ -47,6 +40,7 @@ class IbetStraightBondScheduledUpdate(BaseModel):
 
 class IbetShareScheduledUpdate(BaseModel):
     """scheduled event (Request)"""
+
     scheduled_datetime: datetime
     event_type: ScheduledEventType = Field(...)
     data: IbetShareUpdate
@@ -57,11 +51,13 @@ class IbetShareScheduledUpdate(BaseModel):
 ############################
 class ScheduledEventIdResponse(BaseModel):
     """scheduled event (Response)"""
+
     scheduled_event_id: str
 
 
 class ScheduledEventResponse(BaseModel):
     """scheduled event (Response)"""
+
     scheduled_event_id: str
     token_address: str
     token_type: TokenType

@@ -19,44 +19,40 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 
 import pytz
+from eth_keyfile import decode_keyfile_json
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
-from eth_keyfile import decode_keyfile_json
 
-from config import (
-    WEB3_HTTP_PROVIDER,
-    CHAIN_ID,
-    TX_GAS_LIMIT,
-    ZERO_ADDRESS,
-    TZ
-)
-from app.utils.e2ee_utils import E2EEUtils
 from app.model.blockchain import (
     IbetShareContract,
     IbetStraightBondContract,
     PersonalInfoContract,
 )
-from app.utils.contract_utils import ContractUtils
-from app.model.schema import (
-    IbetShareUpdate,
-    IbetStraightBondUpdate
+from app.model.blockchain.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams,
 )
 from app.model.db import (
+    UTXO,
     Account,
     AccountRsaStatus,
-    Token,
-    TokenType,
     IDXPersonalInfo,
-    UTXO,
     Ledger,
     LedgerDetailsData,
-    LedgerTemplate,
-    LedgerDetailsTemplate,
     LedgerDetailsDataType,
+    LedgerDetailsTemplate,
+    LedgerTemplate,
     Notification,
     NotificationType,
+    Token,
+    TokenType,
 )
 from app.utils import ledger_utils
+from app.utils.contract_utils import ContractUtils
+from app.utils.e2ee_utils import E2EEUtils
+from config import CHAIN_ID, TX_GAS_LIMIT, TZ, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
@@ -73,14 +69,14 @@ def deploy_bond_token_contract(address, private_key, personal_info_contract_addr
         30,
         "token.return_date",
         "token.return_amount",
-        "token.purpose"
+        "token.purpose",
     ]
+    bond_contrat = IbetStraightBondContract()
+    contract_address, _, _ = bond_contrat.create(arguments, address, private_key)
 
-    contract_address, _, _ = IbetStraightBondContract.create(arguments, address, private_key)
-
-    data = IbetStraightBondUpdate()
+    data = IbetStraightBondUpdateParams()
     data.personal_info_contract_address = personal_info_contract_address
-    IbetStraightBondContract.update(contract_address, data, address, private_key)
+    bond_contrat.update(data, address, private_key)
 
     return contract_address
 
@@ -95,20 +91,22 @@ def deploy_share_token_contract(address, private_key, personal_info_contract_add
         "token.dividend_record_date",
         "token.dividend_payment_date",
         "token.cancellation_date",
-        200
+        200,
     ]
+    share_contract = IbetShareContract()
+    contract_address, _, _ = share_contract.create(arguments, address, private_key)
 
-    contract_address, _, _ = IbetShareContract.create(arguments, address, private_key)
-
-    data = IbetShareUpdate()
+    data = IbetShareUpdateParams()
     data.personal_info_contract_address = personal_info_contract_address
-    IbetShareContract.update(contract_address, data, address, private_key)
+    share_contract.update(data, address, private_key)
 
     return contract_address
 
 
 def deploy_personal_info_contract(address, private_key):
-    contract_address, _, _ = ContractUtils.deploy_contract("PersonalInfo", [], address, private_key)
+    contract_address, _, _ = ContractUtils.deploy_contract(
+        "PersonalInfo", [], address, private_key
+    )
     return contract_address
 
 
@@ -116,13 +114,15 @@ def set_personal_info_contract(db, contract_address, issuer_address, sender_list
     contract = ContractUtils.get_contract("PersonalInfo", contract_address)
 
     for sender in sender_list:
-        tx = contract.functions.register(issuer_address, "").build_transaction({
-            "nonce": web3.eth.get_transaction_count(sender["address"]),
-            "chainId": CHAIN_ID,
-            "from": sender["address"],
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+        tx = contract.functions.register(issuer_address, "").build_transaction(
+            {
+                "nonce": web3.eth.get_transaction_count(sender["address"]),
+                "chainId": CHAIN_ID,
+                "from": sender["address"],
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         ContractUtils.send_transaction(tx, sender["private_key"])
 
         personal_info = PersonalInfoContract(db, issuer_address, contract_address)
@@ -130,7 +130,6 @@ def set_personal_info_contract(db, contract_address, issuer_address, sender_list
 
 
 class TestCreateLedger:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -141,20 +140,17 @@ class TestCreateLedger:
         issuer = config_eth_account("user5")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=issuer["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
         )
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # prepare data
@@ -170,28 +166,35 @@ class TestCreateLedger:
         db.add(_account)
 
         # Token
-        personal_info_contract_address = deploy_personal_info_contract(issuer_address, issuer_private_key)
-        set_personal_info_contract(db, personal_info_contract_address, issuer_address,
-                                   [
-                                       {
-                                           "address": user_address_1,
-                                           "private_key": user_private_key_1,
-                                           "data": {
-                                               "name": "name_test_con_1",
-                                               "address": "address_test_con_1",
-                                           },
-                                       },
-                                       {
-                                           "address": user_address_2,
-                                           "private_key": user_private_key_2,
-                                           "data": {
-                                               "name": "name_test_con_2",
-                                               "address": "address_test_con_2",
-                                           },
-                                       }
-                                   ])
-        token_address_1 = deploy_share_token_contract(issuer_address, issuer_private_key,
-                                                      personal_info_contract_address)
+        personal_info_contract_address = deploy_personal_info_contract(
+            issuer_address, issuer_private_key
+        )
+        set_personal_info_contract(
+            db,
+            personal_info_contract_address,
+            issuer_address,
+            [
+                {
+                    "address": user_address_1,
+                    "private_key": user_private_key_1,
+                    "data": {
+                        "name": "name_test_con_1",
+                        "address": "address_test_con_1",
+                    },
+                },
+                {
+                    "address": user_address_2,
+                    "private_key": user_private_key_2,
+                    "data": {
+                        "name": "name_test_con_2",
+                        "address": "address_test_con_2",
+                    },
+                },
+            ],
+        )
+        token_address_1 = deploy_share_token_contract(
+            issuer_address, issuer_private_key, personal_info_contract_address
+        )
         _token_1 = Token()
         _token_1.type = TokenType.IBET_SHARE.value
         _token_1.tx_hash = ""
@@ -219,7 +222,9 @@ class TestCreateLedger:
         _utxo_1.token_address = token_address_1
         _utxo_1.amount = 100
         _utxo_1.block_number = 1
-        _utxo_1.block_timestamp = datetime.strptime("2021/12/31 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/01
+        _utxo_1.block_timestamp = datetime.strptime(
+            "2021/12/31 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/01
         db.add(_utxo_1)
 
         _utxo_2 = UTXO()
@@ -228,7 +233,9 @@ class TestCreateLedger:
         _utxo_2.token_address = token_address_1
         _utxo_2.amount = 10
         _utxo_2.block_number = 2
-        _utxo_2.block_timestamp = datetime.strptime("2022/01/01 01:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/01
+        _utxo_2.block_timestamp = datetime.strptime(
+            "2022/01/01 01:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/01
         db.add(_utxo_2)
 
         _utxo_3 = UTXO()
@@ -237,7 +244,9 @@ class TestCreateLedger:
         _utxo_3.token_address = token_address_1
         _utxo_3.amount = 30
         _utxo_3.block_number = 3
-        _utxo_3.block_timestamp = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _utxo_3.block_timestamp = datetime.strptime(
+            "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_utxo_3)
 
         _utxo_4 = UTXO()
@@ -246,7 +255,9 @@ class TestCreateLedger:
         _utxo_4.token_address = token_address_1
         _utxo_4.amount = 40
         _utxo_4.block_number = 4
-        _utxo_4.block_timestamp = datetime.strptime("2022/01/02 01:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _utxo_4.block_timestamp = datetime.strptime(
+            "2022/01/02 01:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_utxo_4)
 
         _utxo_5 = UTXO()
@@ -255,7 +266,9 @@ class TestCreateLedger:
         _utxo_5.token_address = token_address_1
         _utxo_5.amount = 200
         _utxo_5.block_number = 5
-        _utxo_5.block_timestamp = datetime.strptime("2021/12/31 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/01
+        _utxo_5.block_timestamp = datetime.strptime(
+            "2021/12/31 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/01
         db.add(_utxo_5)
 
         _utxo_6 = UTXO()
@@ -264,7 +277,9 @@ class TestCreateLedger:
         _utxo_6.token_address = token_address_1
         _utxo_6.amount = 20
         _utxo_6.block_number = 6
-        _utxo_6.block_timestamp = datetime.strptime("2022/01/01 01:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/01
+        _utxo_6.block_timestamp = datetime.strptime(
+            "2022/01/01 01:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/01
         db.add(_utxo_6)
 
         _utxo_7 = UTXO()
@@ -273,7 +288,9 @@ class TestCreateLedger:
         _utxo_7.token_address = token_address_1
         _utxo_7.amount = 40
         _utxo_7.block_number = 7
-        _utxo_7.block_timestamp = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _utxo_7.block_timestamp = datetime.strptime(
+            "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_utxo_7)
 
         _utxo_8 = UTXO()
@@ -282,7 +299,9 @@ class TestCreateLedger:
         _utxo_8.token_address = token_address_1
         _utxo_8.amount = 2
         _utxo_8.block_number = 8
-        _utxo_8.block_timestamp = datetime.strptime("2022/01/02 01:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _utxo_8.block_timestamp = datetime.strptime(
+            "2022/01/02 01:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_utxo_8)
 
         # Template
@@ -301,12 +320,10 @@ class TestCreateLedger:
                     "テスト項目B": "テスト値2B",
                 },
                 "テスト項目3": {
-                    "テスト項目A": {
-                        "テスト項目a": "テスト値3Aa"
-                    },
+                    "テスト項目A": {"テスト項目a": "テスト値3Aa"},
                     "テスト項目B": "テスト値3B",
                 },
-            }
+            },
         ]
         _template.token_name = "受益権テスト"
         _template.footers = [
@@ -321,12 +338,10 @@ class TestCreateLedger:
                     "f-テスト項目B": "f-テスト値2B",
                 },
                 "f-テスト項目3": {
-                    "f-テスト項目A": {
-                        "f-テスト項目a": "f-テスト値3Aa"
-                    },
+                    "f-テスト項目A": {"f-テスト項目a": "f-テスト値3Aa"},
                     "f-テスト項目B": "f-テスト値3B",
                 },
-            }
+            },
         ]
         db.add(_template)
 
@@ -344,7 +359,7 @@ class TestCreateLedger:
                 "test項目2": {
                     "test項目A": "test値2A",
                 },
-            }
+            },
         ]
         _details_1.footers = [
             {
@@ -353,12 +368,8 @@ class TestCreateLedger:
             },
             {
                 "test-item1": "test-value1",
-                "test-item2": {
-                    "test-itemA": {
-                        "test-itema": "test-value2Aa"
-                    }
-                },
-            }
+                "test-item2": {"test-itemA": {"test-itema": "test-value2Aa"}},
+            },
         ]
         _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
         _details_1.data_source = token_address_1
@@ -376,7 +387,7 @@ class TestCreateLedger:
             {
                 "d-test項目1": "d-test値1",
                 "d-test項目2": "d-test値2",
-            }
+            },
         ]
         _details_2.footers = [
             {
@@ -386,7 +397,7 @@ class TestCreateLedger:
             {
                 "f-d-test項目1": "d-test値1",
                 "f-d-test項目2": "d-test値2",
-            }
+            },
         ]
         _details_2.data_type = LedgerDetailsDataType.DB.value
         _details_2.data_source = "data_id_2"
@@ -431,7 +442,7 @@ class TestCreateLedger:
         assert _notification.metainfo == {
             "token_address": token_address_1,
             "token_type": TokenType.IBET_SHARE.value,
-            "ledger_id": 1
+            "ledger_id": 1,
         }
 
         _ledger = db.query(Ledger).first()
@@ -454,12 +465,10 @@ class TestCreateLedger:
                         "テスト項目B": "テスト値2B",
                     },
                     "テスト項目3": {
-                        "テスト項目A": {
-                            "テスト項目a": "テスト値3Aa"
-                        },
+                        "テスト項目A": {"テスト項目a": "テスト値3Aa"},
                         "テスト項目B": "テスト値3B",
                     },
-                }
+                },
             ],
             "details": [
                 {
@@ -474,7 +483,7 @@ class TestCreateLedger:
                             "test項目2": {
                                 "test項目A": "test値2A",
                             },
-                        }
+                        },
                     ],
                     "data": [
                         {
@@ -522,12 +531,10 @@ class TestCreateLedger:
                         {
                             "test-item1": "test-value1",
                             "test-item2": {
-                                "test-itemA": {
-                                    "test-itema": "test-value2Aa"
-                                }
+                                "test-itemA": {"test-itema": "test-value2Aa"}
                             },
-                        }
-                    ]
+                        },
+                    ],
                 },
                 {
                     "token_detail_type": "劣後受益権",
@@ -539,7 +546,7 @@ class TestCreateLedger:
                         {
                             "d-test項目1": "d-test値1",
                             "d-test項目2": "d-test値2",
-                        }
+                        },
                     ],
                     "data": [
                         {
@@ -569,8 +576,8 @@ class TestCreateLedger:
                         {
                             "f-d-test項目1": "d-test値1",
                             "f-d-test項目2": "d-test値2",
-                        }
-                    ]
+                        },
+                    ],
                 },
             ],
             "footers": [
@@ -585,13 +592,11 @@ class TestCreateLedger:
                         "f-テスト項目B": "f-テスト値2B",
                     },
                     "f-テスト項目3": {
-                        "f-テスト項目A": {
-                            "f-テスト項目a": "f-テスト値3Aa"
-                        },
+                        "f-テスト項目A": {"f-テスト項目a": "f-テスト値3Aa"},
                         "f-テスト項目B": "f-テスト値3B",
                     },
-                }
-            ]
+                },
+            ],
         }
 
     # <Normal_2>
@@ -600,20 +605,17 @@ class TestCreateLedger:
         issuer = config_eth_account("user5")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=issuer["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
         )
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_2 = user_2["address"]
         user_private_key_2 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # prepare data
@@ -629,28 +631,35 @@ class TestCreateLedger:
         db.add(_account)
 
         # Token
-        personal_info_contract_address = deploy_personal_info_contract(issuer_address, issuer_private_key)
-        set_personal_info_contract(db, personal_info_contract_address, issuer_address,
-                                   [
-                                       {
-                                           "address": user_address_1,
-                                           "private_key": user_private_key_1,
-                                           "data": {
-                                               "name": "name_test_con_1",
-                                               "address": "address_test_con_1",
-                                           },
-                                       },
-                                       {
-                                           "address": user_address_2,
-                                           "private_key": user_private_key_2,
-                                           "data": {
-                                               "name": "name_test_con_2",
-                                               "address": "address_test_con_2",
-                                           },
-                                       }
-                                   ])
-        token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key,
-                                                     personal_info_contract_address)
+        personal_info_contract_address = deploy_personal_info_contract(
+            issuer_address, issuer_private_key
+        )
+        set_personal_info_contract(
+            db,
+            personal_info_contract_address,
+            issuer_address,
+            [
+                {
+                    "address": user_address_1,
+                    "private_key": user_private_key_1,
+                    "data": {
+                        "name": "name_test_con_1",
+                        "address": "address_test_con_1",
+                    },
+                },
+                {
+                    "address": user_address_2,
+                    "private_key": user_private_key_2,
+                    "data": {
+                        "name": "name_test_con_2",
+                        "address": "address_test_con_2",
+                    },
+                },
+            ],
+        )
+        token_address_1 = deploy_bond_token_contract(
+            issuer_address, issuer_private_key, personal_info_contract_address
+        )
         _token_1 = Token()
         _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
@@ -678,7 +687,9 @@ class TestCreateLedger:
         _utxo_1.token_address = token_address_1
         _utxo_1.amount = 100
         _utxo_1.block_number = 1
-        _utxo_1.block_timestamp = datetime.strptime("2021/12/31 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/01
+        _utxo_1.block_timestamp = datetime.strptime(
+            "2021/12/31 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/01
         db.add(_utxo_1)
 
         _utxo_2 = UTXO()
@@ -687,7 +698,9 @@ class TestCreateLedger:
         _utxo_2.token_address = token_address_1
         _utxo_2.amount = 10
         _utxo_2.block_number = 2
-        _utxo_2.block_timestamp = datetime.strptime("2022/01/01 01:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/01
+        _utxo_2.block_timestamp = datetime.strptime(
+            "2022/01/01 01:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/01
         db.add(_utxo_2)
 
         _utxo_3 = UTXO()
@@ -696,7 +709,9 @@ class TestCreateLedger:
         _utxo_3.token_address = token_address_1
         _utxo_3.amount = 30
         _utxo_3.block_number = 3
-        _utxo_3.block_timestamp = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _utxo_3.block_timestamp = datetime.strptime(
+            "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_utxo_3)
 
         _utxo_4 = UTXO()
@@ -705,7 +720,9 @@ class TestCreateLedger:
         _utxo_4.token_address = token_address_1
         _utxo_4.amount = 40
         _utxo_4.block_number = 4
-        _utxo_4.block_timestamp = datetime.strptime("2022/01/02 01:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _utxo_4.block_timestamp = datetime.strptime(
+            "2022/01/02 01:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_utxo_4)
 
         _utxo_5 = UTXO()
@@ -714,7 +731,9 @@ class TestCreateLedger:
         _utxo_5.token_address = token_address_1
         _utxo_5.amount = 200
         _utxo_5.block_number = 5
-        _utxo_5.block_timestamp = datetime.strptime("2021/12/31 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/01
+        _utxo_5.block_timestamp = datetime.strptime(
+            "2021/12/31 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/01
         db.add(_utxo_5)
 
         _utxo_6 = UTXO()
@@ -723,7 +742,9 @@ class TestCreateLedger:
         _utxo_6.token_address = token_address_1
         _utxo_6.amount = 20
         _utxo_6.block_number = 6
-        _utxo_6.block_timestamp = datetime.strptime("2022/01/01 01:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/01
+        _utxo_6.block_timestamp = datetime.strptime(
+            "2022/01/01 01:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/01
         db.add(_utxo_6)
 
         _utxo_7 = UTXO()
@@ -732,7 +753,9 @@ class TestCreateLedger:
         _utxo_7.token_address = token_address_1
         _utxo_7.amount = 40
         _utxo_7.block_number = 7
-        _utxo_7.block_timestamp = datetime.strptime("2022/01/01 15:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _utxo_7.block_timestamp = datetime.strptime(
+            "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_utxo_7)
 
         _utxo_8 = UTXO()
@@ -741,7 +764,9 @@ class TestCreateLedger:
         _utxo_8.token_address = token_address_1
         _utxo_8.amount = 2
         _utxo_8.block_number = 8
-        _utxo_8.block_timestamp = datetime.strptime("2022/01/02 01:20:30", '%Y/%m/%d %H:%M:%S')  # JST 2022/01/02
+        _utxo_8.block_timestamp = datetime.strptime(
+            "2022/01/02 01:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/02
         db.add(_utxo_8)
 
         # Template
@@ -763,12 +788,10 @@ class TestCreateLedger:
                     "テスト項目B": "テスト値2B",
                 },
                 "テスト項目3": {
-                    "テスト項目A": {
-                        "テスト項目a": "テスト値3Aa"
-                    },
+                    "テスト項目A": {"テスト項目a": "テスト値3Aa"},
                     "テスト項目B": "テスト値3B",
                 },
-            }
+            },
         ]
         _template.footers = [
             {
@@ -782,12 +805,10 @@ class TestCreateLedger:
                     "f-テスト項目B": "f-テスト値2B",
                 },
                 "f-テスト項目3": {
-                    "f-テスト項目A": {
-                        "f-テスト項目a": "f-テスト値3Aa"
-                    },
+                    "f-テスト項目A": {"f-テスト項目a": "f-テスト値3Aa"},
                     "f-テスト項目B": "f-テスト値3B",
                 },
-            }
+            },
         ]
         db.add(_template)
 
@@ -805,7 +826,7 @@ class TestCreateLedger:
                 "test項目2": {
                     "test項目A": "test値2A",
                 },
-            }
+            },
         ]
         _details_1.footers = [
             {
@@ -814,12 +835,8 @@ class TestCreateLedger:
             },
             {
                 "test-item1": "test-value1",
-                "test-item2": {
-                    "test-itemA": {
-                        "test-itema": "test-value2Aa"
-                    }
-                },
-            }
+                "test-item2": {"test-itemA": {"test-itema": "test-value2Aa"}},
+            },
         ]
         _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
         _details_1.data_source = token_address_1
@@ -837,7 +854,7 @@ class TestCreateLedger:
             {
                 "d-test項目1": "d-test値1",
                 "d-test項目2": "d-test値2",
-            }
+            },
         ]
         _details_2.footers = [
             {
@@ -847,7 +864,7 @@ class TestCreateLedger:
             {
                 "f-d-test項目1": "d-test値1",
                 "f-d-test項目2": "d-test値2",
-            }
+            },
         ]
         _details_2.data_type = LedgerDetailsDataType.DB.value
         _details_2.data_source = "data_id_2"
@@ -892,7 +909,7 @@ class TestCreateLedger:
         assert _notification.metainfo == {
             "token_address": token_address_1,
             "token_type": TokenType.IBET_STRAIGHT_BOND.value,
-            "ledger_id": 1
+            "ledger_id": 1,
         }
         _ledger = db.query(Ledger).first()
         assert _ledger.id == 1
@@ -914,12 +931,10 @@ class TestCreateLedger:
                         "テスト項目B": "テスト値2B",
                     },
                     "テスト項目3": {
-                        "テスト項目A": {
-                            "テスト項目a": "テスト値3Aa"
-                        },
+                        "テスト項目A": {"テスト項目a": "テスト値3Aa"},
                         "テスト項目B": "テスト値3B",
                     },
-                }
+                },
             ],
             "details": [
                 {
@@ -934,7 +949,7 @@ class TestCreateLedger:
                             "test項目2": {
                                 "test項目A": "test値2A",
                             },
-                        }
+                        },
                     ],
                     "data": [
                         {
@@ -982,12 +997,10 @@ class TestCreateLedger:
                         {
                             "test-item1": "test-value1",
                             "test-item2": {
-                                "test-itemA": {
-                                    "test-itema": "test-value2Aa"
-                                }
+                                "test-itemA": {"test-itema": "test-value2Aa"}
                             },
-                        }
-                    ]
+                        },
+                    ],
                 },
                 {
                     "token_detail_type": "劣後受益権",
@@ -999,7 +1012,7 @@ class TestCreateLedger:
                         {
                             "d-test項目1": "d-test値1",
                             "d-test項目2": "d-test値2",
-                        }
+                        },
                     ],
                     "data": [
                         {
@@ -1029,8 +1042,8 @@ class TestCreateLedger:
                         {
                             "f-d-test項目1": "d-test値1",
                             "f-d-test項目2": "d-test値2",
-                        }
-                    ]
+                        },
+                    ],
                 },
             ],
             "footers": [
@@ -1045,13 +1058,11 @@ class TestCreateLedger:
                         "f-テスト項目B": "f-テスト値2B",
                     },
                     "f-テスト項目3": {
-                        "f-テスト項目A": {
-                            "f-テスト項目a": "f-テスト値3Aa"
-                        },
+                        "f-テスト項目A": {"f-テスト項目a": "f-テスト値3Aa"},
                         "f-テスト項目B": "f-テスト値3B",
                     },
-                }
-            ]
+                },
+            ],
         }
 
     # <Normal_3>
@@ -1060,13 +1071,14 @@ class TestCreateLedger:
         issuer = config_eth_account("user5")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=issuer["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
         )
 
         # prepare data
         # Token
-        token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key, ZERO_ADDRESS)
+        token_address_1 = deploy_bond_token_contract(
+            issuer_address, issuer_private_key, ZERO_ADDRESS
+        )
         _token_1 = Token()
         _token_1.type = TokenType.IBET_STRAIGHT_BOND.value
         _token_1.tx_hash = ""
@@ -1090,13 +1102,14 @@ class TestCreateLedger:
         issuer = config_eth_account("user5")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=issuer["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
         )
 
         # prepare data
         # Token
-        token_address_1 = deploy_bond_token_contract(issuer_address, issuer_private_key, ZERO_ADDRESS)
+        token_address_1 = deploy_bond_token_contract(
+            issuer_address, issuer_private_key, ZERO_ADDRESS
+        )
         _token_1 = Token()
         _token_1.type = "IbetCoupon"
         _token_1.tx_hash = ""

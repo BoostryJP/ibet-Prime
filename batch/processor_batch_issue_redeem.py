@@ -20,42 +20,43 @@ import os
 import sys
 import time
 import uuid
-from typing import List
+from typing import List, Type
 
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-path = os.path.join(os.path.dirname(__file__), '../')
+path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
-from config import DATABASE_URL
-from app.model.blockchain import (
-    IbetStraightBondContract,
-    IbetShareContract
+import batch_log
+
+from app.exceptions import ContractRevertError, SendTransactionError
+from app.model.blockchain import IbetShareContract, IbetStraightBondContract
+from app.model.blockchain.tx_params.ibet_share import (
+    AdditionalIssueParams as IbetShareAdditionalIssueParams,
+)
+from app.model.blockchain.tx_params.ibet_share import (
+    RedeemParams as IbetShareRedeemParams,
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    RedeemParams as IbetStraightBondRedeemParams,
 )
 from app.model.db import (
-    BatchIssueRedeemUpload,
+    Account,
     BatchIssueRedeem,
     BatchIssueRedeemProcessingCategory,
-    TokenType,
-    Account,
+    BatchIssueRedeemUpload,
     Notification,
-    NotificationType
-)
-from app.model.schema import (
-    IbetStraightBondAdditionalIssue,
-    IbetStraightBondRedeem,
-    IbetShareAdditionalIssue,
-    IbetShareRedeem
+    NotificationType,
+    TokenType,
 )
 from app.utils.e2ee_utils import E2EEUtils
-from app.exceptions import (
-    SendTransactionError,
-    ContractRevertError
-)
-import batch_log
+from config import DATABASE_URL
 
 """
 [PROCESSOR-Batch-Issue-Redeem]
@@ -70,20 +71,23 @@ db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 
 class Processor:
-
     def process(self):
         db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
         try:
-            upload_list: List[BatchIssueRedeemUpload] = db_session.query(BatchIssueRedeemUpload). \
-                filter(BatchIssueRedeemUpload.processed == False). \
-                all()
+            upload_list: List[Type[BatchIssueRedeemUpload]] = (
+                db_session.query(BatchIssueRedeemUpload)
+                .filter(BatchIssueRedeemUpload.processed == False)
+                .all()
+            )
             for upload in upload_list:
                 LOG.info(f"Process start: upload_id={upload.upload_id}")
 
                 # Get issuer's private key
-                issuer_account = db_session.query(Account). \
-                    filter(Account.issuer_address == upload.issuer_address). \
-                    first()
+                issuer_account = (
+                    db_session.query(Account)
+                    .filter(Account.issuer_address == upload.issuer_address)
+                    .first()
+                )
                 if issuer_account is None:
                     LOG.exception("Issuer account does not exist")
                     self.__sink_on_notification(
@@ -94,7 +98,7 @@ class Processor:
                         code=1,
                         upload_category=upload.category,
                         upload_id=upload.upload_id,
-                        error_data_id_list=[]
+                        error_data_id_list=[],
                     )
                     upload.processed = True
                     db_session.commit()
@@ -103,7 +107,9 @@ class Processor:
                 try:
                     issuer_pk = decode_keyfile_json(
                         raw_keyfile_json=issuer_account.keyfile,
-                        password=E2EEUtils.decrypt(issuer_account.eoa_password).encode("utf-8")
+                        password=E2EEUtils.decrypt(issuer_account.eoa_password).encode(
+                            "utf-8"
+                        ),
                     )
                 except (ValueError, TypeError):
                     LOG.exception("Failed to decode keyfile")
@@ -115,66 +121,86 @@ class Processor:
                         code=2,
                         upload_category=upload.category,
                         upload_id=upload.upload_id,
-                        error_data_id_list=[]
+                        error_data_id_list=[],
                     )
                     upload.processed = True
                     db_session.commit()
                     continue
 
                 # Batch processing
-                batch_data_list: List[BatchIssueRedeem] = db_session.query(BatchIssueRedeem). \
-                    filter(BatchIssueRedeem.upload_id == upload.upload_id). \
-                    filter(BatchIssueRedeem.status == 0). \
-                    all()
+                batch_data_list: List[BatchIssueRedeem] = (
+                    db_session.query(BatchIssueRedeem)
+                    .filter(BatchIssueRedeem.upload_id == upload.upload_id)
+                    .filter(BatchIssueRedeem.status == 0)
+                    .all()
+                )
                 for batch_data in batch_data_list:
                     tx_hash = "-"
                     try:
                         if upload.token_type == TokenType.IBET_STRAIGHT_BOND.value:
-                            if upload.category == BatchIssueRedeemProcessingCategory.ISSUE.value:
-                                tx_hash = IbetStraightBondContract.additional_issue(
-                                    contract_address=upload.token_address,
-                                    data=IbetStraightBondAdditionalIssue(
+                            if (
+                                upload.category
+                                == BatchIssueRedeemProcessingCategory.ISSUE.value
+                            ):
+                                tx_hash = IbetStraightBondContract(
+                                    upload.token_address
+                                ).additional_issue(
+                                    data=IbetStraightBondAdditionalIssueParams(
                                         account_address=batch_data.account_address,
-                                        amount=batch_data.amount
+                                        amount=batch_data.amount,
                                     ),
                                     tx_from=upload.issuer_address,
-                                    private_key=issuer_pk
+                                    private_key=issuer_pk,
                                 )
-                            elif upload.category == BatchIssueRedeemProcessingCategory.REDEEM.value:
-                                tx_hash = IbetStraightBondContract.redeem(
-                                    contract_address=upload.token_address,
-                                    data=IbetStraightBondRedeem(
+                            elif (
+                                upload.category
+                                == BatchIssueRedeemProcessingCategory.REDEEM.value
+                            ):
+                                tx_hash = IbetStraightBondContract(
+                                    upload.token_address
+                                ).redeem(
+                                    data=IbetStraightBondRedeemParams(
                                         account_address=batch_data.account_address,
-                                        amount=batch_data.amount
+                                        amount=batch_data.amount,
                                     ),
                                     tx_from=upload.issuer_address,
-                                    private_key=issuer_pk
+                                    private_key=issuer_pk,
                                 )
                         elif upload.token_type == TokenType.IBET_SHARE.value:
-                            if upload.category == BatchIssueRedeemProcessingCategory.ISSUE.value:
-                                tx_hash = IbetShareContract.additional_issue(
-                                    contract_address=upload.token_address,
-                                    data=IbetShareAdditionalIssue(
+                            if (
+                                upload.category
+                                == BatchIssueRedeemProcessingCategory.ISSUE.value
+                            ):
+                                tx_hash = IbetShareContract(
+                                    upload.token_address
+                                ).additional_issue(
+                                    data=IbetShareAdditionalIssueParams(
                                         account_address=batch_data.account_address,
-                                        amount=batch_data.amount
+                                        amount=batch_data.amount,
                                     ),
                                     tx_from=upload.issuer_address,
-                                    private_key=issuer_pk
+                                    private_key=issuer_pk,
                                 )
-                            elif upload.category == BatchIssueRedeemProcessingCategory.REDEEM.value:
-                                tx_hash = IbetShareContract.redeem(
-                                    contract_address=upload.token_address,
-                                    data=IbetShareRedeem(
+                            elif (
+                                upload.category
+                                == BatchIssueRedeemProcessingCategory.REDEEM.value
+                            ):
+                                tx_hash = IbetShareContract(
+                                    upload.token_address
+                                ).redeem(
+                                    data=IbetShareRedeemParams(
                                         account_address=batch_data.account_address,
-                                        amount=batch_data.amount
+                                        amount=batch_data.amount,
                                     ),
                                     tx_from=upload.issuer_address,
-                                    private_key=issuer_pk
+                                    private_key=issuer_pk,
                                 )
                         LOG.debug(f"Transaction sent successfully: {tx_hash}")
                         batch_data.status = 1
                     except ContractRevertError as e:
-                        LOG.warning(f"Transaction reverted: upload_id=<{batch_data.upload_id}> error_code:<{e.code}> error_msg:<{e.message}>")
+                        LOG.warning(
+                            f"Transaction reverted: upload_id=<{batch_data.upload_id}> error_code:<{e.code}> error_msg:<{e.message}>"
+                        )
                         batch_data.status = 2
                     except SendTransactionError:
                         LOG.warning(f"Failed to send transaction: {tx_hash}")
@@ -183,10 +209,12 @@ class Processor:
                         db_session.commit()  # commit for each data
 
                 # Process failed data
-                failed_batch_data_list: List[BatchIssueRedeem] = db_session.query(BatchIssueRedeem). \
-                    filter(BatchIssueRedeem.upload_id == upload.upload_id). \
-                    filter(BatchIssueRedeem.status == 2). \
-                    all()
+                failed_batch_data_list: List[BatchIssueRedeem] = (
+                    db_session.query(BatchIssueRedeem)
+                    .filter(BatchIssueRedeem.upload_id == upload.upload_id)
+                    .filter(BatchIssueRedeem.status == 2)
+                    .all()
+                )
 
                 error_data_id_list = [data.id for data in failed_batch_data_list]
                 # 0: Success, 3: failed
@@ -199,7 +227,7 @@ class Processor:
                     code=code,
                     upload_category=upload.category,
                     upload_id=upload.upload_id,
-                    error_data_id_list=error_data_id_list
+                    error_data_id_list=error_data_id_list,
                 )
                 # Update to processed
                 upload.processed = True
@@ -210,14 +238,16 @@ class Processor:
             db_session.close()
 
     @staticmethod
-    def __sink_on_notification(db_session: Session,
-                               issuer_address: str,
-                               token_address: str,
-                               token_type: str,
-                               upload_category: str,
-                               code: int,
-                               upload_id: str,
-                               error_data_id_list: list[int]):
+    def __sink_on_notification(
+        db_session: Session,
+        issuer_address: str,
+        token_address: str,
+        token_type: str,
+        upload_category: str,
+        code: int,
+        upload_id: str,
+        error_data_id_list: list[int],
+    ):
         notification = Notification()
         notification.notice_id = uuid.uuid4()
         notification.issuer_address = issuer_address
@@ -229,7 +259,7 @@ class Processor:
             "upload_id": upload_id,
             "error_data_id": error_data_id_list,
             "token_address": token_address,
-            "token_type": token_type
+            "token_type": token_type,
         }
         db_session.add(notification)
 

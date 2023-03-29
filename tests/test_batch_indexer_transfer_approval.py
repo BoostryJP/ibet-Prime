@@ -16,38 +16,46 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from datetime import datetime
-from eth_keyfile import decode_keyfile_json
 import logging
-import pytest
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
+from datetime import datetime
 from unittest import mock
 from unittest.mock import patch
 from uuid import UUID
 
+import pytest
+from eth_keyfile import decode_keyfile_json
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
 import config
 from app.exceptions import ServiceUnavailableError
+from app.model.blockchain import IbetShareContract, IbetStraightBondContract
+from app.model.blockchain.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams,
+)
 from app.model.db import (
-    Token,
-    TokenType,
     IDXTransferApproval,
     IDXTransferApprovalBlockNumber,
     Notification,
-    NotificationType
+    NotificationType,
+    Token,
+    TokenType,
 )
-from app.model.blockchain import IbetStraightBondContract, IbetShareContract
-from app.model.schema import IbetStraightBondUpdate, IbetShareUpdate
-from app.utils.web3_utils import Web3Wrapper
 from app.utils.contract_utils import ContractUtils
-from batch.indexer_transfer_approval import Processor, LOG, main
+from app.utils.web3_utils import Web3Wrapper
+from batch.indexer_transfer_approval import LOG, Processor, main
 from config import CHAIN_ID, TX_GAS_LIMIT
 from tests.account_config import config_eth_account
 from tests.utils.contract_utils import (
     IbetSecurityTokenContractTestUtils as STContractUtils,
-    PersonalInfoContractTestUtils,
+)
+from tests.utils.contract_utils import (
     IbetSecurityTokenEscrowContractTestUtils as STEscrowContractUtils,
 )
+from tests.utils.contract_utils import PersonalInfoContractTestUtils
 
 web3 = Web3Wrapper()
 
@@ -74,11 +82,13 @@ def processor(db, caplog: pytest.LogCaptureFixture):
     LOG.setLevel(default_log_level)
 
 
-def deploy_bond_token_contract(address,
-                               private_key,
-                               personal_info_contract_address,
-                               tradable_exchange_contract_address=None,
-                               transfer_approval_required=None):
+def deploy_bond_token_contract(
+    address,
+    private_key,
+    personal_info_contract_address,
+    tradable_exchange_contract_address=None,
+    transfer_approval_required=None,
+):
     arguments = [
         "token.name",
         "token.symbol",
@@ -88,28 +98,31 @@ def deploy_bond_token_contract(address,
         30,
         "token.return_date",
         "token.return_amount",
-        "token.purpose"
+        "token.purpose",
     ]
-
-    token_address, _, _ = IbetStraightBondContract.create(arguments, address, private_key)
-    IbetStraightBondContract.update(
-        contract_address=token_address,
-        data=IbetStraightBondUpdate(transferable=True,
-                                    personal_info_contract_address=personal_info_contract_address,
-                                    tradable_exchange_contract_address=tradable_exchange_contract_address,
-                                    transfer_approval_required=transfer_approval_required),
+    bond_contrat = IbetStraightBondContract()
+    token_address, _, _ = bond_contrat.create(arguments, address, private_key)
+    bond_contrat.update(
+        data=IbetStraightBondUpdateParams(
+            transferable=True,
+            personal_info_contract_address=personal_info_contract_address,
+            tradable_exchange_contract_address=tradable_exchange_contract_address,
+            transfer_approval_required=transfer_approval_required,
+        ),
         tx_from=address,
-        private_key=private_key
+        private_key=private_key,
     )
 
     return ContractUtils.get_contract("IbetStraightBond", token_address)
 
 
-def deploy_share_token_contract(address,
-                                private_key,
-                                personal_info_contract_address,
-                                tradable_exchange_contract_address=None,
-                                transfer_approval_required=None):
+def deploy_share_token_contract(
+    address,
+    private_key,
+    personal_info_contract_address,
+    tradable_exchange_contract_address=None,
+    transfer_approval_required=None,
+):
     arguments = [
         "token.name",
         "token.symbol",
@@ -119,25 +132,25 @@ def deploy_share_token_contract(address,
         "token.dividend_record_date",
         "token.dividend_payment_date",
         "token.cancellation_date",
-        30
+        30,
     ]
-
-    token_address, _, _ = IbetShareContract.create(arguments, address, private_key)
-    IbetShareContract.update(
-        contract_address=token_address,
-        data=IbetShareUpdate(transferable=True,
-                             personal_info_contract_address=personal_info_contract_address,
-                             tradable_exchange_contract_address=tradable_exchange_contract_address,
-                             transfer_approval_required=transfer_approval_required),
+    share_contract = IbetShareContract()
+    token_address, _, _ = share_contract.create(arguments, address, private_key)
+    share_contract.update(
+        data=IbetShareUpdateParams(
+            transferable=True,
+            personal_info_contract_address=personal_info_contract_address,
+            tradable_exchange_contract_address=tradable_exchange_contract_address,
+            transfer_approval_required=transfer_approval_required,
+        ),
         tx_from=address,
-        private_key=private_key
+        private_key=private_key,
     )
 
     return ContractUtils.get_contract("IbetShare", token_address)
 
 
 class TestProcessor:
-
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -172,7 +185,9 @@ class TestProcessor:
         _notification_list = db.query(Notification).all()
         assert len(_notification_list) == 0
 
-        _idx_transfer_approval_block_number = db.query(IDXTransferApprovalBlockNumber).first()
+        _idx_transfer_approval_block_number = db.query(
+            IDXTransferApprovalBlockNumber
+        ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
 
@@ -183,15 +198,16 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address,
-                                                      transfer_approval_required=True)
+        token_contract_1 = deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            transfer_approval_required=True,
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -229,7 +245,9 @@ class TestProcessor:
         _notification_list = db.query(Notification).all()
         assert len(_notification_list) == 0
 
-        _idx_transfer_approval_block_number = db.query(IDXTransferApprovalBlockNumber).first()
+        _idx_transfer_approval_block_number = db.query(
+            IDXTransferApprovalBlockNumber
+        ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
 
@@ -241,21 +259,21 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address,
-                                                      transfer_approval_required=True)
+        token_contract_1 = deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            transfer_approval_required=True,
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -284,28 +302,28 @@ class TestProcessor:
 
         # Transfer
         tx = token_contract_1.functions.transferFrom(
-            issuer_address,
-            user_address_1,
-            40
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            issuer_address, user_address_1, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # ApplyForTransfer
         tx = token_contract_1.functions.applyForTransfer(
-            issuer_address,
-            30,
-            ""
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": user_address_1,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            issuer_address, 30, ""
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         _, tx_receipt_1 = ContractUtils.send_transaction(tx, user_private_key_1)
 
         # Run target process
@@ -325,7 +343,10 @@ class TestProcessor:
         assert _transfer_approval.amount == 30
         assert _transfer_approval.application_datetime is None
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _transfer_approval.application_blocktimestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert (
+            _transfer_approval.application_blocktimestamp
+            == datetime.utcfromtimestamp(block["timestamp"])
+        )
         assert _transfer_approval.approval_datetime is None
         assert _transfer_approval.approval_blocktimestamp is None
         assert _transfer_approval.cancelled is None
@@ -343,10 +364,12 @@ class TestProcessor:
         assert _notification.metainfo == {
             "token_type": token_1.type,
             "token_address": token_address_1,
-            "id": 1
+            "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.query(IDXTransferApprovalBlockNumber).first()
+        _idx_transfer_approval_block_number = db.query(
+            IDXTransferApprovalBlockNumber
+        ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
 
@@ -359,21 +382,21 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address,
-                                                      transfer_approval_required=True)
+        token_contract_1 = deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            transfer_approval_required=True,
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -392,40 +415,39 @@ class TestProcessor:
 
         # Transfer: issuer -> user
         tx_1 = token_contract_1.functions.transferFrom(
-            issuer_address,
-            user_address_1,
-            40
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            issuer_address, user_address_1, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         ContractUtils.send_transaction(tx_1, issuer_private_key)
 
         # ApplyForTransfer from user
         tx_2 = token_contract_1.functions.applyForTransfer(
-            issuer_address,
-            30,
-            ""
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": user_address_1,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            issuer_address, 30, ""
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         _, tx_receipt_2 = ContractUtils.send_transaction(tx_2, user_private_key_1)
 
         # CancelTransfer from issuer
-        tx_3 = token_contract_1.functions.cancelTransfer(
-            0,
-            ""
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+        tx_3 = token_contract_1.functions.cancelTransfer(0, "").build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         _, tx_receipt_3 = ContractUtils.send_transaction(tx_3, issuer_private_key)
 
         # Run target process
@@ -447,7 +469,10 @@ class TestProcessor:
         assert _transfer_approval.to_address == issuer_address
         assert _transfer_approval.amount == 30
         assert _transfer_approval.application_datetime is None
-        assert _transfer_approval.application_blocktimestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert (
+            _transfer_approval.application_blocktimestamp
+            == datetime.utcfromtimestamp(block["timestamp"])
+        )
         assert _transfer_approval.approval_datetime is None
         assert _transfer_approval.approval_blocktimestamp is None
         assert _transfer_approval.cancelled is True
@@ -465,10 +490,12 @@ class TestProcessor:
         assert _notification.metainfo == {
             "token_type": token_1.type,
             "token_address": token_address_1,
-            "id": 1
+            "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.query(IDXTransferApprovalBlockNumber).first()
+        _idx_transfer_approval_block_number = db.query(
+            IDXTransferApprovalBlockNumber
+        ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
 
@@ -481,21 +508,21 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address,
-                                                      transfer_approval_required=True)
+        token_contract_1 = deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            transfer_approval_required=True,
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -514,40 +541,39 @@ class TestProcessor:
 
         # Transfer: issuer -> user
         tx_1 = token_contract_1.functions.transferFrom(
-            issuer_address,
-            user_address_1,
-            40
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            issuer_address, user_address_1, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         ContractUtils.send_transaction(tx_1, issuer_private_key)
 
         # ApplyForTransfer from user
         tx_2 = token_contract_1.functions.applyForTransfer(
-            issuer_address,
-            30,
-            ""
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": user_address_1,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            issuer_address, 30, ""
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         _, tx_receipt_2 = ContractUtils.send_transaction(tx_2, user_private_key_1)
 
         # CancelTransfer from applicant
-        tx_3 = token_contract_1.functions.cancelTransfer(
-            0,
-            ""
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": user_address_1,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+        tx_3 = token_contract_1.functions.cancelTransfer(0, "").build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         _, tx_receipt_3 = ContractUtils.send_transaction(tx_3, user_private_key_1)
 
         # Run target process
@@ -569,7 +595,10 @@ class TestProcessor:
         assert _transfer_approval.to_address == issuer_address
         assert _transfer_approval.amount == 30
         assert _transfer_approval.application_datetime is None
-        assert _transfer_approval.application_blocktimestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert (
+            _transfer_approval.application_blocktimestamp
+            == datetime.utcfromtimestamp(block["timestamp"])
+        )
         assert _transfer_approval.approval_datetime is None
         assert _transfer_approval.approval_blocktimestamp is None
         assert _transfer_approval.cancelled is True
@@ -587,36 +616,38 @@ class TestProcessor:
         assert _notification.metainfo == {
             "token_type": token_1.type,
             "token_address": token_address_1,
-            "id": 1
+            "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.query(IDXTransferApprovalBlockNumber).first()
+        _idx_transfer_approval_block_number = db.query(
+            IDXTransferApprovalBlockNumber
+        ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
 
     # <Normal_2_3>
     # Event log
     #   - ibetSecurityToken: ApproveTransfer (from issuer)
-    @pytest.mark.freeze_time('2021-04-27 12:34:56')
+    @pytest.mark.freeze_time("2021-04-27 12:34:56")
     def test_normal_2_3(self, processor, db, personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address,
-                                                      transfer_approval_required=True)
+        token_contract_1 = deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            transfer_approval_required=True,
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -635,42 +666,43 @@ class TestProcessor:
 
         # Transfer: issuer -> user
         tx = token_contract_1.functions.transferFrom(
-            issuer_address,
-            user_address_1,
-            40
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            issuer_address, user_address_1, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # ApplyForTransfer from user
         tx = token_contract_1.functions.applyForTransfer(
-            issuer_address,
-            30,
-            ""
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": user_address_1,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            issuer_address, 30, ""
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         _, tx_receipt_1 = ContractUtils.send_transaction(tx, user_private_key_1)
         block_1 = web3.eth.get_block(tx_receipt_1["blockNumber"])
 
         # ApproveTransfer from issuer
         now = datetime.utcnow()
         tx = token_contract_1.functions.approveTransfer(
-            0,
-            str(now.timestamp())
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            0, str(now.timestamp())
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         _, tx_receipt_2 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
@@ -690,10 +722,15 @@ class TestProcessor:
         assert _transfer_approval.to_address == issuer_address
         assert _transfer_approval.amount == 30
         assert _transfer_approval.application_datetime is None
-        assert _transfer_approval.application_blocktimestamp == datetime.utcfromtimestamp(block_1["timestamp"])
+        assert (
+            _transfer_approval.application_blocktimestamp
+            == datetime.utcfromtimestamp(block_1["timestamp"])
+        )
         assert _transfer_approval.approval_datetime == now
         block_2 = web3.eth.get_block(tx_receipt_2["blockNumber"])
-        assert _transfer_approval.approval_blocktimestamp == datetime.utcfromtimestamp(block_2["timestamp"])
+        assert _transfer_approval.approval_blocktimestamp == datetime.utcfromtimestamp(
+            block_2["timestamp"]
+        )
         assert _transfer_approval.cancelled is None
         assert _transfer_approval.transfer_approved is True
 
@@ -709,39 +746,43 @@ class TestProcessor:
         assert _notification.metainfo == {
             "token_type": token_1.type,
             "token_address": token_address_1,
-            "id": 1
+            "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.query(IDXTransferApprovalBlockNumber).first()
+        _idx_transfer_approval_block_number = db.query(
+            IDXTransferApprovalBlockNumber
+        ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
 
     # <Normal_2_4>
     # Event log
     #   - Exchange: ApplyForTransfer
-    @pytest.mark.freeze_time('2021-04-27 12:34:56')
-    def test_normal_2_4(self, processor, db, personal_info_contract, ibet_security_token_escrow_contract):
+    @pytest.mark.freeze_time("2021-04-27 12:34:56")
+    def test_normal_2_4(
+        self, processor, db, personal_info_contract, ibet_security_token_escrow_contract
+    ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
         user_3 = config_eth_account("user3")
         user_address_2 = user_3["address"]
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address,
-                                                      tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
-                                                      transfer_approval_required=True)
+        token_contract_1 = deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
+            transfer_approval_required=True,
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -760,26 +801,27 @@ class TestProcessor:
 
         # Deposit
         tx = token_contract_1.functions.transferFrom(
-            issuer_address,
-            user_address_1,
-            40
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            issuer_address, user_address_1, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         tx = token_contract_1.functions.transfer(
-            ibet_security_token_escrow_contract.address,
-            40
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": user_address_1,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            ibet_security_token_escrow_contract.address, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         ContractUtils.send_transaction(tx, user_private_key_1)
 
         # ApplyForTransfer
@@ -790,13 +832,15 @@ class TestProcessor:
             30,
             user_address_1,
             str(now.timestamp()),
-            ""
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": user_address_1,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            "",
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         _, tx_receipt_1 = ContractUtils.send_transaction(tx, user_private_key_1)
 
         # Run target process
@@ -809,14 +853,20 @@ class TestProcessor:
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
         assert _transfer_approval.token_address == token_address_1
-        assert _transfer_approval.exchange_address == ibet_security_token_escrow_contract.address
+        assert (
+            _transfer_approval.exchange_address
+            == ibet_security_token_escrow_contract.address
+        )
         assert _transfer_approval.application_id == 1
         assert _transfer_approval.from_address == user_address_1
         assert _transfer_approval.to_address == user_address_2
         assert _transfer_approval.amount == 30
         assert _transfer_approval.application_datetime == now
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _transfer_approval.application_blocktimestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert (
+            _transfer_approval.application_blocktimestamp
+            == datetime.utcfromtimestamp(block["timestamp"])
+        )
         assert _transfer_approval.approval_datetime is None
         assert _transfer_approval.approval_blocktimestamp is None
         assert _transfer_approval.cancelled is None
@@ -834,10 +884,12 @@ class TestProcessor:
         assert _notification.metainfo == {
             "token_type": token_1.type,
             "token_address": token_address_1,
-            "id": 1
+            "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.query(IDXTransferApprovalBlockNumber).first()
+        _idx_transfer_approval_block_number = db.query(
+            IDXTransferApprovalBlockNumber
+        ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
 
@@ -845,28 +897,30 @@ class TestProcessor:
     # Event log
     #   - Exchange: CancelTransfer
     # Cancel from applicant
-    def test_normal_2_5(self, processor, db, personal_info_contract, ibet_security_token_escrow_contract):
+    def test_normal_2_5(
+        self, processor, db, personal_info_contract, ibet_security_token_escrow_contract
+    ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
         user_3 = config_eth_account("user3")
         user_address_2 = user_3["address"]
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address,
-                                                      tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
-                                                      transfer_approval_required=True)
+        token_contract_1 = deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
+            transfer_approval_required=True,
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -895,52 +949,54 @@ class TestProcessor:
 
         # Deposit
         tx = token_contract_1.functions.transferFrom(
-            issuer_address,
-            user_address_1,
-            40
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            issuer_address, user_address_1, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         tx = token_contract_1.functions.transfer(
-            ibet_security_token_escrow_contract.address,
-            40
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": user_address_1,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            ibet_security_token_escrow_contract.address, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         ContractUtils.send_transaction(tx, user_private_key_1)
 
         # ApplyForTransfer
         tx = ibet_security_token_escrow_contract.functions.createEscrow(
-            token_address_1,
-            user_address_2,
-            30,
-            user_address_1,
-            "",
-            ""
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": user_address_1,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            token_address_1, user_address_2, 30, user_address_1, "", ""
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         _, tx_receipt_1 = ContractUtils.send_transaction(tx, user_private_key_1)
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
 
         # CancelTransfer from applicant
-        tx = ibet_security_token_escrow_contract.functions.cancelEscrow(1).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": user_address_1,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+        tx = ibet_security_token_escrow_contract.functions.cancelEscrow(
+            1
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         ContractUtils.send_transaction(tx, user_private_key_1)
 
         # Run target process
@@ -953,13 +1009,19 @@ class TestProcessor:
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
         assert _transfer_approval.token_address == token_address_1
-        assert _transfer_approval.exchange_address == ibet_security_token_escrow_contract.address
+        assert (
+            _transfer_approval.exchange_address
+            == ibet_security_token_escrow_contract.address
+        )
         assert _transfer_approval.application_id == 1
         assert _transfer_approval.from_address == user_address_1
         assert _transfer_approval.to_address == user_address_2
         assert _transfer_approval.amount == 30
         assert _transfer_approval.application_datetime is None
-        assert _transfer_approval.application_blocktimestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert (
+            _transfer_approval.application_blocktimestamp
+            == datetime.utcfromtimestamp(block["timestamp"])
+        )
         assert _transfer_approval.approval_datetime is None
         assert _transfer_approval.approval_blocktimestamp is None
         assert _transfer_approval.cancelled is True
@@ -977,10 +1039,12 @@ class TestProcessor:
         assert _notification.metainfo == {
             "token_type": token_1.type,
             "token_address": token_address_1,
-            "id": 1
+            "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.query(IDXTransferApprovalBlockNumber).first()
+        _idx_transfer_approval_block_number = db.query(
+            IDXTransferApprovalBlockNumber
+        ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
 
@@ -988,29 +1052,31 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - Exchange: EscrowFinished
-    @pytest.mark.freeze_time('2021-04-27 12:34:56')
-    def test_normal_2_6(self, processor, db, personal_info_contract, ibet_security_token_escrow_contract):
+    @pytest.mark.freeze_time("2021-04-27 12:34:56")
+    def test_normal_2_6(
+        self, processor, db, personal_info_contract, ibet_security_token_escrow_contract
+    ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
         user_3 = config_eth_account("user3")
         user_address_2 = user_3["address"]
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address,
-                                                      tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
-                                                      transfer_approval_required=True)
+        token_contract_1 = deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
+            transfer_approval_required=True,
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -1029,52 +1095,54 @@ class TestProcessor:
 
         # Deposit
         tx = token_contract_1.functions.transferFrom(
-            issuer_address,
-            user_address_1,
-            40
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            issuer_address, user_address_1, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         tx = token_contract_1.functions.transfer(
-            ibet_security_token_escrow_contract.address,
-            40
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": user_address_1,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            ibet_security_token_escrow_contract.address, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         ContractUtils.send_transaction(tx, user_private_key_1)
 
         # ApplyForTransfer
         tx = ibet_security_token_escrow_contract.functions.createEscrow(
-            token_address_1,
-            user_address_2,
-            30,
-            user_address_1,
-            "",
-            ""
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": user_address_1,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            token_address_1, user_address_2, 30, user_address_1, "", ""
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         _, tx_receipt_1 = ContractUtils.send_transaction(tx, user_private_key_1)
         block_1 = web3.eth.get_block(tx_receipt_1["blockNumber"])
 
         # FinishTransfer
-        tx = ibet_security_token_escrow_contract.functions.finishEscrow(1).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": user_address_1,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+        tx = ibet_security_token_escrow_contract.functions.finishEscrow(
+            1
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         _, tx_receipt_2 = ContractUtils.send_transaction(tx, user_private_key_1)
 
         # Run target process
@@ -1087,13 +1155,19 @@ class TestProcessor:
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
         assert _transfer_approval.token_address == token_address_1
-        assert _transfer_approval.exchange_address == ibet_security_token_escrow_contract.address
+        assert (
+            _transfer_approval.exchange_address
+            == ibet_security_token_escrow_contract.address
+        )
         assert _transfer_approval.application_id == 1
         assert _transfer_approval.from_address == user_address_1
         assert _transfer_approval.to_address == user_address_2
         assert _transfer_approval.amount == 30
         assert _transfer_approval.application_datetime is None
-        assert _transfer_approval.application_blocktimestamp == datetime.utcfromtimestamp(block_1["timestamp"])
+        assert (
+            _transfer_approval.application_blocktimestamp
+            == datetime.utcfromtimestamp(block_1["timestamp"])
+        )
         assert _transfer_approval.approval_datetime is None
         assert _transfer_approval.approval_blocktimestamp is None
         assert _transfer_approval.cancelled is None
@@ -1111,39 +1185,43 @@ class TestProcessor:
         assert _notification.metainfo == {
             "token_type": token_1.type,
             "token_address": token_address_1,
-            "id": 1
+            "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.query(IDXTransferApprovalBlockNumber).first()
+        _idx_transfer_approval_block_number = db.query(
+            IDXTransferApprovalBlockNumber
+        ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
 
     # <Normal_2_7>
     # Event logs
     #   - Exchange: ApproveTransfer
-    @pytest.mark.freeze_time('2021-04-27 12:34:56')
-    def test_normal_2_7(self, processor, db, personal_info_contract, ibet_security_token_escrow_contract):
+    @pytest.mark.freeze_time("2021-04-27 12:34:56")
+    def test_normal_2_7(
+        self, processor, db, personal_info_contract, ibet_security_token_escrow_contract
+    ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
         user_private_key_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
         user_3 = config_eth_account("user3")
         user_address_2 = user_3["address"]
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address,
-                                                      tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
-                                                      transfer_approval_required=True)
+        token_contract_1 = deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
+            transfer_approval_required=True,
+        )
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -1162,64 +1240,67 @@ class TestProcessor:
 
         # Deposit
         tx = token_contract_1.functions.transferFrom(
-            issuer_address,
-            user_address_1,
-            40
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            issuer_address, user_address_1, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         tx = token_contract_1.functions.transfer(
-            ibet_security_token_escrow_contract.address,
-            40
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": user_address_1,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            ibet_security_token_escrow_contract.address, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         ContractUtils.send_transaction(tx, user_private_key_1)
 
         # ApplyForTransfer
         tx = ibet_security_token_escrow_contract.functions.createEscrow(
-            token_address_1,
-            user_address_2,
-            30,
-            user_address_1,
-            "",
-            ""
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": user_address_1,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            token_address_1, user_address_2, 30, user_address_1, "", ""
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         _, tx_receipt_1 = ContractUtils.send_transaction(tx, user_private_key_1)
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
 
         # FinishTransfer
-        tx = ibet_security_token_escrow_contract.functions.finishEscrow(1).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": user_address_1,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+        tx = ibet_security_token_escrow_contract.functions.finishEscrow(
+            1
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         ContractUtils.send_transaction(tx, user_private_key_1)
 
         # ApproveTransfer
         tx = ibet_security_token_escrow_contract.functions.approveTransfer(
-            1,
-            ""
-        ).build_transaction({
-            "chainId": CHAIN_ID,
-            "from": issuer_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0
-        })
+            1, ""
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
         _, tx_receipt_2 = ContractUtils.send_transaction(tx, issuer_private_key)
         block_2 = web3.eth.get_block(tx_receipt_2["blockNumber"])
 
@@ -1233,15 +1314,23 @@ class TestProcessor:
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
         assert _transfer_approval.token_address == token_address_1
-        assert _transfer_approval.exchange_address == ibet_security_token_escrow_contract.address
+        assert (
+            _transfer_approval.exchange_address
+            == ibet_security_token_escrow_contract.address
+        )
         assert _transfer_approval.application_id == 1
         assert _transfer_approval.from_address == user_address_1
         assert _transfer_approval.to_address == user_address_2
         assert _transfer_approval.amount == 30
         assert _transfer_approval.application_datetime is None
-        assert _transfer_approval.application_blocktimestamp == datetime.utcfromtimestamp(block["timestamp"])
+        assert (
+            _transfer_approval.application_blocktimestamp
+            == datetime.utcfromtimestamp(block["timestamp"])
+        )
         assert _transfer_approval.approval_datetime is None
-        assert _transfer_approval.approval_blocktimestamp == datetime.utcfromtimestamp(block_2["timestamp"])
+        assert _transfer_approval.approval_blocktimestamp == datetime.utcfromtimestamp(
+            block_2["timestamp"]
+        )
         assert _transfer_approval.cancelled is None
         assert _transfer_approval.transfer_approved is True
 
@@ -1257,10 +1346,12 @@ class TestProcessor:
         assert _notification.metainfo == {
             "token_type": token_1.type,
             "token_address": token_address_1,
-            "id": 1
+            "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.query(IDXTransferApprovalBlockNumber).first()
+        _idx_transfer_approval_block_number = db.query(
+            IDXTransferApprovalBlockNumber
+        ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
 
@@ -1268,7 +1359,9 @@ class TestProcessor:
     # If block number processed in batch is equal or greater than current block number,
     # batch will output a log "skip process".
     @mock.patch("web3.eth.Eth.block_number", 100)
-    def test_normal_3(self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture):
+    def test_normal_3(
+        self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture
+    ):
         _idx_transfer_approval_block_number = IDXTransferApprovalBlockNumber()
         _idx_transfer_approval_block_number.id = 1
         _idx_transfer_approval_block_number.latest_block_number = 1000
@@ -1276,27 +1369,44 @@ class TestProcessor:
         db.commit()
 
         processor.sync_new_logs()
-        assert caplog.record_tuples.count((LOG.name, logging.DEBUG, "skip process")) == 1
+        assert (
+            caplog.record_tuples.count((LOG.name, logging.DEBUG, "skip process")) == 1
+        )
 
     # <Normal_4>
     # If DB session fails in sinking phase each event, batch outputs a log "exception occurred".
-    def test_normal_4(self, processor, db, personal_info_contract, ibet_security_token_escrow_contract, caplog: pytest.LogCaptureFixture):
+    def test_normal_4(
+        self,
+        processor,
+        db,
+        personal_info_contract,
+        ibet_security_token_escrow_contract,
+        caplog: pytest.LogCaptureFixture,
+    ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8"))
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_pk_1 = decode_keyfile_json(raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8"))
+        user_pk_1 = decode_keyfile_json(
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
+        )
         user_3 = config_eth_account("user3")
         user_address_2 = user_3["address"]
-        user_pk_2 = decode_keyfile_json(raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8"))
+        user_pk_2 = decode_keyfile_json(
+            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
+        )
 
         # Prepare data : Token
-        token_contract = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address,
-                                                      tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
-                                                      transfer_approval_required=True)
+        token_contract = deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
+            transfer_approval_required=True,
+        )
         token_address = token_contract.address
         token = Token()
         token.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -1307,23 +1417,84 @@ class TestProcessor:
         db.add(token)
         db.commit()
 
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_1, user_pk_1, [issuer_address, ""])
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, user_address_2, user_pk_2, [issuer_address, ""])
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, issuer_address, issuer_private_key, [issuer_address, ""])
-        PersonalInfoContractTestUtils.register(personal_info_contract.address, issuer_address, issuer_private_key, [ibet_security_token_escrow_contract.address, ""])
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            user_address_1,
+            user_pk_1,
+            [issuer_address, ""],
+        )
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            user_address_2,
+            user_pk_2,
+            [issuer_address, ""],
+        )
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [issuer_address, ""],
+        )
+        PersonalInfoContractTestUtils.register(
+            personal_info_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [ibet_security_token_escrow_contract.address, ""],
+        )
 
-        STContractUtils.set_transfer_approve_required(token_contract.address, issuer_address, issuer_private_key, [True])
-        STContractUtils.apply_for_transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 10, "to user1#1"])
-        STContractUtils.apply_for_transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_1, 20, "to user1#2"])
-        STContractUtils.apply_for_transfer(token_contract.address, issuer_address, issuer_private_key, [user_address_2, 10, "to user2#1"])
+        STContractUtils.set_transfer_approve_required(
+            token_contract.address, issuer_address, issuer_private_key, [True]
+        )
+        STContractUtils.apply_for_transfer(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [user_address_1, 10, "to user1#1"],
+        )
+        STContractUtils.apply_for_transfer(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [user_address_1, 20, "to user1#2"],
+        )
+        STContractUtils.apply_for_transfer(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [user_address_2, 10, "to user2#1"],
+        )
 
-        STContractUtils.cancel_transfer(token_contract.address, issuer_address, issuer_private_key, [0, "to user1#1"])
-        STContractUtils.approve_transfer(token_contract.address, issuer_address, issuer_private_key, [1, "to user1#2"])
-        STContractUtils.approve_transfer(token_contract.address, issuer_address, issuer_private_key, [2, "to user2#1"])
+        STContractUtils.cancel_transfer(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [0, "to user1#1"],
+        )
+        STContractUtils.approve_transfer(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [1, "to user1#2"],
+        )
+        STContractUtils.approve_transfer(
+            token_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [2, "to user2#1"],
+        )
 
-        STContractUtils.set_transfer_approve_required(token_contract.address, issuer_address, issuer_private_key, [False])
-        STContractUtils.transfer(token_contract.address, user_address_1, user_pk_1, [ibet_security_token_escrow_contract.address, 20])
-        STContractUtils.set_transfer_approve_required(token_contract.address, issuer_address, issuer_private_key, [True])
+        STContractUtils.set_transfer_approve_required(
+            token_contract.address, issuer_address, issuer_private_key, [False]
+        )
+        STContractUtils.transfer(
+            token_contract.address,
+            user_address_1,
+            user_pk_1,
+            [ibet_security_token_escrow_contract.address, 20],
+        )
+        STContractUtils.set_transfer_approve_required(
+            token_contract.address, issuer_address, issuer_private_key, [True]
+        )
 
         STEscrowContractUtils.create_escrow(
             ibet_security_token_escrow_contract.address,
@@ -1331,29 +1502,56 @@ class TestProcessor:
             user_pk_1,
             [token_contract.address, user_address_2, 10, issuer_address, "", ""],
         )
-        latest_security_escrow_id = STEscrowContractUtils.get_latest_escrow_id(ibet_security_token_escrow_contract.address)
+        latest_security_escrow_id = STEscrowContractUtils.get_latest_escrow_id(
+            ibet_security_token_escrow_contract.address
+        )
 
         STEscrowContractUtils.finish_escrow(
-            ibet_security_token_escrow_contract.address, issuer_address, issuer_private_key, [latest_security_escrow_id]
+            ibet_security_token_escrow_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [latest_security_escrow_id],
         )
         STEscrowContractUtils.approve_transfer(
-            ibet_security_token_escrow_contract.address, issuer_address, issuer_private_key, [latest_security_escrow_id, ""]
+            ibet_security_token_escrow_contract.address,
+            issuer_address,
+            issuer_private_key,
+            [latest_security_escrow_id, ""],
         )
 
-        with caplog.at_level(logging.ERROR, LOG.name), patch.object(Session, "add", side_effect=Exception()):
+        with caplog.at_level(logging.ERROR, LOG.name), patch.object(
+            Session, "add", side_effect=Exception()
+        ):
             # Then execute processor.
             processor.sync_new_logs()
 
         # Error occurs in events with exception of Escrow.
-        assert caplog.record_tuples.count((LOG.name, logging.ERROR, "An exception occurred during event synchronization")) == 3
+        assert (
+            caplog.record_tuples.count(
+                (
+                    LOG.name,
+                    logging.ERROR,
+                    "An exception occurred during event synchronization",
+                )
+            )
+            == 3
+        )
 
     # <Normal_5>
     # Newly tokens added
-    def test_normal_5(self, processor: Processor, db: Session, personal_info_contract, ibet_security_token_escrow_contract):
+    def test_normal_5(
+        self,
+        processor: Processor,
+        db: Session,
+        personal_info_contract,
+        ibet_security_token_escrow_contract,
+    ):
         escrow_contract = ibet_security_token_escrow_contract
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8"))
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
 
         # Issuer issues bond token.
         token_contract1 = deploy_bond_token_contract(
@@ -1414,17 +1612,22 @@ class TestProcessor:
 
     # <Error_1>
     # If each error occurs, batch will output logs and continue next sync.
-    def test_error_1(self, main_func, db:Session, personal_info_contract, caplog: pytest.LogCaptureFixture):
+    def test_error_1(
+        self,
+        main_func,
+        db: Session,
+        personal_info_contract,
+        caplog: pytest.LogCaptureFixture,
+    ):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"],
-            password="password".encode("utf-8")
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         # Prepare data : Token
-        token_contract = deploy_bond_token_contract(issuer_address,
-                                                      issuer_private_key,
-                                                      personal_info_contract.address)
+        token_contract = deploy_bond_token_contract(
+            issuer_address, issuer_private_key, personal_info_contract.address
+        )
         token_address = token_contract.address
         token = Token()
         token.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -1437,17 +1640,27 @@ class TestProcessor:
         db.commit()
 
         # Run mainloop once and fail with web3 utils error
-        with patch("batch.indexer_transfer_approval.INDEXER_SYNC_INTERVAL", None),\
-            patch.object(web3.eth, "contract", side_effect=ServiceUnavailableError()), \
-                pytest.raises(TypeError):
+        with patch(
+            "batch.indexer_transfer_approval.INDEXER_SYNC_INTERVAL", None
+        ), patch.object(
+            web3.eth, "contract", side_effect=ServiceUnavailableError()
+        ), pytest.raises(
+            TypeError
+        ):
             main_func()
-        assert 1 == caplog.record_tuples.count((LOG.name, logging.WARNING, "An external service was unavailable"))
+        assert 1 == caplog.record_tuples.count(
+            (LOG.name, logging.WARNING, "An external service was unavailable")
+        )
         caplog.clear()
 
         # Run mainloop once and fail with sqlalchemy Error
-        with patch("batch.indexer_transfer_approval.INDEXER_SYNC_INTERVAL", None),\
-            patch.object(Session, "commit", side_effect=SQLAlchemyError(code="dbapi")), \
-                pytest.raises(TypeError):
+        with patch(
+            "batch.indexer_transfer_approval.INDEXER_SYNC_INTERVAL", None
+        ), patch.object(
+            Session, "commit", side_effect=SQLAlchemyError(code="dbapi")
+        ), pytest.raises(
+            TypeError
+        ):
             main_func()
-        assert 'A database error has occurred: code=dbapi' in caplog.text
+        assert "A database error has occurred: code=dbapi" in caplog.text
         caplog.clear()

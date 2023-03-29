@@ -23,38 +23,34 @@ import sys
 import time
 from datetime import datetime
 
-from Crypto.Cipher import (
-    AES,
-    PKCS1_OAEP
-)
+from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from Crypto.Util.Padding import unpad
-from sqlalchemy import (
-    create_engine,
-    desc
-)
-from sqlalchemy.orm import Session
+from sqlalchemy import create_engine, desc
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
 
-from config import (
-    INDEXER_SYNC_INTERVAL,
-    DATABASE_URL,
-    E2E_MESSAGING_CONTRACT_ADDRESS
-)
+import batch_log
+
+from app.exceptions import ServiceUnavailableError
 from app.model.db import (
+    E2EMessagingAccount,
+    E2EMessagingAccountRsaKey,
     IDXE2EMessaging,
     IDXE2EMessagingBlockNumber,
-    E2EMessagingAccount,
-    E2EMessagingAccountRsaKey
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.web3_utils import Web3Wrapper
-from app.exceptions import ServiceUnavailableError
-import batch_log
+from config import (
+    DATABASE_URL,
+    E2E_MESSAGING_CONTRACT_ADDRESS,
+    INDEXER_BLOCK_LOT_MAX_SIZE,
+    INDEXER_SYNC_INTERVAL,
+)
 
 process_name = "INDEXER-E2E-Messaging"
 LOG = batch_log.get_logger(process_name=process_name)
@@ -81,47 +77,72 @@ decoded message's max length is 5000.
 
 class Processor:
     def __init__(self):
-        self.latest_block = web3.eth.block_number
         self.e2e_messaging_contract = ContractUtils.get_contract(
             contract_name="E2EMessaging",
-            contract_address=E2E_MESSAGING_CONTRACT_ADDRESS)
+            contract_address=E2E_MESSAGING_CONTRACT_ADDRESS,
+        )
 
     def process(self):
         db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
         try:
             # Get from_block_number and to_block_number for contract event filter
-            idx_e2e_messaging_block_number = self.__get_idx_e2e_messaging_block_number(db_session=db_session)
             latest_block = web3.eth.block_number
+            _from_block = self.__get_idx_e2e_messaging_block_number(
+                db_session=db_session
+            )
+            _to_block = _from_block + INDEXER_BLOCK_LOT_MAX_SIZE
 
-            if idx_e2e_messaging_block_number >= latest_block:
+            # Skip processing if the latest block is not counted up
+            if _from_block >= latest_block:
                 LOG.debug("skip process")
-                pass
+                return
+
+            # Create index data with the upper limit of one process
+            # as INDEXER_BLOCK_LOT_MAX_SIZE(1_000_000 blocks)
+            if latest_block > _to_block:
+                while _to_block < latest_block:
+                    self.__sync_all(
+                        db_session=db_session,
+                        block_from=_from_block + 1,
+                        block_to=_to_block,
+                    )
+                    _to_block += INDEXER_BLOCK_LOT_MAX_SIZE
+                    _from_block += INDEXER_BLOCK_LOT_MAX_SIZE
+                self.__sync_all(
+                    db_session=db_session,
+                    block_from=_from_block + 1,
+                    block_to=latest_block,
+                )
             else:
                 self.__sync_all(
                     db_session=db_session,
-                    block_from=idx_e2e_messaging_block_number + 1,
-                    block_to=latest_block
+                    block_from=_from_block + 1,
+                    block_to=latest_block,
                 )
-                self.__set_idx_e2e_messaging_block_number(
-                    db_session=db_session,
-                    block_number=latest_block
-                )
-                db_session.commit()
+
+            self.__set_idx_e2e_messaging_block_number(
+                db_session=db_session, block_number=latest_block
+            )
+            db_session.commit()
         finally:
             db_session.close()
         LOG.info("Sync job has been completed")
 
     def __get_idx_e2e_messaging_block_number(self, db_session: Session):
-        _idx_e2e_messaging_block_number = db_session.query(IDXE2EMessagingBlockNumber). \
-            first()
+        _idx_e2e_messaging_block_number = db_session.query(
+            IDXE2EMessagingBlockNumber
+        ).first()
         if _idx_e2e_messaging_block_number is None:
             return 0
         else:
             return _idx_e2e_messaging_block_number.latest_block_number
 
-    def __set_idx_e2e_messaging_block_number(self, db_session: Session, block_number: int):
-        _idx_e2e_messaging_block_number = db_session.query(IDXE2EMessagingBlockNumber). \
-            first()
+    def __set_idx_e2e_messaging_block_number(
+        self, db_session: Session, block_number: int
+    ):
+        _idx_e2e_messaging_block_number = db_session.query(
+            IDXE2EMessagingBlockNumber
+        ).first()
         if _idx_e2e_messaging_block_number is None:
             _idx_e2e_messaging_block_number = IDXE2EMessagingBlockNumber()
 
@@ -145,11 +166,13 @@ class Processor:
                 contract=self.e2e_messaging_contract,
                 event="Message",
                 block_from=block_from,
-                block_to=block_to
+                block_to=block_to,
             )
             for event in events:
                 transaction_hash = event["transactionHash"].hex()
-                block_timestamp = datetime.utcfromtimestamp(web3.eth.get_block(event["blockNumber"])["timestamp"])
+                block_timestamp = datetime.utcfromtimestamp(
+                    web3.eth.get_block(event["blockNumber"])["timestamp"]
+                )
                 args = event["args"]
                 from_address = args["sender"]
                 to_address = args["receiver"]
@@ -158,8 +181,7 @@ class Processor:
 
                 # Check if the message receiver is own accounts
                 _e2e_messaging_account = self.__get_e2e_messaging_account(
-                    db_session=db_session,
-                    to_address=to_address
+                    db_session=db_session, to_address=to_address
                 )
                 if _e2e_messaging_account is None:
                     continue
@@ -169,7 +191,7 @@ class Processor:
                     db_session=db_session,
                     to_address=to_address,
                     text=text,
-                    block_timestamp=block_timestamp
+                    block_timestamp=block_timestamp,
                 )
                 if message_type is None:
                     continue
@@ -183,22 +205,24 @@ class Processor:
                     send_timestamp=send_timestamp,
                     _type=_type,
                     message=message,
-                    block_timestamp=block_timestamp
+                    block_timestamp=block_timestamp,
                 )
         except Exception as e:
             LOG.error(e)
 
     def __get_e2e_messaging_account(self, db_session: Session, to_address: str):
-
         # NOTE: Self sending data is registered at the time of sending.
-        _e2e_messaging_account = db_session.query(E2EMessagingAccount). \
-            filter(E2EMessagingAccount.account_address == to_address). \
-            filter(E2EMessagingAccount.is_deleted == False). \
-            first()
+        _e2e_messaging_account = (
+            db_session.query(E2EMessagingAccount)
+            .filter(E2EMessagingAccount.account_address == to_address)
+            .filter(E2EMessagingAccount.is_deleted == False)
+            .first()
+        )
         return _e2e_messaging_account
 
-    def __get_message(self, db_session: Session, to_address: str, text: str, block_timestamp: datetime):
-
+    def __get_message(
+        self, db_session: Session, to_address: str, text: str, block_timestamp: datetime
+    ):
         # Check message format
         try:
             text_dict = json.loads(text)
@@ -216,11 +240,13 @@ class Processor:
             return None
 
         # Get RSA key
-        account_rsa_key = db_session.query(E2EMessagingAccountRsaKey). \
-            filter(E2EMessagingAccountRsaKey.account_address == to_address). \
-            filter(E2EMessagingAccountRsaKey.block_timestamp <= block_timestamp). \
-            order_by(desc(E2EMessagingAccountRsaKey.block_timestamp)). \
-            first()
+        account_rsa_key = (
+            db_session.query(E2EMessagingAccountRsaKey)
+            .filter(E2EMessagingAccountRsaKey.account_address == to_address)
+            .filter(E2EMessagingAccountRsaKey.block_timestamp <= block_timestamp)
+            .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
+            .first()
+        )
         if account_rsa_key is None:
             LOG.warning(f"RSA key does not exist: account_address={to_address}")
             return None
@@ -239,9 +265,9 @@ class Processor:
         # Decrypt message
         try:
             message_org = base64.b64decode(message)
-            aes_iv = message_org[:AES.block_size]
+            aes_iv = message_org[: AES.block_size]
             aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
-            pad_message = aes_cipher.decrypt(message_org[AES.block_size:])
+            pad_message = aes_cipher.decrypt(message_org[AES.block_size :])
             decrypt_message = unpad(pad_message, AES.block_size).decode()
         except Exception as e:
             LOG.warning(f"Message could not be decoded: text={text}", exc_info=e)
@@ -254,14 +280,16 @@ class Processor:
         return decrypt_message, _type
 
     @staticmethod
-    def __sink_on_e2e_messaging(db_session: Session,
-                                transaction_hash: str,
-                                from_address: str,
-                                to_address: str,
-                                _type: str,
-                                message: str,
-                                send_timestamp: datetime,
-                                block_timestamp: datetime):
+    def __sink_on_e2e_messaging(
+        db_session: Session,
+        transaction_hash: str,
+        from_address: str,
+        to_address: str,
+        _type: str,
+        message: str,
+        send_timestamp: datetime,
+        block_timestamp: datetime,
+    ):
         _idx_e2e_messaging = IDXE2EMessaging()
         _idx_e2e_messaging.transaction_hash = transaction_hash
         _idx_e2e_messaging.from_address = from_address

@@ -17,11 +17,11 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from app.model.db import (
+    LedgerDetailsDataType,
+    LedgerDetailsTemplate,
+    LedgerTemplate,
     Token,
     TokenType,
-    LedgerTemplate,
-    LedgerDetailsTemplate,
-    LedgerDetailsDataType
 )
 from tests.account_config import config_eth_account
 
@@ -62,7 +62,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
             {
                 "hoge": "aaaa",
                 "fuga": "bbbb",
-            }
+            },
         ]
         _template.footers = [
             {
@@ -72,7 +72,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
             {
                 "f-hoge": "f-aaaa",
                 "f-fuga": "f-bbbb",
-            }
+            },
         ]
         db.add(_template)
 
@@ -84,20 +84,14 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
                 "key": "aaa",
                 "value": "bbb",
             },
-            {
-                "test1": "a",
-                "test2": "b"
-            }
+            {"test1": "a", "test2": "b"},
         ]
         _details_1.footers = [
             {
                 "key": "aaa",
                 "value": "bbb",
             },
-            {
-                "f-test1": "a",
-                "f-test2": "b"
-            }
+            {"f-test1": "a", "f-test2": "b"},
         ]
         _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
         _details_1.data_source = token_address
@@ -111,20 +105,14 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
                 "key": "aaa",
                 "value": "bbb",
             },
-            {
-                "test3": "a",
-                "test4": "b"
-            }
+            {"test3": "a", "test4": "b"},
         ]
         _details_2.footers = [
             {
                 "key": "aaa",
                 "value": "bbb",
             },
-            {
-                "f-test3": "a",
-                "f-test4": "b"
-            }
+            {"f-test3": "a", "f-test4": "b"},
         ]
         _details_2.data_type = LedgerDetailsDataType.DB.value
         _details_2.data_source = "data_id_2"
@@ -135,7 +123,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
             self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
@@ -150,7 +138,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
                 {
                     "hoge": "aaaa",
                     "fuga": "bbbb",
-                }
+                },
             ],
             "details": [
                 {
@@ -160,10 +148,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
                             "key": "aaa",
                             "value": "bbb",
                         },
-                        {
-                            "test1": "a",
-                            "test2": "b"
-                        }
+                        {"test1": "a", "test2": "b"},
                     ],
                     "data": {
                         "type": "ibetfin",
@@ -174,10 +159,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
                             "key": "aaa",
                             "value": "bbb",
                         },
-                        {
-                            "f-test1": "a",
-                            "f-test2": "b"
-                        }
+                        {"f-test1": "a", "f-test2": "b"},
                     ],
                 },
                 {
@@ -187,10 +169,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
                             "key": "aaa",
                             "value": "bbb",
                         },
-                        {
-                            "test3": "a",
-                            "test4": "b"
-                        }
+                        {"test3": "a", "test4": "b"},
                     ],
                     "data": {
                         "type": "db",
@@ -201,12 +180,9 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
                             "key": "aaa",
                             "value": "bbb",
                         },
-                        {
-                            "f-test3": "a",
-                            "f-test4": "b"
-                        }
+                        {"f-test3": "a", "f-test4": "b"},
                     ],
-                }
+                },
             ],
             "footers": [
                 {
@@ -216,7 +192,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
                 {
                     "f-hoge": "f-aaaa",
                     "f-fuga": "f-bbbb",
-                }
+                },
             ],
         }
 
@@ -248,7 +224,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
             {
                 "hoge": "aaaa",
                 "fuga": "bbbb",
-            }
+            },
         ]
         _template.footers = [
             {
@@ -258,7 +234,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
             {
                 "f-hoge": "f-aaaa",
                 "f-fuga": "f-bbbb",
-            }
+            },
         ]
         db.add(_template)
 
@@ -270,20 +246,14 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
                 "key": "aaa",
                 "value": "bbb",
             },
-            {
-                "test1": "a",
-                "test2": "b"
-            }
+            {"test1": "a", "test2": "b"},
         ]
         _details_1.footers = [
             {
                 "key": "aaa",
                 "value": "bbb",
             },
-            {
-                "f-test1": "a",
-                "f-test2": "b"
-            }
+            {"f-test1": "a", "f-test2": "b"},
         ]
         _details_1.data_type = LedgerDetailsDataType.IBET_FIN.value
         _details_1.data_source = token_address
@@ -297,20 +267,14 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
                 "key": "aaa",
                 "value": "bbb",
             },
-            {
-                "test3": "a",
-                "test4": "b"
-            }
+            {"test3": "a", "test4": "b"},
         ]
         _details_2.footers = [
             {
                 "key": "aaa",
                 "value": "bbb",
             },
-            {
-                "f-test3": "a",
-                "f-test4": "b"
-            }
+            {"f-test3": "a", "f-test4": "b"},
         ]
         _details_2.data_type = LedgerDetailsDataType.DB.value
         _details_2.data_source = "data_id_2"
@@ -333,7 +297,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
                 {
                     "hoge": "aaaa",
                     "fuga": "bbbb",
-                }
+                },
             ],
             "details": [
                 {
@@ -343,10 +307,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
                             "key": "aaa",
                             "value": "bbb",
                         },
-                        {
-                            "test1": "a",
-                            "test2": "b"
-                        }
+                        {"test1": "a", "test2": "b"},
                     ],
                     "data": {
                         "type": "ibetfin",
@@ -357,10 +318,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
                             "key": "aaa",
                             "value": "bbb",
                         },
-                        {
-                            "f-test1": "a",
-                            "f-test2": "b"
-                        }
+                        {"f-test1": "a", "f-test2": "b"},
                     ],
                 },
                 {
@@ -370,10 +328,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
                             "key": "aaa",
                             "value": "bbb",
                         },
-                        {
-                            "test3": "a",
-                            "test4": "b"
-                        }
+                        {"test3": "a", "test4": "b"},
                     ],
                     "data": {
                         "type": "db",
@@ -384,12 +339,9 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
                             "key": "aaa",
                             "value": "bbb",
                         },
-                        {
-                            "f-test3": "a",
-                            "f-test4": "b"
-                        }
+                        {"f-test3": "a", "f-test4": "b"},
                     ],
-                }
+                },
             ],
             "footers": [
                 {
@@ -399,7 +351,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
                 {
                     "f-hoge": "f-aaaa",
                     "f-fuga": "f-bbbb",
-                }
+                },
             ],
         }
 
@@ -441,7 +393,7 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
             self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
@@ -477,23 +429,20 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
             self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": "test",
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_2_1>
@@ -508,7 +457,9 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
-        _token.issuer_address = "0x1234567890123456789012345678901234567899"  # not target
+        _token.issuer_address = (
+            "0x1234567890123456789012345678901234567899"  # not target
+        )
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 2
@@ -519,17 +470,14 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
             self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token does not exist"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token does not exist",
         }
 
     # <Error_2_2>
@@ -546,11 +494,8 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "token does not exist"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "token does not exist",
         }
 
     # <Error_3>
@@ -575,17 +520,14 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
             self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "this token is temporarily unavailable"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "this token is temporarily unavailable",
         }
 
     # <Error_4>
@@ -609,15 +551,12 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
             self.base_url.format(token_address=token_address),
             headers={
                 "issuer-address": issuer_address,
-            }
+            },
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "ledger template does not exist"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "ledger template does not exist",
         }

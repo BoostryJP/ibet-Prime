@@ -18,18 +18,14 @@ SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
 
-from sqlalchemy import (
-    Column,
-    BigInteger,
-    String,
-    DateTime
-)
+from sqlalchemy import BigInteger, Column, DateTime, String
 
 from .base import Base
 
 
 class IDXIssueRedeem(Base):
     """INDEX Issue/Redeem"""
+
     __tablename__ = "idx_issue_redeem"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
@@ -51,12 +47,14 @@ class IDXIssueRedeem(Base):
 
 class IDXIssueRedeemEventType(str, Enum):
     """Issue/Redeem event type"""
+
     ISSUE = "Issue"
     REDEEM = "Redeem"
 
 
 class IDXIssueRedeemSortItem(str, Enum):
     """Issue/Redeem sort item"""
+
     BLOCK_TIMESTAMP = "block_timestamp"
     LOCKED_ADDRESS = "locked_address"
     TARGET_ADDRESS = "target_address"
@@ -65,6 +63,7 @@ class IDXIssueRedeemSortItem(str, Enum):
 
 class IDXIssueRedeemBlockNumber(Base):
     """Synchronized blockNumber of IDXIssueRedeem"""
+
     __tablename__ = "idx_issue_redeem_block_number"
 
     # sequence id

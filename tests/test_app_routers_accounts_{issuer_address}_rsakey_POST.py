@@ -16,9 +16,13 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from config import PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG, PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE, ZERO_ADDRESS
 from app.model.db import Account, AccountRsaKeyTemporary, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
+from config import (
+    PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE,
+    PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG,
+    ZERO_ADDRESS,
+)
 from tests.account_config import config_eth_account
 
 
@@ -48,9 +52,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         db.commit()
 
         password = self.valid_password
-        req_param = {
-            "rsa_passphrase": E2EEUtils.encrypt(password)
-        }
+        req_param = {"rsa_passphrase": E2EEUtils.encrypt(password)}
 
         resp = client.post(self.base_url.format(_user_1["address"]), json=req_param)
 
@@ -60,7 +62,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
             "issuer_address": _user_1["address"],
             "rsa_public_key": None,
             "rsa_status": AccountRsaStatus.CREATING.value,
-            "is_deleted": False
+            "is_deleted": False,
         }
         _account_after = db.query(Account).first()
         assert _account_after.issuer_address == _user_1["address"]
@@ -93,9 +95,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         _temporary_before = db.query(AccountRsaKeyTemporary).all()
 
         password = self.valid_password
-        req_param = {
-            "rsa_passphrase": E2EEUtils.encrypt(password)
-        }
+        req_param = {"rsa_passphrase": E2EEUtils.encrypt(password)}
 
         resp = client.post(self.base_url.format(_user_1["address"]), json=req_param)
 
@@ -105,7 +105,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
             "issuer_address": _user_1["address"],
             "rsa_public_key": _user_1["rsa_public_key"],
             "rsa_status": AccountRsaStatus.CHANGING.value,
-            "is_deleted": False
+            "is_deleted": False,
         }
         _temporary_after = db.query(AccountRsaKeyTemporary).all()
         assert len(_temporary_before) == 0
@@ -148,7 +148,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
             "issuer_address": _user_1["address"],
             "rsa_public_key": None,
             "rsa_status": AccountRsaStatus.CREATING.value,
-            "is_deleted": False
+            "is_deleted": False,
         }
         _account_after = db.query(Account).first()
         assert _account_after.issuer_address == _user_1["address"]
@@ -156,7 +156,10 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         assert _account_after.eoa_password == eoa_password
         assert _account_after.rsa_private_key is None
         assert _account_after.rsa_public_key is None
-        assert E2EEUtils.decrypt(_account_after.rsa_passphrase) == PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE
+        assert (
+            E2EEUtils.decrypt(_account_after.rsa_passphrase)
+            == PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE
+        )
         assert _account_after.rsa_status == AccountRsaStatus.CREATING.value
 
     ###########################################################################
@@ -166,24 +169,19 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
     # <Error_1>
     # Parameter Error: no body
     def test_error_1(self, client, db):
-        resp = client.post(
-            self.base_url.format(ZERO_ADDRESS)
-        )
+        resp = client.post(self.base_url.format(ZERO_ADDRESS))
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 }
-            ]
+            ],
         }
 
     # <Error_2>
@@ -191,26 +189,21 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
     def test_error_2(self, client, db):
         _user_1 = config_eth_account("user1")
 
-        req_param = {
-            "rsa_passphrase": "test"
-        }
+        req_param = {"rsa_passphrase": "test"}
 
         resp = client.post(self.base_url.format(_user_1["address"]), json=req_param)
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "rsa_passphrase"],
                     "msg": "rsa_passphrase is not a Base64-encoded encrypted data",
-                    "type": "value_error"
+                    "type": "value_error",
                 }
-            ]
+            ],
         }
 
     # <Error_3>
@@ -228,9 +221,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         _account.rsa_status = AccountRsaStatus.SET.value
         db.add(_account)
 
-        req_param = {
-            "rsa_passphrase": E2EEUtils.encrypt(self.valid_password)
-        }
+        req_param = {"rsa_passphrase": E2EEUtils.encrypt(self.valid_password)}
 
         _user_2 = config_eth_account("user2")
         resp = client.post(self.base_url.format(_user_2["address"]), json=req_param)
@@ -238,11 +229,8 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "NotFound"
-            },
-            "detail": "issuer does not exist"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "issuer does not exist",
         }
 
     # <Error_4>
@@ -257,20 +245,15 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         _account.rsa_status = AccountRsaStatus.CREATING.value
         db.add(_account)
 
-        req_param = {
-            "rsa_passphrase": E2EEUtils.encrypt(self.valid_password)
-        }
+        req_param = {"rsa_passphrase": E2EEUtils.encrypt(self.valid_password)}
 
         resp = client.post(self.base_url.format(_user_1["address"]), json=req_param)
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "RSA key is now generating"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "RSA key is now generating",
         }
 
     # <Error_5>
@@ -288,20 +271,15 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         _account.rsa_status = AccountRsaStatus.CHANGING.value
         db.add(_account)
 
-        req_param = {
-            "rsa_passphrase": E2EEUtils.encrypt(self.valid_password)
-        }
+        req_param = {"rsa_passphrase": E2EEUtils.encrypt(self.valid_password)}
 
         resp = client.post(self.base_url.format(_user_1["address"]), json=req_param)
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": "RSA key is now generating"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "RSA key is now generating",
         }
 
     # <Error_6>
@@ -319,18 +297,13 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         _account.rsa_status = AccountRsaStatus.SET.value
         db.add(_account)
 
-        req_param = {
-            "rsa_passphrase": E2EEUtils.encrypt(self.invalid_password)
-        }
+        req_param = {"rsa_passphrase": E2EEUtils.encrypt(self.invalid_password)}
 
         resp = client.post(self.base_url.format(_user_1["address"]), json=req_param)
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "InvalidParameterError"
-            },
-            "detail": PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG,
         }

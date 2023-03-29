@@ -18,10 +18,10 @@ SPDX-License-Identifier: Apache-2.0
 """
 from eth_keyfile import decode_keyfile_json
 
-from config import EOA_PASSWORD_PATTERN_MSG
 from app.model.blockchain import IbetStraightBondContract
 from app.model.db import E2EMessagingAccount
 from app.utils.e2ee_utils import E2EEUtils
+from config import EOA_PASSWORD_PATTERN_MSG
 from tests.account_config import config_eth_account
 
 
@@ -53,8 +53,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
             "eoa_password": E2EEUtils.encrypt(new_password),
         }
         resp = client.post(
-            self.base_url.format(account_address=user_address_1),
-            json=req_param
+            self.base_url.format(account_address=user_address_1), json=req_param
         )
 
         # assertion
@@ -66,8 +65,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
 
         # test new keyfile
         private_key = decode_keyfile_json(
-            raw_keyfile_json=_account.keyfile,
-            password=new_password.encode("utf-8")
+            raw_keyfile_json=_account.keyfile, password=new_password.encode("utf-8")
         )
         arguments = [
             "name_test",
@@ -78,12 +76,10 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
             30,
             "return_date_test",
             "return_amount_test",
-            "purpose_test"
+            "purpose_test",
         ]
-        IbetStraightBondContract.create(
-            args=arguments,
-            tx_from=user_address_1,
-            private_key=private_key
+        IbetStraightBondContract().create(
+            args=arguments, tx_from=user_address_1, private_key=private_key
         )
 
     ###########################################################################
@@ -94,22 +90,23 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
     # Parameter Error
     # no body
     def test_error_1_1(self, client, db):
-        resp = client.post(self.base_url.format(account_address="0x1234567890123456789012345678900000000000"))
+        resp = client.post(
+            self.base_url.format(
+                account_address="0x1234567890123456789012345678900000000000"
+            )
+        )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 }
-            ]
+            ],
         }
 
     # <Error_1_2>
@@ -118,29 +115,28 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
     def test_error_1_2(self, client, db):
         req_param = {}
         resp = client.post(
-            self.base_url.format(account_address="0x1234567890123456789012345678900000000000"),
-            json=req_param
+            self.base_url.format(
+                account_address="0x1234567890123456789012345678900000000000"
+            ),
+            json=req_param,
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "old_eoa_password"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
                 {
                     "loc": ["body", "eoa_password"],
                     "msg": "field required",
-                    "type": "value_error.missing"
+                    "type": "value_error.missing",
                 },
-            ]
+            ],
         }
 
     # <Error_1_3>
@@ -154,29 +150,28 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
             "eoa_password": new_password,
         }
         resp = client.post(
-            self.base_url.format(account_address="0x1234567890123456789012345678900000000000"),
-            json=req_param
+            self.base_url.format(
+                account_address="0x1234567890123456789012345678900000000000"
+            ),
+            json=req_param,
         )
 
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {
-                "code": 1,
-                "title": "RequestValidationError"
-            },
+            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
                     "loc": ["body", "old_eoa_password"],
                     "msg": "old_eoa_password is not a Base64-encoded encrypted data",
-                    "type": "value_error"
+                    "type": "value_error",
                 },
                 {
                     "loc": ["body", "eoa_password"],
                     "msg": "eoa_password is not a Base64-encoded encrypted data",
-                    "type": "value_error"
+                    "type": "value_error",
                 },
-            ]
+            ],
         }
 
     # <Error_2>
@@ -189,17 +184,17 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
             "eoa_password": E2EEUtils.encrypt(new_password),
         }
         resp = client.post(
-            self.base_url.format(account_address="0x1234567890123456789012345678900000000000"),
-            json=req_param
+            self.base_url.format(
+                account_address="0x1234567890123456789012345678900000000000"
+            ),
+            json=req_param,
         )
 
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
-            "meta": {
-                "code": 1, "title": "NotFound"
-            },
-            "detail": "e2e messaging account is not exists"
+            "meta": {"code": 1, "title": "NotFound"},
+            "detail": "e2e messaging account is not exists",
         }
 
     # <Error_3>
@@ -223,17 +218,14 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
             "eoa_password": E2EEUtils.encrypt(new_password),
         }
         resp = client.post(
-            self.base_url.format(account_address=user_address_1),
-            json=req_param
+            self.base_url.format(account_address=user_address_1), json=req_param
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1, "title": "InvalidParameterError"
-            },
-            "detail": "old password mismatch"
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "old password mismatch",
         }
 
     # <Error_4>
@@ -257,15 +249,12 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
             "eoa_password": E2EEUtils.encrypt(new_password),
         }
         resp = client.post(
-            self.base_url.format(account_address=user_address_1),
-            json=req_param
+            self.base_url.format(account_address=user_address_1), json=req_param
         )
 
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
-            "meta": {
-                "code": 1, "title": "InvalidParameterError"
-            },
-            "detail": EOA_PASSWORD_PATTERN_MSG
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": EOA_PASSWORD_PATTERN_MSG,
         }
