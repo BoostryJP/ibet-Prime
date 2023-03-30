@@ -33,7 +33,7 @@ def reset():
     meta.bind = engine
     table = Table("alembic_version", meta, schema=get_db_schema())
     if table.exists():
-        table.drop()
+        table.drop(bind=engine)
 
 
 argv = sys.argv

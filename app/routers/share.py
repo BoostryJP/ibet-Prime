@@ -862,7 +862,7 @@ def list_redeem_history(
         query = query.limit(limit)
     if offset is not None:
         query = query.offset(offset)
-    _events: List[IDXIssueRedeem] = query.all()
+    _events: List[Type[IDXIssueRedeem]] = query.all()
 
     history = []
     for _event in _events:
@@ -1011,7 +1011,7 @@ def list_all_redeem_upload(
     if offset is not None:
         query = query.offset(offset)
 
-    _upload_list: list[BatchIssueRedeemUpload] = query.all()
+    _upload_list: list[Type[BatchIssueRedeemUpload]] = query.all()
 
     uploads = []
     for _upload in _upload_list:
@@ -1812,7 +1812,7 @@ def list_all_personal_info_batch_registration_uploads(
     if offset is not None:
         query = query.offset(offset)
 
-    _upload_list: list[BatchRegisterPersonalInfoUpload] = query.all()
+    _upload_list: list[Type[BatchRegisterPersonalInfoUpload]] = query.all()
 
     uploads = []
     for _upload in _upload_list:

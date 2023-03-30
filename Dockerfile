@@ -49,13 +49,13 @@ RUN echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~apl/.bash_profile \
 # install python
 USER apl
 RUN . ~/.bash_profile \
- && pyenv install 3.10.4 \
- && pyenv global 3.10.4 \
+ && pyenv install 3.11.2 \
+ && pyenv global 3.11.2 \
  && pip install --upgrade pip
 
 # install poetry
 RUN . ~/.bash_profile \
- && python -m pip install poetry==1.4.0
+ && python -m pip install poetry==1.3.2
 RUN . ~/.bash_profile \
  && poetry config virtualenvs.create false
 
@@ -85,6 +85,7 @@ COPY pyproject.toml /app/ibet-Prime/pyproject.toml
 COPY poetry.lock /app/ibet-Prime/poetry.lock
 RUN . ~/.bash_profile \
  && cd /app/ibet-Prime \
+ && poetry run python -m pip install wheel --use-pep517 "parsimonious (==0.9.0)" \
  && poetry install --only main --no-root -E ibet-explorer \
  && rm -f /app/ibet-Prime/pyproject.toml \
  && rm -f /app/ibet-Prime/poetry.lock
