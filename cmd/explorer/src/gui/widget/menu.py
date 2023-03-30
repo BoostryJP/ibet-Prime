@@ -43,11 +43,11 @@ class Menu(TuiWidget):
 
     def compose(self) -> ComposeResult:
         yield Button(
-            Text.from_markup("\[t] Show Transactions :package:"),
+            Text.from_markup(r"\[t] Show Transactions :package:"),
             id=ID.MENU_SHOW_TX,
             classes="menubutton",
         )
-        yield Button("\[c] Cancel", id=ID.MENU_CANCEL, classes="menubutton")
+        yield Button(r"\[c] Cancel", id=ID.MENU_CANCEL, classes="menubutton")
 
     def show(self, ix: MenuInstruction):
         self.ix = ix

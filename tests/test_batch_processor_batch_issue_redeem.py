@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 import logging
 import uuid
-from typing import List
+from typing import List, Type
 from unittest.mock import ANY, patch
 
 import pytest
@@ -823,14 +823,14 @@ class TestProcessor:
             processor.process()
 
         # Assertion: DB
-        _upload_1_after: BatchIssueRedeemUpload = (
+        _upload_1_after: Type[BatchIssueRedeemUpload] = (
             db.query(BatchIssueRedeemUpload)
             .filter(BatchIssueRedeemUpload.upload_id == upload_1_id)
             .first()
         )
         assert _upload_1_after.processed == True
 
-        _upload_1_data_after: List[BatchIssueRedeem] = (
+        _upload_1_data_after: List[Type[BatchIssueRedeem]] = (
             db.query(BatchIssueRedeem)
             .filter(BatchIssueRedeem.upload_id == upload_1_id)
             .all()
@@ -838,14 +838,14 @@ class TestProcessor:
         assert len(_upload_1_data_after) == 1
         assert _upload_1_data_after[0].status == 2
 
-        _upload_2_after: BatchIssueRedeemUpload = (
+        _upload_2_after: Type[BatchIssueRedeemUpload] = (
             db.query(BatchIssueRedeemUpload)
             .filter(BatchIssueRedeemUpload.upload_id == upload_2_id)
             .first()
         )
         assert _upload_2_after.processed == True
 
-        _upload_2_data_after: List[BatchIssueRedeem] = (
+        _upload_2_data_after: List[Type[BatchIssueRedeem]] = (
             db.query(BatchIssueRedeem)
             .filter(BatchIssueRedeem.upload_id == upload_2_id)
             .all()

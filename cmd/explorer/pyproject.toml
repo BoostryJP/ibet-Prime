@@ -9,20 +9,20 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "3.10.4"
+python = "3.11.2"
 
 [tool.poetry.scripts]
 ibet-explorer = "src.main:app"
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 no_strict_optional = true
 ignore_missing_imports = true
 check_untyped_defs = true
 
 [tool.black]
 includes = "src"
-target-version = ['py310']
+target-version = ['py311']
 line-length = 120
 
 [build-system]

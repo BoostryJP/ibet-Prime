@@ -7,7 +7,7 @@ license = "Apache License, Version 2.0"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "3.10.4"
+python = "3.11.2"
 alembic = "~1.9.4"
 boto3 = "~1.26.82"
 coincurve = "~18.0.0"
