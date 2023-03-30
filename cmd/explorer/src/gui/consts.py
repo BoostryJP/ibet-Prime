@@ -16,7 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from enum import Enum
+from enum import StrEnum
 
 UP = "\u2191"
 DOWN = "\u2193"
@@ -31,7 +31,7 @@ FIRE = ":fire:"
 INFO = "[blue]:information:[/]"
 
 
-class ID(str, Enum):
+class ID(StrEnum):
     BLOCK_CONNECTED = "block_connected"
     BLOCK_CURRENT_BLOCK_NUMBER = "block_current_block_number"
     BLOCK_IS_SYNCED = "block_is_synced"
