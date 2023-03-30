@@ -16,12 +16,10 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from datetime import datetime
 from unittest import mock
 from unittest.mock import MagicMock
 
 from app.exceptions import ServiceUnavailableError
-from app.model.db import Node
 
 
 class TestAppRoutersBlockNumberGET:
@@ -49,7 +47,7 @@ class TestAppRoutersBlockNumberGET:
     # <Error_1>
     # Unable to connect ibet
     @mock.patch(
-        "web3.eth.BaseEth.get_block_number",
+        "web3.eth.eth.Eth.get_block_number",
         MagicMock(side_effect=ServiceUnavailableError("")),
     )
     def test_error_1(self, client, db):

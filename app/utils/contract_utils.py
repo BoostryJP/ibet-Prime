@@ -273,7 +273,7 @@ class ContractUtils:
         """
         try:
             _event = getattr(contract.events, event)
-            result = _event.getLogs(
+            result = _event.get_logs(
                 fromBlock=block_from,
                 toBlock=block_to,
                 argument_filters=argument_filters,

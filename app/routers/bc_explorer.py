@@ -23,7 +23,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path
 from pydantic import NonNegativeInt
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
-from web3.contract import ContractFunction
+from web3.contract.contract import ContractFunction
 
 import config
 from app import log

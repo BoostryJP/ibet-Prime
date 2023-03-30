@@ -23,7 +23,7 @@ import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy.orm import Session
 from web3 import Web3
-from web3.exceptions import ContractLogicError
+from web3.exceptions import ContractLogicError, Web3Exception
 from web3.middleware import geth_poa_middleware
 
 from app.exceptions import ContractRevertError, SendTransactionError
@@ -268,7 +268,7 @@ class TestSendTransaction:
         assert rtn_receipt["status"] == 1
         assert rtn_receipt["to"] is None
         assert rtn_receipt["from"] == self.test_account["address"]
-        assert web3.isAddress(rtn_receipt["contractAddress"])
+        assert web3.is_address(rtn_receipt["contractAddress"])
 
     ###########################################################################
     # Error Case
@@ -332,11 +332,12 @@ class TestSendTransaction:
 
         # mock
         Web3_send_raw_transaction = patch(
-            target="web3.eth.Eth.wait_for_transaction_receipt", side_effect=ValueError
+            target="web3.eth.Eth.wait_for_transaction_receipt",
+            side_effect=Web3Exception,
         )
 
         with Web3_send_raw_transaction:
-            with pytest.raises(ValueError):
+            with pytest.raises(Web3Exception):
                 ContractUtils.send_transaction(
                     transaction=tx, private_key=self.private_key
                 )

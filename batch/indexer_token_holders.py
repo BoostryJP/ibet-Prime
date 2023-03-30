@@ -96,7 +96,7 @@ class Processor:
         return Session(autocommit=False, autoflush=True, bind=db_engine)
 
     def __load_target(self, db_session: Session) -> bool:
-        self.target: TokenHoldersList = (
+        self.target: Optional[TokenHoldersList] = (
             db_session.query(TokenHoldersList)
             .filter(TokenHoldersList.batch_status == TokenHolderBatchStatus.PENDING)
             .first()

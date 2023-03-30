@@ -169,7 +169,7 @@ class PersonalInfoContract:
                 raw_keyfile_json=self.issuer.keyfile, password=password.encode("utf-8")
             )
             tx = self.personal_info_contract.functions.forceRegister(
-                account_address, ciphertext
+                account_address, ciphertext.decode("utf-8")
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
@@ -225,7 +225,7 @@ class PersonalInfoContract:
                 raw_keyfile_json=self.issuer.keyfile, password=password.encode("utf-8")
             )
             tx = self.personal_info_contract.functions.modify(
-                account_address, ciphertext
+                account_address, ciphertext.decode("utf-8")
             ).build_transaction(
                 {
                     "chainId": CHAIN_ID,

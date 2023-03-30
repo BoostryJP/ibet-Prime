@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import json
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import List
+from typing import List, Type
 
 from sqlalchemy import desc
 from sqlalchemy.exc import IntegrityError as SAIntegrityError
@@ -446,7 +446,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
 
         # When using the cache
         if TOKEN_CACHE:
-            token_cache: TokenCache = (
+            token_cache: Type[TokenCache] | None = (
                 db_session.query(TokenCache)
                 .filter(TokenCache.token_address == self.token_address)
                 .first()
@@ -888,7 +888,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
 
         # When using the cache
         if TOKEN_CACHE:
-            token_cache: TokenCache = (
+            token_cache: Type[TokenCache] | None = (
                 db_session.query(TokenCache)
                 .filter(TokenCache.token_address == self.token_address)
                 .first()

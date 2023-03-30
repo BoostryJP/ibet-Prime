@@ -55,11 +55,6 @@ class Web3Wrapper:
         return web3.eth
 
     @property
-    def parity(self):
-        web3 = self._get_web3()
-        return web3.parity
-
-    @property
     def geth(self):
         web3 = self._get_web3()
         return web3.geth
