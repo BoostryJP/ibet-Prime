@@ -107,7 +107,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         old_passphrase = "password"
-        new_passphrase = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~"
+        new_passphrase = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 *+.\\()?[]^$-|!#%&\"',/:;<=>@_`{}~"
 
         # prepare data
         _account = E2EMessagingAccount()
@@ -234,7 +234,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # not decrypt
     def test_error_1_3(self, client, db):
         old_passphrase = "password"
-        new_passphrase = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~"
+        new_passphrase = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 *+.\\()?[]^$-|!#%&\"',/:;<=>@_`{}~"
 
         req_param = {
             "old_rsa_passphrase": old_passphrase,
@@ -270,7 +270,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # e2e messaging account
     def test_error_2_1(self, client, db):
         old_passphrase = "password"
-        new_passphrase = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~"
+        new_passphrase = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 *+.\\()?[]^$-|!#%&\"',/:;<=>@_`{}~"
 
         req_param = {
             "old_rsa_passphrase": E2EEUtils.encrypt(old_passphrase),
@@ -298,7 +298,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         old_passphrase = "password"
-        new_passphrase = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~"
+        new_passphrase = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 *+.\\()?[]^$-|!#%&\"',/:;<=>@_`{}~"
 
         # prepare data
         _account = E2EMessagingAccount()
@@ -330,7 +330,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         old_passphrase = "password"
-        new_passphrase = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~"
+        new_passphrase = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 *+.\\()?[]^$-|!#%&\"',/:;<=>@_`{}~"
 
         # prepare data
         _account = E2EMessagingAccount()
