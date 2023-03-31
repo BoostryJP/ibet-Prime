@@ -16,8 +16,11 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from typing import Annotated
+
+from fastapi import Depends
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from config import DATABASE_SCHEMA, DATABASE_URL, DB_ECHO
 
@@ -39,6 +42,9 @@ def db_session():
         yield db
     finally:
         db.close()
+
+
+DBSession = Annotated[Session, Depends(db_session)]
 
 
 def get_db_schema():

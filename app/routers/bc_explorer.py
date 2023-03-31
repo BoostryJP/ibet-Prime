@@ -22,12 +22,11 @@ from eth_utils import to_checksum_address
 from fastapi import APIRouter, Depends, HTTPException, Path
 from pydantic import NonNegativeInt
 from sqlalchemy import desc
-from sqlalchemy.orm import Session
 from web3.contract.contract import ContractFunction
 
 import config
 from app import log
-from app.database import db_session
+from app.database import DBSession
 from app.exceptions import ResponseLimitExceededError
 from app.model.db import IDXBlockData, IDXBlockDataBlockNumber, IDXTxData, Token
 from app.model.schema import (
@@ -63,8 +62,8 @@ router = APIRouter(prefix="/blockchain_explorer", tags=["blockchain_explorer"])
     responses=get_routers_responses(404, ResponseLimitExceededError),
 )
 def list_block_data(
+    db: DBSession,
     request_query: ListBlockDataQuery = Depends(),
-    session: Session = Depends(db_session),
 ):
     """
     Returns a list of block data within the specified block number range.
@@ -84,7 +83,7 @@ def list_block_data(
     # NOTE: The more data, the slower the SELECT COUNT(1) query becomes.
     #       To get total number of block data, latest block number where block data synced is used here.
     idx_block_data_block_number = (
-        session.query(IDXBlockDataBlockNumber)
+        db.query(IDXBlockDataBlockNumber)
         .filter(IDXBlockDataBlockNumber.chain_id == str(config.CHAIN_ID))
         .first()
     )
@@ -103,7 +102,7 @@ def list_block_data(
 
     total = idx_block_data_block_number.latest_block_number + 1
 
-    query = session.query(IDXBlockData)
+    query = db.query(IDXBlockData)
 
     # Search Filter
     if from_block_number is not None and to_block_number is not None:
@@ -172,8 +171,8 @@ def list_block_data(
     responses=get_routers_responses(404),
 )
 def get_block_data(
+    db: DBSession,
     block_number: NonNegativeInt = Path(description="Block number"),
-    session: Session = Depends(db_session),
 ):
     """
     Returns block data in the specified block number.
@@ -184,7 +183,7 @@ def get_block_data(
         )
 
     block_data = (
-        session.query(IDXBlockData).filter(IDXBlockData.number == block_number).first()
+        db.query(IDXBlockData).filter(IDXBlockData.number == block_number).first()
     )
     if block_data is None:
         raise HTTPException(status_code=404, detail="block data not found")
@@ -224,7 +223,8 @@ def get_block_data(
     responses=get_routers_responses(404, ResponseLimitExceededError),
 )
 def list_tx_data(
-    request_query: ListTxDataQuery = Depends(), session: Session = Depends(db_session)
+    db: DBSession,
+    request_query: ListTxDataQuery = Depends(),
 ):
     """
     Returns a list of transactions by various search parameters.
@@ -241,7 +241,7 @@ def list_tx_data(
     from_address = request_query.from_address
     to_address = request_query.to_address
 
-    query = session.query(IDXTxData)
+    query = db.query(IDXTxData)
     total = query.count()
 
     # Search Filter
@@ -306,8 +306,8 @@ def list_tx_data(
     responses=get_routers_responses(404),
 )
 def get_tx_data(
+    db: DBSession,
     hash: str = Path(description="Transaction hash"),
-    session: Session = Depends(db_session),
 ):
     """
     Searching for the transaction by transaction hash
@@ -318,7 +318,7 @@ def get_tx_data(
         )
 
     # Search tx data
-    tx_data = session.query(IDXTxData).filter(IDXTxData.hash == hash).first()
+    tx_data = db.query(IDXTxData).filter(IDXTxData.hash == hash).first()
     if tx_data is None:
         raise HTTPException(status_code=404, detail="block data not found")
 
@@ -327,7 +327,7 @@ def get_tx_data(
     contract_function: str | None = None
     contract_parameters: dict | None = None
     token_contract = (
-        session.query(Token).filter(Token.token_address == tx_data.to_address).first()
+        db.query(Token).filter(Token.token_address == tx_data.to_address).first()
     )
     if token_contract is not None:
         contract_name = token_contract.type

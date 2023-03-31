@@ -19,12 +19,11 @@ SPDX-License-Identifier: Apache-2.0
 import uuid
 from typing import List, Optional, Type
 
-from fastapi import APIRouter, Depends, Header, Path, Query
+from fastapi import APIRouter, Header, Path, Query
 from fastapi.exceptions import HTTPException
 from sqlalchemy import asc, desc
-from sqlalchemy.orm import Session
 
-from app.database import db_session
+from app.database import DBSession
 from app.exceptions import InvalidParameterError
 from app.model.db import Token, TokenHolder, TokenHolderBatchStatus, TokenHoldersList
 from app.model.schema import (
@@ -53,13 +52,13 @@ router = APIRouter(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def create_collection(
+    db: DBSession,
     data: CreateTokenHoldersListRequest,
     token_address: str = Path(
         ...,
         example="0xABCdeF1234567890abcdEf123456789000000000",
     ),
     issuer_address: str = Header(...),
-    db: Session = Depends(db_session),
 ):
     """Create collection"""
 
@@ -133,13 +132,13 @@ def create_collection(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def list_all_token_holders_collections(
+    db: DBSession,
     token_address: str = Path(...),
     issuer_address: Optional[str] = Header(None),
     status: Optional[TokenHolderBatchStatus] = Query(None),
     sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc (created)"),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
-    db: Session = Depends(db_session),
 ):
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -218,6 +217,7 @@ def list_all_token_holders_collections(
     responses=get_routers_responses(404, InvalidParameterError),
 )
 def retrieve_token_holders_list(
+    db: DBSession,
     token_address: str = Path(...),
     list_id: str = Path(
         ...,
@@ -225,7 +225,6 @@ def retrieve_token_holders_list(
         description="UUID v4 required",
     ),
     issuer_address: str = Header(...),
-    db: Session = Depends(db_session),
 ):
     """Get token holders"""
 

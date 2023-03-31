@@ -19,11 +19,10 @@ SPDX-License-Identifier: Apache-2.0
 from typing import Optional
 
 import pytz
-from fastapi import APIRouter, Depends, Header, Query
+from fastapi import APIRouter, Header, Query
 from fastapi.exceptions import HTTPException
-from sqlalchemy.orm import Session
 
-from app.database import db_session
+from app.database import DBSession
 from app.model.db import Notification
 from app.model.schema import ListAllNotificationsResponse
 from app.utils.check_utils import address_is_valid_address, validate_headers
@@ -44,11 +43,11 @@ utc_tz = pytz.timezone("UTC")
     responses=get_routers_responses(422),
 )
 def list_all_notifications(
+    db: DBSession,
     issuer_address: Optional[str] = Header(None),
     notice_type: str = Query(None),
     offset: int = Query(None),
     limit: int = Query(None),
-    db: Session = Depends(db_session),
 ):
     """List all notifications"""
 
@@ -110,7 +109,9 @@ def list_all_notifications(
     responses=get_routers_responses(422, 404),
 )
 def delete_notification(
-    notice_id: str, issuer_address: str = Header(...), db: Session = Depends(db_session)
+    db: DBSession,
+    notice_id: str,
+    issuer_address: str = Header(...),
 ):
     """Delete notification"""
 

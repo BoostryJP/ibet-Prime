@@ -23,9 +23,8 @@ from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.exceptions import HTTPException
 from pytz import timezone
 from sqlalchemy import String, and_, column, desc, func, literal, null, or_
-from sqlalchemy.orm import Session
 
-from app.database import db_session
+from app.database import DBSession
 from app.exceptions import (
     AuthorizationError,
     ContractRevertError,
@@ -79,13 +78,13 @@ local_tz = timezone(TZ)
     responses=get_routers_responses(422),
 )
 def list_all_position(
+    db: DBSession,
     account_address: str,
     issuer_address: Optional[str] = Header(None),
     include_former_position: bool = False,
     token_type: Optional[TokenType] = Query(None),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
-    db: Session = Depends(db_session),
 ):
     """List all account's position"""
 
@@ -188,12 +187,12 @@ def list_all_position(
     responses=get_routers_responses(422),
 )
 def list_all_locked_position(
+    db: DBSession,
     account_address: str,
     issuer_address: Optional[str] = Header(None),
     token_type: Optional[TokenType] = Query(None),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
-    db: Session = Depends(db_session),
 ):
     """List all account's locked position"""
 
@@ -270,10 +269,10 @@ def list_all_locked_position(
     responses=get_routers_responses(422),
 )
 def list_all_lock_events(
+    db: DBSession,
     account_address: str,
     issuer_address: Optional[str] = Header(None),
     request_query: ListAllLockEventsQuery = Depends(),
-    db: Session = Depends(db_session),
 ):
     """List all lock/unlock events in the account"""
 
@@ -431,12 +430,12 @@ def list_all_lock_events(
     ),
 )
 def force_unlock(
+    db: DBSession,
     request: Request,
     data: ForceUnlockRequest,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Force unlock the locked position"""
 
@@ -504,10 +503,10 @@ def force_unlock(
     responses=get_routers_responses(422, InvalidParameterError, 404),
 )
 def retrieve_position(
+    db: DBSession,
     account_address: str,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Retrieve account's position"""
 
