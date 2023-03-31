@@ -75,6 +75,13 @@ class TestAppRoutersBondTransferApprovalsGET:
         .astimezone(local_tz)
         .isoformat()
     )
+    test_cancellation_blocktimestamp = datetime(year=2019, month=9, day=5)
+    test_cancellation_blocktimestamp_str = (
+        timezone("UTC")
+        .localize(test_cancellation_blocktimestamp)
+        .astimezone(local_tz)
+        .isoformat()
+    )
 
     ###########################################################################
     # Normal Case
@@ -118,6 +125,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.approval_blocktimestamp = (
             self.test_approval_blocktimestamp
         )
+        _idx_transfer_approval.cancellation_blocktimestamp = (
+            self.test_cancellation_blocktimestamp
+        )
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
@@ -138,6 +148,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.approval_blocktimestamp = (
             self.test_approval_blocktimestamp
         )
+        _idx_transfer_approval.cancellation_blocktimestamp = (
+            self.test_cancellation_blocktimestamp
+        )
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
@@ -157,6 +170,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.approval_datetime = self.test_approval_datetime
         _idx_transfer_approval.approval_blocktimestamp = (
             self.test_approval_blocktimestamp
+        )
+        _idx_transfer_approval.cancellation_blocktimestamp = (
+            self.test_cancellation_blocktimestamp
         )
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.transfer_approved = None
@@ -201,6 +217,7 @@ class TestAppRoutersBondTransferApprovalsGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None  # unapproved
@@ -220,6 +237,7 @@ class TestAppRoutersBondTransferApprovalsGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True  # escrow_finished
         _idx_transfer_approval.transfer_approved = None
@@ -241,6 +259,7 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.approval_blocktimestamp = (
             self.test_approval_blocktimestamp
         )
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True  # escrow_finished
         _idx_transfer_approval.transfer_approved = None  # event not synchronized
@@ -271,6 +290,7 @@ class TestAppRoutersBondTransferApprovalsGET:
         _idx_transfer_approval.approval_blocktimestamp = (
             self.test_approval_blocktimestamp
         )
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True  # escrow_finished
         _idx_transfer_approval.transfer_approved = True  # transferred
@@ -290,6 +310,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = (
+            None  # event not synchronized
+        )
         _idx_transfer_approval.cancelled = None  # event not synchronized
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
@@ -318,6 +341,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = (
+            self.test_cancellation_blocktimestamp
+        )  # cancelled
         _idx_transfer_approval.cancelled = True  # cancelled
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
@@ -393,6 +419,7 @@ class TestAppRoutersBondTransferApprovalsGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None  # unapproved
@@ -411,6 +438,7 @@ class TestAppRoutersBondTransferApprovalsGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True  # escrow_finished
         _idx_transfer_approval.transfer_approved = None
@@ -429,6 +457,8 @@ class TestAppRoutersBondTransferApprovalsGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
+        _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True  # escrow_finished
         _idx_transfer_approval.transfer_approved = True  # transferred
         db.add(_idx_transfer_approval)
@@ -446,6 +476,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = (
+            self.test_cancellation_blocktimestamp
+        )  # cancelled
         _idx_transfer_approval.cancelled = True  # cancelled
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
@@ -465,6 +498,7 @@ class TestAppRoutersBondTransferApprovalsGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None  # unapproved
@@ -484,6 +518,7 @@ class TestAppRoutersBondTransferApprovalsGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None  # unapproved
@@ -566,6 +601,7 @@ class TestAppRoutersBondTransferApprovalsGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None  # unapproved
@@ -584,6 +620,7 @@ class TestAppRoutersBondTransferApprovalsGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True  # escrow_finished
         _idx_transfer_approval.transfer_approved = None
@@ -602,6 +639,8 @@ class TestAppRoutersBondTransferApprovalsGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
+        _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True  # escrow_finished
         _idx_transfer_approval.transfer_approved = True  # transferred
         db.add(_idx_transfer_approval)
@@ -619,6 +658,9 @@ class TestAppRoutersBondTransferApprovalsGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = (
+            self.test_cancellation_blocktimestamp
+        )  # cancelled
         _idx_transfer_approval.cancelled = True  # cancelled
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
@@ -638,6 +680,7 @@ class TestAppRoutersBondTransferApprovalsGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None  # unapproved
@@ -657,6 +700,7 @@ class TestAppRoutersBondTransferApprovalsGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None  # unapproved
@@ -756,6 +800,7 @@ class TestAppRoutersBondTransferApprovalsGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
@@ -775,6 +820,7 @@ class TestAppRoutersBondTransferApprovalsGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
@@ -794,6 +840,7 @@ class TestAppRoutersBondTransferApprovalsGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
@@ -813,6 +860,7 @@ class TestAppRoutersBondTransferApprovalsGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None

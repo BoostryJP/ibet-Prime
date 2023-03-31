@@ -273,6 +273,7 @@ class Processor:
                 )
                 for event in events:
                     args = event["args"]
+                    block_timestamp = self.__get_block_timestamp(event=event)
                     self.__sink_on_transfer_approval(
                         db_session=db_session,
                         event_type="Cancel",
@@ -281,6 +282,7 @@ class Processor:
                         application_id=args.get("index"),
                         from_address=args.get("from", ZERO_ADDRESS),
                         to_address=args.get("to", ZERO_ADDRESS),
+                        block_timestamp=block_timestamp,
                     )
                     self.__register_notification(
                         db_session=db_session,
@@ -402,6 +404,7 @@ class Processor:
                 )
                 for event in events:
                     args = event["args"]
+                    block_timestamp = self.__get_block_timestamp(event=event)
                     self.__sink_on_transfer_approval(
                         db_session=db_session,
                         event_type="Cancel",
@@ -410,6 +413,7 @@ class Processor:
                         application_id=args.get("escrowId"),
                         from_address=args.get("from", ZERO_ADDRESS),
                         to_address=args.get("to", ZERO_ADDRESS),
+                        block_timestamp=block_timestamp,
                     )
                     self.__register_notification(
                         db_session=db_session,
@@ -623,6 +627,9 @@ class Processor:
             )
         elif event_type == "Cancel":
             if transfer_approval is not None:
+                transfer_approval.cancellation_blocktimestamp = datetime.fromtimestamp(
+                    block_timestamp, tz=timezone.utc
+                )
                 transfer_approval.cancelled = True
         elif event_type == "EscrowFinish":
             if transfer_approval is not None:

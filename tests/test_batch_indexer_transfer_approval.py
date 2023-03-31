@@ -349,6 +349,7 @@ class TestProcessor:
         )
         assert _transfer_approval.approval_datetime is None
         assert _transfer_approval.approval_blocktimestamp is None
+        assert _transfer_approval.cancellation_blocktimestamp is None
         assert _transfer_approval.cancelled is None
         assert _transfer_approval.transfer_approved is None
 
@@ -456,7 +457,8 @@ class TestProcessor:
         db.commit()
 
         # Assertion
-        block = web3.eth.get_block(tx_receipt_2["blockNumber"])
+        block_2 = web3.eth.get_block(tx_receipt_2["blockNumber"])
+        block_3 = web3.eth.get_block(tx_receipt_3["blockNumber"])
 
         _transfer_approval_list = db.query(IDXTransferApproval).all()
         assert len(_transfer_approval_list) == 1
@@ -471,10 +473,14 @@ class TestProcessor:
         assert _transfer_approval.application_datetime is None
         assert (
             _transfer_approval.application_blocktimestamp
-            == datetime.utcfromtimestamp(block["timestamp"])
+            == datetime.utcfromtimestamp(block_2["timestamp"])
         )
         assert _transfer_approval.approval_datetime is None
         assert _transfer_approval.approval_blocktimestamp is None
+        assert (
+            _transfer_approval.cancellation_blocktimestamp
+            == datetime.utcfromtimestamp(block_3["timestamp"])
+        )
         assert _transfer_approval.cancelled is True
         assert _transfer_approval.transfer_approved is None
 
@@ -582,7 +588,8 @@ class TestProcessor:
         db.commit()
 
         # Assertion
-        block = web3.eth.get_block(tx_receipt_2["blockNumber"])
+        block_2 = web3.eth.get_block(tx_receipt_2["blockNumber"])
+        block_3 = web3.eth.get_block(tx_receipt_3["blockNumber"])
 
         _transfer_approval_list = db.query(IDXTransferApproval).all()
         assert len(_transfer_approval_list) == 1
@@ -597,10 +604,14 @@ class TestProcessor:
         assert _transfer_approval.application_datetime is None
         assert (
             _transfer_approval.application_blocktimestamp
-            == datetime.utcfromtimestamp(block["timestamp"])
+            == datetime.utcfromtimestamp(block_2["timestamp"])
         )
         assert _transfer_approval.approval_datetime is None
         assert _transfer_approval.approval_blocktimestamp is None
+        assert (
+            _transfer_approval.cancellation_blocktimestamp
+            == datetime.utcfromtimestamp(block_3["timestamp"])
+        )
         assert _transfer_approval.cancelled is True
         assert _transfer_approval.transfer_approved is None
 
@@ -731,6 +742,7 @@ class TestProcessor:
         assert _transfer_approval.approval_blocktimestamp == datetime.utcfromtimestamp(
             block_2["timestamp"]
         )
+        assert _transfer_approval.cancellation_blocktimestamp is None
         assert _transfer_approval.cancelled is None
         assert _transfer_approval.transfer_approved is True
 
@@ -869,6 +881,7 @@ class TestProcessor:
         )
         assert _transfer_approval.approval_datetime is None
         assert _transfer_approval.approval_blocktimestamp is None
+        assert _transfer_approval.cancellation_blocktimestamp is None
         assert _transfer_approval.cancelled is None
         assert _transfer_approval.transfer_approved is None
 
@@ -984,7 +997,7 @@ class TestProcessor:
             }
         )
         _, tx_receipt_1 = ContractUtils.send_transaction(tx, user_private_key_1)
-        block = web3.eth.get_block(tx_receipt_1["blockNumber"])
+        block_1 = web3.eth.get_block(tx_receipt_1["blockNumber"])
 
         # CancelTransfer from applicant
         tx = ibet_security_token_escrow_contract.functions.cancelEscrow(
@@ -997,7 +1010,8 @@ class TestProcessor:
                 "gasPrice": 0,
             }
         )
-        ContractUtils.send_transaction(tx, user_private_key_1)
+        _, tx_receipt_2 = ContractUtils.send_transaction(tx, user_private_key_1)
+        block_2 = web3.eth.get_block(tx_receipt_2["blockNumber"])
 
         # Run target process
         block_number = web3.eth.block_number
@@ -1020,10 +1034,14 @@ class TestProcessor:
         assert _transfer_approval.application_datetime is None
         assert (
             _transfer_approval.application_blocktimestamp
-            == datetime.utcfromtimestamp(block["timestamp"])
+            == datetime.utcfromtimestamp(block_1["timestamp"])
         )
         assert _transfer_approval.approval_datetime is None
         assert _transfer_approval.approval_blocktimestamp is None
+        assert (
+            _transfer_approval.cancellation_blocktimestamp
+            == datetime.utcfromtimestamp(block_2["timestamp"])
+        )
         assert _transfer_approval.cancelled is True
         assert _transfer_approval.transfer_approved is None
 
@@ -1170,6 +1188,7 @@ class TestProcessor:
         )
         assert _transfer_approval.approval_datetime is None
         assert _transfer_approval.approval_blocktimestamp is None
+        assert _transfer_approval.cancellation_blocktimestamp is None
         assert _transfer_approval.cancelled is None
         assert _transfer_approval.transfer_approved is None
 
@@ -1331,6 +1350,7 @@ class TestProcessor:
         assert _transfer_approval.approval_blocktimestamp == datetime.utcfromtimestamp(
             block_2["timestamp"]
         )
+        assert _transfer_approval.cancellation_blocktimestamp is None
         assert _transfer_approval.cancelled is None
         assert _transfer_approval.transfer_approved is True
 

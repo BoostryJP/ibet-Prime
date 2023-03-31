@@ -131,6 +131,7 @@ class TransferApprovalTokenResponse(BaseModel):
     application_blocktimestamp: str
     approval_datetime: Optional[str]
     approval_blocktimestamp: Optional[str]
+    cancellation_blocktimestamp: Optional[str]
     cancelled: bool
     escrow_finished: bool
     transfer_approved: bool

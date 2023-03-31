@@ -85,6 +85,13 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         .astimezone(local_tz)
         .isoformat()
     )
+    test_cancellation_blocktimestamp = datetime(year=2019, month=9, day=5)
+    test_cancellation_blocktimestamp_str = (
+        timezone("UTC")
+        .localize(test_cancellation_blocktimestamp)
+        .astimezone(local_tz)
+        .isoformat()
+    )
 
     ###########################################################################
     # Normal Case
@@ -140,6 +147,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             )
             _idx_transfer_approval.approval_datetime = None
             _idx_transfer_approval.approval_blocktimestamp = None
+            _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -164,6 +172,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -182,6 +191,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -200,6 +210,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -239,6 +250,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.approval_blocktimestamp = (
                 self.test_approval_blocktimestamp
             )
+            _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -265,6 +277,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -311,6 +324,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.approval_blocktimestamp = (
                 self.test_approval_blocktimestamp
             )
+            _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -335,6 +349,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -353,6 +368,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -371,6 +387,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -411,6 +428,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.approval_blocktimestamp = (
                 self.test_approval_blocktimestamp
             )
+            _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -438,6 +456,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -478,6 +497,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.approval_blocktimestamp = (
                 self.test_approval_blocktimestamp
             )
+            _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -505,6 +525,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -543,26 +564,33 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             )
             if i == 0:  # unapproved
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
             elif i == 1:  # escrow_finished
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = True
                 _idx_transfer_approval.transfer_approved = None
             elif i == 2:  # transferred_1
                 _idx_transfer_approval.exchange_address = "test_exchange_address"
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = True
                 _idx_transfer_approval.transfer_approved = True
             elif i == 3:  # transferred_2
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = True
             elif i == 4:  # canceled
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = (
+                    self.test_cancellation_blocktimestamp
+                )
                 _idx_transfer_approval.cancelled = True
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
@@ -590,6 +618,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -628,26 +657,33 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             )
             if i == 0:  # unapproved
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
             elif i == 1:  # escrow_finished
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = True
                 _idx_transfer_approval.transfer_approved = None
             elif i == 2:  # transferred_1
                 _idx_transfer_approval.exchange_address = "test_exchange_address"
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = True
                 _idx_transfer_approval.transfer_approved = True
             elif i == 3:  # transferred_2
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = True
             elif i == 4:  # canceled
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = (
+                    self.test_cancellation_blocktimestamp
+                )
                 _idx_transfer_approval.cancelled = True
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
@@ -675,6 +711,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -713,16 +750,19 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             )
             if i == 0:  # unapproved
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
             elif i == 1:  # escrow_finished
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = True
                 _idx_transfer_approval.transfer_approved = None
             elif i == 2:  # transferred_1
                 _idx_transfer_approval.exchange_address = "test_exchange_address"
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = True
                 _idx_transfer_approval.transfer_approved = True
@@ -732,6 +772,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                 )
             elif i == 3:  # transferred_2
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
@@ -745,6 +786,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                 db.add(_transfer_approval_history)
             elif i == 4:  # transferred_3
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = True
@@ -754,6 +796,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                 )
             elif i == 5:  # canceled-1
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
@@ -767,6 +810,9 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                 db.add(_transfer_approval_history)
             elif i == 6:  # canceled-2
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = (
+                    self.test_cancellation_blocktimestamp
+                )
                 _idx_transfer_approval.cancelled = True
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
@@ -794,6 +840,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": True,
@@ -812,6 +859,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": True,
@@ -830,6 +878,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": True,
                     "transfer_approved": True,
@@ -868,26 +917,31 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             )
             if i == 0:  # unapproved
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
             elif i == 1:  # escrow_finished
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = True
                 _idx_transfer_approval.transfer_approved = None
             elif i == 2:  # transferred_1
                 _idx_transfer_approval.exchange_address = "test_exchange_address"
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = True
                 _idx_transfer_approval.transfer_approved = True
             elif i == 3:  # transferred_2
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = True
             elif i == 4:  # canceled-1
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
@@ -901,6 +955,9 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                 db.add(_transfer_approval_history)
             elif i == 5:  # canceled-2
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = (
+                    self.test_cancellation_blocktimestamp
+                )
                 _idx_transfer_approval.cancelled = True
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
@@ -929,6 +986,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
+                    "cancellation_blocktimestamp": self.test_cancellation_blocktimestamp_str,
                     "cancelled": True,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -947,6 +1005,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": True,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -985,21 +1044,25 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             )
             if i == 0:  # unapproved
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
             elif i == 1:  # escrow_finished
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = True
                 _idx_transfer_approval.transfer_approved = None
             elif i == 2:  # transferred_1
                 _idx_transfer_approval.exchange_address = "test_exchange_address"
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = True
                 _idx_transfer_approval.transfer_approved = True
             elif i == 3:  # transferred_2
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
@@ -1013,11 +1076,13 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                 db.add(_transfer_approval_history)
             elif i == 4:  # transferred_3
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = True
             elif i == 5:  # canceled-1
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
@@ -1031,6 +1096,9 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                 db.add(_transfer_approval_history)
             elif i == 6:  # canceled-2
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = (
+                    self.test_cancellation_blocktimestamp
+                )
                 _idx_transfer_approval.cancelled = True
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
@@ -1058,6 +1126,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1076,6 +1145,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1116,6 +1186,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.approval_blocktimestamp = (
                 self.test_approval_blocktimestamp
             )
+            _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -1143,6 +1214,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1161,6 +1233,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1179,6 +1252,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1220,6 +1294,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.approval_blocktimestamp = (
                 self.test_approval_blocktimestamp
             )
+            _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -1247,6 +1322,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1265,6 +1341,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1283,6 +1360,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1301,6 +1379,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1342,6 +1421,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.approval_blocktimestamp = (
                 self.test_approval_blocktimestamp
             )
+            _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -1369,6 +1449,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1387,6 +1468,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1405,6 +1487,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1423,6 +1506,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1465,6 +1549,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.approval_blocktimestamp = (
                 self.test_approval_blocktimestamp
             )
+            _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -1492,6 +1577,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1510,6 +1596,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1528,6 +1615,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1546,6 +1634,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1586,6 +1675,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.approval_blocktimestamp = (
                 self.test_approval_blocktimestamp
             )
+            _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -1613,6 +1703,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1631,6 +1722,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1649,6 +1741,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1667,6 +1760,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1707,6 +1801,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.approval_blocktimestamp = (
                 self.test_approval_blocktimestamp
             )
+            _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -1734,6 +1829,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1752,6 +1848,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1770,6 +1867,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1788,6 +1886,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1835,6 +1934,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.approval_blocktimestamp = (
                 self.test_approval_blocktimestamp
             )
+            _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -1862,6 +1962,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1880,6 +1981,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1898,6 +2000,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1916,6 +2019,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -1959,6 +2063,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.approval_blocktimestamp = (
                 self.test_approval_blocktimestamp
             )
+            _idx_transfer_approval.cancellation_blocktimestamp = None
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
@@ -1986,6 +2091,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str_2,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -2004,6 +2110,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str_2,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -2022,6 +2129,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -2040,6 +2148,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -2079,6 +2188,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                 # unapproved
                 _idx_transfer_approval.approval_datetime = None
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
@@ -2086,6 +2196,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                 # escrow_finished
                 _idx_transfer_approval.approval_datetime = None
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = True
                 _idx_transfer_approval.transfer_approved = None
@@ -2093,6 +2204,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                 # transferred
                 _idx_transfer_approval.approval_datetime = self.test_approval_datetime
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = None
                 _idx_transfer_approval.cancelled = None
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = True
@@ -2104,6 +2216,9 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                 # canceled
                 _idx_transfer_approval.approval_datetime = None
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+                _idx_transfer_approval.cancellation_blocktimestamp = (
+                    self.test_cancellation_blocktimestamp
+                )
                 _idx_transfer_approval.cancelled = True
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
@@ -2132,6 +2247,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -2150,6 +2266,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -2168,6 +2285,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -2186,6 +2304,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -2204,6 +2323,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": True,
@@ -2222,6 +2342,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": self.test_approval_datetime_str,
                     "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+                    "cancellation_blocktimestamp": None,
                     "cancelled": False,
                     "escrow_finished": False,
                     "transfer_approved": True,
@@ -2240,6 +2361,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
+                    "cancellation_blocktimestamp": self.test_cancellation_blocktimestamp_str,
                     "cancelled": True,
                     "escrow_finished": False,
                     "transfer_approved": False,
@@ -2258,6 +2380,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
                     "approval_datetime": None,
                     "approval_blocktimestamp": None,
+                    "cancellation_blocktimestamp": self.test_cancellation_blocktimestamp_str,
                     "cancelled": True,
                     "escrow_finished": False,
                     "transfer_approved": False,

@@ -2592,6 +2592,16 @@ def list_token_transfer_approval_history(
         else:
             approval_blocktimestamp = None
 
+        if _transfer_approval.cancellation_blocktimestamp is not None:
+            cancellation_blocktimestamp_utc = timezone("UTC").localize(
+                _transfer_approval.cancellation_blocktimestamp
+            )
+            cancellation_blocktimestamp = cancellation_blocktimestamp_utc.astimezone(
+                local_tz
+            ).isoformat()
+        else:
+            cancellation_blocktimestamp = None
+
         transfer_approval_history.append(
             {
                 "id": _transfer_approval.id,
@@ -2605,6 +2615,7 @@ def list_token_transfer_approval_history(
                 "application_blocktimestamp": application_blocktimestamp,
                 "approval_datetime": approval_datetime,
                 "approval_blocktimestamp": approval_blocktimestamp,
+                "cancellation_blocktimestamp": cancellation_blocktimestamp,
                 "cancelled": cancelled,
                 "escrow_finished": escrow_finished,
                 "transfer_approved": transfer_approved,
@@ -2930,6 +2941,16 @@ def retrieve_transfer_approval_history(
     else:
         approval_blocktimestamp = None
 
+    if _transfer_approval.cancellation_blocktimestamp is not None:
+        cancellation_blocktimestamp_utc = timezone("UTC").localize(
+            _transfer_approval.cancellation_blocktimestamp
+        )
+        cancellation_blocktimestamp = cancellation_blocktimestamp_utc.astimezone(
+            local_tz
+        ).isoformat()
+    else:
+        cancellation_blocktimestamp = None
+
     history = {
         "id": _transfer_approval.id,
         "token_address": token_address,
@@ -2942,6 +2963,7 @@ def retrieve_transfer_approval_history(
         "application_blocktimestamp": application_blocktimestamp,
         "approval_datetime": approval_datetime,
         "approval_blocktimestamp": approval_blocktimestamp,
+        "cancellation_blocktimestamp": cancellation_blocktimestamp,
         "cancelled": cancelled,
         "escrow_finished": escrow_finished,
         "transfer_approved": transfer_approved,
