@@ -21,12 +21,11 @@ import uuid
 from typing import Optional
 
 import pytz
-from fastapi import APIRouter, Depends, Header, Query
+from fastapi import APIRouter, Header, Query
 from fastapi.exceptions import HTTPException
 from sqlalchemy import desc
-from sqlalchemy.orm import Session
 
-from app.database import db_session
+from app.database import DBSession
 from app.model.db import UploadFile
 from app.model.schema import (
     DownloadFileResponse,
@@ -50,13 +49,13 @@ utc_tz = pytz.timezone("UTC")
     "", response_model=ListAllFilesResponse, responses=get_routers_responses(422)
 )
 def list_all_upload_files(
+    db: DBSession,
     issuer_address: Optional[str] = Header(None),
     relation: Optional[str] = Query(None),
     file_name: Optional[str] = Query(None, description="partial match"),
     label: Optional[str] = Query(None, description="partial match"),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
-    db: Session = Depends(db_session),
 ):
     """List all files"""
 
@@ -133,9 +132,9 @@ def list_all_upload_files(
 # POST: /files
 @router.post("", response_model=FileResponse, responses=get_routers_responses(422))
 def upload_file(
+    db: DBSession,
     data: UploadFileRequest,
     issuer_address: str = Header(...),
-    db: Session = Depends(db_session),
 ):
     """Upload file"""
 
@@ -181,9 +180,9 @@ def upload_file(
     responses=get_routers_responses(404),
 )
 def download_file(
+    db: DBSession,
     file_id: str,
     issuer_address: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Download file"""
 
@@ -227,7 +226,9 @@ def download_file(
     "/{file_id}", response_model=None, responses=get_routers_responses(422, 404)
 )
 def delete_file(
-    file_id: str, issuer_address: str = Header(...), db: Session = Depends(db_session)
+    db: DBSession,
+    file_id: str,
+    issuer_address: str = Header(...),
 ):
     """Delete file"""
 

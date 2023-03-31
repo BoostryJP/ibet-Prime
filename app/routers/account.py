@@ -27,13 +27,12 @@ import eth_keyfile
 from coincurve import PublicKey
 from Crypto.PublicKey import RSA
 from eth_utils import keccak, to_checksum_address
-from fastapi import APIRouter, Depends, Header, Request
+from fastapi import APIRouter, Header, Request
 from fastapi.exceptions import HTTPException
 from pytz import timezone
 from sqlalchemy.exc import IntegrityError as SAIntegrityError
-from sqlalchemy.orm import Session
 
-from app.database import db_session
+from app.database import DBSession
 from app.exceptions import (
     AuthorizationError,
     AuthTokenAlreadyExistsError,
@@ -88,7 +87,7 @@ local_tz = timezone(TZ)
     response_model=AccountResponse,
     responses=get_routers_responses(422, InvalidParameterError),
 )
-def create_key(data: AccountCreateKeyRequest, db: Session = Depends(db_session)):
+def create_key(db: DBSession, data: AccountCreateKeyRequest):
     """Create Keys"""
     # Check Password Policy
     eoa_password = (
@@ -140,7 +139,7 @@ def create_key(data: AccountCreateKeyRequest, db: Session = Depends(db_session))
 
 # GET: /accounts
 @router.get("/accounts", response_model=List[AccountResponse])
-def list_all_accounts(db: Session = Depends(db_session)):
+def list_all_accounts(db: DBSession):
     """List all accounts"""
 
     # Register key data to the DB
@@ -166,7 +165,7 @@ def list_all_accounts(db: Session = Depends(db_session)):
     response_model=AccountResponse,
     responses=get_routers_responses(404),
 )
-def retrieve_account(issuer_address: str, db: Session = Depends(db_session)):
+def retrieve_account(db: DBSession, issuer_address: str):
     """Retrieve an account"""
 
     _account = (
@@ -191,7 +190,7 @@ def retrieve_account(issuer_address: str, db: Session = Depends(db_session)):
     response_model=AccountResponse,
     responses=get_routers_responses(404),
 )
-def delete_account(issuer_address: str, db: Session = Depends(db_session)):
+def delete_account(db: DBSession, issuer_address: str):
     """Logically delete an account"""
 
     _account = (
@@ -221,9 +220,9 @@ def delete_account(issuer_address: str, db: Session = Depends(db_session)):
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def generate_rsa_key(
+    db: DBSession,
     issuer_address: str,
     data: AccountGenerateRsaKeyRequest,
-    db: Session = Depends(db_session),
 ):
     """Generate RSA key"""
 
@@ -292,9 +291,9 @@ def generate_rsa_key(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def change_eoa_password(
+    db: DBSession,
     issuer_address: str,
     data: AccountChangeEOAPasswordRequest,
-    db: Session = Depends(db_session),
 ):
     """Change EOA Password"""
 
@@ -352,9 +351,9 @@ def change_eoa_password(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def change_rsa_passphrase(
+    db: DBSession,
     issuer_address: str,
     data: AccountChangeRSAPassphraseRequest,
-    db: Session = Depends(db_session),
 ):
     """Change RSA Passphrase"""
 
@@ -410,11 +409,11 @@ def change_rsa_passphrase(
     ),
 )
 def create_auth_token(
+    db: DBSession,
     request: Request,
     data: AccountAuthTokenRequest,
     issuer_address: str,
     eoa_password: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Create Auth Token"""
 
@@ -492,11 +491,11 @@ def create_auth_token(
     responses=get_routers_responses(422, 404, AuthorizationError),
 )
 def delete_auth_token(
+    db: DBSession,
     request: Request,
     issuer_address: str,
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Delete auth token"""
 

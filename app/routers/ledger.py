@@ -20,12 +20,12 @@ import uuid
 from typing import List, Optional
 
 import pytz
-from fastapi import APIRouter, Depends, Header, Query
+from fastapi import APIRouter, Header, Query
 from fastapi.exceptions import HTTPException
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
-from app.database import db_session
+from app.database import DBSession
 from app.exceptions import InvalidParameterError
 from app.model.blockchain import (
     IbetShareContract,
@@ -74,11 +74,11 @@ utc_tz = pytz.timezone("UTC")
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def list_all_ledger_history(
+    db: DBSession,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
     offset: int = Query(None),
     limit: int = Query(None),
-    db: Session = Depends(db_session),
 ):
     """List all Ledger"""
 
@@ -157,11 +157,11 @@ def list_all_ledger_history(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def retrieve_ledger_history(
+    db: DBSession,
     token_address: str,
     ledger_id: int,
     issuer_address: Optional[str] = Header(None),
     latest_flg: int = Query(..., ge=0, le=1),
-    db: Session = Depends(db_session),
 ):
     """Retrieve Ledger"""
 
@@ -237,9 +237,9 @@ def retrieve_ledger_history(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def retrieve_ledger_template(
+    db: DBSession,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Retrieve Ledger Template"""
 
@@ -314,10 +314,10 @@ def retrieve_ledger_template(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def create_update_ledger_template(
+    db: DBSession,
     token_address: str,
     data: CreateUpdateLedgerTemplateRequest,
     issuer_address: str = Header(...),
-    db: Session = Depends(db_session),
 ):
     """Create or Update Ledger Template"""
 
@@ -423,9 +423,9 @@ def create_update_ledger_template(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def delete_ledger_template(
+    db: DBSession,
     token_address: str,
     issuer_address: str = Header(...),
-    db: Session = Depends(db_session),
 ):
     """Delete Ledger Template"""
 
@@ -475,11 +475,11 @@ def delete_ledger_template(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def list_all_ledger_details_data(
+    db: DBSession,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
     offset: int = Query(None),
     limit: int = Query(None),
-    db: Session = Depends(db_session),
 ):
     """List all Ledger Details Data"""
 
@@ -561,10 +561,10 @@ def list_all_ledger_details_data(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def create_ledger_details_data(
+    db: DBSession,
     token_address: str,
     data_list: List[CreateUpdateLedgerDetailsDataRequest],
     issuer_address: str = Header(...),
-    db: Session = Depends(db_session),
 ):
     """Create Ledger Details Data"""
 
@@ -608,10 +608,10 @@ def create_ledger_details_data(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def retrieve_ledger_details_data(
+    db: DBSession,
     token_address: str,
     data_id: str,
     issuer_address: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Retrieve Ledger Details Data"""
 
@@ -670,11 +670,11 @@ def retrieve_ledger_details_data(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def update_ledger_details_data(
+    db: DBSession,
     token_address: str,
     data_id: str,
     data_list: List[CreateUpdateLedgerDetailsDataRequest],
     issuer_address: str = Header(...),
-    db: Session = Depends(db_session),
 ):
     """Update Ledger Details Data"""
 
@@ -729,10 +729,10 @@ def update_ledger_details_data(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def delete_ledger_details_data(
+    db: DBSession,
     token_address: str,
     data_id: str,
     issuer_address: str = Header(...),
-    db: Session = Depends(db_session),
 ):
     """Delete Ledger Details Data"""
 

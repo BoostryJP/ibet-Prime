@@ -37,11 +37,11 @@ from sqlalchemy import (
     null,
     or_,
 )
-from sqlalchemy.orm import Session, aliased
+from sqlalchemy.orm import aliased
 
 import config
 from app import log
-from app.database import db_session
+from app.database import DBSession
 from app.exceptions import (
     AuthorizationError,
     ContractRevertError,
@@ -94,7 +94,7 @@ from app.model.db import (
     TransferApprovalOperationType,
     UpdateToken,
 )
-from app.model.schema import (  # Request; Response
+from app.model.schema import (
     BatchIssueRedeemUploadIdResponse,
     BatchRegisterPersonalInfoUploadResponse,
     BulkTransferResponse,
@@ -159,12 +159,12 @@ local_tz = timezone(config.TZ)
     ),
 )
 def issue_token(
+    db: DBSession,
     request: Request,
     token: IbetStraightBondCreate,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Issue ibetStraightBond token"""
 
@@ -310,7 +310,8 @@ def issue_token(
     responses=get_routers_responses(422),
 )
 def list_all_tokens(
-    issuer_address: Optional[str] = Header(None), db: Session = Depends(db_session)
+    db: DBSession,
+    issuer_address: Optional[str] = Header(None),
 ):
     """List all issued tokens"""
 
@@ -355,7 +356,7 @@ def list_all_tokens(
     response_model=IbetStraightBondResponse,
     responses=get_routers_responses(404, InvalidParameterError),
 )
-def retrieve_token(token_address: str, db: Session = Depends(db_session)):
+def retrieve_token(db: DBSession, token_address: str):
     """Retrieve token"""
     # Get Token
     _token = (
@@ -395,13 +396,13 @@ def retrieve_token(token_address: str, db: Session = Depends(db_session)):
     ),
 )
 def update_token(
+    db: DBSession,
     request: Request,
     token_address: str,
     token: IbetStraightBondUpdate,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Update a token"""
 
@@ -461,12 +462,12 @@ def update_token(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def list_additional_issuance_history(
+    db: DBSession,
     token_address: str,
     sort_item: IDXIssueRedeemSortItem = Query(IDXIssueRedeemSortItem.BLOCK_TIMESTAMP),
     sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
-    db: Session = Depends(db_session),
 ):
     """List additional issuance history"""
 
@@ -551,13 +552,13 @@ def list_additional_issuance_history(
     ),
 )
 def additional_issue(
+    db: DBSession,
     request: Request,
     token_address: str,
     data: IbetStraightBondAdditionalIssue,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Additional issue"""
 
@@ -616,13 +617,13 @@ def additional_issue(
     responses=get_routers_responses(422),
 )
 def list_all_additional_issue_upload(
+    db: DBSession,
     token_address: str,
     processed: Optional[bool] = Query(None),
     sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc (created)"),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
     issuer_address: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     # Get a list of uploads
     query = (
@@ -693,13 +694,13 @@ def list_all_additional_issue_upload(
     ),
 )
 def additional_issue_in_batch(
+    db: DBSession,
     request: Request,
     token_address: str,
     data: List[IbetStraightBondAdditionalIssue],
     issuer_address: str = Header(...),
     auth_token: Optional[str] = Header(None),
     eoa_password: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Additional issue (Batch)"""
 
@@ -769,10 +770,10 @@ def additional_issue_in_batch(
     responses=get_routers_responses(422, 404),
 )
 def retrieve_batch_additional_issue(
+    db: DBSession,
     token_address: str,
     batch_id: str,
     issuer_address: str = Header(...),
-    db: Session = Depends(db_session),
 ):
     """Get Batch status for additional issue"""
 
@@ -821,12 +822,12 @@ def retrieve_batch_additional_issue(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def list_redeem_history(
+    db: DBSession,
     token_address: str,
     sort_item: IDXIssueRedeemSortItem = Query(IDXIssueRedeemSortItem.BLOCK_TIMESTAMP),
     sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
-    db: Session = Depends(db_session),
 ):
     """List redemption history"""
 
@@ -911,13 +912,13 @@ def list_redeem_history(
     ),
 )
 def redeem_token(
+    db: DBSession,
     request: Request,
     token_address: str,
     data: IbetStraightBondRedeem,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Redeem a token"""
 
@@ -976,13 +977,13 @@ def redeem_token(
     responses=get_routers_responses(422),
 )
 def list_all_redeem_upload(
+    db: DBSession,
     token_address: str,
     processed: Optional[bool] = Query(None),
     sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc (created)"),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
     issuer_address: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     # Get a list of uploads
     query = (
@@ -1053,13 +1054,13 @@ def list_all_redeem_upload(
     ),
 )
 def redeem_token_in_batch(
+    db: DBSession,
     request: Request,
     token_address: str,
     data: List[IbetStraightBondRedeem],
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Redeem a token (Batch)"""
 
@@ -1129,10 +1130,10 @@ def redeem_token_in_batch(
     responses=get_routers_responses(422, 404),
 )
 def retrieve_batch_redeem(
+    db: DBSession,
     token_address: str,
     batch_id: str,
     issuer_address: str = Header(...),
-    db: Session = Depends(db_session),
 ):
     """Get Batch status for additional issue"""
 
@@ -1180,9 +1181,9 @@ def retrieve_batch_redeem(
     response_model=List[ScheduledEventResponse],
 )
 def list_all_scheduled_events(
+    db: DBSession,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """List all scheduled update events"""
 
@@ -1236,13 +1237,13 @@ def list_all_scheduled_events(
     ),
 )
 def schedule_new_update_event(
+    db: DBSession,
     request: Request,
     token_address: str,
     event_data: IbetStraightBondScheduledUpdate,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Register a new update event"""
 
@@ -1298,10 +1299,10 @@ def schedule_new_update_event(
     responses=get_routers_responses(404),
 )
 def retrieve_token_event(
+    db: DBSession,
     scheduled_event_id: str,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Retrieve a scheduled token event"""
 
@@ -1350,13 +1351,13 @@ def retrieve_token_event(
     responses=get_routers_responses(422, 401, 404, AuthorizationError),
 )
 def delete_scheduled_event(
+    db: DBSession,
     request: Request,
     token_address: str,
     scheduled_event_id: str,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Delete a scheduled event"""
 
@@ -1412,10 +1413,10 @@ def delete_scheduled_event(
     responses=get_routers_responses(422, InvalidParameterError, 404),
 )
 def list_all_holders(
+    db: DBSession,
     token_address: str,
     include_former_holder: bool = False,
     issuer_address: str = Header(...),
-    db: Session = Depends(db_session),
 ):
     """List all bond token holders"""
 
@@ -1523,9 +1524,9 @@ def list_all_holders(
     responses=get_routers_responses(422, InvalidParameterError, 404),
 )
 def count_number_of_holders(
+    db: DBSession,
     token_address: str,
     issuer_address: str = Header(...),
-    db: Session = Depends(db_session),
 ):
     """Count the number of holders"""
 
@@ -1591,10 +1592,10 @@ def count_number_of_holders(
     responses=get_routers_responses(422, InvalidParameterError, 404),
 )
 def retrieve_holder(
+    db: DBSession,
     token_address: str,
     account_address: str,
     issuer_address: str = Header(...),
-    db: Session = Depends(db_session),
 ):
     """Retrieve bond token holder"""
 
@@ -1705,13 +1706,13 @@ def retrieve_holder(
     ),
 )
 def register_holder_personal_info(
+    db: DBSession,
     request: Request,
     token_address: str,
     personal_info: RegisterPersonalInfoRequest,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Register the holder's personal information"""
 
@@ -1770,13 +1771,13 @@ def register_holder_personal_info(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def list_all_personal_info_batch_registration_uploads(
+    db: DBSession,
     token_address: str,
     issuer_address: str = Header(...),
     status: Optional[str] = Query(None),
     sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc (created)"),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
-    db: Session = Depends(db_session),
 ):
     """List all personal information batch registration uploads"""
 
@@ -1854,13 +1855,13 @@ def list_all_personal_info_batch_registration_uploads(
     ),
 )
 def batch_register_personal_info(
+    db: DBSession,
     request: Request,
     token_address: str,
     personal_info_list: List[RegisterPersonalInfoRequest],
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Create Batch for register personal information"""
 
@@ -1932,10 +1933,10 @@ def batch_register_personal_info(
     responses=get_routers_responses(422, 401, 404),
 )
 def retrieve_batch_register_personal_info(
+    db: DBSession,
     token_address: str,
     batch_id: str,
     issuer_address: str = Header(...),
-    db: Session = Depends(db_session),
 ):
     """Get Batch status for register personal information"""
 
@@ -1990,10 +1991,10 @@ def retrieve_batch_register_personal_info(
     responses=get_routers_responses(422),
 )
 def list_all_lock_events_by_bond(
+    db: DBSession,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
     request_query: ListAllTokenLockEventsQuery = Depends(),
-    db: Session = Depends(db_session),
 ):
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -2142,12 +2143,12 @@ def list_all_lock_events_by_bond(
     ),
 )
 def transfer_ownership(
+    db: DBSession,
     request: Request,
     token: IbetStraightBondTransfer,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Transfer token ownership"""
 
@@ -2205,9 +2206,9 @@ def transfer_ownership(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def list_transfer_history(
+    db: DBSession,
     token_address: str,
     request_query: ListTransferHistoryQuery = Depends(),
-    db: Session = Depends(db_session),
 ):
     """List token transfer history"""
     # Get token
@@ -2288,10 +2289,10 @@ def list_transfer_history(
     responses=get_routers_responses(422),
 )
 def list_transfer_approval_history(
+    db: DBSession,
     issuer_address: Optional[str] = Header(None),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
-    db: Session = Depends(db_session),
 ):
     """List transfer approval history"""
     # Create a subquery for 'status' added IDXTransferApproval
@@ -2421,6 +2422,7 @@ def list_transfer_approval_history(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def list_token_transfer_approval_history(
+    db: DBSession,
     token_address: str,
     from_address: Optional[str] = Query(None),
     to_address: Optional[str] = Query(None),
@@ -2436,7 +2438,6 @@ def list_token_transfer_approval_history(
     sort_order: Optional[int] = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
-    db: Session = Depends(db_session),
 ):
     """List token transfer approval history"""
     # Get token
@@ -2651,6 +2652,7 @@ def list_token_transfer_approval_history(
     ),
 )
 def update_transfer_approval(
+    db: DBSession,
     request: Request,
     token_address: str,
     id: int,
@@ -2658,7 +2660,6 @@ def update_transfer_approval(
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Update on the status of a bond transfer approval"""
 
@@ -2823,9 +2824,7 @@ def update_transfer_approval(
     response_model=TransferApprovalTokenResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-def retrieve_transfer_approval_history(
-    token_address: str, id: int, db: Session = Depends(db_session)
-):
+def retrieve_transfer_approval_history(db: DBSession, token_address: str, id: int):
     """Retrieve bond token transfer approval history"""
     # Get token
     _token = (
@@ -2983,12 +2982,12 @@ def retrieve_transfer_approval_history(
     ),
 )
 def bulk_transfer_ownership(
+    db: DBSession,
     request: Request,
     tokens: List[IbetStraightBondTransfer],
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Bulk transfer token ownership"""
 
@@ -3063,7 +3062,7 @@ def bulk_transfer_ownership(
     responses=get_routers_responses(422),
 )
 def list_bulk_transfer_upload(
-    issuer_address: Optional[str] = Header(None), db: Session = Depends(db_session)
+    db: DBSession, issuer_address: Optional[str] = Header(None)
 ):
     """List bulk transfer uploads"""
 
@@ -3109,9 +3108,9 @@ def list_bulk_transfer_upload(
     responses=get_routers_responses(422, 404),
 )
 def retrieve_bulk_transfer(
+    db: DBSession,
     upload_id: str,
     issuer_address: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Retrieve a bulk transfer upload"""
 
