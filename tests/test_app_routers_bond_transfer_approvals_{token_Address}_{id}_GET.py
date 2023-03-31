@@ -71,6 +71,13 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
         .astimezone(local_tz)
         .isoformat()
     )
+    test_cancellation_blocktimestamp = datetime(year=2019, month=9, day=5)
+    test_cancellation_blocktimestamp_str = (
+        timezone("UTC")
+        .localize(test_cancellation_blocktimestamp)
+        .astimezone(local_tz)
+        .isoformat()
+    )
 
     ###########################################################################
     # Normal Case
@@ -103,6 +110,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
@@ -125,6 +133,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
             "application_blocktimestamp": self.test_application_blocktimestamp_str,
             "approval_datetime": None,
             "approval_blocktimestamp": None,
+            "cancellation_blocktimestamp": None,
             "cancelled": False,
             "escrow_finished": False,
             "transfer_approved": False,
@@ -160,6 +169,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
@@ -189,6 +199,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
             "application_blocktimestamp": self.test_application_blocktimestamp_str,
             "approval_datetime": None,
             "approval_blocktimestamp": None,
+            "cancellation_blocktimestamp": None,
             "cancelled": True,
             "escrow_finished": False,
             "transfer_approved": False,
@@ -223,6 +234,9 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = (
+            self.test_cancellation_blocktimestamp
+        )
         _idx_transfer_approval.cancelled = True
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
@@ -245,6 +259,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
             "application_blocktimestamp": self.test_application_blocktimestamp_str,
             "approval_datetime": None,
             "approval_blocktimestamp": None,
+            "cancellation_blocktimestamp": self.test_cancellation_blocktimestamp_str,
             "cancelled": True,
             "escrow_finished": False,
             "transfer_approved": False,
@@ -279,6 +294,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True
         _idx_transfer_approval.transfer_approved = False
@@ -301,6 +317,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
             "application_blocktimestamp": self.test_application_blocktimestamp_str,
             "approval_datetime": None,
             "approval_blocktimestamp": None,
+            "cancellation_blocktimestamp": None,
             "cancelled": False,
             "escrow_finished": True,
             "transfer_approved": False,
@@ -338,6 +355,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
         _idx_transfer_approval.approval_blocktimestamp = (
             self.test_approval_blocktimestamp
         )
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True
         _idx_transfer_approval.transfer_approved = None
@@ -367,6 +385,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
             "application_blocktimestamp": self.test_application_blocktimestamp_str,
             "approval_datetime": self.test_approval_datetime_str,
             "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+            "cancellation_blocktimestamp": None,
             "cancelled": False,
             "escrow_finished": True,
             "transfer_approved": True,
@@ -403,6 +422,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
         _idx_transfer_approval.approval_blocktimestamp = (
             self.test_approval_blocktimestamp
         )
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True
         _idx_transfer_approval.transfer_approved = True
@@ -425,6 +445,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdGET:
             "application_blocktimestamp": self.test_application_blocktimestamp_str,
             "approval_datetime": self.test_approval_datetime_str,
             "approval_blocktimestamp": self.test_approval_blocktimestamp_str,
+            "cancellation_blocktimestamp": None,
             "cancelled": False,
             "escrow_finished": True,
             "transfer_approved": True,
