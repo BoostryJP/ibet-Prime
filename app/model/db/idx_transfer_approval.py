@@ -75,7 +75,6 @@ class IDXTransferApproval(Base):
             "application_blocktimestamp": self.application_blocktimestamp,
             "approval_datetime": self.approval_datetime,
             "approval_blocktimestamp": self.approval_blocktimestamp,
-            "cancellation_datetime": self.cancellation_datetime,
             "cancellation_blocktimestamp": self.cancellation_blocktimestamp,
             "cancelled": self.cancelled,
             "escrow_finished": self.escrow_finished,
