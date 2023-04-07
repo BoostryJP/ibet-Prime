@@ -92,7 +92,7 @@ def create_collection(
         raise InvalidParameterError("list_id must be unique.")
 
     # Check existing list
-    _same_combi_record: Type[TokenHoldersList] = (
+    _same_combi_record: TokenHoldersList | None = (
         db.query(TokenHoldersList)
         .filter(TokenHoldersList.block_number == data.block_number)
         .filter(TokenHoldersList.token_address == token_address)
@@ -184,7 +184,7 @@ def list_all_token_holders_collections(
         query = query.offset(offset)
 
     # Get all collections
-    _token_holders_collections: list[Type[TokenHoldersList]] = query.all()
+    _token_holders_collections: list[TokenHoldersList] = query.all()
 
     token_holders_collections = []
     for _collection in _token_holders_collections:
@@ -252,7 +252,7 @@ def retrieve_token_holders_list(
         raise InvalidParameterError(description)
 
     # Check existing list
-    _same_list_id_record: Type[TokenHoldersList] = (
+    _same_list_id_record: TokenHoldersList | None = (
         db.query(TokenHoldersList).filter(TokenHoldersList.list_id == list_id).first()
     )
 

@@ -287,7 +287,7 @@ class Processor:
 
     def __get_transfer_data(
         self, db_session: Session, upload_id: str, status: int
-    ) -> List[Type[BulkTransfer]]:
+    ) -> List[BulkTransfer]:
         transfer_list = (
             db_session.query(BulkTransfer)
             .filter(BulkTransfer.upload_id == upload_id)

@@ -23,7 +23,7 @@ import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from itertools import groupby
-from typing import Optional, Type
+from typing import Optional
 
 from eth_utils import to_checksum_address
 from sqlalchemy import create_engine
@@ -141,7 +141,7 @@ class Processor:
             set(issued_token_address_list) ^ set(loaded_token_address_list)
         )
 
-        load_required_token_list: list[Type[Token]] = (
+        load_required_token_list: list[Token] = (
             db_session.query(Token)
             .filter(Token.type == TokenType.IBET_SHARE)
             .filter(Token.token_status == 1)

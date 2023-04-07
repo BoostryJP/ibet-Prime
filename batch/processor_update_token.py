@@ -21,7 +21,7 @@ import sys
 import time
 import uuid
 from datetime import datetime
-from typing import List, Type
+from typing import List
 
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import create_engine
@@ -248,7 +248,7 @@ class Processor:
         finally:
             db_session.close()
 
-    def __get_update_token_list(self, db_session: Session) -> List[Type[UpdateToken]]:
+    def __get_update_token_list(self, db_session: Session) -> List[UpdateToken]:
         _update_token_list = (
             db_session.query(UpdateToken)
             .filter(UpdateToken.status == 0)
