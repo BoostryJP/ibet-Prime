@@ -5,9 +5,8 @@ Revises: 7d09371c365e
 Create Date: 2023-04-01 14:53:28.859908
 
 """
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 from app.database import get_db_schema
 

@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 import uuid
 from datetime import datetime
-from typing import List, Optional, Type
+from typing import List, Optional
 
 from eth_keyfile import decode_keyfile_json
 from fastapi import APIRouter, Depends, Header, Query, Request
@@ -508,7 +508,7 @@ def list_additional_issuance_history(
         query = query.limit(limit)
     if offset is not None:
         query = query.offset(offset)
-    _events: List[Type[IDXIssueRedeem]] = query.all()
+    _events: List[IDXIssueRedeem] = query.all()
 
     history = []
     for _event in _events:
@@ -657,7 +657,7 @@ def list_all_additional_issue_upload(
     if offset is not None:
         query = query.offset(offset)
 
-    _upload_list: list[Type[BatchIssueRedeemUpload]] = query.all()
+    _upload_list: list[BatchIssueRedeemUpload] = query.all()
 
     uploads = []
     for _upload in _upload_list:
@@ -796,7 +796,7 @@ def retrieve_batch_additional_issue(
         raise HTTPException(status_code=404, detail="batch not found")
 
     # Get Batch Records
-    record_list: List[Type[BatchIssueRedeem]] = (
+    record_list: List[BatchIssueRedeem] = (
         db.query(BatchIssueRedeem).filter(BatchIssueRedeem.upload_id == batch_id).all()
     )
 
@@ -868,7 +868,7 @@ def list_redeem_history(
         query = query.limit(limit)
     if offset is not None:
         query = query.offset(offset)
-    _events: List[Type[IDXIssueRedeem]] = query.all()
+    _events: List[IDXIssueRedeem] = query.all()
 
     history = []
     for _event in _events:
@@ -1017,7 +1017,7 @@ def list_all_redeem_upload(
     if offset is not None:
         query = query.offset(offset)
 
-    _upload_list: list[Type[BatchIssueRedeemUpload]] = query.all()
+    _upload_list: list[BatchIssueRedeemUpload] = query.all()
 
     uploads = []
     for _upload in _upload_list:
@@ -1156,7 +1156,7 @@ def retrieve_batch_redeem(
         raise HTTPException(status_code=404, detail="batch not found")
 
     # Get Batch Records
-    record_list: List[Type[BatchIssueRedeem]] = (
+    record_list: List[BatchIssueRedeem] = (
         db.query(BatchIssueRedeem).filter(BatchIssueRedeem.upload_id == batch_id).all()
     )
 
@@ -1819,7 +1819,7 @@ def list_all_personal_info_batch_registration_uploads(
     if offset is not None:
         query = query.offset(offset)
 
-    _upload_list: list[Type[BatchRegisterPersonalInfoUpload]] = query.all()
+    _upload_list: list[BatchRegisterPersonalInfoUpload] = query.all()
 
     uploads = []
     for _upload in _upload_list:

@@ -20,7 +20,6 @@ import os
 import sys
 import time
 from datetime import datetime
-from typing import Type
 
 from Crypto import Random
 from Crypto.PublicKey import RSA
@@ -104,7 +103,7 @@ class Processor:
         self,
         db_session: Session,
         base_time: int,
-        e2e_messaging_account: Type[E2EMessagingAccount],
+        e2e_messaging_account: E2EMessagingAccount,
     ):
         if e2e_messaging_account.rsa_key_generate_interval > 0:
             # Get latest RSA key
@@ -182,7 +181,7 @@ class Processor:
             db_session.add(_account_rsa_key)
 
     def __rotate_rsa_key(
-        self, db_session: Session, e2e_messaging_account: Type[E2EMessagingAccount]
+        self, db_session: Session, e2e_messaging_account: E2EMessagingAccount
     ):
         if e2e_messaging_account.rsa_generation > 0:
             # Delete RSA key that exceeds the number of generations

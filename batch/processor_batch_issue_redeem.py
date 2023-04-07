@@ -74,7 +74,7 @@ class Processor:
     def process(self):
         db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
         try:
-            upload_list: List[Type[BatchIssueRedeemUpload]] = (
+            upload_list: List[BatchIssueRedeemUpload] = (
                 db_session.query(BatchIssueRedeemUpload)
                 .filter(BatchIssueRedeemUpload.processed == False)
                 .all()

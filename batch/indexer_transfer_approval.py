@@ -21,7 +21,7 @@ import sys
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import Optional, Type
+from typing import Optional
 
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
@@ -145,7 +145,7 @@ class Processor:
             set(issued_token_address_list) ^ set(loaded_token_address_list)
         )
 
-        load_required_token_list: list[Type[Token]] = (
+        load_required_token_list: list[Token] = (
             db_session.query(Token)
             .filter(Token.token_status == 1)
             .filter(Token.token_address.in_(load_required_address_list))
