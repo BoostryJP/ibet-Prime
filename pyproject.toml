@@ -24,7 +24,7 @@ requests = "~2.28.2"
 shared-memory-dict = "~0.7.2"
 uvicorn = "~0.20.0"
 web3 = "~6.0.0"
-sqlalchemy = "~2.0.4"
+sqlalchemy = "~2.0.9"
 
 ibet-prime-explorer = {path = "cmd/explorer", optional = true, develop = true}
 textual = {version = "~0.10.1", optional = true}
