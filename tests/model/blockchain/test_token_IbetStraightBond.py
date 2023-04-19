@@ -39,7 +39,7 @@ from app.model.blockchain.tx_params.ibet_straight_bond import (
     AdditionalIssueParams,
     ApproveTransferParams,
     CancelTransferParams,
-    ForceUnlockPrams,
+    ForceUnlockParams,
     LockParams,
     RedeemParams,
     TransferParams,
@@ -3284,7 +3284,7 @@ class TestForceUnlock:
             "data": "",
         }
         tx_hash, tx_receipt = bond_contract.force_unlock(
-            data=ForceUnlockPrams(**lock_data),
+            data=ForceUnlockParams(**lock_data),
             tx_from=issuer_address,
             private_key=issuer_pk,
         )
@@ -3311,7 +3311,7 @@ class TestForceUnlock:
     def test_error_1_1(self, db):
         lock_data = {}
         with pytest.raises(ValidationError) as ex_info:
-            ForceUnlockPrams(**lock_data)
+            ForceUnlockParams(**lock_data)
 
         assert ex_info.value.errors() == [
             {
@@ -3346,7 +3346,7 @@ class TestForceUnlock:
             "data": "",
         }
         with pytest.raises(ValidationError) as ex_info:
-            ForceUnlockPrams(**lock_data)
+            ForceUnlockParams(**lock_data)
 
         assert ex_info.value.errors() == [
             {
@@ -3421,7 +3421,7 @@ class TestForceUnlock:
         }
         with pytest.raises(SendTransactionError) as exc_info:
             bond_contract.force_unlock(
-                data=ForceUnlockPrams(**lock_data),
+                data=ForceUnlockParams(**lock_data),
                 tx_from="invalid_tx_from",  # invalid tx from
                 private_key="",
             )
@@ -3478,7 +3478,7 @@ class TestForceUnlock:
         }
         with pytest.raises(SendTransactionError) as exc_info:
             bond_contract.force_unlock(
-                data=ForceUnlockPrams(**lock_data),
+                data=ForceUnlockParams(**lock_data),
                 tx_from=issuer_address,
                 private_key="invalid_pk",  # invalid pk
             )
@@ -3542,7 +3542,7 @@ class TestForceUnlock:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 bond_contract.force_unlock(
-                    data=ForceUnlockPrams(**lock_data),
+                    data=ForceUnlockParams(**lock_data),
                     tx_from=issuer_address,
                     private_key=issuer_pk,
                 )
@@ -3605,7 +3605,7 @@ class TestForceUnlock:
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
                 bond_contract.force_unlock(
-                    data=ForceUnlockPrams(**lock_data),
+                    data=ForceUnlockParams(**lock_data),
                     tx_from=issuer_address,
                     private_key=issuer_pk,
                 )
@@ -3669,7 +3669,7 @@ class TestForceUnlock:
         }
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             bond_contract.force_unlock(
-                data=ForceUnlockPrams(**lock_data),
+                data=ForceUnlockParams(**lock_data),
                 tx_from=issuer_address,
                 private_key=issuer_pk,
             )

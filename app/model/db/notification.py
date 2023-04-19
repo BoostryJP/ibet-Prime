@@ -43,6 +43,12 @@ notice_type: BatchIssueRedeemProcessed
 - 2: Failed to decode keyfile
 - 3: Some records are failed to send transaction
 
+notice_type: BatchForceUnlockProcessed
+- 0: All records successfully processed
+- 1: Issuer does not exist
+- 2: Failed to decode keyfile
+- 3: Some records are failed to send transaction
+
 notice_type: ScheduleEventError
 - 0: Issuer does not exist
 - 1: Could not get the private key of the issuer
@@ -94,5 +100,6 @@ class NotificationType(str, Enum):
     TRANSFER_APPROVAL_INFO = "TransferApprovalInfo"
     CREATE_LEDGER_INFO = "CreateLedgerInfo"
     BATCH_ISSUE_REDEEM_PROCESSED = "BatchIssueProcessed"
+    BATCH_FORCE_UNLOCK_PROCESSED = "BatchForceUnlockProcessed"
     LOCK_INFO = "LockInfo"
     UNLOCK_INFO = "UnlockInfo"

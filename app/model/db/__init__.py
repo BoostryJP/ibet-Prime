@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 from .account import Account, AccountRsaKeyTemporary, AccountRsaStatus
 from .auth_token import AuthToken
 from .base import Base
+from .batch_force_unlock import BatchForceUnlock, BatchForceUnlockUpload
 from .batch_issue_redeem import (
     BatchIssueRedeem,
     BatchIssueRedeemProcessingCategory,

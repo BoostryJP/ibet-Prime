@@ -464,10 +464,10 @@ class TestAppRoutersLockedPositions:
             ],
         }
 
-    # Normal_5
+    # Normal_5_1
     # Search filter: token type
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_5(self, mock_IbetStraightBondContract_get, client, db):
+    def test_normal_5_1(self, mock_IbetStraightBondContract_get, client, db):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
         account_address = "0x1234567890123456789012345678900000000000"
@@ -521,6 +521,86 @@ class TestAppRoutersLockedPositions:
         resp = client.get(
             self.base_url.format(account_address=account_address),
             params={"token_type": TokenType.IBET_STRAIGHT_BOND.value},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {
+                "count": 1,
+                "offset": None,
+                "limit": None,
+                "total": 2,
+            },
+            "locked_positions": [
+                {
+                    "issuer_address": issuer_address,
+                    "token_address": token_address_2,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_name": "test_bond_1",
+                    "lock_address": lock_address_2,
+                    "locked": 5,
+                },
+            ],
+        }
+
+    # Normal_5_2
+    # Search filter: token address
+    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    def test_normal_5_2(self, mock_IbetStraightBondContract_get, client, db):
+        issuer_address = "0x1234567890123456789012345678900000000100"
+
+        account_address = "0x1234567890123456789012345678900000000000"
+
+        lock_address_1 = "0x1234567890123456789012345678900000000001"
+        lock_address_2 = "0x1234567890123456789012345678900000000002"
+
+        token_address_1 = "0x1234567890123456789012345678900000000010"
+        token_address_2 = "0x1234567890123456789012345678900000000020"
+
+        # prepare data: Token
+        _token = Token()
+        _token.token_address = token_address_1
+        _token.issuer_address = issuer_address
+        _token.type = TokenType.IBET_SHARE.value
+        _token.tx_hash = ""
+        _token.abi = ""
+        db.add(_token)
+
+        _token = Token()
+        _token.token_address = token_address_2
+        _token.issuer_address = issuer_address
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _token.tx_hash = ""
+        _token.abi = ""
+        db.add(_token)
+
+        # prepare data: Locked Position
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = token_address_1
+        _locked_position.lock_address = lock_address_1
+        _locked_position.account_address = account_address
+        _locked_position.value = 5
+        db.add(_locked_position)
+
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = token_address_2
+        _locked_position.lock_address = lock_address_2
+        _locked_position.account_address = account_address
+        _locked_position.value = 5
+        db.add(_locked_position)
+
+        db.commit()
+
+        # mock
+        bond_1 = IbetStraightBondContract()
+        bond_1.name = "test_bond_1"
+        mock_IbetStraightBondContract_get.side_effect = [bond_1]
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(account_address=account_address),
+            params={"token_address": token_address_2},
         )
 
         # assertion

@@ -83,6 +83,7 @@ def list_all_position(
     issuer_address: Optional[str] = Header(None),
     include_former_position: bool = False,
     token_type: Optional[TokenType] = Query(None),
+    token_address: Optional[str] = Query(None),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
 ):
@@ -132,6 +133,8 @@ def list_all_position(
     # Search Filter
     if token_type is not None:
         query = query.filter(Token.type == token_type.value)
+    if token_address is not None:
+        query = query.filter(Token.token_address == token_address)
     count = query.count()
 
     # Pagination
@@ -191,6 +194,7 @@ def list_all_locked_position(
     account_address: str,
     issuer_address: Optional[str] = Header(None),
     token_type: Optional[TokenType] = Query(None),
+    token_address: Optional[str] = Query(None),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
 ):
@@ -217,6 +221,9 @@ def list_all_locked_position(
     # Search Filter
     if token_type is not None:
         query = query.filter(Token.type == token_type.value)
+
+    if token_address is not None:
+        query = query.filter(Token.token_address == token_address)
 
     count = query.count()
 

@@ -109,5 +109,5 @@ class LockParams(IbetSecurityTokenLockParams):
     pass
 
 
-class ForceUnlockPrams(IbetSecurityTokenForceUnlockParams):
+class ForceUnlockParams(IbetSecurityTokenForceUnlockParams):
     pass

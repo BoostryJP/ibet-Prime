@@ -69,6 +69,13 @@ class BatchIssueRedeemProcessedMetaInfo(BaseModel):
     token_type: TokenType
 
 
+class BatchForceUnlockProcessedMetaInfo(BaseModel):
+    batch_id: str
+    error_data_id: list[int]
+    token_address: str
+    token_type: TokenType
+
+
 class LockInfoMetaInfo(BaseModel):
     token_address: str
     token_type: TokenType
@@ -206,6 +213,23 @@ class BatchIssueRedeemProcessedNotification(Notification):
             )
 
 
+class BatchForceUnlockProcessedNotification(Notification):
+    notice_type: Literal[NotificationType.BATCH_FORCE_UNLOCK_PROCESSED]
+    notice_code: conint(ge=0, le=3)
+    metainfo: BatchForceUnlockProcessedMetaInfo
+
+    class Config:
+        @staticmethod
+        def schema_extra(schema: Dict[str, Any], _) -> None:
+            notice_code_schema = schema["properties"]["notice_code"]
+            notice_code_schema["description"] = (
+                " - 0: All records successfully processed\n"
+                " - 1: Issuer does not exist\n"
+                " - 2: Failed to decode keyfile\n"
+                " - 3: Some records are failed to send transaction"
+            )
+
+
 class LockInfoNotification(Notification):
     notice_type: Literal[NotificationType.LOCK_INFO]
     notice_code: conint(ge=0, le=0)
@@ -251,6 +275,7 @@ class NotificationsListResponse(BaseModel):
         CreateLedgerInfoNotification,
         BatchRegisterPersonalInfoErrorNotification,
         BatchIssueRedeemProcessedNotification,
+        BatchForceUnlockProcessedNotification,
         LockInfoNotification,
         UnlockInfoNotification,
     ]

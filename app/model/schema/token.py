@@ -169,6 +169,33 @@ class IbetStraightBondRedeem(BaseModel):
         return v
 
 
+class IbetStraightBondForceUnlock(BaseModel):
+    """ibet Straight Bond schema (ForceUnlock)"""
+
+    lock_address: str = Field(..., description="Lock address")
+    account_address: str = Field(..., description="Account address")
+    recipient_address: str = Field(..., description="Recipient address")
+    value: int = Field(..., ge=1, le=1_000_000_000_000, description="Unlock amount")
+
+    @validator("lock_address")
+    def lock_address_is_valid_address(cls, v):
+        if not Web3.is_address(v):
+            raise ValueError("lock_address is not a valid address")
+        return v
+
+    @validator("account_address")
+    def account_address_is_valid_address(cls, v):
+        if not Web3.is_address(v):
+            raise ValueError("account_address is not a valid address")
+        return v
+
+    @validator("recipient_address")
+    def recipient_address_is_valid_address(cls, v):
+        if not Web3.is_address(v):
+            raise ValueError("recipient_address is not a valid address")
+        return v
+
+
 class IbetStraightBondTransfer(BaseModel):
     """ibet Straight Bond schema (Transfer)"""
 
@@ -347,6 +374,33 @@ class IbetShareRedeem(BaseModel):
     def account_address_is_valid_address(cls, v):
         if not Web3.is_address(v):
             raise ValueError("account_address is not a valid address")
+        return v
+
+
+class IbetShareForceUnlock(BaseModel):
+    """ibet Share schema (ForceUnlock)"""
+
+    lock_address: str = Field(..., description="Lock address")
+    account_address: str = Field(..., description="Account address")
+    recipient_address: str = Field(..., description="Recipient address")
+    value: int = Field(..., ge=1, le=1_000_000_000_000, description="Unlock amount")
+
+    @validator("lock_address")
+    def lock_address_is_valid_address(cls, v):
+        if not Web3.is_address(v):
+            raise ValueError("lock_address is not a valid address")
+        return v
+
+    @validator("account_address")
+    def account_address_is_valid_address(cls, v):
+        if not Web3.is_address(v):
+            raise ValueError("account_address is not a valid address")
+        return v
+
+    @validator("recipient_address")
+    def recipient_address_is_valid_address(cls, v):
+        if not Web3.is_address(v):
+            raise ValueError("recipient_address is not a valid address")
         return v
 
 

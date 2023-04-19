@@ -59,7 +59,7 @@ class TestAppRoutersNotificationsGET:
         }
         _notification_1.created = datetime.strptime(
             "2022/01/01 15:20:30", "%Y/%m/%d %H:%M:%S"
-        )  # JST 2022/01/02
+        )  # JST 2022/01/01
         db.add(_notification_1)
 
         _notification_2 = Notification()
@@ -107,7 +107,7 @@ class TestAppRoutersNotificationsGET:
         }
         _notification_4.created = datetime.strptime(
             "2022/01/03 00:20:30", "%Y/%m/%d %H:%M:%S"
-        )  # JST 2022/01/03
+        )  # JST 2022/01/04
         db.add(_notification_4)
 
         _notification_5 = Notification()
@@ -123,7 +123,7 @@ class TestAppRoutersNotificationsGET:
         }
         _notification_5.created = datetime.strptime(
             "2022/01/05 00:20:30", "%Y/%m/%d %H:%M:%S"
-        )  # JST 2022/01/03
+        )  # JST 2022/01/05
         db.add(_notification_5)
 
         _notification_6 = Notification()
@@ -138,7 +138,7 @@ class TestAppRoutersNotificationsGET:
         }
         _notification_6.created = datetime.strptime(
             "2022/01/06 00:20:30", "%Y/%m/%d %H:%M:%S"
-        )  # JST 2022/01/03
+        )  # JST 2022/01/06
         db.add(_notification_6)
 
         _notification_7 = Notification()
@@ -156,7 +156,7 @@ class TestAppRoutersNotificationsGET:
         }
         _notification_7.created = datetime.strptime(
             "2022/01/07 00:20:30", "%Y/%m/%d %H:%M:%S"
-        )  # JST 2022/01/03
+        )  # JST 2022/01/07
         db.add(_notification_7)
 
         _notification_8 = Notification()
@@ -175,7 +175,7 @@ class TestAppRoutersNotificationsGET:
         }
         _notification_8.created = datetime.strptime(
             "2022/01/08 00:20:30", "%Y/%m/%d %H:%M:%S"
-        )  # JST 2022/01/03
+        )  # JST 2022/01/08
         db.add(_notification_8)
 
         _notification_9 = Notification()
@@ -195,8 +195,25 @@ class TestAppRoutersNotificationsGET:
         }
         _notification_9.created = datetime.strptime(
             "2022/01/09 00:20:30", "%Y/%m/%d %H:%M:%S"
-        )  # JST 2022/01/03
+        )  # JST 2022/01/09
         db.add(_notification_9)
+
+        _notification_10 = Notification()
+        _notification_10.notice_id = "notice_id_10"
+        _notification_10.issuer_address = issuer_address_2
+        _notification_10.priority = 0
+        _notification_10.type = NotificationType.BATCH_FORCE_UNLOCK_PROCESSED
+        _notification_10.code = 1
+        _notification_10.metainfo = {
+            "batch_id": str(uuid.uuid4()),
+            "token_address": "0x0000000000000000000000000000000000000000",
+            "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+            "error_data_id": [],
+        }
+        _notification_10.created = datetime.strptime(
+            "2022/01/10 00:20:30", "%Y/%m/%d %H:%M:%S"
+        )  # JST 2022/01/10
+        db.add(_notification_10)
 
         # request target API
         resp = client.get(
@@ -206,7 +223,7 @@ class TestAppRoutersNotificationsGET:
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {"count": 9, "offset": None, "limit": None, "total": 9},
+            "result_set": {"count": 10, "offset": None, "limit": None, "total": 10},
             "notifications": [
                 {
                     "notice_id": "notice_id_1",
@@ -329,6 +346,20 @@ class TestAppRoutersNotificationsGET:
                         "data": {"message": "unlock1"},
                     },
                     "created": "2022-01-09T09:20:30+09:00",
+                },
+                {
+                    "notice_id": "notice_id_10",
+                    "issuer_address": issuer_address_2,
+                    "priority": 0,
+                    "notice_type": NotificationType.BATCH_FORCE_UNLOCK_PROCESSED,
+                    "notice_code": 1,
+                    "metainfo": {
+                        "batch_id": ANY,
+                        "token_address": "0x0000000000000000000000000000000000000000",
+                        "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                        "error_data_id": [],
+                    },
+                    "created": "2022-01-10T09:20:30+09:00",
                 },
             ],
         }

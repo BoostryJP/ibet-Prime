@@ -68,6 +68,8 @@ from app.model.blockchain.tx_params.ibet_straight_bond import (
 from app.model.db import (
     UTXO,
     Account,
+    BatchForceUnlock,
+    BatchForceUnlockUpload,
     BatchIssueRedeem,
     BatchIssueRedeemProcessingCategory,
     BatchIssueRedeemUpload,
@@ -95,6 +97,9 @@ from app.model.db import (
     UpdateToken,
 )
 from app.model.schema import (
+    BatchForceUnlockResponse,
+    BatchForceUnlockUploadIdResponse,
+    BatchForceUnlockUploadResponse,
     BatchIssueRedeemUploadIdResponse,
     BatchRegisterPersonalInfoUploadResponse,
     BulkTransferResponse,
@@ -106,6 +111,7 @@ from app.model.schema import (
     HolderResponse,
     IbetStraightBondAdditionalIssue,
     IbetStraightBondCreate,
+    IbetStraightBondForceUnlock,
     IbetStraightBondRedeem,
     IbetStraightBondResponse,
     IbetStraightBondScheduledUpdate,
@@ -1167,6 +1173,216 @@ def retrieve_batch_redeem(
                 {
                     "account_address": record.account_address,
                     "amount": record.amount,
+                    "status": record.status,
+                }
+                for record in record_list
+            ],
+        }
+    )
+
+
+# GET: /bond/tokens/{token_address}/force_unlock/batch
+@router.get(
+    "/tokens/{token_address}/force_unlock/batch",
+    response_model=BatchForceUnlockUploadResponse,
+    responses=get_routers_responses(422),
+)
+def list_all_force_unlock_upload(
+    db: DBSession,
+    token_address: str,
+    status: Optional[int] = Query(
+        default=None, ge=0, le=2, description="0:pending, 1:succeeded, 2:failed"
+    ),
+    sort_order: int = Query(
+        default=1, ge=0, le=1, description="0:asc, 1:desc (created)"
+    ),
+    offset: Optional[int] = Query(None),
+    limit: Optional[int] = Query(None),
+    issuer_address: Optional[str] = Header(None),
+):
+    # Get a list of uploads
+    query = (
+        db.query(BatchForceUnlockUpload)
+        .filter(BatchForceUnlockUpload.token_address == token_address)
+        .filter(BatchForceUnlockUpload.token_type == TokenType.IBET_STRAIGHT_BOND)
+    )
+
+    if issuer_address is not None:
+        query = query.filter(BatchForceUnlockUpload.issuer_address == issuer_address)
+
+    total = query.count()
+
+    if status is not None:
+        query = query.filter(BatchForceUnlockUpload.status == status)
+
+    count = query.count()
+
+    # Sort
+    if sort_order == 0:  # ASC
+        query = query.order_by(BatchForceUnlockUpload.created)
+    else:  # DESC
+        query = query.order_by(desc(BatchForceUnlockUpload.created))
+
+    # Pagination
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+
+    _upload_list: list[BatchForceUnlockUpload] = query.all()
+
+    uploads = []
+    for _upload in _upload_list:
+        created_utc = timezone("UTC").localize(_upload.created)
+        uploads.append(
+            {
+                "batch_id": _upload.batch_id,
+                "issuer_address": _upload.issuer_address,
+                "token_type": _upload.token_type,
+                "token_address": _upload.token_address,
+                "status": _upload.status,
+                "created": created_utc.astimezone(local_tz).isoformat(),
+            }
+        )
+
+    resp = {
+        "result_set": {
+            "count": count,
+            "offset": offset,
+            "limit": limit,
+            "total": total,
+        },
+        "uploads": uploads,
+    }
+    return json_response(resp)
+
+
+# POST: /bond/tokens/{token_address}/force_unlock/batch
+@router.post(
+    "/tokens/{token_address}/force_unlock/batch",
+    response_model=BatchForceUnlockUploadIdResponse,
+    responses=get_routers_responses(
+        422, 401, 404, AuthorizationError, InvalidParameterError
+    ),
+)
+def force_unlock_token_in_batch(
+    db: DBSession,
+    request: Request,
+    token_address: str,
+    data: List[IbetStraightBondForceUnlock],
+    issuer_address: str = Header(...),
+    eoa_password: Optional[str] = Header(None),
+    auth_token: Optional[str] = Header(None),
+):
+    """ForceUnlock a token (Batch)"""
+
+    # Validate Headers
+    validate_headers(
+        issuer_address=(issuer_address, address_is_valid_address),
+        eoa_password=(eoa_password, eoa_password_is_encrypted_value),
+    )
+
+    # Validate params
+    if len(data) < 1:
+        raise InvalidParameterError("list length must be at least one")
+
+    # Authentication
+    check_auth(
+        request=request,
+        db=db,
+        issuer_address=issuer_address,
+        eoa_password=eoa_password,
+        auth_token=auth_token,
+    )
+
+    # Check token status
+    _token = (
+        db.query(Token)
+        .filter(Token.type == TokenType.IBET_STRAIGHT_BOND)
+        .filter(Token.issuer_address == issuer_address)
+        .filter(Token.token_address == token_address)
+        .filter(Token.token_status != 2)
+        .first()
+    )
+    if _token is None:
+        raise HTTPException(status_code=404, detail="token not found")
+    if _token.token_status == 0:
+        raise InvalidParameterError("this token is temporarily unavailable")
+
+    # Generate batch_id
+    batch_id = uuid.uuid4()
+
+    # Add batch data
+    _batch_upload = BatchForceUnlockUpload()
+    _batch_upload.batch_id = batch_id
+    _batch_upload.issuer_address = issuer_address
+    _batch_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+    _batch_upload.token_address = token_address
+    _batch_upload.status = 0
+    db.add(_batch_upload)
+
+    for _item in data:
+        _batch_unlock = BatchForceUnlock()
+        _batch_unlock.issuer_address = issuer_address
+        _batch_unlock.batch_id = batch_id
+        _batch_unlock.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        _batch_unlock.token_address = token_address
+        _batch_unlock.lock_address = _item.lock_address
+        _batch_unlock.account_address = _item.account_address
+        _batch_unlock.recipient_address = _item.recipient_address
+        _batch_unlock.value = _item.value
+        _batch_unlock.status = 0
+        db.add(_batch_unlock)
+
+    db.commit()
+
+    return json_response({"batch_id": str(batch_id)})
+
+
+# GET: /bond/tokens/{token_address}/force_unlock/batch/{batch_id}
+@router.get(
+    "/tokens/{token_address}/force_unlock/batch/{batch_id}",
+    response_model=BatchForceUnlockResponse,
+    responses=get_routers_responses(422, 404),
+)
+def retrieve_batch_force_unlock(
+    db: DBSession,
+    token_address: str,
+    batch_id: str,
+    issuer_address: str = Header(...),
+):
+    """Get Batch status for force unlock"""
+
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
+
+    # Upload Existence Check
+    batch: Optional[BatchForceUnlockUpload] = (
+        db.query(BatchForceUnlockUpload)
+        .filter(BatchForceUnlockUpload.batch_id == batch_id)
+        .filter(BatchForceUnlockUpload.issuer_address == issuer_address)
+        .filter(BatchForceUnlockUpload.token_type == TokenType.IBET_STRAIGHT_BOND)
+        .filter(BatchForceUnlockUpload.token_address == token_address)
+        .first()
+    )
+    if batch is None:
+        raise HTTPException(status_code=404, detail="batch not found")
+
+    # Get Batch Records
+    record_list: List[BatchForceUnlock] = (
+        db.query(BatchForceUnlock).filter(BatchForceUnlock.batch_id == batch_id).all()
+    )
+
+    return json_response(
+        {
+            "status": batch.status,
+            "results": [
+                {
+                    "id": record.id,
+                    "account_address": record.account_address,
+                    "lock_address": record.lock_address,
+                    "recipient_address": record.recipient_address,
+                    "value": record.value,
                     "status": record.status,
                 }
                 for record in record_list
