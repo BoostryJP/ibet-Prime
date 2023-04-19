@@ -16,7 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.model.db import TokenType
 from app.model.schema.types import ResultSet
@@ -38,7 +38,7 @@ class BatchForceUnlockUpload(BaseModel):
     issuer_address: str
     token_type: TokenType
     token_address: str
-    status: int
+    status: int = Field(..., description="0:pending, 1:succeeded, 2:failed")
     created: str
 
     class Config:
@@ -75,11 +75,11 @@ class BatchForceUnlockResult(BaseModel):
     lock_address: str
     recipient_address: str
     value: int
-    status: int
+    status: int = Field(..., description="0:pending, 1:succeeded, 2:failed")
 
 
 class BatchForceUnlockResponse(BaseModel):
     """List All batch force unlock records"""
 
-    status: int
+    status: int = Field(..., description="0:pending, 1:succeeded, 2:failed")
     results: list[BatchForceUnlockResult]
