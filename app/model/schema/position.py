@@ -66,6 +66,7 @@ class LockEventCategory(str, Enum):
 class LockEvent(BaseModel):
     category: LockEventCategory = Field(description="Event category")
     transaction_hash: str = Field(description="Transaction hash")
+    msg_sender: Optional[str] = Field(description="Message sender", nullable=True)
     issuer_address: str = Field(description="Issuer address")
     token_address: str = Field(description="Token address")
     token_type: TokenType = Field(description="Token type")
@@ -102,6 +103,7 @@ class ListAllLockEventsQuery:
 
     token_address: Optional[str] = Query(default=None, description="Token address")
     token_type: Optional[TokenType] = Query(default=None, description="Token type")
+    msg_sender: Optional[str] = Query(default=None, description="Msg sender")
     lock_address: Optional[str] = Query(default=None, description="Lock address")
     recipient_address: Optional[str] = Query(
         default=None, description="Recipient address"
