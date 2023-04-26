@@ -758,6 +758,7 @@ class TestProcessor:
         _lock1 = _lock_list[0]
         assert _lock1.id == 1
         assert _lock1.token_address == token_address_1
+        assert _lock1.msg_sender == issuer_address
         assert _lock1.lock_address == issuer_address
         assert _lock1.account_address == issuer_address
         assert _lock1.value == 40
@@ -916,6 +917,7 @@ class TestProcessor:
         _lock1 = _lock_list[0]
         assert _lock1.id == 1
         assert _lock1.token_address == token_address_1
+        assert _lock1.msg_sender == issuer_address
         assert _lock1.lock_address == issuer_address
         assert _lock1.account_address == issuer_address
         assert _lock1.value == 40
@@ -927,6 +929,7 @@ class TestProcessor:
         _unlock1 = _unlock_list[0]
         assert _unlock1.id == 1
         assert _unlock1.token_address == token_address_1
+        assert _unlock1.msg_sender == issuer_address
         assert _unlock1.lock_address == issuer_address
         assert _unlock1.account_address == issuer_address
         assert _unlock1.recipient_address == issuer_address

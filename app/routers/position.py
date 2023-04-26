@@ -290,6 +290,7 @@ def list_all_lock_events(
         db.query(
             literal(value=LockEventCategory.Lock.value, type_=String).label("category"),
             IDXLock.transaction_hash.label("transaction_hash"),
+            IDXLock.msg_sender.label("msg_sender"),
             IDXLock.token_address.label("token_address"),
             IDXLock.lock_address.label("lock_address"),
             IDXLock.account_address.label("account_address"),
@@ -312,6 +313,7 @@ def list_all_lock_events(
                 "category"
             ),
             IDXUnlock.transaction_hash.label("transaction_hash"),
+            IDXUnlock.msg_sender.label("msg_sender"),
             IDXUnlock.token_address.label("token_address"),
             IDXUnlock.lock_address.label("lock_address"),
             IDXUnlock.account_address.label("account_address"),
@@ -345,6 +347,8 @@ def list_all_lock_events(
         query = query.filter(column("token_address") == request_query.token_address)
     if request_query.token_type is not None:
         query = query.filter(Token.type == request_query.token_type.value)
+    if request_query.msg_sender is not None:
+        query = query.filter(column("msg_sender") == request_query.msg_sender)
     if request_query.lock_address is not None:
         query = query.filter(column("lock_address") == request_query.lock_address)
     if request_query.recipient_address is not None:
@@ -378,7 +382,7 @@ def list_all_lock_events(
     resp_data = []
     for lock_event in lock_events:
         token_name = None
-        _token = lock_event[9]
+        _token = lock_event[10]
         if _token.type == TokenType.IBET_STRAIGHT_BOND.value:
             _bond = IbetStraightBondContract(_token.token_address).get()
             token_name = _bond.name
@@ -386,20 +390,21 @@ def list_all_lock_events(
             _share = IbetShareContract(_token.token_address).get()
             token_name = _share.name
 
-        block_timestamp_utc = timezone("UTC").localize(lock_event[8])
+        block_timestamp_utc = timezone("UTC").localize(lock_event[9])
         resp_data.append(
             {
                 "category": lock_event[0],
                 "transaction_hash": lock_event[1],
+                "msg_sender": lock_event[2],
                 "issuer_address": _token.issuer_address,
-                "token_address": lock_event[2],
+                "token_address": lock_event[3],
                 "token_type": _token.type,
                 "token_name": token_name,
-                "lock_address": lock_event[3],
-                "account_address": lock_event[4],
-                "recipient_address": lock_event[5],
-                "value": lock_event[6],
-                "data": lock_event[7],
+                "lock_address": lock_event[4],
+                "account_address": lock_event[5],
+                "recipient_address": lock_event[6],
+                "value": lock_event[7],
+                "data": lock_event[8],
                 "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat(),
             }
         )

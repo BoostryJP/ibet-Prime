@@ -364,6 +364,7 @@ class ListAllTokenLockEventsQuery:
     limit: Optional[int] = Query(default=None, description="Number of set", ge=0)
 
     account_address: Optional[str] = Query(default=None, description="Account address")
+    msg_sender: Optional[str] = Query(default=None, description="Msg sender")
     lock_address: Optional[str] = Query(default=None, description="Lock address")
     recipient_address: Optional[str] = Query(
         default=None, description="Recipient address"

@@ -70,6 +70,7 @@ class TestAppRoutersBondLockEvents:
         # prepare data: Lock events
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_1"
+        _lock.msg_sender = self.account_address_1
         _lock.block_number = 1
         _lock.token_address = self.token_address_1
         _lock.lock_address = self.lock_address_1
@@ -81,6 +82,7 @@ class TestAppRoutersBondLockEvents:
 
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_2"
+        _lock.msg_sender = self.account_address_2
         _lock.block_number = 2
         _lock.token_address = self.token_address_1
         _lock.lock_address = self.lock_address_2
@@ -92,6 +94,7 @@ class TestAppRoutersBondLockEvents:
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_3"
+        _unlock.msg_sender = self.lock_address_1
         _unlock.block_number = 3
         _unlock.token_address = self.token_address_1
         _unlock.lock_address = self.lock_address_1
@@ -104,6 +107,7 @@ class TestAppRoutersBondLockEvents:
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_4"
+        _unlock.msg_sender = self.lock_address_2
         _unlock.block_number = 4
         _unlock.token_address = self.token_address_1
         _unlock.lock_address = self.lock_address_2
@@ -128,6 +132,7 @@ class TestAppRoutersBondLockEvents:
     expected_lock_1 = {
         "category": "Lock",
         "transaction_hash": "tx_hash_1",
+        "msg_sender": account_address_1,
         "issuer_address": issuer_address,
         "token_address": token_address_1,
         "token_type": TokenType.IBET_STRAIGHT_BOND.value,
@@ -142,6 +147,7 @@ class TestAppRoutersBondLockEvents:
     expected_lock_2 = {
         "category": "Lock",
         "transaction_hash": "tx_hash_2",
+        "msg_sender": account_address_2,
         "issuer_address": issuer_address,
         "token_address": token_address_1,
         "token_type": TokenType.IBET_STRAIGHT_BOND.value,
@@ -156,6 +162,7 @@ class TestAppRoutersBondLockEvents:
     expected_unlock_1 = {
         "category": "Unlock",
         "transaction_hash": "tx_hash_3",
+        "msg_sender": lock_address_1,
         "issuer_address": issuer_address,
         "token_address": token_address_1,
         "token_type": TokenType.IBET_STRAIGHT_BOND.value,
@@ -170,6 +177,7 @@ class TestAppRoutersBondLockEvents:
     expected_unlock_2 = {
         "category": "Unlock",
         "transaction_hash": "tx_hash_4",
+        "msg_sender": lock_address_2,
         "issuer_address": issuer_address,
         "token_address": token_address_1,
         "token_type": TokenType.IBET_STRAIGHT_BOND.value,
