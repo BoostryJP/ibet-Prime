@@ -17,6 +17,7 @@ from typing import Any
 import orjson
 from fastapi.responses import ORJSONResponse
 
+from app.exceptions import Integer64bitLimitExceededError
 from config import RESPONSE_VALIDATION_MODE
 
 
@@ -30,11 +31,19 @@ class CustomORJSONResponse(ORJSONResponse):
     media_type = "application/json"
 
     def render(self, content: Any) -> bytes:
-        return orjson.dumps(
-            content,
-            option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SERIALIZE_NUMPY,
-            default=decimal_default,
-        )
+        try:
+            result = orjson.dumps(
+                content,
+                option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SERIALIZE_NUMPY,
+                default=decimal_default,
+            )
+            return result
+        except TypeError as e:
+            if e.args[0] == "Integer exceeds 64-bit range":
+                raise Integer64bitLimitExceededError(
+                    "Response data includes integer which exceeds 64-bit range"
+                ) from None
+            raise
 
 
 def json_response(content: dict | list):

@@ -183,6 +183,18 @@ async def response_limit_exceeded_error_handler(
     )
 
 
+# 400:ResponseLimitExceededError
+@app.exception_handler(Integer64bitLimitExceededError)
+async def response_limit_exceeded_error_handler(
+    request: Request, exc: Integer64bitLimitExceededError
+):
+    meta = {"code": 5, "title": "Integer64bitLimitExceededError"}
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
+    )
+
+
 # 400:ContractRevertError
 @app.exception_handler(ContractRevertError)
 async def contract_revert_error_handler(request: Request, exc: ContractRevertError):
