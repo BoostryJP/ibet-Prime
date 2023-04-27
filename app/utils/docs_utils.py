@@ -16,19 +16,14 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import Any, Dict, List, Union
+from enum import Enum
+from functools import lru_cache
+from typing import Any, Dict, List, Type, Union
 
-from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.utils import get_openapi
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, create_model
 
-from app.exceptions import (
-    AuthorizationError,
-    ContractRevertError,
-    InvalidParameterError,
-    SendTransactionError,
-    ServiceUnavailableError,
-)
+from app.exceptions import AppError
 
 
 class MetaModel(BaseModel):
@@ -150,7 +145,7 @@ class Error503Model(BaseModel):
 
 DEFAULT_RESPONSE = {
     400: {
-        "description": "Invalid Parameter Error / Send Transaction Error / Contract Revert Error",
+        "description": "Invalid Parameter Error / Send Transaction Error / Contract Revert Error etc",
         "model": Error400Model,
     },
     401: {"description": "Authorization Error", "model": Error401Model},
@@ -161,23 +156,69 @@ DEFAULT_RESPONSE = {
 }
 
 
-def get_routers_responses(*args):
-    responses = {}
+@lru_cache(None)
+def create_error_model(app_error: Type[AppError]):
+    """
+    This function creates Pydantic Model from AppError.
+    * create_model() generates a different model each time when called,
+      so cache is enabled.
+
+    @param app_error: AppError defined in ibet-Prime
+    @return: pydantic Model created dynamically
+    """
+    base_name = app_error.__name__
+    error_code_enum = (
+        Enum(f"{base_name}Code", {f"{app_error.code}": app_error.code})
+        if app_error.code is not None
+        else Enum(f"{base_name}Code", {f"{code}": code for code in app_error.code_list})
+    )
+    metainfo_model = create_model(
+        f"{base_name}Metainfo",
+        code=(
+            error_code_enum,
+            Field(..., example=app_error.code if app_error.code else 0),
+        ),
+        title=(str, Field(..., example=base_name)),
+    )
+    error_model = create_model(
+        f"{base_name}Response",
+        meta=(
+            metainfo_model,
+            Field(
+                ...,
+            ),
+        ),
+        detail=(str, Field()),
+    )
+    error_model.__doc__ = app_error.__doc__
+    return error_model
+
+
+def get_routers_responses(*args: Type[AppError] | int):
+    """
+    This function returns responses dictionary to be used for openapi document.
+    Supposed to be used in router decorator.
+
+    @param args: tuple of AppError
+    @return: responses dict
+    """
+    responses_per_status_code: dict[int, list[BaseModel]] = {}
     for arg in args:
-        if isinstance(arg, int):
-            responses[arg] = DEFAULT_RESPONSE.get(arg, {})
-        elif arg == InvalidParameterError:
-            responses[400] = DEFAULT_RESPONSE[400]
-        elif arg == SendTransactionError:
-            responses[400] = DEFAULT_RESPONSE[400]
-        elif arg == ContractRevertError:
-            responses[400] = DEFAULT_RESPONSE[400]
-        elif arg == AuthorizationError:
-            responses[401] = DEFAULT_RESPONSE[401]
-        elif arg == RequestValidationError:
-            responses[422] = DEFAULT_RESPONSE[422]
-        elif arg == ServiceUnavailableError:
-            responses[503] = DEFAULT_RESPONSE[503]
+        if not isinstance(arg, int):
+            responses_per_status_code.setdefault(arg.status_code, [])
+            responses_per_status_code[arg.status_code].append(create_error_model(arg))
+        else:
+            responses_per_status_code.setdefault(arg, [])
+            error_model = DEFAULT_RESPONSE.get(arg)["model"]
+            responses_per_status_code[arg].append(error_model)
+
+    responses: dict[int, dict] = {}
+    for status_code, error_models in responses_per_status_code.items():
+        if len(error_models) > 0:
+            responses[status_code] = {
+                "model": Union[tuple(set(error_models))],
+                "description": DEFAULT_RESPONSE.get(status_code)["description"],
+            }
 
     return responses
 

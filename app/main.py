@@ -144,7 +144,7 @@ async def query_validation_exception_handler(request: Request, exc: ValidationEr
 async def invalid_parameter_error_handler(request: Request, exc: InvalidParameterError):
     meta = {"code": 1, "title": "InvalidParameterError"}
     return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
+        status_code=exc.status_code,
         content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
     )
 
@@ -154,7 +154,7 @@ async def invalid_parameter_error_handler(request: Request, exc: InvalidParamete
 async def send_transaction_error_handler(request: Request, exc: SendTransactionError):
     meta = {"code": 2, "title": "SendTransactionError"}
     return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
+        status_code=exc.status_code,
         content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
     )
 
@@ -166,7 +166,7 @@ async def auth_token_already_exists_error_handler(
 ):
     meta = {"code": 3, "title": "AuthTokenAlreadyExistsError"}
     return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
+        status_code=exc.status_code,
         content=jsonable_encoder({"meta": meta}),
     )
 
@@ -178,7 +178,7 @@ async def response_limit_exceeded_error_handler(
 ):
     meta = {"code": 4, "title": "ResponseLimitExceededError"}
     return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
+        status_code=exc.status_code,
         content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
     )
 
@@ -188,7 +188,7 @@ async def response_limit_exceeded_error_handler(
 async def contract_revert_error_handler(request: Request, exc: ContractRevertError):
     meta = {"code": exc.code, "title": "ContractRevertError"}
     return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
+        status_code=exc.status_code,
         content=jsonable_encoder({"meta": meta, "detail": exc.message}),
     )
 
@@ -198,7 +198,7 @@ async def contract_revert_error_handler(request: Request, exc: ContractRevertErr
 async def authorization_error_handler(request: Request, exc: AuthorizationError):
     meta = {"code": 1, "title": "AuthorizationError"}
     return JSONResponse(
-        status_code=status.HTTP_401_UNAUTHORIZED,
+        status_code=exc.status_code,
         content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
     )
 
@@ -232,6 +232,6 @@ async def service_unavailable_error_handler(
 ):
     meta = {"code": 1, "title": "ServiceUnavailableError"}
     return JSONResponse(
-        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        status_code=exc.status_code,
         content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
     )
