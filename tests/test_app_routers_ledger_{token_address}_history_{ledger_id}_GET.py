@@ -1701,15 +1701,16 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         db.add(_ledger_1)
 
         # request target AsPI
-        resp = client.get(
-            self.base_url.format(token_address=token_address, ledger_id=1),
-            params={
-                "latest_flg": 0,
-            },
-            headers={
-                "issuer-address": issuer_address,
-            },
-        )
+        with mock.patch("app.utils.fastapi.RESPONSE_VALIDATION_MODE", False):
+            resp = client.get(
+                self.base_url.format(token_address=token_address, ledger_id=1),
+                params={
+                    "latest_flg": 0,
+                },
+                headers={
+                    "issuer-address": issuer_address,
+                },
+            )
 
         # assertion
         assert resp.status_code == 400
