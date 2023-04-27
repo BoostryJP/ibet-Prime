@@ -26,7 +26,7 @@ from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
 from app.database import DBSession
-from app.exceptions import InvalidParameterError
+from app.exceptions import Integer64bitLimitExceededError, InvalidParameterError
 from app.model.blockchain import (
     IbetShareContract,
     IbetStraightBondContract,
@@ -154,7 +154,9 @@ def list_all_ledger_history(
 @router.get(
     "/{token_address}/history/{ledger_id}",
     response_model=RetrieveLedgerHistoryResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(
+        422, 404, InvalidParameterError, Integer64bitLimitExceededError
+    ),
 )
 def retrieve_ledger_history(
     db: DBSession,
