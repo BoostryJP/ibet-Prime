@@ -16,6 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from enum import StrEnum
+
 from sqlalchemy import JSON, Column, Integer, String
 
 from .base import Base
@@ -35,7 +37,16 @@ class UpdateToken(Base):
     type = Column(String(40), nullable=False)
     # arguments
     arguments = Column(JSON, nullable=False)
+    # original contents
+    original_contents = Column(JSON, nullable=True)
     # processing status (pending:0, succeeded:1, failed:2)
     status = Column(Integer, nullable=False)
     # update trigger
     trigger = Column(String(40), nullable=False)
+
+
+class UpdateTokenTrigger(StrEnum):
+    """Trigger of update token"""
+
+    ISSUE = "Issue"
+    UPDATE = "Update"
