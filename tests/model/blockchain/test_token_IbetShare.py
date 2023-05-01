@@ -604,9 +604,7 @@ class TestUpdate:
         assert share_contract.memo == ""
 
         _token_attr_update = db.query(TokenAttrUpdate).first()
-        assert _token_attr_update.id == 1
-        assert _token_attr_update.token_address == contract_address
-        assert _token_attr_update.updated_datetime > pre_datetime
+        assert _token_attr_update is None
 
     # <Normal_2>
     # Update all items
