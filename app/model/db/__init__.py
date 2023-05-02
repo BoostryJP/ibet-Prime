@@ -74,6 +74,6 @@ from .transfer_appoval_history import (
     TransferApprovalOperationType,
 )
 from .tx_management import TransactionLock
-from .update_token import UpdateToken
+from .update_token import UpdateToken, UpdateTokenTrigger
 from .upload_file import UploadFile
 from .utxo import UTXO, UTXOBlockNumber

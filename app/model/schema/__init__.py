@@ -114,7 +114,11 @@ from .token import (
     ListAllTokenLockEventsQuery,
     ListAllTokenLockEventsResponse,
     ListAllTokenLockEventsSortItem,
+    ListTokenHistoryQuery,
+    ListTokenHistoryResponse,
     TokenAddressResponse,
+    TokenHistoryResponse,
+    UpdateTokenTrigger,
 )
 from .token_holders import (
     CreateTokenHoldersListRequest,

@@ -168,7 +168,10 @@ class TestAppRoutersShareTokensPOST:
             assert utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
 
             update_token = db.query(UpdateToken).first()
-            assert update_token is None
+            assert update_token.token_address == "contract_address_test1"
+            assert update_token.type == TokenType.IBET_SHARE.value
+            assert update_token.status == 1
+            assert update_token.trigger == "Issue"
 
     # <Normal_1_2>
     # create only
@@ -270,7 +273,10 @@ class TestAppRoutersShareTokensPOST:
             assert utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
 
             update_token = db.query(UpdateToken).first()
-            assert update_token is None
+            assert update_token.token_address == "contract_address_test1"
+            assert update_token.type == TokenType.IBET_SHARE.value
+            assert update_token.status == 1
+            assert update_token.trigger == "Issue"
 
     # <Normal_2>
     # include updates
@@ -508,7 +514,10 @@ class TestAppRoutersShareTokensPOST:
             assert utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
 
             update_token = db.query(UpdateToken).first()
-            assert update_token is None
+            assert update_token.token_address == "contract_address_test1"
+            assert update_token.type == TokenType.IBET_SHARE.value
+            assert update_token.status == 1
+            assert update_token.trigger == "Issue"
 
     # <Normal_4_1>
     # YYYYMMDD parameter is not empty

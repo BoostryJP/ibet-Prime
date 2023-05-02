@@ -17,8 +17,9 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import math
-from enum import Enum
-from typing import List, Optional
+from datetime import datetime
+from enum import Enum, StrEnum
+from typing import Optional
 
 from fastapi import Query
 from pydantic import BaseModel, Field, validator
@@ -47,14 +48,14 @@ class IbetStraightBondCreate(BaseModel):
     return_date: Optional[YYYYMMDD_constr]
     return_amount: Optional[str] = Field(max_length=2000)
     interest_rate: Optional[float] = Field(None, ge=0.0000, le=100.0000)
-    interest_payment_date: Optional[List[MMDD_constr]]
+    interest_payment_date: Optional[list[MMDD_constr]]
     transferable: Optional[bool]
     is_redeemed: Optional[bool]
     status: Optional[bool]
     is_offering: Optional[bool]
     tradable_exchange_contract_address: Optional[str]
     personal_info_contract_address: Optional[str]
-    image_url: Optional[List[str]]
+    image_url: Optional[list[str]]
     contact_information: Optional[str] = Field(max_length=2000)
     privacy_policy: Optional[str] = Field(max_length=5000)
     transfer_approval_required: Optional[bool]
@@ -98,7 +99,7 @@ class IbetStraightBondUpdate(BaseModel):
 
     face_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
     interest_rate: Optional[float] = Field(None, ge=0.0000, le=100.0000)
-    interest_payment_date: Optional[List[MMDD_constr]]
+    interest_payment_date: Optional[list[MMDD_constr]]
     redemption_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
     transferable: Optional[bool]
     status: Optional[bool]
@@ -381,6 +382,44 @@ class ListAllTokenLockEventsQuery:
     )
 
 
+class UpdateTokenTrigger(StrEnum):
+    """Trigger of update token"""
+
+    ISSUE = "Issue"
+    UPDATE = "Update"
+
+
+class ListTokenHistorySortItem(StrEnum):
+    """Sort item of token history"""
+
+    created = "created"
+    trigger = "trigger"
+
+
+@dataclass
+class ListTokenHistoryQuery:
+    modified_contents: Optional[str] = Query(
+        default=None, description="Modified contents query"
+    )
+    trigger: Optional[UpdateTokenTrigger] = Query(
+        default=None, description="Trigger of change"
+    )
+    created_from: Optional[datetime] = Query(
+        default=None, description="Created datetime filter(From)"
+    )
+    created_to: Optional[datetime] = Query(
+        default=None, description="Created datetime filter(To)"
+    )
+    sort_item: ListTokenHistorySortItem = Query(
+        default=ListTokenHistorySortItem.created, description="Sort item"
+    )
+    sort_order: SortOrder = Query(
+        default=SortOrder.DESC, description="Sort order(0: ASC, 1: DESC)"
+    )
+    offset: Optional[int] = Query(default=None, description="Start position", ge=0)
+    limit: Optional[int] = Query(default=None, description="Number of set", ge=0)
+
+
 ############################
 # RESPONSE
 ############################
@@ -408,7 +447,7 @@ class IbetStraightBondResponse(BaseModel):
     return_amount: str
     purpose: str
     interest_rate: float
-    interest_payment_date: List[str]
+    interest_payment_date: list[str]
     transferable: bool
     is_redeemed: bool
     status: bool
@@ -451,8 +490,24 @@ class IbetShareResponse(BaseModel):
     memo: str
 
 
+class TokenHistoryResponse(BaseModel):
+    original_contents: dict | None = Field(
+        default=None, nullable=True, description="original attributes before update"
+    )
+    modified_contents: dict = Field(..., description="update attributes")
+    trigger: UpdateTokenTrigger
+    created: datetime
+
+
+class ListTokenHistoryResponse(BaseModel):
+    result_set: ResultSet
+    history: list[TokenHistoryResponse] = Field(
+        default=[], description="token update histories"
+    )
+
+
 class ListAllTokenLockEventsResponse(BaseModel):
     """List All Lock/Unlock events (Response)"""
 
     result_set: ResultSet
-    events: List[LockEvent] = Field(description="Lock/Unlock event list")
+    events: list[LockEvent] = Field(description="Lock/Unlock event list")

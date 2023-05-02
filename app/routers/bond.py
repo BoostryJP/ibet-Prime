@@ -117,6 +117,8 @@ from app.model.schema import (
     ListAllTokenLockEventsSortItem,
     ListBatchIssueRedeemUploadResponse,
     ListBatchRegisterPersonalInfoUploadResponse,
+    ListTokenHistoryQuery,
+    ListTokenHistoryResponse,
     ListTransferHistoryQuery,
     ListTransferHistorySortItem,
     LockEventCategory,
@@ -124,6 +126,7 @@ from app.model.schema import (
     ScheduledEventIdResponse,
     ScheduledEventResponse,
     TokenAddressResponse,
+    TokenHistoryResponse,
     TransferApprovalHistoryResponse,
     TransferApprovalsResponse,
     TransferApprovalTokenResponse,
@@ -148,6 +151,7 @@ router = APIRouter(
 
 LOG = log.get_logger()
 local_tz = timezone(config.TZ)
+utc_tz = timezone("UTC")
 
 
 # POST: /bond/tokens
@@ -246,6 +250,7 @@ def issue_token(
         _update_token.issuer_address = issuer_address
         _update_token.type = TokenType.IBET_STRAIGHT_BOND.value
         _update_token.arguments = token_dict
+        _update_token.original_contents = None
         _update_token.status = 0  # pending
         _update_token.trigger = "Issue"
         db.add(_update_token)
@@ -283,6 +288,17 @@ def issue_token(
         _utxo.block_number = block["number"]
         _utxo.block_timestamp = datetime.utcfromtimestamp(block["timestamp"])
         db.add(_utxo)
+
+        # Insert token history
+        _update_token = UpdateToken()
+        _update_token.token_address = contract_address
+        _update_token.issuer_address = issuer_address
+        _update_token.type = TokenType.IBET_STRAIGHT_BOND.value
+        _update_token.arguments = token_dict
+        _update_token.original_contents = None
+        _update_token.status = 1  # succeeded
+        _update_token.trigger = "Issue"
+        db.add(_update_token)
 
         token_status = 1  # succeeded
 
@@ -453,6 +469,84 @@ def update_token(
 
     db.commit()
     return
+
+
+# GET: /bond/tokens/{token_address}/history
+@router.get(
+    "/tokens/{token_address}/history",
+    response_model=ListTokenHistoryResponse,
+    responses=get_routers_responses(404, InvalidParameterError),
+)
+def list_bond_history(
+    db: DBSession,
+    token_address: str,
+    request_query: ListTokenHistoryQuery = Depends(),
+):
+    """List token history"""
+    query = (
+        db.query(UpdateToken)
+        .filter(UpdateToken.type == TokenType.IBET_STRAIGHT_BOND)
+        .filter(UpdateToken.token_address == token_address)
+        .filter(UpdateToken.status == 1)
+    )
+    total = query.count()
+
+    if request_query.trigger:
+        query = query.filter(UpdateToken.trigger == request_query.trigger)
+    if request_query.modified_contents:
+        query = query.filter(
+            cast(UpdateToken.arguments, String).like(
+                "%" + request_query.modified_contents + "%"
+            )
+        )
+    if request_query.created_from:
+        query = query.filter(
+            UpdateToken.created
+            >= local_tz.localize(request_query.created_from).astimezone(utc_tz)
+        )
+    if request_query.created_to:
+        query = query.filter(
+            UpdateToken.created
+            <= local_tz.localize(request_query.created_to).astimezone(utc_tz)
+        )
+
+    count = query.count()
+
+    # Sort
+    sort_attr = getattr(UpdateToken, request_query.sort_item, None)
+    if request_query.sort_order == 0:  # ASC
+        query = query.order_by(sort_attr)
+    else:  # DESC
+        query = query.order_by(desc(sort_attr))
+    if request_query.sort_item != UpdateToken.created:
+        # NOTE: Set secondary sort for consistent results
+        query = query.order_by(desc(UpdateToken.created))
+
+    # Pagination
+    if request_query.limit is not None:
+        query = query.limit(request_query.limit)
+    if request_query.offset is not None:
+        query = query.offset(request_query.offset)
+
+    return json_response(
+        {
+            "result_set": {
+                "count": count,
+                "offset": request_query.offset,
+                "limit": request_query.limit,
+                "total": total,
+            },
+            "history": [
+                {
+                    "original_contents": h.original_contents,
+                    "modified_contents": h.arguments,
+                    "trigger": h.trigger,
+                    "created": utc_tz.localize(h.created).astimezone(local_tz),
+                }
+                for h in query.all()
+            ],
+        }
+    )
 
 
 # GET: /bond/tokens/{token_address}/additional_issue

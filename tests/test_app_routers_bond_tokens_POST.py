@@ -153,7 +153,10 @@ class TestAppRoutersBondTokensPOST:
             assert utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
 
             update_token = db.query(UpdateToken).first()
-            assert update_token is None
+            assert update_token.token_address == "contract_address_test1"
+            assert update_token.type == TokenType.IBET_STRAIGHT_BOND.value
+            assert update_token.status == 1
+            assert update_token.trigger == "Issue"
 
     # <Normal_2>
     # include updates
@@ -380,7 +383,10 @@ class TestAppRoutersBondTokensPOST:
             assert utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
 
             update_token = db.query(UpdateToken).first()
-            assert update_token is None
+            assert update_token.token_address == "contract_address_test1"
+            assert update_token.type == TokenType.IBET_STRAIGHT_BOND.value
+            assert update_token.status == 1
+            assert update_token.trigger == "Issue"
 
     ###########################################################################
     # Error Case
