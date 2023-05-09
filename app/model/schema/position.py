@@ -123,7 +123,6 @@ class ListAllLockEventsQuery:
 class ForceUnlockRequest(BaseModel):
     token_address: str = Field(..., description="Token address")
     lock_address: str = Field(..., description="Lock address")
-    account_address: str = Field(..., description="Account address")
     recipient_address: str = Field(..., description="Recipient address")
     value: PositiveInt = Field(..., description="Unlock amount")
 
@@ -137,12 +136,6 @@ class ForceUnlockRequest(BaseModel):
     def lock_address_is_valid_address(cls, v):
         if not Web3.is_address(v):
             raise ValueError("lock_address is not a valid address")
-        return v
-
-    @validator("account_address")
-    def account_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("account_address is not a valid address")
         return v
 
     @validator("recipient_address")

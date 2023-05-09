@@ -38,6 +38,8 @@ class TestAppRoutersForceUnlockPOST:
     # Authorization by eoa-password
     @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock")
     def test_normal_1(self, IbetSecurityTokenInterface_mock, client, db):
+        account_address = "0x1234567890123456789012345678900000000000"
+
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -69,12 +71,11 @@ class TestAppRoutersForceUnlockPOST:
         req_param = {
             "token_address": _token_address,
             "lock_address": _lock_address,
-            "account_address": _admin_address,
             "recipient_address": _recipient_address,
             "value": 10,
         }
         resp = client.post(
-            self.test_url,
+            self.test_url.format(account_address=account_address),
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
@@ -86,7 +87,7 @@ class TestAppRoutersForceUnlockPOST:
         IbetSecurityTokenInterface_mock.assert_any_call(
             data={
                 "lock_address": _lock_address,
-                "account_address": _admin_address,
+                "account_address": account_address,
                 "recipient_address": _recipient_address,
                 "value": 10,
                 "data": "",
@@ -102,6 +103,8 @@ class TestAppRoutersForceUnlockPOST:
     # Authorization by auth-token
     @mock.patch("app.model.blockchain.token.IbetSecurityTokenInterface.force_unlock")
     def test_normal_2(self, IbetSecurityTokenInterface_mock, client, db):
+        account_address = "0x1234567890123456789012345678900000000000"
+
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -139,12 +142,11 @@ class TestAppRoutersForceUnlockPOST:
         req_param = {
             "token_address": _token_address,
             "lock_address": _lock_address,
-            "account_address": _admin_address,
             "recipient_address": _recipient_address,
             "value": 10,
         }
         resp = client.post(
-            self.test_url,
+            self.test_url.format(account_address=account_address),
             json=req_param,
             headers={"issuer-address": _admin_address, "auth-token": "test_auth_token"},
         )
@@ -153,7 +155,7 @@ class TestAppRoutersForceUnlockPOST:
         IbetSecurityTokenInterface_mock.assert_any_call(
             data={
                 "lock_address": _lock_address,
-                "account_address": _admin_address,
+                "account_address": account_address,
                 "recipient_address": _recipient_address,
                 "value": 10,
                 "data": "",
@@ -173,10 +175,14 @@ class TestAppRoutersForceUnlockPOST:
     # RequestValidationError
     # Required fields are not set
     def test_error_1(self, client, db):
+        account_address = "0x1234567890123456789012345678900000000000"
+
         # request target API
         req_param = {}
         resp = client.post(
-            self.test_url, json=req_param, headers={"issuer-address": "issuer-address"}
+            self.test_url.format(account_address=account_address),
+            json=req_param,
+            headers={"issuer-address": "issuer-address"},
         )
 
         # assertion
@@ -191,11 +197,6 @@ class TestAppRoutersForceUnlockPOST:
                 },
                 {
                     "loc": ["body", "lock_address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
-                },
-                {
-                    "loc": ["body", "account_address"],
                     "msg": "field required",
                     "type": "value_error.missing",
                 },
@@ -217,9 +218,10 @@ class TestAppRoutersForceUnlockPOST:
     # - address is invalid
     # - value is not greater than 0
     def test_error_1_2(self, client, db):
+        account_address = "0x1234567890123456789012345678900000000000"
+
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
         _lock_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
-        _admin_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
         _recipient_address = (
             "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
         )
@@ -228,12 +230,13 @@ class TestAppRoutersForceUnlockPOST:
         req_param = {
             "token_address": _token_address,
             "lock_address": _lock_address,
-            "account_address": _admin_address,
             "recipient_address": _recipient_address,
             "value": 0,
         }
         resp = client.post(
-            self.test_url, json=req_param, headers={"issuer-address": "issuer-address"}
+            self.test_url.format(account_address=account_address),
+            json=req_param,
+            headers={"issuer-address": "issuer-address"},
         )
 
         # assertion
@@ -249,11 +252,6 @@ class TestAppRoutersForceUnlockPOST:
                 {
                     "loc": ["body", "lock_address"],
                     "msg": "lock_address is not a valid address",
-                    "type": "value_error",
-                },
-                {
-                    "loc": ["body", "account_address"],
-                    "msg": "account_address is not a valid address",
                     "type": "value_error",
                 },
                 {
@@ -274,8 +272,9 @@ class TestAppRoutersForceUnlockPOST:
     # RequestValidationError
     # Header and body are required
     def test_error_1_3(self, client, db):
+        account_address = "0x1234567890123456789012345678900000000000"
         # request target API
-        resp = client.post(self.test_url)
+        resp = client.post(self.test_url.format(account_address=account_address))
 
         # assertion
         assert resp.status_code == 422
@@ -299,6 +298,8 @@ class TestAppRoutersForceUnlockPOST:
     # RequestValidationError
     # issuer-address is not a valid address
     def test_error_1_4(self, client, db):
+        account_address = "0x1234567890123456789012345678900000000000"
+
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -317,7 +318,7 @@ class TestAppRoutersForceUnlockPOST:
             "value": 10,
         }
         resp = client.post(
-            self.test_url,
+            self.test_url.format(account_address=account_address),
             json=req_param,
             headers={"issuer-address": "issuer-address"},  # dummy address
         )
@@ -339,6 +340,8 @@ class TestAppRoutersForceUnlockPOST:
     # RequestValidationError
     # eoa-password is not a Base64-encoded encrypted data
     def test_error_1_5(self, client, db):
+        account_address = "0x1234567890123456789012345678900000000000"
+
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -357,7 +360,7 @@ class TestAppRoutersForceUnlockPOST:
             "value": 10,
         }
         resp = client.post(
-            self.test_url,
+            self.test_url.format(account_address=account_address),
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
@@ -382,6 +385,8 @@ class TestAppRoutersForceUnlockPOST:
     # AuthorizationError
     # Issuer does not exist
     def test_error_2_1(self, client, db):
+        account_address = "0x1234567890123456789012345678900000000000"
+
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -400,7 +405,7 @@ class TestAppRoutersForceUnlockPOST:
             "value": 10,
         }
         resp = client.post(
-            self.test_url,
+            self.test_url.format(account_address=account_address),
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
@@ -419,6 +424,8 @@ class TestAppRoutersForceUnlockPOST:
     # AuthorizationError
     # Password mismatch
     def test_error_2_2(self, client, db):
+        account_address = "0x1234567890123456789012345678900000000000"
+
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -439,12 +446,11 @@ class TestAppRoutersForceUnlockPOST:
         req_param = {
             "token_address": _token_address,
             "lock_address": _lock_address,
-            "account_address": _admin_address,
             "recipient_address": _recipient_address,
             "value": 10,
         }
         resp = client.post(
-            self.test_url,
+            self.test_url.format(account_address=account_address),
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
@@ -461,8 +467,63 @@ class TestAppRoutersForceUnlockPOST:
 
     # <Error_3_1>
     # InvalidParameterError
-    # token not found
+    # account_address is not a valid address
     def test_error_3_1(self, client, db):
+        account_address = "invalid_address"
+
+        _admin_account = config_eth_account("user1")
+        _admin_address = _admin_account["address"]
+        _admin_keyfile = _admin_account["keyfile_json"]
+
+        _lock_address = config_eth_account("user2")["address"]
+        _recipient_address = config_eth_account("user3")["address"]
+
+        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _admin_address
+        account.keyfile = _admin_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.tx_hash = ""
+        token.issuer_address = _admin_address
+        token.token_address = _token_address
+        token.abi = ""
+        db.add(token)
+
+        # request target API
+        req_param = {
+            "token_address": _token_address,
+            "lock_address": _lock_address,
+            "recipient_address": _recipient_address,
+            "value": 10,
+        }
+        resp = client.post(
+            self.test_url.format(account_address=account_address),
+            json=req_param,
+            headers={
+                "issuer-address": _admin_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "account_address is not a valid address",
+        }
+
+    # <Error_3_2>
+    # InvalidParameterError
+    # token not found
+    def test_error_3_2(self, client, db):
+        account_address = "0x1234567890123456789012345678900000000000"
+
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -483,12 +544,11 @@ class TestAppRoutersForceUnlockPOST:
         req_param = {
             "token_address": _token_address,
             "lock_address": _lock_address,
-            "account_address": _admin_address,
             "recipient_address": _recipient_address,
             "value": 10,
         }
         resp = client.post(
-            self.test_url,
+            self.test_url.format(account_address=account_address),
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
@@ -503,10 +563,12 @@ class TestAppRoutersForceUnlockPOST:
             "detail": "token not found",
         }
 
-    # <Error_3_2>
+    # <Error_3_3>
     # InvalidParameterError
     # token is temporarily unavailable
-    def test_error_3_2(self, client, db):
+    def test_error_3_3(self, client, db):
+        account_address = "0x1234567890123456789012345678900000000000"
+
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -536,12 +598,11 @@ class TestAppRoutersForceUnlockPOST:
         req_param = {
             "token_address": _token_address,
             "lock_address": _lock_address,
-            "account_address": _admin_address,
             "recipient_address": _recipient_address,
             "value": 10,
         }
         resp = client.post(
-            self.test_url,
+            self.test_url.format(account_address=account_address),
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
@@ -563,6 +624,8 @@ class TestAppRoutersForceUnlockPOST:
         MagicMock(side_effect=ContractRevertError(code_msg="111201")),
     )
     def test_error_4(self, client, db):
+        account_address = "0x1234567890123456789012345678900000000000"
+
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -591,12 +654,11 @@ class TestAppRoutersForceUnlockPOST:
         req_param = {
             "token_address": _token_address,
             "lock_address": _lock_address,
-            "account_address": _admin_address,
             "recipient_address": _recipient_address,
             "value": 10,
         }
         resp = client.post(
-            self.test_url,
+            self.test_url.format(account_address=account_address),
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
@@ -618,6 +680,8 @@ class TestAppRoutersForceUnlockPOST:
         MagicMock(side_effect=SendTransactionError()),
     )
     def test_error_5(self, client, db):
+        account_address = "0x1234567890123456789012345678900000000000"
+
         _admin_account = config_eth_account("user1")
         _admin_address = _admin_account["address"]
         _admin_keyfile = _admin_account["keyfile_json"]
@@ -646,12 +710,11 @@ class TestAppRoutersForceUnlockPOST:
         req_param = {
             "token_address": _token_address,
             "lock_address": _lock_address,
-            "account_address": _admin_address,
             "recipient_address": _recipient_address,
             "value": 10,
         }
         resp = client.post(
-            self.test_url,
+            self.test_url.format(account_address=account_address),
             json=req_param,
             headers={
                 "issuer-address": _admin_address,
