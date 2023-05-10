@@ -23,6 +23,7 @@ from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.exceptions import HTTPException
 from pytz import timezone
 from sqlalchemy import String, and_, column, desc, func, literal, null, or_
+from web3 import Web3
 
 from app.database import DBSession
 from app.exceptions import (
@@ -437,6 +438,7 @@ def list_all_lock_events(
 def force_unlock(
     db: DBSession,
     request: Request,
+    account_address: str,
     data: ForceUnlockRequest,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
@@ -458,6 +460,9 @@ def force_unlock(
         eoa_password=eoa_password,
         auth_token=auth_token,
     )
+
+    if not Web3.is_address(account_address):
+        raise InvalidParameterError("account_address is not a valid address")
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -481,7 +486,7 @@ def force_unlock(
     # Force unlock
     unlock_data = {
         "lock_address": data.lock_address,
-        "account_address": data.account_address,
+        "account_address": account_address,
         "recipient_address": data.recipient_address,
         "value": data.value,
         "data": "",
