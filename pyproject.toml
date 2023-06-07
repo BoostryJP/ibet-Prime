@@ -13,7 +13,7 @@ boto3 = "~1.26.82"
 coincurve = "~18.0.0"
 eth-keyfile = "0.6.1"
 eth-utils = "~2.1.0"
-fastapi = "~0.95.0"
+fastapi = "~0.96.0"
 gunicorn = "~20.1.0"
 orjson = "~3.8.7"
 psycopg = {extras = ["binary"], version = "~3.1.8"}
