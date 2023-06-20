@@ -119,12 +119,16 @@ class TestAppRoutersTokenHoldersGET:
         token_holder_list1.batch_status = TokenHolderBatchStatus.PENDING.value
         db.add(token_holder_list1)
 
+        db.commit()
+
         token_holder_list2 = TokenHoldersList()
         token_holder_list2.token_address = token_address
         token_holder_list2.list_id = str(uuid.uuid4())
         token_holder_list2.block_number = 200
         token_holder_list2.batch_status = TokenHolderBatchStatus.FAILED.value
         db.add(token_holder_list2)
+
+        db.commit()
 
         token_holder_list3 = TokenHoldersList()
         token_holder_list3.token_address = token_address
@@ -133,6 +137,8 @@ class TestAppRoutersTokenHoldersGET:
         token_holder_list3.batch_status = TokenHolderBatchStatus.FAILED.value
         db.add(token_holder_list3)
 
+        db.commit()
+
         token_holder_list4 = TokenHoldersList()
         token_holder_list4.token_address = token_address
         token_holder_list4.list_id = str(uuid.uuid4())
@@ -140,12 +146,16 @@ class TestAppRoutersTokenHoldersGET:
         token_holder_list4.batch_status = TokenHolderBatchStatus.DONE.value
         db.add(token_holder_list4)
 
+        db.commit()
+
         token_holder_list5 = TokenHoldersList()
         token_holder_list5.token_address = token_address
         token_holder_list5.list_id = str(uuid.uuid4())
         token_holder_list5.block_number = 500
         token_holder_list5.batch_status = TokenHolderBatchStatus.DONE.value
         db.add(token_holder_list5)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(token_address), headers={})
@@ -203,12 +213,16 @@ class TestAppRoutersTokenHoldersGET:
         token.abi = ""
         db.add(token)
 
+        db.commit()
+
         token_holder_list1 = TokenHoldersList()
         token_holder_list1.token_address = token_address
         token_holder_list1.list_id = str(uuid.uuid4())
         token_holder_list1.block_number = 100
         token_holder_list1.batch_status = TokenHolderBatchStatus.PENDING.value
         db.add(token_holder_list1)
+
+        db.commit()
 
         token_holder_list2 = TokenHoldersList()
         token_holder_list2.token_address = token_address
@@ -217,12 +231,16 @@ class TestAppRoutersTokenHoldersGET:
         token_holder_list2.batch_status = TokenHolderBatchStatus.FAILED.value
         db.add(token_holder_list2)
 
+        db.commit()
+
         token_holder_list3 = TokenHoldersList()
         token_holder_list3.token_address = token_address
         token_holder_list3.list_id = str(uuid.uuid4())
         token_holder_list3.block_number = 300
         token_holder_list3.batch_status = TokenHolderBatchStatus.FAILED.value
         db.add(token_holder_list3)
+
+        db.commit()
 
         token_holder_list4 = TokenHoldersList()
         token_holder_list4.token_address = token_address
@@ -231,12 +249,16 @@ class TestAppRoutersTokenHoldersGET:
         token_holder_list4.batch_status = TokenHolderBatchStatus.DONE.value
         db.add(token_holder_list4)
 
+        db.commit()
+
         token_holder_list5 = TokenHoldersList()
         token_holder_list5.token_address = token_address
         token_holder_list5.list_id = str(uuid.uuid4())
         token_holder_list5.block_number = 500
         token_holder_list5.batch_status = TokenHolderBatchStatus.DONE.value
         db.add(token_holder_list5)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -368,6 +390,8 @@ class TestAppRoutersTokenHoldersGET:
         token.abi = ""
         db.add(token)
 
+        db.commit()
+
         token_holder_list1 = TokenHoldersList()
         token_holder_list1.token_address = token_address
         token_holder_list1.list_id = str(uuid.uuid4())
@@ -375,12 +399,16 @@ class TestAppRoutersTokenHoldersGET:
         token_holder_list1.batch_status = TokenHolderBatchStatus.PENDING.value
         db.add(token_holder_list1)
 
+        db.commit()
+
         token_holder_list2 = TokenHoldersList()
         token_holder_list2.token_address = token_address
         token_holder_list2.list_id = str(uuid.uuid4())
         token_holder_list2.block_number = 200
         token_holder_list2.batch_status = TokenHolderBatchStatus.FAILED.value
         db.add(token_holder_list2)
+
+        db.commit()
 
         token_holder_list3 = TokenHoldersList()
         token_holder_list3.token_address = token_address
@@ -395,6 +423,8 @@ class TestAppRoutersTokenHoldersGET:
         token_holder_list4.block_number = 400
         token_holder_list4.batch_status = TokenHolderBatchStatus.DONE.value
         db.add(token_holder_list4)
+
+        db.commit()
 
         token_holder_list5 = TokenHoldersList()
         token_holder_list5.token_address = token_address
