@@ -23,7 +23,7 @@ pytz = "~2023.3"
 requests = "~2.31.0"
 shared-memory-dict = "~0.7.2"
 uvicorn = "~0.20.0"
-web3 = "~6.0.0"
+web3 = "~6.5.0"
 sqlalchemy = "~2.0.9"
 
 ibet-prime-explorer = {path = "cmd/explorer", optional = true, develop = true}
