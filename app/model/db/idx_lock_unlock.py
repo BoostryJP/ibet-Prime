@@ -30,6 +30,8 @@ class IDXLock(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     # Transaction Hash
     transaction_hash = Column(String(66), index=True, nullable=False)
+    # Message Sender of Transaction
+    msg_sender = Column(String(42), index=True, nullable=True)
     # Block Number
     block_number = Column(BigInteger, nullable=False)
     # Token Address
@@ -55,6 +57,8 @@ class IDXUnlock(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     # Transaction Hash
     transaction_hash = Column(String(66), index=True, nullable=False)
+    # Message Sender of Transaction
+    msg_sender = Column(String(42), index=True, nullable=True)
     # Block Number
     block_number = Column(BigInteger, nullable=False)
     # Token Address

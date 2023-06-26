@@ -56,21 +56,10 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
     test_from_address = "test_from_address"
     test_to_address = "test_to_address"
     test_application_datetime = datetime(year=2019, month=9, day=1)
-    test_application_datetime_str = (
-        timezone("UTC")
-        .localize(test_application_datetime)
-        .astimezone(local_tz)
-        .isoformat()
-    )
     test_application_blocktimestamp = datetime(year=2019, month=9, day=2)
-    test_application_blocktimestamp_str = (
-        timezone("UTC")
-        .localize(test_application_blocktimestamp)
-        .astimezone(local_tz)
-        .isoformat()
-    )
     test_approval_datetime = datetime(year=2019, month=9, day=3)
     test_approval_blocktimestamp = datetime(year=2019, month=9, day=4)
+    test_cancellation_blocktimestamp = datetime(year=2019, month=9, day=5)
 
     ###########################################################################
     # Normal Case
@@ -114,6 +103,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
 
@@ -194,6 +184,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True
         db.add(_idx_transfer_approval)
@@ -275,6 +266,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
 
@@ -360,6 +352,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
 
@@ -732,6 +725,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.approval_blocktimestamp = (
             self.test_approval_blocktimestamp
         )
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = True
@@ -791,6 +785,9 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = (
+            self.test_cancellation_blocktimestamp
+        )
         _idx_transfer_approval.cancelled = True
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
@@ -850,6 +847,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = False
         _idx_transfer_approval.escrow_finished = False
         _idx_transfer_approval.transfer_approved = None
@@ -909,6 +907,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = False
         _idx_transfer_approval.escrow_finished = True
         _idx_transfer_approval.transfer_approved = None
@@ -968,6 +967,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = False
         _idx_transfer_approval.escrow_finished = True
         _idx_transfer_approval.transfer_approved = None
@@ -1040,6 +1040,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
 
@@ -1099,6 +1100,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
 
@@ -1175,6 +1177,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True
         db.add(_idx_transfer_approval)
@@ -1235,6 +1238,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True
         db.add(_idx_transfer_approval)
@@ -1306,6 +1310,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
 
@@ -1365,6 +1370,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         )
         _idx_transfer_approval.approval_datetime = None
         _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
 

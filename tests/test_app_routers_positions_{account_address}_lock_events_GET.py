@@ -89,6 +89,7 @@ class TestAppRoutersLockEvents:
         # prepare data: Lock events
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_1"
+        _lock.msg_sender = account_address
         _lock.block_number = 1
         _lock.token_address = token_address_1
         _lock.lock_address = lock_address_1
@@ -100,6 +101,7 @@ class TestAppRoutersLockEvents:
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_2"
+        _unlock.msg_sender = lock_address_1
         _unlock.block_number = 2
         _unlock.token_address = token_address_1
         _unlock.lock_address = lock_address_1
@@ -130,6 +132,7 @@ class TestAppRoutersLockEvents:
                 {
                     "category": "Unlock",
                     "transaction_hash": "tx_hash_2",
+                    "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
                     "token_type": TokenType.IBET_STRAIGHT_BOND.value,
@@ -144,6 +147,7 @@ class TestAppRoutersLockEvents:
                 {
                     "category": "Lock",
                     "transaction_hash": "tx_hash_1",
+                    "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
                     "token_type": TokenType.IBET_STRAIGHT_BOND.value,
@@ -184,6 +188,7 @@ class TestAppRoutersLockEvents:
         # prepare data: Lock events
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_1"
+        _lock.msg_sender = account_address
         _lock.block_number = 1
         _lock.token_address = token_address_1
         _lock.lock_address = lock_address_1
@@ -195,6 +200,7 @@ class TestAppRoutersLockEvents:
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_2"
+        _unlock.msg_sender = lock_address_1
         _unlock.block_number = 2
         _unlock.token_address = token_address_1
         _unlock.lock_address = lock_address_1
@@ -225,6 +231,7 @@ class TestAppRoutersLockEvents:
                 {
                     "category": "Unlock",
                     "transaction_hash": "tx_hash_2",
+                    "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
                     "token_type": TokenType.IBET_SHARE.value,
@@ -239,6 +246,7 @@ class TestAppRoutersLockEvents:
                 {
                     "category": "Lock",
                     "transaction_hash": "tx_hash_1",
+                    "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
                     "token_type": TokenType.IBET_SHARE.value,
@@ -280,6 +288,7 @@ class TestAppRoutersLockEvents:
         # prepare data: Lock events
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_1"
+        _lock.msg_sender = other_account_address
         _lock.block_number = 1
         _lock.token_address = token_address_1
         _lock.lock_address = lock_address_1
@@ -291,6 +300,7 @@ class TestAppRoutersLockEvents:
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_2"
+        _unlock.msg_sender = lock_address_1
         _unlock.block_number = 2
         _unlock.token_address = token_address_1
         _unlock.lock_address = lock_address_1
@@ -348,6 +358,7 @@ class TestAppRoutersLockEvents:
         # prepare data: Lock events
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_1"
+        _lock.msg_sender = account_address
         _lock.block_number = 1
         _lock.token_address = token_address_1
         _lock.lock_address = lock_address_1
@@ -359,6 +370,7 @@ class TestAppRoutersLockEvents:
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_2"
+        _unlock.msg_sender = lock_address_1
         _unlock.block_number = 2
         _unlock.token_address = token_address_1
         _unlock.lock_address = lock_address_1
@@ -424,6 +436,7 @@ class TestAppRoutersLockEvents:
         # prepare data: Lock events
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_1"
+        _lock.msg_sender = account_address
         _lock.block_number = 1
         _lock.token_address = token_address_1
         _lock.lock_address = lock_address_1
@@ -435,6 +448,7 @@ class TestAppRoutersLockEvents:
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_2"
+        _unlock.msg_sender = lock_address_1
         _unlock.block_number = 2
         _unlock.token_address = token_address_1
         _unlock.lock_address = lock_address_1
@@ -447,6 +461,7 @@ class TestAppRoutersLockEvents:
 
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_3"
+        _lock.msg_sender = account_address
         _lock.block_number = 3
         _lock.token_address = token_address_2  # others
         _lock.lock_address = lock_address_1
@@ -458,6 +473,7 @@ class TestAppRoutersLockEvents:
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_2"
+        _unlock.msg_sender = lock_address_1
         _unlock.block_number = 2
         _unlock.token_address = token_address_2  # others
         _unlock.lock_address = lock_address_1
@@ -489,6 +505,7 @@ class TestAppRoutersLockEvents:
                 {
                     "category": "Unlock",
                     "transaction_hash": "tx_hash_2",
+                    "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
                     "token_type": TokenType.IBET_STRAIGHT_BOND.value,
@@ -503,6 +520,7 @@ class TestAppRoutersLockEvents:
                 {
                     "category": "Lock",
                     "transaction_hash": "tx_hash_1",
+                    "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
                     "token_type": TokenType.IBET_STRAIGHT_BOND.value,
@@ -543,6 +561,7 @@ class TestAppRoutersLockEvents:
         # prepare data: Lock events
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_1"
+        _lock.msg_sender = account_address
         _lock.block_number = 1
         _lock.token_address = token_address_1
         _lock.lock_address = lock_address_1
@@ -554,6 +573,7 @@ class TestAppRoutersLockEvents:
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_2"
+        _unlock.msg_sender = lock_address_1
         _unlock.block_number = 2
         _unlock.token_address = token_address_1
         _unlock.lock_address = lock_address_1
@@ -585,6 +605,7 @@ class TestAppRoutersLockEvents:
                 {
                     "category": "Unlock",
                     "transaction_hash": "tx_hash_2",
+                    "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
                     "token_type": TokenType.IBET_STRAIGHT_BOND.value,
@@ -634,6 +655,7 @@ class TestAppRoutersLockEvents:
         # prepare data: Lock events
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_1"
+        _lock.msg_sender = account_address
         _lock.block_number = 1
         _lock.token_address = token_address_1
         _lock.lock_address = lock_address_1
@@ -645,6 +667,7 @@ class TestAppRoutersLockEvents:
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_2"
+        _unlock.msg_sender = lock_address_1
         _unlock.block_number = 2
         _unlock.token_address = token_address_2
         _unlock.lock_address = lock_address_1
@@ -676,6 +699,7 @@ class TestAppRoutersLockEvents:
                 {
                     "category": "Lock",
                     "transaction_hash": "tx_hash_1",
+                    "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
                     "token_type": TokenType.IBET_STRAIGHT_BOND.value,
@@ -725,6 +749,7 @@ class TestAppRoutersLockEvents:
         # prepare data: Lock events
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_1"
+        _lock.msg_sender = account_address
         _lock.block_number = 1
         _lock.token_address = token_address_1
         _lock.lock_address = lock_address_1
@@ -736,6 +761,7 @@ class TestAppRoutersLockEvents:
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_2"
+        _unlock.msg_sender = lock_address_1
         _unlock.block_number = 2
         _unlock.token_address = token_address_2
         _unlock.lock_address = lock_address_1
@@ -767,6 +793,7 @@ class TestAppRoutersLockEvents:
                 {
                     "category": "Lock",
                     "transaction_hash": "tx_hash_1",
+                    "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
                     "token_type": TokenType.IBET_STRAIGHT_BOND.value,
@@ -782,7 +809,7 @@ class TestAppRoutersLockEvents:
         }
 
     # Normal_5_4
-    # Search filter: lock_address
+    # Search filter: msg_sender
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
     def test_normal_5_4(self, mock_IbetStraightBondContract_get, client, db):
         issuer_address = "0x1234567890123456789012345678900000000100"
@@ -805,8 +832,95 @@ class TestAppRoutersLockEvents:
         db.add(_token)
 
         # prepare data: Lock events
+        _lock = IDXUnlock()
+        _lock.transaction_hash = "tx_hash_1"
+        _lock.msg_sender = lock_address_1
+        _lock.block_number = 1
+        _lock.token_address = token_address_1
+        _lock.lock_address = lock_address_1  # lock address 1
+        _lock.account_address = account_address
+        _lock.recipient_address = lock_address_1
+        _lock.value = 1
+        _lock.data = {"message": "unlocked_1"}
+        _lock.block_timestamp = datetime.utcnow()
+        db.add(_lock)
+
+        _lock = IDXLock()
+        _lock.transaction_hash = "tx_hash_2"
+        _lock.msg_sender = lock_address_2
+        _lock.block_number = 2
+        _lock.token_address = token_address_1
+        _lock.lock_address = lock_address_2  # lock address 2
+        _lock.account_address = account_address
+        _lock.recipient_address = lock_address_2
+        _lock.value = 1
+        _lock.data = {"message": "unlocked_2"}
+        _lock.block_timestamp = datetime.utcnow()
+        db.add(_lock)
+
+        db.commit()
+
+        # mock
+        bond_1 = IbetStraightBondContract()
+        bond_1.name = token_name_1
+        mock_IbetStraightBondContract_get.side_effect = [bond_1]
+
+        # request target api
+        resp = client.get(
+            self.base_url.format(account_address=account_address),
+            params={"msg_sender": lock_address_1},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 2},
+            "events": [
+                {
+                    "category": "Unlock",
+                    "transaction_hash": "tx_hash_1",
+                    "msg_sender": lock_address_1,
+                    "issuer_address": issuer_address,
+                    "token_address": token_address_1,
+                    "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                    "token_name": token_name_1,
+                    "lock_address": lock_address_1,
+                    "account_address": account_address,
+                    "recipient_address": lock_address_1,
+                    "value": 1,
+                    "data": {"message": "unlocked_1"},
+                    "block_timestamp": ANY,
+                }
+            ],
+        }
+
+    # Normal_5_5
+    # Search filter: lock_address
+    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
+    def test_normal_5_5(self, mock_IbetStraightBondContract_get, client, db):
+        issuer_address = "0x1234567890123456789012345678900000000100"
+
+        account_address = "0x1234567890123456789012345678900000000000"
+
+        lock_address_1 = "0x1234567890123456789012345678900000000001"
+        lock_address_2 = "0x1234567890123456789012345678900000000002"
+
+        token_address_1 = "0x1234567890123456789012345678900000000010"
+        token_name_1 = "test_bond_1"
+
+        # prepare data: Token
+        _token = Token()
+        _token.token_address = token_address_1
+        _token.issuer_address = issuer_address
+        _token.type = TokenType.IBET_STRAIGHT_BOND.value  # bond
+        _token.tx_hash = ""
+        _token.abi = ""
+        db.add(_token)
+
+        # prepare data: Lock events
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_1"
+        _lock.msg_sender = account_address
         _lock.block_number = 1
         _lock.token_address = token_address_1
         _lock.lock_address = lock_address_1  # lock address 1
@@ -818,6 +932,7 @@ class TestAppRoutersLockEvents:
 
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_2"
+        _lock.msg_sender = account_address
         _lock.block_number = 2
         _lock.token_address = token_address_1
         _lock.lock_address = lock_address_2  # lock address 2
@@ -848,6 +963,7 @@ class TestAppRoutersLockEvents:
                 {
                     "category": "Lock",
                     "transaction_hash": "tx_hash_1",
+                    "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
                     "token_type": TokenType.IBET_STRAIGHT_BOND.value,
@@ -862,10 +978,10 @@ class TestAppRoutersLockEvents:
             ],
         }
 
-    # Normal_5_5
+    # Normal_5_6
     # Search filter: recipient_address
     @mock.patch("app.model.blockchain.token.IbetStraightBondContract.get")
-    def test_normal_5_5(self, mock_IbetStraightBondContract_get, client, db):
+    def test_normal_5_6(self, mock_IbetStraightBondContract_get, client, db):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
         account_address = "0x1234567890123456789012345678900000000000"
@@ -889,6 +1005,7 @@ class TestAppRoutersLockEvents:
         # prepare data: Lock events
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_1"
+        _unlock.msg_sender = lock_address_1
         _unlock.block_number = 1
         _unlock.token_address = token_address_1
         _unlock.lock_address = lock_address_1
@@ -901,6 +1018,7 @@ class TestAppRoutersLockEvents:
 
         _unlock = IDXUnlock()
         _unlock.transaction_hash = "tx_hash_2"
+        _unlock.msg_sender = lock_address_1
         _unlock.block_number = 2
         _unlock.token_address = token_address_1
         _unlock.lock_address = lock_address_1
@@ -932,6 +1050,7 @@ class TestAppRoutersLockEvents:
                 {
                     "category": "Unlock",
                     "transaction_hash": "tx_hash_1",
+                    "msg_sender": lock_address_1,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
                     "token_type": TokenType.IBET_STRAIGHT_BOND.value,
@@ -972,6 +1091,7 @@ class TestAppRoutersLockEvents:
         # prepare data: Lock events
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_1"
+        _lock.msg_sender = account_address
         _lock.block_number = 1
         _lock.token_address = token_address_1
         _lock.lock_address = lock_address_1
@@ -983,6 +1103,7 @@ class TestAppRoutersLockEvents:
 
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_2"
+        _lock.msg_sender = account_address
         _lock.block_number = 2
         _lock.token_address = token_address_1
         _lock.lock_address = lock_address_2
@@ -994,6 +1115,7 @@ class TestAppRoutersLockEvents:
 
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_3"
+        _lock.msg_sender = account_address
         _lock.block_number = 3
         _lock.token_address = token_address_1
         _lock.lock_address = lock_address_1
@@ -1005,6 +1127,7 @@ class TestAppRoutersLockEvents:
 
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_4"
+        _lock.msg_sender = account_address
         _lock.block_number = 4
         _lock.token_address = token_address_1
         _lock.lock_address = lock_address_2
@@ -1035,6 +1158,7 @@ class TestAppRoutersLockEvents:
                 {
                     "category": "Lock",
                     "transaction_hash": "tx_hash_3",
+                    "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
                     "token_type": TokenType.IBET_STRAIGHT_BOND.value,
@@ -1049,6 +1173,7 @@ class TestAppRoutersLockEvents:
                 {
                     "category": "Lock",
                     "transaction_hash": "tx_hash_1",
+                    "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
                     "token_type": TokenType.IBET_STRAIGHT_BOND.value,
@@ -1063,6 +1188,7 @@ class TestAppRoutersLockEvents:
                 {
                     "category": "Lock",
                     "transaction_hash": "tx_hash_4",
+                    "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
                     "token_type": TokenType.IBET_STRAIGHT_BOND.value,
@@ -1077,6 +1203,7 @@ class TestAppRoutersLockEvents:
                 {
                     "category": "Lock",
                     "transaction_hash": "tx_hash_2",
+                    "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
                     "token_type": TokenType.IBET_STRAIGHT_BOND.value,
@@ -1116,6 +1243,7 @@ class TestAppRoutersLockEvents:
         # prepare data: Lock events
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_1"
+        _lock.msg_sender = account_address
         _lock.block_number = 1
         _lock.token_address = token_address_1
         _lock.lock_address = lock_address_1
@@ -1127,6 +1255,7 @@ class TestAppRoutersLockEvents:
 
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_2"
+        _lock.msg_sender = account_address
         _lock.block_number = 2
         _lock.token_address = token_address_1
         _lock.lock_address = lock_address_1
@@ -1138,6 +1267,7 @@ class TestAppRoutersLockEvents:
 
         _lock = IDXLock()
         _lock.transaction_hash = "tx_hash_3"
+        _lock.msg_sender = account_address
         _lock.block_number = 3
         _lock.token_address = token_address_1
         _lock.lock_address = lock_address_1
@@ -1168,6 +1298,7 @@ class TestAppRoutersLockEvents:
                 {
                     "category": "Lock",
                     "transaction_hash": "tx_hash_2",
+                    "msg_sender": account_address,
                     "issuer_address": issuer_address,
                     "token_address": token_address_1,
                     "token_type": TokenType.IBET_STRAIGHT_BOND.value,

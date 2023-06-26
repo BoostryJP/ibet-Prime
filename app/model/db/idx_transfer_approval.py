@@ -54,6 +54,8 @@ class IDXTransferApproval(Base):
     approval_datetime = Column(DateTime)
     # Approval Blocktimestamp(ownership vesting block timestamp)
     approval_blocktimestamp = Column(DateTime)
+    # Cancellation Blocktimestamp
+    cancellation_blocktimestamp = Column(DateTime)
     # Cancellation Status
     cancelled = Column(Boolean)  # default = None
     # Escrow Finished Status
@@ -73,6 +75,7 @@ class IDXTransferApproval(Base):
             "application_blocktimestamp": self.application_blocktimestamp,
             "approval_datetime": self.approval_datetime,
             "approval_blocktimestamp": self.approval_blocktimestamp,
+            "cancellation_blocktimestamp": self.cancellation_blocktimestamp,
             "cancelled": self.cancelled,
             "escrow_finished": self.escrow_finished,
             "transfer_approved": self.transfer_approved,

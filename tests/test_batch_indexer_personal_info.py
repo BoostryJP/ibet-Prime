@@ -330,7 +330,7 @@ class TestProcessor:
             personal_info_1, issuer_rsa_public_key, issuer_rsa_passphrase
         )
         tx = personal_info_contract.functions.register(
-            issuer_address, ciphertext
+            issuer_address, ciphertext.decode("utf-8")
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -425,7 +425,7 @@ class TestProcessor:
             personal_info_1, issuer_rsa_public_key, issuer_rsa_passphrase
         )
         tx = personal_info_contract.functions.register(
-            issuer_address, ciphertext
+            issuer_address, ciphertext.decode("utf-8")
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -461,7 +461,7 @@ class TestProcessor:
             personal_info_2, issuer_rsa_public_key, issuer_rsa_passphrase
         )
         tx = personal_info_contract.functions.modify(
-            user_address_1, ciphertext
+            user_address_1, ciphertext.decode("utf-8")
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -560,7 +560,7 @@ class TestProcessor:
             personal_info_1, issuer_rsa_public_key, issuer_rsa_passphrase
         )
         tx = personal_info_contract.functions.register(
-            issuer_address, ciphertext
+            issuer_address, ciphertext.decode("utf-8")
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -596,7 +596,7 @@ class TestProcessor:
             personal_info_2, issuer_rsa_public_key, issuer_rsa_passphrase
         )
         tx = personal_info_contract.functions.modify(
-            user_address_1, ciphertext
+            user_address_1, ciphertext.decode("utf-8")
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -642,7 +642,7 @@ class TestProcessor:
             personal_info_3, issuer_rsa_public_key, issuer_rsa_passphrase
         )
         tx = personal_info_contract.functions.modify(
-            user_address_1, ciphertext
+            user_address_1, ciphertext.decode("utf-8")
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -775,7 +775,7 @@ class TestProcessor:
             personal_info_1, issuer_rsa_public_key_1, issuer_rsa_passphrase_1
         )
         tx = personal_info_contract_1.functions.register(
-            issuer_address_1, ciphertext
+            issuer_address_1, ciphertext.decode("utf-8")
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -800,7 +800,7 @@ class TestProcessor:
             personal_info_2, issuer_rsa_public_key_2, issuer_rsa_passphrase_2
         )
         tx = personal_info_contract_2.functions.register(
-            issuer_address_2, ciphertext
+            issuer_address_2, ciphertext.decode("utf-8")
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -941,7 +941,7 @@ class TestProcessor:
             personal_info_1, issuer_rsa_public_key, issuer_rsa_passphrase
         )
         tx = personal_info_contract.functions.register(
-            issuer_address, ciphertext
+            issuer_address, ciphertext.decode("utf-8")
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,
@@ -967,7 +967,7 @@ class TestProcessor:
             personal_info_2, issuer_rsa_public_key, issuer_rsa_passphrase
         )
         tx = personal_info_contract.functions.modify(
-            user_address_1, ciphertext
+            user_address_1, ciphertext.decode("utf-8")
         ).build_transaction(
             {
                 "chainId": CHAIN_ID,

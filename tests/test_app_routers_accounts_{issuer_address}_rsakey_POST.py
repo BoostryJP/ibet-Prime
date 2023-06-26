@@ -30,7 +30,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
     # target API endpoint
     base_url = "/accounts/{}/rsakey"
 
-    valid_password = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~"
+    valid_password = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 *+.\\()?[]^$-|!#%&\"',/:;<=>@_`{}~"
     invalid_password = "password🚀"
 
     ###########################################################################

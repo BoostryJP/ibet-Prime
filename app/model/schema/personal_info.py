@@ -50,7 +50,7 @@ class RegisterPersonalInfoRequest(PersonalInfo):
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("account_address is not a valid address")
         return v
 

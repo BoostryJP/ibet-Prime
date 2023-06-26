@@ -11,11 +11,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from sqlalchemy.orm import Session
 
 from app import log
-from app.database import db_session
+from app.database import DBSession
 from app.exceptions import ServiceUnavailableError
 from app.model.db import Node
 from app.model.schema import BlockNumberResponse, E2EEResponse
@@ -51,7 +51,7 @@ def e2e_encryption_key():
     response_model=None,
     responses=get_routers_responses(ServiceUnavailableError),
 )
-def check_health(db: Session = Depends(db_session)):
+def check_health(db: DBSession):
     errors = []
 
     # Check DB Connection

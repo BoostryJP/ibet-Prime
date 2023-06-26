@@ -18,14 +18,24 @@ SPDX-License-Identifier: Apache-2.0
 """
 import hashlib
 from unittest import mock
-from unittest.mock import ANY, MagicMock
+from unittest.mock import MagicMock
 
+from eth_keyfile import decode_keyfile_json
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
 import config
 from app.exceptions import SendTransactionError
-from app.model.db import Account, AuthToken, Token, TokenType
+from app.model.blockchain import IbetStraightBondContract
+from app.model.db import (
+    Account,
+    AuthToken,
+    Token,
+    TokenAttrUpdate,
+    TokenType,
+    UpdateToken,
+)
+from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
@@ -33,6 +43,28 @@ web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
+def deploy_bond_token_contract(
+    address,
+    private_key,
+):
+    arguments = [
+        "token.name",
+        "token.symbol",
+        100,
+        20,
+        "token.redemption_date",
+        30,
+        "token.return_date",
+        "token.return_amount",
+        "token.purpose",
+    ]
+    bond_contrat = IbetStraightBondContract()
+    token_address, _, _ = bond_contrat.create(arguments, address, private_key)
+
+    return ContractUtils.get_contract("IbetStraightBond", token_address)
+
+
+@mock.patch("app.model.blockchain.token.TX_GAS_LIMIT", 8000000)
 class TestAppRoutersBondTokensTokenAddressPOST:
     # target API endpoint
     base_url = "/bond/tokens/{}"
@@ -42,12 +74,18 @@ class TestAppRoutersBondTokensTokenAddressPOST:
     ###########################################################################
 
     # <Normal_1>
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.update")
-    def test_normal_1(self, IbetStraightBondContract_mock, client, db):
+    def test_normal_1(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account["keyfile_json"],
+            password="password".encode("utf-8"),
+        )
         _keyfile = test_account["keyfile_json"]
-        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # Prepare data : Token
+        token_contract = deploy_bond_token_contract(_issuer_address, issuer_private_key)
+        _token_address = token_contract.address
 
         # prepare data
         account = Account()
@@ -63,9 +101,6 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         token.token_address = _token_address
         token.abi = ""
         db.add(token)
-
-        # mock
-        IbetStraightBondContract_mock.side_effect = [None]
 
         # request target API
         req_param = {
@@ -94,20 +129,78 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         )
 
         # assertion
-        IbetStraightBondContract_mock.assert_any_call(
-            data=req_param, tx_from=_issuer_address, private_key=ANY
-        )
         assert resp.status_code == 200
         assert resp.json() is None
 
+        token_attr_update = (
+            db.query(TokenAttrUpdate)
+            .filter(TokenAttrUpdate.token_address == _token_address)
+            .all()
+        )
+        assert len(token_attr_update) == 1
+
+        update_token = db.query(UpdateToken).first()
+        assert update_token.token_address == _token_address
+        assert update_token.issuer_address == _issuer_address
+        assert update_token.type == TokenType.IBET_STRAIGHT_BOND.value
+        assert update_token.original_contents == {
+            "contact_information": "",
+            "contract_name": "IbetStraightBond",
+            "face_value": 20,
+            "interest_payment_date": ["", "", "", "", "", "", "", "", "", "", "", ""],
+            "interest_rate": 0.0,
+            "is_offering": False,
+            "is_redeemed": False,
+            "issuer_address": _issuer_address,
+            "memo": "",
+            "name": "token.name",
+            "personal_info_contract_address": "0x0000000000000000000000000000000000000000",
+            "privacy_policy": "",
+            "purpose": "token.purpose",
+            "redemption_date": "token.redemption_date",
+            "redemption_value": 30,
+            "return_amount": "token.return_amount",
+            "return_date": "token.return_date",
+            "status": True,
+            "symbol": "token.symbol",
+            "token_address": _token_address,
+            "total_supply": 100,
+            "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000000",
+            "transfer_approval_required": False,
+            "transferable": False,
+        }
+        assert update_token.arguments == {
+            "face_value": 10000,
+            "interest_rate": 0.5,
+            "interest_payment_date": ["0101", "0701"],
+            "redemption_value": 11000,
+            "transferable": False,
+            "status": False,
+            "is_offering": False,
+            "is_redeemed": True,
+            "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
+            "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "contact_information": "問い合わせ先test",
+            "privacy_policy": "プライバシーポリシーtest",
+            "transfer_approval_required": True,
+            "memo": "m" * 10000,
+        }
+        assert update_token.status == 1
+
     # <Normal_2>
     # No request parameters
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.update")
-    def test_normal_2(self, IbetStraightBondContract_mock, client, db):
+    def test_normal_2(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account["keyfile_json"],
+            password="password".encode("utf-8"),
+        )
         _keyfile = test_account["keyfile_json"]
-        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # Prepare data : Token
+        token_contract = deploy_bond_token_contract(_issuer_address, issuer_private_key)
+        _token_address = token_contract.address
 
         # prepare data
         account = Account()
@@ -124,9 +217,6 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         token.abi = ""
         db.add(token)
 
-        # mock
-        IbetStraightBondContract_mock.side_effect = [None]
-
         # request target API
         req_param = {}
         resp = client.post(
@@ -142,14 +232,33 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         assert resp.status_code == 200
         assert resp.json() is None
 
+        token_attr_update = (
+            db.query(TokenAttrUpdate)
+            .filter(TokenAttrUpdate.token_address == _token_address)
+            .all()
+        )
+        assert len(token_attr_update) == 0
+
+        update_token = db.query(UpdateToken).first()
+        assert update_token is None
+
     # <Normal_3>
     # Authorization by auth token
-    @mock.patch("app.model.blockchain.token.IbetStraightBondContract.update")
-    def test_normal_3(self, IbetStraightBondContract_mock, client, db):
+    def test_normal_3(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account["keyfile_json"],
+            password="password".encode("utf-8"),
+        )
         _keyfile = test_account["keyfile_json"]
-        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # Prepare data : Token
+        token_contract = deploy_bond_token_contract(
+            _issuer_address,
+            issuer_private_key,
+        )
+        _token_address = token_contract.address
 
         # prepare data
         account = Account()
@@ -171,9 +280,6 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         token.token_address = _token_address
         token.abi = ""
         db.add(token)
-
-        # mock
-        IbetStraightBondContract_mock.side_effect = [None]
 
         # request target API
         req_param = {
@@ -202,11 +308,63 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         )
 
         # assertion
-        IbetStraightBondContract_mock.assert_any_call(
-            data=req_param, tx_from=_issuer_address, private_key=ANY
-        )
         assert resp.status_code == 200
         assert resp.json() is None
+
+        token_attr_update = (
+            db.query(TokenAttrUpdate)
+            .filter(TokenAttrUpdate.token_address == _token_address)
+            .all()
+        )
+        assert len(token_attr_update) == 1
+
+        update_token = db.query(UpdateToken).first()
+        assert update_token.token_address == _token_address
+        assert update_token.issuer_address == _issuer_address
+        assert update_token.type == TokenType.IBET_STRAIGHT_BOND.value
+        assert update_token.original_contents == {
+            "contact_information": "",
+            "contract_name": "IbetStraightBond",
+            "face_value": 20,
+            "interest_payment_date": ["", "", "", "", "", "", "", "", "", "", "", ""],
+            "interest_rate": 0.0,
+            "is_offering": False,
+            "is_redeemed": False,
+            "issuer_address": _issuer_address,
+            "memo": "",
+            "name": "token.name",
+            "personal_info_contract_address": "0x0000000000000000000000000000000000000000",
+            "privacy_policy": "",
+            "purpose": "token.purpose",
+            "redemption_date": "token.redemption_date",
+            "redemption_value": 30,
+            "return_amount": "token.return_amount",
+            "return_date": "token.return_date",
+            "status": True,
+            "symbol": "token.symbol",
+            "token_address": _token_address,
+            "total_supply": 100,
+            "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000000",
+            "transfer_approval_required": False,
+            "transferable": False,
+        }
+        assert update_token.arguments == {
+            "face_value": 10000,
+            "interest_rate": 0.5,
+            "interest_payment_date": ["0101", "0701"],
+            "redemption_value": 11000,
+            "transferable": False,
+            "status": False,
+            "is_offering": False,
+            "is_redeemed": True,
+            "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
+            "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "contact_information": "問い合わせ先test",
+            "privacy_policy": "プライバシーポリシーtest",
+            "transfer_approval_required": True,
+            "memo": "memo_test1",
+        }
+        assert update_token.status == 1
 
     ###########################################################################
     # Error Case

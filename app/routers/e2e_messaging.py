@@ -29,13 +29,13 @@ from coincurve import PublicKey
 from Crypto import Random
 from Crypto.PublicKey import RSA
 from eth_utils import keccak, to_checksum_address
-from fastapi import APIRouter, Depends, Path, Query
+from fastapi import APIRouter, Path, Query
 from fastapi.exceptions import HTTPException
 from sqlalchemy import asc, desc
-from sqlalchemy.orm import Session, aliased
+from sqlalchemy.orm import aliased
 from sqlalchemy.sql import func
 
-from app.database import db_session
+from app.database import DBSession
 from app.exceptions import (
     ContractRevertError,
     InvalidParameterError,
@@ -89,7 +89,8 @@ utc_tz = pytz.timezone("UTC")
     ),
 )
 def create_account(
-    data: E2EMessagingAccountCreateRequest, db: Session = Depends(db_session)
+    db: DBSession,
+    data: E2EMessagingAccountCreateRequest,
 ):
     """Create Account"""
     # Check Password Policy(EOA password)
@@ -184,7 +185,7 @@ def create_account(
 
 # GET: /e2e_messaging/accounts
 @router.get("/accounts", response_model=List[E2EMessagingAccountResponse])
-def list_all_accounts(db: Session = Depends(db_session)):
+def list_all_accounts(db: DBSession):
     """List all e2e messaging accounts"""
 
     # Create query to get the latest RSA key
@@ -243,7 +244,7 @@ def list_all_accounts(db: Session = Depends(db_session)):
     response_model=E2EMessagingAccountResponse,
     responses=get_routers_responses(404),
 )
-def retrieve_account(account_address: str, db: Session = Depends(db_session)):
+def retrieve_account(db: DBSession, account_address: str):
     """Retrieve an e2e messaging account"""
 
     _account = (
@@ -283,7 +284,7 @@ def retrieve_account(account_address: str, db: Session = Depends(db_session)):
     response_model=E2EMessagingAccountResponse,
     responses=get_routers_responses(404),
 )
-def delete_account(account_address: str, db: Session = Depends(db_session)):
+def delete_account(db: DBSession, account_address: str):
     """Logically delete an e2e messaging account"""
 
     _account = (
@@ -324,9 +325,9 @@ def delete_account(account_address: str, db: Session = Depends(db_session)):
     responses=get_routers_responses(422, 404),
 )
 def update_account_rsa_key(
+    db: DBSession,
     account_address: str,
     data: E2EMessagingAccountUpdateRsaKeyRequest,
-    db: Session = Depends(db_session),
 ):
     """Update an e2e messaging account rsa key"""
 
@@ -372,9 +373,9 @@ def update_account_rsa_key(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def change_eoa_password(
+    db: DBSession,
     account_address: str,
     data: E2EMessagingAccountChangeEOAPasswordRequest,
-    db: Session = Depends(db_session),
 ):
     """Change Account's EOA Password"""
 
@@ -436,9 +437,9 @@ def change_eoa_password(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def change_rsa_passphrase(
+    db: DBSession,
     account_address: str,
     data: E2EMessagingAccountChangeRSAPassphraseRequest,
-    db: Session = Depends(db_session),
 ):
     """Change Account's RSA Passphrase"""
 
@@ -508,13 +509,13 @@ def change_rsa_passphrase(
     responses=get_routers_responses(422),
 )
 def list_all_e2e_messages(
+    db: DBSession,
     from_address: Optional[str] = Query(None),
     to_address: Optional[str] = Query(None),
     _type: Optional[str] = Query(None, alias="type"),
     message: Optional[str] = Query(None, description="partial match"),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
-    db: Session = Depends(db_session),
 ):
     """List all e2e message"""
 
@@ -583,9 +584,7 @@ def list_all_e2e_messages(
     response_model=E2EMessagingResponse,
     responses=get_routers_responses(422, 404),
 )
-def retrieve_e2e_messaging(
-    _id: int = Path(..., alias="id"), db: Session = Depends(db_session)
-):
+def retrieve_e2e_messaging(db: DBSession, _id: int = Path(..., alias="id")):
     """Retrieve an e2e message"""
 
     # Get E2E Messaging

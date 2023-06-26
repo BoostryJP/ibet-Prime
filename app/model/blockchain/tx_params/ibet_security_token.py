@@ -27,13 +27,13 @@ class TransferParams(BaseModel):
 
     @validator("from_address")
     def from_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("from_address is not a valid address")
         return v
 
     @validator("to_address")
     def to_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("to_address is not a valid address")
         return v
 
@@ -44,7 +44,7 @@ class AdditionalIssueParams(BaseModel):
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("account_address is not a valid address")
         return v
 
@@ -55,7 +55,7 @@ class RedeemParams(BaseModel):
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("account_address is not a valid address")
         return v
 
@@ -77,7 +77,7 @@ class LockParams(BaseModel):
 
     @validator("lock_address")
     def lock_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("lock_address is not a valid address")
         return v
 
@@ -91,18 +91,18 @@ class ForceUnlockParams(BaseModel):
 
     @validator("lock_address")
     def lock_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("lock_address is not a valid address")
         return v
 
     @validator("account_address")
     def account_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("account_address is not a valid address")
         return v
 
     @validator("recipient_address")
     def recipient_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("recipient_address is not a valid address")
         return v

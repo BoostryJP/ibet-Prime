@@ -23,7 +23,7 @@ import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from itertools import groupby
-from typing import Optional, Type
+from typing import Optional
 
 from eth_utils import to_checksum_address
 from sqlalchemy import create_engine
@@ -141,7 +141,7 @@ class Processor:
             set(issued_token_address_list) ^ set(loaded_token_address_list)
         )
 
-        load_required_token_list: list[Type[Token]] = (
+        load_required_token_list: list[Token] = (
             db_session.query(Token)
             .filter(Token.type == TokenType.IBET_SHARE)
             .filter(Token.token_status == 1)
@@ -326,11 +326,14 @@ class Processor:
                         value = args.get("value", 0)
                         data = args.get("data", "")
                         event_created = self.__gen_block_timestamp(event=event)
+                        tx = web3.eth.get_transaction(event["transactionHash"])
+                        msg_sender = tx["from"]
 
                         # Index Lock event
                         self.__insert_lock_idx(
                             db_session=db_session,
                             transaction_hash=event["transactionHash"].hex(),
+                            msg_sender=msg_sender,
                             block_number=event["blockNumber"],
                             token_address=token.address,
                             lock_address=lock_address,
@@ -432,11 +435,14 @@ class Processor:
                         value = args.get("value", 0)
                         data = args.get("data", "")
                         event_created = self.__gen_block_timestamp(event=event)
+                        tx = web3.eth.get_transaction(event["transactionHash"])
+                        msg_sender = tx["from"]
 
                         # Index Unlock event
                         self.__insert_unlock_idx(
                             db_session=db_session,
                             transaction_hash=event["transactionHash"].hex(),
+                            msg_sender=msg_sender,
                             block_number=event["blockNumber"],
                             token_address=token.address,
                             lock_address=lock_address,
@@ -933,6 +939,7 @@ class Processor:
     def __insert_lock_idx(
         db_session: Session,
         transaction_hash: str,
+        msg_sender: str,
         block_number: int,
         token_address: str,
         lock_address: str,
@@ -944,6 +951,7 @@ class Processor:
         """Registry Lock event data in DB
 
         :param transaction_hash: transaction hash
+        :param msg_sender: message sender
         :param token_address: token address
         :param lock_address: lock address
         :param account_address: account address
@@ -959,6 +967,7 @@ class Processor:
 
         lock = IDXLock()
         lock.transaction_hash = transaction_hash
+        lock.msg_sender = msg_sender
         lock.block_number = block_number
         lock.token_address = token_address
         lock.lock_address = lock_address
@@ -972,6 +981,7 @@ class Processor:
     def __insert_unlock_idx(
         db_session: Session,
         transaction_hash: str,
+        msg_sender: str,
         block_number: int,
         token_address: str,
         lock_address: str,
@@ -984,6 +994,7 @@ class Processor:
         """Registry Unlock event data in DB
 
         :param transaction_hash: transaction hash
+        :param msg_sender: message sender
         :param token_address: token address
         :param lock_address: lock address
         :param account_address: account address
@@ -1000,6 +1011,7 @@ class Processor:
 
         unlock = IDXUnlock()
         unlock.transaction_hash = transaction_hash
+        unlock.msg_sender = msg_sender
         unlock.block_number = block_number
         unlock.token_address = token_address
         unlock.lock_address = lock_address

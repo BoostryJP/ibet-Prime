@@ -1,7 +1,7 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-23.3-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-23.6-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
@@ -20,7 +20,7 @@ English | [日本語](./README_JA.md)
 
 ## Dependencies
 
-- [Python3](https://www.python.org/downloads/release/python-3811/) - version 3.10
+- [Python3](https://www.python.org/downloads/release/python-3811/) - version 3.11
 - [PostgreSQL](https://www.postgresql.org/) - version 13
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - We support the official GoQuorum node of [ibet-Network](https://github.com/BoostryJP/ibet-Network).
@@ -50,7 +50,7 @@ English | [日本語](./README_JA.md)
 
 Install python packages with:
 ```bash
-$ poetry install --no-root --only main -E explorer
+$ poetry install --no-root --only main -E ibet-explorer
 ```
 
 ### Install pre-commit hook

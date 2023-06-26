@@ -66,6 +66,7 @@ class LockEventCategory(str, Enum):
 class LockEvent(BaseModel):
     category: LockEventCategory = Field(description="Event category")
     transaction_hash: str = Field(description="Transaction hash")
+    msg_sender: Optional[str] = Field(description="Message sender", nullable=True)
     issuer_address: str = Field(description="Issuer address")
     token_address: str = Field(description="Token address")
     token_type: TokenType = Field(description="Token type")
@@ -102,6 +103,7 @@ class ListAllLockEventsQuery:
 
     token_address: Optional[str] = Query(default=None, description="Token address")
     token_type: Optional[TokenType] = Query(default=None, description="Token type")
+    msg_sender: Optional[str] = Query(default=None, description="Msg sender")
     lock_address: Optional[str] = Query(default=None, description="Lock address")
     recipient_address: Optional[str] = Query(
         default=None, description="Recipient address"
@@ -121,31 +123,24 @@ class ListAllLockEventsQuery:
 class ForceUnlockRequest(BaseModel):
     token_address: str = Field(..., description="Token address")
     lock_address: str = Field(..., description="Lock address")
-    account_address: str = Field(..., description="Account address")
     recipient_address: str = Field(..., description="Recipient address")
     value: PositiveInt = Field(..., description="Unlock amount")
 
     @validator("token_address")
     def token_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("token_address is not a valid address")
         return v
 
     @validator("lock_address")
     def lock_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("lock_address is not a valid address")
-        return v
-
-    @validator("account_address")
-    def account_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
-            raise ValueError("account_address is not a valid address")
         return v
 
     @validator("recipient_address")
     def recipient_address_is_valid_address(cls, v):
-        if not Web3.isAddress(v):
+        if not Web3.is_address(v):
             raise ValueError("recipient_address is not a valid address")
         return v
 

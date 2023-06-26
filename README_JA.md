@@ -1,7 +1,7 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-23.3-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-23.6-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
@@ -21,7 +21,7 @@
 
 ## 依存
 
-- [Python3](https://www.python.org/downloads/release/python-3811/) - バージョン 3.10
+- [Python3](https://www.python.org/downloads/release/python-3811/) - バージョン 3.11
 - [PostgreSQL](https://www.postgresql.org/) - バージョン 13
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - [ibet-Network](https://github.com/BoostryJP/ibet-Network) の公式の GoQuorum をサポートしています。
@@ -51,7 +51,7 @@
 
 以下のコマンドで Python パッケージをインストールします。
 ```bash
-$ poetry install --no-root --only main -E explorer
+$ poetry install --no-root --only main -E ibet-explorer
 ```
 
 ### pre-commit hookのインストール

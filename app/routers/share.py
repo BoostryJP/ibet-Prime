@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from typing import List, Optional, Type
+from typing import List, Optional
 
 from eth_keyfile import decode_keyfile_json
 from fastapi import APIRouter, Depends, Header, Query, Request
@@ -38,11 +38,11 @@ from sqlalchemy import (
     null,
     or_,
 )
-from sqlalchemy.orm import Session, aliased
+from sqlalchemy.orm import aliased
 
 import config
 from app import log
-from app.database import db_session
+from app.database import DBSession
 from app.exceptions import (
     AuthorizationError,
     ContractRevertError,
@@ -118,6 +118,8 @@ from app.model.schema import (  # Request; Response
     ListAllTokenLockEventsSortItem,
     ListBatchIssueRedeemUploadResponse,
     ListBatchRegisterPersonalInfoUploadResponse,
+    ListTokenHistoryQuery,
+    ListTokenHistoryResponse,
     ListTransferHistoryQuery,
     ListTransferHistorySortItem,
     LockEventCategory,
@@ -125,6 +127,7 @@ from app.model.schema import (  # Request; Response
     ScheduledEventIdResponse,
     ScheduledEventResponse,
     TokenAddressResponse,
+    TokenHistoryResponse,
     TransferApprovalHistoryResponse,
     TransferApprovalsResponse,
     TransferApprovalTokenResponse,
@@ -149,6 +152,7 @@ router = APIRouter(
 
 LOG = log.get_logger()
 local_tz = timezone(config.TZ)
+utc_tz = timezone("UTC")
 
 
 # POST: /share/tokens
@@ -160,12 +164,12 @@ local_tz = timezone(config.TZ)
     ),
 )
 def issue_token(
+    db: DBSession,
     request: Request,
     token: IbetShareCreate,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Issue ibetShare token"""
 
@@ -247,6 +251,7 @@ def issue_token(
         _update_token.issuer_address = issuer_address
         _update_token.type = TokenType.IBET_SHARE.value
         _update_token.arguments = token_dict
+        _update_token.original_contents = None
         _update_token.status = 0  # pending
         _update_token.trigger = "Issue"
         db.add(_update_token)
@@ -285,6 +290,17 @@ def issue_token(
         _utxo.block_timestamp = datetime.utcfromtimestamp(block["timestamp"])
         db.add(_utxo)
 
+        # Insert token history
+        _update_token = UpdateToken()
+        _update_token.token_address = contract_address
+        _update_token.issuer_address = issuer_address
+        _update_token.type = TokenType.IBET_SHARE.value
+        _update_token.arguments = token_dict
+        _update_token.original_contents = None
+        _update_token.status = 1  # succeeded
+        _update_token.trigger = "Issue"
+        db.add(_update_token)
+
         token_status = 1  # succeeded
 
     # Register token data
@@ -311,7 +327,8 @@ def issue_token(
     responses=get_routers_responses(422),
 )
 def list_all_tokens(
-    issuer_address: Optional[str] = Header(None), db: Session = Depends(db_session)
+    db: DBSession,
+    issuer_address: Optional[str] = Header(None),
 ):
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -349,7 +366,7 @@ def list_all_tokens(
     response_model=IbetShareResponse,
     responses=get_routers_responses(404, InvalidParameterError),
 )
-def retrieve_token(token_address: str, db: Session = Depends(db_session)):
+def retrieve_token(db: DBSession, token_address: str):
     """Retrieve token"""
     # Get Token
     _token = (
@@ -389,13 +406,13 @@ def retrieve_token(token_address: str, db: Session = Depends(db_session)):
     ),
 )
 def update_token(
+    db: DBSession,
     request: Request,
     token_address: str,
     token: IbetShareUpdate,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Update a token"""
 
@@ -449,6 +466,84 @@ def update_token(
     return
 
 
+# GET: /share/tokens/{token_address}/history
+@router.get(
+    "/tokens/{token_address}/history",
+    response_model=ListTokenHistoryResponse,
+    responses=get_routers_responses(404, InvalidParameterError),
+)
+def list_share_history(
+    db: DBSession,
+    token_address: str,
+    request_query: ListTokenHistoryQuery = Depends(),
+):
+    """List token history"""
+    query = (
+        db.query(UpdateToken)
+        .filter(UpdateToken.type == TokenType.IBET_SHARE)
+        .filter(UpdateToken.token_address == token_address)
+        .filter(UpdateToken.status == 1)
+    )
+    total = query.count()
+
+    if request_query.trigger:
+        query = query.filter(UpdateToken.trigger == request_query.trigger)
+    if request_query.modified_contents:
+        query = query.filter(
+            cast(UpdateToken.arguments, String).like(
+                "%" + request_query.modified_contents + "%"
+            )
+        )
+    if request_query.created_from:
+        query = query.filter(
+            UpdateToken.created
+            >= local_tz.localize(request_query.created_from).astimezone(utc_tz)
+        )
+    if request_query.created_to:
+        query = query.filter(
+            UpdateToken.created
+            <= local_tz.localize(request_query.created_to).astimezone(utc_tz)
+        )
+
+    count = query.count()
+
+    # Sort
+    sort_attr = getattr(UpdateToken, request_query.sort_item, None)
+    if request_query.sort_order == 0:  # ASC
+        query = query.order_by(sort_attr)
+    else:  # DESC
+        query = query.order_by(desc(sort_attr))
+    if request_query.sort_item != UpdateToken.created:
+        # NOTE: Set secondary sort for consistent results
+        query = query.order_by(desc(UpdateToken.created))
+
+    # Pagination
+    if request_query.limit is not None:
+        query = query.limit(request_query.limit)
+    if request_query.offset is not None:
+        query = query.offset(request_query.offset)
+
+    return json_response(
+        {
+            "result_set": {
+                "count": count,
+                "offset": request_query.offset,
+                "limit": request_query.limit,
+                "total": total,
+            },
+            "history": [
+                {
+                    "original_contents": h.original_contents,
+                    "modified_contents": h.arguments,
+                    "trigger": h.trigger,
+                    "created": utc_tz.localize(h.created).astimezone(local_tz),
+                }
+                for h in query.all()
+            ],
+        }
+    )
+
+
 # GET: /share/tokens/{token_address}/additional_issue
 @router.get(
     "/tokens/{token_address}/additional_issue",
@@ -456,12 +551,12 @@ def update_token(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def list_additional_issuance_history(
+    db: DBSession,
     token_address: str,
     sort_item: IDXIssueRedeemSortItem = Query(IDXIssueRedeemSortItem.BLOCK_TIMESTAMP),
     sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
-    db: Session = Depends(db_session),
 ):
     """List additional issuance history"""
 
@@ -502,7 +597,7 @@ def list_additional_issuance_history(
         query = query.limit(limit)
     if offset is not None:
         query = query.offset(offset)
-    _events: List[Type[IDXIssueRedeem]] = query.all()
+    _events: List[IDXIssueRedeem] = query.all()
 
     history = []
     for _event in _events:
@@ -546,13 +641,13 @@ def list_additional_issuance_history(
     ),
 )
 def additional_issue(
+    db: DBSession,
     request: Request,
     token_address: str,
     data: IbetShareAdditionalIssue,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Additional issue"""
 
@@ -611,13 +706,13 @@ def additional_issue(
     responses=get_routers_responses(422),
 )
 def list_all_additional_issue_upload(
+    db: DBSession,
     token_address: str,
     processed: Optional[bool] = Query(None),
     sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc (created)"),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
     issuer_address: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     # Get a list of uploads
     query = (
@@ -651,7 +746,7 @@ def list_all_additional_issue_upload(
     if offset is not None:
         query = query.offset(offset)
 
-    _upload_list: list[Type[BatchIssueRedeemUpload]] = query.all()
+    _upload_list: list[BatchIssueRedeemUpload] = query.all()
 
     uploads = []
     for _upload in _upload_list:
@@ -688,13 +783,13 @@ def list_all_additional_issue_upload(
     ),
 )
 def additional_issue_in_batch(
+    db: DBSession,
     request: Request,
     token_address: str,
     data: List[IbetShareAdditionalIssue],
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Additional issue (Batch)"""
 
@@ -764,10 +859,10 @@ def additional_issue_in_batch(
     responses=get_routers_responses(422, 404),
 )
 def retrieve_batch_additional_issue(
+    db: DBSession,
     token_address: str,
     batch_id: str,
     issuer_address: str = Header(...),
-    db: Session = Depends(db_session),
 ):
     """Get Batch status for additional issue"""
 
@@ -790,7 +885,7 @@ def retrieve_batch_additional_issue(
         raise HTTPException(status_code=404, detail="batch not found")
 
     # Get Batch Records
-    record_list: List[Type[BatchIssueRedeem]] = (
+    record_list: List[BatchIssueRedeem] = (
         db.query(BatchIssueRedeem).filter(BatchIssueRedeem.upload_id == batch_id).all()
     )
 
@@ -816,12 +911,12 @@ def retrieve_batch_additional_issue(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def list_redeem_history(
+    db: DBSession,
     token_address: str,
     sort_item: IDXIssueRedeemSortItem = Query(IDXIssueRedeemSortItem.BLOCK_TIMESTAMP),
     sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
-    db: Session = Depends(db_session),
 ):
     """List redemption history"""
 
@@ -906,13 +1001,13 @@ def list_redeem_history(
     ),
 )
 def redeem_token(
+    db: DBSession,
     request: Request,
     token_address: str,
     data: IbetShareRedeem,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Redeem a token"""
 
@@ -971,13 +1066,13 @@ def redeem_token(
     responses=get_routers_responses(422),
 )
 def list_all_redeem_upload(
+    db: DBSession,
     token_address: str,
     processed: Optional[bool] = Query(None),
     sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc (created)"),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
     issuer_address: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     # Get a list of uploads
     query = (
@@ -1048,13 +1143,13 @@ def list_all_redeem_upload(
     ),
 )
 def redeem_token_in_batch(
+    db: DBSession,
     request: Request,
     token_address: str,
     data: List[IbetShareRedeem],
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Redeem a token (Batch)"""
 
@@ -1124,10 +1219,10 @@ def redeem_token_in_batch(
     responses=get_routers_responses(422, 404),
 )
 def retrieve_batch_additional_issue(
+    db: DBSession,
     token_address: str,
     batch_id: str,
     issuer_address: str = Header(...),
-    db: Session = Depends(db_session),
 ):
     """Get Batch status for additional issue"""
 
@@ -1150,7 +1245,7 @@ def retrieve_batch_additional_issue(
         raise HTTPException(status_code=404, detail="batch not found")
 
     # Get Batch Records
-    record_list: List[Type[BatchIssueRedeem]] = (
+    record_list: List[BatchIssueRedeem] = (
         db.query(BatchIssueRedeem).filter(BatchIssueRedeem.upload_id == batch_id).all()
     )
 
@@ -1175,9 +1270,9 @@ def retrieve_batch_additional_issue(
     response_model=List[ScheduledEventResponse],
 )
 def list_all_scheduled_events(
+    db: DBSession,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """List all scheduled update events"""
 
@@ -1231,13 +1326,13 @@ def list_all_scheduled_events(
     ),
 )
 def schedule_new_update_event(
+    db: DBSession,
     request: Request,
     token_address: str,
     event_data: IbetShareScheduledUpdate,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Register a new update event"""
 
@@ -1293,10 +1388,10 @@ def schedule_new_update_event(
     responses=get_routers_responses(404),
 )
 def retrieve_token_event(
+    db: DBSession,
     token_address: str,
     scheduled_event_id: str,
     issuer_address: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Retrieve a scheduled token event"""
 
@@ -1345,13 +1440,13 @@ def retrieve_token_event(
     responses=get_routers_responses(422, 401, 404, AuthorizationError),
 )
 def delete_scheduled_event(
+    db: DBSession,
     request: Request,
     token_address: str,
     scheduled_event_id: str,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Delete a scheduled event"""
 
@@ -1408,10 +1503,10 @@ def delete_scheduled_event(
     responses=get_routers_responses(422, InvalidParameterError, 404),
 )
 def list_all_holders(
+    db: DBSession,
     token_address: str,
     include_former_holder: bool = False,
     issuer_address: str = Header(...),
-    db: Session = Depends(db_session),
 ):
     """List all share token holders"""
 
@@ -1517,9 +1612,9 @@ def list_all_holders(
     responses=get_routers_responses(422, InvalidParameterError, 404),
 )
 def count_number_of_holders(
+    db: DBSession,
     token_address: str,
     issuer_address: str = Header(...),
-    db: Session = Depends(db_session),
 ):
     """Count the number of holders"""
 
@@ -1585,10 +1680,10 @@ def count_number_of_holders(
     responses=get_routers_responses(422, InvalidParameterError, 404),
 )
 def retrieve_holder(
+    db: DBSession,
     token_address: str,
     account_address: str,
     issuer_address: str = Header(...),
-    db: Session = Depends(db_session),
 ):
     """Retrieve share token holder"""
 
@@ -1699,13 +1794,13 @@ def retrieve_holder(
     ),
 )
 def register_holder_personal_info(
+    db: DBSession,
     request: Request,
     token_address: str,
     personal_info: RegisterPersonalInfoRequest,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Register the holder's personal information"""
 
@@ -1764,13 +1859,13 @@ def register_holder_personal_info(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def list_all_personal_info_batch_registration_uploads(
+    db: DBSession,
     token_address: str,
     issuer_address: str = Header(...),
     status: Optional[str] = Query(None),
     sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc (created)"),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
-    db: Session = Depends(db_session),
 ):
     """List all personal information batch registration uploads"""
 
@@ -1848,13 +1943,13 @@ def list_all_personal_info_batch_registration_uploads(
     ),
 )
 def batch_register_personal_info(
+    db: DBSession,
     request: Request,
     token_address: str,
     personal_info_list: List[RegisterPersonalInfoRequest],
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Create Batch for register personal information"""
 
@@ -1926,10 +2021,10 @@ def batch_register_personal_info(
     responses=get_routers_responses(422, 404),
 )
 def retrieve_batch_register_personal_info(
+    db: DBSession,
     token_address: str,
     batch_id: str,
     issuer_address: str = Header(...),
-    db: Session = Depends(db_session),
 ):
     """Get Batch status for register personal information"""
 
@@ -1986,10 +2081,10 @@ def retrieve_batch_register_personal_info(
     responses=get_routers_responses(422),
 )
 def list_all_lock_events_by_share(
+    db: DBSession,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
     request_query: ListAllTokenLockEventsQuery = Depends(),
-    db: Session = Depends(db_session),
 ):
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -2005,6 +2100,7 @@ def list_all_lock_events_by_share(
         db.query(
             literal(value=LockEventCategory.Lock.value, type_=String).label("category"),
             IDXLock.transaction_hash.label("transaction_hash"),
+            IDXLock.msg_sender.label("msg_sender"),
             IDXLock.token_address.label("token_address"),
             IDXLock.lock_address.label("lock_address"),
             IDXLock.account_address.label("account_address"),
@@ -2028,6 +2124,7 @@ def list_all_lock_events_by_share(
                 "category"
             ),
             IDXUnlock.transaction_hash.label("transaction_hash"),
+            IDXUnlock.msg_sender.label("msg_sender"),
             IDXUnlock.token_address.label("token_address"),
             IDXUnlock.lock_address.label("lock_address"),
             IDXUnlock.account_address.label("account_address"),
@@ -2056,6 +2153,8 @@ def list_all_lock_events_by_share(
         case _:
             query = query_lock.union_all(query_unlock)
 
+    if request_query.msg_sender is not None:
+        query = query.filter(column("msg_sender") == request_query.msg_sender)
     if request_query.account_address is not None:
         query = query.filter(column("account_address") == request_query.account_address)
     if request_query.lock_address is not None:
@@ -2090,24 +2189,25 @@ def list_all_lock_events_by_share(
 
     resp_data = []
     for lock_event in lock_events:
-        _token = lock_event[9]
+        _token = lock_event[10]
         _share = IbetShareContract(_token.token_address).get()
         token_name = _share.name
 
-        block_timestamp_utc = timezone("UTC").localize(lock_event[8])
+        block_timestamp_utc = timezone("UTC").localize(lock_event[9])
         resp_data.append(
             {
                 "category": lock_event[0],
                 "transaction_hash": lock_event[1],
+                "msg_sender": lock_event[2],
                 "issuer_address": _token.issuer_address,
-                "token_address": lock_event[2],
+                "token_address": lock_event[3],
                 "token_type": _token.type,
                 "token_name": token_name,
-                "lock_address": lock_event[3],
-                "account_address": lock_event[4],
-                "recipient_address": lock_event[5],
-                "value": lock_event[6],
-                "data": lock_event[7],
+                "lock_address": lock_event[4],
+                "account_address": lock_event[5],
+                "recipient_address": lock_event[6],
+                "value": lock_event[7],
+                "data": lock_event[8],
                 "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat(),
             }
         )
@@ -2139,12 +2239,12 @@ def list_all_lock_events_by_share(
     ),
 )
 def transfer_ownership(
+    db: DBSession,
     request: Request,
     token: IbetShareTransfer,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Transfer token ownership"""
 
@@ -2202,9 +2302,9 @@ def transfer_ownership(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def list_transfer_history(
+    db: DBSession,
     token_address: str,
     request_query: ListTransferHistoryQuery = Depends(),
-    db: Session = Depends(db_session),
 ):
     """List token transfer history"""
     # Get token
@@ -2285,10 +2385,10 @@ def list_transfer_history(
     responses=get_routers_responses(422),
 )
 def list_transfer_approval_history(
+    db: DBSession,
     issuer_address: Optional[str] = Header(None),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
-    db: Session = Depends(db_session),
 ):
     """List transfer approval history"""
     # Create a subquery for 'status' added IDXTransferApproval
@@ -2418,6 +2518,7 @@ def list_transfer_approval_history(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def list_token_transfer_approval_history(
+    db: DBSession,
     token_address: str,
     from_address: Optional[str] = Query(None),
     to_address: Optional[str] = Query(None),
@@ -2433,7 +2534,6 @@ def list_token_transfer_approval_history(
     sort_order: Optional[int] = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
-    db: Session = Depends(db_session),
 ):
     """List token transfer approval history"""
     # Get token
@@ -2589,6 +2689,16 @@ def list_token_transfer_approval_history(
         else:
             approval_blocktimestamp = None
 
+        if _transfer_approval.cancellation_blocktimestamp is not None:
+            cancellation_blocktimestamp_utc = timezone("UTC").localize(
+                _transfer_approval.cancellation_blocktimestamp
+            )
+            cancellation_blocktimestamp = cancellation_blocktimestamp_utc.astimezone(
+                local_tz
+            ).isoformat()
+        else:
+            cancellation_blocktimestamp = None
+
         transfer_approval_history.append(
             {
                 "id": _transfer_approval.id,
@@ -2602,6 +2712,7 @@ def list_token_transfer_approval_history(
                 "application_blocktimestamp": application_blocktimestamp,
                 "approval_datetime": approval_datetime,
                 "approval_blocktimestamp": approval_blocktimestamp,
+                "cancellation_blocktimestamp": cancellation_blocktimestamp,
                 "cancelled": cancelled,
                 "escrow_finished": escrow_finished,
                 "transfer_approved": transfer_approved,
@@ -2637,6 +2748,7 @@ def list_token_transfer_approval_history(
     ),
 )
 def update_transfer_approval(
+    db: DBSession,
     request: Request,
     token_address: str,
     id: int,
@@ -2644,7 +2756,6 @@ def update_transfer_approval(
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Update on the status of a share transfer approval"""
 
@@ -2808,7 +2919,9 @@ def update_transfer_approval(
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def retrieve_transfer_approval_history(
-    token_address: str, id: int, db: Session = Depends(db_session)
+    db: DBSession,
+    token_address: str,
+    id: int,
 ):
     """Retrieve share token transfer approval history"""
     # Get token
@@ -2925,6 +3038,16 @@ def retrieve_transfer_approval_history(
     else:
         approval_blocktimestamp = None
 
+    if _transfer_approval.cancellation_blocktimestamp is not None:
+        cancellation_blocktimestamp_utc = timezone("UTC").localize(
+            _transfer_approval.cancellation_blocktimestamp
+        )
+        cancellation_blocktimestamp = cancellation_blocktimestamp_utc.astimezone(
+            local_tz
+        ).isoformat()
+    else:
+        cancellation_blocktimestamp = None
+
     history = {
         "id": _transfer_approval.id,
         "token_address": token_address,
@@ -2937,6 +3060,7 @@ def retrieve_transfer_approval_history(
         "application_blocktimestamp": application_blocktimestamp,
         "approval_datetime": approval_datetime,
         "approval_blocktimestamp": approval_blocktimestamp,
+        "cancellation_blocktimestamp": cancellation_blocktimestamp,
         "cancelled": cancelled,
         "escrow_finished": escrow_finished,
         "transfer_approved": transfer_approved,
@@ -2956,12 +3080,12 @@ def retrieve_transfer_approval_history(
     ),
 )
 def bulk_transfer_ownership(
+    db: DBSession,
     request: Request,
     tokens: List[IbetShareTransfer],
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Bulk transfer token ownership"""
 
@@ -3036,7 +3160,7 @@ def bulk_transfer_ownership(
     responses=get_routers_responses(422),
 )
 def list_bulk_transfer_upload(
-    issuer_address: Optional[str] = Header(None), db: Session = Depends(db_session)
+    db: DBSession, issuer_address: Optional[str] = Header(None)
 ):
     """List bulk transfer uploads"""
 
@@ -3082,9 +3206,9 @@ def list_bulk_transfer_upload(
     responses=get_routers_responses(422, 404),
 )
 def retrieve_bulk_transfer(
+    db: DBSession,
     upload_id: str,
     issuer_address: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Retrieve a bulk transfer upload"""
 

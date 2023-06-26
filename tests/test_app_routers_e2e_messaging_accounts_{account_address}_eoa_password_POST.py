@@ -39,7 +39,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         old_password = "password"
-        new_password = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~"
+        new_password = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 *+.\\()?[]^$-|!#%&\"',/:;<=>@_`{}~"
 
         # prepare data
         _account = E2EMessagingAccount()
@@ -204,7 +204,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
         old_password = "password"
-        new_password = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \*\+\.\\\(\)\?\[\]\^\$\-\|!#%&\"',/:;<=>@_`{}~"
+        new_password = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 *+.\\()?[]^$-|!#%&\"',/:;<=>@_`{}~"
 
         # prepare data
         _account = E2EMessagingAccount()

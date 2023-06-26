@@ -18,14 +18,24 @@ SPDX-License-Identifier: Apache-2.0
 """
 import hashlib
 from unittest import mock
-from unittest.mock import ANY, MagicMock
+from unittest.mock import MagicMock
 
+from eth_keyfile import decode_keyfile_json
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
 import config
 from app.exceptions import SendTransactionError
-from app.model.db import Account, AuthToken, Token, TokenType
+from app.model.blockchain import IbetShareContract
+from app.model.db import (
+    Account,
+    AuthToken,
+    Token,
+    TokenAttrUpdate,
+    TokenType,
+    UpdateToken,
+)
+from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
@@ -33,6 +43,28 @@ web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
+def deploy_share_token_contract(
+    address,
+    private_key,
+):
+    arguments = [
+        "token.name",
+        "token.symbol",
+        20,
+        100,
+        3,
+        "token.dividend_record_date",
+        "token.dividend_payment_date",
+        "token.cancellation_date",
+        30,
+    ]
+    share_contract = IbetShareContract()
+    token_address, _, _ = share_contract.create(arguments, address, private_key)
+
+    return ContractUtils.get_contract("IbetShare", token_address)
+
+
+@mock.patch("app.model.blockchain.token.TX_GAS_LIMIT", 8000000)
 class TestAppRoutersShareTokensTokenAddressPOST:
     # target API endpoint
     base_url = "/share/tokens/{}"
@@ -42,12 +74,21 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     ###########################################################################
 
     # <Normal_1>
-    @mock.patch("app.model.blockchain.token.IbetShareContract.update")
-    def test_normal_1(self, IbetShareContract_mock, client, db):
+    def test_normal_1(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account["keyfile_json"],
+            password="password".encode("utf-8"),
+        )
         _keyfile = test_account["keyfile_json"]
-        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # Prepare data : Token
+        token_contract = deploy_share_token_contract(
+            _issuer_address,
+            issuer_private_key,
+        )
+        _token_address = token_contract.address
 
         # prepare data
         account = Account()
@@ -63,9 +104,6 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.token_address = _token_address
         token.abi = ""
         db.add(token)
-
-        # mock
-        IbetShareContract_mock.side_effect = [None]
 
         # request target API
         req_param = {
@@ -94,21 +132,80 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             },
         )
 
-        # assertion
-        IbetShareContract_mock.assert_any_call(
-            data=req_param, tx_from=_issuer_address, private_key=ANY
-        )
         assert resp.status_code == 200
         assert resp.json() is None
 
+        token_attr_update = (
+            db.query(TokenAttrUpdate)
+            .filter(TokenAttrUpdate.token_address == _token_address)
+            .all()
+        )
+        assert len(token_attr_update) == 1
+
+        update_token = db.query(UpdateToken).first()
+        assert update_token.token_address == _token_address
+        assert update_token.issuer_address == _issuer_address
+        assert update_token.type == TokenType.IBET_SHARE.value
+        assert update_token.original_contents == {
+            "cancellation_date": "token.cancellation_date",
+            "contact_information": "",
+            "contract_name": "IbetShare",
+            "dividend_payment_date": "token.dividend_payment_date",
+            "dividend_record_date": "token.dividend_record_date",
+            "dividends": 3e-13,
+            "is_canceled": False,
+            "is_offering": False,
+            "issue_price": 20,
+            "issuer_address": _issuer_address,
+            "memo": "",
+            "name": "token.name",
+            "personal_info_contract_address": "0x0000000000000000000000000000000000000000",
+            "principal_value": 30,
+            "privacy_policy": "",
+            "status": True,
+            "symbol": "token.symbol",
+            "token_address": _token_address,
+            "total_supply": 100,
+            "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000000",
+            "transfer_approval_required": False,
+            "transferable": False,
+        }
+        assert update_token.arguments == {
+            "cancellation_date": "20221231",
+            "dividends": 345.67,
+            "dividend_record_date": "20211231",
+            "dividend_payment_date": "20211231",
+            "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
+            "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "transferable": False,
+            "status": False,
+            "is_offering": False,
+            "contact_information": "問い合わせ先test",
+            "privacy_policy": "プライバシーポリシーtest",
+            "transfer_approval_required": False,
+            "principal_value": 1000,
+            "is_canceled": True,
+            "memo": "m" * 10000,
+        }
+        assert update_token.status == 1
+
     # <Normal_2>
     # No request parameters
-    @mock.patch("app.model.blockchain.token.IbetShareContract.update")
-    def test_normal_2(self, IbetShareContract_mock, client, db):
+    def test_normal_2(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account["keyfile_json"],
+            password="password".encode("utf-8"),
+        )
         _keyfile = test_account["keyfile_json"]
-        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # Prepare data : Token
+        token_contract = deploy_share_token_contract(
+            _issuer_address,
+            issuer_private_key,
+        )
+        _token_address = token_contract.address
 
         # prepare data
         account = Account()
@@ -125,9 +222,6 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.abi = ""
         db.add(token)
 
-        # mock
-        IbetShareContract_mock.side_effect = [None]
-
         # request target API
         req_param = {}
         resp = client.post(
@@ -143,14 +237,33 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         assert resp.status_code == 200
         assert resp.json() is None
 
+        token_attr_update = (
+            db.query(TokenAttrUpdate)
+            .filter(TokenAttrUpdate.token_address == _token_address)
+            .all()
+        )
+        assert len(token_attr_update) == 0
+
+        update_token = db.query(UpdateToken).first()
+        assert update_token is None
+
     # <Normal_3>
     # Authorization by auth-token
-    @mock.patch("app.model.blockchain.token.IbetShareContract.update")
-    def test_normal_3(self, IbetShareContract_mock, client, db):
+    def test_normal_3(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account["keyfile_json"],
+            password="password".encode("utf-8"),
+        )
         _keyfile = test_account["keyfile_json"]
-        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # Prepare data : Token
+        token_contract = deploy_share_token_contract(
+            _issuer_address,
+            issuer_private_key,
+        )
+        _token_address = token_contract.address
 
         # prepare data
         account = Account()
@@ -172,9 +285,6 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.token_address = _token_address
         token.abi = ""
         db.add(token)
-
-        # mock
-        IbetShareContract_mock.side_effect = [None]
 
         # request target API
         req_param = {
@@ -204,20 +314,80 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         )
 
         # assertion
-        IbetShareContract_mock.assert_any_call(
-            data=req_param, tx_from=_issuer_address, private_key=ANY
-        )
         assert resp.status_code == 200
         assert resp.json() is None
 
+        token_attr_update = (
+            db.query(TokenAttrUpdate)
+            .filter(TokenAttrUpdate.token_address == _token_address)
+            .all()
+        )
+        assert len(token_attr_update) == 1
+
+        update_token = db.query(UpdateToken).first()
+        assert update_token.token_address == _token_address
+        assert update_token.issuer_address == _issuer_address
+        assert update_token.type == TokenType.IBET_SHARE.value
+        assert update_token.original_contents == {
+            "cancellation_date": "token.cancellation_date",
+            "contact_information": "",
+            "contract_name": "IbetShare",
+            "dividend_payment_date": "token.dividend_payment_date",
+            "dividend_record_date": "token.dividend_record_date",
+            "dividends": 3e-13,
+            "is_canceled": False,
+            "is_offering": False,
+            "issue_price": 20,
+            "issuer_address": _issuer_address,
+            "memo": "",
+            "name": "token.name",
+            "personal_info_contract_address": "0x0000000000000000000000000000000000000000",
+            "principal_value": 30,
+            "privacy_policy": "",
+            "status": True,
+            "symbol": "token.symbol",
+            "token_address": _token_address,
+            "total_supply": 100,
+            "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000000",
+            "transfer_approval_required": False,
+            "transferable": False,
+        }
+        assert update_token.arguments == {
+            "cancellation_date": "20221231",
+            "dividends": 345.67,
+            "dividend_record_date": "20211231",
+            "dividend_payment_date": "20211231",
+            "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
+            "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "transferable": False,
+            "status": False,
+            "is_offering": False,
+            "contact_information": "問い合わせ先test",
+            "privacy_policy": "プライバシーポリシーtest",
+            "transfer_approval_required": False,
+            "principal_value": 1000,
+            "is_canceled": True,
+            "memo": "memo_test1",
+        }
+        assert update_token.status == 1
+
     # <Normal_4_1>
     # YYYYMMDD parameter is not an empty string
-    @mock.patch("app.model.blockchain.token.IbetShareContract.update")
-    def test_normal_4_1(self, IbetShareContract_mock, client, db):
+    def test_normal_4_1(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account["keyfile_json"],
+            password="password".encode("utf-8"),
+        )
         _keyfile = test_account["keyfile_json"]
-        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # Prepare data : Token
+        token_contract = deploy_share_token_contract(
+            _issuer_address,
+            issuer_private_key,
+        )
+        _token_address = token_contract.address
 
         # prepare data
         account = Account()
@@ -233,9 +403,6 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.token_address = _token_address
         token.abi = ""
         db.add(token)
-
-        # mock
-        IbetShareContract_mock.side_effect = [None]
 
         # request target API
         req_param = {
@@ -254,38 +421,69 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         )
 
         # assertion
-        IbetShareContract_mock.assert_any_call(
-            data={
-                "cancellation_date": "20221231",
-                "dividends": 345.67,
-                "dividend_record_date": "20211231",
-                "dividend_payment_date": "20211231",
-                "tradable_exchange_contract_address": None,
-                "personal_info_contract_address": None,
-                "transferable": None,
-                "status": None,
-                "is_offering": None,
-                "contact_information": None,
-                "privacy_policy": None,
-                "transfer_approval_required": None,
-                "principal_value": None,
-                "is_canceled": None,
-                "memo": None,
-            },
-            tx_from=_issuer_address,
-            private_key=ANY,
-        )
         assert resp.status_code == 200
         assert resp.json() is None
 
+        token_attr_update = (
+            db.query(TokenAttrUpdate)
+            .filter(TokenAttrUpdate.token_address == _token_address)
+            .all()
+        )
+        assert len(token_attr_update) == 1
+
+        update_token = db.query(UpdateToken).first()
+        assert update_token.token_address == _token_address
+        assert update_token.issuer_address == _issuer_address
+        assert update_token.type == TokenType.IBET_SHARE.value
+        assert update_token.original_contents == {
+            "cancellation_date": "token.cancellation_date",
+            "contact_information": "",
+            "contract_name": "IbetShare",
+            "dividend_payment_date": "token.dividend_payment_date",
+            "dividend_record_date": "token.dividend_record_date",
+            "dividends": 3e-13,
+            "is_canceled": False,
+            "is_offering": False,
+            "issue_price": 20,
+            "issuer_address": _issuer_address,
+            "memo": "",
+            "name": "token.name",
+            "personal_info_contract_address": "0x0000000000000000000000000000000000000000",
+            "principal_value": 30,
+            "privacy_policy": "",
+            "status": True,
+            "symbol": "token.symbol",
+            "token_address": _token_address,
+            "total_supply": 100,
+            "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000000",
+            "transfer_approval_required": False,
+            "transferable": False,
+        }
+        assert update_token.arguments == {
+            "cancellation_date": "20221231",
+            "dividends": 345.67,
+            "dividend_record_date": "20211231",
+            "dividend_payment_date": "20211231",
+        }
+        assert update_token.status == 1
+
     # <Normal_4_2>
     # YYYYMMDD parameter is an empty string
-    @mock.patch("app.model.blockchain.token.IbetShareContract.update")
-    def test_normal_4_2(self, IbetShareContract_mock, client, db):
+    def test_normal_4_2(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account["keyfile_json"],
+            password="password".encode("utf-8"),
+        )
         _keyfile = test_account["keyfile_json"]
-        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # Prepare data : Token
+        token_contract = deploy_share_token_contract(
+            _issuer_address,
+            issuer_private_key,
+        )
+        _token_address = token_contract.address
 
         # prepare data
         account = Account()
@@ -301,9 +499,6 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.token_address = _token_address
         token.abi = ""
         db.add(token)
-
-        # mock
-        IbetShareContract_mock.side_effect = [None]
 
         # request target API
         req_param = {
@@ -322,29 +517,51 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         )
 
         # assertion
-        IbetShareContract_mock.assert_any_call(
-            data={
-                "cancellation_date": "",
-                "dividends": 345.67,
-                "dividend_record_date": "",
-                "dividend_payment_date": "",
-                "tradable_exchange_contract_address": None,
-                "personal_info_contract_address": None,
-                "transferable": None,
-                "status": None,
-                "is_offering": None,
-                "contact_information": None,
-                "privacy_policy": None,
-                "transfer_approval_required": None,
-                "principal_value": None,
-                "is_canceled": None,
-                "memo": None,
-            },
-            tx_from=_issuer_address,
-            private_key=ANY,
-        )
         assert resp.status_code == 200
         assert resp.json() is None
+
+        token_attr_update = (
+            db.query(TokenAttrUpdate)
+            .filter(TokenAttrUpdate.token_address == _token_address)
+            .all()
+        )
+        assert len(token_attr_update) == 1
+
+        update_token = db.query(UpdateToken).first()
+        assert update_token.token_address == _token_address
+        assert update_token.issuer_address == _issuer_address
+        assert update_token.type == TokenType.IBET_SHARE.value
+        assert update_token.original_contents == {
+            "cancellation_date": "token.cancellation_date",
+            "contact_information": "",
+            "contract_name": "IbetShare",
+            "dividend_payment_date": "token.dividend_payment_date",
+            "dividend_record_date": "token.dividend_record_date",
+            "dividends": 3e-13,
+            "is_canceled": False,
+            "is_offering": False,
+            "issue_price": 20,
+            "issuer_address": _issuer_address,
+            "memo": "",
+            "name": "token.name",
+            "personal_info_contract_address": "0x0000000000000000000000000000000000000000",
+            "principal_value": 30,
+            "privacy_policy": "",
+            "status": True,
+            "symbol": "token.symbol",
+            "token_address": _token_address,
+            "total_supply": 100,
+            "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000000",
+            "transfer_approval_required": False,
+            "transferable": False,
+        }
+        assert update_token.arguments == {
+            "cancellation_date": "",
+            "dividends": 345.67,
+            "dividend_record_date": "",
+            "dividend_payment_date": "",
+        }
+        assert update_token.status == 1
 
     ###########################################################################
     # Error Case

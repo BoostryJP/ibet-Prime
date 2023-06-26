@@ -823,7 +823,7 @@ class TestProcessor:
             processor.process()
 
         # Assertion: DB
-        _upload_1_after: BatchIssueRedeemUpload = (
+        _upload_1_after: BatchIssueRedeemUpload | None = (
             db.query(BatchIssueRedeemUpload)
             .filter(BatchIssueRedeemUpload.upload_id == upload_1_id)
             .first()
@@ -838,7 +838,7 @@ class TestProcessor:
         assert len(_upload_1_data_after) == 1
         assert _upload_1_data_after[0].status == 2
 
-        _upload_2_after: BatchIssueRedeemUpload = (
+        _upload_2_after: BatchIssueRedeemUpload | None = (
             db.query(BatchIssueRedeemUpload)
             .filter(BatchIssueRedeemUpload.upload_id == upload_2_id)
             .first()

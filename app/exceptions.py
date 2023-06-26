@@ -16,18 +16,37 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from app.utils.contract_error_code import error_code_msg
+from fastapi import status
+
+from app.utils.contract_error_code import REVERT_CODE_MAP, error_code_msg
 
 
-class InvalidParameterError(Exception):
-    pass
+class AppError(Exception):
+    status_code: int
+    code: int | None = None
+    code_list: list[int] | None = None
 
 
-class SendTransactionError(Exception):
-    pass
+class InvalidParameterError(AppError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = 1
 
 
-class ContractRevertError(Exception):
+class SendTransactionError(AppError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = 2
+
+
+class ContractRevertError(AppError):
+    """
+    * Error code is defined here
+      * https://github.com/BoostryJP/ibet-SmartContract/blob/dev-23.3/docs/Errors.md
+    * If contract doesn't throw error code, 0 is returned.
+    """
+
+    status_code = status.HTTP_400_BAD_REQUEST
+    code_list = [0] + list(REVERT_CODE_MAP.keys())
+
     def __init__(self, code_msg: str):
         code, message = error_code_msg(code_msg)
         self.code = code
@@ -38,17 +57,26 @@ class ContractRevertError(Exception):
         return f"<ContractRevertError(code={self.code}, message={self.message})>"
 
 
-class AuthorizationError(Exception):
-    pass
+class AuthorizationError(AppError):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    code = 1
 
 
-class ServiceUnavailableError(Exception):
-    pass
+class ServiceUnavailableError(AppError):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    code = 1
 
 
-class AuthTokenAlreadyExistsError(Exception):
-    pass
+class AuthTokenAlreadyExistsError(AppError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = 3
 
 
-class ResponseLimitExceededError(Exception):
-    pass
+class ResponseLimitExceededError(AppError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = 4
+
+
+class Integer64bitLimitExceededError(AppError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = 5

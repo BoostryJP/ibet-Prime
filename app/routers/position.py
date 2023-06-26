@@ -23,9 +23,9 @@ from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.exceptions import HTTPException
 from pytz import timezone
 from sqlalchemy import String, and_, column, desc, func, literal, null, or_
-from sqlalchemy.orm import Session
+from web3 import Web3
 
-from app.database import db_session
+from app.database import DBSession
 from app.exceptions import (
     AuthorizationError,
     ContractRevertError,
@@ -79,13 +79,13 @@ local_tz = timezone(TZ)
     responses=get_routers_responses(422),
 )
 def list_all_position(
+    db: DBSession,
     account_address: str,
     issuer_address: Optional[str] = Header(None),
     include_former_position: bool = False,
     token_type: Optional[TokenType] = Query(None),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
-    db: Session = Depends(db_session),
 ):
     """List all account's position"""
 
@@ -188,12 +188,12 @@ def list_all_position(
     responses=get_routers_responses(422),
 )
 def list_all_locked_position(
+    db: DBSession,
     account_address: str,
     issuer_address: Optional[str] = Header(None),
     token_type: Optional[TokenType] = Query(None),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
-    db: Session = Depends(db_session),
 ):
     """List all account's locked position"""
 
@@ -270,10 +270,10 @@ def list_all_locked_position(
     responses=get_routers_responses(422),
 )
 def list_all_lock_events(
+    db: DBSession,
     account_address: str,
     issuer_address: Optional[str] = Header(None),
     request_query: ListAllLockEventsQuery = Depends(),
-    db: Session = Depends(db_session),
 ):
     """List all lock/unlock events in the account"""
 
@@ -291,6 +291,7 @@ def list_all_lock_events(
         db.query(
             literal(value=LockEventCategory.Lock.value, type_=String).label("category"),
             IDXLock.transaction_hash.label("transaction_hash"),
+            IDXLock.msg_sender.label("msg_sender"),
             IDXLock.token_address.label("token_address"),
             IDXLock.lock_address.label("lock_address"),
             IDXLock.account_address.label("account_address"),
@@ -313,6 +314,7 @@ def list_all_lock_events(
                 "category"
             ),
             IDXUnlock.transaction_hash.label("transaction_hash"),
+            IDXUnlock.msg_sender.label("msg_sender"),
             IDXUnlock.token_address.label("token_address"),
             IDXUnlock.lock_address.label("lock_address"),
             IDXUnlock.account_address.label("account_address"),
@@ -346,6 +348,8 @@ def list_all_lock_events(
         query = query.filter(column("token_address") == request_query.token_address)
     if request_query.token_type is not None:
         query = query.filter(Token.type == request_query.token_type.value)
+    if request_query.msg_sender is not None:
+        query = query.filter(column("msg_sender") == request_query.msg_sender)
     if request_query.lock_address is not None:
         query = query.filter(column("lock_address") == request_query.lock_address)
     if request_query.recipient_address is not None:
@@ -379,7 +383,7 @@ def list_all_lock_events(
     resp_data = []
     for lock_event in lock_events:
         token_name = None
-        _token = lock_event[9]
+        _token = lock_event[10]
         if _token.type == TokenType.IBET_STRAIGHT_BOND.value:
             _bond = IbetStraightBondContract(_token.token_address).get()
             token_name = _bond.name
@@ -387,20 +391,21 @@ def list_all_lock_events(
             _share = IbetShareContract(_token.token_address).get()
             token_name = _share.name
 
-        block_timestamp_utc = timezone("UTC").localize(lock_event[8])
+        block_timestamp_utc = timezone("UTC").localize(lock_event[9])
         resp_data.append(
             {
                 "category": lock_event[0],
                 "transaction_hash": lock_event[1],
+                "msg_sender": lock_event[2],
                 "issuer_address": _token.issuer_address,
-                "token_address": lock_event[2],
+                "token_address": lock_event[3],
                 "token_type": _token.type,
                 "token_name": token_name,
-                "lock_address": lock_event[3],
-                "account_address": lock_event[4],
-                "recipient_address": lock_event[5],
-                "value": lock_event[6],
-                "data": lock_event[7],
+                "lock_address": lock_event[4],
+                "account_address": lock_event[5],
+                "recipient_address": lock_event[6],
+                "value": lock_event[7],
+                "data": lock_event[8],
                 "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat(),
             }
         )
@@ -431,12 +436,13 @@ def list_all_lock_events(
     ),
 )
 def force_unlock(
+    db: DBSession,
     request: Request,
+    account_address: str,
     data: ForceUnlockRequest,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Force unlock the locked position"""
 
@@ -454,6 +460,9 @@ def force_unlock(
         eoa_password=eoa_password,
         auth_token=auth_token,
     )
+
+    if not Web3.is_address(account_address):
+        raise InvalidParameterError("account_address is not a valid address")
 
     # Get private key
     keyfile_json = _account.keyfile
@@ -477,7 +486,7 @@ def force_unlock(
     # Force unlock
     unlock_data = {
         "lock_address": data.lock_address,
-        "account_address": data.account_address,
+        "account_address": account_address,
         "recipient_address": data.recipient_address,
         "value": data.value,
         "data": "",
@@ -504,10 +513,10 @@ def force_unlock(
     responses=get_routers_responses(422, InvalidParameterError, 404),
 )
 def retrieve_position(
+    db: DBSession,
     account_address: str,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
-    db: Session = Depends(db_session),
 ):
     """Retrieve account's position"""
 
