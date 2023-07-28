@@ -24,7 +24,7 @@ from typing import Any
 
 from eth_typing import URI
 from requests.exceptions import ConnectionError, HTTPError
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
@@ -90,20 +90,19 @@ class FailOverHTTPProvider(Web3.HTTPProvider):
             if FailOverHTTPProvider.fail_over_mode is True:
                 # If never running the block monitoring processor,
                 # use default(primary) node.
-                if db_session.query(Node).first() is None:
+                if db_session.scalars(select(Node).limit(1)).first() is None:
                     self.endpoint_uri = URI(WEB3_HTTP_PROVIDER)
                     return super().make_request(method, params)
                 else:
                     counter = 0
                     while counter <= WEB3_REQUEST_RETRY_COUNT:
                         # Switch alive node
-                        _node = (
-                            db_session.query(Node)
-                            .filter(Node.is_synced == True)
-                            .order_by(Node.priority)
-                            .order_by(Node.id)
-                            .first()
-                        )
+                        _node: Node | None = db_session.scalars(
+                            select(Node)
+                            .where(Node.is_synced == True)
+                            .order_by(Node.priority, Node.id)
+                            .limit(1)
+                        ).first()
                         if _node is None:
                             counter += 1
                             if counter <= WEB3_REQUEST_RETRY_COUNT:

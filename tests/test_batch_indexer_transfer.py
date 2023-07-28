@@ -1074,7 +1074,7 @@ class TestProcessor:
 
         # Run mainloop once and fail with sqlalchemy InvalidRequestError
         with patch("batch.indexer_transfer.INDEXER_SYNC_INTERVAL", None), patch.object(
-            Session, "query", side_effect=InvalidRequestError()
+            Session, "scalars", side_effect=InvalidRequestError()
         ), pytest.raises(TypeError):
             main_func()
         assert 1 == caplog.text.count("A database error has occurred")

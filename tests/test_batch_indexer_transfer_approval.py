@@ -51,11 +51,9 @@ from config import CHAIN_ID, TX_GAS_LIMIT
 from tests.account_config import config_eth_account
 from tests.utils.contract_utils import (
     IbetSecurityTokenContractTestUtils as STContractUtils,
-)
-from tests.utils.contract_utils import (
     IbetSecurityTokenEscrowContractTestUtils as STEscrowContractUtils,
+    PersonalInfoContractTestUtils,
 )
-from tests.utils.contract_utils import PersonalInfoContractTestUtils
 
 web3 = Web3Wrapper()
 

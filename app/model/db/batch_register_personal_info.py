@@ -18,8 +18,9 @@ SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
 
-from sqlalchemy import JSON, Column, Integer, String
+from sqlalchemy import JSON, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -30,11 +31,11 @@ class BatchRegisterPersonalInfoUpload(Base):
     __tablename__ = "batch_register_personal_info_upload"
 
     # upload id (UUID)
-    upload_id = Column(String(36), primary_key=True)
+    upload_id: Mapped[str] = mapped_column(String(36), primary_key=True)
     # issuer address
-    issuer_address = Column(String(42), nullable=False, index=True)
+    issuer_address: Mapped[str] = mapped_column(String(42), nullable=False, index=True)
     # processing status (BatchRegisterPersonalInfoUploadStatus)
-    status = Column(String, nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String, nullable=False, index=True)
 
 
 class BatchRegisterPersonalInfoUploadStatus(str, Enum):
@@ -51,15 +52,15 @@ class BatchRegisterPersonalInfo(Base):
     __tablename__ = "batch_register_personal_info"
 
     # sequence id
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     # upload id (UUID)
-    upload_id = Column(String(36), index=True)
+    upload_id: Mapped[str | None] = mapped_column(String(36), index=True)
     # token address
-    token_address = Column(String(42), nullable=False)
+    token_address: Mapped[str] = mapped_column(String(42), nullable=False)
     # account address
-    account_address = Column(String(42), nullable=False)
+    account_address: Mapped[str] = mapped_column(String(42), nullable=False)
     # processing status (pending:0, succeeded:1, failed:2)
-    status = Column(Integer, nullable=False, index=True)
+    status: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
 
     # personal information
     #   {
@@ -72,7 +73,7 @@ class BatchRegisterPersonalInfo(Base):
     #       "is_corporate": "boolean",
     #       "tax_category": "integer"
     #   }
-    _personal_info = Column("personal_info", JSON, nullable=False)
+    _personal_info = mapped_column("personal_info", JSON, nullable=False)
 
     @hybrid_property
     def personal_info(self):
@@ -89,8 +90,8 @@ class BatchRegisterPersonalInfo(Base):
             }
         return self._personal_info
 
-    @personal_info.setter  # type: ignore
-    def personal_info(self, personal_info_dict):
+    @personal_info.inplace.setter
+    def _personal_info_setter(self, personal_info_dict: dict):
         self._personal_info = {
             "key_manager": personal_info_dict.get("key_manager", None),
             "name": personal_info_dict.get("name", None),

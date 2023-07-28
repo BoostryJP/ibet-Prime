@@ -16,13 +16,14 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import Optional
+from typing import Optional, Sequence
 
 from eth_keyfile import decode_keyfile_json
 from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.exceptions import HTTPException
 from pytz import timezone
-from sqlalchemy import String, and_, column, desc, func, literal, null, or_
+from sqlalchemy import String, and_, column, desc, func, literal, null, or_, select
+from sqlalchemy.orm import aliased
 from web3 import Web3
 
 from app.database import DBSession
@@ -63,7 +64,7 @@ from app.utils.check_utils import (
     validate_headers,
 )
 from app.utils.docs_utils import get_routers_responses
-from app.utils.fastapi import json_response
+from app.utils.fastapi_utils import json_response
 from config import TZ
 
 router = APIRouter(prefix="/positions", tags=["token_common"])
@@ -93,8 +94,8 @@ def list_all_position(
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get a list of positions
-    query = (
-        db.query(IDXPosition, func.sum(IDXLockedPosition.value), Token)
+    stmt = (
+        select(IDXPosition, func.sum(IDXLockedPosition.value), Token)
         .join(Token, IDXPosition.token_address == Token.token_address)
         .outerjoin(
             IDXLockedPosition,
@@ -103,8 +104,11 @@ def list_all_position(
                 IDXLockedPosition.account_address == IDXPosition.account_address,
             ),
         )
-        .filter(IDXPosition.account_address == account_address)
-        .filter(Token.token_status != 2)
+        .where(
+            and_(
+                IDXPosition.account_address == account_address, Token.token_status != 2
+            )
+        )
         .group_by(
             IDXPosition.id,
             Token.id,
@@ -114,7 +118,7 @@ def list_all_position(
     )
 
     if not include_former_position:
-        query = query.filter(
+        stmt = stmt.where(
             or_(
                 IDXPosition.balance != 0,
                 IDXPosition.exchange_balance != 0,
@@ -124,24 +128,28 @@ def list_all_position(
             )
         )
 
-    query = query.order_by(IDXPosition.token_address, IDXPosition.account_address)
+    stmt = stmt.order_by(IDXPosition.token_address, IDXPosition.account_address)
 
     if issuer_address is not None:
-        query = query.filter(Token.issuer_address == issuer_address)
-    total = query.count()
+        stmt = stmt.where(Token.issuer_address == issuer_address)
+
+    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Search Filter
     if token_type is not None:
-        query = query.filter(Token.type == token_type.value)
-    count = query.count()
+        stmt = stmt.where(Token.type == token_type.value)
+
+    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Pagination
     if limit is not None:
-        query = query.limit(limit)
+        stmt = stmt.limit(limit)
     if offset is not None:
-        query = query.offset(offset)
+        stmt = stmt.offset(offset)
 
-    _position_list = query.all()
+    _position_list: Sequence[tuple[IDXPosition, int, Token]] = (
+        db.execute(stmt).tuples().all()
+    )
 
     positions = []
     for _position, _locked, _token in _position_list:
@@ -201,33 +209,39 @@ def list_all_locked_position(
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get a list of locked positions
-    query = (
-        db.query(IDXLockedPosition, Token)
+    stmt = (
+        select(IDXLockedPosition, Token)
         .join(Token, IDXLockedPosition.token_address == Token.token_address)
-        .filter(IDXLockedPosition.account_address == account_address)
-        .filter(IDXLockedPosition.value > 0)
-        .filter(Token.token_status != 2)
+        .where(
+            and_(
+                IDXLockedPosition.account_address == account_address,
+                IDXLockedPosition.value > 0,
+                Token.token_status != 2,
+            )
+        )
         .order_by(IDXLockedPosition.token_address)
     )
 
     if issuer_address is not None:
-        query = query.filter(Token.issuer_address == issuer_address)
+        stmt = stmt.where(Token.issuer_address == issuer_address)
 
-    total = query.count()
+    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Search Filter
     if token_type is not None:
-        query = query.filter(Token.type == token_type.value)
+        stmt = stmt.where(Token.type == token_type.value)
 
-    count = query.count()
+    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Pagination
     if limit is not None:
-        query = query.limit(limit)
+        stmt = stmt.limit(limit)
     if offset is not None:
-        query = query.offset(offset)
+        stmt = stmt.offset(offset)
 
-    _position_list = query.all()
+    _position_list: Sequence[tuple[IDXLockedPosition, Token]] = (
+        db.execute(stmt).tuples().all()
+    )
 
     positions = []
     for _locked_position, _token in _position_list:
@@ -287,8 +301,8 @@ def list_all_lock_events(
     sort_order = request_query.sort_order
 
     # Base query
-    query_lock = (
-        db.query(
+    stmt_lock = (
+        select(
             literal(value=LockEventCategory.Lock.value, type_=String).label("category"),
             IDXLock.transaction_hash.label("transaction_hash"),
             IDXLock.msg_sender.label("msg_sender"),
@@ -302,14 +316,15 @@ def list_all_lock_events(
             Token,
         )
         .join(Token, IDXLock.token_address == Token.token_address)
-        .filter(column("account_address") == account_address)
-        .filter(Token.token_status != 2)
+        .where(
+            and_(column("account_address") == account_address, Token.token_status != 2)
+        )
     )
     if issuer_address is not None:
-        query_lock = query_lock.filter(Token.issuer_address == issuer_address)
+        stmt_lock = stmt_lock.where(Token.issuer_address == issuer_address)
 
-    query_unlock = (
-        db.query(
+    stmt_unlock = (
+        select(
             literal(value=LockEventCategory.Unlock.value, type_=String).label(
                 "category"
             ),
@@ -325,87 +340,110 @@ def list_all_lock_events(
             Token,
         )
         .join(Token, IDXUnlock.token_address == Token.token_address)
-        .filter(column("account_address") == account_address)
-        .filter(Token.token_status != 2)
+        .where(
+            and_(column("account_address") == account_address, Token.token_status != 2)
+        )
     )
     if issuer_address is not None:
-        query_unlock = query_unlock.filter(Token.issuer_address == issuer_address)
+        stmt_unlock = stmt_unlock.where(Token.issuer_address == issuer_address)
 
-    total = query_lock.count() + query_unlock.count()
+    total = db.scalar(
+        select(func.count()).select_from(stmt_lock.subquery())
+    ) + db.scalar(select(func.count()).select_from(stmt_unlock.subquery()))
 
     # Filter
     match request_query.category:
         case LockEventCategory.Lock.value:
-            query = query_lock
+            all_lock_event_alias = aliased(stmt_lock.subquery("all_lock_event"))
         case LockEventCategory.Unlock.value:
-            query = query_unlock
+            all_lock_event_alias = aliased(stmt_unlock.subquery("all_lock_event"))
         case _:
-            query = query_lock.union_all(query_unlock)
+            all_lock_event_alias = aliased(
+                stmt_lock.union_all(stmt_unlock).subquery("all_lock_event")
+            )
+    stmt = select(all_lock_event_alias)
 
-    query = query.filter(column("account_address") == account_address)
+    stmt = stmt.where(all_lock_event_alias.c.account_address == account_address)
 
     if request_query.token_address is not None:
-        query = query.filter(column("token_address") == request_query.token_address)
+        stmt = stmt.where(
+            all_lock_event_alias.c.token_address == request_query.token_address
+        )
     if request_query.token_type is not None:
-        query = query.filter(Token.type == request_query.token_type.value)
+        stmt = stmt.where(all_lock_event_alias.c.type == request_query.token_type)
     if request_query.msg_sender is not None:
-        query = query.filter(column("msg_sender") == request_query.msg_sender)
+        stmt = stmt.where(all_lock_event_alias.c.msg_sender == request_query.msg_sender)
     if request_query.lock_address is not None:
-        query = query.filter(column("lock_address") == request_query.lock_address)
+        stmt = stmt.where(
+            all_lock_event_alias.c.lock_address == request_query.lock_address
+        )
     if request_query.recipient_address is not None:
-        query = query.filter(
-            column("recipient_address") == request_query.recipient_address
+        stmt = stmt.where(
+            all_lock_event_alias.c.recipient_address == request_query.recipient_address
         )
 
-    count = query.count()
+    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
     sort_attr = column(sort_item)
     if sort_order == 0:  # ASC
-        query = query.order_by(sort_attr)
+        stmt = stmt.order_by(sort_attr)
     else:  # DESC
-        query = query.order_by(desc(sort_attr))
+        stmt = stmt.order_by(desc(sort_attr))
 
     if sort_item != ListAllLockEventsSortItem.block_timestamp.value:
         # NOTE: Set secondary sort for consistent results
-        query = query.order_by(
+        stmt = stmt.order_by(
             desc(column(ListAllLockEventsSortItem.block_timestamp.value))
         )
 
     # Pagination
     if offset is not None:
-        query = query.offset(offset)
+        stmt = stmt.offset(offset)
     if limit is not None:
-        query = query.limit(limit)
+        stmt = stmt.limit(limit)
 
-    lock_events = query.all()
+    entries = [
+        all_lock_event_alias.c.category,
+        all_lock_event_alias.c.transaction_hash,
+        all_lock_event_alias.c.msg_sender,
+        all_lock_event_alias.c.token_address,
+        all_lock_event_alias.c.lock_address,
+        all_lock_event_alias.c.account_address,
+        all_lock_event_alias.c.recipient_address,
+        all_lock_event_alias.c.value,
+        all_lock_event_alias.c.data,
+        all_lock_event_alias.c.block_timestamp,
+        Token,
+    ]
+    lock_events = db.execute(select(*entries).from_statement(stmt)).tuples().all()
 
     resp_data = []
     for lock_event in lock_events:
         token_name = None
-        _token = lock_event[10]
-        if _token.type == TokenType.IBET_STRAIGHT_BOND.value:
-            _bond = IbetStraightBondContract(_token.token_address).get()
-            token_name = _bond.name
-        elif _token.type == TokenType.IBET_SHARE.value:
-            _share = IbetShareContract(_token.token_address).get()
-            token_name = _share.name
+        token: Token = lock_event.Token
+        if token.type == TokenType.IBET_STRAIGHT_BOND.value:
+            _contract = IbetStraightBondContract(token.token_address).get()
+            token_name = _contract.name
+        elif token.type == TokenType.IBET_SHARE.value:
+            _contract = IbetShareContract(token.token_address).get()
+            token_name = _contract.name
 
         block_timestamp_utc = timezone("UTC").localize(lock_event[9])
         resp_data.append(
             {
-                "category": lock_event[0],
-                "transaction_hash": lock_event[1],
-                "msg_sender": lock_event[2],
-                "issuer_address": _token.issuer_address,
-                "token_address": lock_event[3],
-                "token_type": _token.type,
+                "category": lock_event.category,
+                "transaction_hash": lock_event.transaction_hash,
+                "msg_sender": lock_event.msg_sender,
+                "issuer_address": token.issuer_address,
+                "token_address": token.token_address,
+                "token_type": token.type,
                 "token_name": token_name,
-                "lock_address": lock_event[4],
-                "account_address": lock_event[5],
-                "recipient_address": lock_event[6],
-                "value": lock_event[7],
-                "data": lock_event[8],
+                "lock_address": lock_event.lock_address,
+                "account_address": lock_event.account_address,
+                "recipient_address": lock_event.recipient_address,
+                "value": lock_event.value,
+                "data": lock_event.data,
                 "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat(),
             }
         )
@@ -471,13 +509,17 @@ def force_unlock(
     )
 
     # Verify that the token is issued by the issuer_address
-    _token = (
-        db.query(Token)
-        .filter(Token.issuer_address == issuer_address)
-        .filter(Token.token_address == data.token_address)
-        .filter(Token.token_status != 2)
-        .first()
-    )
+    _token = db.scalars(
+        select(Token)
+        .where(
+            and_(
+                Token.issuer_address == issuer_address,
+                Token.token_address == data.token_address,
+                Token.token_status != 2,
+            )
+        )
+        .limit(1)
+    ).first()
     if _token is None:
         raise InvalidParameterError("token not found")
     if _token.token_status == 0:
@@ -524,22 +566,32 @@ def retrieve_position(
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get Token
-    query = (
-        db.query(Token)
-        .filter(Token.token_address == token_address)
-        .filter(Token.token_status != 2)
-    )
     if issuer_address is not None:
-        query = query.filter(Token.issuer_address == issuer_address)
-    _token = query.first()
+        _token = db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.token_address == token_address,
+                    Token.issuer_address == issuer_address,
+                    Token.token_status != 2,
+                )
+            )
+            .limit(1)
+        ).first()
+    else:
+        _token = db.scalars(
+            select(Token)
+            .where(and_(Token.token_address == token_address, Token.token_status != 2))
+            .limit(1)
+        ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Position
-    _record = (
-        db.query(IDXPosition, func.sum(IDXLockedPosition.value))
+    _record: tuple[IDXPosition, int] = db.execute(
+        select(IDXPosition, func.sum(IDXLockedPosition.value))
         .outerjoin(
             IDXLockedPosition,
             and_(
@@ -547,15 +599,19 @@ def retrieve_position(
                 IDXLockedPosition.account_address == IDXPosition.account_address,
             ),
         )
-        .filter(IDXPosition.token_address == token_address)
-        .filter(IDXPosition.account_address == account_address)
+        .where(
+            and_(
+                IDXPosition.token_address == token_address,
+                IDXPosition.account_address == account_address,
+            )
+        )
         .group_by(
             IDXPosition.id,
             IDXLockedPosition.token_address,
             IDXLockedPosition.account_address,
         )
-        .first()
-    )
+        .limit(1)
+    ).first()
 
     if _record is not None:
         _position = _record[0]

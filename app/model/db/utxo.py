@@ -16,7 +16,10 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import BigInteger, Column, DateTime, String
+from datetime import datetime
+
+from sqlalchemy import BigInteger, DateTime, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -29,17 +32,17 @@ class UTXO(Base):
     __tablename__ = "utxo"
 
     # transaction hash
-    transaction_hash = Column(String(66), primary_key=True)
+    transaction_hash: Mapped[str] = mapped_column(String(66), primary_key=True)
     # account address
-    account_address = Column(String(42), primary_key=True)
+    account_address: Mapped[str] = mapped_column(String(42), primary_key=True)
     # token address
-    token_address = Column(String(42), index=True)
+    token_address: Mapped[str | None] = mapped_column(String(42), index=True)
     # transfer amount
-    amount = Column(BigInteger)
+    amount: Mapped[int | None] = mapped_column(BigInteger)
     # block number
-    block_number = Column(BigInteger)
+    block_number: Mapped[int | None] = mapped_column(BigInteger)
     # block timestamp(UTC)
-    block_timestamp = Column(DateTime)
+    block_timestamp: Mapped[datetime | None] = mapped_column(DateTime)
 
 
 class UTXOBlockNumber(Base):
@@ -48,6 +51,6 @@ class UTXOBlockNumber(Base):
     __tablename__ = "utxo_block_number"
 
     # sequence id
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # latest blockNumber
-    latest_block_number = Column(BigInteger)
+    latest_block_number: Mapped[int | None] = mapped_column(BigInteger)

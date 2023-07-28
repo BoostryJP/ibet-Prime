@@ -18,7 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 from enum import StrEnum
 
-from sqlalchemy import JSON, Column, Integer, String
+from sqlalchemy import JSON, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -28,21 +29,21 @@ class UpdateToken(Base):
 
     __tablename__ = "update_token"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     # token address
-    token_address = Column(String(42), index=True)
+    token_address: Mapped[str | None] = mapped_column(String(42), index=True)
     # issuer address
-    issuer_address = Column(String(42), nullable=True)
+    issuer_address: Mapped[str] = mapped_column(String(42), nullable=True)
     # token type
-    type = Column(String(40), nullable=False)
+    type: Mapped[str] = mapped_column(String(40), nullable=False)
     # arguments
-    arguments = Column(JSON, nullable=False)
+    arguments: Mapped[dict] = mapped_column(JSON, nullable=False)
     # original contents
-    original_contents = Column(JSON, nullable=True)
+    original_contents: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     # processing status (pending:0, succeeded:1, failed:2)
-    status = Column(Integer, nullable=False)
+    status: Mapped[int] = mapped_column(Integer, nullable=False)
     # update trigger
-    trigger = Column(String(40), nullable=False)
+    trigger: Mapped[str] = mapped_column(String(40), nullable=False)
 
 
 class UpdateTokenTrigger(StrEnum):

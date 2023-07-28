@@ -1050,7 +1050,7 @@ class TestProcessor:
         with patch(
             "batch.indexer_personal_info.INDEXER_SYNC_INTERVAL", None
         ), patch.object(
-            Session, "query", side_effect=InvalidRequestError()
+            Session, "scalars", side_effect=InvalidRequestError()
         ), pytest.raises(
             TypeError
         ):

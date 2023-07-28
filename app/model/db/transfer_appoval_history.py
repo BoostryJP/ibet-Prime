@@ -18,7 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
 
-from sqlalchemy import BigInteger, Column, String
+from sqlalchemy import BigInteger, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -29,15 +30,17 @@ class TransferApprovalHistory(Base):
     __tablename__ = "transfer_approval_history"
 
     # Sequence Id
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # Token Address
-    token_address = Column(String(42), index=True, nullable=False)
+    token_address: Mapped[str] = mapped_column(String(42), index=True, nullable=False)
     # Exchange Address (value is set if the event is from exchange)
-    exchange_address = Column(String(42), index=True, nullable=False)
+    exchange_address: Mapped[str] = mapped_column(
+        String(42), index=True, nullable=False
+    )
     # Application ID (escrow id is set if the event is from exchange)
-    application_id = Column(BigInteger, index=True, nullable=False)
+    application_id: Mapped[int] = mapped_column(BigInteger, index=True, nullable=False)
     # Operation Type: TransferApprovalOperationType
-    operation_type = Column(String(20), index=True, nullable=False)
+    operation_type: Mapped[str] = mapped_column(String(20), index=True, nullable=False)
 
     def json(self):
         return {

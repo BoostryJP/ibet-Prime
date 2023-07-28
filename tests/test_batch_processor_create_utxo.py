@@ -29,33 +29,17 @@ from web3.middleware import geth_poa_middleware
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.blockchain.tx_params.ibet_share import (
     AdditionalIssueParams as IbetShareAdditionalIssueParams,
-)
-from app.model.blockchain.tx_params.ibet_share import (
     ForceUnlockPrams as IbetShareForceUnlockParams,
-)
-from app.model.blockchain.tx_params.ibet_share import LockParams as IbetShareLockParams
-from app.model.blockchain.tx_params.ibet_share import (
+    LockParams as IbetShareLockParams,
     RedeemParams as IbetShareRedeemParams,
-)
-from app.model.blockchain.tx_params.ibet_share import (
     TransferParams as IbetShareTransferParams,
-)
-from app.model.blockchain.tx_params.ibet_share import (
     UpdateParams as IbetShareUpdateParams,
 )
 from app.model.blockchain.tx_params.ibet_straight_bond import (
     AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
     LockParams as IbetStraightBondLockParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
     RedeemParams as IbetStraightBondRedeemParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
     TransferParams as IbetStraightBondTransferParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
 )
 from app.model.db import UTXO, Token, TokenType, UTXOBlockNumber
@@ -63,11 +47,11 @@ from app.utils.contract_utils import ContractUtils
 from batch.processor_create_utxo import Processor
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
-from tests.utils.contract_utils import IbetExchangeContractTestUtils
 from tests.utils.contract_utils import (
+    IbetExchangeContractTestUtils,
     IbetSecurityTokenContractTestUtils as STContractUtils,
+    PersonalInfoContractTestUtils,
 )
-from tests.utils.contract_utils import PersonalInfoContractTestUtils
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)

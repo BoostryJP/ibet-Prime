@@ -16,22 +16,22 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-
 import time
-from datetime import date as datetime_date
-from datetime import datetime
+from datetime import date as datetime_date, datetime
 
-from sqlalchemy import Column, DateTime
-from sqlalchemy.orm import declarative_base
+from sqlalchemy import DateTime
+from sqlalchemy.orm import Mapped, declarative_base, mapped_column
 
 from app.database import get_db_schema
 
 
 class BaseModel(object):
     # created datetime(UTC)
-    created = Column(DateTime, default=datetime.utcnow)
+    created: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
     # modified datetime(UTC)
-    modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    modified: Mapped[datetime | None] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     @staticmethod
     def datetime_to_timestamp(date):

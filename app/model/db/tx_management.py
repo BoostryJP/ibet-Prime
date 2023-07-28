@@ -16,7 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import Column, String
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -27,4 +28,4 @@ class TransactionLock(Base):
     __tablename__ = "tx_management"
 
     # transaction from
-    tx_from = Column(String(42), primary_key=True)
+    tx_from: Mapped[str] = mapped_column(String(42), primary_key=True)

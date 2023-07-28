@@ -1701,7 +1701,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         db.add(_ledger_1)
 
         # request target AsPI
-        with mock.patch("app.utils.fastapi.RESPONSE_VALIDATION_MODE", False):
+        with mock.patch("app.utils.fastapi_utils.RESPONSE_VALIDATION_MODE", False):
             resp = client.get(
                 self.base_url.format(token_address=token_address, ledger_id=1),
                 params={

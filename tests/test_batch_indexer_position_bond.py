@@ -46,14 +46,12 @@ from app.utils.web3_utils import Web3Wrapper
 from batch.indexer_position_bond import LOG, Processor, main
 from config import CHAIN_ID, TX_GAS_LIMIT, ZERO_ADDRESS
 from tests.account_config import config_eth_account
-from tests.utils.contract_utils import IbetExchangeContractTestUtils
 from tests.utils.contract_utils import (
+    IbetExchangeContractTestUtils,
     IbetSecurityTokenContractTestUtils as STContractUtils,
-)
-from tests.utils.contract_utils import (
     IbetSecurityTokenEscrowContractTestUtils as STEscrowContractUtils,
+    PersonalInfoContractTestUtils,
 )
-from tests.utils.contract_utils import PersonalInfoContractTestUtils
 
 web3 = Web3Wrapper()
 
@@ -3686,7 +3684,7 @@ class TestProcessor:
         with patch(
             "batch.indexer_position_bond.INDEXER_SYNC_INTERVAL", None
         ), patch.object(
-            Session, "query", side_effect=InvalidRequestError()
+            Session, "scalars", side_effect=InvalidRequestError()
         ), pytest.raises(
             TypeError
         ):

@@ -20,7 +20,7 @@ import json
 import re
 import secrets
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 import boto3
 import eth_keyfile
@@ -31,7 +31,7 @@ from Crypto.PublicKey import RSA
 from eth_utils import keccak, to_checksum_address
 from fastapi import APIRouter, Path, Query
 from fastapi.exceptions import HTTPException
-from sqlalchemy import asc, desc
+from sqlalchemy import and_, asc, delete, desc, select
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import func
 
@@ -60,7 +60,7 @@ from app.model.schema import (
 from app.utils.contract_utils import ContractUtils
 from app.utils.docs_utils import get_routers_responses
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.fastapi import json_response
+from app.utils.fastapi_utils import json_response
 from config import (
     AWS_KMS_GENERATE_RANDOM_ENABLED,
     AWS_REGION_NAME,
@@ -197,13 +197,14 @@ def list_all_accounts(db: DBSession):
     #   )
     rsa_key_aliased = aliased(E2EMessagingAccountRsaKey)
     subquery_max = (
-        db.query(func.max(rsa_key_aliased.block_timestamp))
-        .filter(
+        select(func.max(rsa_key_aliased.block_timestamp))
+        .where(
             rsa_key_aliased.account_address == E2EMessagingAccountRsaKey.account_address
         )
         .scalar_subquery()
     )
-    subquery = db.query(E2EMessagingAccountRsaKey).filter(
+
+    subquery = select(E2EMessagingAccountRsaKey).where(
         E2EMessagingAccountRsaKey.block_timestamp == subquery_max
     )
     latest_rsa_key = aliased(
@@ -213,13 +214,16 @@ def list_all_accounts(db: DBSession):
     )
 
     # Get E2E Messaging Accounts
-    _accounts = (
-        db.query(E2EMessagingAccount, latest_rsa_key.rsa_public_key)
-        .outerjoin(
-            latest_rsa_key,
-            E2EMessagingAccount.account_address == latest_rsa_key.account_address,
+    _accounts: Sequence[tuple[E2EMessagingAccount, str]] = (
+        db.execute(
+            select(E2EMessagingAccount, latest_rsa_key.rsa_public_key)
+            .outerjoin(
+                latest_rsa_key,
+                E2EMessagingAccount.account_address == latest_rsa_key.account_address,
+            )
+            .order_by(E2EMessagingAccount.account_address)
         )
-        .order_by(E2EMessagingAccount.account_address)
+        .tuples()
         .all()
     )
 
@@ -247,11 +251,11 @@ def list_all_accounts(db: DBSession):
 def retrieve_account(db: DBSession, account_address: str):
     """Retrieve an e2e messaging account"""
 
-    _account = (
-        db.query(E2EMessagingAccount)
-        .filter(E2EMessagingAccount.account_address == account_address)
-        .first()
-    )
+    _account: E2EMessagingAccount | None = db.scalars(
+        select(E2EMessagingAccount)
+        .where(E2EMessagingAccount.account_address == account_address)
+        .limit(1)
+    ).first()
     if _account is None:
         raise HTTPException(
             status_code=404, detail="e2e messaging account is not exists"
@@ -259,12 +263,12 @@ def retrieve_account(db: DBSession, account_address: str):
 
     rsa_public_key = None
     if _account.is_deleted is False:
-        _rsa_key = (
-            db.query(E2EMessagingAccountRsaKey)
-            .filter(E2EMessagingAccountRsaKey.account_address == account_address)
+        _rsa_key = db.scalars(
+            select(E2EMessagingAccountRsaKey)
+            .where(E2EMessagingAccountRsaKey.account_address == account_address)
             .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
-            .first()
-        )
+            .limit(1)
+        ).first()
         rsa_public_key = _rsa_key.rsa_public_key
 
     return json_response(
@@ -287,11 +291,11 @@ def retrieve_account(db: DBSession, account_address: str):
 def delete_account(db: DBSession, account_address: str):
     """Logically delete an e2e messaging account"""
 
-    _account = (
-        db.query(E2EMessagingAccount)
-        .filter(E2EMessagingAccount.account_address == account_address)
-        .first()
-    )
+    _account: E2EMessagingAccount | None = db.scalars(
+        select(E2EMessagingAccount)
+        .where(E2EMessagingAccount.account_address == account_address)
+        .limit(1)
+    ).first()
     if _account is None:
         raise HTTPException(
             status_code=404, detail="e2e messaging account is not exists"
@@ -301,10 +305,11 @@ def delete_account(db: DBSession, account_address: str):
     db.merge(_account)
 
     # NOTE: RSA key is physically delete
-    db.query(E2EMessagingAccountRsaKey).filter(
-        E2EMessagingAccountRsaKey.account_address == account_address
-    ).delete()
-
+    db.execute(
+        delete(E2EMessagingAccountRsaKey).where(
+            E2EMessagingAccountRsaKey.account_address == account_address
+        )
+    )
     db.commit()
 
     return json_response(
@@ -331,28 +336,31 @@ def update_account_rsa_key(
 ):
     """Update an e2e messaging account rsa key"""
 
-    _account = (
-        db.query(E2EMessagingAccount)
-        .filter(E2EMessagingAccount.account_address == account_address)
-        .filter(E2EMessagingAccount.is_deleted == False)
-        .first()
-    )
+    _account = db.scalars(
+        select(E2EMessagingAccount)
+        .where(
+            and_(
+                E2EMessagingAccount.account_address == account_address,
+                E2EMessagingAccount.is_deleted == False,
+            )
+        )
+        .limit(1)
+    ).first()
     if _account is None:
         raise HTTPException(
             status_code=404, detail="e2e messaging account is not exists"
         )
 
-    _rsa_key = (
-        db.query(E2EMessagingAccountRsaKey)
-        .filter(E2EMessagingAccountRsaKey.account_address == account_address)
+    _rsa_key: E2EMessagingAccountRsaKey | None = db.scalars(
+        select(E2EMessagingAccountRsaKey)
+        .where(E2EMessagingAccountRsaKey.account_address == account_address)
         .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
-        .first()
-    )
+        .limit(1)
+    ).first()
 
     _account.rsa_key_generate_interval = data.rsa_key_generate_interval
     _account.rsa_generation = data.rsa_generation
     db.merge(_account)
-
     db.commit()
 
     return json_response(
@@ -380,11 +388,11 @@ def change_eoa_password(
     """Change Account's EOA Password"""
 
     # Get E2E Messaging Account
-    _account = (
-        db.query(E2EMessagingAccount)
-        .filter(E2EMessagingAccount.account_address == account_address)
-        .first()
-    )
+    _account: E2EMessagingAccount | None = db.scalars(
+        select(E2EMessagingAccount)
+        .where(E2EMessagingAccount.account_address == account_address)
+        .limit(1)
+    ).first()
     if _account is None:
         raise HTTPException(
             status_code=404, detail="e2e messaging account is not exists"
@@ -444,23 +452,23 @@ def change_rsa_passphrase(
     """Change Account's RSA Passphrase"""
 
     # Get E2E Messaging Account
-    _account = (
-        db.query(E2EMessagingAccount)
-        .filter(E2EMessagingAccount.account_address == account_address)
-        .first()
-    )
+    _account: E2EMessagingAccount | None = db.scalars(
+        select(E2EMessagingAccount)
+        .where(E2EMessagingAccount.account_address == account_address)
+        .limit(1)
+    ).first()
     if _account is None:
         raise HTTPException(
             status_code=404, detail="e2e messaging account is not exists"
         )
 
     # Get latest RSA key
-    _rsa_key = (
-        db.query(E2EMessagingAccountRsaKey)
-        .filter(E2EMessagingAccountRsaKey.account_address == account_address)
+    _rsa_key = db.scalars(
+        select(E2EMessagingAccountRsaKey)
+        .where(E2EMessagingAccountRsaKey.account_address == account_address)
         .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
-        .first()
-    )
+        .limit(1)
+    ).first()
     if _rsa_key is None:
         raise HTTPException(
             status_code=404, detail="e2e messaging rsa key is not exists"
@@ -520,27 +528,29 @@ def list_all_e2e_messages(
     """List all e2e message"""
 
     # Get E2E Messaging
-    query = db.query(IDXE2EMessaging).order_by(asc(IDXE2EMessaging.id))
-    total = query.count()
+    stmt = select(IDXE2EMessaging).order_by(asc(IDXE2EMessaging.id))
+
+    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Search Filter
     if from_address is not None:
-        query = query.filter(IDXE2EMessaging.from_address == from_address)
+        stmt = stmt.where(IDXE2EMessaging.from_address == from_address)
     if to_address is not None:
-        query = query.filter(IDXE2EMessaging.to_address == to_address)
+        stmt = stmt.where(IDXE2EMessaging.to_address == to_address)
     if _type is not None:
-        query = query.filter(IDXE2EMessaging.type == _type)
+        stmt = stmt.where(IDXE2EMessaging.type == _type)
     if message is not None:
-        query = query.filter(IDXE2EMessaging.message.like("%" + message + "%"))
-    count = query.count()
+        stmt = stmt.where(IDXE2EMessaging.message.like("%" + message + "%"))
+
+    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Pagination
     if limit is not None:
-        query = query.limit(limit)
+        stmt = stmt.limit(limit)
     if offset is not None:
-        query = query.offset(offset)
+        stmt = stmt.offset(offset)
 
-    _e2e_messaging_list = query.all()
+    _e2e_messaging_list: Sequence[IDXE2EMessaging] = db.scalars(stmt).all()
 
     e2e_messages = []
     for _e2e_messaging in _e2e_messaging_list:
@@ -588,8 +598,9 @@ def retrieve_e2e_messaging(db: DBSession, _id: int = Path(..., alias="id")):
     """Retrieve an e2e message"""
 
     # Get E2E Messaging
-    query = db.query(IDXE2EMessaging).filter(IDXE2EMessaging.id == _id)
-    _e2e_messaging = query.first()
+    _e2e_messaging: IDXE2EMessaging | None = db.scalars(
+        select(IDXE2EMessaging).where(IDXE2EMessaging.id == _id).limit(1)
+    ).first()
     if _e2e_messaging is None:
         raise HTTPException(status_code=404, detail="e2e messaging not found")
 

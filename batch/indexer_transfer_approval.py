@@ -21,9 +21,9 @@ import sys
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Sequence
 
-from sqlalchemy import create_engine
+from sqlalchemy import and_, create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from web3.eth import Contract
@@ -133,11 +133,11 @@ class Processor:
         issued_token_address_list: tuple[str, ...] = tuple(
             [
                 record[0]
-                for record in (
-                    db_session.query(Token.token_address)
-                    .filter(Token.token_status == 1)
-                    .all()
+                for record in db_session.execute(
+                    select(Token.token_address).where(Token.token_status == 1)
                 )
+                .tuples()
+                .all()
             ]
         )
         loaded_token_address_list: tuple[str, ...] = tuple(self.token_list.keys())
@@ -145,12 +145,14 @@ class Processor:
             set(issued_token_address_list) ^ set(loaded_token_address_list)
         )
 
-        load_required_token_list: list[Token] = (
-            db_session.query(Token)
-            .filter(Token.token_status == 1)
-            .filter(Token.token_address.in_(load_required_address_list))
-            .all()
-        )
+        load_required_token_list: Sequence[Token] = db_session.scalars(
+            select(Token).where(
+                and_(
+                    Token.token_status == 1,
+                    Token.token_address.in_(load_required_address_list),
+                )
+            )
+        ).all()
         for load_required_token in load_required_token_list:
             token_contract = web3.eth.contract(
                 address=load_required_token.token_address, abi=load_required_token.abi
@@ -177,9 +179,9 @@ class Processor:
             self.exchange_list.append(exchange_contract)
 
     def __get_idx_transfer_approval_block_number(self, db_session: Session):
-        _idx_transfer_approval_block_number = db_session.query(
-            IDXTransferApprovalBlockNumber
-        ).first()
+        _idx_transfer_approval_block_number: IDXTransferApprovalBlockNumber | None = (
+            db_session.scalars(select(IDXTransferApprovalBlockNumber).limit(1)).first()
+        )
         if _idx_transfer_approval_block_number is None:
             return 0
         else:
@@ -188,9 +190,9 @@ class Processor:
     def __set_idx_transfer_approval_block_number(
         self, db_session: Session, block_number: int
     ):
-        _idx_transfer_approval_block_number = db_session.query(
-            IDXTransferApprovalBlockNumber
-        ).first()
+        _idx_transfer_approval_block_number: IDXTransferApprovalBlockNumber | None = (
+            db_session.scalars(select(IDXTransferApprovalBlockNumber).limit(1)).first()
+        )
         if _idx_transfer_approval_block_number is None:
             _idx_transfer_approval_block_number = IDXTransferApprovalBlockNumber()
 
@@ -518,20 +520,22 @@ class Processor:
         notice_code,
     ):
         # Get IDXTransferApproval's Sequence Id
-        transfer_approval = (
-            db_session.query(IDXTransferApproval)
-            .filter(IDXTransferApproval.token_address == token_address)
-            .filter(IDXTransferApproval.exchange_address == exchange_address)
-            .filter(IDXTransferApproval.application_id == application_id)
-            .first()
-        )
+        transfer_approval: IDXTransferApproval | None = db_session.scalars(
+            select(IDXTransferApproval)
+            .where(
+                and_(
+                    IDXTransferApproval.token_address == token_address,
+                    IDXTransferApproval.exchange_address == exchange_address,
+                    IDXTransferApproval.application_id == application_id,
+                )
+            )
+            .limit(1)
+        ).first()
         if transfer_approval is not None:
             # Get issuer address
-            token: Token | None = (
-                db_session.query(Token)
-                .filter(Token.token_address == token_address)
-                .first()
-            )
+            token: Token | None = db_session.scalars(
+                select(Token).where(Token.token_address == token_address).limit(1)
+            ).first()
             sender = web3.eth.get_transaction(transaction_hash)["from"]
             if token is not None:
                 if token.issuer_address != sender:  # Operate from other than issuer
@@ -600,13 +604,17 @@ class Processor:
         :param block_timestamp: block timestamp
         :return: None
         """
-        transfer_approval = (
-            db_session.query(IDXTransferApproval)
-            .filter(IDXTransferApproval.token_address == token_address)
-            .filter(IDXTransferApproval.exchange_address == exchange_address)
-            .filter(IDXTransferApproval.application_id == application_id)
-            .first()
-        )
+        transfer_approval: IDXTransferApproval | None = db_session.scalars(
+            select(IDXTransferApproval)
+            .where(
+                and_(
+                    IDXTransferApproval.token_address == token_address,
+                    IDXTransferApproval.exchange_address == exchange_address,
+                    IDXTransferApproval.application_id == application_id,
+                )
+            )
+            .limit(1)
+        ).first()
         if event_type == "ApplyFor":
             if transfer_approval is None:
                 transfer_approval = IDXTransferApproval()

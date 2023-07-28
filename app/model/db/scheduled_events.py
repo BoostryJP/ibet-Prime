@@ -14,9 +14,11 @@
 # limitations under the License.
 #
 # SPDX-License-Identifier: Apache-2.0
+from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import JSON, Column, DateTime, Integer, String
+from sqlalchemy import JSON, DateTime, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -27,23 +29,23 @@ class ScheduledEvents(Base):
     __tablename__ = "scheduled_events"
 
     # sequence id
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     # event id (UUID)
-    event_id = Column(String(36), index=True)
+    event_id: Mapped[str | None] = mapped_column(String(36), index=True)
     # issuer_address
-    issuer_address = Column(String(42), nullable=False)
+    issuer_address: Mapped[str] = mapped_column(String(42), nullable=False)
     # token_address
-    token_address = Column(String(42), nullable=False)
+    token_address: Mapped[str] = mapped_column(String(42), nullable=False)
     # token type
-    token_type = Column(String(40), nullable=False)
+    token_type: Mapped[str] = mapped_column(String(40), nullable=False)
     # datetime when the event is scheduled (UTC)
-    scheduled_datetime = Column(DateTime, nullable=False)
+    scheduled_datetime: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     # event type
-    event_type = Column(String(40), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(40), nullable=False)
     # event processing status (pending:0, succeeded:1, failed:2)
-    status = Column(Integer, nullable=False, index=True)
+    status: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     # transaction data
-    data = Column(JSON, nullable=False)
+    data: Mapped[dict] = mapped_column(JSON, nullable=False)
 
 
 class ScheduledEventType(str, Enum):

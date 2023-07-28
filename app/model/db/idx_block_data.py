@@ -16,7 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import JSON, BigInteger, Column, Integer, String, Text
+from sqlalchemy import JSON, BigInteger, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -27,26 +28,28 @@ class IDXBlockData(Base):
     __tablename__ = "block_data"
 
     # Header data
-    number = Column(BigInteger, primary_key=True, autoincrement=False)
-    parent_hash = Column(String(66), nullable=False)
-    sha3_uncles = Column(String(66))
-    miner = Column(String(42))
-    state_root = Column(String(66))
-    transactions_root = Column(String(66))
-    receipts_root = Column(String(66))
-    logs_bloom = Column(String(514))
-    difficulty = Column(BigInteger)
-    gas_limit = Column(Integer)
-    gas_used = Column(Integer)
-    timestamp = Column(Integer, nullable=False, index=True)
-    proof_of_authority_data = Column(Text)
-    mix_hash = Column(String(66))
-    nonce = Column(String(18))
+    number: Mapped[int] = mapped_column(
+        BigInteger, primary_key=True, autoincrement=False
+    )
+    parent_hash: Mapped[str | None] = mapped_column(String(66), nullable=False)
+    sha3_uncles: Mapped[str | None] = mapped_column(String(66))
+    miner: Mapped[str | None] = mapped_column(String(42))
+    state_root: Mapped[str | None] = mapped_column(String(66))
+    transactions_root: Mapped[str | None] = mapped_column(String(66))
+    receipts_root: Mapped[str | None] = mapped_column(String(66))
+    logs_bloom: Mapped[str | None] = mapped_column(String(514))
+    difficulty: Mapped[int | None] = mapped_column(BigInteger)
+    gas_limit: Mapped[int | None] = mapped_column(Integer)
+    gas_used: Mapped[int | None] = mapped_column(Integer)
+    timestamp: Mapped[int | None] = mapped_column(Integer, nullable=False, index=True)
+    proof_of_authority_data: Mapped[str | None] = mapped_column(Text)
+    mix_hash: Mapped[str | None] = mapped_column(String(66))
+    nonce: Mapped[str | None] = mapped_column(String(18))
 
     # Other data
-    hash = Column(String(66), nullable=False, index=True)
-    size = Column(Integer)
-    transactions = Column(JSON)
+    hash: Mapped[str] = mapped_column(String(66), nullable=False, index=True)
+    size: Mapped[int | None] = mapped_column(Integer)
+    transactions: Mapped[dict | None] = mapped_column(JSON)
 
 
 class IDXBlockDataBlockNumber(Base):
@@ -55,6 +58,6 @@ class IDXBlockDataBlockNumber(Base):
     __tablename__ = "idx_block_data_block_number"
 
     # Chain id
-    chain_id = Column(String(10), primary_key=True)
+    chain_id: Mapped[str] = mapped_column(String(10), primary_key=True)
     # Latest blockNumber
-    latest_block_number = Column(BigInteger)
+    latest_block_number: Mapped[int | None] = mapped_column(BigInteger)

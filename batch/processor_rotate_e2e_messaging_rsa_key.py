@@ -20,11 +20,12 @@ import os
 import sys
 import time
 from datetime import datetime
+from typing import Sequence
 
 from Crypto import Random
 from Crypto.PublicKey import RSA
 from eth_keyfile import decode_keyfile_json
-from sqlalchemy import create_engine, desc
+from sqlalchemy import create_engine, desc, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -91,12 +92,11 @@ class Processor:
             db_session.close()
 
     def __get_e2e_messaging_account_list(self, db_session: Session):
-        e2e_messaging_account_list = (
-            db_session.query(E2EMessagingAccount)
-            .filter(E2EMessagingAccount.is_deleted == False)
+        e2e_messaging_account_list: Sequence[E2EMessagingAccount] = db_session.scalars(
+            select(E2EMessagingAccount)
+            .where(E2EMessagingAccount.is_deleted == False)
             .order_by(E2EMessagingAccount.account_address)
-            .all()
-        )
+        ).all()
         return e2e_messaging_account_list
 
     def __auto_generate_rsa_key(
@@ -107,15 +107,16 @@ class Processor:
     ):
         if e2e_messaging_account.rsa_key_generate_interval > 0:
             # Get latest RSA key
-            _account_rsa_key = (
-                db_session.query(E2EMessagingAccountRsaKey)
-                .filter(
+            _account_rsa_key: E2EMessagingAccountRsaKey | None = db_session.scalars(
+                select(E2EMessagingAccountRsaKey)
+                .where(
                     E2EMessagingAccountRsaKey.account_address
                     == e2e_messaging_account.account_address
                 )
                 .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
-                .first()
-            )
+                .limit(1)
+            ).first()
+
             latest_time = int(_account_rsa_key.block_timestamp.timestamp())
             interval = e2e_messaging_account.rsa_key_generate_interval * 3600
             if base_time - latest_time < interval:
@@ -185,16 +186,17 @@ class Processor:
     ):
         if e2e_messaging_account.rsa_generation > 0:
             # Delete RSA key that exceeds the number of generations
-            _account_rsa_key_over_generation_list = (
-                db_session.query(E2EMessagingAccountRsaKey)
-                .filter(
+            _account_rsa_key_over_generation_list: Sequence[
+                E2EMessagingAccountRsaKey
+            ] = db_session.scalars(
+                select(E2EMessagingAccountRsaKey)
+                .where(
                     E2EMessagingAccountRsaKey.account_address
                     == e2e_messaging_account.account_address
                 )
                 .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
                 .offset(e2e_messaging_account.rsa_generation)
-                .all()
-            )
+            ).all()
             for _account_rsa_key in _account_rsa_key_over_generation_list:
                 db_session.delete(_account_rsa_key)
 

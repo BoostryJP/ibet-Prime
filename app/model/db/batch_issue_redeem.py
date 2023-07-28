@@ -18,7 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
 
-from sqlalchemy import BigInteger, Boolean, Column, Integer, String
+from sqlalchemy import BigInteger, Boolean, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -29,17 +30,17 @@ class BatchIssueRedeemUpload(Base):
     __tablename__ = "batch_issue_redeem_upload"
 
     # upload id (UUID)
-    upload_id = Column(String(36), primary_key=True)
+    upload_id: Mapped[str] = mapped_column(String(36), primary_key=True)
     # issuer address
-    issuer_address = Column(String(42), nullable=False, index=True)
+    issuer_address: Mapped[str] = mapped_column(String(42), nullable=False, index=True)
     # token type
-    token_type = Column(String(40), nullable=False)
+    token_type: Mapped[str] = mapped_column(String(40), nullable=False)
     # token address
-    token_address = Column(String(42), nullable=False)
+    token_address: Mapped[str] = mapped_column(String(42), nullable=False)
     # processing category (BatchIssueRedeemProcessingCategory)
-    category = Column(String(20), nullable=False)
+    category: Mapped[str] = mapped_column(String(20), nullable=False)
     # processed status
-    processed = Column(Boolean, default=False, index=True)
+    processed: Mapped[bool | None] = mapped_column(Boolean, default=False, index=True)
 
 
 class BatchIssueRedeemProcessingCategory(str, Enum):
@@ -55,12 +56,12 @@ class BatchIssueRedeem(Base):
     __tablename__ = "batch_issue_redeem"
 
     # sequence id
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     # upload id (UUID)
-    upload_id = Column(String(36), index=True)
+    upload_id: Mapped[str | None] = mapped_column(String(36), index=True)
     # target account
-    account_address = Column(String(42), nullable=False)
+    account_address: Mapped[str] = mapped_column(String(42), nullable=False)
     # amount
-    amount = Column(BigInteger, nullable=False)
+    amount: Mapped[str] = mapped_column(BigInteger, nullable=False)
     # processing status (pending:0, succeeded:1, failed:2)
-    status = Column(Integer, nullable=False, index=True)
+    status: Mapped[int] = mapped_column(Integer, nullable=False, index=True)

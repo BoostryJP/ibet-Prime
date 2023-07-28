@@ -22,7 +22,7 @@ import time
 from typing import Sequence
 
 from eth_utils import to_checksum_address
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from web3.types import BlockData, TxData
@@ -128,11 +128,11 @@ class Processor:
 
     @staticmethod
     def __get_indexed_block_number(db_session: Session):
-        indexed_block_number = (
-            db_session.query(IDXBlockDataBlockNumber)
-            .filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
-            .first()
-        )
+        indexed_block_number: IDXBlockDataBlockNumber = db_session.scalars(
+            select(IDXBlockDataBlockNumber)
+            .where(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
+            .limit(1)
+        ).first()
         if indexed_block_number is None:
             return -1
         else:

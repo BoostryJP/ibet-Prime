@@ -19,9 +19,9 @@ SPDX-License-Identifier: Apache-2.0
 import os
 import sys
 import time
-from typing import Dict, List, Optional
+from typing import Dict, Optional, Sequence
 
-from sqlalchemy import create_engine
+from sqlalchemy import and_, create_engine, delete, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from web3.contract import Contract
@@ -96,21 +96,25 @@ class Processor:
         return Session(autocommit=False, autoflush=True, bind=db_engine)
 
     def __load_target(self, db_session: Session) -> bool:
-        self.target: Optional[TokenHoldersList] = (
-            db_session.query(TokenHoldersList)
-            .filter(TokenHoldersList.batch_status == TokenHolderBatchStatus.PENDING)
-            .first()
-        )
+        self.target: Optional[TokenHoldersList] = db_session.scalars(
+            select(TokenHoldersList)
+            .where(TokenHoldersList.batch_status == TokenHolderBatchStatus.PENDING)
+            .limit(1)
+        ).first()
         return True if self.target else False
 
     def __load_token_info(self, db_session: Session) -> bool:
         # Fetch token list information from DB
-        issued_token: Optional[Token] = (
-            db_session.query(Token)
-            .filter(Token.token_address == self.target.token_address)
-            .filter(Token.token_status == 1)
-            .first()
-        )
+        issued_token: Optional[Token] = db_session.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.token_address == self.target.token_address,
+                    Token.token_status == 1,
+                )
+            )
+            .limit(1)
+        ).first()
         if not issued_token:
             return False
         self.token_owner_address = issued_token.issuer_address
@@ -143,20 +147,22 @@ class Processor:
     def __load_checkpoint(
         self, local_session: Session, target_token_address: str, block_to: int
     ) -> int:
-        _checkpoint: Optional[TokenHoldersList] = (
-            local_session.query(TokenHoldersList)
-            .filter(TokenHoldersList.token_address == target_token_address)
-            .filter(TokenHoldersList.block_number < block_to)
-            .filter(TokenHoldersList.batch_status == TokenHolderBatchStatus.DONE)
-            .order_by(TokenHoldersList.block_number.desc())
-            .first()
-        )
-        if _checkpoint:
-            _holders: List[TokenHolder] = (
-                local_session.query(TokenHolder)
-                .filter(TokenHolder.holder_list_id == _checkpoint.id)
-                .all()
+        _checkpoint: Optional[TokenHoldersList] = local_session.scalars(
+            select(TokenHoldersList)
+            .where(
+                and_(
+                    TokenHoldersList.token_address == target_token_address,
+                    TokenHoldersList.block_number < block_to,
+                    TokenHoldersList.batch_status == TokenHolderBatchStatus.DONE,
+                )
             )
+            .order_by(TokenHoldersList.block_number.desc())
+            .limit(1)
+        ).first()
+        if _checkpoint:
+            _holders: Sequence[TokenHolder] = local_session.scalars(
+                select(TokenHolder).where(TokenHolder.holder_list_id == _checkpoint.id)
+            ).all()
             for holder in _holders:
                 self.balance_book.store(
                     account_address=holder.account_address,
@@ -218,12 +224,14 @@ class Processor:
     def __update_status(self, local_session: Session, status: TokenHolderBatchStatus):
         if status == TokenHolderBatchStatus.DONE:
             # Not to store non-holders
-            (
-                local_session.query(TokenHolder)
-                .filter(TokenHolder.holder_list_id == self.target.id)
-                .filter(TokenHolder.hold_balance == 0)
-                .filter(TokenHolder.locked_balance == 0)
-                .delete()
+            local_session.execute(
+                delete(TokenHolder).where(
+                    and_(
+                        TokenHolder.holder_list_id == self.target.id,
+                        TokenHolder.hold_balance == 0,
+                        TokenHolder.locked_balance == 0,
+                    )
+                )
             )
 
         self.target.batch_status = status.value
@@ -317,7 +325,7 @@ class Processor:
                 args = event["args"]
                 from_account = args.get("from", ZERO_ADDRESS)
                 to_account = args.get("to", ZERO_ADDRESS)
-                amount = args.get("value")
+                amount = int(args.get("value"))
 
                 # Skip sinking in case of deposit to exchange or withdrawal from exchange
                 if (
@@ -481,12 +489,16 @@ class Processor:
             if page.account_address == token_owner_address:
                 # Skip storing data for token owner
                 continue
-            token_holder: TokenHolder | None = (
-                db_session.query(TokenHolder)
-                .filter(TokenHolder.holder_list_id == holder_list_id)
-                .filter(TokenHolder.account_address == account_address)
-                .first()
-            )
+            token_holder: TokenHolder | None = db_session.scalars(
+                select(TokenHolder)
+                .where(
+                    and_(
+                        TokenHolder.holder_list_id == holder_list_id,
+                        TokenHolder.account_address == account_address,
+                    )
+                )
+                .limit(1)
+            ).first()
             if token_holder is not None:
                 token_holder.hold_balance = page.hold_balance
                 token_holder.locked_balance = page.locked_balance
