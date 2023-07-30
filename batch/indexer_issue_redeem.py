@@ -20,9 +20,10 @@ import os
 import sys
 import time
 from datetime import datetime
+from typing import Sequence
 
 from eth_utils import to_checksum_address
-from sqlalchemy import create_engine
+from sqlalchemy import and_, create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from web3.eth import Contract
@@ -107,11 +108,11 @@ class Processor:
         issued_token_address_list: tuple[str, ...] = tuple(
             [
                 record[0]
-                for record in (
-                    db_session.query(Token.token_address)
-                    .filter(Token.token_status == 1)
-                    .all()
+                for record in db_session.execute(
+                    select(Token.token_address).where(Token.token_status == 1)
                 )
+                .tuples()
+                .all()
             ]
         )
         loaded_token_address_list: tuple[str, ...] = tuple(self.token_list.keys())
@@ -123,12 +124,14 @@ class Processor:
             # If there are no tokens to load newly, skip process
             return
 
-        load_required_token_list: list[Token] = (
-            db_session.query(Token)
-            .filter(Token.token_status == 1)
-            .filter(Token.token_address.in_(load_required_address_list))
-            .all()
-        )
+        load_required_token_list: Sequence[Token] = db_session.scalars(
+            select(Token).where(
+                and_(
+                    Token.token_status == 1,
+                    Token.token_address.in_(load_required_address_list),
+                )
+            )
+        ).all()
         for load_required_token in load_required_token_list:
             token_contract = web3.eth.contract(
                 address=load_required_token.token_address, abi=load_required_token.abi
@@ -136,14 +139,18 @@ class Processor:
             self.token_list[load_required_token.token_address] = token_contract
 
     def __get_idx_issue_redeem_block_number(self, db_session: Session):
-        _idx_transfer_block_number = db_session.query(IDXIssueRedeemBlockNumber).first()
+        _idx_transfer_block_number = db_session.scalars(
+            select(IDXIssueRedeemBlockNumber).limit(1)
+        ).first()
         if _idx_transfer_block_number is None:
             return 0
         else:
             return _idx_transfer_block_number.latest_block_number
 
     def __set_idx_transfer_block_number(self, db_session: Session, block_number: int):
-        _idx_transfer_block_number = db_session.query(IDXIssueRedeemBlockNumber).first()
+        _idx_transfer_block_number = db_session.scalars(
+            select(IDXIssueRedeemBlockNumber).limit(1)
+        ).first()
         if _idx_transfer_block_number is None:
             _idx_transfer_block_number = IDXIssueRedeemBlockNumber()
 

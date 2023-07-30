@@ -24,17 +24,13 @@ from web3 import Web3
 
 from .ibet_security_token import (
     AdditionalIssueParams as IbetSecurityTokenAdditionalIssueParams,
-)
-from .ibet_security_token import (
     ApproveTransferParams as IbetSecurityTokenApproveTransferParams,
-)
-from .ibet_security_token import (
     CancelTransferParams as IbetSecurityTokenCancelTransferParams,
+    ForceUnlockParams as IbetSecurityTokenForceUnlockParams,
+    LockParams as IbetSecurityTokenLockParams,
+    RedeemParams as IbetSecurityTokenRedeemParams,
+    TransferParams as IbetSecurityTokenTransferParams,
 )
-from .ibet_security_token import ForceUnlockParams as IbetSecurityTokenForceUnlockParams
-from .ibet_security_token import LockParams as IbetSecurityTokenLockParams
-from .ibet_security_token import RedeemParams as IbetSecurityTokenRedeemParams
-from .ibet_security_token import TransferParams as IbetSecurityTokenTransferParams
 
 
 class UpdateParams(BaseModel):

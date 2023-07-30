@@ -24,6 +24,7 @@ from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from pydantic.error_wrappers import ErrorWrapper
 from pydantic.errors import MissingError
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from web3 import Web3
 
@@ -146,7 +147,9 @@ def check_auth(
 
 
 def check_account_for_auth(db: Session, issuer_address: str):
-    account = db.query(Account).filter(Account.issuer_address == issuer_address).first()
+    account = db.scalars(
+        select(Account).where(Account.issuer_address == issuer_address).limit(1)
+    ).first()
     if account is None:
         raise AuthorizationError
     decrypted_eoa_password = E2EEUtils.decrypt(account.eoa_password)
@@ -164,9 +167,9 @@ def check_eoa_password_for_auth(checked_pwd: str, correct_pwd: str):
 
 
 def check_token_for_auth(db: Session, issuer_address: str, auth_token: str):
-    issuer_token: Optional[AuthToken] = (
-        db.query(AuthToken).filter(AuthToken.issuer_address == issuer_address).first()
-    )
+    issuer_token: Optional[AuthToken] = db.scalars(
+        select(AuthToken).where(AuthToken.issuer_address == issuer_address).limit(1)
+    ).first()
     if issuer_token is None:
         raise AuthorizationError
     else:

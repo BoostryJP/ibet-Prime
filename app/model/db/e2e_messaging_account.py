@@ -16,7 +16,10 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import JSON, BigInteger, Boolean, Column, DateTime, Integer, String
+from datetime import datetime
+
+from sqlalchemy import JSON, BigInteger, Boolean, DateTime, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -27,17 +30,17 @@ class E2EMessagingAccount(Base):
     __tablename__ = "e2e_messaging_account"
 
     # account address
-    account_address = Column(String(42), primary_key=True)
+    account_address: Mapped[str] = mapped_column(String(42), primary_key=True)
     # ethereum keyfile
-    keyfile = Column(JSON)
+    keyfile: Mapped[dict | None] = mapped_column(JSON)
     # ethereum account password(encrypted)
-    eoa_password = Column(String(2000))
+    eoa_password: Mapped[str | None] = mapped_column(String(2000))
     # RSA key auto-generation interval(hour)
-    rsa_key_generate_interval = Column(Integer, default=0)
+    rsa_key_generate_interval: Mapped[int | None] = mapped_column(Integer, default=0)
     # Number of RSA key generations
-    rsa_generation = Column(Integer, default=0)
+    rsa_generation: Mapped[int | None] = mapped_column(Integer, default=0)
     # delete flag
-    is_deleted = Column(Boolean, default=False)
+    is_deleted: Mapped[bool | None] = mapped_column(Boolean, default=False)
 
 
 class E2EMessagingAccountRsaKey(Base):
@@ -45,16 +48,16 @@ class E2EMessagingAccountRsaKey(Base):
 
     __tablename__ = "e2e_messaging_account_rsa_key"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # transaction hash
-    transaction_hash = Column(String(66), index=True)
+    transaction_hash: Mapped[str | None] = mapped_column(String(66), index=True)
     # account address
-    account_address = Column(String(42), index=True)
+    account_address: Mapped[str | None] = mapped_column(String(42), index=True)
     # rsa private key
-    rsa_private_key = Column(String(4000))
+    rsa_private_key: Mapped[str | None] = mapped_column(String(4000))
     # rsa public key
-    rsa_public_key = Column(String(1000))
+    rsa_public_key: Mapped[str | None] = mapped_column(String(1000))
     # rsa passphrase(encrypted)
-    rsa_passphrase = Column(String(2000))
+    rsa_passphrase: Mapped[str | None] = mapped_column(String(2000))
     # block timestamp
-    block_timestamp = Column(DateTime)
+    block_timestamp: Mapped[datetime | None] = mapped_column(DateTime)

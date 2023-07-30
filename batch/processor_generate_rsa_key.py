@@ -19,10 +19,11 @@ SPDX-License-Identifier: Apache-2.0
 import os
 import sys
 import time
+from typing import Sequence
 
 from Crypto import Random
 from Crypto.PublicKey import RSA
-from sqlalchemy import create_engine, or_
+from sqlalchemy import create_engine, or_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -77,16 +78,14 @@ class Processor:
             db_session.close()
 
     def __get_account_list(self, db_session: Session):
-        account_list = (
-            db_session.query(Account)
-            .filter(
+        account_list: Sequence[Account] = db_session.scalars(
+            select(Account).where(
                 or_(
                     Account.rsa_status == AccountRsaStatus.CREATING.value,
                     Account.rsa_status == AccountRsaStatus.CHANGING.value,
                 )
             )
-            .all()
-        )
+        ).all()
 
         return account_list
 
@@ -105,11 +104,9 @@ class Processor:
         rsa_private_pem: str,
         rsa_public_pem: str,
     ):
-        account = (
-            db_session.query(Account)
-            .filter(Account.issuer_address == issuer_address)
-            .first()
-        )
+        account: Account | None = db_session.scalars(
+            select(Account).where(Account.issuer_address == issuer_address).limit(1)
+        ).first()
         if account is not None:
             rsa_status = AccountRsaStatus.SET.value
             if account.rsa_status == AccountRsaStatus.CHANGING.value:

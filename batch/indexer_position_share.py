@@ -23,10 +23,10 @@ import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from itertools import groupby
-from typing import Optional
+from typing import Optional, Sequence
 
 from eth_utils import to_checksum_address
-from sqlalchemy import create_engine
+from sqlalchemy import and_, create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from web3.eth import Contract
@@ -128,12 +128,15 @@ class Processor:
         issued_token_address_list: tuple[str, ...] = tuple(
             [
                 record[0]
-                for record in (
-                    db_session.query(Token.token_address)
-                    .filter(Token.type == TokenType.IBET_SHARE)
-                    .filter(Token.token_status == 1)
-                    .all()
+                for record in db_session.execute(
+                    select(Token.token_address).where(
+                        and_(
+                            Token.type == TokenType.IBET_SHARE, Token.token_status == 1
+                        )
+                    )
                 )
+                .tuples()
+                .all()
             ]
         )
         loaded_token_address_list: tuple[str, ...] = tuple(self.token_list.keys())
@@ -141,13 +144,15 @@ class Processor:
             set(issued_token_address_list) ^ set(loaded_token_address_list)
         )
 
-        load_required_token_list: list[Token] = (
-            db_session.query(Token)
-            .filter(Token.type == TokenType.IBET_SHARE)
-            .filter(Token.token_status == 1)
-            .filter(Token.token_address.in_(load_required_address_list))
-            .all()
-        )
+        load_required_token_list: Sequence[Token] = db_session.scalars(
+            select(Token).where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.token_status == 1,
+                    Token.token_address.in_(load_required_address_list),
+                )
+            )
+        ).all()
 
         for load_required_token in load_required_token_list:
             token_contract = web3.eth.contract(
@@ -170,18 +175,18 @@ class Processor:
         self.exchange_address_list = list(set(_exchange_list_tmp))
 
     def __get_idx_position_block_number(self, db_session: Session):
-        _idx_position_block_number = db_session.query(
-            IDXPositionShareBlockNumber
-        ).first()
+        _idx_position_block_number: IDXPositionShareBlockNumber | None = (
+            db_session.scalars(select(IDXPositionShareBlockNumber).limit(1)).first()
+        )
         if _idx_position_block_number is None:
             return 0
         else:
             return _idx_position_block_number.latest_block_number
 
     def __set_idx_position_block_number(self, db_session: Session, block_number: int):
-        _idx_position_block_number = db_session.query(
-            IDXPositionShareBlockNumber
-        ).first()
+        _idx_position_block_number: IDXPositionShareBlockNumber | None = (
+            db_session.scalars(select(IDXPositionShareBlockNumber).limit(1)).first()
+        )
         if _idx_position_block_number is None:
             _idx_position_block_number = IDXPositionShareBlockNumber()
 
@@ -1043,12 +1048,16 @@ class Processor:
         :param pending_transfer: pending transfer
         :return: None
         """
-        position = (
-            db_session.query(IDXPosition)
-            .filter(IDXPosition.token_address == token_address)
-            .filter(IDXPosition.account_address == account_address)
-            .first()
-        )
+        position: IDXPosition | None = db_session.scalars(
+            select(IDXPosition)
+            .where(
+                and_(
+                    IDXPosition.token_address == token_address,
+                    IDXPosition.account_address == account_address,
+                )
+            )
+            .limit(1)
+        ).first()
         if position is not None:
             if balance is not None:
                 position.balance = balance
@@ -1097,13 +1106,17 @@ class Processor:
         :param value: updated locked amount
         :return: None
         """
-        locked = (
-            db_session.query(IDXLockedPosition)
-            .filter(IDXLockedPosition.token_address == token_address)
-            .filter(IDXLockedPosition.lock_address == lock_address)
-            .filter(IDXLockedPosition.account_address == account_address)
-            .first()
-        )
+        locked: IDXLockedPosition | None = db_session.scalars(
+            select(IDXLockedPosition)
+            .where(
+                and_(
+                    IDXLockedPosition.token_address == token_address,
+                    IDXLockedPosition.lock_address == lock_address,
+                    IDXLockedPosition.account_address == account_address,
+                )
+            )
+            .limit(1)
+        ).first()
         if locked is not None:
             locked.value = value
             db_session.merge(locked)

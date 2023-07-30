@@ -16,7 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import BigInteger, Column, Integer, String
+from sqlalchemy import BigInteger, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -27,13 +28,13 @@ class BulkTransferUpload(Base):
     __tablename__ = "bulk_transfer_upload"
 
     # upload id (UUID)
-    upload_id = Column(String(36), primary_key=True)
+    upload_id: Mapped[str] = mapped_column(String(36), primary_key=True)
     # issuer address
-    issuer_address = Column(String(42), nullable=False, index=True)
+    issuer_address: Mapped[str] = mapped_column(String(42), nullable=False, index=True)
     # token type
-    token_type = Column(String(40), nullable=False)
+    token_type: Mapped[str] = mapped_column(String(40), nullable=False)
     # processing status (pending:0, succeeded:1, failed:2)
-    status = Column(Integer, nullable=False, index=True)
+    status: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
 
 
 class BulkTransfer(Base):
@@ -42,20 +43,20 @@ class BulkTransfer(Base):
     __tablename__ = "bulk_transfer"
 
     # sequence id
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     # issuer address
-    issuer_address = Column(String(42), nullable=False, index=True)
+    issuer_address: Mapped[str] = mapped_column(String(42), nullable=False, index=True)
     # upload id (UUID)
-    upload_id = Column(String(36), index=True)
+    upload_id: Mapped[str | None] = mapped_column(String(36), index=True)
     # token address
-    token_address = Column(String(42), nullable=False)
+    token_address: Mapped[str] = mapped_column(String(42), nullable=False)
     # token type
-    token_type = Column(String(40), nullable=False)
+    token_type: Mapped[str] = mapped_column(String(40), nullable=False)
     # transfer from
-    from_address = Column(String(42), nullable=False)
+    from_address: Mapped[str] = mapped_column(String(42), nullable=False)
     # transfer to
-    to_address = Column(String(42), nullable=False)
+    to_address: Mapped[str] = mapped_column(String(42), nullable=False)
     # transfer amount
-    amount = Column(BigInteger, nullable=False)
+    amount: Mapped[int] = mapped_column(BigInteger, nullable=False)
     # processing status (pending:0, succeeded:1, failed:2)
-    status = Column(Integer, nullable=False, index=True)
+    status: Mapped[int] = mapped_column(Integer, nullable=False, index=True)

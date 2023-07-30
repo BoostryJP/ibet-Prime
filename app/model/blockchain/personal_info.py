@@ -26,6 +26,8 @@ import sys
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 from web3.exceptions import TimeExhausted
 
 path = os.path.join(os.path.dirname(__file__), "../")
@@ -44,13 +46,13 @@ web3 = Web3Wrapper()
 class PersonalInfoContract:
     """PersonalInfo contract model"""
 
-    def __init__(self, db, issuer_address: str, contract_address=None):
+    def __init__(self, db: Session, issuer_address: str, contract_address=None):
         self.personal_info_contract = ContractUtils.get_contract(
             contract_name="PersonalInfo", contract_address=contract_address
         )
-        self.issuer = (
-            db.query(Account).filter(Account.issuer_address == issuer_address).first()
-        )
+        self.issuer = db.scalars(
+            select(Account).where(Account.issuer_address == issuer_address).limit(1)
+        ).first()
 
     def get_info(self, account_address: str, default_value=None):
         """Get personal information

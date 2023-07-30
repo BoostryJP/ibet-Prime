@@ -16,9 +16,11 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import BigInteger, Column, DateTime, String
+from sqlalchemy import BigInteger, DateTime, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -28,21 +30,21 @@ class IDXIssueRedeem(Base):
 
     __tablename__ = "idx_issue_redeem"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # event type
-    event_type = Column(String(10), index=True)
+    event_type: Mapped[str | None] = mapped_column(String(10), index=True)
     # transaction hash
-    transaction_hash = Column(String(66), index=True)
+    transaction_hash: Mapped[str | None] = mapped_column(String(66), index=True)
     # token address
-    token_address = Column(String(42), index=True)
+    token_address: Mapped[str | None] = mapped_column(String(42), index=True)
     # locked address
-    locked_address = Column(String(42), index=True)
+    locked_address: Mapped[str | None] = mapped_column(String(42), index=True)
     # target (account) address
-    target_address = Column(String(42), index=True)
+    target_address: Mapped[str | None] = mapped_column(String(42), index=True)
     # amount
-    amount = Column(BigInteger)
+    amount: Mapped[int | None] = mapped_column(BigInteger)
     # block timestamp
-    block_timestamp = Column(DateTime)
+    block_timestamp: Mapped[datetime | None] = mapped_column(DateTime)
 
 
 class IDXIssueRedeemEventType(str, Enum):
@@ -67,6 +69,6 @@ class IDXIssueRedeemBlockNumber(Base):
     __tablename__ = "idx_issue_redeem_block_number"
 
     # sequence id
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # latest blockNumber
-    latest_block_number = Column(BigInteger)
+    latest_block_number: Mapped[int | None] = mapped_column(BigInteger)

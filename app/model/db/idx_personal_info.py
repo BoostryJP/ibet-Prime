@@ -16,8 +16,9 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import JSON, BigInteger, Column, String
+from sqlalchemy import JSON, BigInteger, String
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -27,11 +28,11 @@ class IDXPersonalInfo(Base):
 
     __tablename__ = "idx_personal_info"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # account address
-    account_address = Column(String(42), index=True)
+    account_address: Mapped[str | None] = mapped_column(String(42), index=True)
     # issuer address
-    issuer_address = Column(String(42), index=True)
+    issuer_address: Mapped[str | None] = mapped_column(String(42), index=True)
     # personal information
     #   {
     #       "key_manager": "string",
@@ -43,7 +44,7 @@ class IDXPersonalInfo(Base):
     #       "is_corporate": "boolean",
     #       "tax_category": "integer"
     #   }
-    _personal_info = Column("personal_info", JSON, nullable=False)
+    _personal_info = mapped_column("personal_info", JSON, nullable=False)
 
     @hybrid_property
     def personal_info(self):
@@ -60,8 +61,8 @@ class IDXPersonalInfo(Base):
             }
         return self._personal_info
 
-    @personal_info.setter  # type: ignore
-    def personal_info(self, personal_info_dict):
+    @personal_info.inplace.setter
+    def _personal_info_setter(self, personal_info_dict: dict):
         self._personal_info = {
             "key_manager": personal_info_dict.get("key_manager", None),
             "name": personal_info_dict.get("name", None),
@@ -79,6 +80,6 @@ class IDXPersonalInfoBlockNumber(Base):
 
     __tablename__ = "idx_personal_info_block_number"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # latest blockNumber
-    latest_block_number = Column(BigInteger)
+    latest_block_number: Mapped[int | None] = mapped_column(BigInteger)

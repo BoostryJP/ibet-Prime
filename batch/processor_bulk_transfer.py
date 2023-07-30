@@ -21,10 +21,10 @@ import sys
 import threading
 import time
 import uuid
-from typing import List, Type
+from typing import List, Sequence
 
 from eth_keyfile import decode_keyfile_json
-from sqlalchemy import create_engine
+from sqlalchemy import and_, create_engine, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -93,11 +93,11 @@ class Processor:
 
                 # Get issuer's private key
                 try:
-                    _account = (
-                        db_session.query(Account)
-                        .filter(Account.issuer_address == _upload.issuer_address)
-                        .first()
-                    )
+                    _account: Account | None = db_session.scalars(
+                        select(Account)
+                        .where(Account.issuer_address == _upload.issuer_address)
+                        .limit(1)
+                    ).first()
                     if (
                         _account is None
                     ):  # If issuer does not exist, update the status of the upload to ERROR
@@ -240,23 +240,31 @@ class Processor:
 
             # Retrieve one target data
             # NOTE: Priority is given to non-issuers that are being processed by other threads.
-            upload_1 = (
-                db_session.query(BulkTransferUpload)
-                .filter(BulkTransferUpload.upload_id.notin_(locked_update_id))
-                .filter(BulkTransferUpload.status == 0)
-                .filter(BulkTransferUpload.issuer_address.notin_(exclude_issuer))
+            upload_1: BulkTransferUpload | None = db_session.scalars(
+                select(BulkTransferUpload)
+                .where(
+                    and_(
+                        BulkTransferUpload.upload_id.notin_(locked_update_id),
+                        BulkTransferUpload.status == 0,
+                        BulkTransferUpload.issuer_address.notin_(exclude_issuer),
+                    )
+                )
                 .order_by(BulkTransferUpload.created)
-                .first()
-            )
+                .limit(1)
+            ).first()
             if upload_1 is None:
                 # Retrieve again for all issuers
-                upload_1 = (
-                    db_session.query(BulkTransferUpload)
-                    .filter(BulkTransferUpload.upload_id.notin_(locked_update_id))
-                    .filter(BulkTransferUpload.status == 0)
+                upload_1: BulkTransferUpload | None = db_session.scalars(
+                    select(BulkTransferUpload)
+                    .where(
+                        and_(
+                            BulkTransferUpload.upload_id.notin_(locked_update_id),
+                            BulkTransferUpload.status == 0,
+                        )
+                    )
                     .order_by(BulkTransferUpload.created)
-                    .first()
-                )
+                    .limit(1)
+                ).first()
 
             # Issuer to be processed => upload_1.issuer_address
             # Retrieve the data of the Issuer to be processed
@@ -264,19 +272,20 @@ class Processor:
             if upload_1 is not None:
                 upload_list = [upload_1]
                 if BULK_TRANSFER_WORKER_LOT_SIZE > 1:
-                    upload_list = (
-                        upload_list
-                        + db_session.query(BulkTransferUpload)
-                        .filter(BulkTransferUpload.upload_id.notin_(locked_update_id))
-                        .filter(BulkTransferUpload.status == 0)
-                        .filter(
-                            BulkTransferUpload.issuer_address == upload_1.issuer_address
+                    upload_list += db_session.scalars(
+                        select(BulkTransferUpload)
+                        .where(
+                            and_(
+                                BulkTransferUpload.upload_id.notin_(locked_update_id),
+                                BulkTransferUpload.status == 0,
+                                BulkTransferUpload.issuer_address
+                                == upload_1.issuer_address,
+                            )
                         )
                         .order_by(BulkTransferUpload.created)
                         .offset(1)
                         .limit(BULK_TRANSFER_WORKER_LOT_SIZE - 1)
-                        .all()
-                    )
+                    ).all()
 
             processing_issuer[self.thread_num] = {}
             for upload in upload_list:
@@ -285,15 +294,12 @@ class Processor:
                 ] = upload.issuer_address
         return upload_list
 
-    def __get_transfer_data(
-        self, db_session: Session, upload_id: str, status: int
-    ) -> List[BulkTransfer]:
-        transfer_list = (
-            db_session.query(BulkTransfer)
-            .filter(BulkTransfer.upload_id == upload_id)
-            .filter(BulkTransfer.status == status)
-            .all()
-        )
+    def __get_transfer_data(self, db_session: Session, upload_id: str, status: int):
+        transfer_list: Sequence[BulkTransfer] = db_session.scalars(
+            select(BulkTransfer).where(
+                and_(BulkTransfer.upload_id == upload_id, BulkTransfer.status == status)
+            )
+        ).all()
         return transfer_list
 
     def __release_processing_issuer(self, upload_id):
@@ -304,25 +310,21 @@ class Processor:
     def __sink_on_finish_upload_process(
         db_session: Session, upload_id: str, status: int
     ):
-        transfer_upload_record = (
-            db_session.query(BulkTransferUpload)
-            .filter(BulkTransferUpload.upload_id == upload_id)
-            .first()
+        db_session.execute(
+            update(BulkTransferUpload)
+            .where(BulkTransferUpload.upload_id == upload_id)
+            .values(status=status)
         )
-        if transfer_upload_record is not None:
-            transfer_upload_record.status = status
-            db_session.merge(transfer_upload_record)
 
     @staticmethod
     def __sink_on_finish_transfer_process(
         db_session: Session, record_id: int, status: int
     ):
-        transfer_record = (
-            db_session.query(BulkTransfer).filter(BulkTransfer.id == record_id).first()
+        db_session.execute(
+            update(BulkTransfer)
+            .where(BulkTransfer.id == record_id)
+            .values(status=status)
         )
-        if transfer_record is not None:
-            transfer_record.status = status
-            db_session.merge(transfer_record)
 
     @staticmethod
     def __sink_on_error_notification(

@@ -16,7 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import BigInteger, Column, Integer, String, Text
+from sqlalchemy import BigInteger, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -26,14 +27,14 @@ class IDXTxData(Base):
 
     __tablename__ = "tx_data"
 
-    hash = Column(String(66), primary_key=True)
-    block_hash = Column(String(66))
-    block_number = Column(BigInteger, index=True)
-    transaction_index = Column(Integer)
-    from_address = Column(String(42), index=True)
-    to_address = Column(String(42), index=True)
-    input = Column(Text)
-    gas = Column(Integer)
-    gas_price = Column(BigInteger)
-    value = Column(BigInteger)
-    nonce = Column(Integer)
+    hash: Mapped[str] = mapped_column(String(66), primary_key=True)
+    block_hash: Mapped[str | None] = mapped_column(String(66))
+    block_number: Mapped[int | None] = mapped_column(BigInteger, index=True)
+    transaction_index: Mapped[int | None] = mapped_column(Integer)
+    from_address: Mapped[str | None] = mapped_column(String(42), index=True)
+    to_address: Mapped[str | None] = mapped_column(String(42), index=True)
+    input: Mapped[str | None] = mapped_column(Text)
+    gas: Mapped[int | None] = mapped_column(Integer)
+    gas_price: Mapped[int | None] = mapped_column(BigInteger)
+    value: Mapped[int | None] = mapped_column(BigInteger)
+    nonce: Mapped[int | None] = mapped_column(Integer)

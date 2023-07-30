@@ -18,7 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
 
-from sqlalchemy import JSON, Column, Integer, String
+from sqlalchemy import JSON, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -29,15 +30,15 @@ class LedgerTemplate(Base):
     __tablename__ = "ledger_template"
 
     # token address
-    token_address = Column(String(42), primary_key=True)
+    token_address: Mapped[str] = mapped_column(String(42), primary_key=True)
     # issuer address
-    issuer_address = Column(String(42), index=False)
+    issuer_address: Mapped[str | None] = mapped_column(String(42), index=False)
     # token name
-    token_name = Column(String(200), nullable=False)
+    token_name: Mapped[str] = mapped_column(String(200), nullable=False)
     # headers(any object array)
-    headers = Column(JSON, default=[])
+    headers: Mapped[dict | None] = mapped_column(JSON, default=[])
     # footers(any object array)
-    footers = Column(JSON, default=[])
+    footers: Mapped[dict | None] = mapped_column(JSON, default=[])
 
 
 class LedgerDetailsTemplate(Base):
@@ -49,19 +50,19 @@ class LedgerDetailsTemplate(Base):
     # Note: It will be unique in token_address and token_detail_type,
     #       but since there is a possibility that multibyte characters will be set in token_detail_type,
     #       this column will be primary key.
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[str] = mapped_column(Integer, primary_key=True, autoincrement=True)
     # token address
-    token_address = Column(String(42), nullable=False)
+    token_address: Mapped[str] = mapped_column(String(42), nullable=False)
     # token detail type
-    token_detail_type = Column(String(100), nullable=False)
+    token_detail_type: Mapped[str] = mapped_column(String(100), nullable=False)
     # headers(any object array)
-    headers = Column(JSON, default=[])
+    headers: Mapped[dict | None] = mapped_column(JSON, default=[])
     # footers(any object array)
-    footers = Column(JSON, default=[])
+    footers: Mapped[dict | None] = mapped_column(JSON, default=[])
     # data type
-    data_type = Column(String(20), nullable=False)
+    data_type: Mapped[str] = mapped_column(String(20), nullable=False)
     # data source (address or UUID)
-    data_source = Column(String(42))
+    data_source: Mapped[str | None] = mapped_column(String(42))
 
 
 class LedgerDetailsDataType(str, Enum):

@@ -740,7 +740,7 @@ class TestProcessor:
         with patch(
             "batch.indexer_issue_redeem.INDEXER_SYNC_INTERVAL", None
         ), patch.object(
-            Session, "query", side_effect=InvalidRequestError()
+            Session, "execute", side_effect=InvalidRequestError()
         ), pytest.raises(
             TypeError
         ):

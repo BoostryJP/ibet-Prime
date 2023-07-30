@@ -26,7 +26,7 @@ from datetime import datetime
 from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from Crypto.Util.Padding import unpad
-from sqlalchemy import create_engine, desc
+from sqlalchemy import and_, create_engine, desc, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -129,9 +129,9 @@ class Processor:
         LOG.info("Sync job has been completed")
 
     def __get_idx_e2e_messaging_block_number(self, db_session: Session):
-        _idx_e2e_messaging_block_number = db_session.query(
-            IDXE2EMessagingBlockNumber
-        ).first()
+        _idx_e2e_messaging_block_number: IDXE2EMessagingBlockNumber | None = (
+            db_session.scalars(select(IDXE2EMessagingBlockNumber).limit(1)).first()
+        )
         if _idx_e2e_messaging_block_number is None:
             return 0
         else:
@@ -140,9 +140,9 @@ class Processor:
     def __set_idx_e2e_messaging_block_number(
         self, db_session: Session, block_number: int
     ):
-        _idx_e2e_messaging_block_number = db_session.query(
-            IDXE2EMessagingBlockNumber
-        ).first()
+        _idx_e2e_messaging_block_number: IDXE2EMessagingBlockNumber | None = (
+            db_session.scalars(select(IDXE2EMessagingBlockNumber).limit(1)).first()
+        )
         if _idx_e2e_messaging_block_number is None:
             _idx_e2e_messaging_block_number = IDXE2EMessagingBlockNumber()
 
@@ -212,12 +212,16 @@ class Processor:
 
     def __get_e2e_messaging_account(self, db_session: Session, to_address: str):
         # NOTE: Self sending data is registered at the time of sending.
-        _e2e_messaging_account = (
-            db_session.query(E2EMessagingAccount)
-            .filter(E2EMessagingAccount.account_address == to_address)
-            .filter(E2EMessagingAccount.is_deleted == False)
-            .first()
-        )
+        _e2e_messaging_account: E2EMessagingAccount | None = db_session.scalars(
+            select(E2EMessagingAccount)
+            .where(
+                and_(
+                    E2EMessagingAccount.account_address == to_address,
+                    E2EMessagingAccount.is_deleted == False,
+                )
+            )
+            .limit(1)
+        ).first()
         return _e2e_messaging_account
 
     def __get_message(
@@ -240,13 +244,17 @@ class Processor:
             return None
 
         # Get RSA key
-        account_rsa_key = (
-            db_session.query(E2EMessagingAccountRsaKey)
-            .filter(E2EMessagingAccountRsaKey.account_address == to_address)
-            .filter(E2EMessagingAccountRsaKey.block_timestamp <= block_timestamp)
+        account_rsa_key: E2EMessagingAccountRsaKey | None = db_session.scalars(
+            select(E2EMessagingAccountRsaKey)
+            .where(
+                and_(
+                    E2EMessagingAccountRsaKey.account_address == to_address,
+                    E2EMessagingAccountRsaKey.block_timestamp <= block_timestamp,
+                )
+            )
             .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
-            .first()
-        )
+            .limit(1)
+        ).first()
         if account_rsa_key is None:
             LOG.warning(f"RSA key does not exist: account_address={to_address}")
             return None

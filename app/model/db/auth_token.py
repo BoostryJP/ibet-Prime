@@ -18,7 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, Integer, String
+from sqlalchemy import DateTime, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -29,11 +30,13 @@ class AuthToken(Base):
     __tablename__ = "auth_token"
 
     # issuer address
-    issuer_address = Column(String(42), primary_key=True)
+    issuer_address: Mapped[str] = mapped_column(String(42), primary_key=True)
     # authentication token (sha256 hashed)
-    auth_token = Column(String(64))
+    auth_token: Mapped[str | None] = mapped_column(String(64))
     # usage start
-    usage_start = Column(DateTime, default=datetime.utcnow)
+    usage_start: Mapped[datetime | None] = mapped_column(
+        DateTime, default=datetime.utcnow
+    )
     # valid duration (sec)
     # - 0: endless
-    valid_duration = Column(Integer, nullable=False)
+    valid_duration: Mapped[int | None] = mapped_column(Integer, nullable=False)

@@ -19,7 +19,8 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import JSON, Column, DateTime, Integer, String
+from sqlalchemy import JSON, DateTime, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -29,19 +30,19 @@ class Token(Base):
 
     __tablename__ = "token"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     # token type
-    type = Column(String(40), nullable=False)
+    type: Mapped[str] = mapped_column(String(40), nullable=False)
     # transaction hash
-    tx_hash = Column(String(66), nullable=False)
+    tx_hash: Mapped[str] = mapped_column(String(66), nullable=False)
     # issuer address
-    issuer_address = Column(String(42), nullable=True)
+    issuer_address: Mapped[str] = mapped_column(String(42), nullable=True)
     # token address
-    token_address = Column(String(42), nullable=True)
+    token_address: Mapped[str] = mapped_column(String(42), nullable=True)
     # ABI
-    abi = Column(JSON, nullable=False)
+    abi: Mapped[dict] = mapped_column(JSON, nullable=False)
     # token processing status (pending:0, succeeded:1, failed:2)
-    token_status = Column(Integer, default=1)
+    token_status: Mapped[int | None] = mapped_column(Integer, default=1)
 
 
 class TokenAttrUpdate(Base):
@@ -50,11 +51,11 @@ class TokenAttrUpdate(Base):
     __tablename__ = "token_attr_update"
 
     # sequence id
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     # token address
-    token_address = Column(String(42), index=True)
+    token_address: Mapped[str | None] = mapped_column(String(42), index=True)
     # datetime when token attribute updated (UTC)
-    updated_datetime = Column(DateTime, nullable=False)
+    updated_datetime: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
 
 class TokenType(str, Enum):
@@ -68,10 +69,14 @@ class TokenCache(Base):
     __tablename__ = "token_cache"
 
     # token address
-    token_address = Column(String(42), primary_key=True)
+    token_address: Mapped[str] = mapped_column(String(42), primary_key=True)
     # token attributes
-    attributes = Column(JSON, nullable=False)
+    attributes: Mapped[dict] = mapped_column(JSON, nullable=False)
     # cached datetime
-    cached_datetime = Column(DateTime, default=datetime.utcnow)
+    cached_datetime: Mapped[datetime | None] = mapped_column(
+        DateTime, default=datetime.utcnow
+    )
     # expiration datetime
-    expiration_datetime = Column(DateTime, default=datetime.utcnow)
+    expiration_datetime: Mapped[datetime | None] = mapped_column(
+        DateTime, default=datetime.utcnow
+    )

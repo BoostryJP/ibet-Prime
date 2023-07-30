@@ -30,8 +30,8 @@ from web3.exceptions import (
     InvalidAddress,
     TimeExhausted,
     TransactionNotFound,
+    ValidationError as Web3ValidationError,
 )
-from web3.exceptions import ValidationError as Web3ValidationError
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.blockchain import IbetStraightBondContract

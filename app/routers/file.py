@@ -23,7 +23,7 @@ from typing import Optional
 import pytz
 from fastapi import APIRouter, Header, Query
 from fastapi.exceptions import HTTPException
-from sqlalchemy import desc
+from sqlalchemy import and_, desc, func, select
 
 from app.database import DBSession
 from app.model.db import UploadFile
@@ -35,7 +35,7 @@ from app.model.schema import (
 )
 from app.utils.check_utils import address_is_valid_address, validate_headers
 from app.utils.docs_utils import get_routers_responses
-from app.utils.fastapi import json_response
+from app.utils.fastapi_utils import json_response
 from config import TZ
 
 router = APIRouter(prefix="/files", tags=["utility"])
@@ -72,46 +72,47 @@ def list_all_upload_files(
         UploadFile.label,
         UploadFile.created,
     ]
+    stmt = select(*rows).order_by(desc(UploadFile.modified))
 
-    query = db.query(*rows).order_by(desc(UploadFile.modified))
-    total = query.count()
+    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Search Filter
     if issuer_address is not None:
-        query = query.filter(UploadFile.issuer_address == issuer_address)
+        stmt = stmt.where(UploadFile.issuer_address == issuer_address)
     if relation is not None:
-        query = query.filter(UploadFile.relation == relation)
+        stmt = stmt.where(UploadFile.relation == relation)
     if file_name is not None:
-        query = query.filter(UploadFile.file_name.like("%" + file_name + "%"))
+        stmt = stmt.where(UploadFile.file_name.like("%" + file_name + "%"))
     if label is not None:
         if label == "":
-            query = query.filter(UploadFile.label == "")
+            stmt = stmt.where(UploadFile.label == "")
         else:
-            query = query.filter(UploadFile.label.like("%" + label + "%"))
-    count = query.count()
+            stmt = stmt.where(UploadFile.label.like("%" + label + "%"))
+
+    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Pagination
     if limit is not None:
-        query = query.limit(limit)
+        stmt = stmt.limit(limit)
     if offset is not None:
-        query = query.offset(offset)
+        stmt = stmt.offset(offset)
 
-    _upload_file_list = query.all()
+    _upload_file_list = db.execute(stmt).tuples().all()
 
     files = []
     for _upload_file in _upload_file_list:
         created_formatted = (
-            utc_tz.localize(_upload_file[7]).astimezone(local_tz).isoformat()
+            utc_tz.localize(_upload_file.created).astimezone(local_tz).isoformat()
         )
         files.append(
             {
-                "file_id": _upload_file[0],
-                "issuer_address": _upload_file[1],
-                "relation": _upload_file[2],
-                "file_name": _upload_file[3],
-                "content_size": _upload_file[4],
-                "description": _upload_file[5],
-                "label": _upload_file[6],
+                "file_id": _upload_file.file_id,
+                "issuer_address": _upload_file.issuer_address,
+                "relation": _upload_file.relation,
+                "file_name": _upload_file.file_name,
+                "content_size": _upload_file.content_size,
+                "description": _upload_file.description,
+                "label": _upload_file.label,
                 "created": created_formatted,
             }
         )
@@ -191,16 +192,20 @@ def download_file(
 
     # Get Upload File
     if issuer_address is None:
-        _upload_file = (
-            db.query(UploadFile).filter(UploadFile.file_id == file_id).first()
-        )
+        _upload_file: UploadFile | None = db.scalars(
+            select(UploadFile).where(UploadFile.file_id == file_id).limit(1)
+        ).first()
     else:
-        _upload_file = (
-            db.query(UploadFile)
-            .filter(UploadFile.file_id == file_id)
-            .filter(UploadFile.issuer_address == issuer_address)
-            .first()
-        )
+        _upload_file: UploadFile | None = db.scalars(
+            select(UploadFile)
+            .where(
+                and_(
+                    UploadFile.file_id == file_id,
+                    UploadFile.issuer_address == issuer_address,
+                )
+            )
+            .limit(1)
+        ).first()
     if _upload_file is None:
         raise HTTPException(status_code=404, detail="file not found")
 
@@ -236,17 +241,21 @@ def delete_file(
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get Upload File
-    _upload_file = (
-        db.query(UploadFile)
-        .filter(UploadFile.file_id == file_id)
-        .filter(UploadFile.issuer_address == issuer_address)
-        .first()
-    )
+    _upload_file = db.scalars(
+        select(UploadFile)
+        .where(
+            and_(
+                UploadFile.file_id == file_id,
+                UploadFile.issuer_address == issuer_address,
+            )
+        )
+        .limit(1)
+    ).first()
     if _upload_file is None:
         raise HTTPException(status_code=404, detail="file not found")
 
     # Delete Upload File
     db.delete(_upload_file)
-
     db.commit()
+
     return

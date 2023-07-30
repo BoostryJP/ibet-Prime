@@ -18,8 +18,10 @@ SPDX-License-Identifier: Apache-2.0
 """
 import uuid
 from datetime import datetime
+from typing import Sequence
 
 import pytz
+from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
 
 from app.model.blockchain import (
@@ -47,33 +49,31 @@ utc_tz = pytz.timezone("UTC")
 
 
 def create_ledger(token_address: str, db: Session):
-    _token = (
-        db.query(Token)
-        .filter(Token.token_address == token_address)
-        .filter(Token.token_status == 1)
-        .first()
-    )
+    _token: Token | None = db.scalars(
+        select(Token)
+        .where(and_(Token.token_address == token_address, Token.token_status == 1))
+        .limit(1)
+    ).first()
     if (
         _token.type != TokenType.IBET_SHARE.value
         and _token.type != TokenType.IBET_STRAIGHT_BOND.value
     ):
         return
 
-    _template = (
-        db.query(LedgerTemplate)
-        .filter(LedgerTemplate.token_address == token_address)
-        .first()
-    )
+    _template: LedgerTemplate | None = db.scalars(
+        select(LedgerTemplate)
+        .where(LedgerTemplate.token_address == token_address)
+        .limit(1)
+    ).first()
     if _template is None:
         return
 
     # Get ledger details
-    _details_list = (
-        db.query(LedgerDetailsTemplate)
-        .filter(LedgerDetailsTemplate.token_address == token_address)
+    _details_list: Sequence[LedgerDetailsTemplate] = db.scalars(
+        select(LedgerDetailsTemplate)
+        .where(LedgerDetailsTemplate.token_address == token_address)
         .order_by(LedgerDetailsTemplate.id)
-        .all()
-    )
+    ).all()
     ledger_details = []
 
     for _details in _details_list:
@@ -138,13 +138,16 @@ def __get_details_data_list(
     if data_type == LedgerDetailsDataType.DB.value:
         data_list = []
         # Get Ledger Details Data from DB
-        _details_data_list = (
-            db.query(LedgerDetailsData)
-            .filter(LedgerDetailsData.token_address == token_address)
-            .filter(LedgerDetailsData.data_id == data_source)
+        _details_data_list: Sequence[LedgerDetailsData] = db.scalars(
+            select(LedgerDetailsData)
+            .where(
+                and_(
+                    LedgerDetailsData.token_address == token_address,
+                    LedgerDetailsData.data_id == data_source,
+                )
+            )
             .order_by(LedgerDetailsData.id)
-            .all()
-        )
+        ).all()
         for _details_data in _details_data_list:
             data_list.append(
                 {
@@ -181,13 +184,13 @@ def __get_details_data_list_from_ibetfin(
     )
 
     # Get token holders from UTXO
-    _utxo_list = (
-        db.query(UTXO)
-        .filter(UTXO.token_address == token_contract.token_address)
-        .filter(UTXO.amount > 0)
+    _utxo_list: Sequence[UTXO] = db.scalars(
+        select(UTXO)
+        .where(
+            and_(UTXO.token_address == token_contract.token_address, UTXO.amount > 0)
+        )
         .order_by(UTXO.account_address, UTXO.block_timestamp)
-        .all()
-    )
+    ).all()
 
     # NOTE: UTXO grouping
     #       account_address
@@ -239,12 +242,16 @@ def __get_personal_info(
     personal_info_contract: PersonalInfoContract,
     db: Session,
 ):
-    _idx_personal_info = (
-        db.query(IDXPersonalInfo)
-        .filter(IDXPersonalInfo.account_address == account_address)
-        .filter(IDXPersonalInfo.issuer_address == issuer_address)
-        .first()
-    )
+    _idx_personal_info: IDXPersonalInfo | None = db.scalars(
+        select(IDXPersonalInfo)
+        .where(
+            and_(
+                IDXPersonalInfo.account_address == account_address,
+                IDXPersonalInfo.issuer_address == issuer_address,
+            )
+        )
+        .limit(1)
+    ).first()
 
     if _idx_personal_info is None:  # Get PersonalInfo to Contract
         personal_info = personal_info_contract.get_info(
