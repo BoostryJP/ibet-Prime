@@ -18,6 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 import hashlib
 
+from sqlalchemy import select
+
 from app.model.db import (
     Account,
     AuthToken,
@@ -109,21 +111,20 @@ class TestAppRoutersShareBulkTransferPOST:
         # assertion
         assert resp.status_code == 200
 
-        bulk_transfer_upload = (
-            db.query(BulkTransferUpload)
-            .filter(BulkTransferUpload.upload_id == resp.json()["upload_id"])
-            .all()
-        )
+        bulk_transfer_upload = db.scalars(
+            select(BulkTransferUpload).where(
+                BulkTransferUpload.upload_id == resp.json()["upload_id"]
+            )
+        ).all()
         assert len(bulk_transfer_upload) == 1
         assert bulk_transfer_upload[0].issuer_address == self.admin_address
         assert bulk_transfer_upload[0].status == 0
 
-        bulk_transfer = (
-            db.query(BulkTransfer)
-            .filter(BulkTransfer.upload_id == resp.json()["upload_id"])
+        bulk_transfer = db.scalars(
+            select(BulkTransfer)
+            .where(BulkTransfer.upload_id == resp.json()["upload_id"])
             .order_by(BulkTransfer.id)
-            .all()
-        )
+        ).all()
         assert len(bulk_transfer) == 2
         assert bulk_transfer[0].issuer_address == self.admin_address
         assert bulk_transfer[0].token_address == self.req_tokens[0]
@@ -194,21 +195,20 @@ class TestAppRoutersShareBulkTransferPOST:
         # assertion
         assert resp.status_code == 200
 
-        bulk_transfer_upload = (
-            db.query(BulkTransferUpload)
-            .filter(BulkTransferUpload.upload_id == resp.json()["upload_id"])
-            .all()
-        )
+        bulk_transfer_upload = db.scalars(
+            select(BulkTransferUpload).where(
+                BulkTransferUpload.upload_id == resp.json()["upload_id"]
+            )
+        ).all()
         assert len(bulk_transfer_upload) == 1
         assert bulk_transfer_upload[0].issuer_address == self.admin_address
         assert bulk_transfer_upload[0].status == 0
 
-        bulk_transfer = (
-            db.query(BulkTransfer)
-            .filter(BulkTransfer.upload_id == resp.json()["upload_id"])
+        bulk_transfer = db.scalars(
+            select(BulkTransfer)
+            .where(BulkTransfer.upload_id == resp.json()["upload_id"])
             .order_by(BulkTransfer.id)
-            .all()
-        )
+        ).all()
         assert len(bulk_transfer) == 2
         assert bulk_transfer[0].issuer_address == self.admin_address
         assert bulk_transfer[0].token_address == self.req_tokens[0]

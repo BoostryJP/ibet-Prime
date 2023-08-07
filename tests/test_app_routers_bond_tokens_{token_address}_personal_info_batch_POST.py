@@ -20,6 +20,8 @@ import hashlib
 from typing import Optional
 from unittest.mock import ANY
 
+from sqlalchemy import select
+
 from app.model.db import (
     Account,
     AuthToken,
@@ -98,14 +100,14 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
             "created": ANY,
         }
 
-        _upload: Optional[BatchRegisterPersonalInfoUpload] = db.query(
-            BatchRegisterPersonalInfoUpload
+        _upload: Optional[BatchRegisterPersonalInfoUpload] = db.scalars(
+            select(BatchRegisterPersonalInfoUpload).limit(1)
         ).first()
         assert _upload.status == BatchRegisterPersonalInfoUploadStatus.PENDING.value
         assert _upload.issuer_address == _issuer_address
 
-        _register_list: list[BatchRegisterPersonalInfo] = db.query(
-            BatchRegisterPersonalInfo
+        _register_list: list[BatchRegisterPersonalInfo] = db.scalars(
+            select(BatchRegisterPersonalInfo)
         ).all()
         assert len(_register_list) == 10
 
@@ -172,14 +174,14 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchPOST:
             "created": ANY,
         }
 
-        _upload: Optional[BatchRegisterPersonalInfoUpload] = db.query(
-            BatchRegisterPersonalInfoUpload
+        _upload: Optional[BatchRegisterPersonalInfoUpload] = db.scalars(
+            select(BatchRegisterPersonalInfoUpload).limit(1)
         ).first()
         assert _upload.status == BatchRegisterPersonalInfoUploadStatus.PENDING.value
         assert _upload.issuer_address == _issuer_address
 
-        _register_list: list[BatchRegisterPersonalInfo] = db.query(
-            BatchRegisterPersonalInfo
+        _register_list: list[BatchRegisterPersonalInfo] = db.scalars(
+            select(BatchRegisterPersonalInfo)
         ).all()
         assert len(_register_list) == 10
 

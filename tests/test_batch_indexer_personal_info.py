@@ -26,6 +26,7 @@ import pytest
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy import select
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.orm import Session
 
@@ -192,9 +193,11 @@ class TestProcessor:
         processor.process()
 
         # Assertion
-        _personal_info_list = db.query(IDXPersonalInfo).all()
+        _personal_info_list = db.scalars(select(IDXPersonalInfo)).all()
         assert len(_personal_info_list) == 0
-        _idx_personal_info_block_number = db.query(IDXPersonalInfoBlockNumber).first()
+        _idx_personal_info_block_number = db.scalars(
+            select(IDXPersonalInfoBlockNumber).limit(1)
+        ).first()
         assert _idx_personal_info_block_number.id == 1
         assert _idx_personal_info_block_number.latest_block_number == block_number
 
@@ -256,9 +259,11 @@ class TestProcessor:
         processor.process()
 
         # Assertion
-        _personal_info_list = db.query(IDXPersonalInfo).all()
+        _personal_info_list = db.scalars(select(IDXPersonalInfo)).all()
         assert len(_personal_info_list) == 0
-        _idx_personal_info_block_number = db.query(IDXPersonalInfoBlockNumber).first()
+        _idx_personal_info_block_number = db.scalars(
+            select(IDXPersonalInfoBlockNumber).limit(1)
+        ).first()
         assert _idx_personal_info_block_number.id == 1
         assert _idx_personal_info_block_number.latest_block_number == block_number
 
@@ -346,14 +351,16 @@ class TestProcessor:
         processor.process()
 
         # Assertion
-        _personal_info_list = db.query(IDXPersonalInfo).all()
+        _personal_info_list = db.scalars(select(IDXPersonalInfo)).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
         assert _personal_info.id == 1
         assert _personal_info.account_address == user_address_1
         assert _personal_info.issuer_address == issuer_address
         assert _personal_info.personal_info == personal_info_1
-        _idx_personal_info_block_number = db.query(IDXPersonalInfoBlockNumber).first()
+        _idx_personal_info_block_number = db.scalars(
+            select(IDXPersonalInfoBlockNumber).limit(1)
+        ).first()
         assert _idx_personal_info_block_number.id == 1
         assert _idx_personal_info_block_number.latest_block_number == block_number
 
@@ -438,7 +445,7 @@ class TestProcessor:
 
         # Before run(consume accumulated events)
         processor.process()
-        _personal_info_list = db.query(IDXPersonalInfo).all()
+        _personal_info_list = db.scalars(select(IDXPersonalInfo)).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
         assert _personal_info.id == 1
@@ -481,14 +488,16 @@ class TestProcessor:
         db.expire_all()
 
         # Assertion
-        _personal_info_list = db.query(IDXPersonalInfo).all()
+        _personal_info_list = db.scalars(select(IDXPersonalInfo)).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
         assert _personal_info.id == 1
         assert _personal_info.account_address == user_address_1
         assert _personal_info.issuer_address == issuer_address
         assert _personal_info.personal_info == personal_info_2
-        _idx_personal_info_block_number = db.query(IDXPersonalInfoBlockNumber).first()
+        _idx_personal_info_block_number = db.scalars(
+            select(IDXPersonalInfoBlockNumber).limit(1)
+        ).first()
         assert _idx_personal_info_block_number.id == 1
         assert _idx_personal_info_block_number.latest_block_number == block_number
 
@@ -573,7 +582,7 @@ class TestProcessor:
 
         # Before run(consume accumulated events)
         processor.process()
-        _personal_info_list = db.query(IDXPersonalInfo).all()
+        _personal_info_list = db.scalars(select(IDXPersonalInfo)).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
         assert _personal_info.id == 1
@@ -616,14 +625,16 @@ class TestProcessor:
         db.expire_all()
 
         # Assertion
-        _personal_info_list = db.query(IDXPersonalInfo).all()
+        _personal_info_list = db.scalars(select(IDXPersonalInfo)).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
         assert _personal_info.id == 1
         assert _personal_info.account_address == user_address_1
         assert _personal_info.issuer_address == issuer_address
         assert _personal_info.personal_info == personal_info_2
-        _idx_personal_info_block_number = db.query(IDXPersonalInfoBlockNumber).first()
+        _idx_personal_info_block_number = db.scalars(
+            select(IDXPersonalInfoBlockNumber).limit(1)
+        ).first()
         assert _idx_personal_info_block_number.id == 1
         assert _idx_personal_info_block_number.latest_block_number == block_number
 
@@ -662,14 +673,16 @@ class TestProcessor:
         db.expire_all()
 
         # Assertion
-        _personal_info_list = db.query(IDXPersonalInfo).all()
+        _personal_info_list = db.scalars(select(IDXPersonalInfo)).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
         assert _personal_info.id == 1
         assert _personal_info.account_address == user_address_1
         assert _personal_info.issuer_address == issuer_address
         assert _personal_info.personal_info == personal_info_3
-        _idx_personal_info_block_number = db.query(IDXPersonalInfoBlockNumber).first()
+        _idx_personal_info_block_number = db.scalars(
+            select(IDXPersonalInfoBlockNumber).limit(1)
+        ).first()
         assert _idx_personal_info_block_number.id == 1
         assert _idx_personal_info_block_number.latest_block_number == block_number
 
@@ -834,7 +847,7 @@ class TestProcessor:
         stored_address_order = [line["issuer_address"] for line in unique_list]
 
         # Assertion
-        _personal_info_list = db.query(IDXPersonalInfo).all()
+        _personal_info_list = db.scalars(select(IDXPersonalInfo)).all()
         assert len(_personal_info_list) == 2
 
         for i in range(2):
@@ -847,7 +860,9 @@ class TestProcessor:
                 == personal_info_dict[stored_address_order[i]]
             )
 
-        _idx_personal_info_block_number = db.query(IDXPersonalInfoBlockNumber).first()
+        _idx_personal_info_block_number = db.scalars(
+            select(IDXPersonalInfoBlockNumber).limit(1)
+        ).first()
         assert _idx_personal_info_block_number.id == 1
         assert _idx_personal_info_block_number.latest_block_number == block_number
 

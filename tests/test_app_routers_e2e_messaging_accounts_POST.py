@@ -21,6 +21,8 @@ from datetime import datetime, timezone
 from unittest import mock
 from unittest.mock import ANY, MagicMock
 
+from sqlalchemy import select
+
 from app.exceptions import SendTransactionError
 from app.model.blockchain import E2EMessaging
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey, TransactionLock
@@ -47,9 +49,9 @@ class TestAppRoutersE2EMessagingAccountsPOST:
 
     # <Normal_1>
     def test_normal_1(self, client, db, e2e_messaging_contract):
-        _accounts_before = db.query(E2EMessagingAccount).all()
-        _rsa_key_before = db.query(E2EMessagingAccountRsaKey).all()
-        _transaction_before = db.query(TransactionLock).all()
+        _accounts_before = db.scalars(select(E2EMessagingAccount)).all()
+        _rsa_key_before = db.scalars(select(E2EMessagingAccountRsaKey)).all()
+        _transaction_before = db.scalars(select(TransactionLock)).all()
 
         # mock
         mock_E2EMessaging_set_public_key = mock.patch(
@@ -99,9 +101,9 @@ class TestAppRoutersE2EMessagingAccountsPOST:
             "is_deleted": False,
         }
 
-        _accounts_after = db.query(E2EMessagingAccount).all()
-        _rsa_key_after = db.query(E2EMessagingAccountRsaKey).all()
-        _transaction_after = db.query(TransactionLock).all()
+        _accounts_after = db.scalars(select(E2EMessagingAccount)).all()
+        _rsa_key_after = db.scalars(select(E2EMessagingAccountRsaKey)).all()
+        _transaction_after = db.scalars(select(TransactionLock)).all()
 
         assert 0 == len(_accounts_before)
         assert 1 == len(_accounts_after)
@@ -133,9 +135,9 @@ class TestAppRoutersE2EMessagingAccountsPOST:
     # <Normal_2>
     # use AWS KMS
     def test_normal_2(self, client, db, e2e_messaging_contract):
-        _accounts_before = db.query(E2EMessagingAccount).all()
-        _rsa_key_before = db.query(E2EMessagingAccountRsaKey).all()
-        _transaction_before = db.query(TransactionLock).all()
+        _accounts_before = db.scalars(select(E2EMessagingAccount)).all()
+        _rsa_key_before = db.scalars(select(E2EMessagingAccountRsaKey)).all()
+        _transaction_before = db.scalars(select(TransactionLock)).all()
 
         # mock
         class KMSClientMock:
@@ -202,9 +204,9 @@ class TestAppRoutersE2EMessagingAccountsPOST:
             "is_deleted": False,
         }
 
-        _accounts_after = db.query(E2EMessagingAccount).all()
-        _rsa_key_after = db.query(E2EMessagingAccountRsaKey).all()
-        _transaction_after = db.query(TransactionLock).all()
+        _accounts_after = db.scalars(select(E2EMessagingAccount)).all()
+        _rsa_key_after = db.scalars(select(E2EMessagingAccountRsaKey)).all()
+        _transaction_after = db.scalars(select(TransactionLock)).all()
 
         assert 0 == len(_accounts_before)
         assert 1 == len(_accounts_after)

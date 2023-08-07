@@ -21,6 +21,7 @@ from unittest import mock
 from unittest.mock import MagicMock
 
 import pytest
+from sqlalchemy import select
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
@@ -53,7 +54,7 @@ class TestProcessor:
         processor.process()
 
         # assertion
-        _node = db.query(Node).first()
+        _node = db.scalars(select(Node).limit(1)).first()
         assert _node.id == 1
         assert _node.endpoint_uri == WEB3_HTTP_PROVIDER
         assert _node.priority == 0
@@ -69,7 +70,7 @@ class TestProcessor:
 
         # assertion
         db.rollback()
-        _node = db.query(Node).first()
+        _node = db.scalars(select(Node).limit(1)).first()
         assert _node.is_synced == False
 
         time.sleep(BLOCK_SYNC_STATUS_SLEEP_INTERVAL)
@@ -79,7 +80,7 @@ class TestProcessor:
 
         # assertion
         db.rollback()
-        _node = db.query(Node).first()
+        _node = db.scalars(select(Node).limit(1)).first()
         assert _node.is_synced == True
 
         time.sleep(BLOCK_SYNC_STATUS_SLEEP_INTERVAL)
@@ -94,7 +95,7 @@ class TestProcessor:
 
         # assertion
         db.rollback()
-        _node = db.query(Node).first()
+        _node = db.scalars(select(Node).limit(1)).first()
         assert _node.is_synced == False
 
         time.sleep(BLOCK_SYNC_STATUS_SLEEP_INTERVAL)
@@ -109,7 +110,7 @@ class TestProcessor:
 
         # assertion
         db.rollback()
-        _node = db.query(Node).first()
+        _node = db.scalars(select(Node).limit(1)).first()
         assert _node.is_synced == True
 
     # <Normal_2>
@@ -123,7 +124,7 @@ class TestProcessor:
 
         # pre assertion
         db.rollback()
-        _node = db.query(Node).first()
+        _node = db.scalars(select(Node).limit(1)).first()
         assert _node.id == 1
         assert _node.endpoint_uri == "http://test1:1000"
         assert _node.priority == 1
@@ -143,7 +144,9 @@ class TestProcessor:
 
         # assertion
         db.rollback()
-        _node = db.query(Node).filter(Node.endpoint_uri == "http://test1:1000").first()
+        _node = db.scalars(
+            select(Node).where(Node.endpoint_uri == "http://test1:1000").limit(1)
+        ).first()
         assert _node.is_synced == True
 
     # <Normal_3>
@@ -160,11 +163,9 @@ class TestProcessor:
         processor = Processor()
 
         # assertion-1
-        old_node = (
-            db.query(Node)
-            .filter(Node.endpoint_uri.not_in(list(WEB3_HTTP_PROVIDER)))
-            .all()
-        )
+        old_node = db.scalars(
+            select(Node).where(Node.endpoint_uri.not_in(list(WEB3_HTTP_PROVIDER)))
+        ).all()
         assert len(old_node) == 0
 
         # process
@@ -172,7 +173,7 @@ class TestProcessor:
         db.commit()
 
         # assertion-2
-        new_node = db.query(Node).first()
+        new_node = db.scalars(select(Node).limit(1)).first()
         assert new_node.id == 1
         assert new_node.endpoint_uri == WEB3_HTTP_PROVIDER
         assert new_node.priority == 0
@@ -197,7 +198,7 @@ class TestProcessor:
 
         # assertion
         db.rollback()
-        _node_list = db.query(Node).order_by(Node.id).all()
+        _node_list = db.scalars(select(Node).order_by(Node.id)).all()
         assert len(_node_list) == 3
         _node = _node_list[0]
         assert _node.id == 1
@@ -222,7 +223,7 @@ class TestProcessor:
 
         # assertion
         db.rollback()
-        _node = db.query(Node).first()
+        _node = db.scalars(select(Node).limit(1)).first()
         assert _node.id == 1
         assert _node.endpoint_uri == WEB3_HTTP_PROVIDER
         assert _node.priority == 0
@@ -242,7 +243,7 @@ class TestProcessor:
 
         # assertion
         db.rollback()
-        _node = db.query(Node).first()
+        _node = db.scalars(select(Node).limit(1)).first()
         assert _node.id == 1
         assert _node.endpoint_uri == WEB3_HTTP_PROVIDER
         assert _node.priority == 0

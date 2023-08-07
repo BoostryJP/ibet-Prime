@@ -19,6 +19,8 @@ SPDX-License-Identifier: Apache-2.0
 import time
 from datetime import datetime
 
+from sqlalchemy import select
+
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
 
 
@@ -77,9 +79,9 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
             "rsa_public_key": None,
             "is_deleted": True,
         }
-        _account = db.query(E2EMessagingAccount).first()
+        _account = db.scalars(select(E2EMessagingAccount).limit(1)).first()
         assert _account.is_deleted is True
-        _rsa_key_list = db.query(E2EMessagingAccountRsaKey).all()
+        _rsa_key_list = db.scalars(select(E2EMessagingAccountRsaKey)).all()
         assert len(_rsa_key_list) == 0
 
     ###########################################################################

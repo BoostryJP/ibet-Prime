@@ -18,6 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 from unittest import mock
 
+from sqlalchemy import select
+
 from app.model.db import (
     LedgerDetailsDataType,
     LedgerDetailsTemplate,
@@ -144,7 +146,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
-        _template = db.query(LedgerTemplate).first()
+        _template = db.scalars(select(LedgerTemplate).limit(1)).first()
         assert _template.token_address == token_address
         assert _template.issuer_address == issuer_address
         assert _template.token_name == "テスト原簿"
@@ -168,9 +170,9 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 "f-fuga": "bbb",
             },
         ]
-        _details_list = (
-            db.query(LedgerDetailsTemplate).order_by(LedgerDetailsTemplate.id).all()
-        )
+        _details_list = db.scalars(
+            select(LedgerDetailsTemplate).order_by(LedgerDetailsTemplate.id)
+        ).all()
         assert len(_details_list) == 2
         _details = _details_list[0]
         assert _details.id == 1
@@ -414,7 +416,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
 
         # assertion
         assert resp.status_code == 200
-        _template = db.query(LedgerTemplate).first()
+        _template = db.scalars(select(LedgerTemplate).limit(1)).first()
         assert _template.token_address == token_address
         assert _template.issuer_address == issuer_address
         assert _template.token_name == "テスト原簿_update"
@@ -438,9 +440,9 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
                 "f-fuga_update": "bbb_update",
             },
         ]
-        _details_list = (
-            db.query(LedgerDetailsTemplate).order_by(LedgerDetailsTemplate.id).all()
-        )
+        _details_list = db.scalars(
+            select(LedgerDetailsTemplate).order_by(LedgerDetailsTemplate.id)
+        ).all()
         assert len(_details_list) == 2
         _details = _details_list[0]
         assert _details.id == 1

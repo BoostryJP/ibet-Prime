@@ -22,6 +22,7 @@ import string
 from datetime import datetime, timezone
 from unittest.mock import ANY, patch
 
+from sqlalchemy import select
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
@@ -67,7 +68,7 @@ class TestAppRoutersBondTokensPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
-        token_before = db.query(Token).all()
+        token_before = db.scalars(select(Token)).all()
 
         # mock
         IbetStraightBondContract_create = patch(
@@ -125,7 +126,7 @@ class TestAppRoutersBondTokensPOST:
             assert resp.json()["token_address"] == "contract_address_test1"
             assert resp.json()["token_status"] == 1
 
-            token_after = db.query(Token).all()
+            token_after = db.scalars(select(Token)).all()
             assert 0 == len(token_before)
             assert 1 == len(token_after)
             token_1 = token_after[0]
@@ -137,7 +138,7 @@ class TestAppRoutersBondTokensPOST:
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
 
-            position = db.query(IDXPosition).first()
+            position = db.scalars(select(IDXPosition).limit(1)).first()
             assert position.token_address == "contract_address_test1"
             assert position.account_address == test_account["address"]
             assert position.balance == req_param["total_supply"]
@@ -145,7 +146,7 @@ class TestAppRoutersBondTokensPOST:
             assert position.exchange_commitment == 0
             assert position.pending_transfer == 0
 
-            utxo = db.query(UTXO).first()
+            utxo = db.scalars(select(UTXO).limit(1)).first()
             assert utxo.transaction_hash == "tx_hash_test1"
             assert utxo.account_address == test_account["address"]
             assert utxo.token_address == "contract_address_test1"
@@ -153,7 +154,7 @@ class TestAppRoutersBondTokensPOST:
             assert utxo.block_number == 12345
             assert utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
 
-            operation_log = db.query(TokenUpdateOperationLog).first()
+            operation_log = db.scalars(select(TokenUpdateOperationLog).limit(1)).first()
             assert operation_log.token_address == "contract_address_test1"
             assert operation_log.type == TokenType.IBET_STRAIGHT_BOND.value
             assert operation_log.operation_category == "Issue"
@@ -170,7 +171,7 @@ class TestAppRoutersBondTokensPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
-        token_before = db.query(Token).all()
+        token_before = db.scalars(select(Token)).all()
 
         # mock
         IbetStraightBondContract_create = patch(
@@ -251,7 +252,7 @@ class TestAppRoutersBondTokensPOST:
             assert resp.json()["token_address"] == "contract_address_test1"
             assert resp.json()["token_status"] == 0
 
-            token_after = db.query(Token).all()
+            token_after = db.scalars(select(Token)).all()
             assert 0 == len(token_before)
             assert 1 == len(token_after)
             token_1 = token_after[0]
@@ -263,13 +264,13 @@ class TestAppRoutersBondTokensPOST:
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 0
 
-            position = db.query(IDXPosition).first()
+            position = db.scalars(select(IDXPosition).limit(1)).first()
             assert position is None
 
-            utxo = db.query(UTXO).first()
+            utxo = db.scalars(select(UTXO).limit(1)).first()
             assert utxo is None
 
-            update_token = db.query(UpdateToken).first()
+            update_token = db.scalars(select(UpdateToken).limit(1)).first()
             assert update_token.id == 1
             assert update_token.token_address == "contract_address_test1"
             assert update_token.issuer_address == test_account["address"]
@@ -296,7 +297,7 @@ class TestAppRoutersBondTokensPOST:
         auth_token.valid_duration = 0
         db.add(auth_token)
 
-        token_before = db.query(Token).all()
+        token_before = db.scalars(select(Token)).all()
 
         # mock
         IbetStraightBondContract_create = patch(
@@ -354,7 +355,7 @@ class TestAppRoutersBondTokensPOST:
             assert resp.json()["token_address"] == "contract_address_test1"
             assert resp.json()["token_status"] == 1
 
-            token_after = db.query(Token).all()
+            token_after = db.scalars(select(Token)).all()
             assert 0 == len(token_before)
             assert 1 == len(token_after)
             token_1 = token_after[0]
@@ -366,7 +367,7 @@ class TestAppRoutersBondTokensPOST:
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
 
-            position = db.query(IDXPosition).first()
+            position = db.scalars(select(IDXPosition).limit(1)).first()
             assert position.token_address == "contract_address_test1"
             assert position.account_address == test_account["address"]
             assert position.balance == req_param["total_supply"]
@@ -374,7 +375,7 @@ class TestAppRoutersBondTokensPOST:
             assert position.exchange_commitment == 0
             assert position.pending_transfer == 0
 
-            utxo = db.query(UTXO).first()
+            utxo = db.scalars(select(UTXO).limit(1)).first()
             assert utxo.transaction_hash == "tx_hash_test1"
             assert utxo.account_address == test_account["address"]
             assert utxo.token_address == "contract_address_test1"
@@ -382,7 +383,7 @@ class TestAppRoutersBondTokensPOST:
             assert utxo.block_number == 12345
             assert utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
 
-            operation_log = db.query(TokenUpdateOperationLog).first()
+            operation_log = db.scalars(select(TokenUpdateOperationLog).limit(1)).first()
             assert operation_log.token_address == "contract_address_test1"
             assert operation_log.type == TokenType.IBET_STRAIGHT_BOND.value
             assert operation_log.operation_category == "Issue"

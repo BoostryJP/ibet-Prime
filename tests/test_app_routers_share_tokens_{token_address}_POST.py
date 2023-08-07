@@ -21,6 +21,7 @@ from unittest import mock
 from unittest.mock import MagicMock
 
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy import select
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
@@ -136,14 +137,14 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        token_attr_update = (
-            db.query(TokenAttrUpdate)
-            .filter(TokenAttrUpdate.token_address == _token_address)
-            .all()
-        )
+        token_attr_update = db.scalars(
+            select(TokenAttrUpdate).where(
+                TokenAttrUpdate.token_address == _token_address
+            )
+        ).all()
         assert len(token_attr_update) == 1
 
-        operation_log = db.query(TokenUpdateOperationLog).first()
+        operation_log = db.scalars(select(TokenUpdateOperationLog).limit(1)).first()
         assert operation_log.token_address == _token_address
         assert operation_log.issuer_address == _issuer_address
         assert operation_log.type == TokenType.IBET_SHARE.value
@@ -238,14 +239,14 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        token_attr_update = (
-            db.query(TokenAttrUpdate)
-            .filter(TokenAttrUpdate.token_address == _token_address)
-            .all()
-        )
+        token_attr_update = db.scalars(
+            select(TokenAttrUpdate)
+            .where(TokenAttrUpdate.token_address == _token_address)
+            .limit(1)
+        ).all()
         assert len(token_attr_update) == 1
 
-        operation_log = db.query(TokenUpdateOperationLog).first()
+        operation_log = db.scalars(select(TokenUpdateOperationLog).limit(1)).first()
         assert operation_log is not None
 
     # <Normal_3>
@@ -318,14 +319,14 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        token_attr_update = (
-            db.query(TokenAttrUpdate)
-            .filter(TokenAttrUpdate.token_address == _token_address)
-            .all()
-        )
+        token_attr_update = db.scalars(
+            select(TokenAttrUpdate)
+            .where(TokenAttrUpdate.token_address == _token_address)
+            .limit(1)
+        ).all()
         assert len(token_attr_update) == 1
 
-        operation_log = db.query(TokenUpdateOperationLog).first()
+        operation_log = db.scalars(select(TokenUpdateOperationLog).limit(1)).first()
         assert operation_log.token_address == _token_address
         assert operation_log.issuer_address == _issuer_address
         assert operation_log.type == TokenType.IBET_SHARE.value
@@ -425,14 +426,14 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        token_attr_update = (
-            db.query(TokenAttrUpdate)
-            .filter(TokenAttrUpdate.token_address == _token_address)
-            .all()
-        )
+        token_attr_update = db.scalars(
+            select(TokenAttrUpdate)
+            .where(TokenAttrUpdate.token_address == _token_address)
+            .limit(1)
+        ).all()
         assert len(token_attr_update) == 1
 
-        operation_log = db.query(TokenUpdateOperationLog).first()
+        operation_log = db.scalars(select(TokenUpdateOperationLog).limit(1)).first()
         assert operation_log.token_address == _token_address
         assert operation_log.issuer_address == _issuer_address
         assert operation_log.type == TokenType.IBET_SHARE.value
@@ -521,14 +522,14 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        token_attr_update = (
-            db.query(TokenAttrUpdate)
-            .filter(TokenAttrUpdate.token_address == _token_address)
-            .all()
-        )
+        token_attr_update = db.scalars(
+            select(TokenAttrUpdate)
+            .where(TokenAttrUpdate.token_address == _token_address)
+            .limit(1)
+        ).all()
         assert len(token_attr_update) == 1
 
-        operation_log = db.query(TokenUpdateOperationLog).first()
+        operation_log = db.scalars(select(TokenUpdateOperationLog).limit(1)).first()
         assert operation_log.token_address == _token_address
         assert operation_log.issuer_address == _issuer_address
         assert operation_log.type == TokenType.IBET_SHARE.value

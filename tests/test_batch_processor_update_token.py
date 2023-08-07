@@ -20,6 +20,7 @@ from datetime import datetime, timezone
 from unittest.mock import ANY, call, patch
 
 import pytest
+from sqlalchemy import select
 
 from app.exceptions import SendTransactionError
 from app.model.db import (
@@ -251,7 +252,9 @@ class TestProcessor:
             )
 
             # assertion(DB)
-            _idx_position_list = db.query(IDXPosition).order_by(IDXPosition.id).all()
+            _idx_position_list = db.scalars(
+                select(IDXPosition).order_by(IDXPosition.id)
+            ).all()
             assert len(_idx_position_list) == 2
             _idx_position = _idx_position_list[0]
             assert _idx_position.id == 1
@@ -268,7 +271,7 @@ class TestProcessor:
             assert _idx_position.exchange_commitment == 0
             assert _idx_position.pending_transfer == 0
 
-            _utxo_list = db.query(UTXO).order_by(UTXO.transaction_hash).all()
+            _utxo_list = db.scalars(select(UTXO).order_by(UTXO.transaction_hash)).all()
             _utxo = _utxo_list[0]
             assert _utxo.transaction_hash == "tx_hash_1"
             assert _utxo.account_address == _issuer_address
@@ -284,13 +287,15 @@ class TestProcessor:
             assert _utxo.block_number == 12345
             assert _utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
 
-            _token_list = db.query(Token).order_by(Token.id).all()
+            _token_list = db.scalars(select(Token).order_by(Token.id)).all()
             _token = _token_list[0]
             assert _token.token_status == 1
             _token = _token_list[1]
             assert _token.token_status == 1
 
-            _update_token_list = db.query(UpdateToken).order_by(UpdateToken.id).all()
+            _update_token_list = db.scalars(
+                select(UpdateToken).order_by(UpdateToken.id)
+            ).all()
             _update_token = _update_token_list[0]
             assert _update_token.status == 1
             _update_token = _update_token_list[1]
@@ -300,7 +305,9 @@ class TestProcessor:
             _update_token = _update_token_list[3]
             assert _update_token.status == 2
 
-            _notification_list = db.query(Notification).order_by(Notification.id).all()
+            _notification_list = db.scalars(
+                select(Notification).order_by(Notification.id)
+            ).all()
             assert len(_notification_list) == 0
 
     ###########################################################################
@@ -427,19 +434,23 @@ class TestProcessor:
         processor.process()
 
         # assertion(DB)
-        _idx_position_list = db.query(IDXPosition).order_by(IDXPosition.id).all()
+        _idx_position_list = db.scalars(
+            select(IDXPosition).order_by(IDXPosition.id)
+        ).all()
         assert len(_idx_position_list) == 0
 
-        _utxo_list = db.query(UTXO).order_by(UTXO.transaction_hash).all()
+        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.transaction_hash)).all()
         assert len(_utxo_list) == 0
 
-        _token_list = db.query(Token).order_by(Token.id).all()
+        _token_list = db.scalars(select(Token).order_by(Token.id)).all()
         _token = _token_list[0]
         assert _token.token_status == 2
         _token = _token_list[1]
         assert _token.token_status == 2
 
-        _update_token_list = db.query(UpdateToken).order_by(UpdateToken.id).all()
+        _update_token_list = db.scalars(
+            select(UpdateToken).order_by(UpdateToken.id)
+        ).all()
         _update_token = _update_token_list[0]
         assert _update_token.status == 2
         _update_token = _update_token_list[1]
@@ -449,7 +460,9 @@ class TestProcessor:
         _update_token = _update_token_list[3]
         assert _update_token.status == 2
 
-        _notification_list = db.query(Notification).order_by(Notification.id).all()
+        _notification_list = db.scalars(
+            select(Notification).order_by(Notification.id)
+        ).all()
         _notification = _notification_list[0]
         assert _notification.id == 1
         assert _notification.notice_id is not None
@@ -635,19 +648,23 @@ class TestProcessor:
         processor.process()
 
         # assertion(DB)
-        _idx_position_list = db.query(IDXPosition).order_by(IDXPosition.id).all()
+        _idx_position_list = db.scalars(
+            select(IDXPosition).order_by(IDXPosition.id)
+        ).all()
         assert len(_idx_position_list) == 0
 
-        _utxo_list = db.query(UTXO).order_by(UTXO.transaction_hash).all()
+        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.transaction_hash)).all()
         assert len(_utxo_list) == 0
 
-        _token_list = db.query(Token).order_by(Token.id).all()
+        _token_list = db.scalars(select(Token).order_by(Token.id)).all()
         _token = _token_list[0]
         assert _token.token_status == 2
         _token = _token_list[1]
         assert _token.token_status == 2
 
-        _update_token_list = db.query(UpdateToken).order_by(UpdateToken.id).all()
+        _update_token_list = db.scalars(
+            select(UpdateToken).order_by(UpdateToken.id)
+        ).all()
         _update_token = _update_token_list[0]
         assert _update_token.status == 2
         _update_token = _update_token_list[1]
@@ -657,7 +674,9 @@ class TestProcessor:
         _update_token = _update_token_list[3]
         assert _update_token.status == 2
 
-        _notification_list = db.query(Notification).order_by(Notification.id).all()
+        _notification_list = db.scalars(
+            select(Notification).order_by(Notification.id)
+        ).all()
         _notification = _notification_list[0]
         assert _notification.id == 1
         assert _notification.notice_id is not None
@@ -850,19 +869,23 @@ class TestProcessor:
             processor.process()
 
             # assertion(DB)
-            _idx_position_list = db.query(IDXPosition).order_by(IDXPosition.id).all()
+            _idx_position_list = db.scalars(
+                select(IDXPosition).order_by(IDXPosition.id)
+            ).all()
             assert len(_idx_position_list) == 0
 
-            _utxo_list = db.query(UTXO).order_by(UTXO.transaction_hash).all()
+            _utxo_list = db.scalars(select(UTXO).order_by(UTXO.transaction_hash)).all()
             assert len(_utxo_list) == 0
 
-            _token_list = db.query(Token).order_by(Token.id).all()
+            _token_list = db.scalars(select(Token).order_by(Token.id)).all()
             _token = _token_list[0]
             assert _token.token_status == 2
             _token = _token_list[1]
             assert _token.token_status == 2
 
-            _update_token_list = db.query(UpdateToken).order_by(UpdateToken.id).all()
+            _update_token_list = db.scalars(
+                select(UpdateToken).order_by(UpdateToken.id)
+            ).all()
             _update_token = _update_token_list[0]
             assert _update_token.status == 2
             _update_token = _update_token_list[1]
@@ -872,7 +895,9 @@ class TestProcessor:
             _update_token = _update_token_list[3]
             assert _update_token.status == 2
 
-            _notification_list = db.query(Notification).order_by(Notification.id).all()
+            _notification_list = db.scalars(
+                select(Notification).order_by(Notification.id)
+            ).all()
             _notification = _notification_list[0]
             assert _notification.id == 1
             assert _notification.notice_id is not None
@@ -1107,19 +1132,23 @@ class TestProcessor:
             )
 
             # assertion(DB)
-            _idx_position_list = db.query(IDXPosition).order_by(IDXPosition.id).all()
+            _idx_position_list = db.scalars(
+                select(IDXPosition).order_by(IDXPosition.id)
+            ).all()
             assert len(_idx_position_list) == 0
 
-            _utxo_list = db.query(UTXO).order_by(UTXO.transaction_hash).all()
+            _utxo_list = db.scalars(select(UTXO).order_by(UTXO.transaction_hash)).all()
             assert len(_utxo_list) == 0
 
-            _token_list = db.query(Token).order_by(Token.id).all()
+            _token_list = db.scalars(select(Token).order_by(Token.id)).all()
             _token = _token_list[0]
             assert _token.token_status == 2
             _token = _token_list[1]
             assert _token.token_status == 2
 
-            _update_token_list = db.query(UpdateToken).order_by(UpdateToken.id).all()
+            _update_token_list = db.scalars(
+                select(UpdateToken).order_by(UpdateToken.id)
+            ).all()
             _update_token = _update_token_list[0]
             assert _update_token.status == 2
             _update_token = _update_token_list[1]
@@ -1129,7 +1158,9 @@ class TestProcessor:
             _update_token = _update_token_list[3]
             assert _update_token.status == 2
 
-            _notification_list = db.query(Notification).order_by(Notification.id).all()
+            _notification_list = db.scalars(
+                select(Notification).order_by(Notification.id)
+            ).all()
             _notification = _notification_list[0]
             assert _notification.id == 1
             assert _notification.notice_id is not None

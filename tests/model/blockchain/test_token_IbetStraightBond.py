@@ -25,6 +25,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from eth_keyfile import decode_keyfile_json
 from pydantic.error_wrappers import ValidationError
+from sqlalchemy import select
 from web3.exceptions import (
     ContractLogicError,
     InvalidAddress,
@@ -681,7 +682,7 @@ class TestUpdate:
         assert bond_contract.transfer_approval_required is False
         assert bond_contract.memo == ""
 
-        _token_attr_update = db.query(TokenAttrUpdate).first()
+        _token_attr_update = db.scalars(select(TokenAttrUpdate).limit(1)).first()
         assert _token_attr_update.id == 1
         assert _token_attr_update.token_address == contract_address
         assert _token_attr_update.updated_datetime > pre_datetime
@@ -772,7 +773,7 @@ class TestUpdate:
         assert bond_contract.transfer_approval_required is True
         assert bond_contract.memo == "memo test"
 
-        _token_attr_update = db.query(TokenAttrUpdate).first()
+        _token_attr_update = db.scalars(select(TokenAttrUpdate).limit(1)).first()
         assert _token_attr_update.id == 1
         assert _token_attr_update.token_address == contract_address
         assert _token_attr_update.updated_datetime > pre_datetime
@@ -1433,7 +1434,7 @@ class TestAdditionalIssue:
         balance = bond_contract.get_account_balance(issuer_address)
         assert balance == arguments[2] + 10
 
-        _token_attr_update = db.query(TokenAttrUpdate).first()
+        _token_attr_update = db.scalars(select(TokenAttrUpdate).limit(1)).first()
         assert _token_attr_update.id == 1
         assert _token_attr_update.token_address == contract_address
         assert _token_attr_update.updated_datetime > pre_datetime
@@ -1749,7 +1750,7 @@ class TestRedeem:
         balance = bond_contract.get_account_balance(issuer_address)
         assert balance == arguments[2] - 10
 
-        _token_attr_update = db.query(TokenAttrUpdate).first()
+        _token_attr_update = db.scalars(select(TokenAttrUpdate).limit(1)).first()
         assert _token_attr_update.id == 1
         assert _token_attr_update.token_address == contract_address
         assert _token_attr_update.updated_datetime > pre_datetime
@@ -2182,7 +2183,7 @@ class TestRecordAttrUpdate:
         bond_contract.record_attr_update(db)
 
         # assertion
-        _update = db.query(TokenAttrUpdate).first()
+        _update = db.scalars(select(TokenAttrUpdate).limit(1)).first()
         assert _update.id == 1
         assert _update.token_address == self.token_address
         assert _update.updated_datetime == datetime(2021, 4, 27, 12, 34, 56)
@@ -2205,7 +2206,9 @@ class TestRecordAttrUpdate:
         bond_contract.record_attr_update(db)
 
         # assertion
-        _update = db.query(TokenAttrUpdate).filter(TokenAttrUpdate.id == 2).first()
+        _update = db.scalars(
+            select(TokenAttrUpdate).where(TokenAttrUpdate.id == 2).limit(1)
+        ).first()
         assert _update.id == 2
         assert _update.token_address == self.token_address
         assert _update.updated_datetime == datetime(2021, 4, 27, 12, 34, 56)

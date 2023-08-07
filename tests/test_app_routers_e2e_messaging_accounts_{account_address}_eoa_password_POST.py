@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy import select
 
 from app.model.blockchain import IbetStraightBondContract
 from app.model.db import E2EMessagingAccount
@@ -59,7 +60,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
-        _account = db.query(E2EMessagingAccount).first()
+        _account = db.scalars(select(E2EMessagingAccount).limit(1)).first()
         assert _account.keyfile != user_keyfile_1
         assert E2EEUtils.decrypt(_account.eoa_password) == new_password
 

@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import datetime, timezone
 
 from pytz import timezone as tz
+from sqlalchemy import and_, select
 
 from app.model.db import Account, ScheduledEvents, ScheduledEventType, Token, TokenType
 from app.utils.e2ee_utils import E2EEUtils
@@ -92,12 +93,16 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         )
 
         # assertion
-        _scheduled_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.issuer_address == _issuer_address)
-            .filter(ScheduledEvents.token_address == _token_address)
-            .first()
-        )
+        _scheduled_event = db.scalars(
+            select(ScheduledEvents)
+            .where(
+                and_(
+                    ScheduledEvents.issuer_address == _issuer_address,
+                    ScheduledEvents.token_address == _token_address,
+                )
+            )
+            .limit(1)
+        ).first()
         assert resp.status_code == 200
         assert resp.json() == {"scheduled_event_id": _scheduled_event.event_id}
         assert _scheduled_event.token_type == TokenType.IBET_STRAIGHT_BOND.value
@@ -167,12 +172,16 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         )
 
         # assertion
-        _scheduled_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.issuer_address == _issuer_address)
-            .filter(ScheduledEvents.token_address == _token_address)
-            .first()
-        )
+        _scheduled_event = db.scalars(
+            select(ScheduledEvents)
+            .where(
+                and_(
+                    ScheduledEvents.issuer_address == _issuer_address,
+                    ScheduledEvents.token_address == _token_address,
+                )
+            )
+            .limit(1)
+        ).first()
         assert resp_1.status_code == 200
         assert resp_1.json() == {"scheduled_event_id": _scheduled_event.event_id}
         assert _scheduled_event.token_type == TokenType.IBET_STRAIGHT_BOND.value

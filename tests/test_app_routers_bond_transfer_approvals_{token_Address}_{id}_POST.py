@@ -23,6 +23,7 @@ from unittest.mock import ANY, MagicMock
 
 import pytest
 from pytz import timezone
+from sqlalchemy import select
 
 import config
 from app.exceptions import ContractRevertError, SendTransactionError
@@ -136,8 +137,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             private_key=ANY,
         )
 
-        approval_op_list: list[TransferApprovalHistory] = db.query(
-            TransferApprovalHistory
+        approval_op_list: list[TransferApprovalHistory] = db.scalars(
+            select(TransferApprovalHistory)
         ).all()
         assert len(approval_op_list) == 1
         approval_op = approval_op_list[0]
@@ -218,8 +219,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             private_key=ANY,
         )
 
-        approval_op_list: list[TransferApprovalHistory] = db.query(
-            TransferApprovalHistory
+        approval_op_list: list[TransferApprovalHistory] = db.scalars(
+            select(TransferApprovalHistory)
         ).all()
         assert len(approval_op_list) == 1
         approval_op = approval_op_list[0]
@@ -299,8 +300,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressIdPOST:
             private_key=ANY,
         )
 
-        cancel_op_list: list[TransferApprovalHistory] = db.query(
-            TransferApprovalHistory
+        cancel_op_list: list[TransferApprovalHistory] = db.scalars(
+            select(TransferApprovalHistory)
         ).all()
         assert len(cancel_op_list) == 1
         cancel_op = cancel_op_list[0]

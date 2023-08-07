@@ -18,6 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 import base64
 
+from sqlalchemy import select
+
 from app.model.db import UploadFile
 
 
@@ -65,7 +67,7 @@ abc def"""
         assert resp.status_code == 200
         assert resp.json() is None
 
-        _upload_file_list = db.query(UploadFile).all()
+        _upload_file_list = db.scalars(select(UploadFile)).all()
         assert len(_upload_file_list) == 0
 
     ###########################################################################
