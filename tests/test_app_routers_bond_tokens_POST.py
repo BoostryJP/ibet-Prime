@@ -36,6 +36,7 @@ from app.model.db import (
     IDXPosition,
     Token,
     TokenType,
+    TokenUpdateOperationLog,
     UpdateToken,
 )
 from app.utils.contract_utils import ContractUtils
@@ -152,11 +153,10 @@ class TestAppRoutersBondTokensPOST:
             assert utxo.block_number == 12345
             assert utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
 
-            update_token = db.query(UpdateToken).first()
-            assert update_token.token_address == "contract_address_test1"
-            assert update_token.type == TokenType.IBET_STRAIGHT_BOND.value
-            assert update_token.status == 1
-            assert update_token.trigger == "Issue"
+            operation_log = db.query(TokenUpdateOperationLog).first()
+            assert operation_log.token_address == "contract_address_test1"
+            assert operation_log.type == TokenType.IBET_STRAIGHT_BOND.value
+            assert operation_log.operation_category == "Issue"
 
     # <Normal_2>
     # include updates
@@ -382,11 +382,10 @@ class TestAppRoutersBondTokensPOST:
             assert utxo.block_number == 12345
             assert utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
 
-            update_token = db.query(UpdateToken).first()
-            assert update_token.token_address == "contract_address_test1"
-            assert update_token.type == TokenType.IBET_STRAIGHT_BOND.value
-            assert update_token.status == 1
-            assert update_token.trigger == "Issue"
+            operation_log = db.query(TokenUpdateOperationLog).first()
+            assert operation_log.token_address == "contract_address_test1"
+            assert operation_log.type == TokenType.IBET_STRAIGHT_BOND.value
+            assert operation_log.operation_category == "Issue"
 
     ###########################################################################
     # Error Case

@@ -33,7 +33,8 @@ from app.model.db import (
     Token,
     TokenAttrUpdate,
     TokenType,
-    UpdateToken,
+    TokenUpdateOperationCategory,
+    TokenUpdateOperationLog,
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
@@ -142,11 +143,11 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         )
         assert len(token_attr_update) == 1
 
-        update_token = db.query(UpdateToken).first()
-        assert update_token.token_address == _token_address
-        assert update_token.issuer_address == _issuer_address
-        assert update_token.type == TokenType.IBET_SHARE.value
-        assert update_token.original_contents == {
+        operation_log = db.query(TokenUpdateOperationLog).first()
+        assert operation_log.token_address == _token_address
+        assert operation_log.issuer_address == _issuer_address
+        assert operation_log.type == TokenType.IBET_SHARE.value
+        assert operation_log.original_contents == {
             "cancellation_date": "token.cancellation_date",
             "contact_information": "",
             "contract_name": "IbetShare",
@@ -170,7 +171,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "transfer_approval_required": False,
             "transferable": False,
         }
-        assert update_token.arguments == {
+        assert operation_log.arguments == {
             "cancellation_date": "20221231",
             "dividends": 345.67,
             "dividend_record_date": "20211231",
@@ -187,7 +188,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "is_canceled": True,
             "memo": "m" * 10000,
         }
-        assert update_token.status == 1
+        assert operation_log.operation_category == "Update"
 
     # <Normal_2>
     # No request parameters
@@ -242,10 +243,10 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             .filter(TokenAttrUpdate.token_address == _token_address)
             .all()
         )
-        assert len(token_attr_update) == 0
+        assert len(token_attr_update) == 1
 
-        update_token = db.query(UpdateToken).first()
-        assert update_token is None
+        operation_log = db.query(TokenUpdateOperationLog).first()
+        assert operation_log is not None
 
     # <Normal_3>
     # Authorization by auth-token
@@ -324,11 +325,11 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         )
         assert len(token_attr_update) == 1
 
-        update_token = db.query(UpdateToken).first()
-        assert update_token.token_address == _token_address
-        assert update_token.issuer_address == _issuer_address
-        assert update_token.type == TokenType.IBET_SHARE.value
-        assert update_token.original_contents == {
+        operation_log = db.query(TokenUpdateOperationLog).first()
+        assert operation_log.token_address == _token_address
+        assert operation_log.issuer_address == _issuer_address
+        assert operation_log.type == TokenType.IBET_SHARE.value
+        assert operation_log.original_contents == {
             "cancellation_date": "token.cancellation_date",
             "contact_information": "",
             "contract_name": "IbetShare",
@@ -352,7 +353,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "transfer_approval_required": False,
             "transferable": False,
         }
-        assert update_token.arguments == {
+        assert operation_log.arguments == {
             "cancellation_date": "20221231",
             "dividends": 345.67,
             "dividend_record_date": "20211231",
@@ -369,7 +370,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "is_canceled": True,
             "memo": "memo_test1",
         }
-        assert update_token.status == 1
+        assert operation_log.operation_category == "Update"
 
     # <Normal_4_1>
     # YYYYMMDD parameter is not an empty string
@@ -431,11 +432,11 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         )
         assert len(token_attr_update) == 1
 
-        update_token = db.query(UpdateToken).first()
-        assert update_token.token_address == _token_address
-        assert update_token.issuer_address == _issuer_address
-        assert update_token.type == TokenType.IBET_SHARE.value
-        assert update_token.original_contents == {
+        operation_log = db.query(TokenUpdateOperationLog).first()
+        assert operation_log.token_address == _token_address
+        assert operation_log.issuer_address == _issuer_address
+        assert operation_log.type == TokenType.IBET_SHARE.value
+        assert operation_log.original_contents == {
             "cancellation_date": "token.cancellation_date",
             "contact_information": "",
             "contract_name": "IbetShare",
@@ -459,13 +460,13 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "transfer_approval_required": False,
             "transferable": False,
         }
-        assert update_token.arguments == {
+        assert operation_log.arguments == {
             "cancellation_date": "20221231",
             "dividends": 345.67,
             "dividend_record_date": "20211231",
             "dividend_payment_date": "20211231",
         }
-        assert update_token.status == 1
+        assert operation_log.operation_category == "Update"
 
     # <Normal_4_2>
     # YYYYMMDD parameter is an empty string
@@ -527,11 +528,11 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         )
         assert len(token_attr_update) == 1
 
-        update_token = db.query(UpdateToken).first()
-        assert update_token.token_address == _token_address
-        assert update_token.issuer_address == _issuer_address
-        assert update_token.type == TokenType.IBET_SHARE.value
-        assert update_token.original_contents == {
+        operation_log = db.query(TokenUpdateOperationLog).first()
+        assert operation_log.token_address == _token_address
+        assert operation_log.issuer_address == _issuer_address
+        assert operation_log.type == TokenType.IBET_SHARE.value
+        assert operation_log.original_contents == {
             "cancellation_date": "token.cancellation_date",
             "contact_information": "",
             "contract_name": "IbetShare",
@@ -555,13 +556,13 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             "transfer_approval_required": False,
             "transferable": False,
         }
-        assert update_token.arguments == {
+        assert operation_log.arguments == {
             "cancellation_date": "",
             "dividends": 345.67,
             "dividend_record_date": "",
             "dividend_payment_date": "",
         }
-        assert update_token.status == 1
+        assert operation_log.operation_category == "Update"
 
     ###########################################################################
     # Error Case

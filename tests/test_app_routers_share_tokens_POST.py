@@ -36,6 +36,7 @@ from app.model.db import (
     IDXPosition,
     Token,
     TokenType,
+    TokenUpdateOperationLog,
     UpdateToken,
 )
 from app.utils.contract_utils import ContractUtils
@@ -168,10 +169,13 @@ class TestAppRoutersShareTokensPOST:
             assert utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
 
             update_token = db.query(UpdateToken).first()
-            assert update_token.token_address == "contract_address_test1"
-            assert update_token.type == TokenType.IBET_SHARE.value
-            assert update_token.status == 1
-            assert update_token.trigger == "Issue"
+            assert update_token is None
+
+            operation_log = db.query(TokenUpdateOperationLog).first()
+            assert operation_log.token_address == "contract_address_test1"
+            assert operation_log.type == TokenType.IBET_SHARE.value
+            assert operation_log.original_contents is None
+            assert operation_log.operation_category == "Issue"
 
     # <Normal_1_2>
     # create only
@@ -273,10 +277,13 @@ class TestAppRoutersShareTokensPOST:
             assert utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
 
             update_token = db.query(UpdateToken).first()
-            assert update_token.token_address == "contract_address_test1"
-            assert update_token.type == TokenType.IBET_SHARE.value
-            assert update_token.status == 1
-            assert update_token.trigger == "Issue"
+            assert update_token is None
+
+            operation_log = db.query(TokenUpdateOperationLog).first()
+            assert operation_log.token_address == "contract_address_test1"
+            assert operation_log.type == TokenType.IBET_SHARE.value
+            assert operation_log.original_contents is None
+            assert operation_log.operation_category == "Issue"
 
     # <Normal_2>
     # include updates
@@ -514,10 +521,13 @@ class TestAppRoutersShareTokensPOST:
             assert utxo.block_timestamp == datetime(2021, 4, 27, 12, 34, 56)
 
             update_token = db.query(UpdateToken).first()
-            assert update_token.token_address == "contract_address_test1"
-            assert update_token.type == TokenType.IBET_SHARE.value
-            assert update_token.status == 1
-            assert update_token.trigger == "Issue"
+            assert update_token is None
+
+            operation_log = db.query(TokenUpdateOperationLog).first()
+            assert operation_log.token_address == "contract_address_test1"
+            assert operation_log.type == TokenType.IBET_SHARE.value
+            assert operation_log.original_contents is None
+            assert operation_log.operation_category == "Issue"
 
     # <Normal_4_1>
     # YYYYMMDD parameter is not empty
