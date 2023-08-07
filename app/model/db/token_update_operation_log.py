@@ -18,33 +18,34 @@ SPDX-License-Identifier: Apache-2.0
 """
 from enum import StrEnum
 
-from sqlalchemy import JSON, Integer, String
+from sqlalchemy import JSON, BigInteger, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import Base
+from app.model.db import Base
 
 
-class UpdateToken(Base):
-    """Update Token"""
+class TokenUpdateOperationLog(Base):
+    """Token Update Operation Log"""
 
-    __tablename__ = "update_token"
+    __tablename__ = "token_update_operation_log"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # token address
-    token_address: Mapped[str | None] = mapped_column(String(42), index=True)
+    token_address: Mapped[str] = mapped_column(String(42), index=True, nullable=False)
     # issuer address
-    issuer_address: Mapped[str | None] = mapped_column(String(42), nullable=True)
-    # token type
+    issuer_address: Mapped[str] = mapped_column(String(42), nullable=False)
+    # token type(TokenType)
     type: Mapped[str] = mapped_column(String(40), nullable=False)
     # arguments
     arguments: Mapped[dict] = mapped_column(JSON, nullable=False)
-    # processing status (pending:0, succeeded:1, failed:2)
-    status: Mapped[int] = mapped_column(Integer, nullable=False)
-    # update trigger
-    trigger: Mapped[str] = mapped_column(String(40), nullable=False)
+    # original contents
+    original_contents: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # operation category(TokenUpdateOperationCategory)
+    operation_category: Mapped[str] = mapped_column(String(40), nullable=False)
 
 
-class UpdateTokenTrigger(StrEnum):
-    """Trigger of update token"""
+class TokenUpdateOperationCategory(StrEnum):
+    """Operation category of update token"""
 
     ISSUE = "Issue"
+    UPDATE = "Update"

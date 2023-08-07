@@ -46,13 +46,7 @@ from app.model.blockchain.tx_params.ibet_share import (
 from app.model.blockchain.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
 )
-from app.model.db import (
-    TokenAttrUpdate,
-    TokenCache,
-    TokenType,
-    UpdateToken,
-    UpdateTokenTrigger,
-)
+from app.model.db import TokenAttrUpdate, TokenCache
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
 from config import CHAIN_ID, TOKEN_CACHE, TOKEN_CACHE_TTL, TX_GAS_LIMIT, ZERO_ADDRESS
@@ -101,24 +95,6 @@ class IbetStandardTokenInterface:
         _token_attr_update.token_address = self.token_address
         _token_attr_update.updated_datetime = datetime.utcnow()
         db_session.add(_token_attr_update)
-
-    def create_history(
-        self,
-        db_session: Session,
-        original_contents: dict,
-        modified_contents: dict,
-        token_type: str,
-        trigger: UpdateTokenTrigger,
-    ):
-        update_token = UpdateToken()
-        update_token.token_address = self.token_address
-        update_token.issuer_address = self.issuer_address
-        update_token.type = token_type
-        update_token.arguments = modified_contents
-        update_token.original_contents = original_contents
-        update_token.status = 1  # succeeded
-        update_token.trigger = trigger
-        db_session.add(update_token)
 
     def create_cache(self, db_session: Session):
         token_cache = TokenCache()
@@ -571,11 +547,6 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         self, data: IbetStraightBondUpdateParams, tx_from: str, private_key: str
     ):
         """Update token"""
-        if data.dict(exclude_none=True) == {}:
-            return
-
-        original_contents = self.get().__dict__
-
         contract = ContractUtils.get_contract(
             contract_name=self.contract_name, contract_address=self.token_address
         )
@@ -857,13 +828,6 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         db_session = Session(autocommit=False, autoflush=True, bind=engine)
         try:
             self.record_attr_update(db_session)
-            self.create_history(
-                db_session,
-                original_contents=original_contents,
-                modified_contents=data.dict(exclude_none=True),
-                token_type=TokenType.IBET_STRAIGHT_BOND.value,
-                trigger=UpdateTokenTrigger.UPDATE,
-            )
             self.delete_cache(db_session)
             db_session.commit()
         except Exception as err:
@@ -1006,11 +970,6 @@ class IbetShareContract(IbetSecurityTokenInterface):
 
     def update(self, data: IbetShareUpdateParams, tx_from: str, private_key: str):
         """Update token"""
-        if data.dict(exclude_none=True) == {}:
-            return
-
-        original_contents = self.get().__dict__
-
         contract = ContractUtils.get_contract(
             contract_name=self.contract_name, contract_address=self.token_address
         )
@@ -1274,13 +1233,6 @@ class IbetShareContract(IbetSecurityTokenInterface):
         db_session = Session(autocommit=False, autoflush=True, bind=engine)
         try:
             self.record_attr_update(db_session)
-            self.create_history(
-                db_session,
-                original_contents=original_contents,
-                modified_contents=data.dict(exclude_none=True),
-                token_type=TokenType.IBET_SHARE.value,
-                trigger=UpdateTokenTrigger.UPDATE,
-            )
             self.delete_cache(db_session)
             db_session.commit()
         except Exception as err:

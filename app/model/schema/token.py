@@ -382,8 +382,8 @@ class ListAllTokenLockEventsQuery:
     )
 
 
-class UpdateTokenTrigger(StrEnum):
-    """Trigger of update token"""
+class TokenUpdateOperationCategory(StrEnum):
+    """Operation category of update token"""
 
     ISSUE = "Issue"
     UPDATE = "Update"
@@ -393,15 +393,15 @@ class ListTokenHistorySortItem(StrEnum):
     """Sort item of token history"""
 
     created = "created"
-    trigger = "trigger"
+    operation_category = "operation_category"
 
 
 @dataclass
-class ListTokenHistoryQuery:
+class ListTokenOperationLogHistoryQuery:
     modified_contents: Optional[str] = Query(
         default=None, description="Modified contents query"
     )
-    trigger: Optional[UpdateTokenTrigger] = Query(
+    operation_category: Optional[TokenUpdateOperationCategory] = Query(
         default=None, description="Trigger of change"
     )
     created_from: Optional[datetime] = Query(
@@ -490,18 +490,18 @@ class IbetShareResponse(BaseModel):
     memo: str
 
 
-class TokenHistoryResponse(BaseModel):
+class TokenOperationLogResponse(BaseModel):
     original_contents: dict | None = Field(
         default=None, nullable=True, description="original attributes before update"
     )
     modified_contents: dict = Field(..., description="update attributes")
-    trigger: UpdateTokenTrigger
+    operation_category: TokenUpdateOperationCategory
     created: datetime
 
 
-class ListTokenHistoryResponse(BaseModel):
+class ListTokenOperationLogHistoryResponse(BaseModel):
     result_set: ResultSet
-    history: list[TokenHistoryResponse] = Field(
+    history: list[TokenOperationLogResponse] = Field(
         default=[], description="token update histories"
     )
 

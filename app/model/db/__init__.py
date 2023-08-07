@@ -69,6 +69,10 @@ from .notification import Notification, NotificationType
 from .scheduled_events import ScheduledEvents, ScheduledEventType
 from .token import Token, TokenAttrUpdate, TokenCache, TokenType
 from .token_holders import TokenHolder, TokenHolderBatchStatus, TokenHoldersList
+from .token_update_operation_log import (
+    TokenUpdateOperationCategory,
+    TokenUpdateOperationLog,
+)
 from .transfer_appoval_history import (
     TransferApprovalHistory,
     TransferApprovalOperationType,

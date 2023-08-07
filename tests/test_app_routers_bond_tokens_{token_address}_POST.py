@@ -33,6 +33,7 @@ from app.model.db import (
     Token,
     TokenAttrUpdate,
     TokenType,
+    TokenUpdateOperationLog,
     UpdateToken,
 )
 from app.utils.contract_utils import ContractUtils
@@ -140,10 +141,13 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         assert len(token_attr_update) == 1
 
         update_token = db.query(UpdateToken).first()
-        assert update_token.token_address == _token_address
-        assert update_token.issuer_address == _issuer_address
-        assert update_token.type == TokenType.IBET_STRAIGHT_BOND.value
-        assert update_token.original_contents == {
+        assert update_token is None
+
+        operation_log = db.query(TokenUpdateOperationLog).first()
+        assert operation_log.token_address == _token_address
+        assert operation_log.issuer_address == _issuer_address
+        assert operation_log.type == TokenType.IBET_STRAIGHT_BOND.value
+        assert operation_log.original_contents == {
             "contact_information": "",
             "contract_name": "IbetStraightBond",
             "face_value": 20,
@@ -169,7 +173,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "transfer_approval_required": False,
             "transferable": False,
         }
-        assert update_token.arguments == {
+        assert operation_log.arguments == {
             "face_value": 10000,
             "interest_rate": 0.5,
             "interest_payment_date": ["0101", "0701"],
@@ -185,7 +189,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "transfer_approval_required": True,
             "memo": "m" * 10000,
         }
-        assert update_token.status == 1
+        assert operation_log.operation_category == "Update"
 
     # <Normal_2>
     # No request parameters
@@ -237,10 +241,10 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             .filter(TokenAttrUpdate.token_address == _token_address)
             .all()
         )
-        assert len(token_attr_update) == 0
+        assert len(token_attr_update) == 1
 
-        update_token = db.query(UpdateToken).first()
-        assert update_token is None
+        operation_log = db.query(TokenUpdateOperationLog).first()
+        assert operation_log is not None
 
     # <Normal_3>
     # Authorization by auth token
@@ -319,10 +323,13 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         assert len(token_attr_update) == 1
 
         update_token = db.query(UpdateToken).first()
-        assert update_token.token_address == _token_address
-        assert update_token.issuer_address == _issuer_address
-        assert update_token.type == TokenType.IBET_STRAIGHT_BOND.value
-        assert update_token.original_contents == {
+        assert update_token is None
+
+        operation_log = db.query(TokenUpdateOperationLog).first()
+        assert operation_log.token_address == _token_address
+        assert operation_log.issuer_address == _issuer_address
+        assert operation_log.type == TokenType.IBET_STRAIGHT_BOND.value
+        assert operation_log.original_contents == {
             "contact_information": "",
             "contract_name": "IbetStraightBond",
             "face_value": 20,
@@ -348,7 +355,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "transfer_approval_required": False,
             "transferable": False,
         }
-        assert update_token.arguments == {
+        assert operation_log.arguments == {
             "face_value": 10000,
             "interest_rate": 0.5,
             "interest_payment_date": ["0101", "0701"],
@@ -364,7 +371,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "transfer_approval_required": True,
             "memo": "memo_test1",
         }
-        assert update_token.status == 1
+        assert operation_log.operation_category == "Update"
 
     ###########################################################################
     # Error Case

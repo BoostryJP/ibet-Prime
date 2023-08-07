@@ -91,6 +91,8 @@ from app.model.db import (
     ScheduledEvents,
     Token,
     TokenType,
+    TokenUpdateOperationCategory,
+    TokenUpdateOperationLog,
     TransferApprovalHistory,
     TransferApprovalOperationType,
     UpdateToken,
@@ -118,8 +120,8 @@ from app.model.schema import (
     ListAllTokenLockEventsSortItem,
     ListBatchIssueRedeemUploadResponse,
     ListBatchRegisterPersonalInfoUploadResponse,
-    ListTokenHistoryQuery,
-    ListTokenHistoryResponse,
+    ListTokenOperationLogHistoryQuery,
+    ListTokenOperationLogHistoryResponse,
     ListTransferHistoryQuery,
     ListTransferHistorySortItem,
     LockEventCategory,
@@ -127,6 +129,7 @@ from app.model.schema import (
     ScheduledEventIdResponse,
     ScheduledEventResponse,
     TokenAddressResponse,
+    TokenUpdateOperationCategory,
     TransferApprovalHistoryResponse,
     TransferApprovalsResponse,
     TransferApprovalTokenResponse,
@@ -250,7 +253,6 @@ def issue_token(
         _update_token.issuer_address = issuer_address
         _update_token.type = TokenType.IBET_STRAIGHT_BOND.value
         _update_token.arguments = token_dict
-        _update_token.original_contents = None
         _update_token.status = 0  # pending
         _update_token.trigger = "Issue"
         db.add(_update_token)
@@ -289,17 +291,6 @@ def issue_token(
         _utxo.block_timestamp = datetime.utcfromtimestamp(block["timestamp"])
         db.add(_utxo)
 
-        # Insert token history
-        _update_token = UpdateToken()
-        _update_token.token_address = contract_address
-        _update_token.issuer_address = issuer_address
-        _update_token.type = TokenType.IBET_STRAIGHT_BOND.value
-        _update_token.arguments = token_dict
-        _update_token.original_contents = None
-        _update_token.status = 1  # succeeded
-        _update_token.trigger = "Issue"
-        db.add(_update_token)
-
         token_status = 1  # succeeded
 
     # Register token data
@@ -311,6 +302,16 @@ def issue_token(
     _token.abi = abi
     _token.token_status = token_status
     db.add(_token)
+
+    # Register operation log
+    operation_log = TokenUpdateOperationLog()
+    operation_log.token_address = contract_address
+    operation_log.issuer_address = issuer_address
+    operation_log.type = TokenType.IBET_STRAIGHT_BOND.value
+    operation_log.arguments = token.dict()
+    operation_log.original_contents = None
+    operation_log.operation_category = TokenUpdateOperationCategory.ISSUE.value
+    db.add(operation_log)
 
     db.commit()
 
@@ -469,13 +470,25 @@ def update_token(
 
     # Send transaction
     try:
-        IbetStraightBondContract(token_address).update(
+        token_contract = IbetStraightBondContract(token_address)
+        original_contents = token_contract.get().__dict__
+        token_contract.update(
             data=UpdateParams(**token.dict()),
             tx_from=issuer_address,
             private_key=private_key,
         )
     except SendTransactionError:
         raise SendTransactionError("failed to send transaction")
+
+    # Register operation log
+    operation_log = TokenUpdateOperationLog()
+    operation_log.token_address = token_address
+    operation_log.issuer_address = issuer_address
+    operation_log.type = TokenType.IBET_STRAIGHT_BOND.value
+    operation_log.arguments = token.dict(exclude_none=True)
+    operation_log.original_contents = original_contents
+    operation_log.operation_category = TokenUpdateOperationCategory.UPDATE.value
+    db.add(operation_log)
 
     db.commit()
     return
@@ -484,54 +497,56 @@ def update_token(
 # GET: /bond/tokens/{token_address}/history
 @router.get(
     "/tokens/{token_address}/history",
-    response_model=ListTokenHistoryResponse,
+    response_model=ListTokenOperationLogHistoryResponse,
     responses=get_routers_responses(404, InvalidParameterError),
 )
-def list_bond_history(
+def list_bond_operation_log_history(
     db: DBSession,
     token_address: str,
-    request_query: ListTokenHistoryQuery = Depends(),
+    request_query: ListTokenOperationLogHistoryQuery = Depends(),
 ):
-    """List token history"""
-    stmt = select(UpdateToken).where(
+    """List of token operation log history"""
+    stmt = select(TokenUpdateOperationLog).where(
         and_(
-            UpdateToken.type == TokenType.IBET_STRAIGHT_BOND,
-            UpdateToken.token_address == token_address,
-            UpdateToken.status == 1,
+            TokenUpdateOperationLog.type == TokenType.IBET_STRAIGHT_BOND,
+            TokenUpdateOperationLog.token_address == token_address,
         )
     )
     total = db.scalar(select(func.count()).select_from(stmt.subquery()))
 
-    if request_query.trigger:
-        stmt = stmt.where(UpdateToken.trigger == request_query.trigger)
+    if request_query.operation_category:
+        stmt = stmt.where(
+            TokenUpdateOperationLog.operation_category
+            == request_query.operation_category
+        )
     if request_query.modified_contents:
         stmt = stmt.where(
-            cast(UpdateToken.arguments, String).like(
+            cast(TokenUpdateOperationLog.arguments, String).like(
                 "%" + request_query.modified_contents + "%"
             )
         )
     if request_query.created_from:
         stmt = stmt.where(
-            UpdateToken.created
+            TokenUpdateOperationLog.created
             >= local_tz.localize(request_query.created_from).astimezone(utc_tz)
         )
     if request_query.created_to:
         stmt = stmt.where(
-            UpdateToken.created
+            TokenUpdateOperationLog.created
             <= local_tz.localize(request_query.created_to).astimezone(utc_tz)
         )
 
     count = db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
-    sort_attr = getattr(UpdateToken, request_query.sort_item, None)
+    sort_attr = getattr(TokenUpdateOperationLog, request_query.sort_item, None)
     if request_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
-    if request_query.sort_item != UpdateToken.created:
+    if request_query.sort_item != TokenUpdateOperationLog.created:
         # NOTE: Set secondary sort for consistent results
-        stmt = stmt.order_by(desc(UpdateToken.created))
+        stmt = stmt.order_by(desc(TokenUpdateOperationLog.created))
 
     # Pagination
     if request_query.limit is not None:
@@ -539,7 +554,7 @@ def list_bond_history(
     if request_query.offset is not None:
         stmt = stmt.offset(request_query.offset)
 
-    history: Sequence[UpdateToken] = db.scalars(stmt).all()
+    history: Sequence[TokenUpdateOperationLog] = db.scalars(stmt).all()
 
     return json_response(
         {
@@ -553,7 +568,7 @@ def list_bond_history(
                 {
                     "original_contents": h.original_contents,
                     "modified_contents": h.arguments,
-                    "trigger": h.trigger,
+                    "operation_category": h.operation_category,
                     "created": utc_tz.localize(h.created).astimezone(local_tz),
                 }
                 for h in history
