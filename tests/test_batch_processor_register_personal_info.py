@@ -17,11 +17,12 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import logging
-from typing import Optional
+from typing import Optional, Sequence
 from unittest.mock import patch
 
 import pytest
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.exceptions import ContractRevertError, SendTransactionError
@@ -249,29 +250,25 @@ class TestProcessor:
             processor.process()
 
             # Assertion
-            _batch_register_upload_list = (
-                db.query(BatchRegisterPersonalInfoUpload)
-                .filter(
+            _batch_register_upload_list = db.scalars(
+                select(BatchRegisterPersonalInfoUpload).where(
                     BatchRegisterPersonalInfoUpload.upload_id.in_(
                         [self.upload_id_list[0], self.upload_id_list[4]]
                     )
                 )
-                .all()
-            )
+            ).all()
             for _upload in _batch_register_upload_list:
                 assert (
                     _upload.status == BatchRegisterPersonalInfoUploadStatus.DONE.value
                 )
 
-            _batch_register_list = (
-                db.query(BatchRegisterPersonalInfo)
-                .filter(
+            _batch_register_list = db.scalars(
+                select(BatchRegisterPersonalInfo).where(
                     BatchRegisterPersonalInfo.upload_id.in_(
                         [self.upload_id_list[0], self.upload_id_list[4]]
                     )
                 )
-                .all()
-            )
+            ).all()
             for _batch_register in _batch_register_list:
                 assert _batch_register.status == 1
 
@@ -365,41 +362,41 @@ class TestProcessor:
             processor.process()
 
             # Assertion
-            _batch_register_upload_list: list[BatchRegisterPersonalInfoUpload] = (
-                db.query(BatchRegisterPersonalInfoUpload)
-                .filter(
+            _batch_register_upload_list: Sequence[
+                BatchRegisterPersonalInfoUpload
+            ] = db.scalars(
+                select(BatchRegisterPersonalInfoUpload)
+                .where(
                     BatchRegisterPersonalInfoUpload.status
                     == BatchRegisterPersonalInfoUploadStatus.DONE.value
                 )
                 .order_by(BatchRegisterPersonalInfoUpload.created)
-                .all()
-            )
+            ).all()
             assert len(_batch_register_upload_list) == 2
 
             assert _batch_register_upload_list[0].issuer_address == _account["address"]
             assert _batch_register_upload_list[1].issuer_address == _account["address"]
 
-            _batch_register_list = (
-                db.query(BatchRegisterPersonalInfo)
-                .filter(
+            _batch_register_list = db.scalars(
+                select(BatchRegisterPersonalInfo).where(
                     BatchRegisterPersonalInfo.upload_id.in_(
                         [r.upload_id for r in _batch_register_upload_list]
                     )
                 )
-                .all()
-            )
+            ).all()
             for _batch_register in _batch_register_list:
                 assert _batch_register.status == 1
 
-            _batch_register_upload_list: list[BatchRegisterPersonalInfoUpload] = (
-                db.query(BatchRegisterPersonalInfoUpload)
-                .filter(
+            _batch_register_upload_list: Sequence[
+                BatchRegisterPersonalInfoUpload
+            ] = db.scalars(
+                select(BatchRegisterPersonalInfoUpload)
+                .where(
                     BatchRegisterPersonalInfoUpload.status
                     == BatchRegisterPersonalInfoUploadStatus.PENDING.value
                 )
                 .order_by(BatchRegisterPersonalInfoUpload.created)
-                .all()
-            )
+            ).all()
 
             assert len(_batch_register_upload_list) == 4
 
@@ -420,15 +417,13 @@ class TestProcessor:
                 == _other_issuer["address"]
             )
 
-            _batch_register_list = (
-                db.query(BatchRegisterPersonalInfo)
-                .filter(
+            _batch_register_list = db.scalars(
+                select(BatchRegisterPersonalInfo).where(
                     BatchRegisterPersonalInfo.upload_id.in_(
                         [r.upload_id for r in _batch_register_upload_list]
                     )
                 )
-                .all()
-            )
+            ).all()
             for _batch_register in _batch_register_list:
                 assert _batch_register.status == 0
 
@@ -519,41 +514,41 @@ class TestProcessor:
             processor.process()
 
             # Assertion
-            _batch_register_upload_list: list[BatchRegisterPersonalInfoUpload] = (
-                db.query(BatchRegisterPersonalInfoUpload)
-                .filter(
+            _batch_register_upload_list: Sequence[
+                BatchRegisterPersonalInfoUpload
+            ] = db.scalars(
+                select(BatchRegisterPersonalInfoUpload)
+                .where(
                     BatchRegisterPersonalInfoUpload.status
                     == BatchRegisterPersonalInfoUploadStatus.DONE.value
                 )
                 .order_by(BatchRegisterPersonalInfoUpload.created)
-                .all()
-            )
+            ).all()
             assert len(_batch_register_upload_list) == 2
 
             assert _batch_register_upload_list[0].issuer_address == _account["address"]
             assert _batch_register_upload_list[1].issuer_address == _account["address"]
 
-            _batch_register_list = (
-                db.query(BatchRegisterPersonalInfo)
-                .filter(
+            _batch_register_list = db.scalars(
+                select(BatchRegisterPersonalInfo).where(
                     BatchRegisterPersonalInfo.upload_id.in_(
                         [r.upload_id for r in _batch_register_upload_list]
                     )
                 )
-                .all()
-            )
+            ).all()
             for _batch_register in _batch_register_list:
                 assert _batch_register.status == 1
 
-            _batch_register_upload_list: list[BatchRegisterPersonalInfoUpload] = (
-                db.query(BatchRegisterPersonalInfoUpload)
-                .filter(
+            _batch_register_upload_list: Sequence[
+                BatchRegisterPersonalInfoUpload
+            ] = db.scalars(
+                select(BatchRegisterPersonalInfoUpload)
+                .where(
                     BatchRegisterPersonalInfoUpload.status
                     == BatchRegisterPersonalInfoUploadStatus.PENDING.value
                 )
                 .order_by(BatchRegisterPersonalInfoUpload.created)
-                .all()
-            )
+            ).all()
 
             assert len(_batch_register_upload_list) == 4
 
@@ -562,15 +557,13 @@ class TestProcessor:
             assert _batch_register_upload_list[2].issuer_address == _account["address"]
             assert _batch_register_upload_list[3].issuer_address == _account["address"]
 
-            _batch_register_list = (
-                db.query(BatchRegisterPersonalInfo)
-                .filter(
+            _batch_register_list = db.scalars(
+                select(BatchRegisterPersonalInfo).where(
                     BatchRegisterPersonalInfo.upload_id.in_(
                         [r.upload_id for r in _batch_register_upload_list[0:3]]
                     )
                 )
-                .all()
-            )
+            ).all()
             for _batch_register in _batch_register_list:
                 assert _batch_register.status == 0
 
@@ -646,14 +639,16 @@ class TestProcessor:
             mock.assert_not_called()
 
             # Assertion
-            _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = (
-                db.query(BatchRegisterPersonalInfoUpload)
-                .filter(
+            _batch_register_upload: Optional[
+                BatchRegisterPersonalInfoUpload
+            ] = db.scalars(
+                select(BatchRegisterPersonalInfoUpload)
+                .where(
                     BatchRegisterPersonalInfoUpload.issuer_address
                     == _account["address"]
                 )
-                .first()
-            )
+                .limit(1)
+            ).first()
             assert (
                 _batch_register_upload.status
                 == BatchRegisterPersonalInfoUploadStatus.FAILED.value
@@ -667,7 +662,7 @@ class TestProcessor:
                 )
             )
 
-            _notification_list = db.query(Notification).all()
+            _notification_list = db.scalars(select(Notification)).all()
             for _notification in _notification_list:
                 assert _notification.notice_id is not None
                 assert _notification.issuer_address == _account["address"]
@@ -759,14 +754,16 @@ class TestProcessor:
             processor.process()
 
             # Assertion
-            _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = (
-                db.query(BatchRegisterPersonalInfoUpload)
-                .filter(
+            _batch_register_upload: Optional[
+                BatchRegisterPersonalInfoUpload
+            ] = db.scalars(
+                select(BatchRegisterPersonalInfoUpload)
+                .where(
                     BatchRegisterPersonalInfoUpload.issuer_address
                     == _account["address"]
                 )
-                .first()
-            )
+                .limit(1)
+            ).first()
             assert (
                 _batch_register_upload.status
                 == BatchRegisterPersonalInfoUploadStatus.FAILED.value
@@ -794,7 +791,7 @@ class TestProcessor:
                 )
             )
 
-            _notification_list = db.query(Notification).all()
+            _notification_list = db.scalars(select(Notification)).all()
             for _notification in _notification_list:
                 assert _notification.notice_id is not None
                 assert _notification.issuer_address == _account["address"]
@@ -888,14 +885,16 @@ class TestProcessor:
             processor.process()
 
             # Assertion
-            _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = (
-                db.query(BatchRegisterPersonalInfoUpload)
-                .filter(
+            _batch_register_upload: Optional[
+                BatchRegisterPersonalInfoUpload
+            ] = db.scalars(
+                select(BatchRegisterPersonalInfoUpload)
+                .where(
                     BatchRegisterPersonalInfoUpload.issuer_address
                     == _account["address"]
                 )
-                .first()
-            )
+                .limit(1)
+            ).first()
             assert (
                 _batch_register_upload.status
                 == BatchRegisterPersonalInfoUploadStatus.FAILED.value
@@ -923,7 +922,7 @@ class TestProcessor:
                 )
             )
 
-            _notification_list = db.query(Notification).all()
+            _notification_list = db.scalars(select(Notification)).all()
             for _notification in _notification_list:
                 assert _notification.notice_id is not None
                 assert _notification.issuer_address == _account["address"]

@@ -19,6 +19,8 @@ SPDX-License-Identifier: Apache-2.0
 import json
 from datetime import datetime
 
+from sqlalchemy import select
+
 from app.model.db import E2EMessagingAccount, IDXE2EMessaging
 
 
@@ -37,11 +39,11 @@ class TestAppRoutersE2EMessagingMessagesIdGET:
         _e2e_messaging.send_timestamp = e2e_messaging["send_timestamp"]
         db.add(_e2e_messaging)
 
-        _account = (
-            db.query(E2EMessagingAccount)
-            .filter(E2EMessagingAccount.account_address == e2e_messaging["to_address"])
-            .first()
-        )
+        _account = db.scalars(
+            select(E2EMessagingAccount)
+            .where(E2EMessagingAccount.account_address == e2e_messaging["to_address"])
+            .limit(1)
+        ).first()
         if _account is None:
             _account = E2EMessagingAccount()
             _account.account_address = e2e_messaging["to_address"]

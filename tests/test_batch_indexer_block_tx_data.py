@@ -22,6 +22,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from utils.contract_utils import IbetStandardTokenUtils
@@ -74,17 +75,17 @@ class TestProcessor:
         processor.process()
 
         # Assertion
-        indexed_block = (
-            db.query(IDXBlockDataBlockNumber)
-            .filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
-            .first()
-        )
+        indexed_block = db.scalars(
+            select(IDXBlockDataBlockNumber)
+            .where(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
+            .limit(1)
+        ).first()
         assert indexed_block.latest_block_number == before_block_number
 
-        block_data = db.query(IDXBlockData).all()
+        block_data = db.scalars(select(IDXBlockData)).all()
         assert len(block_data) == 0
 
-        tx_data = db.query(IDXTxData).all()
+        tx_data = db.scalars(select(IDXTxData)).all()
         assert len(tx_data) == 0
 
         assert 1 == caplog.record_tuples.count(
@@ -105,18 +106,18 @@ class TestProcessor:
         after_block_number = web3.eth.block_number
 
         # Assertion: Data
-        indexed_block = (
-            db.query(IDXBlockDataBlockNumber)
-            .filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
-            .first()
-        )
+        indexed_block = db.scalars(
+            select(IDXBlockDataBlockNumber)
+            .where(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
+            .limit(1)
+        ).first()
         assert indexed_block.latest_block_number == after_block_number
 
-        block_data: list[IDXBlockData] = db.query(IDXBlockData).all()
+        block_data: list[IDXBlockData] = db.scalars(select(IDXBlockData)).all()
         assert len(block_data) == 1
         assert block_data[0].number == before_block_number + 1
 
-        tx_data = db.query(IDXTxData).all()
+        tx_data = db.scalars(select(IDXTxData)).all()
         assert len(tx_data) == 0
 
         # Assertion: Log
@@ -162,19 +163,19 @@ class TestProcessor:
         after_block_number = web3.eth.block_number
 
         # Assertion
-        indexed_block = (
-            db.query(IDXBlockDataBlockNumber)
-            .filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
-            .first()
-        )
+        indexed_block = db.scalars(
+            select(IDXBlockDataBlockNumber)
+            .where(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
+            .limit(1)
+        ).first()
         assert indexed_block.latest_block_number == after_block_number
 
-        block_data: list[IDXBlockData] = db.query(IDXBlockData).all()
+        block_data: list[IDXBlockData] = db.scalars(select(IDXBlockData)).all()
         assert len(block_data) == 1
         assert block_data[0].number == before_block_number + 1
         assert len(block_data[0].transactions) == 1
 
-        tx_data: list[IDXTxData] = db.query(IDXTxData).all()
+        tx_data: list[IDXTxData] = db.scalars(select(IDXTxData)).all()
         assert len(tx_data) == 1
         assert tx_data[0].block_hash == block_data[0].hash
         assert tx_data[0].block_number == before_block_number + 1
@@ -220,16 +221,16 @@ class TestProcessor:
         after_block_number = web3.eth.block_number
 
         # Assertion
-        indexed_block = (
-            db.query(IDXBlockDataBlockNumber)
-            .filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
-            .first()
-        )
+        indexed_block = db.scalars(
+            select(IDXBlockDataBlockNumber)
+            .where(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
+            .limit(1)
+        ).first()
         assert indexed_block.latest_block_number == after_block_number
 
-        block_data: list[IDXBlockData] = (
-            db.query(IDXBlockData).order_by(IDXBlockData.number).all()
-        )
+        block_data: list[IDXBlockData] = db.scalars(
+            select(IDXBlockData).order_by(IDXBlockData.number)
+        ).all()
         assert len(block_data) == 2
 
         assert block_data[0].number == before_block_number + 1
@@ -238,7 +239,7 @@ class TestProcessor:
         assert block_data[1].number == before_block_number + 2
         assert len(block_data[1].transactions) == 1
 
-        tx_data: list[IDXTxData] = db.query(IDXTxData).all()
+        tx_data: list[IDXTxData] = db.scalars(select(IDXTxData)).all()
         assert len(tx_data) == 2
 
         assert tx_data[0].block_hash == block_data[0].hash
@@ -271,17 +272,17 @@ class TestProcessor:
             processor.process()
 
         # Assertion
-        indexed_block = (
-            db.query(IDXBlockDataBlockNumber)
-            .filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
-            .first()
-        )
+        indexed_block = db.scalars(
+            select(IDXBlockDataBlockNumber)
+            .where(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
+            .limit(1)
+        ).first()
         assert indexed_block.latest_block_number == before_block_number
 
-        block_data = db.query(IDXBlockData).all()
+        block_data = db.scalars(select(IDXBlockData)).all()
         assert len(block_data) == 0
 
-        tx_data = db.query(IDXTxData).all()
+        tx_data = db.scalars(select(IDXTxData)).all()
         assert len(tx_data) == 0
 
     # Error_2: SQLAlchemyError
@@ -299,15 +300,15 @@ class TestProcessor:
             processor.process()
 
         # Assertion
-        indexed_block = (
-            db.query(IDXBlockDataBlockNumber)
-            .filter(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
-            .first()
-        )
+        indexed_block = db.scalars(
+            select(IDXBlockDataBlockNumber)
+            .where(IDXBlockDataBlockNumber.chain_id == str(CHAIN_ID))
+            .limit(1)
+        ).first()
         assert indexed_block.latest_block_number == before_block_number
 
-        block_data = db.query(IDXBlockData).all()
+        block_data = db.scalars(select(IDXBlockData)).all()
         assert len(block_data) == 0
 
-        tx_data = db.query(IDXTxData).all()
+        tx_data = db.scalars(select(IDXTxData)).all()
         assert len(tx_data) == 0

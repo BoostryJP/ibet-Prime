@@ -21,6 +21,7 @@ from unittest.mock import patch
 
 import pytest
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from web3 import Web3
 from web3.exceptions import ContractLogicError, Web3Exception
@@ -369,9 +370,12 @@ class TestSendTransaction:
         )
 
         # Transaction Lock
-        db.query(TransactionLock).filter(
-            TransactionLock.tx_from == self.test_account["address"]
-        ).populate_existing().with_for_update().first()
+        db.scalars(
+            select(TransactionLock)
+            .where(TransactionLock.tx_from == self.test_account["address"])
+            .limit(1)
+            .with_for_update()
+        ).first()
 
         with pytest.raises(SendTransactionError) as ex_info:
             ContractUtils.send_transaction(transaction=tx, private_key=self.private_key)

@@ -16,6 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from sqlalchemy import select
+
 from app.model.db import LedgerDetailsData, Token, TokenType
 from tests.account_config import config_eth_account
 
@@ -89,7 +91,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdDELETE:
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
-        _details_data_list = db.query(LedgerDetailsData).all()
+        _details_data_list = db.scalars(select(LedgerDetailsData)).all()
         assert len(_details_data_list) == 1
         assert _details_data_list[0].id == 3
         assert _details_data_list[0].token_address == token_address

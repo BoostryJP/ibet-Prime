@@ -21,6 +21,7 @@ from datetime import datetime
 
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
+from sqlalchemy import select
 
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
 from app.utils.e2ee_utils import E2EEUtils
@@ -152,11 +153,11 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
-        _rsa_key_list = (
-            db.query(E2EMessagingAccountRsaKey)
-            .order_by(E2EMessagingAccountRsaKey.block_timestamp)
-            .all()
-        )
+        _rsa_key_list = db.scalars(
+            select(E2EMessagingAccountRsaKey).order_by(
+                E2EMessagingAccountRsaKey.block_timestamp
+            )
+        ).all()
         assert len(_rsa_key_list) == 3
         _rsa_key = _rsa_key_list[2]
         assert _rsa_key.rsa_private_key != self.rsa_private_key

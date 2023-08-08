@@ -20,6 +20,7 @@ import uuid
 from datetime import datetime
 
 from pytz import timezone
+from sqlalchemy import select
 
 from app.model.db import Account, ScheduledEvents, ScheduledEventType, TokenType
 from app.utils.e2ee_utils import E2EEUtils
@@ -107,11 +108,9 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
             "data": data,
             "created": datetime_now_str,
         }
-        token_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.event_id == event_id)
-            .first()
-        )
+        token_event = db.scalars(
+            select(ScheduledEvents).where(ScheduledEvents.event_id == event_id).limit(1)
+        ).first()
         assert token_event is None
 
     #########################################################################

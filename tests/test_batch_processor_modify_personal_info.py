@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 import pytest
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy import func, select
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
@@ -315,7 +316,7 @@ class TestProcessor:
         processor.process()
 
         # assertion(Run 1st)
-        _account = db.query(Account).first()
+        _account = db.scalars(select(Account).limit(1)).first()
         assert _account.issuer_address == user_1["address"]
         assert _account.keyfile == user_1["keyfile_json"]
         assert _account.eoa_password == eoa_password
@@ -323,7 +324,7 @@ class TestProcessor:
         assert _account.rsa_public_key == user_1["rsa_public_key"]
         assert _account.rsa_passphrase == rsa_passphrase
         assert _account.rsa_status == AccountRsaStatus.CHANGING.value
-        _temporary = db.query(AccountRsaKeyTemporary).first()
+        _temporary = db.scalars(select(AccountRsaKeyTemporary).limit(1)).first()
         assert temporary.issuer_address == user_1["address"]
         assert temporary.rsa_private_key == user_1["rsa_private_key"]
         assert temporary.rsa_public_key == user_1["rsa_public_key"]
@@ -380,7 +381,7 @@ class TestProcessor:
         }
 
         # RSA Key Change Completed
-        account = db.query(Account).first()
+        account = db.scalars(select(Account).limit(1)).first()
         account.rsa_private_key = personal_user_1["rsa_private_key"]
         account.rsa_public_key = personal_user_1["rsa_public_key"]
         db.merge(account)
@@ -393,7 +394,7 @@ class TestProcessor:
 
         # assertion(Run 2nd)
         db.rollback()
-        _account = db.query(Account).first()
+        _account = db.scalars(select(Account).limit(1)).first()
         assert _account.issuer_address == user_1["address"]
         assert _account.keyfile == user_1["keyfile_json"]
         assert _account.eoa_password == eoa_password
@@ -401,7 +402,7 @@ class TestProcessor:
         assert _account.rsa_public_key == personal_user_1["rsa_public_key"]
         assert _account.rsa_passphrase == rsa_passphrase
         assert _account.rsa_status == AccountRsaStatus.CHANGING.value
-        _temporary = db.query(AccountRsaKeyTemporary).first()
+        _temporary = db.scalars(select(AccountRsaKeyTemporary).limit(1)).first()
         assert temporary.issuer_address == user_1["address"]
         assert temporary.rsa_private_key == user_1["rsa_private_key"]
         assert temporary.rsa_public_key == user_1["rsa_public_key"]
@@ -463,7 +464,7 @@ class TestProcessor:
 
         # assertion(Run 3rd)
         db.rollback()
-        _account = db.query(Account).first()
+        _account = db.scalars(select(Account).limit(1)).first()
         assert _account.issuer_address == user_1["address"]
         assert _account.keyfile == user_1["keyfile_json"]
         assert _account.eoa_password == eoa_password
@@ -471,7 +472,9 @@ class TestProcessor:
         assert _account.rsa_public_key == personal_user_1["rsa_public_key"]
         assert _account.rsa_passphrase == rsa_passphrase
         assert _account.rsa_status == AccountRsaStatus.SET.value
-        _temporary_count = db.query(AccountRsaKeyTemporary).count()
+        _temporary_count = db.scalar(
+            select(func.count()).select_from(select(AccountRsaKeyTemporary).subquery())
+        )
         assert _temporary_count == 0
         _personal_info_1 = PersonalInfoContract(
             db, user_1["address"], personal_info_contract_address_1

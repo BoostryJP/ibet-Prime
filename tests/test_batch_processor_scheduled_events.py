@@ -21,6 +21,7 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 import pytest
+from sqlalchemy import select
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import (
@@ -144,23 +145,23 @@ class TestProcessor:
             processor.process()
 
         # Assertion
-        _scheduled_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.token_address == _token_address_1)
-            .first()
-        )
+        _scheduled_event = db.scalars(
+            select(ScheduledEvents)
+            .where(ScheduledEvents.token_address == _token_address_1)
+            .limit(1)
+        ).first()
         assert _scheduled_event.status == 2
-        _scheduled_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.token_address == _token_address_2)
-            .first()
-        )
+        _scheduled_event = db.scalars(
+            select(ScheduledEvents)
+            .where(ScheduledEvents.token_address == _token_address_2)
+            .limit(1)
+        ).first()
         assert _scheduled_event.status == 1
-        _scheduled_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.token_address == _token_address_3)
-            .first()
-        )
+        _scheduled_event = db.scalars(
+            select(ScheduledEvents)
+            .where(ScheduledEvents.token_address == _token_address_3)
+            .limit(1)
+        ).first()
         assert _scheduled_event.status == 0
 
     # <Normal_1_2>
@@ -255,23 +256,23 @@ class TestProcessor:
             processor.process()
 
         # Assertion
-        _scheduled_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.token_address == _token_address_1)
-            .first()
-        )
+        _scheduled_event = db.scalars(
+            select(ScheduledEvents)
+            .where(ScheduledEvents.token_address == _token_address_1)
+            .limit(1)
+        ).first()
         assert _scheduled_event.status == 2
-        _scheduled_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.token_address == _token_address_2)
-            .first()
-        )
+        _scheduled_event = db.scalars(
+            select(ScheduledEvents)
+            .where(ScheduledEvents.token_address == _token_address_2)
+            .limit(1)
+        ).first()
         assert _scheduled_event.status == 1
-        _scheduled_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.token_address == _token_address_3)
-            .first()
-        )
+        _scheduled_event = db.scalars(
+            select(ScheduledEvents)
+            .where(ScheduledEvents.token_address == _token_address_3)
+            .limit(1)
+        ).first()
         assert _scheduled_event.status == 0
 
     # <Normal_2_1>
@@ -366,23 +367,23 @@ class TestProcessor:
             processor.process()
 
         # Assertion
-        _scheduled_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.token_address == _token_address_1)
-            .first()
-        )
+        _scheduled_event = db.scalars(
+            select(ScheduledEvents)
+            .where(ScheduledEvents.token_address == _token_address_1)
+            .limit(1)
+        ).first()
         assert _scheduled_event.status == 2
-        _scheduled_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.token_address == _token_address_2)
-            .first()
-        )
+        _scheduled_event = db.scalars(
+            select(ScheduledEvents)
+            .where(ScheduledEvents.token_address == _token_address_2)
+            .limit(1)
+        ).first()
         assert _scheduled_event.status == 1
-        _scheduled_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.token_address == _token_address_3)
-            .first()
-        )
+        _scheduled_event = db.scalars(
+            select(ScheduledEvents)
+            .where(ScheduledEvents.token_address == _token_address_3)
+            .limit(1)
+        ).first()
         assert _scheduled_event.status == 0
 
     # <Normal_2_2>
@@ -477,23 +478,23 @@ class TestProcessor:
             processor.process()
 
         # Assertion
-        _scheduled_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.token_address == _token_address_1)
-            .first()
-        )
+        _scheduled_event = db.scalars(
+            select(ScheduledEvents)
+            .where(ScheduledEvents.token_address == _token_address_1)
+            .limit(1)
+        ).first()
         assert _scheduled_event.status == 2
-        _scheduled_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.token_address == _token_address_2)
-            .first()
-        )
+        _scheduled_event = db.scalars(
+            select(ScheduledEvents)
+            .where(ScheduledEvents.token_address == _token_address_2)
+            .limit(1)
+        ).first()
         assert _scheduled_event.status == 1
-        _scheduled_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.token_address == _token_address_3)
-            .first()
-        )
+        _scheduled_event = db.scalars(
+            select(ScheduledEvents)
+            .where(ScheduledEvents.token_address == _token_address_3)
+            .limit(1)
+        ).first()
         assert _scheduled_event.status == 0
 
     ###########################################################################
@@ -530,13 +531,13 @@ class TestProcessor:
         processor.process()
 
         # Assertion
-        _scheduled_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.token_address == _token_address)
-            .first()
-        )
+        _scheduled_event = db.scalars(
+            select(ScheduledEvents)
+            .where(ScheduledEvents.token_address == _token_address)
+            .limit(1)
+        ).first()
         assert _scheduled_event.status == 2
-        _notification = db.query(Notification).first()
+        _notification = db.scalars(select(Notification).limit(1)).first()
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _issuer_address
@@ -585,13 +586,13 @@ class TestProcessor:
         processor.process()
 
         # Assertion
-        _scheduled_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.token_address == _token_address)
-            .first()
-        )
+        _scheduled_event = db.scalars(
+            select(ScheduledEvents)
+            .where(ScheduledEvents.token_address == _token_address)
+            .limit(1)
+        ).first()
         assert _scheduled_event.status == 2
-        _notification = db.query(Notification).first()
+        _notification = db.scalars(select(Notification).limit(1)).first()
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _issuer_address
@@ -649,13 +650,13 @@ class TestProcessor:
             processor.process()
 
         # Assertion
-        _scheduled_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.token_address == _token_address)
-            .first()
-        )
+        _scheduled_event = db.scalars(
+            select(ScheduledEvents)
+            .where(ScheduledEvents.token_address == _token_address)
+            .limit(1)
+        ).first()
         assert _scheduled_event.status == 2
-        _notification = db.query(Notification).first()
+        _notification = db.scalars(select(Notification).limit(1)).first()
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _issuer_address
@@ -714,13 +715,13 @@ class TestProcessor:
             processor.process()
 
         # Assertion
-        _scheduled_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.token_address == _token_address)
-            .first()
-        )
+        _scheduled_event = db.scalars(
+            select(ScheduledEvents)
+            .where(ScheduledEvents.token_address == _token_address)
+            .limit(1)
+        ).first()
         assert _scheduled_event.status == 2
-        _notification = db.query(Notification).first()
+        _notification = db.scalars(select(Notification).limit(1)).first()
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _issuer_address
@@ -778,13 +779,13 @@ class TestProcessor:
             processor.process()
 
         # Assertion
-        _scheduled_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.token_address == _token_address)
-            .first()
-        )
+        _scheduled_event = db.scalars(
+            select(ScheduledEvents)
+            .where(ScheduledEvents.token_address == _token_address)
+            .limit(1)
+        ).first()
         assert _scheduled_event.status == 2
-        _notification = db.query(Notification).first()
+        _notification = db.scalars(select(Notification).limit(1)).first()
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _issuer_address
@@ -853,13 +854,13 @@ class TestProcessor:
             processor.process()
 
         # Assertion
-        _scheduled_event = (
-            db.query(ScheduledEvents)
-            .filter(ScheduledEvents.token_address == _token_address)
-            .first()
-        )
+        _scheduled_event = db.scalars(
+            select(ScheduledEvents)
+            .where(ScheduledEvents.token_address == _token_address)
+            .limit(1)
+        ).first()
         assert _scheduled_event.status == 2
-        _notification = db.query(Notification).first()
+        _notification = db.scalars(select(Notification).limit(1)).first()
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _issuer_address

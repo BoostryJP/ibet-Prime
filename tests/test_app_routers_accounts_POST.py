@@ -19,6 +19,8 @@ SPDX-License-Identifier: Apache-2.0
 import base64
 from unittest import mock
 
+from sqlalchemy import select
+
 from app.model.db import Account, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
 from config import EOA_PASSWORD_PATTERN_MSG
@@ -37,7 +39,7 @@ class TestAppRoutersAccountsPOST:
 
     # <Normal_1>
     def test_normal_1(self, client, db):
-        accounts_before = db.query(Account).all()
+        accounts_before = db.scalars(select(Account)).all()
 
         password = self.valid_password
         req_param = {"eoa_password": E2EEUtils.encrypt(password)}
@@ -51,7 +53,7 @@ class TestAppRoutersAccountsPOST:
         assert resp.json()["rsa_status"] == AccountRsaStatus.UNSET.value
         assert resp.json()["is_deleted"] is False
 
-        accounts_after = db.query(Account).all()
+        accounts_after = db.scalars(select(Account)).all()
 
         assert 0 == len(accounts_before)
         assert 1 == len(accounts_after)
@@ -70,7 +72,7 @@ class TestAppRoutersAccountsPOST:
     @mock.patch("app.routers.account.AWS_KMS_GENERATE_RANDOM_ENABLED", True)
     @mock.patch("boto3.client")
     def test_normal_2(self, boto3_mock, client, db):
-        accounts_before = db.query(Account).all()
+        accounts_before = db.scalars(select(Account)).all()
 
         password = self.valid_password
         req_param = {"eoa_password": E2EEUtils.encrypt(password)}
@@ -92,7 +94,7 @@ class TestAppRoutersAccountsPOST:
         assert resp.json()["rsa_status"] == AccountRsaStatus.UNSET.value
         assert resp.json()["is_deleted"] is False
 
-        accounts_after = db.query(Account).all()
+        accounts_after = db.scalars(select(Account)).all()
 
         assert 0 == len(accounts_before)
         assert 1 == len(accounts_after)

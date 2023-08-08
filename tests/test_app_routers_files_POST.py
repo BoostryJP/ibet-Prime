@@ -20,6 +20,7 @@ import base64
 from unittest import mock
 
 import pytz
+from sqlalchemy import select
 
 from app.model.db import UploadFile
 from config import TZ
@@ -68,7 +69,7 @@ abc def"""
         # assertion
         assert resp.status_code == 200
 
-        _upload_file = db.query(UploadFile).first()
+        _upload_file = db.scalars(select(UploadFile).limit(1)).first()
         assert _upload_file.file_id is not None
         assert _upload_file.issuer_address == self.issuer_address
         assert _upload_file.relation == self.token_address
@@ -115,7 +116,7 @@ abc def"""
         # assertion
         assert resp.status_code == 200
 
-        _upload_file = db.query(UploadFile).first()
+        _upload_file = db.scalars(select(UploadFile).limit(1)).first()
         assert _upload_file.file_id is not None
         assert _upload_file.issuer_address == self.issuer_address
         assert _upload_file.relation == self.token_address
@@ -162,7 +163,7 @@ abc def"""
         # assertion
         assert resp.status_code == 200
 
-        _upload_file = db.query(UploadFile).first()
+        _upload_file = db.scalars(select(UploadFile).limit(1)).first()
         assert _upload_file.file_id is not None
         assert _upload_file.issuer_address == self.issuer_address
         assert _upload_file.relation == self.token_address

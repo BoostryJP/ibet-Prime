@@ -20,6 +20,7 @@ from datetime import datetime
 
 import pytz
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy import select
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
@@ -430,9 +431,9 @@ class TestCreateLedger:
         ledger_utils.create_ledger(token_address_1, db)
 
         # assertion
-        _notifications = db.query(Notification).all()
+        _notifications = db.scalars(select(Notification)).all()
         assert len(_notifications) == 1
-        _notification = db.query(Notification).first()
+        _notification = db.scalars(select(Notification).limit(1)).first()
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == issuer_address
@@ -445,7 +446,7 @@ class TestCreateLedger:
             "ledger_id": 1,
         }
 
-        _ledger = db.query(Ledger).first()
+        _ledger = db.scalars(select(Ledger).limit(1)).first()
         assert _ledger.id == 1
         assert _ledger.token_address == token_address_1
         assert _ledger.token_type == TokenType.IBET_SHARE.value
@@ -897,9 +898,9 @@ class TestCreateLedger:
         ledger_utils.create_ledger(token_address_1, db)
 
         # assertion
-        _notifications = db.query(Notification).all()
+        _notifications = db.scalars(select(Notification)).all()
         assert len(_notifications) == 1
-        _notification = db.query(Notification).first()
+        _notification = db.scalars(select(Notification).limit(1)).first()
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == issuer_address
@@ -911,7 +912,7 @@ class TestCreateLedger:
             "token_type": TokenType.IBET_STRAIGHT_BOND.value,
             "ledger_id": 1,
         }
-        _ledger = db.query(Ledger).first()
+        _ledger = db.scalars(select(Ledger).limit(1)).first()
         assert _ledger.id == 1
         assert _ledger.token_address == token_address_1
         assert _ledger.token_type == TokenType.IBET_STRAIGHT_BOND.value
@@ -1091,9 +1092,9 @@ class TestCreateLedger:
         ledger_utils.create_ledger(token_address_1, db)
 
         # assertion
-        _notifications = db.query(Notification).all()
+        _notifications = db.scalars(select(Notification)).all()
         assert len(_notifications) == 0
-        _ledger = db.query(Ledger).first()
+        _ledger = db.scalars(select(Ledger).limit(1)).first()
         assert _ledger is None
 
     # <Normal_4>
@@ -1122,9 +1123,9 @@ class TestCreateLedger:
         ledger_utils.create_ledger(token_address_1, db)
 
         # assertion
-        _notifications = db.query(Notification).all()
+        _notifications = db.scalars(select(Notification)).all()
         assert len(_notifications) == 0
-        _ledger = db.query(Ledger).first()
+        _ledger = db.scalars(select(Ledger).limit(1)).first()
         assert _ledger is None
 
     ###########################################################################

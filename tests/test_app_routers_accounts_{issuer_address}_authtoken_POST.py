@@ -19,6 +19,8 @@ SPDX-License-Identifier: Apache-2.0
 import hashlib
 from datetime import datetime
 
+from sqlalchemy import select
+
 from app.model.db import Account, AuthToken
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
@@ -56,11 +58,11 @@ class TestAppRoutersAccountsAuthTokenPOST:
         )
 
         # assertion
-        auth_token: AuthToken = (
-            db.query(AuthToken)
-            .filter(AuthToken.issuer_address == test_account["address"])
-            .first()
-        )
+        auth_token: AuthToken = db.scalars(
+            select(AuthToken)
+            .where(AuthToken.issuer_address == test_account["address"])
+            .limit(1)
+        ).first()
         assert auth_token.issuer_address == test_account["address"]
         assert auth_token.usage_start == datetime(2022, 7, 15, 12, 34, 56)
         assert auth_token.valid_duration == 120
@@ -104,11 +106,11 @@ class TestAppRoutersAccountsAuthTokenPOST:
         )
 
         # assertion
-        auth_token: AuthToken = (
-            db.query(AuthToken)
-            .filter(AuthToken.issuer_address == test_account["address"])
-            .first()
-        )
+        auth_token: AuthToken = db.scalars(
+            select(AuthToken)
+            .where(AuthToken.issuer_address == test_account["address"])
+            .limit(1)
+        ).first()
         assert auth_token.issuer_address == test_account["address"]
         assert auth_token.usage_start == datetime(2022, 7, 15, 12, 34, 56)
         assert auth_token.valid_duration == 120
@@ -146,11 +148,11 @@ class TestAppRoutersAccountsAuthTokenPOST:
         )
 
         # assertion
-        auth_token = (
-            db.query(AuthToken)
-            .filter(AuthToken.issuer_address == test_account["address"])
-            .first()
-        )
+        auth_token = db.scalars(
+            select(AuthToken)
+            .where(AuthToken.issuer_address == test_account["address"])
+            .limit(1)
+        ).first()
         assert auth_token is None
 
         assert resp.status_code == 422
@@ -186,11 +188,11 @@ class TestAppRoutersAccountsAuthTokenPOST:
         )
 
         # assertion
-        auth_token = (
-            db.query(AuthToken)
-            .filter(AuthToken.issuer_address == test_account["address"])
-            .first()
-        )
+        auth_token = db.scalars(
+            select(AuthToken)
+            .where(AuthToken.issuer_address == test_account["address"])
+            .limit(1)
+        ).first()
         assert auth_token is None
 
         assert resp.status_code == 422
@@ -227,11 +229,11 @@ class TestAppRoutersAccountsAuthTokenPOST:
         )
 
         # assertion
-        auth_token = (
-            db.query(AuthToken)
-            .filter(AuthToken.issuer_address == test_account["address"])
-            .first()
-        )
+        auth_token = db.scalars(
+            select(AuthToken)
+            .where(AuthToken.issuer_address == test_account["address"])
+            .limit(1)
+        ).first()
         assert auth_token is None
 
         assert resp.status_code == 422
@@ -270,11 +272,11 @@ class TestAppRoutersAccountsAuthTokenPOST:
         )
 
         # assertion
-        auth_token = (
-            db.query(AuthToken)
-            .filter(AuthToken.issuer_address == test_account["address"])
-            .first()
-        )
+        auth_token = db.scalars(
+            select(AuthToken)
+            .where(AuthToken.issuer_address == test_account["address"])
+            .limit(1)
+        ).first()
         assert auth_token is None
 
         assert resp.status_code == 422
@@ -311,11 +313,11 @@ class TestAppRoutersAccountsAuthTokenPOST:
         )
 
         # assertion
-        auth_token = (
-            db.query(AuthToken)
-            .filter(AuthToken.issuer_address == test_account["address"])
-            .first()
-        )
+        auth_token = db.scalars(
+            select(AuthToken)
+            .where(AuthToken.issuer_address == test_account["address"])
+            .limit(1)
+        ).first()
         assert auth_token is None
 
         assert resp.status_code == 422
@@ -352,11 +354,11 @@ class TestAppRoutersAccountsAuthTokenPOST:
         )
 
         # assertion
-        auth_token = (
-            db.query(AuthToken)
-            .filter(AuthToken.issuer_address == test_account["address"])
-            .first()
-        )
+        auth_token = db.scalars(
+            select(AuthToken)
+            .where(AuthToken.issuer_address == test_account["address"])
+            .limit(1)
+        ).first()
         assert auth_token is None
 
         assert resp.status_code == 422
@@ -394,11 +396,11 @@ class TestAppRoutersAccountsAuthTokenPOST:
         )
 
         # assertion
-        auth_token = (
-            db.query(AuthToken)
-            .filter(AuthToken.issuer_address == test_account["address"])
-            .first()
-        )
+        auth_token = db.scalars(
+            select(AuthToken)
+            .where(AuthToken.issuer_address == test_account["address"])
+            .limit(1)
+        ).first()
         assert auth_token is None
 
         assert resp.status_code == 422
@@ -437,11 +439,11 @@ class TestAppRoutersAccountsAuthTokenPOST:
         )
 
         # assertion
-        auth_token = (
-            db.query(AuthToken)
-            .filter(AuthToken.issuer_address == test_account["address"])
-            .first()
-        )
+        auth_token = db.scalars(
+            select(AuthToken)
+            .where(AuthToken.issuer_address == test_account["address"])
+            .limit(1)
+        ).first()
         assert auth_token is None
 
         assert resp.status_code == 401

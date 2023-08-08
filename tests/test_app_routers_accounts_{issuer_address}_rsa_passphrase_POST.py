@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
+from sqlalchemy import select
 
 from app.model.db import Account, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
@@ -64,7 +65,7 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
-        _account = db.query(Account).first()
+        _account = db.scalars(select(Account).limit(1)).first()
         _account_rsa_private_key = _account.rsa_private_key
         _account_rsa_passphrase = E2EEUtils.decrypt(_account.rsa_passphrase)
         assert _account_rsa_private_key != _old_rsa_private_key

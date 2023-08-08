@@ -24,6 +24,7 @@ from unittest.mock import ANY, call
 
 import pytest
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 import batch.processor_rotate_e2e_messaging_rsa_key as processor_rotate_e2e_messaging_rsa_key
@@ -73,11 +74,11 @@ class TestProcessor:
         processor.process()
 
         # Assertion
-        _rsa_key_list = (
-            db.query(E2EMessagingAccountRsaKey)
-            .order_by(E2EMessagingAccountRsaKey.block_timestamp)
-            .all()
-        )
+        _rsa_key_list = db.scalars(
+            select(E2EMessagingAccountRsaKey).order_by(
+                E2EMessagingAccountRsaKey.block_timestamp
+            )
+        ).all()
         assert len(_rsa_key_list) == 0
 
     # <Normal_1_2>
@@ -109,11 +110,11 @@ class TestProcessor:
         processor.process()
 
         # Assertion
-        _rsa_key_list = (
-            db.query(E2EMessagingAccountRsaKey)
-            .order_by(E2EMessagingAccountRsaKey.block_timestamp)
-            .all()
-        )
+        _rsa_key_list = db.scalars(
+            select(E2EMessagingAccountRsaKey).order_by(
+                E2EMessagingAccountRsaKey.block_timestamp
+            )
+        ).all()
         assert len(_rsa_key_list) == 1
         _rsa_key = _rsa_key_list[0]
         assert _rsa_key.id == 1
@@ -153,11 +154,11 @@ class TestProcessor:
         processor.process()
 
         # Assertion
-        _rsa_key_list = (
-            db.query(E2EMessagingAccountRsaKey)
-            .order_by(E2EMessagingAccountRsaKey.block_timestamp)
-            .all()
-        )
+        _rsa_key_list = db.scalars(
+            select(E2EMessagingAccountRsaKey).order_by(
+                E2EMessagingAccountRsaKey.block_timestamp
+            )
+        ).all()
         assert len(_rsa_key_list) == 1
         _rsa_key = _rsa_key_list[0]
         assert _rsa_key.id == 1
@@ -304,12 +305,11 @@ class TestProcessor:
                 [call(tx_hash="tx_5"), call(tx_hash="tx_6")]
             )
 
-        _rsa_key_list = (
-            db.query(E2EMessagingAccountRsaKey)
-            .filter(E2EMessagingAccountRsaKey.account_address == user_address_1)
+        _rsa_key_list = db.scalars(
+            select(E2EMessagingAccountRsaKey)
+            .where(E2EMessagingAccountRsaKey.account_address == user_address_1)
             .order_by(E2EMessagingAccountRsaKey.block_timestamp)
-            .all()
-        )
+        ).all()
         assert len(_rsa_key_list) == 2
         _rsa_key = _rsa_key_list[0]
         assert _rsa_key.id == 3
@@ -329,12 +329,11 @@ class TestProcessor:
         assert _rsa_key.rsa_public_key == ANY
         assert E2EEUtils.decrypt(_rsa_key.rsa_passphrase) == "latest_passphrase_1"
         assert _rsa_key.block_timestamp == datetime(2099, 4, 27, 12, 34, 59)
-        _rsa_key_list = (
-            db.query(E2EMessagingAccountRsaKey)
-            .filter(E2EMessagingAccountRsaKey.account_address == user_address_2)
+        _rsa_key_list = db.scalars(
+            select(E2EMessagingAccountRsaKey)
+            .where(E2EMessagingAccountRsaKey.account_address == user_address_2)
             .order_by(E2EMessagingAccountRsaKey.block_timestamp)
-            .all()
-        )
+        ).all()
         assert len(_rsa_key_list) == 2
         _rsa_key = _rsa_key_list[0]
         assert _rsa_key.id == 4
@@ -394,11 +393,11 @@ class TestProcessor:
         processor.process()
 
         # Assertion
-        _rsa_key_list = (
-            db.query(E2EMessagingAccountRsaKey)
-            .order_by(E2EMessagingAccountRsaKey.block_timestamp)
-            .all()
-        )
+        _rsa_key_list = db.scalars(
+            select(E2EMessagingAccountRsaKey).order_by(
+                E2EMessagingAccountRsaKey.block_timestamp
+            )
+        ).all()
 
     # <Error_2>
     # Failed to send transaction
@@ -452,11 +451,11 @@ class TestProcessor:
                 private_key=user_private_key_1,
             )
 
-        _rsa_key_list = (
-            db.query(E2EMessagingAccountRsaKey)
-            .order_by(E2EMessagingAccountRsaKey.block_timestamp)
-            .all()
-        )
+        _rsa_key_list = db.scalars(
+            select(E2EMessagingAccountRsaKey).order_by(
+                E2EMessagingAccountRsaKey.block_timestamp
+            )
+        ).all()
         assert len(_rsa_key_list) == 1
 
     # <Error_3>
@@ -517,11 +516,11 @@ class TestProcessor:
                 private_key=user_private_key_1,
             )
 
-        _rsa_key_list = (
-            db.query(E2EMessagingAccountRsaKey)
-            .order_by(E2EMessagingAccountRsaKey.block_timestamp)
-            .all()
-        )
+        _rsa_key_list = db.scalars(
+            select(E2EMessagingAccountRsaKey).order_by(
+                E2EMessagingAccountRsaKey.block_timestamp
+            )
+        ).all()
         assert len(_rsa_key_list) == 1
         assert (
             caplog.record_tuples.count(

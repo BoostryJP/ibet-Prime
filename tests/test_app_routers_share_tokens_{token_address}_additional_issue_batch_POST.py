@@ -18,6 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 from typing import Optional
 
+from sqlalchemy import select
+
 from app.model.db import (
     Account,
     BatchIssueRedeem,
@@ -76,8 +78,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchPOST:
         )
 
         # assertion
-        upload: Optional[BatchIssueRedeemUpload] = db.query(
-            BatchIssueRedeemUpload
+        upload: Optional[BatchIssueRedeemUpload] = db.scalars(
+            select(BatchIssueRedeemUpload).limit(1)
         ).first()
         assert upload.issuer_address == issuer_address
         assert upload.token_type == TokenType.IBET_SHARE.value
@@ -85,7 +87,9 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchPOST:
         assert upload.category == BatchIssueRedeemProcessingCategory.ISSUE.value
         assert upload.processed is False
 
-        batch_data_list: BatchIssueRedeem = db.query(BatchIssueRedeem).all()
+        batch_data_list: list[BatchIssueRedeem] = db.scalars(
+            select(BatchIssueRedeem)
+        ).all()
         assert len(batch_data_list) == 1
 
         batch_data_1: BatchIssueRedeem = batch_data_list[0]
@@ -139,8 +143,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchPOST:
         )
 
         # assertion
-        upload: Optional[BatchIssueRedeemUpload] = db.query(
-            BatchIssueRedeemUpload
+        upload: Optional[BatchIssueRedeemUpload] = db.scalars(
+            select(BatchIssueRedeemUpload).limit(1)
         ).first()
         assert upload.issuer_address == issuer_address
         assert upload.token_type == TokenType.IBET_SHARE.value
@@ -148,7 +152,9 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchPOST:
         assert upload.category == BatchIssueRedeemProcessingCategory.ISSUE.value
         assert upload.processed is False
 
-        batch_data_list: BatchIssueRedeem = db.query(BatchIssueRedeem).all()
+        batch_data_list: list[BatchIssueRedeem] = db.scalars(
+            select(BatchIssueRedeem)
+        ).all()
         assert len(batch_data_list) == 2
 
         batch_data_1: BatchIssueRedeem = batch_data_list[0]
