@@ -59,7 +59,7 @@ tags_metadata = [
 app = FastAPI(
     title="ibet Prime",
     description="Security token management system for ibet network",
-    version="23.6.0",
+    version="23.9.0",
     contact={"email": "dev@boostry.co.jp"},
     license_info={
         "name": "Apache 2.0",
