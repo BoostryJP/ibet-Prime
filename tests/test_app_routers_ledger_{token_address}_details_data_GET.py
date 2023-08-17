@@ -133,7 +133,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataGET:
                 {
                     "data_id": "data_id_3",
                     "count": 3,
-                    "created": "2022-01-03T00:20:30.00001+09:00",
+                    "created": "2022-01-03T00:20:30.000010+09:00",
                 },
                 {
                     "data_id": "data_id_4",
@@ -243,7 +243,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataGET:
                 {
                     "data_id": "data_id_3",
                     "count": 3,
-                    "created": "2022-01-03T00:20:30.00001+09:00",
+                    "created": "2022-01-03T00:20:30.000010+09:00",
                 },
                 {
                     "data_id": "data_id_4",
@@ -352,7 +352,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataGET:
                 {
                     "data_id": "data_id_3",
                     "count": 3,
-                    "created": "2022-01-03T00:20:30.00001+09:00",
+                    "created": "2022-01-03T00:20:30.000010+09:00",
                 },
             ],
         }

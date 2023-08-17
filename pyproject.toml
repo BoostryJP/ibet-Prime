@@ -18,7 +18,7 @@ gunicorn = "~21.2.0"
 orjson = "~3.9.4"
 psycopg = {extras = ["binary"], version = "~3.1.10"}
 pycryptodome = "~3.18"
-pydantic = "~2.1.1"
+pydantic = "~2.2.0"
 pytz = "~2023.3"
 requests = "~2.31.0"
 shared-memory-dict = "~0.7.2"
