@@ -20,6 +20,7 @@ import hashlib
 import random
 import string
 from datetime import datetime, timezone
+from unittest import mock
 from unittest.mock import ANY, patch
 
 from sqlalchemy import select
@@ -699,14 +700,16 @@ class TestAppRoutersShareTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -743,18 +746,27 @@ class TestAppRoutersShareTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": 1e-14,
                     "loc": ["body", "dividends"],
-                    "msg": "dividends must be rounded to 13 decimal places",
+                    "msg": "Value error, dividends must be rounded to 13 decimal "
+                    "places",
                     "type": "value_error",
                 },
                 {
+                    "ctx": {"error": {}},
+                    "input": "0x0",
                     "loc": ["body", "tradable_exchange_contract_address"],
-                    "msg": "tradable_exchange_contract_address is not a valid address",
+                    "msg": "Value error, tradable_exchange_contract_address is not a "
+                    "valid address",
                     "type": "value_error",
                 },
                 {
+                    "ctx": {"error": {}},
+                    "input": "0x0",
                     "loc": ["body", "personal_info_contract_address"],
-                    "msg": "personal_info_contract_address is not a valid address",
+                    "msg": "Value error, personal_info_contract_address is not a "
+                    "valid address",
                     "type": "value_error",
                 },
             ],
@@ -788,6 +800,7 @@ class TestAppRoutersShareTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "issuer-address",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",
@@ -835,6 +848,7 @@ class TestAppRoutersShareTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "password",
                     "loc": ["header", "eoa-password"],
                     "msg": "eoa-password is not a Base64-encoded encrypted data",
                     "type": "value_error",
@@ -881,28 +895,32 @@ class TestAppRoutersShareTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"limit_value": 0},
+                    "ctx": {"ge": 0},
+                    "input": -1,
                     "loc": ["body", "issue_price"],
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
                 {
-                    "ctx": {"limit_value": 0},
+                    "ctx": {"ge": 0},
+                    "input": -1,
                     "loc": ["body", "principal_value"],
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
                 {
-                    "ctx": {"limit_value": 0},
+                    "ctx": {"ge": 0},
+                    "input": -1,
                     "loc": ["body", "total_supply"],
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
                 {
-                    "ctx": {"limit_value": 0.0},
+                    "ctx": {"ge": 0.0},
+                    "input": -0.01,
                     "loc": ["body", "dividends"],
-                    "msg": "ensure this value is greater than or equal to 0.0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
             ],
         }
@@ -946,52 +964,60 @@ class TestAppRoutersShareTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"max_length": 100},
+                    "input": mock.ANY,
                     "loc": ["body", "name"],
-                    "msg": "ensure this value has at most 100 characters",
-                    "type": "value_error.any_str.max_length",
-                    "ctx": {"limit_value": 100},
+                    "msg": "String should have at most 100 characters",
+                    "type": "string_too_long",
                 },
                 {
+                    "ctx": {"le": 5000000000},
+                    "input": 5000000001,
                     "loc": ["body", "issue_price"],
-                    "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le",
-                    "ctx": {"limit_value": 5000000000},
+                    "msg": "Input should be less than or equal to 5000000000",
+                    "type": "less_than_equal",
                 },
                 {
+                    "ctx": {"le": 5000000000},
+                    "input": 5000000001,
                     "loc": ["body", "principal_value"],
-                    "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le",
-                    "ctx": {"limit_value": 5000000000},
+                    "msg": "Input should be less than or equal to 5000000000",
+                    "type": "less_than_equal",
                 },
                 {
+                    "ctx": {"le": 1000000000000},
+                    "input": 1000000000001,
                     "loc": ["body", "total_supply"],
-                    "msg": "ensure this value is less than or equal to 1000000000000",
-                    "type": "value_error.number.not_le",
-                    "ctx": {"limit_value": 1000000000000},
+                    "msg": "Input should be less than or equal to 1000000000000",
+                    "type": "less_than_equal",
                 },
                 {
+                    "ctx": {"max_length": 100},
+                    "input": mock.ANY,
                     "loc": ["body", "symbol"],
-                    "msg": "ensure this value has at most 100 characters",
-                    "type": "value_error.any_str.max_length",
-                    "ctx": {"limit_value": 100},
+                    "msg": "String should have at most 100 characters",
+                    "type": "string_too_long",
                 },
                 {
+                    "ctx": {"le": 5000000000.0},
+                    "input": 5000000000.01,
                     "loc": ["body", "dividends"],
-                    "msg": "ensure this value is less than or equal to 5000000000.0",
-                    "type": "value_error.number.not_le",
-                    "ctx": {"limit_value": 5000000000.0},
+                    "msg": "Input should be less than or equal to 5000000000",
+                    "type": "less_than_equal",
                 },
                 {
+                    "ctx": {"max_length": 2000},
+                    "input": mock.ANY,
                     "loc": ["body", "contact_information"],
-                    "msg": "ensure this value has at most 2000 characters",
-                    "type": "value_error.any_str.max_length",
-                    "ctx": {"limit_value": 2000},
+                    "msg": "String should have at most 2000 characters",
+                    "type": "string_too_long",
                 },
                 {
+                    "ctx": {"max_length": 5000},
+                    "input": mock.ANY,
                     "loc": ["body", "privacy_policy"],
-                    "msg": "ensure this value has at most 5000 characters",
-                    "type": "value_error.any_str.max_length",
-                    "ctx": {"limit_value": 5000},
+                    "msg": "String should have at most 5000 characters",
+                    "type": "string_too_long",
                 },
             ],
         }
@@ -1026,46 +1052,55 @@ class TestAppRoutersShareTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "loc": ["body", "dividend_record_date"],
-                    "msg": 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
-                    "type": "value_error.str.regex",
                     "ctx": {
                         "pattern": "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"
                     },
+                    "input": "202101010",
+                    "loc": ["body", "dividend_record_date", "constrained-str"],
+                    "msg": "String should match pattern "
+                    "'^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'",
+                    "type": "string_pattern_mismatch",
                 },
                 {
-                    "loc": ["body", "dividend_record_date"],
-                    "msg": "unexpected value; permitted: ''",
-                    "type": "value_error.const",
-                    "ctx": {"given": "202101010", "permitted": [""]},
+                    "ctx": {"expected": "''"},
+                    "input": "202101010",
+                    "loc": ["body", "dividend_record_date", "literal['']"],
+                    "msg": "Input should be ''",
+                    "type": "literal_error",
                 },
                 {
-                    "loc": ["body", "dividend_payment_date"],
-                    "msg": 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
-                    "type": "value_error.str.regex",
                     "ctx": {
                         "pattern": "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"
                     },
+                    "input": "202101010",
+                    "loc": ["body", "dividend_payment_date", "constrained-str"],
+                    "msg": "String should match pattern "
+                    "'^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'",
+                    "type": "string_pattern_mismatch",
                 },
                 {
-                    "loc": ["body", "dividend_payment_date"],
-                    "msg": "unexpected value; permitted: ''",
-                    "type": "value_error.const",
-                    "ctx": {"given": "202101010", "permitted": [""]},
+                    "ctx": {"expected": "''"},
+                    "input": "202101010",
+                    "loc": ["body", "dividend_payment_date", "literal['']"],
+                    "msg": "Input should be ''",
+                    "type": "literal_error",
                 },
                 {
-                    "loc": ["body", "cancellation_date"],
-                    "msg": 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
-                    "type": "value_error.str.regex",
                     "ctx": {
                         "pattern": "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"
                     },
+                    "input": "202201010",
+                    "loc": ["body", "cancellation_date", "constrained-str"],
+                    "msg": "String should match pattern "
+                    "'^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'",
+                    "type": "string_pattern_mismatch",
                 },
                 {
-                    "loc": ["body", "cancellation_date"],
-                    "msg": "unexpected value; permitted: ''",
-                    "type": "value_error.const",
-                    "ctx": {"given": "202201010", "permitted": [""]},
+                    "ctx": {"expected": "''"},
+                    "input": "202201010",
+                    "loc": ["body", "cancellation_date", "literal['']"],
+                    "msg": "Input should be ''",
+                    "type": "literal_error",
                 },
             ],
         }

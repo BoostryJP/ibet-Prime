@@ -179,9 +179,10 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 }
             ],
         }
@@ -201,8 +202,11 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": "test",
                     "loc": ["body", "rsa_passphrase"],
-                    "msg": "rsa_passphrase is not a Base64-encoded encrypted data",
+                    "msg": "Value error, rsa_passphrase is not a Base64-encoded "
+                    "encrypted data",
                     "type": "value_error",
                 }
             ],

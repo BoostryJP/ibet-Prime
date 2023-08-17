@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from app.model.db import LedgerDetailsDataType, TokenType
 
@@ -41,20 +41,21 @@ class CreateUpdateLedgerDetailsTemplateRequest(BaseModel):
     """Create or Update Ledger Details Template schema (Request)"""
 
     token_detail_type: str = Field(..., max_length=100)
-    headers: Optional[List[dict]]
+    headers: Optional[List[dict]] = None
     data: CreateUpdateLedgerDetailsDataTemplateRequest
-    footers: Optional[List[dict]]
+    footers: Optional[List[dict]] = None
 
 
 class CreateUpdateLedgerTemplateRequest(BaseModel):
     """Create or Update Ledger Template schema (Request)"""
 
     token_name: str = Field(..., max_length=200)
-    headers: Optional[List[dict]]
+    headers: Optional[List[dict]] = None
     details: List[CreateUpdateLedgerDetailsTemplateRequest]
-    footers: Optional[List[dict]]
+    footers: Optional[List[dict]] = None
 
-    @validator("details")
+    @field_validator("details")
+    @classmethod
     def details_length_is_greater_than_1(cls, v):
         if len(v) < 1:
             raise ValueError("The length must be greater than or equal to 1")
@@ -73,7 +74,8 @@ class CreateUpdateLedgerDetailsDataRequest(BaseModel):
         None, min_length=10, max_length=10, description="YYYY/MM/DD"
     )
 
-    @validator("acquisition_date")
+    @field_validator("acquisition_date")
+    @classmethod
     def acquisition_date_format_is_YYYYMMDD_slash(cls, v):
         if v is not None and len(v) == 10:
             try:
@@ -107,9 +109,9 @@ class ListAllLedgerHistoryResponse(BaseModel):
 class RetrieveLedgerDetailsDataHistoryResponse(BaseModel):
     """Retrieve Ledger Details Data History schema (Response)"""
 
-    account_address: Optional[str]
-    name: Optional[str]
-    address: Optional[str]
+    account_address: Optional[str] = None
+    name: Optional[str] = None
+    address: Optional[str] = None
     amount: int
     price: int
     balance: int
@@ -120,9 +122,9 @@ class RetrieveLedgerDetailsHistoryResponse(BaseModel):
     """Retrieve Ledger Details History schema (Response)"""
 
     token_detail_type: str
-    headers: Optional[List[dict]]
+    headers: Optional[List[dict]] = None
     data: List[RetrieveLedgerDetailsDataHistoryResponse]
-    footers: Optional[List[dict]]
+    footers: Optional[List[dict]] = None
 
 
 class RetrieveLedgerHistoryResponse(BaseModel):
@@ -130,34 +132,34 @@ class RetrieveLedgerHistoryResponse(BaseModel):
 
     created: str
     token_name: str
-    headers: Optional[List[dict]]
+    headers: Optional[List[dict]] = None
     details: List[RetrieveLedgerDetailsHistoryResponse]
-    footers: Optional[List[dict]]
+    footers: Optional[List[dict]] = None
 
 
 class LedgerDetailsDataTemplateResponse(BaseModel):
     """Ledger Details Data Template schema (Response)"""
 
     type: LedgerDetailsDataType
-    source: Optional[str]
+    source: Optional[str] = Field(...)
 
 
 class LedgerDetailsTemplateResponse(BaseModel):
     """Ledger Details Template schema (Response)"""
 
     token_detail_type: str
-    headers: Optional[List[dict]]
+    headers: Optional[List[dict]] = Field(...)
     data: LedgerDetailsDataTemplateResponse
-    footers: Optional[List[dict]]
+    footers: Optional[List[dict]] = Field(...)
 
 
 class LedgerTemplateResponse(BaseModel):
     """Ledger Template schema (Response)"""
 
     token_name: str
-    headers: Optional[List[dict]]
+    headers: Optional[List[dict]] = Field(...)
     details: List[LedgerDetailsTemplateResponse]
-    footers: Optional[List[dict]]
+    footers: Optional[List[dict]] = Field(...)
 
 
 class LedgerDetailsDataListAllResponse(BaseModel):
@@ -184,8 +186,8 @@ class LedgerDetailsDataResponse(BaseModel):
 class RetrieveLedgerDetailsDataResponse(BaseModel):
     """Retrieve Ledger Details Data schema (Response)"""
 
-    name: Optional[str]
-    address: Optional[str]
+    name: Optional[str] = Field(...)
+    address: Optional[str] = Field(...)
     amount: int
     price: int
     balance: int

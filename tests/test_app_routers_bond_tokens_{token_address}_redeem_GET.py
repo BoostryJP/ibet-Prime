@@ -379,17 +379,16 @@ class TestAppRoutersBondTokensTokenAddressRedeemGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "loc": ["query", "sort_item"],
-                    "msg": "value is not a valid enumeration member; permitted: 'block_timestamp', 'locked_address', 'target_address', 'amount'",
-                    "type": "type_error.enum",
                     "ctx": {
-                        "enum_values": [
-                            "block_timestamp",
-                            "locked_address",
-                            "target_address",
-                            "amount",
-                        ]
+                        "expected": "'block_timestamp','locked_address','target_address' "
+                        "or 'amount'"
                     },
+                    "input": "block_timestamp12345",
+                    "loc": ["query", "sort_item"],
+                    "msg": "Input should be "
+                    "'block_timestamp','locked_address','target_address' or "
+                    "'amount'",
+                    "type": "enum",
                 }
             ],
         }
@@ -409,10 +408,11 @@ class TestAppRoutersBondTokensTokenAddressRedeemGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"limit_value": 0},
+                    "ctx": {"ge": 0},
+                    "input": "-1",
                     "loc": ["query", "sort_order"],
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 }
             ],
         }
@@ -432,10 +432,11 @@ class TestAppRoutersBondTokensTokenAddressRedeemGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"limit_value": 1},
+                    "ctx": {"le": 1},
+                    "input": "2",
                     "loc": ["query", "sort_order"],
-                    "msg": "ensure this value is less than or equal to 1",
-                    "type": "value_error.number.not_le",
+                    "msg": "Input should be less than or equal to 1",
+                    "type": "less_than_equal",
                 }
             ],
         }

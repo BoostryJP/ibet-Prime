@@ -23,6 +23,12 @@ import pytest
 from sqlalchemy import select
 
 from app.exceptions import SendTransactionError
+from app.model.blockchain.tx_params.ibet_share import (
+    UpdateParams as IbetShareUpdateParams,
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    UpdateParams as IbetStraightBondUpdateParams,
+)
 from app.model.db import (
     UTXO,
     Account,
@@ -33,10 +39,8 @@ from app.model.db import (
     TokenType,
     UpdateToken,
 )
-from app.model.schema import IbetShareUpdate, IbetStraightBondUpdate
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_update_token import Processor
-from config import TOKEN_LIST_CONTRACT_ADDRESS
 from tests.account_config import config_eth_account
 
 
@@ -190,7 +194,7 @@ class TestProcessor:
 
             # assertion(contract)
             IbetShareContract_update.assert_called_with(
-                data=IbetShareUpdate(
+                data=IbetShareUpdateParams(
                     cancellation_date=None,
                     dividend_record_date=None,
                     dividend_payment_date=None,
@@ -210,7 +214,7 @@ class TestProcessor:
             )
 
             IbetStraightBondContract_update.assert_called_with(
-                data=IbetStraightBondUpdate(
+                data=IbetStraightBondUpdateParams(
                     interest_rate=0.0001,
                     interest_payment_date=["0331", "0930"],
                     transferable=False,
@@ -1094,7 +1098,7 @@ class TestProcessor:
 
             # assertion(contract)
             IbetShareContract_update.assert_called_with(
-                data=IbetShareUpdate(
+                data=IbetShareUpdateParams(
                     cancellation_date=None,
                     dividend_record_date=None,
                     dividend_payment_date=None,
@@ -1114,7 +1118,7 @@ class TestProcessor:
             )
 
             IbetStraightBondContract_update.assert_called_with(
-                data=IbetStraightBondUpdate(
+                data=IbetStraightBondUpdateParams(
                     interest_rate=0.0001,
                     interest_payment_date=["0331", "0930"],
                     transferable=False,

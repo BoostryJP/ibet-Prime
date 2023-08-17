@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 ############################
@@ -27,7 +27,7 @@ from pydantic import BaseModel
 class E2EEResponse(BaseModel):
     """E2EE schema (Response)"""
 
-    public_key: Optional[str]
+    public_key: Optional[str] = Field(...)
 
 
 class BlockNumberResponse(BaseModel):

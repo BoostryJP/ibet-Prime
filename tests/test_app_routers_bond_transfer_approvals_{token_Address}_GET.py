@@ -2415,19 +2415,31 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "loc": ["query", "status", 0],
-                    "msg": "value is not a valid integer",
-                    "type": "type_error.integer",
+                    "input": "a",
+                    "loc": ["query", "status", "list[constrained-int]", 0],
+                    "msg": "Input should be a valid integer, unable to parse string "
+                    "as an integer",
+                    "type": "int_parsing",
                 },
                 {
+                    "input": ["a"],
+                    "loc": ["query", "status", "constrained-int"],
+                    "msg": "Input should be a valid integer",
+                    "type": "int_type",
+                },
+                {
+                    "input": "c",
                     "loc": ["query", "offset"],
-                    "msg": "value is not a valid integer",
-                    "type": "type_error.integer",
+                    "msg": "Input should be a valid integer, unable to parse string "
+                    "as an integer",
+                    "type": "int_parsing",
                 },
                 {
+                    "input": "d",
                     "loc": ["query", "limit"],
-                    "msg": "value is not a valid integer",
-                    "type": "type_error.integer",
+                    "msg": "Input should be a valid integer, unable to parse string "
+                    "as an integer",
+                    "type": "int_parsing",
                 },
             ],
         }
@@ -2451,10 +2463,17 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "loc": ["query", "status", 0],
-                    "ctx": {"limit_value": 0},
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
+                    "ctx": {"ge": 0},
+                    "input": "-1",
+                    "loc": ["query", "status", "list[constrained-int]", 0],
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
+                },
+                {
+                    "input": ["-1"],
+                    "loc": ["query", "status", "constrained-int"],
+                    "msg": "Input should be a valid integer",
+                    "type": "int_type",
                 },
             ],
         }
@@ -2478,10 +2497,17 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "loc": ["query", "status", 0],
-                    "ctx": {"limit_value": 3},
-                    "msg": "ensure this value is less than or equal to 3",
-                    "type": "value_error.number.not_le",
+                    "ctx": {"le": 3},
+                    "input": "4",
+                    "loc": ["query", "status", "list[constrained-int]", 0],
+                    "msg": "Input should be less than or equal to 3",
+                    "type": "less_than_equal",
+                },
+                {
+                    "input": ["4"],
+                    "loc": ["query", "status", "constrained-int"],
+                    "msg": "Input should be a valid integer",
+                    "type": "int_type",
                 },
             ],
         }

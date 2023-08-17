@@ -206,9 +206,11 @@ class TestAppRoutersE2EMessagingMessagesIdGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "id",
                     "loc": ["path", "id"],
-                    "msg": "value is not a valid integer",
-                    "type": "type_error.integer",
+                    "msg": "Input should be a valid integer, unable to parse string "
+                    "as an integer",
+                    "type": "int_parsing",
                 }
             ],
         }

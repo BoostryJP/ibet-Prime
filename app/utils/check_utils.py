@@ -22,8 +22,7 @@ from typing import Optional
 
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
-from pydantic.error_wrappers import ErrorWrapper
-from pydantic.errors import MissingError
+from pydantic_core import ErrorDetails, PydanticCustomError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from web3 import Web3
@@ -65,7 +64,17 @@ def validate_headers(**kwargs):
             try:
                 valid_func(name, value)
             except Exception as err:
-                errors.append(ErrorWrapper(exc=err, loc=("header", name)))
+                if isinstance(err, PydanticCustomError):
+                    type_str = err.type
+                elif isinstance(err, ValueError):
+                    type_str = "value_error"
+                else:
+                    type_str = "type_error"
+                errors.append(
+                    ErrorDetails(
+                        msg=str(err), loc=("header", name), input=value, type=type_str
+                    )
+                )
 
     if len(errors) > 0:
         raise RequestValidationError(errors)
@@ -80,7 +89,7 @@ def address_is_valid_address(name, value):
 def eoa_password_is_required(_, value):
     if EOA_PASSWORD_CHECK_ENABLED:
         if not value:
-            raise MissingError
+            raise PydanticCustomError("value_error.missing", "field required")
 
 
 def eoa_password_is_encrypted_value(name, value):

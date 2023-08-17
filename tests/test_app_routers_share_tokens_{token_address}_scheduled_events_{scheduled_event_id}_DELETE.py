@@ -139,11 +139,13 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
         assert resp.json()["meta"] == {"code": 1, "title": "RequestValidationError"}
         assert resp.json()["detail"] == [
             {
+                "input": _issuer_address[:-1],
                 "loc": ["header", "issuer-address"],
                 "msg": "issuer-address is not a valid address",
                 "type": "value_error",
             },
             {
+                "input": "password",
                 "loc": ["header", "eoa-password"],
                 "msg": "eoa-password is not a Base64-encoded encrypted data",
                 "type": "value_error",

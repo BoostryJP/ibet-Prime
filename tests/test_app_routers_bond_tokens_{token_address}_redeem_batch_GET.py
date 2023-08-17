@@ -630,9 +630,11 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         assert resp.json() == {
             "detail": [
                 {
+                    "input": "invalid_value",
                     "loc": ["query", "processed"],
-                    "msg": "value could not be parsed to a boolean",
-                    "type": "type_error.bool",
+                    "msg": "Input should be a valid boolean, unable to interpret "
+                    "input",
+                    "type": "bool_parsing",
                 }
             ],
             "meta": {"code": 1, "title": "RequestValidationError"},

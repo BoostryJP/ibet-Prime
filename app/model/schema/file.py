@@ -20,7 +20,7 @@ import base64
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from config import MAX_UPLOAD_FILE_SIZE
 
@@ -34,13 +34,18 @@ from .types import ResultSet
 class UploadFileRequest(BaseModel):
     """Upload File schema (Request)"""
 
-    relation: Optional[str] = Field(None, max_length=50)
+    relation: Optional[str] = Field(default=None, max_length=50)
     file_name: str = Field(..., max_length=256)
-    content: str
-    description: Optional[str] = Field(None, max_length=1000)
-    label: Optional[str] = Field(None, max_length=200)
+    content: str = Field(
+        ...,
+        description="Base64-encoded content.\n"
+        f"Max length of binary data before encoding is {MAX_UPLOAD_FILE_SIZE}.",
+    )
+    description: Optional[str] = Field(default=None, max_length=1000)
+    label: Optional[str] = Field(default=None, max_length=200)
 
-    @validator("content")
+    @field_validator("content")
+    @classmethod
     def content_is_less_than_max_upload_file_size(cls, v):
         try:
             data = base64.b64decode(v)
@@ -51,15 +56,6 @@ class UploadFileRequest(BaseModel):
                 f"file size(Base64-decoded size) must be less than or equal to {MAX_UPLOAD_FILE_SIZE}"
             )
         return v
-
-    class Config:
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], _) -> None:
-            notice_code_schema = schema["properties"]["content"]
-            notice_code_schema["description"] = (
-                "Base64-encoded content.\n"
-                f"Max length of binary data before encoding is {MAX_UPLOAD_FILE_SIZE}."
-            )
 
 
 ############################
@@ -72,10 +68,10 @@ class FileResponse(BaseModel):
 
     file_id: str
     issuer_address: str
-    relation: Optional[str]
+    relation: Optional[str] = Field(...)
     file_name: str
     content_size: int
-    description: Optional[str]
+    description: Optional[str] = Field(...)
     label: str
     created: datetime
 
@@ -92,15 +88,9 @@ class DownloadFileResponse(BaseModel):
 
     file_id: str
     issuer_address: str
-    relation: Optional[str]
+    relation: Optional[str] = Field(...)
     file_name: str
-    content: str
+    content: str = Field(..., description="Base64-encoded content")
     content_size: int
-    description: Optional[str]
+    description: Optional[str] = Field(...)
     label: str
-
-    class Config:
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], _) -> None:
-            notice_code_schema = schema["properties"]["content"]
-            notice_code_schema["description"] = "Base64-encoded content"

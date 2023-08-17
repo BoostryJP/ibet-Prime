@@ -142,6 +142,7 @@ class TestAppRoutersAccountsAuthTokenDELETE:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": test_account["address"][::-1],
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",
@@ -188,6 +189,7 @@ class TestAppRoutersAccountsAuthTokenDELETE:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": self.eoa_password,
                     "loc": ["header", "eoa-password"],
                     "msg": "eoa-password is not a Base64-encoded encrypted data",
                     "type": "value_error",

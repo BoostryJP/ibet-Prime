@@ -56,7 +56,7 @@ def create_collection(
     data: CreateTokenHoldersListRequest,
     token_address: str = Path(
         ...,
-        example="0xABCdeF1234567890abcdEf123456789000000000",
+        examples=["0xABCdeF1234567890abcdEf123456789000000000"],
     ),
     issuer_address: str = Header(...),
 ):
@@ -242,7 +242,7 @@ def retrieve_token_holders_list(
     token_address: str = Path(...),
     list_id: str = Path(
         ...,
-        example="cfd83622-34dc-4efe-a68b-2cc275d3d824",
+        examples=["cfd83622-34dc-4efe-a68b-2cc275d3d824"],
         description="UUID v4 required",
     ),
     issuer_address: str = Header(...),

@@ -205,9 +205,10 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": {"block_number": 100},
                     "loc": ["body", "list_id"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 }
             ],
         }
@@ -281,8 +282,10 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": "some_id",
                     "loc": ["body", "list_id"],
-                    "msg": "list_id is not UUIDv4.",
+                    "msg": "Value error, list_id is not UUIDv4.",
                     "type": "value_error",
                 }
             ],
@@ -458,9 +461,10 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 }
             ],
         }

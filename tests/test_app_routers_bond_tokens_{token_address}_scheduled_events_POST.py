@@ -229,11 +229,13 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         assert resp.json()["meta"] == {"code": 1, "title": "RequestValidationError"}
         assert resp.json()["detail"] == [
             {
+                "input": _issuer_address[:-1],
                 "loc": ["header", "issuer-address"],
                 "msg": "issuer-address is not a valid address",
                 "type": "value_error",
             },
             {
+                "input": "password",
                 "loc": ["header", "eoa-password"],
                 "msg": "eoa-password is not a Base64-encoded encrypted data",
                 "type": "value_error",
@@ -395,20 +397,25 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         assert resp.json()["meta"] == {"code": 1, "title": "RequestValidationError"}
         assert resp.json()["detail"] == [
             {
+                "ctx": {"error": "invalid character in year"},
+                "input": "this is not datetime format",
                 "loc": ["body", "scheduled_datetime"],
-                "msg": "invalid datetime format",
-                "type": "value_error.datetime",
+                "msg": "Input should be a valid datetime, invalid character in year",
+                "type": "datetime_parsing",
             },
             {
-                "ctx": {"enum_values": ["Update"]},
+                "ctx": {"expected": "'Update'"},
+                "input": "aUpdateb",
                 "loc": ["body", "event_type"],
-                "msg": "value is not a valid enumeration member; permitted: 'Update'",
-                "type": "type_error.enum",
+                "msg": "Input should be 'Update'",
+                "type": "enum",
             },
             {
+                "input": "must be integer, but string",
                 "loc": ["body", "data", "face_value"],
-                "msg": "value is not a valid integer",
-                "type": "type_error.integer",
+                "msg": "Input should be a valid integer, unable to parse string as an "
+                "integer",
+                "type": "int_parsing",
             },
         ]
 

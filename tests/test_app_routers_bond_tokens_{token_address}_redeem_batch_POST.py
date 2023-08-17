@@ -217,9 +217,10 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": {},
                     "loc": ["body"],
-                    "msg": "value is not a valid list",
-                    "type": "type_error.list",
+                    "msg": "Input should be a valid list",
+                    "type": "list_type",
                 }
             ],
         }
@@ -265,8 +266,10 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": "0x0",
                     "loc": ["body", 0, "account_address"],
-                    "msg": "account_address is not a valid address",
+                    "msg": "Value error, account_address is not a valid address",
                     "type": "value_error",
                 }
             ],
@@ -315,10 +318,11 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"ge": 1},
+                    "input": 0,
                     "loc": ["body", 0, "amount"],
-                    "msg": "ensure this value is greater than or equal to 1",
-                    "type": "value_error.number.not_ge",
-                    "ctx": {"limit_value": 1},
+                    "msg": "Input should be greater than or equal to 1",
+                    "type": "greater_than_equal",
                 }
             ],
         }
@@ -366,10 +370,11 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"le": 1000000000000},
+                    "input": 1000000000001,
                     "loc": ["body", 0, "amount"],
-                    "msg": "ensure this value is less than or equal to 1000000000000",
-                    "type": "value_error.number.not_le",
-                    "ctx": {"limit_value": 1000000000000},
+                    "msg": "Input should be less than or equal to 1000000000000",
+                    "type": "less_than_equal",
                 }
             ],
         }
@@ -412,9 +417,10 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 }
             ],
         }
@@ -459,6 +465,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "password",
                     "loc": ["header", "eoa-password"],
                     "msg": "eoa-password is not a Base64-encoded encrypted data",
                     "type": "value_error",

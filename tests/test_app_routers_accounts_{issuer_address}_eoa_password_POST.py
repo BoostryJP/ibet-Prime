@@ -105,10 +105,11 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
-                },
+                    "msg": "Field required",
+                    "type": "missing",
+                }
             ],
         }
 
@@ -130,14 +131,16 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": {"dummy": "dummy"},
                     "loc": ["body", "old_eoa_password"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": {"dummy": "dummy"},
                     "loc": ["body", "eoa_password"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -163,13 +166,19 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": "password",
                     "loc": ["body", "old_eoa_password"],
-                    "msg": "old_eoa_password is not a Base64-encoded encrypted data",
+                    "msg": "Value error, old_eoa_password is not a Base64-encoded "
+                    "encrypted data",
                     "type": "value_error",
                 },
                 {
+                    "ctx": {"error": {}},
+                    "input": "passwordnew",
                     "loc": ["body", "eoa_password"],
-                    "msg": "eoa_password is not a Base64-encoded encrypted data",
+                    "msg": "Value error, eoa_password is not a Base64-encoded "
+                    "encrypted data",
                     "type": "value_error",
                 },
             ],
