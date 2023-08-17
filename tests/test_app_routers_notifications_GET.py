@@ -428,6 +428,7 @@ class TestAppRoutersNotificationsGET:
                     "notice_code": 1,
                     "metainfo": {
                         "scheduled_event_id": "1",
+                        "token_address": None,
                         "token_type": TokenType.IBET_STRAIGHT_BOND.value,
                     },
                     "created": "2022-01-02T09:20:30+09:00",
@@ -523,6 +524,7 @@ class TestAppRoutersNotificationsGET:
                     "metainfo": {
                         "scheduled_event_id": "1",
                         "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                        "token_address": None,
                     },
                     "created": "2022-01-02T09:20:30+09:00",
                 },
