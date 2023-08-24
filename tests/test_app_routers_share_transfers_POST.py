@@ -21,6 +21,7 @@ from unittest import mock
 from unittest.mock import ANY, MagicMock
 
 from app.exceptions import SendTransactionError
+from app.model.blockchain.tx_params.ibet_share import TransferParams
 from app.model.db import Account, AuthToken, Token, TokenType
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
@@ -86,11 +87,13 @@ class TestAppRoutersShareTransfersPOST:
 
         # assertion
         IbetShareContract_mock.assert_any_call(
-            data={
-                "from_address": _from_address,
-                "to_address": _to_address,
-                "amount": 10,
-            },
+            data=TransferParams(
+                **{
+                    "from_address": _from_address,
+                    "to_address": _to_address,
+                    "amount": 10,
+                }
+            ),
             tx_from=_admin_address,
             private_key=ANY,
         )
@@ -153,11 +156,13 @@ class TestAppRoutersShareTransfersPOST:
 
         # assertion
         IbetShareContract_mock.assert_any_call(
-            data={
-                "from_address": _from_address,
-                "to_address": _to_address,
-                "amount": 10,
-            },
+            data=TransferParams(
+                **{
+                    "from_address": _from_address,
+                    "to_address": _to_address,
+                    "amount": 10,
+                }
+            ),
             tx_from=_admin_address,
             private_key=ANY,
         )
@@ -195,25 +200,32 @@ class TestAppRoutersShareTransfersPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78",
                     "loc": ["body", "token_address"],
-                    "msg": "token_address is not a valid address",
+                    "msg": "Value error, token_address is not a valid address",
                     "type": "value_error",
                 },
                 {
+                    "ctx": {"error": {}},
+                    "input": "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78",
                     "loc": ["body", "from_address"],
-                    "msg": "from_address is not a valid address",
+                    "msg": "Value error, from_address is not a valid address",
                     "type": "value_error",
                 },
                 {
+                    "ctx": {"error": {}},
+                    "input": "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78",
                     "loc": ["body", "to_address"],
-                    "msg": "to_address is not a valid address",
+                    "msg": "Value error, to_address is not a valid address",
                     "type": "value_error",
                 },
                 {
-                    "ctx": {"limit_value": 1},
+                    "ctx": {"ge": 1},
+                    "input": 0,
                     "loc": ["body", "amount"],
-                    "msg": "ensure this value is greater than or equal to 1",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 1",
+                    "type": "greater_than_equal",
                 },
             ],
         }
@@ -250,11 +262,12 @@ class TestAppRoutersShareTransfersPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"limit_value": 1_000_000_000_000},
+                    "ctx": {"le": 1000000000000},
+                    "input": 1000000000001,
                     "loc": ["body", "amount"],
-                    "msg": "ensure this value is less than or equal to 1000000000000",
-                    "type": "value_error.number.not_le",
-                },
+                    "msg": "Input should be less than or equal to 1000000000000",
+                    "type": "less_than_equal",
+                }
             ],
         }
 
@@ -270,14 +283,16 @@ class TestAppRoutersShareTransfersPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -314,6 +329,7 @@ class TestAppRoutersShareTransfersPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "issuer-address",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",
@@ -355,6 +371,7 @@ class TestAppRoutersShareTransfersPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "password",
                     "loc": ["header", "eoa-password"],
                     "msg": "eoa-password is not a Base64-encoded encrypted data",
                     "type": "value_error",

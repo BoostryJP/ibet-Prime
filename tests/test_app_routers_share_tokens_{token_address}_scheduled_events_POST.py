@@ -227,11 +227,13 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         assert resp.json()["meta"] == {"code": 1, "title": "RequestValidationError"}
         assert resp.json()["detail"] == [
             {
+                "input": _issuer_address[:-1],
                 "loc": ["header", "issuer-address"],
                 "msg": "issuer-address is not a valid address",
                 "type": "value_error",
             },
             {
+                "input": "password",
                 "loc": ["header", "eoa-password"],
                 "msg": "eoa-password is not a Base64-encoded encrypted data",
                 "type": "value_error",
@@ -391,20 +393,24 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         assert resp.json()["meta"] == {"code": 1, "title": "RequestValidationError"}
         assert resp.json()["detail"] == [
             {
+                "ctx": {"error": "invalid character in year"},
+                "input": "this is not time format",
                 "loc": ["body", "scheduled_datetime"],
-                "msg": "invalid datetime format",
-                "type": "value_error.datetime",
+                "msg": "Input should be a valid datetime, invalid character in year",
+                "type": "datetime_parsing",
             },
             {
-                "ctx": {"enum_values": ["Update"]},
+                "ctx": {"expected": "'Update'"},
+                "input": "aUpdateb",
                 "loc": ["body", "event_type"],
-                "msg": "value is not a valid enumeration member; permitted: 'Update'",
-                "type": "type_error.enum",
+                "msg": "Input should be 'Update'",
+                "type": "enum",
             },
             {
+                "input": "must be integer, but string",
                 "loc": ["body", "data", "dividends"],
-                "msg": "value is not a valid float",
-                "type": "type_error.float",
+                "msg": "Input should be a valid number, unable to parse string as a number",
+                "type": "float_parsing",
             },
         ]
 

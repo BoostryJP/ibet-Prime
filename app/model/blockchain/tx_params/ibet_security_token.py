@@ -16,7 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from pydantic import BaseModel, PositiveInt, validator
+from pydantic import BaseModel, PositiveInt, field_validator
 from web3 import Web3
 
 
@@ -25,13 +25,15 @@ class TransferParams(BaseModel):
     to_address: str
     amount: PositiveInt
 
-    @validator("from_address")
+    @field_validator("from_address")
+    @classmethod
     def from_address_is_valid_address(cls, v):
         if not Web3.is_address(v):
             raise ValueError("from_address is not a valid address")
         return v
 
-    @validator("to_address")
+    @field_validator("to_address")
+    @classmethod
     def to_address_is_valid_address(cls, v):
         if not Web3.is_address(v):
             raise ValueError("to_address is not a valid address")
@@ -42,7 +44,8 @@ class AdditionalIssueParams(BaseModel):
     account_address: str
     amount: PositiveInt
 
-    @validator("account_address")
+    @field_validator("account_address")
+    @classmethod
     def account_address_is_valid_address(cls, v):
         if not Web3.is_address(v):
             raise ValueError("account_address is not a valid address")
@@ -53,7 +56,8 @@ class RedeemParams(BaseModel):
     account_address: str
     amount: PositiveInt
 
-    @validator("account_address")
+    @field_validator("account_address")
+    @classmethod
     def account_address_is_valid_address(cls, v):
         if not Web3.is_address(v):
             raise ValueError("account_address is not a valid address")
@@ -75,7 +79,8 @@ class LockParams(BaseModel):
     value: PositiveInt
     data: str
 
-    @validator("lock_address")
+    @field_validator("lock_address")
+    @classmethod
     def lock_address_is_valid_address(cls, v):
         if not Web3.is_address(v):
             raise ValueError("lock_address is not a valid address")
@@ -89,19 +94,22 @@ class ForceUnlockParams(BaseModel):
     value: PositiveInt
     data: str
 
-    @validator("lock_address")
+    @field_validator("lock_address")
+    @classmethod
     def lock_address_is_valid_address(cls, v):
         if not Web3.is_address(v):
             raise ValueError("lock_address is not a valid address")
         return v
 
-    @validator("account_address")
+    @field_validator("account_address")
+    @classmethod
     def account_address_is_valid_address(cls, v):
         if not Web3.is_address(v):
             raise ValueError("account_address is not a valid address")
         return v
 
-    @validator("recipient_address")
+    @field_validator("recipient_address")
+    @classmethod
     def recipient_address_is_valid_address(cls, v):
         if not Web3.is_address(v):
             raise ValueError("recipient_address is not a valid address")

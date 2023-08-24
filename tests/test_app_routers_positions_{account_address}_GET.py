@@ -1143,6 +1143,7 @@ class TestAppRoutersPositionsAccountAddressGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "test",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",
@@ -1172,20 +1173,25 @@ class TestAppRoutersPositionsAccountAddressGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"expected": "'IbetStraightBond' or 'IbetShare'"},
+                    "input": "test",
                     "loc": ["query", "token_type"],
-                    "ctx": {"enum_values": ["IbetStraightBond", "IbetShare"]},
-                    "msg": "value is not a valid enumeration member; permitted: 'IbetStraightBond', 'IbetShare'",
-                    "type": "type_error.enum",
+                    "msg": "Input should be 'IbetStraightBond' or 'IbetShare'",
+                    "type": "enum",
                 },
                 {
+                    "input": "test",
                     "loc": ["query", "offset"],
-                    "msg": "value is not a valid integer",
-                    "type": "type_error.integer",
+                    "msg": "Input should be a valid integer, unable to parse string "
+                    "as an integer",
+                    "type": "int_parsing",
                 },
                 {
+                    "input": "test",
                     "loc": ["query", "limit"],
-                    "msg": "value is not a valid integer",
-                    "type": "type_error.integer",
+                    "msg": "Input should be a valid integer, unable to parse string "
+                    "as an integer",
+                    "type": "int_parsing",
                 },
             ],
         }

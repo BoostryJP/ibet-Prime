@@ -160,6 +160,7 @@ class TestAppRoutersAccountsAuthTokenPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "eoa-password"],
                     "msg": "field required",
                     "type": "value_error.missing",
@@ -200,9 +201,10 @@ class TestAppRoutersAccountsAuthTokenPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 }
             ],
         }
@@ -241,6 +243,7 @@ class TestAppRoutersAccountsAuthTokenPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "649F59B9E7FcB7b4A8bDfC7D8a64cc2d228fe6Dex0",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",
@@ -284,6 +287,7 @@ class TestAppRoutersAccountsAuthTokenPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "not_encrypted_password",
                     "loc": ["header", "eoa-password"],
                     "msg": "eoa-password is not a Base64-encoded encrypted data",
                     "type": "value_error",
@@ -325,9 +329,11 @@ class TestAppRoutersAccountsAuthTokenPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "invalid_duration",
                     "loc": ["body", "valid_duration"],
-                    "msg": "value is not a valid integer",
-                    "type": "type_error.integer",
+                    "msg": "Input should be a valid integer, unable to parse string "
+                    "as an integer",
+                    "type": "int_parsing",
                 }
             ],
         }
@@ -366,10 +372,11 @@ class TestAppRoutersAccountsAuthTokenPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"ge": 0},
+                    "input": -1,
                     "loc": ["body", "valid_duration"],
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
-                    "ctx": {"limit_value": 0},
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 }
             ],
         }
@@ -408,10 +415,11 @@ class TestAppRoutersAccountsAuthTokenPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"le": 259200},
+                    "input": 259201,
                     "loc": ["body", "valid_duration"],
-                    "msg": "ensure this value is less than or equal to 259200",
-                    "type": "value_error.number.not_le",
-                    "ctx": {"limit_value": 259200},
+                    "msg": "Input should be less than or equal to 259200",
+                    "type": "less_than_equal",
                 }
             ],
         }

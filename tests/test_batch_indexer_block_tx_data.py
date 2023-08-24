@@ -25,7 +25,6 @@ from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-from utils.contract_utils import IbetStandardTokenUtils
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from web3.types import RPCEndpoint
@@ -36,6 +35,7 @@ from batch import indexer_block_tx_data
 from batch.indexer_block_tx_data import LOG
 from config import CHAIN_ID, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
 from tests.account_config import config_eth_account
+from tests.utils.contract_utils import IbetStandardTokenUtils
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)

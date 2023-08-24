@@ -23,6 +23,7 @@ from typing import List, Optional, Sequence
 from eth_keyfile import decode_keyfile_json
 from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.exceptions import HTTPException
+from pydantic import conint
 from pytz import timezone
 from sqlalchemy import (
     String,
@@ -308,7 +309,7 @@ def issue_token(
     operation_log.token_address = contract_address
     operation_log.issuer_address = issuer_address
     operation_log.type = TokenType.IBET_STRAIGHT_BOND.value
-    operation_log.arguments = token.dict()
+    operation_log.arguments = token.model_dump()
     operation_log.original_contents = None
     operation_log.operation_category = TokenUpdateOperationCategory.ISSUE.value
     db.add(operation_log)
@@ -473,7 +474,7 @@ def update_token(
         token_contract = IbetStraightBondContract(token_address)
         original_contents = token_contract.get().__dict__
         token_contract.update(
-            data=UpdateParams(**token.dict()),
+            data=UpdateParams(**token.model_dump()),
             tx_from=issuer_address,
             private_key=private_key,
         )
@@ -485,7 +486,7 @@ def update_token(
     operation_log.token_address = token_address
     operation_log.issuer_address = issuer_address
     operation_log.type = TokenType.IBET_STRAIGHT_BOND.value
-    operation_log.arguments = token.dict(exclude_none=True)
+    operation_log.arguments = token.model_dump(exclude_none=True)
     operation_log.original_contents = original_contents
     operation_log.operation_category = TokenUpdateOperationCategory.UPDATE.value
     db.add(operation_log)
@@ -732,7 +733,7 @@ def additional_issue(
     # Send transaction
     try:
         IbetStraightBondContract(token_address).additional_issue(
-            data=AdditionalIssueParams(**data.dict()),
+            data=AdditionalIssueParams(**data.model_dump()),
             tx_from=issuer_address,
             private_key=private_key,
         )
@@ -1108,7 +1109,7 @@ def redeem_token(
     # Send transaction
     try:
         IbetStraightBondContract(token_address).redeem(
-            data=RedeemParams(**data.dict()),
+            data=RedeemParams(**data.model_dump()),
             tx_from=issuer_address,
             private_key=private_key,
         )
@@ -1449,7 +1450,7 @@ def schedule_new_update_event(
     _scheduled_event.token_type = TokenType.IBET_STRAIGHT_BOND.value
     _scheduled_event.scheduled_datetime = event_data.scheduled_datetime
     _scheduled_event.event_type = event_data.event_type
-    _scheduled_event.data = event_data.data.dict()
+    _scheduled_event.data = event_data.data.model_dump()
     _scheduled_event.status = 0
     db.add(_scheduled_event)
     db.commit()
@@ -1964,7 +1965,7 @@ def register_holder_personal_info(
         )
         personal_info_contract.register_info(
             account_address=personal_info.account_address,
-            data=personal_info.dict(),
+            data=personal_info.model_dump(),
             default_value=None,
         )
     except SendTransactionError:
@@ -2040,7 +2041,6 @@ def list_all_personal_info_batch_registration_uploads(
         uploads.append(
             {
                 "batch_id": _upload.upload_id,
-                "issuer_address": _upload.issuer_address,
                 "status": _upload.status,
                 "created": created_utc.astimezone(local_tz).isoformat(),
             }
@@ -2125,7 +2125,7 @@ def batch_register_personal_info(
         bulk_register_record.upload_id = batch_id
         bulk_register_record.token_address = token_address
         bulk_register_record.account_address = personal_info.account_address
-        bulk_register_record.personal_info = personal_info.dict()
+        bulk_register_record.personal_info = personal_info.model_dump()
         bulk_register_record.status = 0
         db.add(bulk_register_record)
 
@@ -2449,7 +2449,7 @@ def transfer_ownership(
 
     try:
         IbetStraightBondContract(token.token_address).transfer(
-            data=TransferParams(**token.dict()),
+            data=TransferParams(**token.model_dump()),
             tx_from=issuer_address,
             private_key=private_key,
         )
@@ -2697,10 +2697,8 @@ def list_token_transfer_approval_history(
     token_address: str,
     from_address: Optional[str] = Query(None),
     to_address: Optional[str] = Query(None),
-    status: Optional[List[int]] = Query(
+    status: Optional[List[conint(ge=0, le=3)] | conint(ge=0, le=3)] = Query(
         None,
-        ge=0,
-        le=3,
         description="0:unapproved, 1:escrow_finished, 2:transferred, 3:canceled",
     ),
     sort_item: Optional[IDXTransferApprovalsSortItem] = Query(

@@ -27,6 +27,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.exceptions import ContractRevertError, SendTransactionError
+from app.model.blockchain.tx_params.ibet_share import (
+    AdditionalIssueParams as IbetShareAdditionalIssueParams,
+    RedeemParams as IbetShareRedeemParams,
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
+    RedeemParams as IbetStraightBondRedeemParams,
+)
 from app.model.db import (
     Account,
     BatchIssueRedeem,
@@ -35,12 +43,6 @@ from app.model.db import (
     Notification,
     NotificationType,
     TokenType,
-)
-from app.model.schema import (
-    IbetShareAdditionalIssue,
-    IbetShareRedeem,
-    IbetStraightBondAdditionalIssue,
-    IbetStraightBondRedeem,
 )
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_batch_issue_redeem import LOG, Processor
@@ -120,7 +122,7 @@ class TestProcessor:
 
             # Assertion: contract
             IbetStraightBondContract_additional_issue.assert_called_with(
-                data=IbetStraightBondAdditionalIssue(
+                data=IbetStraightBondAdditionalIssueParams(
                     account_address=target_address, amount=target_amount
                 ),
                 tx_from=issuer_address,
@@ -221,7 +223,7 @@ class TestProcessor:
 
         # Assertion: contract
         IbetStraightBondContract_redeem.assert_called_with(
-            data=IbetStraightBondRedeem(
+            data=IbetStraightBondRedeemParams(
                 account_address=target_address, amount=target_amount
             ),
             tx_from=issuer_address,
@@ -322,7 +324,7 @@ class TestProcessor:
 
         # Assertion: contract
         IbetShareContract_additional_issue.assert_called_with(
-            data=IbetShareAdditionalIssue(
+            data=IbetShareAdditionalIssueParams(
                 account_address=target_address, amount=target_amount
             ),
             tx_from=issuer_address,
@@ -423,7 +425,9 @@ class TestProcessor:
 
         # Assertion: contract
         IbetShareContract_redeem.assert_called_with(
-            data=IbetShareRedeem(account_address=target_address, amount=target_amount),
+            data=IbetShareRedeemParams(
+                account_address=target_address, amount=target_amount
+            ),
             tx_from=issuer_address,
             private_key=issuer_pk,
         )

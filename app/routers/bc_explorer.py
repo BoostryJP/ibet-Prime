@@ -20,7 +20,6 @@ from typing import Any, Dict, Sequence, Tuple
 
 from eth_utils import to_checksum_address
 from fastapi import APIRouter, Depends, HTTPException, Path
-from pydantic import NonNegativeInt
 from sqlalchemy import desc, func, select
 from web3.contract.contract import ContractFunction
 
@@ -173,7 +172,7 @@ def list_block_data(
 )
 def get_block_data(
     db: DBSession,
-    block_number: NonNegativeInt = Path(description="Block number"),
+    block_number: int = Path(description="Block number", ge=0),
 ):
     """
     Returns block data in the specified block number.

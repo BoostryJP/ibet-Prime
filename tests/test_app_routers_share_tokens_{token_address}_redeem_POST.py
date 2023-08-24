@@ -21,6 +21,7 @@ from unittest import mock
 from unittest.mock import ANY, MagicMock
 
 from app.exceptions import SendTransactionError
+from app.model.blockchain.tx_params.ibet_share import RedeemParams
 from app.model.db import Account, AuthToken, Token, TokenType
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
@@ -74,7 +75,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemPOST:
 
         # assertion
         IbetShareContract_mock.assert_any_call(
-            data=req_param, tx_from=_issuer_address, private_key=ANY
+            data=RedeemParams(**req_param), tx_from=_issuer_address, private_key=ANY
         )
 
         assert resp.status_code == 200
@@ -126,7 +127,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemPOST:
 
         # assertion
         IbetShareContract_mock.assert_any_call(
-            data=req_param, tx_from=_issuer_address, private_key=ANY
+            data=RedeemParams(**req_param), tx_from=_issuer_address, private_key=ANY
         )
 
         assert resp.status_code == 200
@@ -150,14 +151,16 @@ class TestAppRoutersShareTokensTokenAddressRedeemPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -183,15 +186,18 @@ class TestAppRoutersShareTokensTokenAddressRedeemPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": "0x0",
                     "loc": ["body", "account_address"],
-                    "msg": "account_address is not a valid address",
+                    "msg": "Value error, account_address is not a valid address",
                     "type": "value_error",
                 },
                 {
-                    "ctx": {"limit_value": 1},
+                    "ctx": {"ge": 1},
+                    "input": 0,
                     "loc": ["body", "amount"],
-                    "msg": "ensure this value is greater than or equal to 1",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 1",
+                    "type": "greater_than_equal",
                 },
             ],
         }
@@ -217,11 +223,12 @@ class TestAppRoutersShareTokensTokenAddressRedeemPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"limit_value": 1_000_000_000_000},
+                    "ctx": {"le": 1000000000000},
+                    "input": 1000000000001,
                     "loc": ["body", "amount"],
-                    "msg": "ensure this value is less than or equal to 1000000000000",
-                    "type": "value_error.number.not_le",
-                },
+                    "msg": "Input should be less than or equal to 1000000000000",
+                    "type": "less_than_equal",
+                }
             ],
         }
 
@@ -246,6 +253,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "issuer-address",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",
@@ -285,6 +293,7 @@ class TestAppRoutersShareTokensTokenAddressRedeemPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "password",
                     "loc": ["header", "eoa-password"],
                     "msg": "eoa-password is not a Base64-encoded encrypted data",
                     "type": "value_error",

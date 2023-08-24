@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from web3 import Web3
 
 from app.model.db import BatchRegisterPersonalInfoUploadStatus
@@ -28,13 +28,13 @@ from app.model.schema.types import ResultSet
 class PersonalInfo(BaseModel):
     """Personal Information schema"""
 
-    name: Optional[str]
-    postal_code: Optional[str]
-    address: Optional[str]
-    email: Optional[str]
-    birth: Optional[str]
-    is_corporate: Optional[bool]
-    tax_category: Optional[int]
+    name: Optional[str] = None
+    postal_code: Optional[str] = None
+    address: Optional[str] = None
+    email: Optional[str] = None
+    birth: Optional[str] = None
+    is_corporate: Optional[bool] = None
+    tax_category: Optional[int] = None
 
 
 ############################
@@ -48,7 +48,8 @@ class RegisterPersonalInfoRequest(PersonalInfo):
     account_address: str
     key_manager: str
 
-    @validator("account_address")
+    @field_validator("account_address")
+    @classmethod
     def account_address_is_valid_address(cls, v):
         if not Web3.is_address(v):
             raise ValueError("account_address is not a valid address")
@@ -66,15 +67,17 @@ class BatchRegisterPersonalInfoUploadResponse(BaseModel):
     batch_id: str = Field(description="UUID v4 required")
     status: BatchRegisterPersonalInfoUploadStatus
     created: str
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "batch_id": "cfd83622-34dc-4efe-a68b-2cc275d3d824",
-                "status": "pending",
-                "created": "2022-09-02T19:49:33.370874+09:00",
-            }
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "batch_id": "cfd83622-34dc-4efe-a68b-2cc275d3d824",
+                    "status": "pending",
+                    "created": "2022-09-02T19:49:33.370874+09:00",
+                }
+            ]
         }
+    )
 
 
 class ListBatchRegisterPersonalInfoUploadResponse(BaseModel):
@@ -91,13 +94,13 @@ class BatchRegisterPersonalInfoResult(BaseModel):
 
     account_address: str
     key_manager: str
-    name: Optional[str]
-    postal_code: Optional[str]
-    address: Optional[str]
-    email: Optional[str]
-    birth: Optional[str]
-    is_corporate: Optional[bool]
-    tax_category: Optional[int]
+    name: Optional[str] = Field(...)
+    postal_code: Optional[str] = Field(...)
+    address: Optional[str] = Field(...)
+    email: Optional[str] = Field(...)
+    birth: Optional[str] = Field(...)
+    is_corporate: Optional[bool] = Field(...)
+    tax_category: Optional[int] = Field(...)
 
 
 class GetBatchRegisterPersonalInfoResponse(BaseModel):

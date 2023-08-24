@@ -102,10 +102,11 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
-                },
+                    "msg": "Field required",
+                    "type": "missing",
+                }
             ],
         }
 
@@ -127,14 +128,16 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": {"dummy": "dummy"},
                     "loc": ["body", "old_rsa_passphrase"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": {"dummy": "dummy"},
                     "loc": ["body", "rsa_passphrase"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -160,13 +163,20 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": "password",
                     "loc": ["body", "old_rsa_passphrase"],
-                    "msg": "old_rsa_passphrase is not a Base64-encoded encrypted data",
+                    "msg": "Value error, old_rsa_passphrase is not a Base64-encoded "
+                    "encrypted data",
                     "type": "value_error",
                 },
                 {
+                    "ctx": {"error": {}},
+                    "input": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 "
+                    "*+.\\()?[]^$-|!#%&\"',/:;<=>@_`{}~",
                     "loc": ["body", "rsa_passphrase"],
-                    "msg": "rsa_passphrase is not a Base64-encoded encrypted data",
+                    "msg": "Value error, rsa_passphrase is not a Base64-encoded "
+                    "encrypted data",
                     "type": "value_error",
                 },
             ],

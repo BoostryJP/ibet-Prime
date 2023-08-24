@@ -17,10 +17,10 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
-from typing import List, Optional
+from typing import Annotated, List, Optional
 
 from fastapi import Query
-from pydantic import BaseModel, Field, PositiveInt, validator
+from pydantic import BaseModel, Field, PositiveInt, RootModel, field_validator
 from pydantic.dataclasses import dataclass
 from web3 import Web3
 
@@ -66,7 +66,7 @@ class LockEventCategory(str, Enum):
 class LockEvent(BaseModel):
     category: LockEventCategory = Field(description="Event category")
     transaction_hash: str = Field(description="Transaction hash")
-    msg_sender: Optional[str] = Field(description="Message sender", nullable=True)
+    msg_sender: Optional[str] = Field(default=None, description="Message sender")
     issuer_address: str = Field(description="Issuer address")
     token_address: str = Field(description="Token address")
     token_type: TokenType = Field(description="Token type")
@@ -98,26 +98,26 @@ class ListAllLockEventsSortItem(str, Enum):
 
 @dataclass
 class ListAllLockEventsQuery:
-    offset: Optional[int] = Query(default=None, description="Start position", ge=0)
-    limit: Optional[int] = Query(default=None, description="Number of set", ge=0)
+    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
+    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
 
-    token_address: Optional[str] = Query(default=None, description="Token address")
-    token_type: Optional[TokenType] = Query(default=None, description="Token type")
-    msg_sender: Optional[str] = Query(default=None, description="Msg sender")
-    lock_address: Optional[str] = Query(default=None, description="Lock address")
-    recipient_address: Optional[str] = Query(
-        default=None, description="Recipient address"
-    )
-    category: Optional[LockEventCategory] = Query(
-        default=None, description="Event category"
-    )
+    token_address: Annotated[Optional[str], Query(description="Token address")] = None
+    token_type: Annotated[Optional[TokenType], Query(description="Token type")] = None
+    msg_sender: Annotated[Optional[str], Query(description="Msg sender")] = None
+    lock_address: Annotated[Optional[str], Query(description="Lock address")] = None
+    recipient_address: Annotated[
+        Optional[str], Query(description="Recipient address")
+    ] = None
+    category: Annotated[
+        Optional[LockEventCategory], Query(description="Event category")
+    ] = None
 
-    sort_item: ListAllLockEventsSortItem = Query(
-        default=ListAllLockEventsSortItem.block_timestamp, description="Sort item"
-    )
-    sort_order: SortOrder = Query(
-        default=SortOrder.DESC, description="Sort order(0: ASC, 1: DESC)"
-    )
+    sort_item: Annotated[
+        ListAllLockEventsSortItem, Query(description="Sort item")
+    ] = ListAllLockEventsSortItem.block_timestamp
+    sort_order: Annotated[
+        SortOrder, Query(description="Sort order(0: ASC, 1: DESC)")
+    ] = SortOrder.DESC
 
 
 class ForceUnlockRequest(BaseModel):
@@ -126,19 +126,22 @@ class ForceUnlockRequest(BaseModel):
     recipient_address: str = Field(..., description="Recipient address")
     value: PositiveInt = Field(..., description="Unlock amount")
 
-    @validator("token_address")
+    @field_validator("token_address")
+    @classmethod
     def token_address_is_valid_address(cls, v):
         if not Web3.is_address(v):
             raise ValueError("token_address is not a valid address")
         return v
 
-    @validator("lock_address")
+    @field_validator("lock_address")
+    @classmethod
     def lock_address_is_valid_address(cls, v):
         if not Web3.is_address(v):
             raise ValueError("lock_address is not a valid address")
         return v
 
-    @validator("recipient_address")
+    @field_validator("recipient_address")
+    @classmethod
     def recipient_address_is_valid_address(cls, v):
         if not Web3.is_address(v):
             raise ValueError("recipient_address is not a valid address")
@@ -150,10 +153,10 @@ class ForceUnlockRequest(BaseModel):
 ############################
 
 
-class PositionResponse(BaseModel):
+class PositionResponse(RootModel[Position]):
     """Position schema (Response)"""
 
-    __root__: Position
+    pass
 
 
 class ListAllPositionResponse(BaseModel):

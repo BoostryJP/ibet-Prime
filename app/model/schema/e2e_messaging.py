@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from app.utils.check_utils import check_value_is_encrypted
 from config import E2EE_REQUEST_ENABLED
@@ -34,52 +34,41 @@ class E2EMessagingAccountCreateRequest(BaseModel):
     """E2E Messaging Account Create schema (REQUEST)"""
 
     eoa_password: str
-    rsa_passphrase: Optional[str]
-    rsa_key_generate_interval: Optional[int] = Field(24, ge=0, le=10_000)
-    rsa_generation: Optional[int] = Field(7, ge=0, le=100)
+    rsa_passphrase: Optional[str] = None
+    rsa_key_generate_interval: Optional[int] = Field(
+        default=24,
+        ge=0,
+        le=10_000,
+        description="0 disables auto-generate(Unit is hour)",
+    )
+    rsa_generation: Optional[int] = Field(
+        default=7, ge=0, le=100, description="0 disables generation"
+    )
 
-    @validator("eoa_password")
+    @field_validator("eoa_password")
+    @classmethod
     def eoa_password_is_encrypted_value(cls, v):
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("eoa_password", v)
         return v
 
-    @validator("rsa_passphrase")
+    @field_validator("rsa_passphrase")
+    @classmethod
     def rsa_passphrase_is_encrypted_value(cls, v):
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("rsa_passphrase", v)
         return v
 
-    class Config:
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], _) -> None:
-            rsa_key_generate_interval_schema = schema["properties"][
-                "rsa_key_generate_interval"
-            ]
-            rsa_key_generate_interval_schema[
-                "description"
-            ] = "0 disables auto-generate(Unit is hour)"
-            rsa_generation_schema = schema["properties"]["rsa_generation"]
-            rsa_generation_schema["description"] = "0 disables generation"
-
 
 class E2EMessagingAccountUpdateRsaKeyRequest(BaseModel):
     """E2E Messaging Account Rsa Key Update schema (REQUEST)"""
 
-    rsa_key_generate_interval: Optional[int] = Field(24, ge=0, le=10_000)
-    rsa_generation: Optional[int] = Field(7, ge=0, le=100)
-
-    class Config:
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], _) -> None:
-            rsa_key_generate_interval_schema = schema["properties"][
-                "rsa_key_generate_interval"
-            ]
-            rsa_key_generate_interval_schema[
-                "description"
-            ] = "0 disables auto-generate(Unit is hour)"
-            rsa_generation_schema = schema["properties"]["rsa_generation"]
-            rsa_generation_schema["description"] = "0 disables generation"
+    rsa_key_generate_interval: Optional[int] = Field(
+        24, ge=0, le=10_000, description="0 disables auto-generate(Unit is hour)"
+    )
+    rsa_generation: Optional[int] = Field(
+        7, ge=0, le=100, description="0 disables generation"
+    )
 
 
 class E2EMessagingAccountChangeEOAPasswordRequest(BaseModel):
@@ -88,13 +77,15 @@ class E2EMessagingAccountChangeEOAPasswordRequest(BaseModel):
     old_eoa_password: str
     eoa_password: str
 
-    @validator("old_eoa_password")
+    @field_validator("old_eoa_password")
+    @classmethod
     def old_eoa_password_is_encrypted_value(cls, v):
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("old_eoa_password", v)
         return v
 
-    @validator("eoa_password")
+    @field_validator("eoa_password")
+    @classmethod
     def eoa_password_is_encrypted_value(cls, v):
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("eoa_password", v)
@@ -107,13 +98,15 @@ class E2EMessagingAccountChangeRSAPassphraseRequest(BaseModel):
     old_rsa_passphrase: str
     rsa_passphrase: str
 
-    @validator("old_rsa_passphrase")
+    @field_validator("old_rsa_passphrase")
+    @classmethod
     def old_rsa_passphrase_is_encrypted_value(cls, v):
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("old_rsa_passphrase", v)
         return v
 
-    @validator("rsa_passphrase")
+    @field_validator("rsa_passphrase")
+    @classmethod
     def rsa_passphrase_is_encrypted_value(cls, v):
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("rsa_passphrase", v)
@@ -127,9 +120,9 @@ class E2EMessagingAccountResponse(BaseModel):
     """E2E Messaging Account schema (Response)"""
 
     account_address: str
-    rsa_key_generate_interval: Optional[int]
-    rsa_generation: Optional[int]
-    rsa_public_key: Optional[str]
+    rsa_key_generate_interval: Optional[int] = Field(...)
+    rsa_generation: Optional[int] = Field(...)
+    rsa_public_key: Optional[str] = Field(...)
     is_deleted: bool
 
 

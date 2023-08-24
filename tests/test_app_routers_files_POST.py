@@ -206,14 +206,16 @@ abc def"""
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -238,14 +240,16 @@ abc def"""
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": {},
                     "loc": ["body", "file_name"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": {},
                     "loc": ["body", "content"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -305,33 +309,40 @@ abc def"""
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"max_length": 50},
+                    "input": "123456789012345678901234567890123456789012345678901",
                     "loc": ["body", "relation"],
-                    "msg": "ensure this value has at most 50 characters",
-                    "type": "value_error.any_str.max_length",
-                    "ctx": {"limit_value": 50},
+                    "msg": "String should have at most 50 characters",
+                    "type": "string_too_long",
                 },
                 {
+                    "ctx": {"max_length": 256},
+                    "input": "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567",
                     "loc": ["body", "file_name"],
-                    "msg": "ensure this value has at most 256 characters",
-                    "type": "value_error.any_str.max_length",
-                    "ctx": {"limit_value": 256},
+                    "msg": "String should have at most 256 characters",
+                    "type": "string_too_long",
                 },
                 {
+                    "ctx": {"error": {}},
+                    "input": "eDAweDAxeDAyeDAzeDA0eDA1eDA2eDA3",
                     "loc": ["body", "content"],
-                    "msg": "file size(Base64-decoded size) must be less than or equal to 6",
+                    "msg": "Value error, file size(Base64-decoded size) must be less "
+                    "than or equal to 6",
                     "type": "value_error",
                 },
                 {
+                    "ctx": {"max_length": 1000},
+                    "input": "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901",
                     "loc": ["body", "description"],
-                    "msg": "ensure this value has at most 1000 characters",
-                    "type": "value_error.any_str.max_length",
-                    "ctx": {"limit_value": 1000},
+                    "msg": "String should have at most 1000 characters",
+                    "type": "string_too_long",
                 },
                 {
+                    "ctx": {"max_length": 200},
+                    "input": "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901",
                     "loc": ["body", "label"],
-                    "msg": "ensure this value has at most 200 characters",
-                    "type": "value_error.any_str.max_length",
-                    "ctx": {"limit_value": 200},
+                    "msg": "String should have at most 200 characters",
+                    "type": "string_too_long",
                 },
             ],
         }
@@ -362,9 +373,11 @@ abc def"""
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": "あいう",
                     "loc": ["body", "content"],
-                    "msg": "content is not a Base64-encoded string",
+                    "msg": "Value error, content is not a Base64-encoded string",
                     "type": "value_error",
-                },
+                }
             ],
         }

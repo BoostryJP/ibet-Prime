@@ -405,14 +405,16 @@ class TestAppRoutersBondTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -465,23 +467,49 @@ class TestAppRoutersBondTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": 12.34567,
                     "loc": ["body", "interest_rate"],
-                    "msg": "interest_rate must be less than or equal to four decimal places",
+                    "msg": "Value error, interest_rate must be less than or equal to "
+                    "four decimal places",
                     "type": "value_error",
                 },
                 {
+                    "ctx": {"error": {}},
+                    "input": [
+                        "0101",
+                        "0201",
+                        "0301",
+                        "0401",
+                        "0501",
+                        "0601",
+                        "0701",
+                        "0801",
+                        "0901",
+                        "1001",
+                        "1101",
+                        "1201",
+                        "1231",
+                    ],
                     "loc": ["body", "interest_payment_date"],
-                    "msg": "list length of interest_payment_date must be less than 13",
+                    "msg": "Value error, list length of interest_payment_date must be "
+                    "less than 13",
                     "type": "value_error",
                 },
                 {
+                    "ctx": {"error": {}},
+                    "input": "0x0",
                     "loc": ["body", "tradable_exchange_contract_address"],
-                    "msg": "tradable_exchange_contract_address is not a valid address",
+                    "msg": "Value error, tradable_exchange_contract_address is not a "
+                    "valid address",
                     "type": "value_error",
                 },
                 {
+                    "ctx": {"error": {}},
+                    "input": "0x0",
                     "loc": ["body", "personal_info_contract_address"],
-                    "msg": "personal_info_contract_address is not a valid address",
+                    "msg": "Value error, personal_info_contract_address is not a "
+                    "valid address",
                     "type": "value_error",
                 },
             ],
@@ -513,6 +541,7 @@ class TestAppRoutersBondTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "issuer-address",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",
@@ -560,6 +589,7 @@ class TestAppRoutersBondTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "password",
                     "loc": ["header", "eoa-password"],
                     "msg": "eoa-password is not a Base64-encoded encrypted data",
                     "type": "value_error",
@@ -594,9 +624,11 @@ class TestAppRoutersBondTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "invalid value",
                     "loc": ["body", "is_redeemed"],
-                    "msg": "value could not be parsed to a boolean",
-                    "type": "type_error.bool",
+                    "msg": "Input should be a valid boolean, unable to interpret "
+                    "input",
+                    "type": "bool_parsing",
                 }
             ],
         }
@@ -643,28 +675,32 @@ class TestAppRoutersBondTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"limit_value": 0},
+                    "ctx": {"ge": 0},
+                    "input": -1,
                     "loc": ["body", "total_supply"],
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
                 {
-                    "ctx": {"limit_value": 0},
+                    "ctx": {"ge": 0},
+                    "input": -1,
                     "loc": ["body", "face_value"],
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
                 {
-                    "ctx": {"limit_value": 0},
+                    "ctx": {"ge": 0},
+                    "input": -1,
                     "loc": ["body", "redemption_value"],
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
                 {
-                    "ctx": {"limit_value": 0.0},
+                    "ctx": {"ge": 0.0},
+                    "input": -0.0001,
                     "loc": ["body", "interest_rate"],
-                    "msg": "ensure this value is greater than or equal to 0.0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
             ],
         }
@@ -711,64 +747,74 @@ class TestAppRoutersBondTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"max_length": 100},
+                    "input": ANY,
                     "loc": ["body", "name"],
-                    "msg": "ensure this value has at most 100 characters",
-                    "type": "value_error.any_str.max_length",
-                    "ctx": {"limit_value": 100},
+                    "msg": "String should have at most 100 characters",
+                    "type": "string_too_long",
                 },
                 {
+                    "ctx": {"le": 1000000000000},
+                    "input": 1000000000001,
                     "loc": ["body", "total_supply"],
-                    "msg": "ensure this value is less than or equal to 1000000000000",
-                    "type": "value_error.number.not_le",
-                    "ctx": {"limit_value": 1000000000000},
+                    "msg": "Input should be less than or equal to 1000000000000",
+                    "type": "less_than_equal",
                 },
                 {
+                    "ctx": {"le": 5000000000},
+                    "input": 5000000001,
                     "loc": ["body", "face_value"],
-                    "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le",
-                    "ctx": {"limit_value": 5000000000},
+                    "msg": "Input should be less than or equal to 5000000000",
+                    "type": "less_than_equal",
                 },
                 {
+                    "ctx": {"max_length": 2000},
+                    "input": ANY,
                     "loc": ["body", "purpose"],
-                    "msg": "ensure this value has at most 2000 characters",
-                    "type": "value_error.any_str.max_length",
-                    "ctx": {"limit_value": 2000},
+                    "msg": "String should have at most 2000 characters",
+                    "type": "string_too_long",
                 },
                 {
+                    "ctx": {"max_length": 100},
+                    "input": ANY,
                     "loc": ["body", "symbol"],
-                    "msg": "ensure this value has at most 100 characters",
-                    "type": "value_error.any_str.max_length",
-                    "ctx": {"limit_value": 100},
+                    "msg": "String should have at most 100 characters",
+                    "type": "string_too_long",
                 },
                 {
+                    "ctx": {"le": 5000000000},
+                    "input": 5000000001,
                     "loc": ["body", "redemption_value"],
-                    "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le",
-                    "ctx": {"limit_value": 5000000000},
+                    "msg": "Input should be less than or equal to 5000000000",
+                    "type": "less_than_equal",
                 },
                 {
+                    "ctx": {"max_length": 2000},
+                    "input": ANY,
                     "loc": ["body", "return_amount"],
-                    "msg": "ensure this value has at most 2000 characters",
-                    "type": "value_error.any_str.max_length",
-                    "ctx": {"limit_value": 2000},
+                    "msg": "String should have at most 2000 characters",
+                    "type": "string_too_long",
                 },
                 {
+                    "ctx": {"le": 100.0},
+                    "input": 100.0001,
                     "loc": ["body", "interest_rate"],
-                    "msg": "ensure this value is less than or equal to 100.0",
-                    "type": "value_error.number.not_le",
-                    "ctx": {"limit_value": 100.0},
+                    "msg": "Input should be less than or equal to 100",
+                    "type": "less_than_equal",
                 },
                 {
+                    "ctx": {"max_length": 2000},
+                    "input": ANY,
                     "loc": ["body", "contact_information"],
-                    "msg": "ensure this value has at most 2000 characters",
-                    "type": "value_error.any_str.max_length",
-                    "ctx": {"limit_value": 2000},
+                    "msg": "String should have at most 2000 characters",
+                    "type": "string_too_long",
                 },
                 {
+                    "ctx": {"max_length": 5000},
+                    "input": ANY,
                     "loc": ["body", "privacy_policy"],
-                    "msg": "ensure this value has at most 5000 characters",
-                    "type": "value_error.any_str.max_length",
-                    "ctx": {"limit_value": 5000},
+                    "msg": "String should have at most 5000 characters",
+                    "type": "string_too_long",
                 },
             ],
         }
@@ -800,26 +846,32 @@ class TestAppRoutersBondTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {
+                        "pattern": "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"
+                    },
+                    "input": "invalid_date",
                     "loc": ["body", "redemption_date"],
-                    "msg": 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
-                    "type": "value_error.str.regex",
+                    "msg": "String should match pattern "
+                    "'^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'",
+                    "type": "string_pattern_mismatch",
+                },
+                {
                     "ctx": {
                         "pattern": "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"
                     },
-                },
-                {
+                    "input": "invalid_date",
                     "loc": ["body", "return_date"],
-                    "msg": 'string does not match regex "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
-                    "type": "value_error.str.regex",
-                    "ctx": {
-                        "pattern": "^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"
-                    },
+                    "msg": "String should match pattern "
+                    "'^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'",
+                    "type": "string_pattern_mismatch",
                 },
                 {
-                    "loc": ["body", "interest_payment_date", 0],
-                    "msg": 'string does not match regex "^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
-                    "type": "value_error.str.regex",
                     "ctx": {"pattern": "^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"},
+                    "input": "invalid_date",
+                    "loc": ["body", "interest_payment_date", 0],
+                    "msg": "String should match pattern "
+                    "'^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'",
+                    "type": "string_pattern_mismatch",
                 },
             ],
         }

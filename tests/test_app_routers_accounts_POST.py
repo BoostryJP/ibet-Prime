@@ -127,8 +127,11 @@ class TestAppRoutersAccountsPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": "cGFzc3dvcmQ=\n",
                     "loc": ["body", "eoa_password"],
-                    "msg": "eoa_password is not a Base64-encoded encrypted data",
+                    "msg": "Value error, eoa_password is not a Base64-encoded "
+                    "encrypted data",
                     "type": "value_error",
                 }
             ],

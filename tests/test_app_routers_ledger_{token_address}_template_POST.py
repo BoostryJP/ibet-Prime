@@ -519,14 +519,16 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -630,6 +632,7 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "test",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",
@@ -662,14 +665,16 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": {"dummy": "dummy"},
                     "loc": ["body", "token_name"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": {"dummy": "dummy"},
                     "loc": ["body", "details"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -722,14 +727,18 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"limit_value": 200},
+                    "ctx": {"max_length": 200},
+                    "input": mock.ANY,
                     "loc": ["body", "token_name"],
-                    "msg": "ensure this value has at most 200 characters",
-                    "type": "value_error.any_str.max_length",
+                    "msg": "String should have at most 200 characters",
+                    "type": "string_too_long",
                 },
                 {
+                    "ctx": {"error": {}},
+                    "input": [],
                     "loc": ["body", "details"],
-                    "msg": "The length must be greater than or equal to 1",
+                    "msg": "Value error, The length must be greater than or equal to "
+                    "1",
                     "type": "value_error",
                 },
             ],
@@ -838,37 +847,43 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"limit_value": 100},
+                    "ctx": {"max_length": 100},
+                    "input": "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901",
                     "loc": ["body", "details", 0, "token_detail_type"],
-                    "msg": "ensure this value has at most 100 characters",
-                    "type": "value_error.any_str.max_length",
+                    "msg": "String should have at most 100 characters",
+                    "type": "string_too_long",
                 },
                 {
-                    "ctx": {"enum_values": ["ibetfin", "db"]},
+                    "ctx": {"expected": "'ibetfin' or 'db'"},
+                    "input": "ibetfina",
                     "loc": ["body", "details", 0, "data", "type"],
-                    "msg": "value is not a valid enumeration member; permitted: 'ibetfin', 'db'",
-                    "type": "type_error.enum",
+                    "msg": "Input should be 'ibetfin' or 'db'",
+                    "type": "enum",
                 },
                 {
-                    "ctx": {"limit_value": 42},
+                    "ctx": {"max_length": 42},
+                    "input": "1234567890123456789012345678901234567890123",
                     "loc": ["body", "details", 0, "data", "source"],
-                    "msg": "ensure this value has at most 42 characters",
-                    "type": "value_error.any_str.max_length",
+                    "msg": "String should have at most 42 characters",
+                    "type": "string_too_long",
                 },
                 {
+                    "input": {"dummy": "dummy"},
                     "loc": ["body", "details", 1, "token_detail_type"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": {"dummy": "dummy"},
                     "loc": ["body", "details", 1, "data"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": {"dummy": "dummy"},
                     "loc": ["body", "details", 2, "data", "type"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -932,24 +947,28 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": {"fuga": "bbb", "hoge": "aaa"},
                     "loc": ["body", "headers"],
-                    "msg": "value is not a valid list",
-                    "type": "type_error.list",
+                    "msg": "Input should be a valid list",
+                    "type": "list_type",
                 },
                 {
+                    "input": {"fuga": "bbb", "hoge": "aaa"},
                     "loc": ["body", "details", 0, "headers"],
-                    "msg": "value is not a valid list",
-                    "type": "type_error.list",
+                    "msg": "Input should be a valid list",
+                    "type": "list_type",
                 },
                 {
+                    "input": {"fuga": "bbb", "hoge": "aaa"},
                     "loc": ["body", "details", 0, "footers"],
-                    "msg": "value is not a valid list",
-                    "type": "type_error.list",
+                    "msg": "Input should be a valid list",
+                    "type": "list_type",
                 },
                 {
+                    "input": {"fuga": "bbb", "hoge": "aaa"},
                     "loc": ["body", "footers"],
-                    "msg": "value is not a valid list",
-                    "type": "type_error.list",
+                    "msg": "Input should be a valid list",
+                    "type": "list_type",
                 },
             ],
         }

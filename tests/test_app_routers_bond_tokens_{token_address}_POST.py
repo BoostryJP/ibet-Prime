@@ -398,8 +398,11 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": 1e-05,
                     "loc": ["body", "interest_rate"],
-                    "msg": "interest_rate must be rounded to 4 decimal places",
+                    "msg": "Value error, interest_rate must be rounded to 4 decimal "
+                    "places",
                     "type": "value_error",
                 }
             ],
@@ -440,8 +443,25 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": [
+                        "0101",
+                        "0102",
+                        "0103",
+                        "0104",
+                        "0105",
+                        "0106",
+                        "0107",
+                        "0108",
+                        "0109",
+                        "0110",
+                        "0111",
+                        "0112",
+                        "0113",
+                    ],
                     "loc": ["body", "interest_payment_date"],
-                    "msg": "list length of interest_payment_date must be less than 13",
+                    "msg": "Value error, list length of interest_payment_date must be "
+                    "less than 13",
                     "type": "value_error",
                 }
             ],
@@ -468,10 +488,12 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "loc": ["body", "interest_payment_date", 0],
-                    "msg": 'string does not match regex "^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
-                    "type": "value_error.str.regex",
                     "ctx": {"pattern": "^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"},
+                    "input": "01010",
+                    "loc": ["body", "interest_payment_date", 0],
+                    "msg": "String should match pattern "
+                    "'^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'",
+                    "type": "string_pattern_mismatch",
                 }
             ],
         }
@@ -494,8 +516,11 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": "invalid_address",
                     "loc": ["body", "tradable_exchange_contract_address"],
-                    "msg": "tradable_exchange_contract_address is not a valid address",
+                    "msg": "Value error, tradable_exchange_contract_address is not a "
+                    "valid address",
                     "type": "value_error",
                 }
             ],
@@ -519,8 +544,11 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": "invalid_address",
                     "loc": ["body", "personal_info_contract_address"],
-                    "msg": "personal_info_contract_address is not a valid address",
+                    "msg": "Value error, personal_info_contract_address is not a "
+                    "valid address",
                     "type": "value_error",
                 }
             ],
@@ -540,14 +568,16 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -573,6 +603,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "issuer-address",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",
@@ -617,6 +648,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "password",
                     "loc": ["header", "eoa-password"],
                     "msg": "eoa-password is not a Base64-encoded encrypted data",
                     "type": "value_error",
@@ -661,22 +693,25 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"limit_value": 0},
+                    "ctx": {"ge": 0},
+                    "input": -1,
                     "loc": ["body", "face_value"],
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
                 {
-                    "ctx": {"limit_value": 0.0000},
+                    "ctx": {"ge": 0.0},
+                    "input": -0.0001,
                     "loc": ["body", "interest_rate"],
-                    "msg": "ensure this value is greater than or equal to 0.0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
                 {
-                    "ctx": {"limit_value": 0},
+                    "ctx": {"ge": 0},
+                    "input": -1,
                     "loc": ["body", "redemption_value"],
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
             ],
         }
@@ -718,22 +753,25 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"limit_value": 5_000_000_000},
+                    "ctx": {"le": 5000000000},
+                    "input": 5000000001,
                     "loc": ["body", "face_value"],
-                    "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le",
+                    "msg": "Input should be less than or equal to 5000000000",
+                    "type": "less_than_equal",
                 },
                 {
-                    "ctx": {"limit_value": 100.0000},
+                    "ctx": {"le": 100.0},
+                    "input": 100.0001,
                     "loc": ["body", "interest_rate"],
-                    "msg": "ensure this value is less than or equal to 100.0",
-                    "type": "value_error.number.not_le",
+                    "msg": "Input should be less than or equal to 100",
+                    "type": "less_than_equal",
                 },
                 {
-                    "ctx": {"limit_value": 5_000_000_000},
+                    "ctx": {"le": 5000000000},
+                    "input": 5000000001,
                     "loc": ["body", "redemption_value"],
-                    "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le",
+                    "msg": "Input should be less than or equal to 5000000000",
+                    "type": "less_than_equal",
                 },
             ],
         }

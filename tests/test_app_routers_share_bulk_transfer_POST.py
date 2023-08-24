@@ -260,25 +260,31 @@ class TestAppRoutersShareBulkTransferPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": 10,
                     "loc": ["body", 0, "token_address"],
-                    "msg": "token_address is not a valid address",
-                    "type": "value_error",
+                    "msg": "Input should be a valid string",
+                    "type": "string_type",
                 },
                 {
+                    "ctx": {"error": {}},
+                    "input": "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D7811",
                     "loc": ["body", 0, "from_address"],
-                    "msg": "from_address is not a valid address",
+                    "msg": "Value error, from_address is not a valid address",
                     "type": "value_error",
                 },
                 {
+                    "ctx": {"error": {}},
+                    "input": "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78",
                     "loc": ["body", 0, "to_address"],
-                    "msg": "to_address is not a valid address",
+                    "msg": "Value error, to_address is not a valid address",
                     "type": "value_error",
                 },
                 {
-                    "ctx": {"limit_value": 1},
+                    "ctx": {"ge": 1},
+                    "input": 0,
                     "loc": ["body", 0, "amount"],
-                    "msg": "ensure this value is greater than or equal to 1",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 1",
+                    "type": "greater_than_equal",
                 },
             ],
         }
@@ -311,11 +317,12 @@ class TestAppRoutersShareBulkTransferPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"limit_value": 1_000_000_000_000},
+                    "ctx": {"le": 1000000000000},
+                    "input": 1000000000001,
                     "loc": ["body", 0, "amount"],
-                    "msg": "ensure this value is less than or equal to 1000000000000",
-                    "type": "value_error.number.not_le",
-                },
+                    "msg": "Input should be less than or equal to 1000000000000",
+                    "type": "less_than_equal",
+                }
             ],
         }
 
@@ -332,14 +339,16 @@ class TestAppRoutersShareBulkTransferPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -360,6 +369,7 @@ class TestAppRoutersShareBulkTransferPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "admin_address",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",
@@ -385,6 +395,7 @@ class TestAppRoutersShareBulkTransferPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "password",
                     "loc": ["header", "eoa-password"],
                     "msg": "eoa-password is not a Base64-encoded encrypted data",
                     "type": "value_error",

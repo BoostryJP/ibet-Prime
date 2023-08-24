@@ -664,6 +664,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "0x0",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",

@@ -314,14 +314,16 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -366,14 +368,16 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["body", "account_address"],
-                    "msg": "none is not an allowed value",
-                    "type": "type_error.none.not_allowed",
+                    "msg": "Input should be a valid string",
+                    "type": "string_type",
                 },
                 {
+                    "input": None,
                     "loc": ["body", "key_manager"],
-                    "msg": "none is not an allowed value",
-                    "type": "type_error.none.not_allowed",
+                    "msg": "Input should be a valid string",
+                    "type": "string_type",
                 },
             ],
         }
@@ -418,8 +422,10 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": "test",
                     "loc": ["body", "account_address"],
-                    "msg": "account_address is not a valid address",
+                    "msg": "Value error, account_address is not a valid address",
                     "type": "value_error",
                 }
             ],
@@ -461,6 +467,7 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "test_issuer_address",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",
@@ -508,6 +515,7 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "not_encrypted_password",
                     "loc": ["header", "eoa-password"],
                     "msg": "eoa-password is not a Base64-encoded encrypted data",
                     "type": "value_error",
