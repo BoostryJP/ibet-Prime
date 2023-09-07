@@ -21,6 +21,7 @@ from app.model.db import (
     BatchIssueRedeem,
     BatchIssueRedeemProcessingCategory,
     BatchIssueRedeemUpload,
+    IDXPersonalInfo,
     Token,
     TokenType,
 )
@@ -46,9 +47,9 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchBatchIdGET:
     # Normal Case
     ###########################################################################
 
-    # Normal_1
-    # Single Record
-    def test_normal_1(self, client, db):
+    # Normal_1_1
+    # Single Record(No personal information)
+    def test_normal_1_1(self, client, db):
         issuer_account = config_eth_account("user1")
         issuer_address = issuer_account["address"]
         issuer_keyfile = issuer_account["keyfile_json"]
@@ -86,6 +87,21 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchBatchIdGET:
         batch_record.status = 1
         db.add(batch_record)
 
+        idx_personal_info_1 = IDXPersonalInfo()
+        idx_personal_info_1.account_address = self.account_list[0]["address"]
+        idx_personal_info_1.issuer_address = "other_issuer_address"
+        idx_personal_info_1._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(idx_personal_info_1)
+
         # request target API
         resp = client.get(
             self.base_url.format(test_token_address, self.upload_id_list[0]),
@@ -101,6 +117,100 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchBatchIdGET:
                     "account_address": self.account_list[0]["address"],
                     "amount": self.account_list[0]["amount"],
                     "status": 1,
+                    "personal_information": {
+                        "key_manager": None,
+                        "address": None,
+                        "birth": None,
+                        "email": None,
+                        "is_corporate": None,
+                        "name": None,
+                        "postal_code": None,
+                        "tax_category": None,
+                    },
+                }
+            ],
+        }
+
+    # Normal_1_2
+    # Single Record(With personal information)
+    def test_normal_1_2(self, client, db):
+        issuer_account = config_eth_account("user1")
+        issuer_address = issuer_account["address"]
+        issuer_keyfile = issuer_account["keyfile_json"]
+
+        test_token_address = "token_address_test"
+
+        # prepare data
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = issuer_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_SHARE.value
+        token.tx_hash = ""
+        token.issuer_address = issuer_address
+        token.token_address = test_token_address
+        token.abi = ""
+        db.add(token)
+
+        batch_upload = BatchIssueRedeemUpload()
+        batch_upload.upload_id = self.upload_id_list[0]
+        batch_upload.issuer_address = issuer_address
+        batch_upload.token_type = TokenType.IBET_SHARE.value
+        batch_upload.token_address = test_token_address
+        batch_upload.category = BatchIssueRedeemProcessingCategory.REDEEM.value
+        batch_upload.processed = True
+        db.add(batch_upload)
+
+        batch_record = BatchIssueRedeem()
+        batch_record.upload_id = self.upload_id_list[0]
+        batch_record.account_address = self.account_list[0]["address"]
+        batch_record.amount = self.account_list[0]["amount"]
+        batch_record.status = 1
+        db.add(batch_record)
+
+        idx_personal_info_1 = IDXPersonalInfo()
+        idx_personal_info_1.account_address = self.account_list[0]["address"]
+        idx_personal_info_1.issuer_address = issuer_address
+        idx_personal_info_1._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(idx_personal_info_1)
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(test_token_address, self.upload_id_list[0]),
+            headers={"issuer-address": issuer_address},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "processed": True,
+            "results": [
+                {
+                    "account_address": self.account_list[0]["address"],
+                    "amount": self.account_list[0]["amount"],
+                    "status": 1,
+                    "personal_information": {
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test1",
+                        "postal_code": "postal_code_test1",
+                        "address": "address_test1",
+                        "email": "email_test1",
+                        "birth": "birth_test1",
+                        "is_corporate": False,
+                        "tax_category": 10,
+                    },
                 }
             ],
         }
@@ -145,6 +255,21 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchBatchIdGET:
         batch_record.status = 1
         db.add(batch_record)
 
+        idx_personal_info_1 = IDXPersonalInfo()
+        idx_personal_info_1.account_address = self.account_list[0]["address"]
+        idx_personal_info_1.issuer_address = issuer_address
+        idx_personal_info_1._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(idx_personal_info_1)
+
         batch_record = BatchIssueRedeem()
         batch_record.upload_id = self.upload_id_list[0]
         batch_record.account_address = self.account_list[1]["address"]
@@ -167,11 +292,31 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchBatchIdGET:
                     "account_address": self.account_list[0]["address"],
                     "amount": self.account_list[0]["amount"],
                     "status": 1,
+                    "personal_information": {
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test1",
+                        "postal_code": "postal_code_test1",
+                        "address": "address_test1",
+                        "email": "email_test1",
+                        "birth": "birth_test1",
+                        "is_corporate": False,
+                        "tax_category": 10,
+                    },
                 },
                 {
                     "account_address": self.account_list[1]["address"],
                     "amount": self.account_list[1]["amount"],
                     "status": 1,
+                    "personal_information": {
+                        "key_manager": None,
+                        "address": None,
+                        "birth": None,
+                        "email": None,
+                        "is_corporate": None,
+                        "name": None,
+                        "postal_code": None,
+                        "tax_category": None,
+                    },
                 },
             ],
         }

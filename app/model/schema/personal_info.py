@@ -26,7 +26,18 @@ from app.model.schema.types import ResultSet
 
 
 class PersonalInfo(BaseModel):
-    """Personal Information schema"""
+    key_manager: Optional[str] = Field(...)
+    name: Optional[str] = Field(...)
+    postal_code: Optional[str] = Field(...)
+    address: Optional[str] = Field(...)
+    email: Optional[str] = Field(...)
+    birth: Optional[str] = Field(...)
+    is_corporate: Optional[bool] = Field(...)
+    tax_category: Optional[int] = Field(...)
+
+
+class PersonalInfoInput(BaseModel):
+    """Personal Information Input schema"""
 
     name: Optional[str] = None
     postal_code: Optional[str] = None
@@ -42,7 +53,7 @@ class PersonalInfo(BaseModel):
 ############################
 
 
-class RegisterPersonalInfoRequest(PersonalInfo):
+class RegisterPersonalInfoRequest(PersonalInfoInput):
     """Register Personal Information schema (REQUEST)"""
 
     account_address: str

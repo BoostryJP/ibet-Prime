@@ -22,6 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.model.db import TokenType
 
+from .personal_info import PersonalInfo
 from .types import ResultSet
 
 ############################
@@ -73,6 +74,7 @@ class GetBatchIssueRedeemResult(BaseModel):
     account_address: str
     amount: int
     status: int
+    personal_information: PersonalInfo
 
 
 class GetBatchIssueRedeemResponse(BaseModel):
