@@ -935,18 +935,44 @@ def retrieve_batch_additional_issue(
         raise HTTPException(status_code=404, detail="batch not found")
 
     # Get Batch Records
-    record_list: Sequence[BatchIssueRedeem] = db.scalars(
-        select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == batch_id)
-    ).all()
+    record_list: Sequence[tuple[BatchIssueRedeem, IDXPersonalInfo | None]] = (
+        db.execute(
+            select(BatchIssueRedeem, IDXPersonalInfo)
+            .outerjoin(
+                IDXPersonalInfo,
+                and_(
+                    BatchIssueRedeem.account_address == IDXPersonalInfo.account_address,
+                    IDXPersonalInfo.issuer_address == issuer_address,
+                ),
+            )
+            .where(BatchIssueRedeem.upload_id == batch_id)
+        )
+        .tuples()
+        .all()
+    )
+
+    personal_info_default = {
+        "key_manager": None,
+        "name": None,
+        "postal_code": None,
+        "address": None,
+        "email": None,
+        "birth": None,
+        "is_corporate": None,
+        "tax_category": None,
+    }
 
     return json_response(
         {
             "processed": batch.processed,
             "results": [
                 {
-                    "account_address": record.account_address,
-                    "amount": record.amount,
-                    "status": record.status,
+                    "account_address": record[0].account_address,
+                    "amount": record[0].amount,
+                    "status": record[0].status,
+                    "personal_information": record[1].personal_info
+                    if record[1]
+                    else personal_info_default,
                 }
                 for record in record_list
             ],
@@ -1312,18 +1338,44 @@ def retrieve_batch_redeem(
         raise HTTPException(status_code=404, detail="batch not found")
 
     # Get Batch Records
-    record_list: Sequence[BatchIssueRedeem] = db.scalars(
-        select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == batch_id)
-    ).all()
+    record_list: Sequence[tuple[BatchIssueRedeem, IDXPersonalInfo | None]] = (
+        db.execute(
+            select(BatchIssueRedeem, IDXPersonalInfo)
+            .outerjoin(
+                IDXPersonalInfo,
+                and_(
+                    BatchIssueRedeem.account_address == IDXPersonalInfo.account_address,
+                    IDXPersonalInfo.issuer_address == issuer_address,
+                ),
+            )
+            .where(BatchIssueRedeem.upload_id == batch_id)
+        )
+        .tuples()
+        .all()
+    )
+
+    personal_info_default = {
+        "key_manager": None,
+        "name": None,
+        "postal_code": None,
+        "address": None,
+        "email": None,
+        "birth": None,
+        "is_corporate": None,
+        "tax_category": None,
+    }
 
     return json_response(
         {
             "processed": batch.processed,
             "results": [
                 {
-                    "account_address": record.account_address,
-                    "amount": record.amount,
-                    "status": record.status,
+                    "account_address": record[0].account_address,
+                    "amount": record[0].amount,
+                    "status": record[0].status,
+                    "personal_information": record[1].personal_info
+                    if record[1]
+                    else personal_info_default,
                 }
                 for record in record_list
             ],
