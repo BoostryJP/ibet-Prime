@@ -104,7 +104,7 @@ class Processor:
                         if transaction.get("to")
                         else None
                     )
-                    tx_model.input = transaction.get("input")
+                    tx_model.input = transaction.get("input").hex()
                     tx_model.gas = transaction.get("gas")
                     tx_model.gas_price = transaction.get("gasPrice")
                     tx_model.value = transaction.get("value")
