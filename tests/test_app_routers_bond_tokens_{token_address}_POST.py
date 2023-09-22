@@ -498,6 +498,33 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             ],
         }
 
+    # <Error_3>
+    # RequestValidationError: is_redeemed
+    def test_error_3(self, client, db):
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # request target API
+        req_param = {"is_redeemed": False}
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={"issuer-address": ""},
+        )
+
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "detail": [
+                {
+                    "ctx": {"error": {}},
+                    "input": False,
+                    "loc": ["body", "is_redeemed"],
+                    "msg": "Value error, is_redeemed cannot be updated to `false`",
+                    "type": "value_error",
+                }
+            ],
+            "meta": {"code": 1, "title": "RequestValidationError"},
+        }
+
     # <Error_4>
     # RequestValidationError: tradable_exchange_contract_address
     def test_error_4(self, client, db):

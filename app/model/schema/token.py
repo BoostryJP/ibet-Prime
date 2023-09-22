@@ -116,6 +116,13 @@ class IbetStraightBondUpdate(BaseModel):
     transfer_approval_required: Optional[bool] = None
     memo: Optional[str] = Field(default=None, max_length=10000)
 
+    @field_validator("is_redeemed")
+    @classmethod
+    def is_redeemed_is_valid(cls, v):
+        if v is not None and v is False:
+            raise ValueError("is_redeemed cannot be updated to `false`")
+        return v
+
     @field_validator("interest_rate")
     @classmethod
     def interest_rate_4_decimal_places(cls, v):
@@ -277,6 +284,13 @@ class IbetShareUpdate(BaseModel):
     principal_value: Optional[int] = Field(default=None, ge=0, le=5_000_000_000)
     is_canceled: Optional[bool] = None
     memo: Optional[str] = Field(default=None, max_length=10000)
+
+    @field_validator("is_canceled")
+    @classmethod
+    def is_canceled_is_valid(cls, v):
+        if v is not None and v is False:
+            raise ValueError("is_canceled cannot be updated to `false`")
+        return v
 
     @field_validator("dividends")
     @classmethod
