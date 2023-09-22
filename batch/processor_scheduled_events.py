@@ -54,6 +54,8 @@ from app.model.db import (
     ScheduledEvents,
     ScheduledEventType,
     TokenType,
+    TokenUpdateOperationCategory,
+    TokenUpdateOperationLog,
 )
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.web3_utils import Web3Wrapper
@@ -199,20 +201,41 @@ class Processor:
                 if _event.token_type == TokenType.IBET_SHARE.value:
                     # Update
                     if _event.event_type == ScheduledEventType.UPDATE.value:
+                        token_contract = IbetShareContract(_event.token_address)
+                        original_contents = token_contract.get().__dict__
                         _update_data = IbetShareUpdateParams(**_event.data)
-                        IbetShareContract(_event.token_address).update(
+                        token_contract.update(
                             data=_update_data,
                             tx_from=_event.issuer_address,
                             private_key=private_key,
                         )
+                        self.__sink_on_token_update_operation_log(
+                            db_session=db_session,
+                            token_address=_event.token_address,
+                            issuer_address=_event.issuer_address,
+                            token_type=_event.token_type,
+                            arguments=_update_data.model_dump(exclude_none=True),
+                            original_contents=original_contents,
+                        )
+
                 elif _event.token_type == TokenType.IBET_STRAIGHT_BOND.value:
                     # Update
                     if _event.event_type == ScheduledEventType.UPDATE.value:
+                        token_contract = IbetStraightBondContract(_event.token_address)
+                        original_contents = token_contract.get().__dict__
                         _update_data = IbetStraightBondUpdateParams(**_event.data)
                         IbetStraightBondContract(_event.token_address).update(
                             data=_update_data,
                             tx_from=_event.issuer_address,
                             private_key=private_key,
+                        )
+                        self.__sink_on_token_update_operation_log(
+                            db_session=db_session,
+                            token_address=_event.token_address,
+                            issuer_address=_event.issuer_address,
+                            token_type=_event.token_type,
+                            arguments=_update_data.model_dump(exclude_none=True),
+                            original_contents=original_contents,
                         )
 
                 self.__sink_on_finish_event_process(
@@ -281,6 +304,24 @@ class Processor:
             "token_address": token_address,
         }
         db_session.add(notification)
+
+    @staticmethod
+    def __sink_on_token_update_operation_log(
+        db_session: Session,
+        token_address: str,
+        issuer_address: str,
+        token_type: str,
+        arguments: dict,
+        original_contents: dict,
+    ):
+        operation_log = TokenUpdateOperationLog()
+        operation_log.token_address = token_address
+        operation_log.issuer_address = issuer_address
+        operation_log.type = token_type
+        operation_log.arguments = arguments
+        operation_log.original_contents = original_contents
+        operation_log.operation_category = TokenUpdateOperationCategory.UPDATE.value
+        db_session.add(operation_log)
 
 
 class Worker:
