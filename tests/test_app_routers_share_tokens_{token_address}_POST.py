@@ -693,6 +693,35 @@ class TestAppRoutersShareTokensTokenAddressPOST:
             ],
         }
 
+    # <Error_5>
+    # RequestValidationError: is_canceled
+    def test_error_5(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # request target API
+        req_param = {"is_canceled": False}
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={"issuer-address": _issuer_address},
+        )
+
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "detail": [
+                {
+                    "ctx": {"error": {}},
+                    "input": False,
+                    "loc": ["body", "is_canceled"],
+                    "msg": "Value error, is_canceled cannot be updated to `false`",
+                    "type": "value_error",
+                }
+            ],
+            "meta": {"code": 1, "title": "RequestValidationError"},
+        }
+
     # <Error_6>
     # RequestValidationError: headers and body required
     def test_error_6(self, client, db):
