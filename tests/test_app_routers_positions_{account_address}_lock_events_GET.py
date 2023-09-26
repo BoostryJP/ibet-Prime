@@ -1398,14 +1398,14 @@ class TestAppRoutersLockEvents:
                 },
                 {
                     "ctx": {
-                        "expected": "'token_address','lock_address','recipient_address','value' "
-                        "or 'block_timestamp'"
+                        "expected": "'token_address', 'lock_address', "
+                        "'recipient_address', 'value' or "
+                        "'block_timestamp'"
                     },
                     "input": "test",
                     "loc": ["query", "sort_item"],
-                    "msg": "Input should be "
-                    "'token_address','lock_address','recipient_address','value' "
-                    "or 'block_timestamp'",
+                    "msg": "Input should be 'token_address', 'lock_address', "
+                    "'recipient_address', 'value' or 'block_timestamp'",
                     "type": "enum",
                 },
             ],
