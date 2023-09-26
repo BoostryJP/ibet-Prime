@@ -380,14 +380,13 @@ class TestAppRoutersBondTokensTokenAddressRedeemGET:
             "detail": [
                 {
                     "ctx": {
-                        "expected": "'block_timestamp','locked_address','target_address' "
-                        "or 'amount'"
+                        "expected": "'block_timestamp', 'locked_address', "
+                        "'target_address' or 'amount'"
                     },
                     "input": "block_timestamp12345",
                     "loc": ["query", "sort_item"],
-                    "msg": "Input should be "
-                    "'block_timestamp','locked_address','target_address' or "
-                    "'amount'",
+                    "msg": "Input should be 'block_timestamp', 'locked_address', "
+                    "'target_address' or 'amount'",
                     "type": "enum",
                 }
             ],
