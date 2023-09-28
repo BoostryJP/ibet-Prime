@@ -18,7 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
 
-from sqlalchemy import JSON, BigInteger, Column, DateTime, Integer, String
+from sqlalchemy import JSON, BigInteger, DateTime, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -29,16 +30,18 @@ class Ledger(Base):
     __tablename__ = "ledger"
 
     # sequence id
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     # token address
-    token_address = Column(String(42), nullable=False)
+    token_address: Mapped[str] = mapped_column(String(42), nullable=False)
     # token type
-    token_type = Column(String(40), nullable=False)
+    token_type: Mapped[str] = mapped_column(String(40), nullable=False)
     # ledger info
-    ledger = Column(JSON, nullable=False)
+    ledger: Mapped[dict] = mapped_column(JSON, nullable=False)
     # created datetime(UTC)
     # NOTE: Because Base's created column is subject to change in the data patch, define another column.
-    ledger_created = Column(DateTime, nullable=False, default=datetime.utcnow)
+    ledger_created: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=datetime.utcnow
+    )
 
 
 """
@@ -77,23 +80,25 @@ class LedgerDetailsData(Base):
     __tablename__ = "ledger_details_data"
 
     # sequence id
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     # token address
-    token_address = Column(String(42), nullable=False)
+    token_address: Mapped[str] = mapped_column(String(42), nullable=False)
     # data id (UUID)
-    data_id = Column(String(36), default=False)
+    data_id: Mapped[str | None] = mapped_column(String(36), default=False)
     # name
-    name = Column(String(200))
+    name: Mapped[str | None] = mapped_column(String(200))
     # address
-    address = Column(String(200))
+    address: Mapped[str | None] = mapped_column(String(200))
     # amount
-    amount = Column(BigInteger)
+    amount: Mapped[int | None] = mapped_column(BigInteger)
     # price
-    price = Column(BigInteger)
+    price: Mapped[int | None] = mapped_column(BigInteger)
     # balance
-    balance = Column(BigInteger)
+    balance: Mapped[int | None] = mapped_column(BigInteger)
     # acquisition date(format: YYYY/MM/DD)
-    acquisition_date = Column(String(10))
+    acquisition_date: Mapped[str | None] = mapped_column(String(10))
     # created datetime(UTC)
     # NOTE: Because Base's created column is subject to change in the data patch, define another column.
-    data_created = Column(DateTime, nullable=False, default=datetime.utcnow)
+    data_created: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=datetime.utcnow
+    )

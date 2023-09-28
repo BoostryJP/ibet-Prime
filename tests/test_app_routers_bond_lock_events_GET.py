@@ -547,6 +547,7 @@ class TestAppRoutersBondLockEvents:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "test",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",
@@ -575,34 +576,37 @@ class TestAppRoutersBondLockEvents:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "test",
                     "loc": ["query", "offset"],
-                    "msg": "value is not a valid integer",
-                    "type": "type_error.integer",
+                    "msg": "Input should be a valid integer, unable to parse string "
+                    "as an integer",
+                    "type": "int_parsing",
                 },
                 {
+                    "input": "test",
                     "loc": ["query", "limit"],
-                    "msg": "value is not a valid integer",
-                    "type": "type_error.integer",
+                    "msg": "Input should be a valid integer, unable to parse string "
+                    "as an integer",
+                    "type": "int_parsing",
                 },
                 {
+                    "ctx": {"expected": "'Lock' or 'Unlock'"},
+                    "input": "test",
                     "loc": ["query", "category"],
-                    "msg": "value is not a valid enumeration member; permitted: 'Lock', 'Unlock'",
-                    "type": "type_error.enum",
-                    "ctx": {"enum_values": ["Lock", "Unlock"]},
+                    "msg": "Input should be 'Lock' or 'Unlock'",
+                    "type": "enum",
                 },
                 {
-                    "loc": ["query", "sort_item"],
-                    "msg": "value is not a valid enumeration member; permitted: 'account_address', 'lock_address', 'recipient_address', 'value', 'block_timestamp'",
-                    "type": "type_error.enum",
                     "ctx": {
-                        "enum_values": [
-                            "account_address",
-                            "lock_address",
-                            "recipient_address",
-                            "value",
-                            "block_timestamp",
-                        ]
+                        "expected": "'account_address', 'lock_address', "
+                        "'recipient_address', 'value' or "
+                        "'block_timestamp'"
                     },
+                    "input": "test",
+                    "loc": ["query", "sort_item"],
+                    "msg": "Input should be 'account_address', 'lock_address', "
+                    "'recipient_address', 'value' or 'block_timestamp'",
+                    "type": "enum",
                 },
             ],
         }

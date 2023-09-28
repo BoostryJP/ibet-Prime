@@ -19,9 +19,9 @@ SPDX-License-Identifier: Apache-2.0
 import os
 import sys
 import time
-from typing import List, Set
+from typing import Sequence, Set
 
-from sqlalchemy import create_engine
+from sqlalchemy import and_, create_engine, delete, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -75,11 +75,11 @@ class Processor:
                 )
 
                 # Get target PersonalInfo account address
-                idx_personal_info_list = (
-                    db_session.query(IDXPersonalInfo)
-                    .filter(IDXPersonalInfo.issuer_address == temporary.issuer_address)
-                    .all()
-                )
+                idx_personal_info_list: Sequence[IDXPersonalInfo] = db_session.scalars(
+                    select(IDXPersonalInfo).where(
+                        IDXPersonalInfo.issuer_address == temporary.issuer_address
+                    )
+                ).all()
 
                 count = len(idx_personal_info_list)
                 completed_count = 0
@@ -121,29 +121,27 @@ class Processor:
         finally:
             db_session.close()
 
-    def __get_temporary_list(self, db_session: Session) -> List[AccountRsaKeyTemporary]:
+    def __get_temporary_list(self, db_session: Session):
         # NOTE: rsa_private_key in Account DB and AccountRsaKeyTemporary DB is the same when API is executed,
         #       Account DB is changed when RSA generate batch is completed.
-        temporary_list = (
-            db_session.query(AccountRsaKeyTemporary)
+        temporary_list: Sequence[AccountRsaKeyTemporary] = db_session.scalars(
+            select(AccountRsaKeyTemporary)
             .join(
                 Account, AccountRsaKeyTemporary.issuer_address == Account.issuer_address
             )
-            .filter(AccountRsaKeyTemporary.rsa_private_key != Account.rsa_private_key)
-            .all()
-        )
+            .where(AccountRsaKeyTemporary.rsa_private_key != Account.rsa_private_key)
+        ).all()
 
         return temporary_list
 
     def __get_personal_info_contract_accessor_list(
         self, db_session: Session, issuer_address: str
     ) -> Set[PersonalInfoContract]:
-        token_list = (
-            db_session.query(Token)
-            .filter(Token.issuer_address == issuer_address)
-            .filter(Token.token_status == 1)
-            .all()
-        )
+        token_list: Sequence[Token] = db_session.scalars(
+            select(Token).where(
+                and_(Token.issuer_address == issuer_address, Token.token_status == 1)
+            )
+        ).all()
         personal_info_contract_list = set()
         for token in token_list:
             if token.type == TokenType.IBET_SHARE.value:
@@ -224,21 +222,16 @@ class Processor:
 
     @staticmethod
     def __sink_on_account(db_session: Session, issuer_address: str):
-        account = (
-            db_session.query(Account)
-            .filter(Account.issuer_address == issuer_address)
-            .first()
+        db_session.execute(
+            update(Account)
+            .where(Account.issuer_address == issuer_address)
+            .values(rsa_status=AccountRsaStatus.SET.value)
         )
-        if account is not None:
-            account.rsa_status = AccountRsaStatus.SET.value
-            db_session.merge(account)
-        temporary = (
-            db_session.query(AccountRsaKeyTemporary)
-            .filter(Account.issuer_address == issuer_address)
-            .first()
+        db_session.execute(
+            delete(AccountRsaKeyTemporary).where(
+                AccountRsaKeyTemporary.issuer_address == issuer_address
+            )
         )
-        if temporary is not None:
-            db_session.delete(temporary)
 
 
 def main():

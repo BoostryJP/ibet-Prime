@@ -22,6 +22,7 @@ import sys
 import pytest
 from eth_keyfile import decode_keyfile_json
 from fastapi.testclient import TestClient
+from sqlalchemy import text
 
 path = os.path.join(os.path.dirname(__file__), "../")
 sys.path.append(path)
@@ -68,7 +69,18 @@ def db():
 
     # Remove DB tables
     db.rollback()
-    Base.metadata.drop_all(engine)
+    db.begin()
+    for table in Base.metadata.sorted_tables:
+        db.execute(text(f'ALTER TABLE "{table.name}" DISABLE TRIGGER ALL;'))
+        db.execute(text(f'TRUNCATE TABLE "{table.name}";'))
+        if table.autoincrement_column is not None:
+            db.execute(
+                text(
+                    f"ALTER SEQUENCE {table.name}_{table.autoincrement_column.name}_seq RESTART WITH 1;"
+                )
+            )
+        db.execute(text(f'ALTER TABLE "{table.name}" ENABLE TRIGGER ALL;'))
+    db.commit()
     db.close()
 
     app.dependency_overrides[db_session] = db_session

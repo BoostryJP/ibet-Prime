@@ -20,18 +20,19 @@ import time
 from binascii import Error
 from datetime import datetime, timedelta
 from unittest import mock
-from unittest.mock import MagicMock, patch
+from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 from eth_keyfile import decode_keyfile_json
 from pydantic.error_wrappers import ValidationError
+from sqlalchemy import select
 from web3.exceptions import (
     ContractLogicError,
     InvalidAddress,
     TimeExhausted,
     TransactionNotFound,
+    ValidationError as Web3ValidationError,
 )
-from web3.exceptions import ValidationError as Web3ValidationError
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.blockchain import IbetShareContract
@@ -603,8 +604,10 @@ class TestUpdate:
         assert share_contract.is_canceled is False
         assert share_contract.memo == ""
 
-        _token_attr_update = db.query(TokenAttrUpdate).first()
-        assert _token_attr_update is None
+        _token_attr_update = db.scalars(select(TokenAttrUpdate).limit(1)).first()
+        assert _token_attr_update.id == 1
+        assert _token_attr_update.token_address == contract_address
+        assert _token_attr_update.updated_datetime > pre_datetime
 
     # <Normal_2>
     # Update all items
@@ -680,7 +683,7 @@ class TestUpdate:
         assert share_contract.principal_value == 9000
         assert share_contract.is_canceled is True
         assert share_contract.memo == "memo_test"
-        _token_attr_update = db.query(TokenAttrUpdate).first()
+        _token_attr_update = db.scalars(select(TokenAttrUpdate).limit(1)).first()
         assert _token_attr_update.id == 1
         assert _token_attr_update.token_address == contract_address
         assert _token_attr_update.updated_datetime > pre_datetime
@@ -703,19 +706,29 @@ class TestUpdate:
             UpdateParams(**_data)
         assert exc_info.value.errors() == [
             {
+                "ctx": {"error": ANY},
+                "input": 1e-14,
                 "loc": ("dividends",),
-                "msg": "dividends must be rounded to 13 decimal places",
+                "msg": "Value error, dividends must be rounded to 13 decimal places",
                 "type": "value_error",
+                "url": ANY,
             },
             {
+                "ctx": {"error": ANY},
+                "input": "invalid contract address",
                 "loc": ("tradable_exchange_contract_address",),
-                "msg": "tradable_exchange_contract_address is not a valid address",
+                "msg": "Value error, tradable_exchange_contract_address is not a valid "
+                "address",
                 "type": "value_error",
+                "url": ANY,
             },
             {
+                "ctx": {"error": ANY},
+                "input": "invalid contract address",
                 "loc": ("personal_info_contract_address",),
-                "msg": "personal_info_contract_address is not a valid address",
+                "msg": "Value error, personal_info_contract_address is not a valid address",
                 "type": "value_error",
+                "url": ANY,
             },
         ]
 
@@ -999,19 +1012,25 @@ class TestTransfer:
             TransferParams(**_data)
         assert exc_info.value.errors() == [
             {
+                "input": {},
                 "loc": ("from_address",),
-                "msg": "field required",
-                "type": "value_error.missing",
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
             },
             {
+                "input": {},
                 "loc": ("to_address",),
-                "msg": "field required",
-                "type": "value_error.missing",
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
             },
             {
+                "input": {},
                 "loc": ("amount",),
-                "msg": "field required",
-                "type": "value_error.missing",
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
             },
         ]
 
@@ -1028,20 +1047,28 @@ class TestTransfer:
             TransferParams(**_data)
         assert exc_info.value.errors() == [
             {
+                "ctx": {"error": ANY},
+                "input": "invalid from_address",
                 "loc": ("from_address",),
-                "msg": "from_address is not a valid address",
+                "msg": "Value error, from_address is not a valid address",
                 "type": "value_error",
+                "url": ANY,
             },
             {
+                "ctx": {"error": ANY},
+                "input": "invalid to_address",
                 "loc": ("to_address",),
-                "msg": "to_address is not a valid address",
+                "msg": "Value error, to_address is not a valid address",
                 "type": "value_error",
+                "url": ANY,
             },
             {
+                "ctx": {"gt": 0},
+                "input": 0,
                 "loc": ("amount",),
-                "msg": "ensure this value is greater than 0",
-                "type": "value_error.number.not_gt",
-                "ctx": {"limit_value": 0},
+                "msg": "Input should be greater than 0",
+                "type": "greater_than",
+                "url": ANY,
             },
         ]
 
@@ -1321,7 +1348,7 @@ class TestAdditionalIssue:
         balance = share_contract.get_account_balance(issuer_address)
         assert balance == arguments[3] + 10
 
-        _token_attr_update = db.query(TokenAttrUpdate).first()
+        _token_attr_update = db.scalars(select(TokenAttrUpdate).limit(1)).first()
         assert _token_attr_update.id == 1
         assert _token_attr_update.token_address == contract_address
         assert _token_attr_update.updated_datetime > pre_datetime
@@ -1338,14 +1365,18 @@ class TestAdditionalIssue:
             AdditionalIssueParams(**_data)
         assert exc_info.value.errors() == [
             {
+                "input": {},
                 "loc": ("account_address",),
-                "msg": "field required",
-                "type": "value_error.missing",
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
             },
             {
+                "input": {},
                 "loc": ("amount",),
-                "msg": "field required",
-                "type": "value_error.missing",
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
             },
         ]
 
@@ -1361,15 +1392,20 @@ class TestAdditionalIssue:
             AdditionalIssueParams(**_data)
         assert exc_info.value.errors() == [
             {
+                "ctx": {"error": ANY},
+                "input": issuer_address[:-1],
                 "loc": ("account_address",),
-                "msg": "account_address is not a valid address",
+                "msg": "Value error, account_address is not a valid address",
                 "type": "value_error",
+                "url": ANY,
             },
             {
+                "ctx": {"gt": 0},
+                "input": 0,
                 "loc": ("amount",),
-                "msg": "ensure this value is greater than 0",
-                "type": "value_error.number.not_gt",
-                "ctx": {"limit_value": 0},
+                "msg": "Input should be greater than 0",
+                "type": "greater_than",
+                "url": ANY,
             },
         ]
 
@@ -1637,7 +1673,7 @@ class TestRedeem:
         balance = share_contract.get_account_balance(issuer_address)
         assert balance == arguments[3] - 10
 
-        _token_attr_update = db.query(TokenAttrUpdate).first()
+        _token_attr_update = db.scalars(select(TokenAttrUpdate).limit(1)).first()
         assert _token_attr_update.id == 1
         assert _token_attr_update.token_address == contract_address
         assert _token_attr_update.updated_datetime > pre_datetime
@@ -1654,14 +1690,18 @@ class TestRedeem:
             RedeemParams(**_data)
         assert exc_info.value.errors() == [
             {
+                "input": {},
                 "loc": ("account_address",),
-                "msg": "field required",
-                "type": "value_error.missing",
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
             },
             {
+                "input": {},
                 "loc": ("amount",),
-                "msg": "field required",
-                "type": "value_error.missing",
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
             },
         ]
 
@@ -1677,15 +1717,20 @@ class TestRedeem:
             RedeemParams(**_data)
         assert exc_info.value.errors() == [
             {
+                "ctx": {"error": ANY},
+                "input": issuer_address[:-1],
                 "loc": ("account_address",),
-                "msg": "account_address is not a valid address",
+                "msg": "Value error, account_address is not a valid address",
                 "type": "value_error",
+                "url": ANY,
             },
             {
+                "ctx": {"gt": 0},
+                "input": 0,
                 "loc": ("amount",),
-                "msg": "ensure this value is greater than 0",
-                "type": "value_error.number.not_gt",
-                "ctx": {"limit_value": 0},
+                "msg": "Input should be greater than 0",
+                "type": "greater_than",
+                "url": ANY,
             },
         ]
 
@@ -2070,7 +2115,7 @@ class TestRecordAttrUpdate:
         share_contract.record_attr_update(db)
 
         # assertion
-        _update = db.query(TokenAttrUpdate).first()
+        _update = db.scalars(select(TokenAttrUpdate).limit(1)).first()
         assert _update.id == 1
         assert _update.token_address == self.token_address
         assert _update.updated_datetime == datetime(2021, 4, 27, 12, 34, 56)
@@ -2093,7 +2138,9 @@ class TestRecordAttrUpdate:
         share_contract.record_attr_update(db)
 
         # assertion
-        _update = db.query(TokenAttrUpdate).filter(TokenAttrUpdate.id == 2).first()
+        _update = db.scalars(
+            select(TokenAttrUpdate).where(TokenAttrUpdate.id == 2).limit(1)
+        ).first()
         assert _update.id == 2
         assert _update.token_address == self.token_address
         assert _update.updated_datetime == datetime(2021, 4, 27, 12, 34, 56)
@@ -2228,11 +2275,20 @@ class TestApproveTransfer:
 
         assert ex_info.value.errors() == [
             {
+                "input": "not-integer",
                 "loc": ("application_id",),
-                "msg": "value is not a valid integer",
-                "type": "type_error.integer",
+                "msg": "Input should be a valid integer, unable to parse string as an "
+                "integer",
+                "type": "int_parsing",
+                "url": ANY,
             },
-            {"loc": ("data",), "msg": "field required", "type": "value_error.missing"},
+            {
+                "input": {"application_id": "not-integer"},
+                "loc": ("data",),
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
+            },
         ]
 
     # <Error_2>
@@ -2567,11 +2623,20 @@ class TestCancelTransfer:
 
         assert ex_info.value.errors() == [
             {
+                "input": "not-integer",
                 "loc": ("application_id",),
-                "msg": "value is not a valid integer",
-                "type": "type_error.integer",
+                "msg": "Input should be a valid integer, unable to parse string as an "
+                "integer",
+                "type": "int_parsing",
+                "url": ANY,
             },
-            {"loc": ("data",), "msg": "field required", "type": "value_error.missing"},
+            {
+                "input": {"application_id": "not-integer"},
+                "loc": ("data",),
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
+            },
         ]
 
     # <Error_2>
@@ -2852,12 +2917,26 @@ class TestLock:
 
         assert ex_info.value.errors() == [
             {
+                "input": {},
                 "loc": ("lock_address",),
-                "msg": "field required",
-                "type": "value_error.missing",
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
             },
-            {"loc": ("value",), "msg": "field required", "type": "value_error.missing"},
-            {"loc": ("data",), "msg": "field required", "type": "value_error.missing"},
+            {
+                "input": {},
+                "loc": ("value",),
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
+            },
+            {
+                "input": {},
+                "loc": ("data",),
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
+            },
         ]
 
     # <Error_1_2>
@@ -2871,15 +2950,20 @@ class TestLock:
 
         assert ex_info.value.errors() == [
             {
+                "ctx": {"error": ANY},
+                "input": "test_address",
                 "loc": ("lock_address",),
-                "msg": "lock_address is not a valid address",
+                "msg": "Value error, lock_address is not a valid address",
                 "type": "value_error",
+                "url": ANY,
             },
             {
+                "ctx": {"gt": 0},
+                "input": 0,
                 "loc": ("value",),
-                "msg": "ensure this value is greater than 0",
-                "type": "value_error.number.not_gt",
-                "ctx": {"limit_value": 0},
+                "msg": "Input should be greater than 0",
+                "type": "greater_than",
+                "url": ANY,
             },
         ]
 
@@ -3205,22 +3289,40 @@ class TestForceUnlock:
 
         assert ex_info.value.errors() == [
             {
+                "input": {},
                 "loc": ("lock_address",),
-                "msg": "field required",
-                "type": "value_error.missing",
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
             },
             {
+                "input": {},
                 "loc": ("account_address",),
-                "msg": "field required",
-                "type": "value_error.missing",
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
             },
             {
+                "input": {},
                 "loc": ("recipient_address",),
-                "msg": "field required",
-                "type": "value_error.missing",
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
             },
-            {"loc": ("value",), "msg": "field required", "type": "value_error.missing"},
-            {"loc": ("data",), "msg": "field required", "type": "value_error.missing"},
+            {
+                "input": {},
+                "loc": ("value",),
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
+            },
+            {
+                "input": {},
+                "loc": ("data",),
+                "msg": "Field required",
+                "type": "missing",
+                "url": ANY,
+            },
         ]
 
     # <Error_1_2>
@@ -3240,25 +3342,36 @@ class TestForceUnlock:
 
         assert ex_info.value.errors() == [
             {
+                "ctx": {"error": ANY},
+                "input": "test_address",
                 "loc": ("lock_address",),
-                "msg": "lock_address is not a valid address",
+                "msg": "Value error, lock_address is not a valid address",
                 "type": "value_error",
+                "url": ANY,
             },
             {
+                "ctx": {"error": ANY},
+                "input": "test_address",
                 "loc": ("account_address",),
-                "msg": "account_address is not a valid address",
+                "msg": "Value error, account_address is not a valid address",
                 "type": "value_error",
+                "url": ANY,
             },
             {
+                "ctx": {"error": ANY},
+                "input": "test_address",
                 "loc": ("recipient_address",),
-                "msg": "recipient_address is not a valid address",
+                "msg": "Value error, recipient_address is not a valid address",
                 "type": "value_error",
+                "url": ANY,
             },
             {
+                "ctx": {"gt": 0},
+                "input": 0,
                 "loc": ("value",),
-                "msg": "ensure this value is greater than 0",
-                "type": "value_error.number.not_gt",
-                "ctx": {"limit_value": 0},
+                "msg": "Input should be greater than 0",
+                "type": "greater_than",
+                "url": ANY,
             },
         ]
 

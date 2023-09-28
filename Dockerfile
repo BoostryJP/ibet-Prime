@@ -31,7 +31,8 @@ RUN apt-get update -q \
  language-pack-ja-base \
  language-pack-ja \
  git \
- libyaml-cpp-dev
+ libyaml-cpp-dev \
+ liblzma-dev
 
 # remove unnessesory package files
 RUN apt clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -55,7 +56,7 @@ RUN . ~/.bash_profile \
 
 # install poetry
 RUN . ~/.bash_profile \
- && python -m pip install poetry==1.4.0
+ && python -m pip install poetry==1.5.1
 RUN . ~/.bash_profile \
  && poetry config virtualenvs.create false
 

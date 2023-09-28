@@ -18,14 +18,23 @@ SPDX-License-Identifier: Apache-2.0
 """
 import logging
 import uuid
-from typing import List
+from typing import List, Sequence
 from unittest.mock import ANY, patch
 
 import pytest
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.exceptions import ContractRevertError, SendTransactionError
+from app.model.blockchain.tx_params.ibet_share import (
+    AdditionalIssueParams as IbetShareAdditionalIssueParams,
+    RedeemParams as IbetShareRedeemParams,
+)
+from app.model.blockchain.tx_params.ibet_straight_bond import (
+    AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
+    RedeemParams as IbetStraightBondRedeemParams,
+)
 from app.model.db import (
     Account,
     BatchIssueRedeem,
@@ -34,12 +43,6 @@ from app.model.db import (
     Notification,
     NotificationType,
     TokenType,
-)
-from app.model.schema import (
-    IbetShareAdditionalIssue,
-    IbetShareRedeem,
-    IbetStraightBondAdditionalIssue,
-    IbetStraightBondRedeem,
 )
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_batch_issue_redeem import LOG, Processor
@@ -119,7 +122,7 @@ class TestProcessor:
 
             # Assertion: contract
             IbetStraightBondContract_additional_issue.assert_called_with(
-                data=IbetStraightBondAdditionalIssue(
+                data=IbetStraightBondAdditionalIssueParams(
                     account_address=target_address, amount=target_amount
                 ),
                 tx_from=issuer_address,
@@ -127,18 +130,16 @@ class TestProcessor:
             )
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = (
-            db.query(BatchIssueRedeemUpload)
-            .filter(BatchIssueRedeemUpload.upload_id == upload_id)
-            .first()
-        )
+        _upload_after: BatchIssueRedeemUpload = db.scalars(
+            select(BatchIssueRedeemUpload)
+            .where(BatchIssueRedeemUpload.upload_id == upload_id)
+            .limit(1)
+        ).first()
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = (
-            db.query(BatchIssueRedeem)
-            .filter(BatchIssueRedeem.upload_id == upload_id)
-            .all()
-        )
+        _upload_data_after: List[BatchIssueRedeem] = db.scalars(
+            select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+        ).all()
         assert len(_upload_data_after) == 1
         assert _upload_data_after[0].status == 1
 
@@ -150,7 +151,7 @@ class TestProcessor:
             == 1
         )
 
-        _notification_list = db.query(Notification).all()
+        _notification_list = db.scalars(select(Notification)).all()
         for _notification in _notification_list:
             assert _notification.notice_id is not None
             assert _notification.issuer_address == issuer_address
@@ -222,7 +223,7 @@ class TestProcessor:
 
         # Assertion: contract
         IbetStraightBondContract_redeem.assert_called_with(
-            data=IbetStraightBondRedeem(
+            data=IbetStraightBondRedeemParams(
                 account_address=target_address, amount=target_amount
             ),
             tx_from=issuer_address,
@@ -230,18 +231,16 @@ class TestProcessor:
         )
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = (
-            db.query(BatchIssueRedeemUpload)
-            .filter(BatchIssueRedeemUpload.upload_id == upload_id)
-            .first()
-        )
+        _upload_after: BatchIssueRedeemUpload = db.scalars(
+            select(BatchIssueRedeemUpload)
+            .where(BatchIssueRedeemUpload.upload_id == upload_id)
+            .limit(1)
+        ).first()
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = (
-            db.query(BatchIssueRedeem)
-            .filter(BatchIssueRedeem.upload_id == upload_id)
-            .all()
-        )
+        _upload_data_after: List[BatchIssueRedeem] = db.scalars(
+            select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+        ).all()
         assert len(_upload_data_after) == 1
         assert _upload_data_after[0].status == 1
 
@@ -253,7 +252,7 @@ class TestProcessor:
             == 1
         )
 
-        _notification_list = db.query(Notification).all()
+        _notification_list = db.scalars(select(Notification)).all()
         for _notification in _notification_list:
             assert _notification.notice_id is not None
             assert _notification.issuer_address == issuer_address
@@ -325,7 +324,7 @@ class TestProcessor:
 
         # Assertion: contract
         IbetShareContract_additional_issue.assert_called_with(
-            data=IbetShareAdditionalIssue(
+            data=IbetShareAdditionalIssueParams(
                 account_address=target_address, amount=target_amount
             ),
             tx_from=issuer_address,
@@ -333,18 +332,16 @@ class TestProcessor:
         )
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = (
-            db.query(BatchIssueRedeemUpload)
-            .filter(BatchIssueRedeemUpload.upload_id == upload_id)
-            .first()
-        )
+        _upload_after: BatchIssueRedeemUpload = db.scalars(
+            select(BatchIssueRedeemUpload)
+            .where(BatchIssueRedeemUpload.upload_id == upload_id)
+            .limit(1)
+        ).first()
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = (
-            db.query(BatchIssueRedeem)
-            .filter(BatchIssueRedeem.upload_id == upload_id)
-            .all()
-        )
+        _upload_data_after: List[BatchIssueRedeem] = db.scalars(
+            select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+        ).all()
         assert len(_upload_data_after) == 1
         assert _upload_data_after[0].status == 1
 
@@ -356,7 +353,7 @@ class TestProcessor:
             == 1
         )
 
-        _notification_list = db.query(Notification).all()
+        _notification_list = db.scalars(select(Notification)).all()
         for _notification in _notification_list:
             assert _notification.notice_id is not None
             assert _notification.issuer_address == issuer_address
@@ -428,24 +425,24 @@ class TestProcessor:
 
         # Assertion: contract
         IbetShareContract_redeem.assert_called_with(
-            data=IbetShareRedeem(account_address=target_address, amount=target_amount),
+            data=IbetShareRedeemParams(
+                account_address=target_address, amount=target_amount
+            ),
             tx_from=issuer_address,
             private_key=issuer_pk,
         )
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = (
-            db.query(BatchIssueRedeemUpload)
-            .filter(BatchIssueRedeemUpload.upload_id == upload_id)
-            .first()
-        )
+        _upload_after: BatchIssueRedeemUpload = db.scalars(
+            select(BatchIssueRedeemUpload)
+            .where(BatchIssueRedeemUpload.upload_id == upload_id)
+            .limit(1)
+        ).first()
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = (
-            db.query(BatchIssueRedeem)
-            .filter(BatchIssueRedeem.upload_id == upload_id)
-            .all()
-        )
+        _upload_data_after: List[BatchIssueRedeem] = db.scalars(
+            select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+        ).all()
         assert len(_upload_data_after) == 1
         assert _upload_data_after[0].status == 1
 
@@ -457,7 +454,7 @@ class TestProcessor:
             == 1
         )
 
-        _notification_list = db.query(Notification).all()
+        _notification_list = db.scalars(select(Notification)).all()
         for _notification in _notification_list:
             assert _notification.notice_id is not None
             assert _notification.issuer_address == issuer_address
@@ -521,18 +518,16 @@ class TestProcessor:
         IbetStraightBondContract_additional_issue.assert_not_called()
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = (
-            db.query(BatchIssueRedeemUpload)
-            .filter(BatchIssueRedeemUpload.upload_id == upload_id)
-            .first()
-        )
+        _upload_after: BatchIssueRedeemUpload = db.scalars(
+            select(BatchIssueRedeemUpload)
+            .where(BatchIssueRedeemUpload.upload_id == upload_id)
+            .limit(1)
+        ).first()
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = (
-            db.query(BatchIssueRedeem)
-            .filter(BatchIssueRedeem.upload_id == upload_id)
-            .all()
-        )
+        _upload_data_after: List[BatchIssueRedeem] = db.scalars(
+            select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+        ).all()
         assert len(_upload_data_after) == 1
         assert _upload_data_after[0].status == 0
 
@@ -544,7 +539,7 @@ class TestProcessor:
             == 1
         )
 
-        _notification_list = db.query(Notification).all()
+        _notification_list = db.scalars(select(Notification)).all()
         for _notification in _notification_list:
             assert _notification.notice_id is not None
             assert _notification.issuer_address == issuer_address
@@ -613,18 +608,16 @@ class TestProcessor:
         IbetStraightBondContract_additional_issue.assert_not_called()
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = (
-            db.query(BatchIssueRedeemUpload)
-            .filter(BatchIssueRedeemUpload.upload_id == upload_id)
-            .first()
-        )
+        _upload_after: BatchIssueRedeemUpload = db.scalars(
+            select(BatchIssueRedeemUpload)
+            .where(BatchIssueRedeemUpload.upload_id == upload_id)
+            .limit(1)
+        ).first()
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = (
-            db.query(BatchIssueRedeem)
-            .filter(BatchIssueRedeem.upload_id == upload_id)
-            .all()
-        )
+        _upload_data_after: List[BatchIssueRedeem] = db.scalars(
+            select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+        ).all()
         assert len(_upload_data_after) == 1
         assert _upload_data_after[0].status == 0
 
@@ -636,7 +629,7 @@ class TestProcessor:
             == 1
         )
 
-        _notification_list = db.query(Notification).all()
+        _notification_list = db.scalars(select(Notification)).all()
         for _notification in _notification_list:
             assert _notification.notice_id is not None
             assert _notification.issuer_address == issuer_address
@@ -709,18 +702,16 @@ class TestProcessor:
             processor.process()
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = (
-            db.query(BatchIssueRedeemUpload)
-            .filter(BatchIssueRedeemUpload.upload_id == upload_id)
-            .first()
-        )
+        _upload_after: BatchIssueRedeemUpload = db.scalars(
+            select(BatchIssueRedeemUpload)
+            .where(BatchIssueRedeemUpload.upload_id == upload_id)
+            .limit(1)
+        ).first()
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = (
-            db.query(BatchIssueRedeem)
-            .filter(BatchIssueRedeem.upload_id == upload_id)
-            .all()
-        )
+        _upload_data_after: List[BatchIssueRedeem] = db.scalars(
+            select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
+        ).all()
         assert len(_upload_data_after) == 2
         assert _upload_data_after[0].status == 2
         assert _upload_data_after[1].status == 2
@@ -733,7 +724,7 @@ class TestProcessor:
             == 2
         )
 
-        _notification_list = db.query(Notification).all()
+        _notification_list = db.scalars(select(Notification)).all()
         for _notification in _notification_list:
             assert _notification.notice_id is not None
             assert _notification.issuer_address == issuer_address
@@ -823,33 +814,29 @@ class TestProcessor:
             processor.process()
 
         # Assertion: DB
-        _upload_1_after: BatchIssueRedeemUpload | None = (
-            db.query(BatchIssueRedeemUpload)
-            .filter(BatchIssueRedeemUpload.upload_id == upload_1_id)
-            .first()
-        )
+        _upload_1_after: BatchIssueRedeemUpload | None = db.scalars(
+            select(BatchIssueRedeemUpload)
+            .where(BatchIssueRedeemUpload.upload_id == upload_1_id)
+            .limit(1)
+        ).first()
         assert _upload_1_after.processed == True
 
-        _upload_1_data_after: List[BatchIssueRedeem] = (
-            db.query(BatchIssueRedeem)
-            .filter(BatchIssueRedeem.upload_id == upload_1_id)
-            .all()
-        )
+        _upload_1_data_after: Sequence[BatchIssueRedeem] = db.scalars(
+            select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_1_id)
+        ).all()
         assert len(_upload_1_data_after) == 1
         assert _upload_1_data_after[0].status == 2
 
-        _upload_2_after: BatchIssueRedeemUpload | None = (
-            db.query(BatchIssueRedeemUpload)
-            .filter(BatchIssueRedeemUpload.upload_id == upload_2_id)
-            .first()
-        )
+        _upload_2_after: BatchIssueRedeemUpload | None = db.scalars(
+            select(BatchIssueRedeemUpload)
+            .where(BatchIssueRedeemUpload.upload_id == upload_2_id)
+            .limit(1)
+        ).first()
         assert _upload_2_after.processed == True
 
-        _upload_2_data_after: List[BatchIssueRedeem] = (
-            db.query(BatchIssueRedeem)
-            .filter(BatchIssueRedeem.upload_id == upload_2_id)
-            .all()
-        )
+        _upload_2_data_after: Sequence[BatchIssueRedeem] = db.scalars(
+            select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_2_id)
+        ).all()
         assert len(_upload_2_data_after) == 1
         assert _upload_2_data_after[0].status == 2
 
@@ -875,7 +862,7 @@ class TestProcessor:
             == 1
         )
 
-        _notification_list = db.query(Notification).all()
+        _notification_list = db.scalars(select(Notification)).all()
         assert _notification_list[0].notice_id is not None
         assert _notification_list[0].issuer_address == issuer_address
         assert _notification_list[0].priority == 1

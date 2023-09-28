@@ -21,6 +21,8 @@ from datetime import datetime, timezone
 from unittest import mock
 from unittest.mock import ANY, MagicMock
 
+from sqlalchemy import select
+
 from app.exceptions import SendTransactionError
 from app.model.blockchain import E2EMessaging
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey, TransactionLock
@@ -47,9 +49,9 @@ class TestAppRoutersE2EMessagingAccountsPOST:
 
     # <Normal_1>
     def test_normal_1(self, client, db, e2e_messaging_contract):
-        _accounts_before = db.query(E2EMessagingAccount).all()
-        _rsa_key_before = db.query(E2EMessagingAccountRsaKey).all()
-        _transaction_before = db.query(TransactionLock).all()
+        _accounts_before = db.scalars(select(E2EMessagingAccount)).all()
+        _rsa_key_before = db.scalars(select(E2EMessagingAccountRsaKey)).all()
+        _transaction_before = db.scalars(select(TransactionLock)).all()
 
         # mock
         mock_E2EMessaging_set_public_key = mock.patch(
@@ -99,9 +101,9 @@ class TestAppRoutersE2EMessagingAccountsPOST:
             "is_deleted": False,
         }
 
-        _accounts_after = db.query(E2EMessagingAccount).all()
-        _rsa_key_after = db.query(E2EMessagingAccountRsaKey).all()
-        _transaction_after = db.query(TransactionLock).all()
+        _accounts_after = db.scalars(select(E2EMessagingAccount)).all()
+        _rsa_key_after = db.scalars(select(E2EMessagingAccountRsaKey)).all()
+        _transaction_after = db.scalars(select(TransactionLock)).all()
 
         assert 0 == len(_accounts_before)
         assert 1 == len(_accounts_after)
@@ -133,9 +135,9 @@ class TestAppRoutersE2EMessagingAccountsPOST:
     # <Normal_2>
     # use AWS KMS
     def test_normal_2(self, client, db, e2e_messaging_contract):
-        _accounts_before = db.query(E2EMessagingAccount).all()
-        _rsa_key_before = db.query(E2EMessagingAccountRsaKey).all()
-        _transaction_before = db.query(TransactionLock).all()
+        _accounts_before = db.scalars(select(E2EMessagingAccount)).all()
+        _rsa_key_before = db.scalars(select(E2EMessagingAccountRsaKey)).all()
+        _transaction_before = db.scalars(select(TransactionLock)).all()
 
         # mock
         class KMSClientMock:
@@ -202,9 +204,9 @@ class TestAppRoutersE2EMessagingAccountsPOST:
             "is_deleted": False,
         }
 
-        _accounts_after = db.query(E2EMessagingAccount).all()
-        _rsa_key_after = db.query(E2EMessagingAccountRsaKey).all()
-        _transaction_after = db.query(TransactionLock).all()
+        _accounts_after = db.scalars(select(E2EMessagingAccount)).all()
+        _rsa_key_after = db.scalars(select(E2EMessagingAccountRsaKey)).all()
+        _transaction_after = db.scalars(select(TransactionLock)).all()
 
         assert 0 == len(_accounts_before)
         assert 1 == len(_accounts_after)
@@ -246,9 +248,10 @@ class TestAppRoutersE2EMessagingAccountsPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 }
             ],
         }
@@ -266,10 +269,11 @@ class TestAppRoutersE2EMessagingAccountsPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": {},
                     "loc": ["body", "eoa_password"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
-                },
+                    "msg": "Field required",
+                    "type": "missing",
+                }
             ],
         }
 
@@ -294,26 +298,34 @@ class TestAppRoutersE2EMessagingAccountsPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": "cGFzc3dvcmQ=\n",
                     "loc": ["body", "eoa_password"],
-                    "msg": "eoa_password is not a Base64-encoded encrypted data",
+                    "msg": "Value error, eoa_password is not a Base64-encoded "
+                    "encrypted data",
                     "type": "value_error",
                 },
                 {
+                    "ctx": {"error": {}},
+                    "input": "cGFzc3dvcmRfcnNh\n",
                     "loc": ["body", "rsa_passphrase"],
-                    "msg": "rsa_passphrase is not a Base64-encoded encrypted data",
+                    "msg": "Value error, rsa_passphrase is not a Base64-encoded "
+                    "encrypted data",
                     "type": "value_error",
                 },
                 {
+                    "ctx": {"ge": 0},
+                    "input": -1,
                     "loc": ["body", "rsa_key_generate_interval"],
-                    "ctx": {"limit_value": 0},
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
                 {
+                    "ctx": {"ge": 0},
+                    "input": -1,
                     "loc": ["body", "rsa_generation"],
-                    "ctx": {"limit_value": 0},
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
             ],
         }
@@ -337,16 +349,18 @@ class TestAppRoutersE2EMessagingAccountsPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"le": 10000},
+                    "input": 10001,
                     "loc": ["body", "rsa_key_generate_interval"],
-                    "ctx": {"limit_value": 10_000},
-                    "msg": "ensure this value is less than or equal to 10000",
-                    "type": "value_error.number.not_le",
+                    "msg": "Input should be less than or equal to 10000",
+                    "type": "less_than_equal",
                 },
                 {
+                    "ctx": {"le": 100},
+                    "input": 101,
                     "loc": ["body", "rsa_generation"],
-                    "ctx": {"limit_value": 100},
-                    "msg": "ensure this value is less than or equal to 100",
-                    "type": "value_error.number.not_le",
+                    "msg": "Input should be less than or equal to 100",
+                    "type": "less_than_equal",
                 },
             ],
         }

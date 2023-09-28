@@ -30,7 +30,14 @@ from web3.middleware import geth_poa_middleware
 
 import config
 from app.model.blockchain import IbetStraightBondContract
-from app.model.db import Account, Token, TokenType, UpdateToken, UpdateTokenTrigger
+from app.model.db import (
+    Account,
+    Token,
+    TokenType,
+    TokenUpdateOperationCategory,
+    TokenUpdateOperationLog,
+    UpdateToken,
+)
 from app.model.schema import IbetStraightBondCreate
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
@@ -88,17 +95,19 @@ def deploy_bond_token_contract(
     ).__dict__
 
     token_create_param.pop("image_url")
-    update_token = UpdateToken()
-    update_token.token_address = token_address
-    update_token.type = TokenType.IBET_STRAIGHT_BOND.value
-    update_token.issuer_address = address
-    update_token.arguments = token_create_param
-    update_token.original_contents = None
-    update_token.status = 1
-    update_token.trigger = UpdateTokenTrigger.ISSUE.value
+    token_update_operation_log = TokenUpdateOperationLog()
+    token_update_operation_log.issuer_address = address
+    token_update_operation_log.token_address = token_address
+    token_update_operation_log.type = TokenType.IBET_STRAIGHT_BOND.value
+    token_update_operation_log.issuer_address = address
+    token_update_operation_log.arguments = token_create_param
+    token_update_operation_log.original_contents = None
+    token_update_operation_log.operation_category = (
+        TokenUpdateOperationCategory.ISSUE.value
+    )
     if created:
-        update_token.created = created
-    session.add(update_token)
+        token_update_operation_log.created = created
+    session.add(token_update_operation_log)
 
     build_tx_param = {
         "chainId": config.CHAIN_ID,
@@ -315,7 +324,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
                         **{"interest_rate": 0.5},
                     },
                     "modified_contents": {"interest_payment_date": ["0101", "0701"]},
-                    "trigger": UpdateTokenTrigger.UPDATE.value,
+                    "operation_category": TokenUpdateOperationCategory.UPDATE.value,
                     "created": ANY,
                 },
                 {
@@ -324,19 +333,19 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
                         **{"face_value": 10000},
                     },
                     "modified_contents": {"interest_rate": 0.5},
-                    "trigger": UpdateTokenTrigger.UPDATE.value,
+                    "operation_category": TokenUpdateOperationCategory.UPDATE.value,
                     "created": ANY,
                 },
                 {
                     "original_contents": original_after_issue,
                     "modified_contents": {"face_value": 10000},
-                    "trigger": UpdateTokenTrigger.UPDATE.value,
+                    "operation_category": TokenUpdateOperationCategory.UPDATE.value,
                     "created": ANY,
                 },
                 {
                     "original_contents": None,
                     "modified_contents": create_param,
-                    "trigger": UpdateTokenTrigger.ISSUE.value,
+                    "operation_category": TokenUpdateOperationCategory.ISSUE.value,
                     "created": ANY,
                 },
             ],
@@ -382,7 +391,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         resp = client.get(
             self.base_url.format(_token_address),
             params={
-                "trigger": "Update",
+                "operation_category": "Update",
             },
         )
 
@@ -407,7 +416,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
                         **{"interest_rate": 0.5},
                     },
                     "modified_contents": {"interest_payment_date": ["0101", "0701"]},
-                    "trigger": UpdateTokenTrigger.UPDATE.value,
+                    "operation_category": TokenUpdateOperationCategory.UPDATE.value,
                     "created": ANY,
                 },
                 {
@@ -416,13 +425,13 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
                         **{"face_value": 10000},
                     },
                     "modified_contents": {"interest_rate": 0.5},
-                    "trigger": UpdateTokenTrigger.UPDATE.value,
+                    "operation_category": TokenUpdateOperationCategory.UPDATE.value,
                     "created": ANY,
                 },
                 {
                     "original_contents": original_after_issue,
                     "modified_contents": {"face_value": 10000},
-                    "trigger": UpdateTokenTrigger.UPDATE.value,
+                    "operation_category": TokenUpdateOperationCategory.UPDATE.value,
                     "created": ANY,
                 },
             ],
@@ -489,13 +498,13 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
                 {
                     "original_contents": original_after_issue,
                     "modified_contents": {"face_value": 10000},
-                    "trigger": UpdateTokenTrigger.UPDATE.value,
+                    "operation_category": TokenUpdateOperationCategory.UPDATE.value,
                     "created": ANY,
                 },
                 {
                     "original_contents": None,
                     "modified_contents": create_param,
-                    "trigger": UpdateTokenTrigger.ISSUE.value,
+                    "operation_category": TokenUpdateOperationCategory.ISSUE.value,
                     "created": ANY,
                 },
             ],
@@ -537,33 +546,33 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.abi = ""
         db.add(_token)
 
-        _update_token_1 = UpdateToken()
-        _update_token_1.created = datetime(2023, 5, 2, tzinfo=timezone("UTC"))
-        _update_token_1.token_address = _token_address
-        _update_token_1.type = TokenType.IBET_STRAIGHT_BOND.value
-        _update_token_1.arguments = {"memo": "20230502"}
-        _update_token_1.original_contents = {}
-        _update_token_1.status = 1
-        _update_token_1.trigger = UpdateTokenTrigger.UPDATE.value
-        db.add(_update_token_1)
-        _update_token_2 = UpdateToken()
-        _update_token_2.created = datetime(2023, 5, 3, tzinfo=timezone("UTC"))
-        _update_token_2.token_address = _token_address
-        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND.value
-        _update_token_2.arguments = {"memo": "20230503"}
-        _update_token_2.original_contents = {}
-        _update_token_2.status = 1
-        _update_token_2.trigger = UpdateTokenTrigger.UPDATE.value
-        db.add(_update_token_2)
-        _update_token_3 = UpdateToken()
-        _update_token_3.created = datetime(2023, 5, 4, tzinfo=timezone("UTC"))
-        _update_token_3.token_address = _token_address
-        _update_token_3.type = TokenType.IBET_STRAIGHT_BOND.value
-        _update_token_3.arguments = {"memo": "20230504"}
-        _update_token_3.original_contents = {}
-        _update_token_3.status = 1
-        _update_token_3.trigger = UpdateTokenTrigger.UPDATE.value
-        db.add(_update_token_3)
+        _operation_log_1 = TokenUpdateOperationLog()
+        _operation_log_1.created = datetime(2023, 5, 2, tzinfo=timezone("UTC"))
+        _operation_log_1.issuer_address = _issuer_address
+        _operation_log_1.token_address = _token_address
+        _operation_log_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        _operation_log_1.arguments = {"memo": "20230502"}
+        _operation_log_1.original_contents = {}
+        _operation_log_1.operation_category = TokenUpdateOperationCategory.UPDATE.value
+        db.add(_operation_log_1)
+        _operation_log_2 = TokenUpdateOperationLog()
+        _operation_log_2.created = datetime(2023, 5, 3, tzinfo=timezone("UTC"))
+        _operation_log_2.issuer_address = _issuer_address
+        _operation_log_2.token_address = _token_address
+        _operation_log_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        _operation_log_2.arguments = {"memo": "20230503"}
+        _operation_log_2.original_contents = {}
+        _operation_log_2.operation_category = TokenUpdateOperationCategory.UPDATE.value
+        db.add(_operation_log_2)
+        _operation_log_3 = TokenUpdateOperationLog()
+        _operation_log_3.created = datetime(2023, 5, 4, tzinfo=timezone("UTC"))
+        _operation_log_3.issuer_address = _issuer_address
+        _operation_log_3.token_address = _token_address
+        _operation_log_3.type = TokenType.IBET_STRAIGHT_BOND.value
+        _operation_log_3.arguments = {"memo": "20230504"}
+        _operation_log_3.original_contents = {}
+        _operation_log_3.operation_category = TokenUpdateOperationCategory.UPDATE.value
+        db.add(_operation_log_3)
         db.commit()
 
         # request target API
@@ -591,13 +600,13 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
                 {
                     "original_contents": {},
                     "modified_contents": {"memo": "20230504"},
-                    "trigger": UpdateTokenTrigger.UPDATE.value,
+                    "operation_category": TokenUpdateOperationCategory.UPDATE.value,
                     "created": ANY,
                 },
                 {
                     "original_contents": {},
                     "modified_contents": {"memo": "20230503"},
-                    "trigger": UpdateTokenTrigger.UPDATE.value,
+                    "operation_category": TokenUpdateOperationCategory.UPDATE.value,
                     "created": ANY,
                 },
             ],
@@ -639,33 +648,33 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.abi = ""
         db.add(_token)
 
-        _update_token_1 = UpdateToken()
-        _update_token_1.created = datetime(2023, 5, 2, tzinfo=timezone("UTC"))
-        _update_token_1.token_address = _token_address
-        _update_token_1.type = TokenType.IBET_STRAIGHT_BOND.value
-        _update_token_1.arguments = {"memo": "20230502"}
-        _update_token_1.original_contents = {}
-        _update_token_1.status = 1
-        _update_token_1.trigger = UpdateTokenTrigger.UPDATE.value
-        db.add(_update_token_1)
-        _update_token_2 = UpdateToken()
-        _update_token_2.created = datetime(2023, 5, 3, tzinfo=timezone("UTC"))
-        _update_token_2.token_address = _token_address
-        _update_token_2.type = TokenType.IBET_STRAIGHT_BOND.value
-        _update_token_2.arguments = {"memo": "20230503"}
-        _update_token_2.original_contents = {}
-        _update_token_2.status = 1
-        _update_token_2.trigger = UpdateTokenTrigger.UPDATE.value
-        db.add(_update_token_2)
-        _update_token_3 = UpdateToken()
-        _update_token_3.created = datetime(2023, 5, 4, tzinfo=timezone("UTC"))
-        _update_token_3.token_address = _token_address
-        _update_token_3.type = TokenType.IBET_STRAIGHT_BOND.value
-        _update_token_3.arguments = {"memo": "20230504"}
-        _update_token_3.original_contents = {}
-        _update_token_3.status = 1
-        _update_token_3.trigger = UpdateTokenTrigger.UPDATE.value
-        db.add(_update_token_3)
+        _operation_log_1 = TokenUpdateOperationLog()
+        _operation_log_1.created = datetime(2023, 5, 2, tzinfo=timezone("UTC"))
+        _operation_log_1.issuer_address = _issuer_address
+        _operation_log_1.token_address = _token_address
+        _operation_log_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        _operation_log_1.arguments = {"memo": "20230502"}
+        _operation_log_1.original_contents = {}
+        _operation_log_1.operation_category = TokenUpdateOperationCategory.UPDATE.value
+        db.add(_operation_log_1)
+        _operation_log_2 = TokenUpdateOperationLog()
+        _operation_log_2.created = datetime(2023, 5, 3, tzinfo=timezone("UTC"))
+        _operation_log_2.issuer_address = _issuer_address
+        _operation_log_2.token_address = _token_address
+        _operation_log_2.type = TokenType.IBET_STRAIGHT_BOND.value
+        _operation_log_2.arguments = {"memo": "20230503"}
+        _operation_log_2.original_contents = {}
+        _operation_log_2.operation_category = TokenUpdateOperationCategory.UPDATE.value
+        db.add(_operation_log_2)
+        _operation_log_3 = TokenUpdateOperationLog()
+        _operation_log_3.created = datetime(2023, 5, 4, tzinfo=timezone("UTC"))
+        _operation_log_3.issuer_address = _issuer_address
+        _operation_log_3.token_address = _token_address
+        _operation_log_3.type = TokenType.IBET_STRAIGHT_BOND.value
+        _operation_log_3.arguments = {"memo": "20230504"}
+        _operation_log_3.original_contents = {}
+        _operation_log_3.operation_category = TokenUpdateOperationCategory.UPDATE.value
+        db.add(_operation_log_3)
         db.commit()
 
         # request target API
@@ -689,7 +698,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
                 {
                     "original_contents": None,
                     "modified_contents": create_param,
-                    "trigger": UpdateTokenTrigger.ISSUE.value,
+                    "operation_category": TokenUpdateOperationCategory.ISSUE.value,
                     "created": ANY,
                 },
             ],
@@ -756,13 +765,13 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
                 {
                     "original_contents": None,
                     "modified_contents": create_param,
-                    "trigger": UpdateTokenTrigger.ISSUE.value,
+                    "operation_category": TokenUpdateOperationCategory.ISSUE.value,
                     "created": ANY,
                 },
                 {
                     "original_contents": original_after_issue,
                     "modified_contents": {"face_value": 10000},
-                    "trigger": UpdateTokenTrigger.UPDATE.value,
+                    "operation_category": TokenUpdateOperationCategory.UPDATE.value,
                     "created": ANY,
                 },
                 {
@@ -771,7 +780,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
                         **{"face_value": 10000},
                     },
                     "modified_contents": {"interest_rate": 0.5},
-                    "trigger": UpdateTokenTrigger.UPDATE.value,
+                    "operation_category": TokenUpdateOperationCategory.UPDATE.value,
                     "created": ANY,
                 },
                 {
@@ -781,7 +790,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
                         **{"interest_rate": 0.5},
                     },
                     "modified_contents": {"interest_payment_date": ["0101", "0701"]},
-                    "trigger": UpdateTokenTrigger.UPDATE.value,
+                    "operation_category": TokenUpdateOperationCategory.UPDATE.value,
                     "created": ANY,
                 },
             ],
@@ -828,7 +837,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
             self.base_url.format(_token_address),
             params={
                 "sort_order": 0,
-                "sort_item": "trigger",
+                "sort_item": "operation_category",
             },
         )
 
@@ -849,7 +858,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
                 {
                     "original_contents": None,
                     "modified_contents": create_param,
-                    "trigger": UpdateTokenTrigger.ISSUE.value,
+                    "operation_category": TokenUpdateOperationCategory.ISSUE.value,
                     "created": ANY,
                 },
                 {
@@ -859,7 +868,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
                         **{"interest_rate": 0.5},
                     },
                     "modified_contents": {"interest_payment_date": ["0101", "0701"]},
-                    "trigger": UpdateTokenTrigger.UPDATE.value,
+                    "operation_category": TokenUpdateOperationCategory.UPDATE.value,
                     "created": ANY,
                 },
                 {
@@ -868,13 +877,13 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
                         **{"face_value": 10000},
                     },
                     "modified_contents": {"interest_rate": 0.5},
-                    "trigger": UpdateTokenTrigger.UPDATE.value,
+                    "operation_category": TokenUpdateOperationCategory.UPDATE.value,
                     "created": ANY,
                 },
                 {
                     "original_contents": original_after_issue,
                     "modified_contents": {"face_value": 10000},
-                    "trigger": UpdateTokenTrigger.UPDATE.value,
+                    "operation_category": TokenUpdateOperationCategory.UPDATE.value,
                     "created": ANY,
                 },
             ],
@@ -945,13 +954,13 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
                         **{"face_value": 10000},
                     },
                     "modified_contents": {"interest_rate": 0.5},
-                    "trigger": UpdateTokenTrigger.UPDATE.value,
+                    "operation_category": TokenUpdateOperationCategory.UPDATE.value,
                     "created": ANY,
                 },
                 {
                     "original_contents": original_after_issue,
                     "modified_contents": {"face_value": 10000},
-                    "trigger": UpdateTokenTrigger.UPDATE.value,
+                    "operation_category": TokenUpdateOperationCategory.UPDATE.value,
                     "created": ANY,
                 },
             ],
@@ -1028,7 +1037,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         resp = client.get(
             self.base_url.format(token_address),
             params={
-                "trigger": "test",
+                "operation_category": "test",
                 "sort_order": "test",
                 "sort_item": "test",
                 "offset": "test",
@@ -1042,33 +1051,39 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"enum_values": ["Issue", "Update"]},
-                    "loc": ["query", "trigger"],
-                    "msg": "value is not a valid enumeration member; permitted: "
-                    "'Issue', 'Update'",
-                    "type": "type_error.enum",
+                    "ctx": {"expected": "'Issue' or 'Update'"},
+                    "input": "test",
+                    "loc": ["query", "operation_category"],
+                    "msg": "Input should be 'Issue' or 'Update'",
+                    "type": "enum",
                 },
                 {
-                    "ctx": {"enum_values": ["created", "trigger"]},
+                    "ctx": {"expected": "'created' or 'operation_category'"},
+                    "input": "test",
                     "loc": ["query", "sort_item"],
-                    "msg": "value is not a valid enumeration member; permitted: "
-                    "'created', 'trigger'",
-                    "type": "type_error.enum",
+                    "msg": "Input should be 'created' or 'operation_category'",
+                    "type": "enum",
                 },
                 {
+                    "input": "test",
                     "loc": ["query", "sort_order"],
-                    "msg": "value is not a valid integer",
-                    "type": "type_error.integer",
+                    "msg": "Input should be a valid integer, unable to parse string "
+                    "as an integer",
+                    "type": "int_parsing",
                 },
                 {
+                    "input": "test",
                     "loc": ["query", "offset"],
-                    "msg": "value is not a valid integer",
-                    "type": "type_error.integer",
+                    "msg": "Input should be a valid integer, unable to parse string "
+                    "as an integer",
+                    "type": "int_parsing",
                 },
                 {
+                    "input": "test",
                     "loc": ["query", "limit"],
-                    "msg": "value is not a valid integer",
-                    "type": "type_error.integer",
+                    "msg": "Input should be a valid integer, unable to parse string "
+                    "as an integer",
+                    "type": "int_parsing",
                 },
             ],
         }

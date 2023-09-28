@@ -23,6 +23,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -45,14 +46,12 @@ from app.utils.web3_utils import Web3Wrapper
 from batch.indexer_token_holders import LOG, Processor, main
 from config import ZERO_ADDRESS
 from tests.account_config import config_eth_account
-from tests.utils.contract_utils import IbetExchangeContractTestUtils
 from tests.utils.contract_utils import (
+    IbetExchangeContractTestUtils,
     IbetSecurityTokenContractTestUtils as STContractUtils,
-)
-from tests.utils.contract_utils import (
     IbetSecurityTokenEscrowContractTestUtils as STEscrowContractUtils,
+    PersonalInfoContractTestUtils,
 )
-from tests.utils.contract_utils import PersonalInfoContractTestUtils
 
 web3 = Web3Wrapper()
 
@@ -532,18 +531,26 @@ class TestProcessor:
         # Then execute processor.
         processor.collect()
 
-        user1_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-            .filter(TokenHolder.account_address == user_address_1)
-            .first()
-        )
-        user2_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-            .filter(TokenHolder.account_address == user_address_2)
-            .first()
-        )
+        user1_record: TokenHolder = db.scalars(
+            select(TokenHolder)
+            .where(
+                and_(
+                    TokenHolder.holder_list_id == _token_holders_list.id,
+                    TokenHolder.account_address == user_address_1,
+                )
+            )
+            .limit(1)
+        ).first()
+        user2_record: TokenHolder = db.scalars(
+            select(TokenHolder)
+            .where(
+                and_(
+                    TokenHolder.holder_list_id == _token_holders_list.id,
+                    TokenHolder.account_address == user_address_2,
+                )
+            )
+            .limit(1)
+        ).first()
 
         assert user1_record.hold_balance == 13000
         assert user1_record.locked_balance == 3000
@@ -553,9 +560,11 @@ class TestProcessor:
         assert (
             len(
                 list(
-                    db.query(TokenHolder).filter(
-                        TokenHolder.holder_list_id == _token_holders_list.id
-                    )
+                    db.scalars(
+                        select(TokenHolder).where(
+                            TokenHolder.holder_list_id == _token_holders_list.id
+                        )
+                    ).all()
                 )
             )
             == 2
@@ -749,18 +758,26 @@ class TestProcessor:
         # Then execute processor.
         processor.collect()
 
-        user1_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-            .filter(TokenHolder.account_address == user_address_1)
-            .first()
-        )
-        user2_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-            .filter(TokenHolder.account_address == user_address_2)
-            .first()
-        )
+        user1_record: TokenHolder = db.scalars(
+            select(TokenHolder)
+            .where(
+                and_(
+                    TokenHolder.holder_list_id == _token_holders_list.id,
+                    TokenHolder.account_address == user_address_1,
+                )
+            )
+            .limit(1)
+        ).first()
+        user2_record: TokenHolder = db.scalars(
+            select(TokenHolder)
+            .where(
+                and_(
+                    TokenHolder.holder_list_id == _token_holders_list.id,
+                    TokenHolder.account_address == user_address_2,
+                )
+            )
+            .limit(1)
+        ).first()
 
         assert user1_record.hold_balance == 10000
         assert user1_record.locked_balance == 0
@@ -770,9 +787,11 @@ class TestProcessor:
         assert (
             len(
                 list(
-                    db.query(TokenHolder).filter(
-                        TokenHolder.holder_list_id == _token_holders_list.id
-                    )
+                    db.scalars(
+                        select(TokenHolder).where(
+                            TokenHolder.holder_list_id == _token_holders_list.id
+                        )
+                    ).all()
                 )
             )
             == 2
@@ -922,18 +941,26 @@ class TestProcessor:
         # Then execute processor.
         processor.collect()
 
-        user1_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-            .filter(TokenHolder.account_address == user_address_1)
-            .first()
-        )
-        user2_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-            .filter(TokenHolder.account_address == user_address_2)
-            .first()
-        )
+        user1_record: TokenHolder = db.scalars(
+            select(TokenHolder)
+            .where(
+                and_(
+                    TokenHolder.holder_list_id == _token_holders_list.id,
+                    TokenHolder.account_address == user_address_1,
+                )
+            )
+            .limit(1)
+        ).first()
+        user2_record: TokenHolder = db.scalars(
+            select(TokenHolder)
+            .where(
+                and_(
+                    TokenHolder.holder_list_id == _token_holders_list.id,
+                    TokenHolder.account_address == user_address_2,
+                )
+            )
+            .limit(1)
+        ).first()
 
         assert user1_record.hold_balance == 17000
         assert user1_record.locked_balance == 0
@@ -943,9 +970,11 @@ class TestProcessor:
         assert (
             len(
                 list(
-                    db.query(TokenHolder).filter(
-                        TokenHolder.holder_list_id == _token_holders_list.id
-                    )
+                    db.scalars(
+                        select(TokenHolder).where(
+                            TokenHolder.holder_list_id == _token_holders_list.id
+                        )
+                    ).all()
                 )
             )
             == 2
@@ -1298,18 +1327,26 @@ class TestProcessor:
         # Then execute processor.
         processor.collect()
 
-        user1_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-            .filter(TokenHolder.account_address == user_address_1)
-            .first()
-        )
-        user2_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-            .filter(TokenHolder.account_address == user_address_2)
-            .first()
-        )
+        user1_record: TokenHolder = db.scalars(
+            select(TokenHolder)
+            .where(
+                and_(
+                    TokenHolder.holder_list_id == _token_holders_list.id,
+                    TokenHolder.account_address == user_address_1,
+                )
+            )
+            .limit(1)
+        ).first()
+        user2_record: TokenHolder = db.scalars(
+            select(TokenHolder)
+            .where(
+                and_(
+                    TokenHolder.holder_list_id == _token_holders_list.id,
+                    TokenHolder.account_address == user_address_2,
+                )
+            )
+            .limit(1)
+        ).first()
 
         assert user1_record.hold_balance == 3000
         assert user1_record.locked_balance == 3000
@@ -1319,9 +1356,11 @@ class TestProcessor:
         assert (
             len(
                 list(
-                    db.query(TokenHolder).filter(
-                        TokenHolder.holder_list_id == _token_holders_list.id
-                    )
+                    db.scalars(
+                        select(TokenHolder).where(
+                            TokenHolder.holder_list_id == _token_holders_list.id
+                        )
+                    ).all()
                 )
             )
             == 2
@@ -1515,18 +1554,26 @@ class TestProcessor:
         # Then execute processor.
         processor.collect()
 
-        user1_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-            .filter(TokenHolder.account_address == user_address_1)
-            .first()
-        )
-        user2_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-            .filter(TokenHolder.account_address == user_address_2)
-            .first()
-        )
+        user1_record: TokenHolder = db.scalars(
+            select(TokenHolder)
+            .where(
+                and_(
+                    TokenHolder.holder_list_id == _token_holders_list.id,
+                    TokenHolder.account_address == user_address_1,
+                )
+            )
+            .limit(1)
+        ).first()
+        user2_record: TokenHolder = db.scalars(
+            select(TokenHolder)
+            .where(
+                and_(
+                    TokenHolder.holder_list_id == _token_holders_list.id,
+                    TokenHolder.account_address == user_address_2,
+                )
+            )
+            .limit(1)
+        ).first()
 
         assert user1_record.hold_balance == 10000
         assert user1_record.locked_balance == 0
@@ -1536,9 +1583,11 @@ class TestProcessor:
         assert (
             len(
                 list(
-                    db.query(TokenHolder).filter(
-                        TokenHolder.holder_list_id == _token_holders_list.id
-                    )
+                    db.scalars(
+                        select(TokenHolder).where(
+                            TokenHolder.holder_list_id == _token_holders_list.id
+                        )
+                    ).all()
                 )
             )
             == 2
@@ -1689,18 +1738,26 @@ class TestProcessor:
         # Then execute processor.
         processor.collect()
 
-        user1_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-            .filter(TokenHolder.account_address == user_address_1)
-            .first()
-        )
-        user2_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-            .filter(TokenHolder.account_address == user_address_2)
-            .first()
-        )
+        user1_record: TokenHolder = db.scalars(
+            select(TokenHolder)
+            .where(
+                and_(
+                    TokenHolder.holder_list_id == _token_holders_list.id,
+                    TokenHolder.account_address == user_address_1,
+                )
+            )
+            .limit(1)
+        ).first()
+        user2_record: TokenHolder = db.scalars(
+            select(TokenHolder)
+            .where(
+                and_(
+                    TokenHolder.holder_list_id == _token_holders_list.id,
+                    TokenHolder.account_address == user_address_2,
+                )
+            )
+            .limit(1)
+        ).first()
 
         assert user1_record.hold_balance == 17000
         assert user1_record.locked_balance == 0
@@ -1710,9 +1767,11 @@ class TestProcessor:
         assert (
             len(
                 list(
-                    db.query(TokenHolder).filter(
-                        TokenHolder.holder_list_id == _token_holders_list.id
-                    )
+                    db.scalars(
+                        select(TokenHolder).where(
+                            TokenHolder.holder_list_id == _token_holders_list.id
+                        )
+                    ).all()
                 )
             )
             == 2
@@ -1972,18 +2031,26 @@ class TestProcessor:
         db.commit()
         processor.collect()
 
-        user1_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list2.id)
-            .filter(TokenHolder.account_address == user_address_1)
-            .first()
-        )
-        user2_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list2.id)
-            .filter(TokenHolder.account_address == user_address_2)
-            .first()
-        )
+        user1_record: TokenHolder = db.scalars(
+            select(TokenHolder)
+            .where(
+                and_(
+                    TokenHolder.holder_list_id == _token_holders_list2.id,
+                    TokenHolder.account_address == user_address_1,
+                )
+            )
+            .limit(1)
+        ).first()
+        user2_record: TokenHolder = db.scalars(
+            select(TokenHolder)
+            .where(
+                and_(
+                    TokenHolder.holder_list_id == _token_holders_list2.id,
+                    TokenHolder.account_address == user_address_2,
+                )
+            )
+            .limit(1)
+        ).first()
 
         assert user1_record.hold_balance == 30000
         assert user1_record.locked_balance == 0
@@ -1993,9 +2060,11 @@ class TestProcessor:
         assert (
             len(
                 list(
-                    db.query(TokenHolder).filter(
-                        TokenHolder.holder_list_id == _token_holders_list1.id
-                    )
+                    db.scalars(
+                        select(TokenHolder).where(
+                            TokenHolder.holder_list_id == _token_holders_list1.id
+                        )
+                    ).all()
                 )
             )
             == 2
@@ -2003,9 +2072,11 @@ class TestProcessor:
         assert (
             len(
                 list(
-                    db.query(TokenHolder).filter(
-                        TokenHolder.holder_list_id == _token_holders_list2.id
-                    )
+                    db.scalars(
+                        select(TokenHolder).where(
+                            TokenHolder.holder_list_id == _token_holders_list2.id
+                        )
+                    ).all()
                 )
             )
             == 2
@@ -2129,18 +2200,26 @@ class TestProcessor:
         # Then execute processor.
         processor.collect()
 
-        user1_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-            .filter(TokenHolder.account_address == user_address_1)
-            .first()
-        )
-        user2_record: TokenHolder = (
-            db.query(TokenHolder)
-            .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-            .filter(TokenHolder.account_address == user_address_2)
-            .first()
-        )
+        user1_record: TokenHolder = db.scalars(
+            select(TokenHolder)
+            .where(
+                and_(
+                    TokenHolder.holder_list_id == _token_holders_list.id,
+                    TokenHolder.account_address == user_address_1,
+                )
+            )
+            .limit(1)
+        ).first()
+        user2_record: TokenHolder = db.scalars(
+            select(TokenHolder)
+            .where(
+                and_(
+                    TokenHolder.holder_list_id == _token_holders_list.id,
+                    TokenHolder.account_address == user_address_2,
+                )
+            )
+            .limit(1)
+        ).first()
 
         assert user1_record is None
         assert user2_record is None
@@ -2148,9 +2227,11 @@ class TestProcessor:
         assert (
             len(
                 list(
-                    db.query(TokenHolder).filter(
-                        TokenHolder.holder_list_id == _token_holders_list.id
-                    )
+                    db.scalars(
+                        select(TokenHolder).where(
+                            TokenHolder.holder_list_id == _token_holders_list.id
+                        )
+                    ).all()
                 )
             )
             == 0
@@ -2246,11 +2327,11 @@ class TestProcessor:
         )
 
         db.rollback()
-        processed_list = (
-            db.query(TokenHoldersList)
-            .filter(TokenHoldersList.id == target_holders_list.id)
-            .first()
-        )
+        processed_list = db.scalars(
+            select(TokenHoldersList)
+            .where(TokenHoldersList.id == target_holders_list.id)
+            .limit(1)
+        ).first()
         assert processed_list.block_number == 19999999
         assert processed_list.batch_status == TokenHolderBatchStatus.DONE.value
 
@@ -2314,9 +2395,12 @@ class TestProcessor:
         # Batch status of token holders list expects to be "ERROR"
         error_record_num = len(
             list(
-                db.query(TokenHoldersList).filter(
-                    TokenHoldersList.batch_status == TokenHolderBatchStatus.FAILED.value
-                )
+                db.scalars(
+                    select(TokenHoldersList).where(
+                        TokenHoldersList.batch_status
+                        == TokenHolderBatchStatus.FAILED.value
+                    )
+                ).all()
             )
         )
         assert error_record_num == 1
@@ -2413,11 +2497,11 @@ class TestProcessor:
             # Then execute processor.
             __sync_all_mock.return_value = None
             processor.collect()
-            _records: List[TokenHolder] = (
-                db.query(TokenHolder)
-                .filter(TokenHolder.holder_list_id == _token_holders_list.id)
-                .all()
-            )
+            _records: List[TokenHolder] = db.scalars(
+                select(TokenHolder).where(
+                    TokenHolder.holder_list_id == _token_holders_list.id
+                )
+            ).all()
             assert len(_records) == 0
 
     # <Error_4>

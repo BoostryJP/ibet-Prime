@@ -23,8 +23,9 @@ import sys
 import threading
 import time
 import uuid
+from typing import Sequence
 
-from sqlalchemy import create_engine
+from sqlalchemy import and_, create_engine, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -99,11 +100,11 @@ class Processor:
                 )
 
                 # Get issuer's private key
-                issuer_account: Account | None = (
-                    db_session.query(Account)
-                    .filter(Account.issuer_address == _upload.issuer_address)
-                    .first()
-                )
+                issuer_account: Account | None = db_session.scalars(
+                    select(Account)
+                    .where(Account.issuer_address == _upload.issuer_address)
+                    .limit(1)
+                ).first()
                 if (
                     issuer_account is None
                 ):  # If issuer does not exist, update the status of the upload to ERROR
@@ -221,12 +222,11 @@ class Processor:
         """
         self.personal_info_contract_accessor_map = {}
 
-        token_list = (
-            db_session.query(Token)
-            .filter(Token.issuer_address == issuer_address)
-            .filter(Token.token_status == 1)
-            .all()
-        )
+        token_list: Sequence[Token] = db_session.scalars(
+            select(Token).where(
+                and_(Token.issuer_address == issuer_address, Token.token_status == 1)
+            )
+        ).all()
         for token in token_list:
             if token.type == TokenType.IBET_SHARE.value:
                 token_contract = IbetShareContract(token.token_address).get()
@@ -266,39 +266,39 @@ class Processor:
 
             # Retrieve one target data
             # NOTE: Priority is given to issuers that are not being processed by other threads.
-            upload_1 = (
-                db_session.query(BatchRegisterPersonalInfoUpload)
-                .filter(
-                    BatchRegisterPersonalInfoUpload.upload_id.notin_(locked_update_id)
-                )
-                .filter(
-                    BatchRegisterPersonalInfoUpload.status
-                    == BatchRegisterPersonalInfoUploadStatus.PENDING
-                )
-                .filter(
-                    BatchRegisterPersonalInfoUpload.issuer_address.notin_(
-                        exclude_issuer
+            upload_1: BatchRegisterPersonalInfoUpload | None = db_session.scalars(
+                select(BatchRegisterPersonalInfoUpload)
+                .where(
+                    and_(
+                        BatchRegisterPersonalInfoUpload.upload_id.notin_(
+                            locked_update_id
+                        ),
+                        BatchRegisterPersonalInfoUpload.status
+                        == BatchRegisterPersonalInfoUploadStatus.PENDING,
+                        BatchRegisterPersonalInfoUpload.issuer_address.notin_(
+                            exclude_issuer
+                        ),
                     )
                 )
                 .order_by(BatchRegisterPersonalInfoUpload.created)
-                .first()
-            )
+                .limit(1)
+            ).first()
             if upload_1 is None:
                 # Retrieve again for all issuers
-                upload_1 = (
-                    db_session.query(BatchRegisterPersonalInfoUpload)
-                    .filter(
-                        BatchRegisterPersonalInfoUpload.upload_id.notin_(
-                            locked_update_id
+                upload_1: BatchRegisterPersonalInfoUpload | None = db_session.scalars(
+                    select(BatchRegisterPersonalInfoUpload)
+                    .where(
+                        and_(
+                            BatchRegisterPersonalInfoUpload.upload_id.notin_(
+                                locked_update_id
+                            ),
+                            BatchRegisterPersonalInfoUpload.status
+                            == BatchRegisterPersonalInfoUploadStatus.PENDING,
                         )
                     )
-                    .filter(
-                        BatchRegisterPersonalInfoUpload.status
-                        == BatchRegisterPersonalInfoUploadStatus.PENDING
-                    )
                     .order_by(BatchRegisterPersonalInfoUpload.created)
-                    .first()
-                )
+                    .limit(1)
+                ).first()
 
             # Issuer to be processed => upload_1.issuer_address
             # Retrieve the data of the Issuer to be processed
@@ -306,27 +306,23 @@ class Processor:
             if upload_1 is not None:
                 upload_list = [upload_1]
                 if BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE > 1:
-                    upload_list = (
-                        upload_list
-                        + db_session.query(BatchRegisterPersonalInfoUpload)
-                        .filter(
-                            BatchRegisterPersonalInfoUpload.upload_id.notin_(
-                                locked_update_id
+                    upload_list += db_session.scalars(
+                        select(BatchRegisterPersonalInfoUpload)
+                        .where(
+                            and_(
+                                BatchRegisterPersonalInfoUpload.upload_id.notin_(
+                                    locked_update_id
+                                ),
+                                BatchRegisterPersonalInfoUpload.status
+                                == BatchRegisterPersonalInfoUploadStatus.PENDING,
+                                BatchRegisterPersonalInfoUpload.issuer_address
+                                == upload_1.issuer_address,
                             )
-                        )
-                        .filter(
-                            BatchRegisterPersonalInfoUpload.status
-                            == BatchRegisterPersonalInfoUploadStatus.PENDING
-                        )
-                        .filter(
-                            BatchRegisterPersonalInfoUpload.issuer_address
-                            == upload_1.issuer_address
                         )
                         .order_by(BatchRegisterPersonalInfoUpload.created)
                         .offset(1)
                         .limit(BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE - 1)
-                        .all()
-                    )
+                    ).all()
 
             processing_issuer[self.thread_num] = {}
             for upload in upload_list:
@@ -337,12 +333,14 @@ class Processor:
 
     @staticmethod
     def __get_registration_data(db_session: Session, upload_id: str, status: int):
-        register_list = (
-            db_session.query(BatchRegisterPersonalInfo)
-            .filter(BatchRegisterPersonalInfo.upload_id == upload_id)
-            .filter(BatchRegisterPersonalInfo.status == status)
-            .all()
-        )
+        register_list: Sequence[BatchRegisterPersonalInfo] = db_session.scalars(
+            select(BatchRegisterPersonalInfo).where(
+                and_(
+                    BatchRegisterPersonalInfo.upload_id == upload_id,
+                    BatchRegisterPersonalInfo.status == status,
+                )
+            )
+        ).all()
         return register_list
 
     def __release_processing_issuer(self, upload_id):
@@ -353,27 +351,21 @@ class Processor:
     def __sink_on_finish_upload_process(
         db_session: Session, upload_id: str, status: str
     ):
-        personal_info_register_upload_record: BatchRegisterPersonalInfoUpload | None = (
-            db_session.query(BatchRegisterPersonalInfoUpload)
-            .filter(BatchRegisterPersonalInfoUpload.upload_id == upload_id)
-            .first()
+        db_session.execute(
+            update(BatchRegisterPersonalInfoUpload)
+            .where(BatchRegisterPersonalInfoUpload.upload_id == upload_id)
+            .values(status=status)
         )
-        if personal_info_register_upload_record is not None:
-            personal_info_register_upload_record.status = status
-            db_session.merge(personal_info_register_upload_record)
 
     @staticmethod
     def __sink_on_finish_register_process(
         db_session: Session, record_id: int, status: int
     ):
-        register_record = (
-            db_session.query(BatchRegisterPersonalInfo)
-            .filter(BatchRegisterPersonalInfo.id == record_id)
-            .first()
+        db_session.execute(
+            update(BatchRegisterPersonalInfo)
+            .where(BatchRegisterPersonalInfo.id == record_id)
+            .values(status=status)
         )
-        if register_record is not None:
-            register_record.status = status
-            db_session.merge(register_record)
 
     @staticmethod
     def __sink_on_error_notification(

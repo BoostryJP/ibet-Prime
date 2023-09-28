@@ -16,6 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from sqlalchemy import select
+
 from app.model.db import Account, AccountRsaStatus
 from tests.account_config import config_eth_account
 
@@ -53,7 +55,7 @@ class TestAppRoutersAccountsIssuerAddressDELETE:
             "rsa_status": AccountRsaStatus.UNSET.value,
             "is_deleted": True,
         }
-        _account_after = db.query(Account).first()
+        _account_after = db.scalars(select(Account).limit(1)).first()
         assert _account_after.issuer_address == _admin_account["address"]
         assert _account_after.is_deleted == True
 

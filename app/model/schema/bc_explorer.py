@@ -16,10 +16,10 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import Optional
+from typing import Annotated, Optional
 
 from fastapi import Query
-from pydantic import BaseModel, Field, NonNegativeInt, validator
+from pydantic import BaseModel, Field, NonNegativeInt, RootModel, field_validator
 from pydantic.dataclasses import dataclass
 from web3 import Web3
 
@@ -67,7 +67,7 @@ class TxData(BaseModel):
     block_number: NonNegativeInt
     transaction_index: NonNegativeInt
     from_address: str
-    to_address: Optional[str]
+    to_address: Optional[str] = Field(...)
 
 
 class TxDataDetail(BaseModel):
@@ -76,10 +76,10 @@ class TxDataDetail(BaseModel):
     block_number: NonNegativeInt
     transaction_index: NonNegativeInt
     from_address: str
-    to_address: Optional[str]
-    contract_name: Optional[str]
-    contract_function: Optional[str]
-    contract_parameters: Optional[dict]
+    to_address: Optional[str] = Field(...)
+    contract_name: Optional[str] = Field(...)
+    contract_function: Optional[str] = Field(...)
+    contract_parameters: Optional[dict] = Field(...)
     gas: NonNegativeInt
     gas_price: NonNegativeInt
     value: NonNegativeInt
@@ -93,33 +93,43 @@ class TxDataDetail(BaseModel):
 
 @dataclass
 class ListBlockDataQuery:
-    offset: Optional[NonNegativeInt] = Query(default=None, description="start position")
-    limit: Optional[NonNegativeInt] = Query(default=None, description="number of set")
-    from_block_number: Optional[NonNegativeInt] = Query(default=None)
-    to_block_number: Optional[NonNegativeInt] = Query(default=None)
-    sort_order: Optional[SortOrder] = Query(
-        default=SortOrder.ASC, description="sort order(0: ASC, 1: DESC)"
-    )
+    offset: Annotated[
+        Optional[NonNegativeInt], Query(description="start position")
+    ] = None
+    limit: Annotated[
+        Optional[NonNegativeInt], Query(description="number of set")
+    ] = None
+    from_block_number: Annotated[Optional[NonNegativeInt], Query()] = None
+    to_block_number: Annotated[Optional[NonNegativeInt], Query()] = None
+    sort_order: Annotated[
+        Optional[SortOrder], Query(description="sort order(0: ASC, 1: DESC)")
+    ] = SortOrder.ASC
 
 
 @dataclass
 class ListTxDataQuery:
-    offset: Optional[NonNegativeInt] = Query(default=None, description="start position")
-    limit: Optional[NonNegativeInt] = Query(default=None, description="number of set")
-    block_number: Optional[NonNegativeInt] = Query(
-        default=None, description="block number"
-    )
-    from_address: Optional[str] = Query(default=None, description="tx from")
-    to_address: Optional[str] = Query(default=None, description="tx to")
+    offset: Annotated[
+        Optional[NonNegativeInt], Query(description="start position")
+    ] = None
+    limit: Annotated[
+        Optional[NonNegativeInt], Query(description="number of set")
+    ] = None
+    block_number: Annotated[
+        Optional[NonNegativeInt], Query(description="block number")
+    ] = None
+    from_address: Annotated[Optional[str], Query(description="tx from")] = None
+    to_address: Annotated[Optional[str], Query(description="tx to")] = None
 
-    @validator("from_address")
+    @field_validator("from_address")
+    @classmethod
     def from_address_is_valid_address(cls, v):
         if v is not None:
             if not Web3.is_address(v):
                 raise ValueError("from_address is not a valid address")
         return v
 
-    @validator("to_address")
+    @field_validator("to_address")
+    @classmethod
     def to_address_is_valid_address(cls, v):
         if v is not None:
             if not Web3.is_address(v):
@@ -132,8 +142,8 @@ class ListTxDataQuery:
 ############################
 
 
-class BlockDataResponse(BaseModel):
-    __root__: BlockDataDetail
+class BlockDataResponse(RootModel[BlockDataDetail]):
+    pass
 
 
 class BlockDataListResponse(BaseModel):
@@ -141,8 +151,8 @@ class BlockDataListResponse(BaseModel):
     block_data: list[BlockData]
 
 
-class TxDataResponse(BaseModel):
-    __root__: TxDataDetail
+class TxDataResponse(RootModel[TxDataDetail]):
+    pass
 
 
 class TxDataListResponse(BaseModel):

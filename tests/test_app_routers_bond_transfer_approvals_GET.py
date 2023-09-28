@@ -925,14 +925,18 @@ class TestAppRoutersBondTransferApprovalsGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "c",
                     "loc": ["query", "offset"],
-                    "msg": "value is not a valid integer",
-                    "type": "type_error.integer",
+                    "msg": "Input should be a valid integer, unable to parse string "
+                    "as an integer",
+                    "type": "int_parsing",
                 },
                 {
+                    "input": "d",
                     "loc": ["query", "limit"],
-                    "msg": "value is not a valid integer",
-                    "type": "type_error.integer",
+                    "msg": "Input should be a valid integer, unable to parse string "
+                    "as an integer",
+                    "type": "int_parsing",
                 },
             ],
         }

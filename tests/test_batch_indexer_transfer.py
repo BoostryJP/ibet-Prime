@@ -24,6 +24,7 @@ from unittest.mock import patch
 
 import pytest
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy import select
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.orm import Session
 
@@ -172,9 +173,11 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        _transfer_list = db.query(IDXTransfer).all()
+        _transfer_list = db.scalars(select(IDXTransfer)).all()
         assert len(_transfer_list) == 0
-        _idx_transfer_block_number = db.query(IDXTransferBlockNumber).first()
+        _idx_transfer_block_number = db.scalars(
+            select(IDXTransferBlockNumber).limit(1)
+        ).first()
         assert _idx_transfer_block_number.id == 1
         assert _idx_transfer_block_number.latest_block_number == block_number
 
@@ -224,9 +227,11 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        _transfer_list = db.query(IDXTransfer).all()
+        _transfer_list = db.scalars(select(IDXTransfer)).all()
         assert len(_transfer_list) == 0
-        _idx_transfer_block_number = db.query(IDXTransferBlockNumber).first()
+        _idx_transfer_block_number = db.scalars(
+            select(IDXTransferBlockNumber).limit(1)
+        ).first()
         assert _idx_transfer_block_number.id == 1
         assert _idx_transfer_block_number.latest_block_number == block_number
 
@@ -323,7 +328,7 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        _transfer_list = db.query(IDXTransfer).all()
+        _transfer_list = db.scalars(select(IDXTransfer)).all()
         assert len(_transfer_list) == 2
 
         _transfer = _transfer_list[0]
@@ -354,7 +359,9 @@ class TestProcessor:
             block["timestamp"]
         )
 
-        _idx_transfer_block_number = db.query(IDXTransferBlockNumber).first()
+        _idx_transfer_block_number = db.scalars(
+            select(IDXTransferBlockNumber).limit(1)
+        ).first()
         assert _idx_transfer_block_number.id == 1
         assert _idx_transfer_block_number.latest_block_number == block_number
 
@@ -430,10 +437,12 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        _transfer_list = db.query(IDXTransfer).all()
+        _transfer_list = db.scalars(select(IDXTransfer)).all()
         assert len(_transfer_list) == 0
 
-        _idx_transfer_block_number = db.query(IDXTransferBlockNumber).first()
+        _idx_transfer_block_number = db.scalars(
+            select(IDXTransferBlockNumber).limit(1)
+        ).first()
         assert _idx_transfer_block_number.id == 1
         assert _idx_transfer_block_number.latest_block_number == block_number
 
@@ -573,7 +582,7 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        _transfer_list = db.query(IDXTransfer).all()
+        _transfer_list = db.scalars(select(IDXTransfer)).all()
         assert len(_transfer_list) == 4
 
         _transfer = _transfer_list[0]
@@ -632,7 +641,9 @@ class TestProcessor:
             block["timestamp"]
         )
 
-        _idx_transfer_block_number = db.query(IDXTransferBlockNumber).first()
+        _idx_transfer_block_number = db.scalars(
+            select(IDXTransferBlockNumber).limit(1)
+        ).first()
         assert _idx_transfer_block_number.id == 1
         assert _idx_transfer_block_number.latest_block_number == block_number
 
@@ -751,7 +762,7 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        _transfer_list = db.query(IDXTransfer).all()
+        _transfer_list = db.scalars(select(IDXTransfer)).all()
         assert len(_transfer_list) == 7
 
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
@@ -784,7 +795,9 @@ class TestProcessor:
                 block["timestamp"]
             )
 
-        _idx_transfer_block_number = db.query(IDXTransferBlockNumber).first()
+        _idx_transfer_block_number = db.scalars(
+            select(IDXTransferBlockNumber).limit(1)
+        ).first()
         assert _idx_transfer_block_number.id == 1
         assert _idx_transfer_block_number.latest_block_number == block_number
 
@@ -883,7 +896,7 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        _transfer_list = db.query(IDXTransfer).all()
+        _transfer_list = db.scalars(select(IDXTransfer)).all()
         assert len(_transfer_list) == 4
         _transfer = _transfer_list[0]
         assert _transfer.id == 1
@@ -940,7 +953,9 @@ class TestProcessor:
             block["timestamp"]
         )
 
-        _idx_transfer_block_number = db.query(IDXTransferBlockNumber).first()
+        _idx_transfer_block_number = db.scalars(
+            select(IDXTransferBlockNumber).limit(1)
+        ).first()
         assert _idx_transfer_block_number.id == 1
         assert _idx_transfer_block_number.latest_block_number == block_number
 
@@ -1074,7 +1089,7 @@ class TestProcessor:
 
         # Run mainloop once and fail with sqlalchemy InvalidRequestError
         with patch("batch.indexer_transfer.INDEXER_SYNC_INTERVAL", None), patch.object(
-            Session, "query", side_effect=InvalidRequestError()
+            Session, "scalars", side_effect=InvalidRequestError()
         ), pytest.raises(TypeError):
             main_func()
         assert 1 == caplog.text.count("A database error has occurred")

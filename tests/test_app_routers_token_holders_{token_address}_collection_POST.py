@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import uuid
 from unittest import mock
 
+from sqlalchemy import select
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
@@ -68,11 +69,9 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
             headers={"issuer-address": issuer_address},
         )
 
-        stored_data: TokenHoldersList = (
-            db.query(TokenHoldersList)
-            .filter(TokenHoldersList.list_id == list_id)
-            .first()
-        )
+        stored_data: TokenHoldersList = db.scalars(
+            select(TokenHoldersList).where(TokenHoldersList.list_id == list_id).limit(1)
+        ).first()
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
@@ -206,9 +205,10 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": {"block_number": 100},
                     "loc": ["body", "list_id"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 }
             ],
         }
@@ -282,8 +282,10 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": "some_id",
                     "loc": ["body", "list_id"],
-                    "msg": "list_id is not UUIDv4.",
+                    "msg": "Value error, list_id is not UUIDv4.",
                     "type": "value_error",
                 }
             ],
@@ -459,9 +461,10 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 }
             ],
         }

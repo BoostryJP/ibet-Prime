@@ -16,7 +16,10 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from sqlalchemy import BigInteger, Column, DateTime, String
+from datetime import datetime
+
+from sqlalchemy import BigInteger, DateTime, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -26,21 +29,21 @@ class IDXE2EMessaging(Base):
 
     __tablename__ = "idx_e2e_messaging"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # transaction hash
-    transaction_hash = Column(String(66), index=True)
+    transaction_hash: Mapped[str | None] = mapped_column(String(66), index=True)
     # from address
-    from_address = Column(String(42), index=True)
+    from_address: Mapped[str | None] = mapped_column(String(42), index=True)
     # to address
-    to_address = Column(String(42), index=True)
+    to_address: Mapped[str | None] = mapped_column(String(42), index=True)
     # type
-    type = Column(String(50), nullable=False, index=True)
+    type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     # message
-    message = Column(String(5000), nullable=False)
+    message: Mapped[str] = mapped_column(String(5000), nullable=False)
     # send timestamp
-    send_timestamp = Column(DateTime)
+    send_timestamp: Mapped[datetime | None] = mapped_column(DateTime)
     # block timestamp
-    block_timestamp = Column(DateTime)
+    block_timestamp: Mapped[datetime | None] = mapped_column(DateTime)
 
 
 class IDXE2EMessagingBlockNumber(Base):
@@ -48,6 +51,6 @@ class IDXE2EMessagingBlockNumber(Base):
 
     __tablename__ = "idx_e2e_messaging_block_number"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # latest blockNumber
-    latest_block_number = Column(BigInteger)
+    latest_block_number: Mapped[int | None] = mapped_column(BigInteger)

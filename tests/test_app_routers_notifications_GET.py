@@ -523,8 +523,8 @@ class TestAppRoutersNotificationsGET:
                     "notice_code": 1,
                     "metainfo": {
                         "scheduled_event_id": "1",
-                        "token_address": None,
                         "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                        "token_address": None,
                     },
                     "created": "2022-01-02T09:20:30+09:00",
                 },
@@ -565,6 +565,7 @@ class TestAppRoutersNotificationsGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "test",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",

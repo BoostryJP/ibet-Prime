@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import uuid
 from unittest import mock
 
+from sqlalchemy import select
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
@@ -128,7 +129,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             self.base_url.format(token_address=token_address, list_id=list_id),
             headers={"issuer-address": issuer_address},
         )
-        db.query(TokenHolder).filter().all()
+        db.scalars(select(TokenHolder)).all()
         sorted_holders = sorted(holders, key=lambda x: x["account_address"])
         # assertion
         assert resp.status_code == 200
@@ -361,9 +362,10 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 }
             ],
         }

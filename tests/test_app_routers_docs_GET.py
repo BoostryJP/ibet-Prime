@@ -33,5 +33,5 @@ class TestOpenAPIDoc:
         resp = client.get(apiurl)
 
         assert resp.status_code == 200
-        assert resp.json()["openapi"] == "3.0.2"
+        assert resp.json()["openapi"] == "3.1.0"
         assert resp.json()["info"]["title"] == "ibet Prime"

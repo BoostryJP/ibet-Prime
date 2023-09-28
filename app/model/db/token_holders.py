@@ -18,7 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
 
-from sqlalchemy import BigInteger, Column, String
+from sqlalchemy import BigInteger, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -28,15 +29,15 @@ class TokenHoldersList(Base):
 
     __tablename__ = "token_holders_list"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # Token Address
-    token_address = Column(String(42))
+    token_address: Mapped[str | None] = mapped_column(String(42))
     # Block Number
-    block_number = Column(BigInteger)
+    block_number: Mapped[int | None] = mapped_column(BigInteger)
     # List id (UUID)
-    list_id = Column(String(36), index=False)
+    list_id: Mapped[str | None] = mapped_column(String(36), index=False)
     # batch processing status
-    batch_status = Column(String(256))
+    batch_status: Mapped[str | None] = mapped_column(String(256))
 
 
 class TokenHolderBatchStatus(str, Enum):
@@ -51,13 +52,13 @@ class TokenHolder(Base):
     __tablename__ = "token_holder"
 
     # related to TokenHoldersList primary key
-    holder_list_id = Column(BigInteger, primary_key=True)
+    holder_list_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     # account address
-    account_address = Column(String(42), primary_key=True)
+    account_address: Mapped[str] = mapped_column(String(42), primary_key=True)
     # Amounts(including balance/pending_transfer/exchange_balance/exchange_commitment)
-    hold_balance = Column(BigInteger)
+    hold_balance: Mapped[int | None] = mapped_column(BigInteger)
     # Amounts(locked)
-    locked_balance = Column(BigInteger)
+    locked_balance: Mapped[int | None] = mapped_column(BigInteger)
 
     def json(self):
         return {

@@ -20,6 +20,8 @@ import hashlib
 from typing import Optional
 from unittest.mock import ANY
 
+from sqlalchemy import select
+
 from app.model.db import (
     Account,
     AuthToken,
@@ -98,14 +100,14 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
             "created": ANY,
         }
 
-        _upload: Optional[BatchRegisterPersonalInfoUpload] = db.query(
-            BatchRegisterPersonalInfoUpload
+        _upload: Optional[BatchRegisterPersonalInfoUpload] = db.scalars(
+            select(BatchRegisterPersonalInfoUpload).limit(1)
         ).first()
         assert _upload.status == BatchRegisterPersonalInfoUploadStatus.PENDING.value
         assert _upload.issuer_address == _issuer_address
 
-        _register_list: list[BatchRegisterPersonalInfo] = db.query(
-            BatchRegisterPersonalInfo
+        _register_list: list[BatchRegisterPersonalInfo] = db.scalars(
+            select(BatchRegisterPersonalInfo)
         ).all()
         assert len(_register_list) == 10
 
@@ -172,14 +174,14 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
             "created": ANY,
         }
 
-        _upload: Optional[BatchRegisterPersonalInfoUpload] = db.query(
-            BatchRegisterPersonalInfoUpload
+        _upload: Optional[BatchRegisterPersonalInfoUpload] = db.scalars(
+            select(BatchRegisterPersonalInfoUpload).limit(1)
         ).first()
         assert _upload.status == BatchRegisterPersonalInfoUploadStatus.PENDING.value
         assert _upload.issuer_address == _issuer_address
 
-        _register_list: list[BatchRegisterPersonalInfo] = db.query(
-            BatchRegisterPersonalInfo
+        _register_list: list[BatchRegisterPersonalInfo] = db.scalars(
+            select(BatchRegisterPersonalInfo)
         ).all()
         assert len(_register_list) == 10
 
@@ -209,14 +211,16 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -260,16 +264,18 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         for i in range(0, 10):
             details.append(
                 {
+                    "input": None,
                     "loc": ["body", i, "account_address"],
-                    "msg": "none is not an allowed value",
-                    "type": "type_error.none.not_allowed",
+                    "msg": "Input should be a valid string",
+                    "type": "string_type",
                 }
             )
             details.append(
                 {
+                    "input": None,
                     "loc": ["body", i, "key_manager"],
-                    "msg": "none is not an allowed value",
-                    "type": "type_error.none.not_allowed",
+                    "msg": "Input should be a valid string",
+                    "type": "string_type",
                 }
             )
         # assertion
@@ -320,11 +326,75 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "loc": ["body", i, "account_address"],
-                    "msg": "account_address is not a valid address",
+                    "ctx": {"error": {}},
+                    "input": "test",
+                    "loc": ["body", 0, "account_address"],
+                    "msg": "Value error, account_address is not a valid address",
                     "type": "value_error",
-                }
-                for i in range(0, 10)
+                },
+                {
+                    "ctx": {"error": {}},
+                    "input": "test",
+                    "loc": ["body", 1, "account_address"],
+                    "msg": "Value error, account_address is not a valid address",
+                    "type": "value_error",
+                },
+                {
+                    "ctx": {"error": {}},
+                    "input": "test",
+                    "loc": ["body", 2, "account_address"],
+                    "msg": "Value error, account_address is not a valid address",
+                    "type": "value_error",
+                },
+                {
+                    "ctx": {"error": {}},
+                    "input": "test",
+                    "loc": ["body", 3, "account_address"],
+                    "msg": "Value error, account_address is not a valid address",
+                    "type": "value_error",
+                },
+                {
+                    "ctx": {"error": {}},
+                    "input": "test",
+                    "loc": ["body", 4, "account_address"],
+                    "msg": "Value error, account_address is not a valid address",
+                    "type": "value_error",
+                },
+                {
+                    "ctx": {"error": {}},
+                    "input": "test",
+                    "loc": ["body", 5, "account_address"],
+                    "msg": "Value error, account_address is not a valid address",
+                    "type": "value_error",
+                },
+                {
+                    "ctx": {"error": {}},
+                    "input": "test",
+                    "loc": ["body", 6, "account_address"],
+                    "msg": "Value error, account_address is not a valid address",
+                    "type": "value_error",
+                },
+                {
+                    "ctx": {"error": {}},
+                    "input": "test",
+                    "loc": ["body", 7, "account_address"],
+                    "msg": "Value error, account_address is not a valid address",
+                    "type": "value_error",
+                },
+                {
+                    "ctx": {"error": {}},
+                    "input": "test",
+                    "loc": ["body", 8, "account_address"],
+                    "msg": "Value error, account_address is not a valid address",
+                    "type": "value_error",
+                },
+                {
+                    "ctx": {"error": {}},
+                    "input": "test",
+                    "loc": ["body", 9, "account_address"],
+                    "msg": "Value error, account_address is not a valid address",
+                    "type": "value_error",
+                },
             ],
         }
 
@@ -366,6 +436,7 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "test_issuer_address",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",
@@ -415,6 +486,7 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "not_encrypted_password",
                     "loc": ["header", "eoa-password"],
                     "msg": "eoa-password is not a Base64-encoded encrypted data",
                     "type": "value_error",

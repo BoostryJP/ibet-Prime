@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ibet-prime"
-version = "23.6"
+version = "23.9"
 description = "ibet-Prime is an API service that enables the issuance and management of security tokens on the ibet network."
 authors = ["BOOSTRY Co., Ltd. <dev@boostry.co.jp>"]
 license = "Apache License, Version 2.0"
@@ -8,23 +8,23 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "3.11.2"
-alembic = "~1.11.1"
-boto3 = "~1.26.82"
+alembic = "~1.11.2"
+boto3 = "~1.28.27"
 coincurve = "~18.0.0"
 eth-keyfile = "0.6.1"
-eth-utils = "~2.1.0"
-fastapi = "~0.96.0"
-gunicorn = "~20.1.0"
-orjson = "~3.8.7"
-psycopg = {extras = ["binary"], version = "~3.1.8"}
-pycryptodome = "~3.17"
-pydantic = "~1.10.5"
+eth-utils = "~2.2.0"
+fastapi = "~0.100.0"
+gunicorn = "~21.2.0"
+orjson = "~3.9.4"
+psycopg = {extras = ["c"], version = "~3.1.10"}
+pycryptodome = "~3.18"
+pydantic = "~2.4.0"
 pytz = "~2023.3"
 requests = "~2.31.0"
 shared-memory-dict = "~0.7.2"
-uvicorn = "~0.20.0"
-web3 = "~6.5.0"
-sqlalchemy = "~2.0.9"
+uvicorn = "~0.23.2"
+web3 = "~6.9.0"
+sqlalchemy = "~2.0.20"
 
 ibet-prime-explorer = {path = "cmd/explorer", optional = true, develop = true}
 textual = {version = "~0.10.1", optional = true}
@@ -50,6 +50,11 @@ ibet-explorer = [
     "typer",
     "aiohttp"
 ]
+
+[tool.isort]
+profile = "black"
+combine_as_imports = true
+skip_glob = ["migrations/*"]
 
 [build-system]
 requires = ["poetry-core"]

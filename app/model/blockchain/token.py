@@ -21,7 +21,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import List
 
-from sqlalchemy import desc
+from sqlalchemy import delete, desc, select
 from sqlalchemy.exc import IntegrityError as SAIntegrityError
 from sqlalchemy.orm import Session
 from web3.datastructures import AttributeDict
@@ -33,23 +33,11 @@ from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.blockchain import IbetExchangeInterface
 from app.model.blockchain.tx_params.ibet_security_token import (
     AdditionalIssueParams as IbetSecurityTokenAdditionalIssueParams,
-)
-from app.model.blockchain.tx_params.ibet_security_token import (
     ApproveTransferParams as IbetSecurityTokenApproveTransfer,
-)
-from app.model.blockchain.tx_params.ibet_security_token import (
     CancelTransferParams as IbetSecurityTokenCancelTransfer,
-)
-from app.model.blockchain.tx_params.ibet_security_token import (
     ForceUnlockParams as IbetSecurityTokenForceUnlockParams,
-)
-from app.model.blockchain.tx_params.ibet_security_token import (
     LockParams as IbetSecurityTokenLockParams,
-)
-from app.model.blockchain.tx_params.ibet_security_token import (
     RedeemParams as IbetSecurityTokenRedeemParams,
-)
-from app.model.blockchain.tx_params.ibet_security_token import (
     TransferParams as IbetSecurityTokenTransferParams,
 )
 from app.model.blockchain.tx_params.ibet_share import (
@@ -58,13 +46,7 @@ from app.model.blockchain.tx_params.ibet_share import (
 from app.model.blockchain.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
 )
-from app.model.db import (
-    TokenAttrUpdate,
-    TokenCache,
-    TokenType,
-    UpdateToken,
-    UpdateTokenTrigger,
-)
+from app.model.db import TokenAttrUpdate, TokenCache
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
 from config import CHAIN_ID, TOKEN_CACHE, TOKEN_CACHE_TTL, TX_GAS_LIMIT, ZERO_ADDRESS
@@ -95,12 +77,12 @@ class IbetStandardTokenInterface:
 
     def check_attr_update(self, db_session: Session, base_datetime: datetime):
         is_updated = False
-        _token_attr_update = (
-            db_session.query(TokenAttrUpdate)
-            .filter(TokenAttrUpdate.token_address == self.token_address)
+        _token_attr_update = db_session.scalars(
+            select(TokenAttrUpdate)
+            .where(TokenAttrUpdate.token_address == self.token_address)
             .order_by(desc(TokenAttrUpdate.id))
-            .first()
-        )
+            .limit(1)
+        ).first()
         if (
             _token_attr_update is not None
             and _token_attr_update.updated_datetime > base_datetime
@@ -114,24 +96,6 @@ class IbetStandardTokenInterface:
         _token_attr_update.updated_datetime = datetime.utcnow()
         db_session.add(_token_attr_update)
 
-    def create_history(
-        self,
-        db_session: Session,
-        original_contents: dict,
-        modified_contents: dict,
-        token_type: str,
-        trigger: UpdateTokenTrigger,
-    ):
-        update_token = UpdateToken()
-        update_token.token_address = self.token_address
-        update_token.issuer_address = self.issuer_address
-        update_token.type = token_type
-        update_token.arguments = modified_contents
-        update_token.original_contents = original_contents
-        update_token.status = 1  # succeeded
-        update_token.trigger = trigger
-        db_session.add(update_token)
-
     def create_cache(self, db_session: Session):
         token_cache = TokenCache()
         token_cache.token_address = self.token_address
@@ -143,9 +107,9 @@ class IbetStandardTokenInterface:
         db_session.merge(token_cache)
 
     def delete_cache(self, db_session: Session):
-        db_session.query(TokenCache).filter(
-            TokenCache.token_address == self.token_address
-        ).delete()
+        db_session.execute(
+            delete(TokenCache).where(TokenCache.token_address == self.token_address)
+        )
 
     def get_account_balance(self, account_address: str):
         """Get account balance"""
@@ -470,11 +434,11 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
 
         # When using the cache
         if TOKEN_CACHE:
-            token_cache: TokenCache | None = (
-                db_session.query(TokenCache)
-                .filter(TokenCache.token_address == self.token_address)
-                .first()
-            )
+            token_cache: TokenCache | None = db_session.scalars(
+                select(TokenCache)
+                .where(TokenCache.token_address == self.token_address)
+                .limit(1)
+            ).first()
             if token_cache is not None:
                 is_updated = self.check_attr_update(
                     db_session=db_session, base_datetime=token_cache.cached_datetime
@@ -583,11 +547,6 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         self, data: IbetStraightBondUpdateParams, tx_from: str, private_key: str
     ):
         """Update token"""
-        if data.dict(exclude_none=True) == {}:
-            return
-
-        original_contents = self.get().__dict__
-
         contract = ContractUtils.get_contract(
             contract_name=self.contract_name, contract_address=self.token_address
         )
@@ -869,13 +828,6 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         db_session = Session(autocommit=False, autoflush=True, bind=engine)
         try:
             self.record_attr_update(db_session)
-            self.create_history(
-                db_session,
-                original_contents=original_contents,
-                modified_contents=data.dict(exclude_none=True),
-                token_type=TokenType.IBET_STRAIGHT_BOND.value,
-                trigger=UpdateTokenTrigger.UPDATE,
-            )
             self.delete_cache(db_session)
             db_session.commit()
         except Exception as err:
@@ -924,11 +876,11 @@ class IbetShareContract(IbetSecurityTokenInterface):
 
         # When using the cache
         if TOKEN_CACHE:
-            token_cache: TokenCache | None = (
-                db_session.query(TokenCache)
-                .filter(TokenCache.token_address == self.token_address)
-                .first()
-            )
+            token_cache: TokenCache | None = db_session.scalars(
+                select(TokenCache)
+                .where(TokenCache.token_address == self.token_address)
+                .limit(1)
+            ).first()
             if token_cache is not None:
                 is_updated = self.check_attr_update(
                     db_session=db_session, base_datetime=token_cache.cached_datetime
@@ -1018,11 +970,6 @@ class IbetShareContract(IbetSecurityTokenInterface):
 
     def update(self, data: IbetShareUpdateParams, tx_from: str, private_key: str):
         """Update token"""
-        if data.dict(exclude_none=True) == {}:
-            return
-
-        original_contents = self.get().__dict__
-
         contract = ContractUtils.get_contract(
             contract_name=self.contract_name, contract_address=self.token_address
         )
@@ -1286,13 +1233,6 @@ class IbetShareContract(IbetSecurityTokenInterface):
         db_session = Session(autocommit=False, autoflush=True, bind=engine)
         try:
             self.record_attr_update(db_session)
-            self.create_history(
-                db_session,
-                original_contents=original_contents,
-                modified_contents=data.dict(exclude_none=True),
-                token_type=TokenType.IBET_SHARE.value,
-                trigger=UpdateTokenTrigger.UPDATE,
-            )
             self.delete_cache(db_session)
             db_session.commit()
         except Exception as err:

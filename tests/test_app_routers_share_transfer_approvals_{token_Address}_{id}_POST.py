@@ -23,13 +23,17 @@ from unittest.mock import ANY, MagicMock
 
 import pytest
 from pytz import timezone
+from sqlalchemy import select
 
 import config
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.blockchain.tx_params.ibet_security_token_escrow import (
     ApproveTransferParams as EscrowApproveTransferParams,
 )
-from app.model.blockchain.tx_params.ibet_straight_bond import ApproveTransferParams
+from app.model.blockchain.tx_params.ibet_share import (
+    ApproveTransferParams,
+    CancelTransferParams,
+)
 from app.model.db import (
     Account,
     AuthToken,
@@ -136,8 +140,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
             private_key=ANY,
         )
 
-        approval_op_list: list[TransferApprovalHistory] = db.query(
-            TransferApprovalHistory
+        approval_op_list: list[TransferApprovalHistory] = db.scalars(
+            select(TransferApprovalHistory)
         ).all()
         assert len(approval_op_list) == 1
         approval_op = approval_op_list[0]
@@ -218,8 +222,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
             private_key=ANY,
         )
 
-        approval_op_list: list[TransferApprovalHistory] = db.query(
-            TransferApprovalHistory
+        approval_op_list: list[TransferApprovalHistory] = db.scalars(
+            select(TransferApprovalHistory)
         ).all()
         assert len(approval_op_list) == 1
         approval_op = approval_op_list[0]
@@ -294,13 +298,13 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _expected = {"application_id": 100, "data": str(datetime.utcnow().timestamp())}
 
         mock_transfer.assert_called_once_with(
-            data=ApproveTransferParams(**_expected),
+            data=CancelTransferParams(**_expected),
             tx_from=issuer_address,
             private_key=ANY,
         )
 
-        cancel_op_list: list[TransferApprovalHistory] = db.query(
-            TransferApprovalHistory
+        cancel_op_list: list[TransferApprovalHistory] = db.scalars(
+            select(TransferApprovalHistory)
         ).all()
         assert len(cancel_op_list) == 1
         cancel_op = cancel_op_list[0]
@@ -406,14 +410,16 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -441,10 +447,11 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": {},
                     "loc": ["body", "operation_type"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
-                },
+                    "msg": "Field required",
+                    "type": "missing",
+                }
             ],
         }
 
@@ -472,11 +479,12 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"expected": "'approve' or 'cancel'"},
+                    "input": "test",
                     "loc": ["body", "operation_type"],
-                    "ctx": {"enum_values": ["approve", "cancel"]},
-                    "msg": "value is not a valid enumeration member; permitted: 'approve', 'cancel'",
-                    "type": "type_error.enum",
-                },
+                    "msg": "Input should be 'approve' or 'cancel'",
+                    "type": "enum",
+                }
             ],
         }
 
@@ -499,11 +507,13 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "issuer_address",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",
                 },
                 {
+                    "input": "password",
                     "loc": ["header", "eoa-password"],
                     "msg": "eoa-password is not a Base64-encoded encrypted data",
                     "type": "value_error",

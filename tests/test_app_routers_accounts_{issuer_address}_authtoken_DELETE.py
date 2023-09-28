@@ -19,6 +19,8 @@ SPDX-License-Identifier: Apache-2.0
 import hashlib
 from datetime import datetime
 
+from sqlalchemy import select
+
 from app.model.db import Account, AuthToken
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
@@ -63,11 +65,11 @@ class TestAppRoutersAccountsAuthTokenDELETE:
         # assertion
         assert resp.status_code == 200
 
-        auth_token: AuthToken = (
-            db.query(AuthToken)
-            .filter(AuthToken.issuer_address == test_account["address"])
-            .first()
-        )
+        auth_token: AuthToken = db.scalars(
+            select(AuthToken)
+            .where(AuthToken.issuer_address == test_account["address"])
+            .limit(1)
+        ).first()
         assert auth_token is None
 
     # Normal_2
@@ -97,11 +99,11 @@ class TestAppRoutersAccountsAuthTokenDELETE:
         # assertion
         assert resp.status_code == 200
 
-        auth_token: AuthToken = (
-            db.query(AuthToken)
-            .filter(AuthToken.issuer_address == test_account["address"])
-            .first()
-        )
+        auth_token: AuthToken = db.scalars(
+            select(AuthToken)
+            .where(AuthToken.issuer_address == test_account["address"])
+            .limit(1)
+        ).first()
         assert auth_token is None
 
     ###########################################################################
@@ -140,6 +142,7 @@ class TestAppRoutersAccountsAuthTokenDELETE:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": test_account["address"][::-1],
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",
@@ -147,11 +150,11 @@ class TestAppRoutersAccountsAuthTokenDELETE:
             ],
         }
 
-        auth_token: AuthToken = (
-            db.query(AuthToken)
-            .filter(AuthToken.issuer_address == test_account["address"])
-            .first()
-        )
+        auth_token: AuthToken = db.scalars(
+            select(AuthToken)
+            .where(AuthToken.issuer_address == test_account["address"])
+            .limit(1)
+        ).first()
         assert auth_token is not None
 
     # Error_2
@@ -186,6 +189,7 @@ class TestAppRoutersAccountsAuthTokenDELETE:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": self.eoa_password,
                     "loc": ["header", "eoa-password"],
                     "msg": "eoa-password is not a Base64-encoded encrypted data",
                     "type": "value_error",
@@ -193,11 +197,11 @@ class TestAppRoutersAccountsAuthTokenDELETE:
             ],
         }
 
-        auth_token: AuthToken = (
-            db.query(AuthToken)
-            .filter(AuthToken.issuer_address == test_account["address"])
-            .first()
-        )
+        auth_token: AuthToken = db.scalars(
+            select(AuthToken)
+            .where(AuthToken.issuer_address == test_account["address"])
+            .limit(1)
+        ).first()
         assert auth_token is not None
 
     # Error_3_1
@@ -232,11 +236,11 @@ class TestAppRoutersAccountsAuthTokenDELETE:
             "detail": "issuer does not exist, or password mismatch",
         }
 
-        auth_token: AuthToken = (
-            db.query(AuthToken)
-            .filter(AuthToken.issuer_address == test_account["address"])
-            .first()
-        )
+        auth_token: AuthToken = db.scalars(
+            select(AuthToken)
+            .where(AuthToken.issuer_address == test_account["address"])
+            .limit(1)
+        ).first()
         assert auth_token is not None
 
     # Error_3_2
@@ -274,11 +278,11 @@ class TestAppRoutersAccountsAuthTokenDELETE:
             "detail": "issuer does not exist, or password mismatch",
         }
 
-        auth_token: AuthToken = (
-            db.query(AuthToken)
-            .filter(AuthToken.issuer_address == test_account["address"])
-            .first()
-        )
+        auth_token: AuthToken = db.scalars(
+            select(AuthToken)
+            .where(AuthToken.issuer_address == test_account["address"])
+            .limit(1)
+        ).first()
         assert auth_token is not None
 
     # Error_4

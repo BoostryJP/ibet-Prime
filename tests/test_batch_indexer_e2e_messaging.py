@@ -28,6 +28,7 @@ from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from Crypto.Util.Padding import pad
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy import select
 
 import batch.indexer_e2e_messaging as indexer_e2e_messaging
 from app.model.blockchain import E2EMessaging
@@ -143,11 +144,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = (
-            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
-        )
+        _e2e_messaging_list = db.scalars(
+            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
+        _idx_e2e_messaging_block_number = db.scalars(
+            select(IDXE2EMessagingBlockNumber).limit(1)
+        ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -206,9 +209,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = (
-            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
-        )
+        _e2e_messaging_list = db.scalars(
+            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        ).all()
         assert len(_e2e_messaging_list) == 1
         _e2e_messaging = _e2e_messaging_list[0]
         assert _e2e_messaging.id == 1
@@ -219,7 +222,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         assert _e2e_messaging.message == message_message_str
         assert _e2e_messaging.send_timestamp == sending_block_timestamp
         assert _e2e_messaging.block_timestamp == sending_block_timestamp
-        _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
+        _idx_e2e_messaging_block_number = db.scalars(
+            select(IDXE2EMessagingBlockNumber).limit(1)
+        ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -318,9 +323,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = (
-            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
-        )
+        _e2e_messaging_list = db.scalars(
+            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        ).all()
         assert len(_e2e_messaging_list) == 1
         _e2e_messaging = _e2e_messaging_list[0]
         assert _e2e_messaging.id == 1
@@ -331,7 +336,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         assert _e2e_messaging.message == message_message_str
         assert _e2e_messaging.send_timestamp == sending_block_timestamp
         assert _e2e_messaging.block_timestamp == sending_block_timestamp
-        _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
+        _idx_e2e_messaging_block_number = db.scalars(
+            select(IDXE2EMessagingBlockNumber).limit(1)
+        ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -464,9 +471,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = (
-            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
-        )
+        _e2e_messaging_list = db.scalars(
+            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        ).all()
         assert len(_e2e_messaging_list) == 4
         _e2e_messaging = _e2e_messaging_list[0]
         assert _e2e_messaging.id == 1
@@ -504,7 +511,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         assert _e2e_messaging.message == message_message_str_4
         assert _e2e_messaging.send_timestamp == sending_block_timestamp_4
         assert _e2e_messaging.block_timestamp == sending_block_timestamp_4
-        _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
+        _idx_e2e_messaging_block_number = db.scalars(
+            select(IDXE2EMessagingBlockNumber).limit(1)
+        ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -560,11 +569,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = (
-            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
-        )
+        _e2e_messaging_list = db.scalars(
+            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
+        _idx_e2e_messaging_block_number = db.scalars(
+            select(IDXE2EMessagingBlockNumber).limit(1)
+        ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -613,11 +624,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = (
-            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
-        )
+        _e2e_messaging_list = db.scalars(
+            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
+        _idx_e2e_messaging_block_number = db.scalars(
+            select(IDXE2EMessagingBlockNumber).limit(1)
+        ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -679,11 +692,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = (
-            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
-        )
+        _e2e_messaging_list = db.scalars(
+            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
+        _idx_e2e_messaging_block_number = db.scalars(
+            select(IDXE2EMessagingBlockNumber).limit(1)
+        ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -732,11 +747,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = (
-            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
-        )
+        _e2e_messaging_list = db.scalars(
+            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
+        _idx_e2e_messaging_block_number = db.scalars(
+            select(IDXE2EMessagingBlockNumber).limit(1)
+        ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -796,11 +813,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = (
-            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
-        )
+        _e2e_messaging_list = db.scalars(
+            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
+        _idx_e2e_messaging_block_number = db.scalars(
+            select(IDXE2EMessagingBlockNumber).limit(1)
+        ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -859,11 +878,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = (
-            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
-        )
+        _e2e_messaging_list = db.scalars(
+            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
+        _idx_e2e_messaging_block_number = db.scalars(
+            select(IDXE2EMessagingBlockNumber).limit(1)
+        ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -919,11 +940,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = (
-            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
-        )
+        _e2e_messaging_list = db.scalars(
+            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
+        _idx_e2e_messaging_block_number = db.scalars(
+            select(IDXE2EMessagingBlockNumber).limit(1)
+        ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -983,11 +1006,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = (
-            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
-        )
+        _e2e_messaging_list = db.scalars(
+            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
+        _idx_e2e_messaging_block_number = db.scalars(
+            select(IDXE2EMessagingBlockNumber).limit(1)
+        ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -1043,11 +1068,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = (
-            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
-        )
+        _e2e_messaging_list = db.scalars(
+            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
+        _idx_e2e_messaging_block_number = db.scalars(
+            select(IDXE2EMessagingBlockNumber).limit(1)
+        ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -1104,11 +1131,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = (
-            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
-        )
+        _e2e_messaging_list = db.scalars(
+            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
+        _idx_e2e_messaging_block_number = db.scalars(
+            select(IDXE2EMessagingBlockNumber).limit(1)
+        ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -1166,11 +1195,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = (
-            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
-        )
+        _e2e_messaging_list = db.scalars(
+            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
+        _idx_e2e_messaging_block_number = db.scalars(
+            select(IDXE2EMessagingBlockNumber).limit(1)
+        ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -1233,11 +1264,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = (
-            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
-        )
+        _e2e_messaging_list = db.scalars(
+            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
+        _idx_e2e_messaging_block_number = db.scalars(
+            select(IDXE2EMessagingBlockNumber).limit(1)
+        ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -1291,11 +1324,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = (
-            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
-        )
+        _e2e_messaging_list = db.scalars(
+            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
+        _idx_e2e_messaging_block_number = db.scalars(
+            select(IDXE2EMessagingBlockNumber).limit(1)
+        ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number
 
@@ -1356,10 +1391,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         processor.process()
 
         # Assertion
-        _e2e_messaging_list = (
-            db.query(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp).all()
-        )
+        _e2e_messaging_list = db.scalars(
+            select(IDXE2EMessaging).order_by(IDXE2EMessaging.block_timestamp)
+        ).all()
         assert len(_e2e_messaging_list) == 0
-        _idx_e2e_messaging_block_number = db.query(IDXE2EMessagingBlockNumber).first()
+        _idx_e2e_messaging_block_number = db.scalars(
+            select(IDXE2EMessagingBlockNumber).limit(1)
+        ).first()
         assert _idx_e2e_messaging_block_number.id == 1
         assert _idx_e2e_messaging_block_number.latest_block_number == block_number

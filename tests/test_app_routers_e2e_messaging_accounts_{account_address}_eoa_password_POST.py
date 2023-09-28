@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy import select
 
 from app.model.blockchain import IbetStraightBondContract
 from app.model.db import E2EMessagingAccount
@@ -59,7 +60,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
-        _account = db.query(E2EMessagingAccount).first()
+        _account = db.scalars(select(E2EMessagingAccount).limit(1)).first()
         assert _account.keyfile != user_keyfile_1
         assert E2EEUtils.decrypt(_account.eoa_password) == new_password
 
@@ -102,9 +103,10 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 }
             ],
         }
@@ -127,14 +129,16 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": {},
                     "loc": ["body", "old_eoa_password"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": {},
                     "loc": ["body", "eoa_password"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -162,13 +166,19 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressEoaPasswordPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": "password",
                     "loc": ["body", "old_eoa_password"],
-                    "msg": "old_eoa_password is not a Base64-encoded encrypted data",
+                    "msg": "Value error, old_eoa_password is not a Base64-encoded "
+                    "encrypted data",
                     "type": "value_error",
                 },
                 {
+                    "ctx": {"error": {}},
+                    "input": "passwordnew",
                     "loc": ["body", "eoa_password"],
-                    "msg": "eoa_password is not a Base64-encoded encrypted data",
+                    "msg": "Value error, eoa_password is not a Base64-encoded "
+                    "encrypted data",
                     "type": "value_error",
                 },
             ],

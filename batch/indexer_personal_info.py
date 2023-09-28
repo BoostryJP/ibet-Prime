@@ -21,9 +21,10 @@ import os
 import sys
 import time
 from datetime import datetime
+from typing import Sequence
 
 from eth_utils import to_checksum_address
-from sqlalchemy import create_engine
+from sqlalchemy import and_, create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -101,7 +102,9 @@ class Processor:
 
     def __refresh_personal_info_list(self, db_session: Session):
         self.personal_info_contract_list.clear()
-        _tokens = db_session.query(Token).filter(Token.token_status == 1).all()
+        _tokens: Sequence[Token] = db_session.scalars(
+            select(Token).where(Token.token_status == 1)
+        ).all()
         tmp_list = []
         for _token in _tokens:
             abi = _token.abi
@@ -133,7 +136,9 @@ class Processor:
 
     def __get_block_number(self, db_session: Session):
         """Get the most recent blockNumber"""
-        block_number = db_session.query(IDXPersonalInfoBlockNumber).first()
+        block_number: IDXPersonalInfoBlockNumber | None = db_session.scalars(
+            select(IDXPersonalInfoBlockNumber).limit(1)
+        ).first()
         if block_number is None:
             return 0
         else:
@@ -141,7 +146,9 @@ class Processor:
 
     def __set_block_number(self, db_session: Session, block_number: int):
         """Setting the most recent blockNumber"""
-        _block_number = db_session.query(IDXPersonalInfoBlockNumber).first()
+        _block_number: IDXPersonalInfoBlockNumber | None = db_session.scalars(
+            select(IDXPersonalInfoBlockNumber).limit(1)
+        ).first()
         if _block_number is None:
             _block_number = IDXPersonalInfoBlockNumber()
             _block_number.latest_block_number = block_number
@@ -220,16 +227,18 @@ class Processor:
         personal_info: dict,
         timestamp: datetime,
     ):
-        _personal_info = (
-            db_session.query(IDXPersonalInfo)
-            .filter(
-                IDXPersonalInfo.account_address == to_checksum_address(account_address)
+        _personal_info: IDXPersonalInfo | None = db_session.scalars(
+            select(IDXPersonalInfo)
+            .where(
+                and_(
+                    IDXPersonalInfo.account_address
+                    == to_checksum_address(account_address),
+                    IDXPersonalInfo.issuer_address
+                    == to_checksum_address(issuer_address),
+                )
             )
-            .filter(
-                IDXPersonalInfo.issuer_address == to_checksum_address(issuer_address)
-            )
-            .first()
-        )
+            .limit(1)
+        ).first()
         if _personal_info is not None:
             _personal_info.personal_info = personal_info
             _personal_info.modified = timestamp

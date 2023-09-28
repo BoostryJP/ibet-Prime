@@ -21,6 +21,7 @@ from unittest import mock
 from unittest.mock import ANY, MagicMock
 
 from app.exceptions import ContractRevertError, SendTransactionError
+from app.model.blockchain.tx_params.ibet_security_token import ForceUnlockParams
 from app.model.db import Account, AuthToken, Token, TokenType
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
@@ -85,13 +86,15 @@ class TestAppRoutersForceUnlockPOST:
 
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
-            data={
-                "lock_address": _lock_address,
-                "account_address": account_address,
-                "recipient_address": _recipient_address,
-                "value": 10,
-                "data": "",
-            },
+            data=ForceUnlockParams(
+                **{
+                    "lock_address": _lock_address,
+                    "account_address": account_address,
+                    "recipient_address": _recipient_address,
+                    "value": 10,
+                    "data": "",
+                }
+            ),
             tx_from=_admin_address,
             private_key=ANY,
         )
@@ -153,13 +156,15 @@ class TestAppRoutersForceUnlockPOST:
 
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
-            data={
-                "lock_address": _lock_address,
-                "account_address": account_address,
-                "recipient_address": _recipient_address,
-                "value": 10,
-                "data": "",
-            },
+            data=ForceUnlockParams(
+                **{
+                    "lock_address": _lock_address,
+                    "account_address": account_address,
+                    "recipient_address": _recipient_address,
+                    "value": 10,
+                    "data": "",
+                }
+            ),
             tx_from=_admin_address,
             private_key=ANY,
         )
@@ -191,24 +196,28 @@ class TestAppRoutersForceUnlockPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": {},
                     "loc": ["body", "token_address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": {},
                     "loc": ["body", "lock_address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": {},
                     "loc": ["body", "recipient_address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": {},
                     "loc": ["body", "value"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -245,25 +254,32 @@ class TestAppRoutersForceUnlockPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78",
                     "loc": ["body", "token_address"],
-                    "msg": "token_address is not a valid address",
+                    "msg": "Value error, token_address is not a valid address",
                     "type": "value_error",
                 },
                 {
+                    "ctx": {"error": {}},
+                    "input": "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78",
                     "loc": ["body", "lock_address"],
-                    "msg": "lock_address is not a valid address",
+                    "msg": "Value error, lock_address is not a valid address",
                     "type": "value_error",
                 },
                 {
+                    "ctx": {"error": {}},
+                    "input": "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78",
                     "loc": ["body", "recipient_address"],
-                    "msg": "recipient_address is not a valid address",
+                    "msg": "Value error, recipient_address is not a valid address",
                     "type": "value_error",
                 },
                 {
+                    "ctx": {"gt": 0},
+                    "input": 0,
                     "loc": ["body", "value"],
-                    "msg": "ensure this value is greater than 0",
-                    "type": "value_error.number.not_gt",
-                    "ctx": {"limit_value": 0},
+                    "msg": "Input should be greater than 0",
+                    "type": "greater_than",
                 },
             ],
         }
@@ -282,14 +298,16 @@ class TestAppRoutersForceUnlockPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -329,6 +347,7 @@ class TestAppRoutersForceUnlockPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "issuer-address",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",
@@ -374,6 +393,7 @@ class TestAppRoutersForceUnlockPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "password",
                     "loc": ["header", "eoa-password"],
                     "msg": "eoa-password is not a Base64-encoded encrypted data",
                     "type": "value_error",

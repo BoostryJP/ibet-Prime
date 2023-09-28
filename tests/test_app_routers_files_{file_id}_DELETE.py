@@ -18,6 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 import base64
 
+from sqlalchemy import select
+
 from app.model.db import UploadFile
 
 
@@ -65,7 +67,7 @@ abc def"""
         assert resp.status_code == 200
         assert resp.json() is None
 
-        _upload_file_list = db.query(UploadFile).all()
+        _upload_file_list = db.scalars(select(UploadFile)).all()
         assert len(_upload_file_list) == 0
 
     ###########################################################################
@@ -88,10 +90,11 @@ abc def"""
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
-                },
+                    "msg": "Field required",
+                    "type": "missing",
+                }
             ],
         }
 
@@ -113,6 +116,7 @@ abc def"""
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "test",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",

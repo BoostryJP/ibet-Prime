@@ -23,6 +23,7 @@ from unittest.mock import patch
 
 import pytest
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy import select
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.orm import Session
 
@@ -168,10 +169,12 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        event_list = db.query(IDXIssueRedeem).all()
+        event_list = db.scalars(select(IDXIssueRedeem)).all()
         assert len(event_list) == 0
 
-        idx_block_number = db.query(IDXIssueRedeemBlockNumber).first()
+        idx_block_number = db.scalars(
+            select(IDXIssueRedeemBlockNumber).limit(1)
+        ).first()
         assert idx_block_number.id == 1
         assert idx_block_number.latest_block_number == block_number
 
@@ -207,10 +210,12 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        event_list = db.query(IDXIssueRedeem).all()
+        event_list = db.scalars(select(IDXIssueRedeem)).all()
         assert len(event_list) == 0
 
-        idx_block_number = db.query(IDXIssueRedeemBlockNumber).first()
+        idx_block_number = db.scalars(
+            select(IDXIssueRedeemBlockNumber).limit(1)
+        ).first()
         assert idx_block_number.id == 1
         assert idx_block_number.latest_block_number == block_number
 
@@ -260,7 +265,7 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        event_list: list[IDXIssueRedeem] = db.query(IDXIssueRedeem).all()
+        event_list: list[IDXIssueRedeem] = db.scalars(select(IDXIssueRedeem)).all()
         assert len(event_list) == 1
         event_0 = event_list[0]
         assert event_0.id == 1
@@ -273,7 +278,9 @@ class TestProcessor:
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
         assert event_0.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
 
-        idx_block_number = db.query(IDXIssueRedeemBlockNumber).first()
+        idx_block_number = db.scalars(
+            select(IDXIssueRedeemBlockNumber).limit(1)
+        ).first()
         assert idx_block_number.id == 1
         assert idx_block_number.latest_block_number == block_number
 
@@ -323,7 +330,7 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        event_list: list[IDXIssueRedeem] = db.query(IDXIssueRedeem).all()
+        event_list: list[IDXIssueRedeem] = db.scalars(select(IDXIssueRedeem)).all()
         assert len(event_list) == 1
         event_0 = event_list[0]
         assert event_0.id == 1
@@ -336,7 +343,9 @@ class TestProcessor:
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
         assert event_0.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
 
-        idx_block_number = db.query(IDXIssueRedeemBlockNumber).first()
+        idx_block_number = db.scalars(
+            select(IDXIssueRedeemBlockNumber).limit(1)
+        ).first()
         assert idx_block_number.id == 1
         assert idx_block_number.latest_block_number == block_number
 
@@ -386,7 +395,7 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        event_list: list[IDXIssueRedeem] = db.query(IDXIssueRedeem).all()
+        event_list: list[IDXIssueRedeem] = db.scalars(select(IDXIssueRedeem)).all()
         assert len(event_list) == 1
         event_0 = event_list[0]
         assert event_0.id == 1
@@ -399,7 +408,9 @@ class TestProcessor:
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
         assert event_0.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
 
-        idx_block_number = db.query(IDXIssueRedeemBlockNumber).first()
+        idx_block_number = db.scalars(
+            select(IDXIssueRedeemBlockNumber).limit(1)
+        ).first()
         assert idx_block_number.id == 1
         assert idx_block_number.latest_block_number == block_number
 
@@ -449,7 +460,7 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        event_list: list[IDXIssueRedeem] = db.query(IDXIssueRedeem).all()
+        event_list: list[IDXIssueRedeem] = db.scalars(select(IDXIssueRedeem)).all()
         assert len(event_list) == 1
         event_0 = event_list[0]
         assert event_0.id == 1
@@ -462,7 +473,9 @@ class TestProcessor:
         block = web3.eth.get_block(tx_receipt_1["blockNumber"])
         assert event_0.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
 
-        idx_block_number = db.query(IDXIssueRedeemBlockNumber).first()
+        idx_block_number = db.scalars(
+            select(IDXIssueRedeemBlockNumber).limit(1)
+        ).first()
         assert idx_block_number.id == 1
         assert idx_block_number.latest_block_number == block_number
 
@@ -523,7 +536,7 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        event_list: list[IDXIssueRedeem] = db.query(IDXIssueRedeem).all()
+        event_list: list[IDXIssueRedeem] = db.scalars(select(IDXIssueRedeem)).all()
         assert len(event_list) == 2
 
         event_0 = event_list[0]
@@ -548,7 +561,9 @@ class TestProcessor:
         block = web3.eth.get_block(tx_receipt_2["blockNumber"])
         assert event_1.block_timestamp == datetime.utcfromtimestamp(block["timestamp"])
 
-        idx_block_number = db.query(IDXIssueRedeemBlockNumber).first()
+        idx_block_number = db.scalars(
+            select(IDXIssueRedeemBlockNumber).limit(1)
+        ).first()
         assert idx_block_number.id == 1
         assert idx_block_number.latest_block_number == block_number
 
@@ -740,7 +755,7 @@ class TestProcessor:
         with patch(
             "batch.indexer_issue_redeem.INDEXER_SYNC_INTERVAL", None
         ), patch.object(
-            Session, "query", side_effect=InvalidRequestError()
+            Session, "execute", side_effect=InvalidRequestError()
         ), pytest.raises(
             TypeError
         ):

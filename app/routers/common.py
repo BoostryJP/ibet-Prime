@@ -1,17 +1,23 @@
 """
 Copyright BOOSTRY Co., Ltd.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
+
 You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing,
 software distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
 See the License for the specific language governing permissions and
 limitations under the License.
+
 SPDX-License-Identifier: Apache-2.0
 """
 from fastapi import APIRouter
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import log
@@ -21,7 +27,7 @@ from app.model.db import Node
 from app.model.schema import BlockNumberResponse, E2EEResponse
 from app.utils.docs_utils import get_routers_responses
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.fastapi import json_response
+from app.utils.fastapi_utils import json_response
 from app.utils.web3_utils import Web3Wrapper
 from config import E2EE_REQUEST_ENABLED
 
@@ -79,7 +85,7 @@ def check_health(db: DBSession):
 
 
 def __check_ethereum(errors: list, db: Session):
-    _node = db.query(Node).filter(Node.is_synced == True).first()
+    _node = db.scalars(select(Node).where(Node.is_synced == True).limit(1)).first()
     if _node is None:
         msg = "Ethereum node's block synchronization is down"
         LOG.error(msg)

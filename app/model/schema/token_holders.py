@@ -17,9 +17,9 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import uuid
-from typing import Dict, List, Union
+from typing import List
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.model.db import TokenHolderBatchStatus
 from app.model.schema.types import ResultSet
@@ -34,16 +34,19 @@ class CreateTokenHoldersListRequest(BaseModel):
 
     list_id: str = Field(description="UUID v4 required")
     block_number: int = Field(ge=1)
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "list_id": "cfd83622-34dc-4efe-a68b-2cc275d3d824",
-                "block_number": 765,
-            }
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "list_id": "cfd83622-34dc-4efe-a68b-2cc275d3d824",
+                    "block_number": 765,
+                }
+            ]
         }
+    )
 
-    @validator("list_id")
+    @field_validator("list_id")
+    @classmethod
     def list_id_is_uuid_v4(cls, v):
         try:
             _uuid = uuid.UUID(v, version=4)
@@ -62,14 +65,16 @@ class CreateTokenHoldersListResponse(BaseModel):
 
     list_id: str = Field(description="UUID v4 required")
     status: TokenHolderBatchStatus
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "list_id": "cfd83622-34dc-4efe-a68b-2cc275d3d824",
-                "status": "pending",
-            }
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "list_id": "cfd83622-34dc-4efe-a68b-2cc275d3d824",
+                    "status": "pending",
+                }
+            ]
         }
+    )
 
 
 class RetrieveTokenHolderCollectionResponse(BaseModel):
@@ -102,17 +107,19 @@ class RetrieveTokenHoldersListResponse(BaseModel):
 
     status: TokenHolderBatchStatus
     holders: List[TokenHoldersCollectionHolder]
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "status": "done",
-                "holders": [
-                    {
-                        "account_address": "0x85a8b8887a4bD76859751b10C8aC8EC5f3aA1bDB",
-                        "hold_balance": 30000,
-                        "locked_balance": 0,
-                    }
-                ],
-            }
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "status": "done",
+                    "holders": [
+                        {
+                            "account_address": "0x85a8b8887a4bD76859751b10C8aC8EC5f3aA1bDB",
+                            "hold_balance": 30000,
+                            "locked_balance": 0,
+                        }
+                    ],
+                }
+            ]
         }
+    )

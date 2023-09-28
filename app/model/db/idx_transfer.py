@@ -16,9 +16,11 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import JSON, BigInteger, Column, DateTime, String
+from sqlalchemy import JSON, BigInteger, DateTime, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -35,23 +37,23 @@ class IDXTransfer(Base):
 
     __tablename__ = "idx_transfer"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # transaction hash
-    transaction_hash = Column(String(66), index=True)
+    transaction_hash: Mapped[str | None] = mapped_column(String(66), index=True)
     # token address
-    token_address = Column(String(42), index=True)
+    token_address: Mapped[str | None] = mapped_column(String(42), index=True)
     # transfer from address
-    from_address = Column(String(42), index=True)
+    from_address: Mapped[str | None] = mapped_column(String(42), index=True)
     # transfer to address
-    to_address = Column(String(42), index=True)
+    to_address: Mapped[str | None] = mapped_column(String(42), index=True)
     # transfer amount
-    amount = Column(BigInteger)
+    amount: Mapped[int | None] = mapped_column(BigInteger)
     # Source Event (IDXTransferSourceEventType)
-    source_event = Column(String(50), nullable=False)
+    source_event: Mapped[str] = mapped_column(String(50), nullable=False)
     # Data
-    data = Column(JSON)
+    data: Mapped[dict | None] = mapped_column(JSON)
     # block timestamp
-    block_timestamp = Column(DateTime)
+    block_timestamp: Mapped[datetime | None] = mapped_column(DateTime)
 
 
 class IDXTransferBlockNumber(Base):
@@ -60,6 +62,6 @@ class IDXTransferBlockNumber(Base):
     __tablename__ = "idx_transfer_block_number"
 
     # sequence id
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # latest blockNumber
-    latest_block_number = Column(BigInteger)
+    latest_block_number: Mapped[int | None] = mapped_column(BigInteger)

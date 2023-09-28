@@ -21,10 +21,10 @@ import sys
 import time
 import uuid
 from datetime import datetime
-from typing import List
+from typing import Sequence
 
 from eth_keyfile import decode_keyfile_json
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -89,11 +89,11 @@ class Processor:
 
                 # Get issuer's private key
                 try:
-                    _account = (
-                        db_session.query(Account)
-                        .filter(Account.issuer_address == _update_token.issuer_address)
-                        .first()
-                    )
+                    _account: Account | None = db_session.scalars(
+                        select(Account)
+                        .where(Account.issuer_address == _update_token.issuer_address)
+                        .limit(1)
+                    ).first()
                     if (
                         _account is None
                     ):  # If issuer does not exist, update the status of the upload to ERROR
@@ -189,11 +189,11 @@ class Processor:
                         db_session.add(_position)
 
                         # Insert issuer's UTXO data
-                        _token = (
-                            db_session.query(Token)
-                            .filter(Token.token_address == _update_token.token_address)
-                            .first()
-                        )
+                        _token: Token = db_session.scalars(
+                            select(Token)
+                            .where(Token.token_address == _update_token.token_address)
+                            .limit(1)
+                        ).first()
                         block = ContractUtils.get_block_by_transaction_hash(
                             _token.tx_hash
                         )
@@ -248,13 +248,10 @@ class Processor:
         finally:
             db_session.close()
 
-    def __get_update_token_list(self, db_session: Session) -> List[UpdateToken]:
-        _update_token_list = (
-            db_session.query(UpdateToken)
-            .filter(UpdateToken.status == 0)
-            .order_by(UpdateToken.id)
-            .all()
-        )
+    def __get_update_token_list(self, db_session: Session):
+        _update_token_list: Sequence[UpdateToken] = db_session.scalars(
+            select(UpdateToken).where(UpdateToken.status == 0).order_by(UpdateToken.id)
+        ).all()
         return _update_token_list
 
     def __create_update_data(self, trigger, token_type, arguments):
@@ -306,22 +303,19 @@ class Processor:
     def __sink_on_finish_update_process(
         db_session: Session, record_id: int, status: int
     ):
-        _update_token = (
-            db_session.query(UpdateToken).filter(UpdateToken.id == record_id).first()
-        )
+        _update_token: UpdateToken | None = db_session.scalars(
+            select(UpdateToken).where(UpdateToken.id == record_id).limit(1)
+        ).first()
         if _update_token is not None:
             _update_token.status = status
             db_session.merge(_update_token)
 
             if _update_token.trigger == "Issue":
-                _token = (
-                    db_session.query(Token)
-                    .filter(Token.token_address == _update_token.token_address)
-                    .first()
+                db_session.execute(
+                    update(Token)
+                    .where(Token.token_address == _update_token.token_address)
+                    .values(token_status=status)
                 )
-                if _token is not None:
-                    _token.token_status = status
-                    db_session.merge(_token)
 
     @staticmethod
     def __sink_on_error_notification(

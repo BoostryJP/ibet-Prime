@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
+from sqlalchemy import select
 
 from app.model.db import Account, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
@@ -64,7 +65,7 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
-        _account = db.query(Account).first()
+        _account = db.scalars(select(Account).limit(1)).first()
         _account_rsa_private_key = _account.rsa_private_key
         _account_rsa_passphrase = E2EEUtils.decrypt(_account.rsa_passphrase)
         assert _account_rsa_private_key != _old_rsa_private_key
@@ -101,10 +102,11 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
-                },
+                    "msg": "Field required",
+                    "type": "missing",
+                }
             ],
         }
 
@@ -126,14 +128,16 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": {"dummy": "dummy"},
                     "loc": ["body", "old_rsa_passphrase"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": {"dummy": "dummy"},
                     "loc": ["body", "rsa_passphrase"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -159,13 +163,20 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": "password",
                     "loc": ["body", "old_rsa_passphrase"],
-                    "msg": "old_rsa_passphrase is not a Base64-encoded encrypted data",
+                    "msg": "Value error, old_rsa_passphrase is not a Base64-encoded "
+                    "encrypted data",
                     "type": "value_error",
                 },
                 {
+                    "ctx": {"error": {}},
+                    "input": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 "
+                    "*+.\\()?[]^$-|!#%&\"',/:;<=>@_`{}~",
                     "loc": ["body", "rsa_passphrase"],
-                    "msg": "rsa_passphrase is not a Base64-encoded encrypted data",
+                    "msg": "Value error, rsa_passphrase is not a Base64-encoded "
+                    "encrypted data",
                     "type": "value_error",
                 },
             ],

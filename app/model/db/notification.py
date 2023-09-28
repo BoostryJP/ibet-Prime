@@ -18,7 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
 
-from sqlalchemy import JSON, Column, Integer, String
+from sqlalchemy import JSON, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -71,19 +72,19 @@ class Notification(Base):
     __tablename__ = "notification"
 
     # sequence id
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     # notification id (UUID)
-    notice_id = Column(String(36), index=False)
+    notice_id: Mapped[str | None] = mapped_column(String(36), index=False)
     # issuer address
-    issuer_address = Column(String(42))
+    issuer_address: Mapped[str | None] = mapped_column(String(42))
     # notification priority（0:Low、1:Medium、2:High）
-    priority = Column(Integer)
+    priority: Mapped[int | None] = mapped_column(Integer)
     # notification type
-    type = Column(String(50))
+    type: Mapped[str | None] = mapped_column(String(50))
     # notification code
-    code = Column(Integer)
+    code: Mapped[int | None] = mapped_column(Integer)
     # meta information
-    metainfo = Column(JSON)
+    metainfo: Mapped[dict | None] = mapped_column(JSON)
 
 
 class NotificationType(str, Enum):

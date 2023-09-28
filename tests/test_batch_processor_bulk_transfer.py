@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 from unittest.mock import patch
 
 import pytest
+from sqlalchemy import and_, select
 
 from app.exceptions import SendTransactionError
 from app.model.db import (
@@ -127,18 +128,18 @@ class TestProcessor:
             processor.process()
 
             # Assertion
-            _bulk_transfer_upload = (
-                db.query(BulkTransferUpload)
-                .filter(BulkTransferUpload.upload_id == self.upload_id_list[0])
-                .first()
-            )
+            _bulk_transfer_upload = db.scalars(
+                select(BulkTransferUpload)
+                .where(BulkTransferUpload.upload_id == self.upload_id_list[0])
+                .limit(1)
+            ).first()
             assert _bulk_transfer_upload.status == 1
 
-            _bulk_transfer_list = (
-                db.query(BulkTransfer)
-                .filter(BulkTransfer.upload_id == self.upload_id_list[0])
-                .all()
-            )
+            _bulk_transfer_list = db.scalars(
+                select(BulkTransfer).where(
+                    BulkTransfer.upload_id == self.upload_id_list[0]
+                )
+            ).all()
             for _bulk_transfer in _bulk_transfer_list:
                 assert _bulk_transfer.status == 1
 
@@ -192,18 +193,18 @@ class TestProcessor:
             processor.process()
 
             # Assertion
-            _bulk_transfer_upload = (
-                db.query(BulkTransferUpload)
-                .filter(BulkTransferUpload.upload_id == self.upload_id_list[0])
-                .first()
-            )
+            _bulk_transfer_upload = db.scalars(
+                select(BulkTransferUpload)
+                .where(BulkTransferUpload.upload_id == self.upload_id_list[0])
+                .limit(1)
+            ).first()
             assert _bulk_transfer_upload.status == 1
 
-            _bulk_transfer_list = (
-                db.query(BulkTransfer)
-                .filter(BulkTransfer.upload_id == self.upload_id_list[0])
-                .all()
-            )
+            _bulk_transfer_list = db.scalars(
+                select(BulkTransfer).where(
+                    BulkTransfer.upload_id == self.upload_id_list[0]
+                )
+            ).all()
             for _bulk_transfer in _bulk_transfer_list:
                 assert _bulk_transfer.status == 1
 
@@ -305,9 +306,9 @@ class TestProcessor:
             processor.process()
 
             # Assertion
-            _bulk_transfer_upload_list = (
-                db.query(BulkTransferUpload).order_by(BulkTransferUpload.created).all()
-            )
+            _bulk_transfer_upload_list = db.scalars(
+                select(BulkTransferUpload).order_by(BulkTransferUpload.created)
+            ).all()
             _bulk_transfer_upload = _bulk_transfer_upload_list[0]
             assert _bulk_transfer_upload.status == 0
             _bulk_transfer_upload = _bulk_transfer_upload_list[1]
@@ -318,20 +319,18 @@ class TestProcessor:
             assert _bulk_transfer_upload.status == 1
             _bulk_transfer_upload = _bulk_transfer_upload_list[4]
             assert _bulk_transfer_upload.status == 1
-            _bulk_transfer_list = (
-                db.query(BulkTransfer)
-                .filter(BulkTransfer.upload_id == self.upload_id_list[3])
+            _bulk_transfer_list = db.scalars(
+                select(BulkTransfer)
+                .where(BulkTransfer.upload_id == self.upload_id_list[3])
                 .order_by(BulkTransfer.id)
-                .all()
-            )
+            ).all()
             _bulk_transfer = _bulk_transfer_list[0]
             assert _bulk_transfer.status == 1
-            _bulk_transfer_list = (
-                db.query(BulkTransfer)
-                .filter(BulkTransfer.upload_id == self.upload_id_list[4])
+            _bulk_transfer_list = db.scalars(
+                select(BulkTransfer)
+                .where(BulkTransfer.upload_id == self.upload_id_list[4])
                 .order_by(BulkTransfer.id)
-                .all()
-            )
+            ).all()
             _bulk_transfer = _bulk_transfer_list[0]
             assert _bulk_transfer.status == 1
 
@@ -430,9 +429,9 @@ class TestProcessor:
             processor.process()
 
             # Assertion
-            _bulk_transfer_upload_list = (
-                db.query(BulkTransferUpload).order_by(BulkTransferUpload.created).all()
-            )
+            _bulk_transfer_upload_list = db.scalars(
+                select(BulkTransferUpload).order_by(BulkTransferUpload.created)
+            ).all()
             _bulk_transfer_upload = _bulk_transfer_upload_list[0]
             assert _bulk_transfer_upload.status == 0
             _bulk_transfer_upload = _bulk_transfer_upload_list[1]
@@ -441,20 +440,18 @@ class TestProcessor:
             assert _bulk_transfer_upload.status == 1
             _bulk_transfer_upload = _bulk_transfer_upload_list[3]
             assert _bulk_transfer_upload.status == 1
-            _bulk_transfer_list = (
-                db.query(BulkTransfer)
-                .filter(BulkTransfer.upload_id == self.upload_id_list[2])
+            _bulk_transfer_list = db.scalars(
+                select(BulkTransfer)
+                .where(BulkTransfer.upload_id == self.upload_id_list[2])
                 .order_by(BulkTransfer.id)
-                .all()
-            )
+            ).all()
             _bulk_transfer = _bulk_transfer_list[0]
             assert _bulk_transfer.status == 1
-            _bulk_transfer_list = (
-                db.query(BulkTransfer)
-                .filter(BulkTransfer.upload_id == self.upload_id_list[3])
+            _bulk_transfer_list = db.scalars(
+                select(BulkTransfer)
+                .where(BulkTransfer.upload_id == self.upload_id_list[3])
                 .order_by(BulkTransfer.id)
-                .all()
-            )
+            ).all()
             _bulk_transfer = _bulk_transfer_list[0]
             assert _bulk_transfer.status == 1
 
@@ -481,13 +478,13 @@ class TestProcessor:
         processor.process()
 
         # Assertion
-        _bulk_transfer_upload = (
-            db.query(BulkTransferUpload)
-            .filter(BulkTransferUpload.upload_id == self.upload_id_list[0])
-            .first()
-        )
+        _bulk_transfer_upload = db.scalars(
+            select(BulkTransferUpload)
+            .where(BulkTransferUpload.upload_id == self.upload_id_list[0])
+            .limit(1)
+        ).first()
         assert _bulk_transfer_upload.status == 2
-        _notification = db.query(Notification).first()
+        _notification = db.scalars(select(Notification).limit(1)).first()
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _account["address"]
@@ -526,13 +523,13 @@ class TestProcessor:
         processor.process()
 
         # Assertion
-        _bulk_transfer_upload = (
-            db.query(BulkTransferUpload)
-            .filter(BulkTransferUpload.upload_id == self.upload_id_list[0])
-            .first()
-        )
+        _bulk_transfer_upload = db.scalars(
+            select(BulkTransferUpload)
+            .where(BulkTransferUpload.upload_id == self.upload_id_list[0])
+            .limit(1)
+        ).first()
         assert _bulk_transfer_upload.status == 2
-        _notification = db.query(Notification).first()
+        _notification = db.scalars(select(Notification).limit(1)).first()
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _account["address"]
@@ -592,22 +589,26 @@ class TestProcessor:
             processor.process()
 
             # Assertion
-            _bulk_transfer_upload = (
-                db.query(BulkTransferUpload)
-                .filter(BulkTransferUpload.upload_id == self.upload_id_list[0])
-                .first()
-            )
+            _bulk_transfer_upload = db.scalars(
+                select(BulkTransferUpload)
+                .where(BulkTransferUpload.upload_id == self.upload_id_list[0])
+                .limit(1)
+            ).first()
             assert _bulk_transfer_upload.status == 2
 
-            _bulk_transfer = (
-                db.query(BulkTransfer)
-                .filter(BulkTransfer.upload_id == self.upload_id_list[0])
-                .filter(BulkTransfer.token_address == self.bulk_transfer_token[0])
-                .first()
-            )
+            _bulk_transfer = db.scalars(
+                select(BulkTransfer)
+                .where(
+                    and_(
+                        BulkTransfer.upload_id == self.upload_id_list[0],
+                        BulkTransfer.token_address == self.bulk_transfer_token[0],
+                    )
+                )
+                .limit(1)
+            ).first()
             assert _bulk_transfer.status == 2
 
-            _notification = db.query(Notification).first()
+            _notification = db.scalars(select(Notification).limit(1)).first()
             assert _notification.id == 1
             assert _notification.notice_id is not None
             assert _notification.issuer_address == _account["address"]
@@ -667,22 +668,26 @@ class TestProcessor:
             processor.process()
 
             # Assertion
-            _bulk_transfer_upload = (
-                db.query(BulkTransferUpload)
-                .filter(BulkTransferUpload.upload_id == self.upload_id_list[0])
-                .first()
-            )
+            _bulk_transfer_upload = db.scalars(
+                select(BulkTransferUpload)
+                .where(BulkTransferUpload.upload_id == self.upload_id_list[0])
+                .limit(1)
+            ).first()
             assert _bulk_transfer_upload.status == 2
 
-            _bulk_transfer = (
-                db.query(BulkTransfer)
-                .filter(BulkTransfer.upload_id == self.upload_id_list[0])
-                .filter(BulkTransfer.token_address == self.bulk_transfer_token[0])
-                .first()
-            )
+            _bulk_transfer = db.scalars(
+                select(BulkTransfer)
+                .where(
+                    and_(
+                        BulkTransfer.upload_id == self.upload_id_list[0],
+                        BulkTransfer.token_address == self.bulk_transfer_token[0],
+                    )
+                )
+                .limit(1)
+            ).first()
             assert _bulk_transfer.status == 2
 
-            _notification = db.query(Notification).first()
+            _notification = db.scalars(select(Notification).limit(1)).first()
             assert _notification.id == 1
             assert _notification.notice_id is not None
             assert _notification.issuer_address == _account["address"]
@@ -745,22 +750,26 @@ class TestProcessor:
             processor.process()
 
             # Assertion
-            _bulk_transfer_upload = (
-                db.query(BulkTransferUpload)
-                .filter(BulkTransferUpload.upload_id == self.upload_id_list[0])
-                .first()
-            )
+            _bulk_transfer_upload = db.scalars(
+                select(BulkTransferUpload)
+                .where(BulkTransferUpload.upload_id == self.upload_id_list[0])
+                .limit(1)
+            ).first()
             assert _bulk_transfer_upload.status == 2
 
-            _bulk_transfer = (
-                db.query(BulkTransfer)
-                .filter(BulkTransfer.upload_id == self.upload_id_list[0])
-                .filter(BulkTransfer.token_address == self.bulk_transfer_token[0])
-                .first()
-            )
+            _bulk_transfer = db.scalars(
+                select(BulkTransfer)
+                .where(
+                    and_(
+                        BulkTransfer.upload_id == self.upload_id_list[0],
+                        BulkTransfer.token_address == self.bulk_transfer_token[0],
+                    )
+                )
+                .limit(1)
+            ).first()
             assert _bulk_transfer.status == 1
 
-            _notification = db.query(Notification).first()
+            _notification = db.scalars(select(Notification).limit(1)).first()
             assert _notification.id == 1
             assert _notification.notice_id is not None
             assert _notification.issuer_address == _account["address"]

@@ -17,11 +17,11 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import uuid
-from typing import List, Optional, Type
+from typing import Optional, Sequence
 
 from fastapi import APIRouter, Header, Path, Query
 from fastapi.exceptions import HTTPException
-from sqlalchemy import asc, desc
+from sqlalchemy import and_, asc, desc, func, select
 
 from app.database import DBSession
 from app.exceptions import InvalidParameterError
@@ -34,7 +34,7 @@ from app.model.schema import (
 )
 from app.utils.check_utils import address_is_valid_address, validate_headers
 from app.utils.docs_utils import get_routers_responses
-from app.utils.fastapi import json_response
+from app.utils.fastapi_utils import json_response
 from app.utils.web3_utils import Web3Wrapper
 
 web3 = Web3Wrapper()
@@ -56,7 +56,7 @@ def create_collection(
     data: CreateTokenHoldersListRequest,
     token_address: str = Path(
         ...,
-        example="0xABCdeF1234567890abcdEf123456789000000000",
+        examples=["0xABCdeF1234567890abcdEf123456789000000000"],
     ),
     issuer_address: str = Header(...),
 ):
@@ -66,13 +66,17 @@ def create_collection(
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get Token to ensure input token valid
-    query = (
-        db.query(Token)
-        .filter(Token.token_address == token_address)
-        .filter(Token.issuer_address == issuer_address)
-        .filter(Token.token_status != 2)
-    )
-    _token = query.first()
+    _token: Token | None = db.scalars(
+        select(Token)
+        .where(
+            and_(
+                Token.token_address == token_address,
+                Token.issuer_address == issuer_address,
+                Token.token_status != 2,
+            )
+        )
+        .limit(1)
+    ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
@@ -83,22 +87,26 @@ def create_collection(
         raise InvalidParameterError("Block number must be current or past one.")
 
     # Check list id conflict
-    _same_list_id_record = (
-        db.query(TokenHoldersList)
-        .filter(TokenHoldersList.list_id == data.list_id)
-        .first()
-    )
+    _same_list_id_record = db.scalars(
+        select(TokenHoldersList)
+        .where(TokenHoldersList.list_id == data.list_id)
+        .limit(1)
+    ).first()
     if _same_list_id_record is not None:
         raise InvalidParameterError("list_id must be unique.")
 
     # Check existing list
-    _same_combi_record: TokenHoldersList | None = (
-        db.query(TokenHoldersList)
-        .filter(TokenHoldersList.block_number == data.block_number)
-        .filter(TokenHoldersList.token_address == token_address)
-        .filter(TokenHoldersList.batch_status != TokenHolderBatchStatus.FAILED)
-        .first()
-    )
+    _same_combi_record: TokenHoldersList | None = db.scalars(
+        select(TokenHoldersList)
+        .where(
+            and_(
+                TokenHoldersList.block_number == data.block_number,
+                TokenHoldersList.token_address == token_address,
+                TokenHoldersList.batch_status != TokenHolderBatchStatus.FAILED,
+            )
+        )
+        .limit(1)
+    ).first()
 
     if _same_combi_record:
         return json_response(
@@ -113,7 +121,6 @@ def create_collection(
     _token_holders_list.list_id = data.list_id
     _token_holders_list.batch_status = TokenHolderBatchStatus.PENDING.value
     _token_holders_list.block_number = data.block_number
-
     db.add(_token_holders_list)
     db.commit()
 
@@ -144,47 +151,61 @@ def list_all_token_holders_collections(
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get Token to ensure input token valid
-    query = (
-        db.query(Token)
-        .filter(Token.token_address == token_address)
-        .filter(Token.token_status != 2)
-    )
-
     if issuer_address is not None:
-        query = query.filter(Token.issuer_address == issuer_address)
+        _token = db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.token_address == token_address,
+                    Token.issuer_address == issuer_address,
+                    Token.token_status != 2,
+                )
+            )
+            .limit(1)
+        ).first()
+    else:
+        _token = db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
+            )
+            .limit(1)
+        ).first()
 
-    _token = query.first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
         raise InvalidParameterError("this token is temporarily unavailable")
 
-    query = db.query(TokenHoldersList).filter(
+    # Base query
+    stmt = select(TokenHoldersList).where(
         TokenHoldersList.token_address == token_address
     )
+    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
 
-    # Total
-    total = query.count()
     if status is not None:
-        query = query.filter(TokenHoldersList.batch_status == status.value)
+        stmt = stmt.where(TokenHoldersList.batch_status == status.value)
 
     # Sort
     if sort_order == 0:  # ASC
-        query = query.order_by(TokenHoldersList.created)
+        stmt = stmt.order_by(TokenHoldersList.created)
     else:  # DESC
-        query = query.order_by(desc(TokenHoldersList.created))
+        stmt = stmt.order_by(desc(TokenHoldersList.created))
 
     # Count
-    count = query.count()
+    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Pagination
     if limit is not None:
-        query = query.limit(limit)
+        stmt = stmt.limit(limit)
     if offset is not None:
-        query = query.offset(offset)
+        stmt = stmt.offset(offset)
 
     # Get all collections
-    _token_holders_collections: list[TokenHoldersList] = query.all()
+    _token_holders_collections: Sequence[TokenHoldersList] = db.scalars(stmt).all()
 
     token_holders_collections = []
     for _collection in _token_holders_collections:
@@ -221,7 +242,7 @@ def retrieve_token_holders_list(
     token_address: str = Path(...),
     list_id: str = Path(
         ...,
-        example="cfd83622-34dc-4efe-a68b-2cc275d3d824",
+        examples=["cfd83622-34dc-4efe-a68b-2cc275d3d824"],
         description="UUID v4 required",
     ),
     issuer_address: str = Header(...),
@@ -232,13 +253,17 @@ def retrieve_token_holders_list(
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get Token to ensure input token valid
-    query = (
-        db.query(Token)
-        .filter(Token.token_address == token_address)
-        .filter(Token.issuer_address == issuer_address)
-        .filter(Token.token_status != 2)
-    )
-    _token = query.first()
+    _token = db.scalars(
+        select(Token)
+        .where(
+            and_(
+                Token.token_address == token_address,
+                Token.issuer_address == issuer_address,
+                Token.token_status != 2,
+            )
+        )
+        .limit(1)
+    ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
     if _token.token_status == 0:
@@ -252,10 +277,9 @@ def retrieve_token_holders_list(
         raise InvalidParameterError(description)
 
     # Check existing list
-    _same_list_id_record: TokenHoldersList | None = (
-        db.query(TokenHoldersList).filter(TokenHoldersList.list_id == list_id).first()
-    )
-
+    _same_list_id_record: TokenHoldersList | None = db.scalars(
+        select(TokenHoldersList).where(TokenHoldersList.list_id == list_id).limit(1)
+    ).first()
     if not _same_list_id_record:
         raise HTTPException(status_code=404, detail="list not found")
     if _same_list_id_record.token_address != token_address:
@@ -265,12 +289,12 @@ def retrieve_token_holders_list(
         )
         raise InvalidParameterError(description)
 
-    _token_holders: List[TokenHolder] = (
-        db.query(TokenHolder)
-        .filter(TokenHolder.holder_list_id == _same_list_id_record.id)
+    # Get holder list
+    _token_holders: Sequence[TokenHolder] = db.scalars(
+        select(TokenHolder)
+        .where(TokenHolder.holder_list_id == _same_list_id_record.id)
         .order_by(asc(TokenHolder.account_address))
-        .all()
-    )
+    ).all()
     token_holders = [_token_holder.json() for _token_holder in _token_holders]
 
     return json_response(

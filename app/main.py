@@ -18,11 +18,12 @@ SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
 
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
+from pydantic_core import ArgsKwargs, ErrorDetails
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.exceptions import *
@@ -59,7 +60,7 @@ tags_metadata = [
 app = FastAPI(
     title="ibet Prime",
     description="Security token management system for ibet network",
-    version="23.6.0",
+    version="23.9.0",
     contact={"email": "dev@boostry.co.jp"},
     license_info={
         "name": "Apache 2.0",
@@ -118,13 +119,32 @@ async def internal_server_error_handler(request: Request, exc: Exception):
     )
 
 
+def convert_errors(
+    e: ValidationError | RequestValidationError,
+) -> list[ErrorDetails]:
+    new_errors: list[ErrorDetails] = []
+    for error in e.errors():
+        # "url" field which Pydantic V2 adds when validation error occurs is not needed for API response.
+        # https://docs.pydantic.dev/2.1/errors/errors/
+        if "url" in error.keys():
+            error.pop("url", None)
+
+        # "input" field generated from GET query model_validator is ArgsKwargs instance.
+        # This cannot be serialized to json as it is, so nested field should be picked.
+        # https://docs.pydantic.dev/2.1/errors/errors/
+        if "input" in error.keys() and isinstance(error["input"], ArgsKwargs):
+            error["input"] = error["input"].kwargs
+        new_errors.append(error)
+    return new_errors
+
+
 # 422:RequestValidationError
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     meta = {"code": 1, "title": "RequestValidationError"}
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=jsonable_encoder({"meta": meta, "detail": exc.errors()}),
+        content=jsonable_encoder({"meta": meta, "detail": convert_errors(exc)}),
     )
 
 
@@ -135,7 +155,7 @@ async def query_validation_exception_handler(request: Request, exc: ValidationEr
     meta = {"code": 1, "title": "RequestValidationError"}
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=jsonable_encoder({"meta": meta, "detail": exc.errors()}),
+        content=jsonable_encoder({"meta": meta, "detail": convert_errors(exc)}),
     )
 
 

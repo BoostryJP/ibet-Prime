@@ -157,6 +157,7 @@ class TestAppRoutersBondBulkTransferGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "DUMMY ADDRESS",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",

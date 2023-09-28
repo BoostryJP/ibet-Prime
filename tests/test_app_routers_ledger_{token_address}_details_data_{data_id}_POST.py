@@ -18,6 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 from unittest import mock
 
+from sqlalchemy import select
+
 from app.model.db import LedgerDetailsData, Token, TokenType
 from tests.account_config import config_eth_account
 
@@ -88,9 +90,9 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
-        _details_data_list = (
-            db.query(LedgerDetailsData).order_by(LedgerDetailsData.id).all()
-        )
+        _details_data_list = db.scalars(
+            select(LedgerDetailsData).order_by(LedgerDetailsData.id)
+        ).all()
         assert len(_details_data_list) == 2
         _details_data = _details_data_list[0]
         assert _details_data.id == 2
@@ -134,14 +136,16 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -185,6 +189,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "test",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",
@@ -237,62 +242,74 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"limit_value": 200},
+                    "ctx": {"max_length": 200},
+                    "input": "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901",
                     "loc": ["body", 0, "name"],
-                    "msg": "ensure this value has at most 200 characters",
-                    "type": "value_error.any_str.max_length",
+                    "msg": "String should have at most 200 characters",
+                    "type": "string_too_long",
                 },
                 {
-                    "ctx": {"limit_value": 1_000_000_000_000},
+                    "ctx": {"le": 1000000000000},
+                    "input": 1000000000001,
                     "loc": ["body", 0, "amount"],
-                    "msg": "ensure this value is less than or equal to 1000000000000",
-                    "type": "value_error.number.not_le",
+                    "msg": "Input should be less than or equal to 1000000000000",
+                    "type": "less_than_equal",
                 },
                 {
-                    "ctx": {"limit_value": 0},
+                    "ctx": {"ge": 0},
+                    "input": -1,
                     "loc": ["body", 0, "price"],
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
                 {
-                    "ctx": {"limit_value": 5_000_000_000_000_000_000_000},
+                    "ctx": {"le": 5000000000000000000000},
+                    "input": 5000000001005000000001,
                     "loc": ["body", 0, "balance"],
-                    "msg": "ensure this value is less than or equal to 5000000000000000000000",
-                    "type": "value_error.number.not_le",
+                    "msg": "Input should be less than or equal to "
+                    "5000000000000000000000",
+                    "type": "less_than_equal",
                 },
                 {
-                    "ctx": {"limit_value": 10},
+                    "ctx": {"max_length": 10},
+                    "input": "2020/01/01a",
                     "loc": ["body", 0, "acquisition_date"],
-                    "msg": "ensure this value has at most 10 characters",
-                    "type": "value_error.any_str.max_length",
+                    "msg": "String should have at most 10 characters",
+                    "type": "string_too_long",
                 },
                 {
-                    "ctx": {"limit_value": 200},
+                    "ctx": {"max_length": 200},
+                    "input": "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901",
                     "loc": ["body", 1, "address"],
-                    "msg": "ensure this value has at most 200 characters",
-                    "type": "value_error.any_str.max_length",
+                    "msg": "String should have at most 200 characters",
+                    "type": "string_too_long",
                 },
                 {
-                    "ctx": {"limit_value": 0},
+                    "ctx": {"ge": 0},
+                    "input": -1,
                     "loc": ["body", 1, "amount"],
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
                 {
-                    "ctx": {"limit_value": 5000000000},
+                    "ctx": {"le": 5000000000},
+                    "input": 5000000001,
                     "loc": ["body", 1, "price"],
-                    "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le",
+                    "msg": "Input should be less than or equal to 5000000000",
+                    "type": "less_than_equal",
                 },
                 {
-                    "ctx": {"limit_value": 0},
+                    "ctx": {"ge": 0},
+                    "input": -1,
                     "loc": ["body", 1, "balance"],
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
                 {
+                    "ctx": {"error": {}},
+                    "input": "2020/02/31",
                     "loc": ["body", 1, "acquisition_date"],
-                    "msg": "The date format must be YYYY/MM/DD",
+                    "msg": "Value error, The date format must be YYYY/MM/DD",
                     "type": "value_error",
                 },
             ],

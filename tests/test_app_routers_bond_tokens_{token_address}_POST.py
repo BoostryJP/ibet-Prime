@@ -21,6 +21,7 @@ from unittest import mock
 from unittest.mock import MagicMock
 
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy import select
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
@@ -33,6 +34,7 @@ from app.model.db import (
     Token,
     TokenAttrUpdate,
     TokenType,
+    TokenUpdateOperationLog,
     UpdateToken,
 )
 from app.utils.contract_utils import ContractUtils
@@ -132,18 +134,21 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        token_attr_update = (
-            db.query(TokenAttrUpdate)
-            .filter(TokenAttrUpdate.token_address == _token_address)
-            .all()
-        )
+        token_attr_update = db.scalars(
+            select(TokenAttrUpdate).where(
+                TokenAttrUpdate.token_address == _token_address
+            )
+        ).all()
         assert len(token_attr_update) == 1
 
-        update_token = db.query(UpdateToken).first()
-        assert update_token.token_address == _token_address
-        assert update_token.issuer_address == _issuer_address
-        assert update_token.type == TokenType.IBET_STRAIGHT_BOND.value
-        assert update_token.original_contents == {
+        update_token = db.scalars(select(UpdateToken).limit(1)).first()
+        assert update_token is None
+
+        operation_log = db.scalars(select(TokenUpdateOperationLog).limit(1)).first()
+        assert operation_log.token_address == _token_address
+        assert operation_log.issuer_address == _issuer_address
+        assert operation_log.type == TokenType.IBET_STRAIGHT_BOND.value
+        assert operation_log.original_contents == {
             "contact_information": "",
             "contract_name": "IbetStraightBond",
             "face_value": 20,
@@ -169,7 +174,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "transfer_approval_required": False,
             "transferable": False,
         }
-        assert update_token.arguments == {
+        assert operation_log.arguments == {
             "face_value": 10000,
             "interest_rate": 0.5,
             "interest_payment_date": ["0101", "0701"],
@@ -185,7 +190,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "transfer_approval_required": True,
             "memo": "m" * 10000,
         }
-        assert update_token.status == 1
+        assert operation_log.operation_category == "Update"
 
     # <Normal_2>
     # No request parameters
@@ -232,15 +237,15 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        token_attr_update = (
-            db.query(TokenAttrUpdate)
-            .filter(TokenAttrUpdate.token_address == _token_address)
-            .all()
-        )
-        assert len(token_attr_update) == 0
+        token_attr_update = db.scalars(
+            select(TokenAttrUpdate).where(
+                TokenAttrUpdate.token_address == _token_address
+            )
+        ).all()
+        assert len(token_attr_update) == 1
 
-        update_token = db.query(UpdateToken).first()
-        assert update_token is None
+        operation_log = db.scalars(select(TokenUpdateOperationLog).limit(1)).first()
+        assert operation_log is not None
 
     # <Normal_3>
     # Authorization by auth token
@@ -311,18 +316,21 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         assert resp.status_code == 200
         assert resp.json() is None
 
-        token_attr_update = (
-            db.query(TokenAttrUpdate)
-            .filter(TokenAttrUpdate.token_address == _token_address)
-            .all()
-        )
+        token_attr_update = db.scalars(
+            select(TokenAttrUpdate).where(
+                TokenAttrUpdate.token_address == _token_address
+            )
+        ).all()
         assert len(token_attr_update) == 1
 
-        update_token = db.query(UpdateToken).first()
-        assert update_token.token_address == _token_address
-        assert update_token.issuer_address == _issuer_address
-        assert update_token.type == TokenType.IBET_STRAIGHT_BOND.value
-        assert update_token.original_contents == {
+        update_token = db.scalars(select(UpdateToken).limit(1)).first()
+        assert update_token is None
+
+        operation_log = db.scalars(select(TokenUpdateOperationLog).limit(1)).first()
+        assert operation_log.token_address == _token_address
+        assert operation_log.issuer_address == _issuer_address
+        assert operation_log.type == TokenType.IBET_STRAIGHT_BOND.value
+        assert operation_log.original_contents == {
             "contact_information": "",
             "contract_name": "IbetStraightBond",
             "face_value": 20,
@@ -348,7 +356,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "transfer_approval_required": False,
             "transferable": False,
         }
-        assert update_token.arguments == {
+        assert operation_log.arguments == {
             "face_value": 10000,
             "interest_rate": 0.5,
             "interest_payment_date": ["0101", "0701"],
@@ -364,7 +372,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "transfer_approval_required": True,
             "memo": "memo_test1",
         }
-        assert update_token.status == 1
+        assert operation_log.operation_category == "Update"
 
     ###########################################################################
     # Error Case
@@ -390,8 +398,11 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": 1e-05,
                     "loc": ["body", "interest_rate"],
-                    "msg": "interest_rate must be rounded to 4 decimal places",
+                    "msg": "Value error, interest_rate must be rounded to 4 decimal "
+                    "places",
                     "type": "value_error",
                 }
             ],
@@ -432,8 +443,25 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": [
+                        "0101",
+                        "0102",
+                        "0103",
+                        "0104",
+                        "0105",
+                        "0106",
+                        "0107",
+                        "0108",
+                        "0109",
+                        "0110",
+                        "0111",
+                        "0112",
+                        "0113",
+                    ],
                     "loc": ["body", "interest_payment_date"],
-                    "msg": "list length of interest_payment_date must be less than 13",
+                    "msg": "Value error, list length of interest_payment_date must be "
+                    "less than 13",
                     "type": "value_error",
                 }
             ],
@@ -460,12 +488,41 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "loc": ["body", "interest_payment_date", 0],
-                    "msg": 'string does not match regex "^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"',
-                    "type": "value_error.str.regex",
                     "ctx": {"pattern": "^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"},
+                    "input": "01010",
+                    "loc": ["body", "interest_payment_date", 0],
+                    "msg": "String should match pattern "
+                    "'^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$'",
+                    "type": "string_pattern_mismatch",
                 }
             ],
+        }
+
+    # <Error_3>
+    # RequestValidationError: is_redeemed
+    def test_error_3(self, client, db):
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+
+        # request target API
+        req_param = {"is_redeemed": False}
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={"issuer-address": ""},
+        )
+
+        assert resp.status_code == 422
+        assert resp.json() == {
+            "detail": [
+                {
+                    "ctx": {"error": {}},
+                    "input": False,
+                    "loc": ["body", "is_redeemed"],
+                    "msg": "Value error, is_redeemed cannot be updated to `false`",
+                    "type": "value_error",
+                }
+            ],
+            "meta": {"code": 1, "title": "RequestValidationError"},
         }
 
     # <Error_4>
@@ -486,8 +543,11 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": "invalid_address",
                     "loc": ["body", "tradable_exchange_contract_address"],
-                    "msg": "tradable_exchange_contract_address is not a valid address",
+                    "msg": "Value error, tradable_exchange_contract_address is not a "
+                    "valid address",
                     "type": "value_error",
                 }
             ],
@@ -511,8 +571,11 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": "invalid_address",
                     "loc": ["body", "personal_info_contract_address"],
-                    "msg": "personal_info_contract_address is not a valid address",
+                    "msg": "Value error, personal_info_contract_address is not a "
+                    "valid address",
                     "type": "value_error",
                 }
             ],
@@ -532,14 +595,16 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -565,6 +630,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "issuer-address",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",
@@ -609,6 +675,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "password",
                     "loc": ["header", "eoa-password"],
                     "msg": "eoa-password is not a Base64-encoded encrypted data",
                     "type": "value_error",
@@ -653,22 +720,25 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"limit_value": 0},
+                    "ctx": {"ge": 0},
+                    "input": -1,
                     "loc": ["body", "face_value"],
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
                 {
-                    "ctx": {"limit_value": 0.0000},
+                    "ctx": {"ge": 0.0},
+                    "input": -0.0001,
                     "loc": ["body", "interest_rate"],
-                    "msg": "ensure this value is greater than or equal to 0.0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
                 {
-                    "ctx": {"limit_value": 0},
+                    "ctx": {"ge": 0},
+                    "input": -1,
                     "loc": ["body", "redemption_value"],
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
             ],
         }
@@ -710,22 +780,25 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"limit_value": 5_000_000_000},
+                    "ctx": {"le": 5000000000},
+                    "input": 5000000001,
                     "loc": ["body", "face_value"],
-                    "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le",
+                    "msg": "Input should be less than or equal to 5000000000",
+                    "type": "less_than_equal",
                 },
                 {
-                    "ctx": {"limit_value": 100.0000},
+                    "ctx": {"le": 100.0},
+                    "input": 100.0001,
                     "loc": ["body", "interest_rate"],
-                    "msg": "ensure this value is less than or equal to 100.0",
-                    "type": "value_error.number.not_le",
+                    "msg": "Input should be less than or equal to 100",
+                    "type": "less_than_equal",
                 },
                 {
-                    "ctx": {"limit_value": 5_000_000_000},
+                    "ctx": {"le": 5000000000},
+                    "input": 5000000001,
                     "loc": ["body", "redemption_value"],
-                    "msg": "ensure this value is less than or equal to 5000000000",
-                    "type": "value_error.number.not_le",
+                    "msg": "Input should be less than or equal to 5000000000",
+                    "type": "less_than_equal",
                 },
             ],
         }

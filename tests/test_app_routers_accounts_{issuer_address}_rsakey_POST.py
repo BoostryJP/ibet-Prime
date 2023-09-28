@@ -16,6 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from sqlalchemy import select
+
 from app.model.db import Account, AccountRsaKeyTemporary, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
 from config import (
@@ -64,7 +66,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
             "rsa_status": AccountRsaStatus.CREATING.value,
             "is_deleted": False,
         }
-        _account_after = db.query(Account).first()
+        _account_after = db.scalars(select(Account).limit(1)).first()
         assert _account_after.issuer_address == _user_1["address"]
         assert _account_after.keyfile == _user_1["keyfile_json"]
         assert _account_after.eoa_password == eoa_password
@@ -92,7 +94,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         db.add(_account_before)
         db.commit()
 
-        _temporary_before = db.query(AccountRsaKeyTemporary).all()
+        _temporary_before = db.scalars(select(AccountRsaKeyTemporary)).all()
 
         password = self.valid_password
         req_param = {"rsa_passphrase": E2EEUtils.encrypt(password)}
@@ -107,7 +109,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
             "rsa_status": AccountRsaStatus.CHANGING.value,
             "is_deleted": False,
         }
-        _temporary_after = db.query(AccountRsaKeyTemporary).all()
+        _temporary_after = db.scalars(select(AccountRsaKeyTemporary)).all()
         assert len(_temporary_before) == 0
         assert len(_temporary_after) == 1
         _temporary = _temporary_after[0]
@@ -115,7 +117,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
         assert _temporary.rsa_private_key == _user_1["rsa_private_key"]
         assert _temporary.rsa_public_key == _user_1["rsa_public_key"]
         assert _temporary.rsa_passphrase == rsa_passphrase
-        _account_after = db.query(Account).first()
+        _account_after = db.scalars(select(Account).limit(1)).first()
         assert _account_after.issuer_address == _user_1["address"]
         assert _account_after.keyfile == _user_1["keyfile_json"]
         assert _account_after.eoa_password == eoa_password
@@ -150,7 +152,7 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
             "rsa_status": AccountRsaStatus.CREATING.value,
             "is_deleted": False,
         }
-        _account_after = db.query(Account).first()
+        _account_after = db.scalars(select(Account).limit(1)).first()
         assert _account_after.issuer_address == _user_1["address"]
         assert _account_after.keyfile == _user_1["keyfile_json"]
         assert _account_after.eoa_password == eoa_password
@@ -177,9 +179,10 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 }
             ],
         }
@@ -199,8 +202,11 @@ class TestAppRoutersAccountsIssuerAddressRsakeyPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"error": {}},
+                    "input": "test",
                     "loc": ["body", "rsa_passphrase"],
-                    "msg": "rsa_passphrase is not a Base64-encoded encrypted data",
+                    "msg": "Value error, rsa_passphrase is not a Base64-encoded "
+                    "encrypted data",
                     "type": "value_error",
                 }
             ],

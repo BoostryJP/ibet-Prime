@@ -20,7 +20,7 @@ import hashlib
 import re
 import secrets
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 import boto3
 import eth_keyfile
@@ -30,6 +30,7 @@ from eth_utils import keccak, to_checksum_address
 from fastapi import APIRouter, Header, Request
 from fastapi.exceptions import HTTPException
 from pytz import timezone
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError as SAIntegrityError
 
 from app.database import DBSession
@@ -63,7 +64,7 @@ from app.utils.check_utils import (
 )
 from app.utils.docs_utils import get_routers_responses
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.fastapi import json_response
+from app.utils.fastapi_utils import json_response
 from config import (
     AWS_KMS_GENERATE_RANDOM_ENABLED,
     AWS_REGION_NAME,
@@ -143,7 +144,9 @@ def list_all_accounts(db: DBSession):
     """List all accounts"""
 
     # Register key data to the DB
-    _accounts = db.query(Account).order_by(Account.issuer_address).all()
+    _accounts: Sequence[Account] = db.scalars(
+        select(Account).order_by(Account.issuer_address)
+    ).all()
 
     account_list = []
     for _account in _accounts:
@@ -168,9 +171,9 @@ def list_all_accounts(db: DBSession):
 def retrieve_account(db: DBSession, issuer_address: str):
     """Retrieve an account"""
 
-    _account = (
-        db.query(Account).filter(Account.issuer_address == issuer_address).first()
-    )
+    _account = db.scalars(
+        select(Account).where(Account.issuer_address == issuer_address).limit(1)
+    ).first()
     if _account is None:
         raise HTTPException(status_code=404, detail="issuer does not exist")
 
@@ -193,9 +196,9 @@ def retrieve_account(db: DBSession, issuer_address: str):
 def delete_account(db: DBSession, issuer_address: str):
     """Logically delete an account"""
 
-    _account = (
-        db.query(Account).filter(Account.issuer_address == issuer_address).first()
-    )
+    _account = db.scalars(
+        select(Account).where(Account.issuer_address == issuer_address).limit(1)
+    ).first()
     if _account is None:
         raise HTTPException(status_code=404, detail="issuer does not exist")
 
@@ -227,9 +230,9 @@ def generate_rsa_key(
     """Generate RSA key"""
 
     # Get Account
-    _account = (
-        db.query(Account).filter(Account.issuer_address == issuer_address).first()
-    )
+    _account = db.scalars(
+        select(Account).where(Account.issuer_address == issuer_address).limit(1)
+    ).first()
     if _account is None:
         raise HTTPException(status_code=404, detail="issuer does not exist")
 
@@ -298,9 +301,9 @@ def change_eoa_password(
     """Change EOA Password"""
 
     # Get Account
-    _account = (
-        db.query(Account).filter(Account.issuer_address == issuer_address).first()
-    )
+    _account = db.scalars(
+        select(Account).where(Account.issuer_address == issuer_address).limit(1)
+    ).first()
     if _account is None:
         raise HTTPException(status_code=404, detail="issuer does not exist")
 
@@ -358,9 +361,9 @@ def change_rsa_passphrase(
     """Change RSA Passphrase"""
 
     # Get Account
-    _account = (
-        db.query(Account).filter(Account.issuer_address == issuer_address).first()
-    )
+    _account = db.scalars(
+        select(Account).where(Account.issuer_address == issuer_address).limit(1)
+    ).first()
     if _account is None:
         raise HTTPException(status_code=404, detail="issuer does not exist")
 
@@ -443,9 +446,9 @@ def create_auth_token(
     current_datetime_local = current_datetime_utc.astimezone(local_tz).isoformat()
 
     # Register auth token
-    auth_token: Optional[AuthToken] = (
-        db.query(AuthToken).filter(AuthToken.issuer_address == issuer_address).first()
-    )
+    auth_token: Optional[AuthToken] = db.scalars(
+        select(AuthToken).where(AuthToken.issuer_address == issuer_address).limit(1)
+    ).first()
     if auth_token is not None:
         # If a valid auth token already exists, return an error.
         if auth_token.valid_duration == 0:
@@ -515,9 +518,9 @@ def delete_auth_token(
     )
 
     # Delete auto token
-    _auth_token = (
-        db.query(AuthToken).filter(AuthToken.issuer_address == issuer_address).first()
-    )
+    _auth_token: Optional[AuthToken] = db.scalars(
+        select(AuthToken).where(AuthToken.issuer_address == issuer_address).limit(1)
+    ).first()
     if _auth_token is None:
         raise HTTPException(status_code=404, detail="auth token does not exist")
 

@@ -20,10 +20,10 @@ import os
 import sys
 import time
 import uuid
-from typing import List, Type
+from typing import Sequence
 
 from eth_keyfile import decode_keyfile_json
-from sqlalchemy import create_engine
+from sqlalchemy import and_, create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -36,14 +36,10 @@ from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.blockchain.tx_params.ibet_share import (
     AdditionalIssueParams as IbetShareAdditionalIssueParams,
-)
-from app.model.blockchain.tx_params.ibet_share import (
     RedeemParams as IbetShareRedeemParams,
 )
 from app.model.blockchain.tx_params.ibet_straight_bond import (
     AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
     RedeemParams as IbetStraightBondRedeemParams,
 )
 from app.model.db import (
@@ -74,20 +70,20 @@ class Processor:
     def process(self):
         db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
         try:
-            upload_list: List[BatchIssueRedeemUpload] = (
-                db_session.query(BatchIssueRedeemUpload)
-                .filter(BatchIssueRedeemUpload.processed == False)
-                .all()
-            )
+            upload_list: Sequence[BatchIssueRedeemUpload] = db_session.scalars(
+                select(BatchIssueRedeemUpload).where(
+                    BatchIssueRedeemUpload.processed == False
+                )
+            ).all()
             for upload in upload_list:
                 LOG.info(f"Process start: upload_id={upload.upload_id}")
 
                 # Get issuer's private key
-                issuer_account = (
-                    db_session.query(Account)
-                    .filter(Account.issuer_address == upload.issuer_address)
-                    .first()
-                )
+                issuer_account: Account | None = db_session.scalars(
+                    select(Account)
+                    .where(Account.issuer_address == upload.issuer_address)
+                    .limit(1)
+                ).first()
                 if issuer_account is None:
                     LOG.exception("Issuer account does not exist")
                     self.__sink_on_notification(
@@ -128,12 +124,14 @@ class Processor:
                     continue
 
                 # Batch processing
-                batch_data_list: List[BatchIssueRedeem] = (
-                    db_session.query(BatchIssueRedeem)
-                    .filter(BatchIssueRedeem.upload_id == upload.upload_id)
-                    .filter(BatchIssueRedeem.status == 0)
-                    .all()
-                )
+                batch_data_list: Sequence[BatchIssueRedeem] = db_session.scalars(
+                    select(BatchIssueRedeem).where(
+                        and_(
+                            BatchIssueRedeem.upload_id == upload.upload_id,
+                            BatchIssueRedeem.status == 0,
+                        )
+                    )
+                ).all()
                 for batch_data in batch_data_list:
                     tx_hash = "-"
                     try:
@@ -209,12 +207,14 @@ class Processor:
                         db_session.commit()  # commit for each data
 
                 # Process failed data
-                failed_batch_data_list: List[BatchIssueRedeem] = (
-                    db_session.query(BatchIssueRedeem)
-                    .filter(BatchIssueRedeem.upload_id == upload.upload_id)
-                    .filter(BatchIssueRedeem.status == 2)
-                    .all()
-                )
+                failed_batch_data_list: Sequence[BatchIssueRedeem] = db_session.scalars(
+                    select(BatchIssueRedeem).where(
+                        and_(
+                            BatchIssueRedeem.upload_id == upload.upload_id,
+                            BatchIssueRedeem.status == 2,
+                        )
+                    )
+                ).all()
 
                 error_data_id_list = [data.id for data in failed_batch_data_list]
                 # 0: Success, 3: failed

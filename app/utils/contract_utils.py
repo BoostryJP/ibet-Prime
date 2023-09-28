@@ -20,7 +20,7 @@ import json
 from typing import Tuple, Type, TypeVar
 
 from eth_utils import to_checksum_address
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 from web3 import contract
@@ -181,13 +181,12 @@ class ContractUtils:
         # 10-sec timeout
         # Lock record
         try:
-            _tm = (
-                local_session.query(TransactionLock)
-                .filter(TransactionLock.tx_from == _tx_from)
-                .populate_existing()
+            _tm = local_session.scalars(
+                select(TransactionLock)
+                .where(TransactionLock.tx_from == _tx_from)
+                .limit(1)
                 .with_for_update()
-                .first()
-            )
+            ).first()
         except OperationalError as op_err:
             local_session.rollback()
             local_session.close()

@@ -19,42 +19,39 @@ SPDX-License-Identifier: Apache-2.0
 import math
 from typing import Optional
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from web3 import Web3
 
 from .ibet_security_token import (
     AdditionalIssueParams as IbetSecurityTokenAdditionalIssueParams,
-)
-from .ibet_security_token import (
     ApproveTransferParams as IbetSecurityTokenApproveTransferParams,
-)
-from .ibet_security_token import (
     CancelTransferParams as IbetSecurityTokenCancelTransferParams,
+    ForceUnlockParams as IbetSecurityTokenForceUnlockParams,
+    LockParams as IbetSecurityTokenLockParams,
+    RedeemParams as IbetSecurityTokenRedeemParams,
+    TransferParams as IbetSecurityTokenTransferParams,
 )
-from .ibet_security_token import ForceUnlockParams as IbetSecurityTokenForceUnlockParams
-from .ibet_security_token import LockParams as IbetSecurityTokenLockParams
-from .ibet_security_token import RedeemParams as IbetSecurityTokenRedeemParams
-from .ibet_security_token import TransferParams as IbetSecurityTokenTransferParams
 
 
 class UpdateParams(BaseModel):
-    cancellation_date: Optional[str]
-    dividend_record_date: Optional[str]
-    dividend_payment_date: Optional[str]
-    dividends: Optional[float]
-    tradable_exchange_contract_address: Optional[str]
-    personal_info_contract_address: Optional[str]
-    transferable: Optional[bool]
-    status: Optional[bool]
-    is_offering: Optional[bool]
-    contact_information: Optional[str]
-    privacy_policy: Optional[str]
-    transfer_approval_required: Optional[bool]
-    principal_value: Optional[int]
-    is_canceled: Optional[bool]
-    memo: Optional[str]
+    cancellation_date: Optional[str] = None
+    dividend_record_date: Optional[str] = None
+    dividend_payment_date: Optional[str] = None
+    dividends: Optional[float] = None
+    tradable_exchange_contract_address: Optional[str] = None
+    personal_info_contract_address: Optional[str] = None
+    transferable: Optional[bool] = None
+    status: Optional[bool] = None
+    is_offering: Optional[bool] = None
+    contact_information: Optional[str] = None
+    privacy_policy: Optional[str] = None
+    transfer_approval_required: Optional[bool] = None
+    principal_value: Optional[int] = None
+    is_canceled: Optional[bool] = None
+    memo: Optional[str] = None
 
-    @validator("dividends")
+    @field_validator("dividends")
+    @classmethod
     def dividends_13_decimal_places(cls, v):
         if v is not None:
             float_data = float(v * 10**13)
@@ -63,7 +60,8 @@ class UpdateParams(BaseModel):
                 raise ValueError("dividends must be rounded to 13 decimal places")
         return v
 
-    @validator("tradable_exchange_contract_address")
+    @field_validator("tradable_exchange_contract_address")
+    @classmethod
     def tradable_exchange_contract_address_is_valid_address(cls, v):
         if v is not None and not Web3.is_address(v):
             raise ValueError(
@@ -71,7 +69,8 @@ class UpdateParams(BaseModel):
             )
         return v
 
-    @validator("personal_info_contract_address")
+    @field_validator("personal_info_contract_address")
+    @classmethod
     def personal_info_contract_address_is_valid_address(cls, v):
         if v is not None and not Web3.is_address(v):
             raise ValueError("personal_info_contract_address is not a valid address")

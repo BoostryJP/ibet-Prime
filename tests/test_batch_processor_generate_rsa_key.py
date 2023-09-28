@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 from unittest import mock
 
 import pytest
+from sqlalchemy import select
 
 from app.model.db import Account, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
@@ -130,7 +131,7 @@ class TestProcessor:
         patch.stop()
 
         # assertion
-        account_after = db.query(Account).order_by(Account.created).all()
+        account_after = db.scalars(select(Account).order_by(Account.created)).all()
         assert len(account_after) == 4
         _account = account_after[0]
         assert _account.issuer_address == issuer_address_1

@@ -19,6 +19,8 @@ SPDX-License-Identifier: Apache-2.0
 import time
 from datetime import datetime
 
+from sqlalchemy import select
+
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
 
 
@@ -79,7 +81,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressRSAKeyPOST:
             "rsa_public_key": "rsa_public_key_1_3",
             "is_deleted": False,
         }
-        _account = db.query(E2EMessagingAccount).first()
+        _account = db.scalars(select(E2EMessagingAccount).limit(1)).first()
         assert _account.rsa_key_generate_interval == 1
         assert _account.rsa_generation == 2
 
@@ -130,7 +132,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressRSAKeyPOST:
             "rsa_public_key": "rsa_public_key_1_3",
             "is_deleted": False,
         }
-        _account = db.query(E2EMessagingAccount).first()
+        _account = db.scalars(select(E2EMessagingAccount).limit(1)).first()
         assert _account.rsa_key_generate_interval == 24
         assert _account.rsa_generation == 7
 
@@ -154,9 +156,10 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressRSAKeyPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["body"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 }
             ],
         }
@@ -182,16 +185,18 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressRSAKeyPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"ge": 0},
+                    "input": -1,
                     "loc": ["body", "rsa_key_generate_interval"],
-                    "ctx": {"limit_value": 0},
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
                 {
+                    "ctx": {"ge": 0},
+                    "input": -1,
                     "loc": ["body", "rsa_generation"],
-                    "ctx": {"limit_value": 0},
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 },
             ],
         }
@@ -217,16 +222,18 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressRSAKeyPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "ctx": {"le": 10000},
+                    "input": 10001,
                     "loc": ["body", "rsa_key_generate_interval"],
-                    "ctx": {"limit_value": 10_000},
-                    "msg": "ensure this value is less than or equal to 10000",
-                    "type": "value_error.number.not_le",
+                    "msg": "Input should be less than or equal to 10000",
+                    "type": "less_than_equal",
                 },
                 {
+                    "ctx": {"le": 100},
+                    "input": 101,
                     "loc": ["body", "rsa_generation"],
-                    "ctx": {"limit_value": 100},
-                    "msg": "ensure this value is less than or equal to 100",
-                    "type": "value_error.number.not_le",
+                    "msg": "Input should be less than or equal to 100",
+                    "type": "less_than_equal",
                 },
             ],
         }

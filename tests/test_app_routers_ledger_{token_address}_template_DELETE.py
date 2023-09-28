@@ -16,6 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from sqlalchemy import select
+
 from app.model.db import (
     LedgerDetailsDataType,
     LedgerDetailsTemplate,
@@ -128,9 +130,9 @@ class TestAppRoutersLedgerTokenAddressTemplateDELETE:
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
-        _template_list = db.query(LedgerTemplate).all()
+        _template_list = db.scalars(select(LedgerTemplate)).all()
         assert len(_template_list) == 0
-        _details_list = db.query(LedgerDetailsTemplate).all()
+        _details_list = db.scalars(select(LedgerDetailsTemplate)).all()
         assert len(_details_list) == 0
 
     ###########################################################################
@@ -153,9 +155,10 @@ class TestAppRoutersLedgerTokenAddressTemplateDELETE:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 }
             ],
         }
@@ -179,6 +182,7 @@ class TestAppRoutersLedgerTokenAddressTemplateDELETE:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "test",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",

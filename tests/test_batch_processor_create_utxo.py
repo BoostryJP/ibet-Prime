@@ -23,39 +23,24 @@ from unittest.mock import ANY, MagicMock, call
 
 import pytest
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy import select
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.blockchain.tx_params.ibet_share import (
     AdditionalIssueParams as IbetShareAdditionalIssueParams,
-)
-from app.model.blockchain.tx_params.ibet_share import (
     ForceUnlockPrams as IbetShareForceUnlockParams,
-)
-from app.model.blockchain.tx_params.ibet_share import LockParams as IbetShareLockParams
-from app.model.blockchain.tx_params.ibet_share import (
+    LockParams as IbetShareLockParams,
     RedeemParams as IbetShareRedeemParams,
-)
-from app.model.blockchain.tx_params.ibet_share import (
     TransferParams as IbetShareTransferParams,
-)
-from app.model.blockchain.tx_params.ibet_share import (
     UpdateParams as IbetShareUpdateParams,
 )
 from app.model.blockchain.tx_params.ibet_straight_bond import (
     AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
     LockParams as IbetStraightBondLockParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
     RedeemParams as IbetStraightBondRedeemParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
     TransferParams as IbetStraightBondTransferParams,
-)
-from app.model.blockchain.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
 )
 from app.model.db import UTXO, Token, TokenType, UTXOBlockNumber
@@ -63,11 +48,11 @@ from app.utils.contract_utils import ContractUtils
 from batch.processor_create_utxo import Processor
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
-from tests.utils.contract_utils import IbetExchangeContractTestUtils
 from tests.utils.contract_utils import (
+    IbetExchangeContractTestUtils,
     IbetSecurityTokenContractTestUtils as STContractUtils,
+    PersonalInfoContractTestUtils,
 )
-from tests.utils.contract_utils import PersonalInfoContractTestUtils
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
@@ -180,9 +165,9 @@ class TestProcessor:
         processor.process()
 
         # assertion
-        _utox_list = db.query(UTXO).all()
+        _utox_list = db.scalars(select(UTXO)).all()
         assert len(_utox_list) == 0
-        _utox_block_number = db.query(UTXOBlockNumber).first()
+        _utox_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
         assert _utox_block_number.latest_block_number == latest_block
 
         # Execute Transfer Event
@@ -228,7 +213,7 @@ class TestProcessor:
 
         # assertion
         db.rollback()
-        _utox_list = db.query(UTXO).order_by(UTXO.created).all()
+        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
         # 1.Bond token:issuer -> user1 (tx2)
         # 2.Bond token:issuer -> user2 (tx3)
         # 3.Share token:issuer -> user1 (tx1)
@@ -262,7 +247,7 @@ class TestProcessor:
         assert _utox.amount == 10
         assert _utox.block_number > _utox_list[1].block_number
         assert _utox.block_timestamp > _utox_list[1].block_timestamp
-        _utox_block_number = db.query(UTXOBlockNumber).first()
+        _utox_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
         assert _utox_block_number.latest_block_number == _utox_list[3].block_number
 
         mock_func.assert_has_calls(
@@ -340,9 +325,9 @@ class TestProcessor:
         processor.process()
 
         # Assertion
-        _utxo_block_number = db.query(UTXOBlockNumber).first()
+        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
         assert _utxo_block_number.latest_block_number == latest_block_number + 5
-        _utox_list = db.query(UTXO).order_by(UTXO.created).all()
+        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
         assert len(_utox_list) == 5
         _utox = _utox_list[0]
         assert _utox.transaction_hash is not None
@@ -459,7 +444,7 @@ class TestProcessor:
         processor.process()
 
         # Assertion
-        _utox_list = db.query(UTXO).order_by(UTXO.created).all()
+        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
         assert len(_utox_list) == 2
         _utox = _utox_list[0]
         assert _utox.transaction_hash is not None
@@ -534,7 +519,7 @@ class TestProcessor:
         processor.process()
 
         # assertion
-        _utox_list = db.query(UTXO).all()
+        _utox_list = db.scalars(select(UTXO)).all()
         assert len(_utox_list) == 0
         mock_func.assert_not_called()
 
@@ -697,7 +682,7 @@ class TestProcessor:
 
         # assertion
         db.rollback()
-        _utox_list = db.query(UTXO).order_by(UTXO.created).all()
+        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
 
         assert len(_utox_list) == 3
         _utox = _utox_list[0]
@@ -720,7 +705,7 @@ class TestProcessor:
         assert _utox.token_address == token_address_1
         assert _utox.amount == 10
 
-        _utox_block_number = db.query(UTXOBlockNumber).first()
+        _utox_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
         assert _utox_block_number.latest_block_number >= _utox_list[1].block_number
 
         mock_func.assert_has_calls([call(token_address=token_address_1, db=ANY)])
@@ -786,7 +771,7 @@ class TestProcessor:
         processor.process()
 
         # assertion
-        _utox_list = db.query(UTXO).order_by(UTXO.created).all()
+        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
         assert len(_utox_list) == 2
         _utox = _utox_list[0]
         assert _utox.transaction_hash is not None
@@ -799,7 +784,7 @@ class TestProcessor:
         assert _utox.token_address == token_address_2
         assert _utox.amount == 80
 
-        _utox_block_number = db.query(UTXOBlockNumber).first()
+        _utox_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
         assert _utox_block_number.latest_block_number == latest_block
 
     # <Normal_7>
@@ -874,7 +859,7 @@ class TestProcessor:
 
         # Before execute
         processor.process()
-        _utox_list = db.query(UTXO).order_by(UTXO.created).all()
+        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
         assert len(_utox_list) == 4
         _utox = _utox_list[0]
         assert _utox.transaction_hash is not None
@@ -920,7 +905,7 @@ class TestProcessor:
 
         # assertion
         db.rollback()
-        _utox_list = db.query(UTXO).order_by(UTXO.created).all()
+        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
         assert len(_utox_list) == 4
         _utox = _utox_list[0]
         assert _utox.account_address == user_address_1
@@ -939,7 +924,7 @@ class TestProcessor:
         assert _utox.token_address == token_address_2
         assert _utox.amount == 30
 
-        _utox_block_number = db.query(UTXOBlockNumber).first()
+        _utox_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
         assert _utox_block_number.latest_block_number == latest_block
 
     # <Normal_8_1>
@@ -1022,7 +1007,7 @@ class TestProcessor:
 
         # Before execute
         processor.process()
-        _utxo_list = db.query(UTXO).order_by(UTXO.created).all()
+        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
         assert len(_utxo_list) == 4
         _utxo = _utxo_list[0]
         assert _utxo.transaction_hash is not None
@@ -1092,7 +1077,7 @@ class TestProcessor:
 
         # assertion
         db.rollback()
-        _utxo_list = db.query(UTXO).order_by(UTXO.created).all()
+        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
         assert len(_utxo_list) == 6
         _utxo = _utxo_list[0]
         assert _utxo.account_address == user_address_1
@@ -1119,7 +1104,7 @@ class TestProcessor:
         assert _utxo.token_address == token_address_2
         assert _utxo.amount == 10
 
-        _utxo_block_number = db.query(UTXOBlockNumber).first()
+        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
         assert _utxo_block_number.latest_block_number == latest_block
 
     # <Normal_8_2>
@@ -1202,7 +1187,7 @@ class TestProcessor:
 
         # Before execute
         processor.process()
-        _utxo_list = db.query(UTXO).order_by(UTXO.created).all()
+        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
         assert len(_utxo_list) == 4
         _utxo = _utxo_list[0]
         assert _utxo.transaction_hash is not None
@@ -1272,7 +1257,7 @@ class TestProcessor:
 
         # assertion
         db.rollback()
-        _utxo_list = db.query(UTXO).order_by(UTXO.created).all()
+        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
         assert len(_utxo_list) == 4
         _utxo = _utxo_list[0]
         assert _utxo.account_address == user_address_1
@@ -1291,7 +1276,7 @@ class TestProcessor:
         assert _utxo.token_address == token_address_2
         assert _utxo.amount == 40
 
-        _utxo_block_number = db.query(UTXOBlockNumber).first()
+        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
         assert _utxo_block_number.latest_block_number == latest_block
 
     ###########################################################################
@@ -1327,7 +1312,7 @@ class TestProcessor:
         ) as web3_mock:
             processor.process()
 
-        _utox_list = db.query(UTXO).all()
+        _utox_list = db.scalars(select(UTXO)).all()
         assert len(_utox_list) == 0
-        _utox_block_number = db.query(UTXOBlockNumber).first()
+        _utox_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
         assert _utox_block_number.latest_block_number == latest_block

@@ -18,7 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
 
-from sqlalchemy import JSON, Boolean, Column, Integer, String
+from sqlalchemy import JSON, Boolean, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
@@ -29,21 +30,21 @@ class Account(Base):
     __tablename__ = "account"
 
     # issuer address
-    issuer_address = Column(String(42), primary_key=True)
+    issuer_address: Mapped[str] = mapped_column(String(42), primary_key=True)
     # ethereum keyfile
-    keyfile = Column(JSON)
+    keyfile: Mapped[str | None] = mapped_column(JSON)
     # ethereum account password (encrypted)
-    eoa_password = Column(String(2000))
+    eoa_password: Mapped[str | None] = mapped_column(String(2000))
     # rsa private key
-    rsa_private_key = Column(String(8000))
+    rsa_private_key: Mapped[str | None] = mapped_column(String(8000))
     # rsa public key
-    rsa_public_key = Column(String(2000))
+    rsa_public_key: Mapped[str | None] = mapped_column(String(2000))
     # rsa passphrase (encrypted)
-    rsa_passphrase = Column(String(2000))
+    rsa_passphrase: Mapped[str | None] = mapped_column(String(2000))
     # rsa status (AccountRsaStatus)
-    rsa_status = Column(Integer)
+    rsa_status: Mapped[int | None] = mapped_column(Integer)
     # delete flag
-    is_deleted = Column(Boolean, default=False)
+    is_deleted: Mapped[bool | None] = mapped_column(Boolean, default=False)
 
 
 class AccountRsaStatus(int, Enum):
@@ -66,10 +67,10 @@ class AccountRsaKeyTemporary(Base):
     __tablename__ = "account_rsa_key_temporary"
 
     # issuer address
-    issuer_address = Column(String(42), primary_key=True)
+    issuer_address: Mapped[str] = mapped_column(String(42), primary_key=True)
     # rsa private key
-    rsa_private_key = Column(String(8000))
+    rsa_private_key: Mapped[str | None] = mapped_column(String(8000))
     # rsa public key
-    rsa_public_key = Column(String(2000))
+    rsa_public_key: Mapped[str | None] = mapped_column(String(2000))
     # rsa passphrase (encrypted)
-    rsa_passphrase = Column(String(2000))
+    rsa_passphrase: Mapped[str | None] = mapped_column(String(2000))

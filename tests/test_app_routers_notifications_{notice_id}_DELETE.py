@@ -18,6 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
 
+from sqlalchemy import select
+
 from app.model.db import Notification, NotificationType
 from tests.account_config import config_eth_account
 
@@ -98,7 +100,9 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
         # assertion
         assert resp.status_code == 200
         assert resp.json() is None
-        _notification_list = db.query(Notification).order_by(Notification.created).all()
+        _notification_list = db.scalars(
+            select(Notification).order_by(Notification.created)
+        ).all()
         assert len(_notification_list) == 3
         _notification = _notification_list[0]
         assert _notification.id == 1
@@ -143,9 +147,10 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": None,
                     "loc": ["header", "issuer-address"],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 }
             ],
         }
@@ -167,6 +172,7 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "test",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",

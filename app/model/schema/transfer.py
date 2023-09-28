@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
-from typing import List, Optional
+from typing import Annotated, List, Optional
 
 from fastapi import Query
 from pydantic import BaseModel, Field, NonNegativeInt
@@ -49,17 +49,21 @@ class ListTransferHistorySortItem(str, Enum):
 
 @dataclass
 class ListTransferHistoryQuery:
-    source_event: Optional[TransferSourceEventType] = Query(
-        default=None, description="source event of transfer"
-    )
-    data: Optional[str] = Query(default=None, description="source event data")
+    source_event: Annotated[
+        Optional[TransferSourceEventType], Query(description="source event of transfer")
+    ] = None
+    data: Annotated[Optional[str], Query(description="source event data")] = None
 
-    sort_item: ListTransferHistorySortItem = Query(
-        default=ListTransferHistorySortItem.BLOCK_TIMESTAMP, description="sort item"
-    )
-    sort_order: int = Query(default=1, ge=0, le=1, description="0:asc, 1:desc")
-    offset: Optional[NonNegativeInt] = Query(default=None, description="start position")
-    limit: Optional[NonNegativeInt] = Query(default=None, description="number of set")
+    sort_item: Annotated[
+        ListTransferHistorySortItem, Query(description="sort item")
+    ] = ListTransferHistorySortItem.BLOCK_TIMESTAMP
+    sort_order: Annotated[int, Query(ge=0, le=1, description="0:asc, 1:desc")] = 1
+    offset: Annotated[
+        Optional[NonNegativeInt], Query(description="start position")
+    ] = None
+    limit: Annotated[
+        Optional[NonNegativeInt], Query(description="number of set")
+    ] = None
 
 
 class UpdateTransferApprovalOperationType(str, Enum):
@@ -129,9 +133,9 @@ class TransferApprovalTokenResponse(BaseModel):
     amount: int
     application_datetime: str
     application_blocktimestamp: str
-    approval_datetime: Optional[str]
-    approval_blocktimestamp: Optional[str]
-    cancellation_blocktimestamp: Optional[str]
+    approval_datetime: Optional[str] = Field(...)
+    approval_blocktimestamp: Optional[str] = Field(...)
+    cancellation_blocktimestamp: Optional[str] = Field(...)
     cancelled: bool
     escrow_finished: bool
     transfer_approved: bool

@@ -1412,6 +1412,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
+                    "input": "test",
                     "loc": ["header", "issuer-address"],
                     "msg": "issuer-address is not a valid address",
                     "type": "value_error",
@@ -1443,10 +1444,11 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"limit_value": 0},
+                    "ctx": {"ge": 0},
+                    "input": "-1",
                     "loc": ["query", "latest_flg"],
-                    "msg": "ensure this value is greater than or equal to 0",
-                    "type": "value_error.number.not_ge",
+                    "msg": "Input should be greater than or equal to 0",
+                    "type": "greater_than_equal",
                 }
             ],
         }
@@ -1475,10 +1477,11 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"limit_value": 1},
+                    "ctx": {"le": 1},
+                    "input": "2",
                     "loc": ["query", "latest_flg"],
-                    "msg": "ensure this value is less than or equal to 1",
-                    "type": "value_error.number.not_le",
+                    "msg": "Input should be less than or equal to 1",
+                    "type": "less_than_equal",
                 }
             ],
         }
@@ -1701,7 +1704,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         db.add(_ledger_1)
 
         # request target AsPI
-        with mock.patch("app.utils.fastapi.RESPONSE_VALIDATION_MODE", False):
+        with mock.patch("app.utils.fastapi_utils.RESPONSE_VALIDATION_MODE", False):
             resp = client.get(
                 self.base_url.format(token_address=token_address, ledger_id=1),
                 params={

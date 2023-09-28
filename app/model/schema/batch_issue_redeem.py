@@ -18,10 +18,11 @@ SPDX-License-Identifier: Apache-2.0
 """
 from typing import List
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.model.db import TokenType
 
+from .personal_info import PersonalInfo
 from .types import ResultSet
 
 ############################
@@ -38,18 +39,20 @@ class BatchIssueRedeemUpload(BaseModel):
     token_address: str
     processed: bool
     created: str
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "batch_id": "cfd83622-34dc-4efe-a68b-2cc275d3d824",
-                "issuer_address": "0x0000000000000000000000000000000000000000",
-                "token_type": "Bond",
-                "token_address": "0x0000000000000000000000000000000000000000",
-                "processed": True,
-                "created": "2022-09-02T19:49:33.370874+09:00",
-            }
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "batch_id": "cfd83622-34dc-4efe-a68b-2cc275d3d824",
+                    "issuer_address": "0x0000000000000000000000000000000000000000",
+                    "token_type": "Bond",
+                    "token_address": "0x0000000000000000000000000000000000000000",
+                    "processed": True,
+                    "created": "2022-09-02T19:49:33.370874+09:00",
+                }
+            ]
         }
+    )
 
 
 class ListBatchIssueRedeemUploadResponse(BaseModel):
@@ -71,6 +74,7 @@ class GetBatchIssueRedeemResult(BaseModel):
     account_address: str
     amount: int
     status: int
+    personal_information: PersonalInfo
 
 
 class GetBatchIssueRedeemResponse(BaseModel):

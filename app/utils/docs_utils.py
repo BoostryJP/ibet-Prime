@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
 from functools import lru_cache
-from typing import Any, Dict, List, Type, Union
+from typing import List, Type, Union
 
 from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel, Field, create_model
@@ -32,40 +32,32 @@ class MetaModel(BaseModel):
 
 
 class Error400MetaModel(MetaModel):
-    class Config:
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], _) -> None:
-            properties = schema["properties"]
-            properties["code"]["examples"] = [0, 1, 2, 100001]
-            properties["title"]["examples"] = [
-                "InvalidParameterError",
-                "SendTransactionError",
-                "ContractRevertError",
-            ]
+    code: int = Field(..., examples=[0, 1, 2, 100001])
+    title: str = Field(
+        ...,
+        examples=[
+            "InvalidParameterError",
+            "SendTransactionError",
+            "ContractRevertError",
+        ],
+    )
 
 
 class Error400Model(BaseModel):
     meta: Error400MetaModel
-    detail: str
-
-    class Config:
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], _) -> None:
-            properties = schema["properties"]
-            properties["detail"]["examples"] = [
-                "this token is temporarily unavailable",
-                "failed to register token address token list",
-                "The address has already been registered.",
-            ]
+    detail: str = Field(
+        ...,
+        examples=[
+            "this token is temporarily unavailable",
+            "failed to register token address token list",
+            "The address has already been registered.",
+        ],
+    )
 
 
 class Error401MetaModel(MetaModel):
-    class Config:
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], _) -> None:
-            properties = schema["properties"]
-            properties["code"]["example"] = 1
-            properties["title"]["example"] = "AuthorizationError"
+    code: int = Field(..., examples=[1])
+    title: str = Field(..., examples=["AuthorizationError"])
 
 
 class Error401Model(BaseModel):
@@ -74,12 +66,8 @@ class Error401Model(BaseModel):
 
 
 class Error404MetaModel(MetaModel):
-    class Config:
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], _) -> None:
-            properties = schema["properties"]
-            properties["code"]["example"] = 1
-            properties["title"]["example"] = "NotFound"
+    code: int = Field(..., examples=[1])
+    title: str = Field(..., examples=["NotFound"])
 
 
 class Error404Model(BaseModel):
@@ -88,12 +76,8 @@ class Error404Model(BaseModel):
 
 
 class Error405MetaModel(MetaModel):
-    class Config:
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], _) -> None:
-            properties = schema["properties"]
-            properties["code"]["example"] = 1
-            properties["title"]["example"] = "MethodNotAllowed"
+    code: int = Field(..., examples=[1])
+    title: str = Field(..., examples=["MethodNotAllowed"])
 
 
 class Error405Model(BaseModel):
@@ -102,26 +86,14 @@ class Error405Model(BaseModel):
 
 
 class Error422MetaModel(MetaModel):
-    class Config:
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], _) -> None:
-            properties = schema["properties"]
-            properties["code"]["example"] = 1
-            properties["title"]["example"] = "RequestValidationError"
+    code: int = Field(..., examples=[1])
+    title: str = Field(..., examples=["RequestValidationError"])
 
 
 class Error422DetailModel(BaseModel):
-    loc: List[str]
-    msg: str
-    type: str
-
-    class Config:
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], _) -> None:
-            properties = schema["properties"]
-            properties["loc"]["example"] = ["header", "issuer-address"]
-            properties["msg"]["example"] = "field required"
-            properties["type"]["example"] = "value_error.missing"
+    loc: List[str] = Field(..., examples=[["header", "issuer-address"]])
+    msg: str = Field(..., examples=["field required"])
+    type: str = Field(..., examples=["value_error.missing"])
 
 
 class Error422Model(BaseModel):
@@ -130,12 +102,8 @@ class Error422Model(BaseModel):
 
 
 class Error503MetaModel(MetaModel):
-    class Config:
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], _) -> None:
-            properties = schema["properties"]
-            properties["code"]["example"] = 1
-            properties["title"]["example"] = "ServiceUnavailableError"
+    code: int = Field(..., examples=[1])
+    title: str = Field(..., examples=["ServiceUnavailableError"])
 
 
 class Error503Model(BaseModel):
@@ -143,7 +111,7 @@ class Error503Model(BaseModel):
     detail: str
 
 
-DEFAULT_RESPONSE = {
+DEFAULT_RESPONSE: dict[int, dict[str, str | BaseModel]] = {
     400: {
         "description": "Invalid Parameter Error / Send Transaction Error / Contract Revert Error etc",
         "model": Error400Model,
@@ -176,9 +144,9 @@ def create_error_model(app_error: Type[AppError]):
         f"{base_name}Metainfo",
         code=(
             error_code_enum,
-            Field(..., example=app_error.code if app_error.code else 0),
+            Field(..., examples=[app_error.code] if app_error.code else [0]),
         ),
-        title=(str, Field(..., example=base_name)),
+        title=(str, Field(..., examples=[base_name])),
     )
     error_model = create_model(
         f"{base_name}Response",

@@ -20,8 +20,9 @@ import os
 import sys
 import time
 from datetime import datetime
+from typing import Sequence
 
-from sqlalchemy import create_engine
+from sqlalchemy import and_, create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from web3.eth import Contract
@@ -126,12 +127,9 @@ class Processor:
         self.token_contract_list = []
 
         # Update token_contract_list to recent
-        _token_list = (
-            db_session.query(Token)
-            .filter(Token.token_status == 1)
-            .order_by(Token.id)
-            .all()
-        )
+        _token_list: Sequence[Token] = db_session.scalars(
+            select(Token).where(Token.token_status == 1).order_by(Token.id)
+        ).all()
         for _token in _token_list:
             token_contract = ContractUtils.get_contract(
                 contract_name=_token.type, contract_address=_token.token_address
@@ -139,14 +137,18 @@ class Processor:
             self.token_contract_list.append(token_contract)
 
     def __get_utxo_block_number(self, db_session: Session):
-        _utxo_block_number = db_session.query(UTXOBlockNumber).first()
+        _utxo_block_number = db_session.scalars(
+            select(UTXOBlockNumber).limit(1)
+        ).first()
         if _utxo_block_number is None:
             return 0
         else:
             return _utxo_block_number.latest_block_number
 
     def __set_utxo_block_number(self, db_session: Session, block_number: int):
-        _utxo_block_number = db_session.query(UTXOBlockNumber).first()
+        _utxo_block_number = db_session.scalars(
+            select(UTXOBlockNumber).limit(1)
+        ).first()
         if _utxo_block_number is None:
             _utxo_block_number = UTXOBlockNumber()
         _utxo_block_number.latest_block_number = block_number
@@ -233,7 +235,7 @@ class Processor:
                 args = event["args"]
                 from_account = args.get("from", ZERO_ADDRESS)
                 to_account = args.get("to", ZERO_ADDRESS)
-                amount = args.get("value")
+                amount = int(args.get("value"))
 
                 # Skip sinking in case of deposit to exchange or withdrawal from exchange
                 if (
@@ -499,12 +501,16 @@ class Processor:
         block_timestamp: datetime,
     ):
         if not spent:
-            _utxo = (
-                db_session.query(UTXO)
-                .filter(UTXO.transaction_hash == transaction_hash)
-                .filter(UTXO.account_address == account_address)
-                .first()
-            )
+            _utxo: UTXO | None = db_session.scalars(
+                select(UTXO)
+                .where(
+                    and_(
+                        UTXO.transaction_hash == transaction_hash,
+                        UTXO.account_address == account_address,
+                    )
+                )
+                .limit(1)
+            ).first()
             if _utxo is None:
                 _utxo = UTXO()
                 _utxo.transaction_hash = transaction_hash
@@ -519,14 +525,17 @@ class Processor:
                 _utxo.amount = utxo_amount + amount
                 db_session.merge(_utxo)
         else:
-            _utxo_list = (
-                db_session.query(UTXO)
-                .filter(UTXO.account_address == account_address)
-                .filter(UTXO.token_address == token_address)
-                .filter(UTXO.amount > 0)
+            _utxo_list: Sequence[UTXO] = db_session.scalars(
+                select(UTXO)
+                .where(
+                    and_(
+                        UTXO.account_address == account_address,
+                        UTXO.token_address == token_address,
+                        UTXO.amount > 0,
+                    )
+                )
                 .order_by(UTXO.block_timestamp)
-                .all()
-            )
+            ).all()
             spend_amount = amount
             for _utxo in _utxo_list:
                 utxo_amount = _utxo.amount

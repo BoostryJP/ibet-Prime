@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from app.model.db import AccountRsaStatus
 from app.utils.check_utils import check_value_is_encrypted
@@ -34,7 +34,8 @@ class AccountCreateKeyRequest(BaseModel):
 
     eoa_password: str
 
-    @validator("eoa_password")
+    @field_validator("eoa_password")
+    @classmethod
     def eoa_password_is_encrypted_value(cls, v):
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("eoa_password", v)
@@ -44,9 +45,10 @@ class AccountCreateKeyRequest(BaseModel):
 class AccountGenerateRsaKeyRequest(BaseModel):
     """Account Change Rsa Key schema (REQUEST)"""
 
-    rsa_passphrase: Optional[str]
+    rsa_passphrase: Optional[str] = None
 
-    @validator("rsa_passphrase")
+    @field_validator("rsa_passphrase")
+    @classmethod
     def rsa_passphrase_is_encrypted_value(cls, v):
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("rsa_passphrase", v)
@@ -59,13 +61,15 @@ class AccountChangeEOAPasswordRequest(BaseModel):
     old_eoa_password: str
     eoa_password: str
 
-    @validator("old_eoa_password")
+    @field_validator("old_eoa_password")
+    @classmethod
     def old_eoa_password_is_encrypted_value(cls, v):
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("old_eoa_password", v)
         return v
 
-    @validator("eoa_password")
+    @field_validator("eoa_password")
+    @classmethod
     def eoa_password_is_encrypted_value(cls, v):
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("eoa_password", v)
@@ -78,13 +82,15 @@ class AccountChangeRSAPassphraseRequest(BaseModel):
     old_rsa_passphrase: str
     rsa_passphrase: str
 
-    @validator("old_rsa_passphrase")
+    @field_validator("old_rsa_passphrase")
+    @classmethod
     def old_rsa_passphrase_is_encrypted_value(cls, v):
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("old_rsa_passphrase", v)
         return v
 
-    @validator("rsa_passphrase")
+    @field_validator("rsa_passphrase")
+    @classmethod
     def rsa_passphrase_is_encrypted_value(cls, v):
         if E2EE_REQUEST_ENABLED:
             check_value_is_encrypted("rsa_passphrase", v)
@@ -108,7 +114,7 @@ class AccountResponse(BaseModel):
     """Account schema (Response)"""
 
     issuer_address: str
-    rsa_public_key: Optional[str]
+    rsa_public_key: Optional[str] = Field(...)
     rsa_status: AccountRsaStatus
     is_deleted: bool
 

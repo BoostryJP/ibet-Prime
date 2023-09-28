@@ -24,6 +24,7 @@ from uuid import UUID
 
 import pytest
 from eth_keyfile import decode_keyfile_json
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -51,11 +52,9 @@ from config import CHAIN_ID, TX_GAS_LIMIT
 from tests.account_config import config_eth_account
 from tests.utils.contract_utils import (
     IbetSecurityTokenContractTestUtils as STContractUtils,
-)
-from tests.utils.contract_utils import (
     IbetSecurityTokenEscrowContractTestUtils as STEscrowContractUtils,
+    PersonalInfoContractTestUtils,
 )
-from tests.utils.contract_utils import PersonalInfoContractTestUtils
 
 web3 = Web3Wrapper()
 
@@ -179,14 +178,14 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        _transfer_approval_list = db.query(IDXTransferApproval).all()
+        _transfer_approval_list = db.scalars(select(IDXTransferApproval)).all()
         assert len(_transfer_approval_list) == 0
 
-        _notification_list = db.query(Notification).all()
+        _notification_list = db.scalars(select(Notification)).all()
         assert len(_notification_list) == 0
 
-        _idx_transfer_approval_block_number = db.query(
-            IDXTransferApprovalBlockNumber
+        _idx_transfer_approval_block_number = db.scalars(
+            select(IDXTransferApprovalBlockNumber).limit(1)
         ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
@@ -239,14 +238,14 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        _transfer_approval_list = db.query(IDXTransferApproval).all()
+        _transfer_approval_list = db.scalars(select(IDXTransferApproval)).all()
         assert len(_transfer_approval_list) == 0
 
-        _notification_list = db.query(Notification).all()
+        _notification_list = db.scalars(select(Notification)).all()
         assert len(_notification_list) == 0
 
-        _idx_transfer_approval_block_number = db.query(
-            IDXTransferApprovalBlockNumber
+        _idx_transfer_approval_block_number = db.scalars(
+            select(IDXTransferApprovalBlockNumber).limit(1)
         ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
@@ -331,7 +330,7 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        _transfer_approval_list = db.query(IDXTransferApproval).all()
+        _transfer_approval_list = db.scalars(select(IDXTransferApproval)).all()
         assert len(_transfer_approval_list) == 1
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
@@ -353,7 +352,7 @@ class TestProcessor:
         assert _transfer_approval.cancelled is None
         assert _transfer_approval.transfer_approved is None
 
-        _notification_list = db.query(Notification).all()
+        _notification_list = db.scalars(select(Notification)).all()
         assert len(_notification_list) == 1
         _notification = _notification_list[0]
         assert _notification.id == 1
@@ -368,8 +367,8 @@ class TestProcessor:
             "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.query(
-            IDXTransferApprovalBlockNumber
+        _idx_transfer_approval_block_number = db.scalars(
+            select(IDXTransferApprovalBlockNumber).limit(1)
         ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
@@ -460,7 +459,7 @@ class TestProcessor:
         block_2 = web3.eth.get_block(tx_receipt_2["blockNumber"])
         block_3 = web3.eth.get_block(tx_receipt_3["blockNumber"])
 
-        _transfer_approval_list = db.query(IDXTransferApproval).all()
+        _transfer_approval_list = db.scalars(select(IDXTransferApproval)).all()
         assert len(_transfer_approval_list) == 1
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
@@ -484,7 +483,7 @@ class TestProcessor:
         assert _transfer_approval.cancelled is True
         assert _transfer_approval.transfer_approved is None
 
-        _notification_list = db.query(Notification).all()
+        _notification_list = db.scalars(select(Notification)).all()
         assert len(_notification_list) == 1
         _notification = _notification_list[0]
         assert _notification.id == 1
@@ -499,8 +498,8 @@ class TestProcessor:
             "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.query(
-            IDXTransferApprovalBlockNumber
+        _idx_transfer_approval_block_number = db.scalars(
+            select(IDXTransferApprovalBlockNumber).limit(1)
         ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
@@ -591,7 +590,7 @@ class TestProcessor:
         block_2 = web3.eth.get_block(tx_receipt_2["blockNumber"])
         block_3 = web3.eth.get_block(tx_receipt_3["blockNumber"])
 
-        _transfer_approval_list = db.query(IDXTransferApproval).all()
+        _transfer_approval_list = db.scalars(select(IDXTransferApproval)).all()
         assert len(_transfer_approval_list) == 1
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
@@ -615,7 +614,7 @@ class TestProcessor:
         assert _transfer_approval.cancelled is True
         assert _transfer_approval.transfer_approved is None
 
-        _notification_list = db.query(Notification).all()
+        _notification_list = db.scalars(select(Notification)).all()
         assert len(_notification_list) == 2
         _notification = _notification_list[1]
         assert _notification.id == 2
@@ -630,8 +629,8 @@ class TestProcessor:
             "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.query(
-            IDXTransferApprovalBlockNumber
+        _idx_transfer_approval_block_number = db.scalars(
+            select(IDXTransferApprovalBlockNumber).limit(1)
         ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
@@ -721,7 +720,7 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        _transfer_approval_list = db.query(IDXTransferApproval).all()
+        _transfer_approval_list = db.scalars(select(IDXTransferApproval)).all()
         assert len(_transfer_approval_list) == 1
 
         _transfer_approval = _transfer_approval_list[0]
@@ -746,7 +745,7 @@ class TestProcessor:
         assert _transfer_approval.cancelled is None
         assert _transfer_approval.transfer_approved is True
 
-        _notification_list = db.query(Notification).all()
+        _notification_list = db.scalars(select(Notification)).all()
         assert len(_notification_list) == 2
         _notification = _notification_list[1]
         assert _notification.id == 2
@@ -761,8 +760,8 @@ class TestProcessor:
             "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.query(
-            IDXTransferApprovalBlockNumber
+        _idx_transfer_approval_block_number = db.scalars(
+            select(IDXTransferApprovalBlockNumber).limit(1)
         ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
@@ -860,7 +859,7 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        _transfer_approval_list = db.query(IDXTransferApproval).all()
+        _transfer_approval_list = db.scalars(select(IDXTransferApproval)).all()
         assert len(_transfer_approval_list) == 1
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
@@ -885,7 +884,7 @@ class TestProcessor:
         assert _transfer_approval.cancelled is None
         assert _transfer_approval.transfer_approved is None
 
-        _notification_list = db.query(Notification).all()
+        _notification_list = db.scalars(select(Notification)).all()
         assert len(_notification_list) == 1
         _notification = _notification_list[0]
         assert _notification.id == 1
@@ -900,8 +899,8 @@ class TestProcessor:
             "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.query(
-            IDXTransferApprovalBlockNumber
+        _idx_transfer_approval_block_number = db.scalars(
+            select(IDXTransferApprovalBlockNumber).limit(1)
         ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
@@ -1018,7 +1017,7 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        _transfer_approval_list = db.query(IDXTransferApproval).all()
+        _transfer_approval_list = db.scalars(select(IDXTransferApproval)).all()
         assert len(_transfer_approval_list) == 1
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
@@ -1045,7 +1044,7 @@ class TestProcessor:
         assert _transfer_approval.cancelled is True
         assert _transfer_approval.transfer_approved is None
 
-        _notification_list = db.query(Notification).all()
+        _notification_list = db.scalars(select(Notification)).all()
         assert len(_notification_list) == 2
         _notification = _notification_list[1]
         assert _notification.id == 2
@@ -1060,8 +1059,8 @@ class TestProcessor:
             "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.query(
-            IDXTransferApprovalBlockNumber
+        _idx_transfer_approval_block_number = db.scalars(
+            select(IDXTransferApprovalBlockNumber).limit(1)
         ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
@@ -1168,7 +1167,7 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        _transfer_approval_list = db.query(IDXTransferApproval).all()
+        _transfer_approval_list = db.scalars(select(IDXTransferApproval)).all()
         assert len(_transfer_approval_list) == 1
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
@@ -1192,7 +1191,7 @@ class TestProcessor:
         assert _transfer_approval.cancelled is None
         assert _transfer_approval.transfer_approved is None
 
-        _notification_list = db.query(Notification).all()
+        _notification_list = db.scalars(select(Notification)).all()
         assert len(_notification_list) == 2
         _notification = _notification_list[1]
         assert _notification.id == 2
@@ -1207,8 +1206,8 @@ class TestProcessor:
             "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.query(
-            IDXTransferApprovalBlockNumber
+        _idx_transfer_approval_block_number = db.scalars(
+            select(IDXTransferApprovalBlockNumber).limit(1)
         ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
@@ -1328,7 +1327,7 @@ class TestProcessor:
         processor.sync_new_logs()
 
         # Assertion
-        _transfer_approval_list = db.query(IDXTransferApproval).all()
+        _transfer_approval_list = db.scalars(select(IDXTransferApproval)).all()
         assert len(_transfer_approval_list) == 1
         _transfer_approval = _transfer_approval_list[0]
         assert _transfer_approval.id == 1
@@ -1354,7 +1353,7 @@ class TestProcessor:
         assert _transfer_approval.cancelled is None
         assert _transfer_approval.transfer_approved is True
 
-        _notification_list = db.query(Notification).all()
+        _notification_list = db.scalars(select(Notification)).all()
         assert len(_notification_list) == 3
         _notification = _notification_list[2]
         assert _notification.id == 3
@@ -1369,8 +1368,8 @@ class TestProcessor:
             "id": 1,
         }
 
-        _idx_transfer_approval_block_number = db.query(
-            IDXTransferApprovalBlockNumber
+        _idx_transfer_approval_block_number = db.scalars(
+            select(IDXTransferApprovalBlockNumber).limit(1)
         ).first()
         assert _idx_transfer_approval_block_number.id == 1
         assert _idx_transfer_approval_block_number.latest_block_number == block_number
