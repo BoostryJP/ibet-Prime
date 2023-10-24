@@ -37,6 +37,7 @@ from app.routers import (
     file,
     ledger,
     notification,
+    personal_info,
     position,
     share,
     token_holders,
@@ -54,6 +55,7 @@ tags_metadata = [
     {"name": "share", "description": "Share token management"},
     {"name": "utility", "description": "Utility functions"},
     {"name": "messaging", "description": "Messaging functions with external systems"},
+    {"name": "personal_info", "description": "Personal information"},
     {"name": "blockchain_explorer", "description": "Blockchain explorer"},
 ]
 
@@ -101,6 +103,7 @@ app.include_router(notification.router)
 app.include_router(position.router)
 app.include_router(share.router)
 app.include_router(token_holders.router)
+app.include_router(personal_info.router)
 app.include_router(bc_explorer.router)
 
 

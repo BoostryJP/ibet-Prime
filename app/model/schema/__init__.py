@@ -80,6 +80,8 @@ from .personal_info import (
     BatchRegisterPersonalInfoUploadResponse,
     GetBatchRegisterPersonalInfoResponse,
     ListBatchRegisterPersonalInfoUploadResponse,
+    ListPersonalInfoQuery,
+    ListPersonalInfoResponse,
     RegisterPersonalInfoRequest,
 )
 from .position import (

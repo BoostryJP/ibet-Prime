@@ -16,13 +16,15 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import List, Optional
+from datetime import datetime
+from typing import Annotated, List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from fastapi import Query
+from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, field_validator
 from web3 import Web3
 
 from app.model.db import BatchRegisterPersonalInfoUploadStatus
-from app.model.schema.types import ResultSet
+from app.model.schema.types import ResultSet, SortOrder
 
 
 class PersonalInfo(BaseModel):
@@ -48,6 +50,15 @@ class PersonalInfoInput(BaseModel):
     tax_category: Optional[int] = None
 
 
+class PersonalInfoIndex(BaseModel):
+    """Personal Information Index schema"""
+
+    id: int = Field(...)
+    account_address: str = Field(...)
+    personal_info: PersonalInfo = Field(...)
+    created: datetime
+
+
 ############################
 # REQUEST
 ############################
@@ -65,6 +76,18 @@ class RegisterPersonalInfoRequest(PersonalInfoInput):
         if not Web3.is_address(v):
             raise ValueError("account_address is not a valid address")
         return v
+
+
+class ListPersonalInfoQuery(BaseModel):
+    offset: Annotated[
+        Optional[NonNegativeInt], Query(description="start position")
+    ] = None
+    limit: Annotated[
+        Optional[NonNegativeInt], Query(description="number of set")
+    ] = None
+    sort_order: Annotated[
+        Optional[SortOrder], Query(description="sort order(0: ASC, 1: DESC)")
+    ] = SortOrder.ASC
 
 
 ############################
@@ -119,3 +142,10 @@ class GetBatchRegisterPersonalInfoResponse(BaseModel):
 
     status: BatchRegisterPersonalInfoUploadStatus
     results: List[BatchRegisterPersonalInfoResult]
+
+
+class ListPersonalInfoResponse(BaseModel):
+    """List All PersonalInfo (Response)"""
+
+    result_set: ResultSet
+    personal_info: List[PersonalInfoIndex]

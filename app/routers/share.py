@@ -1676,7 +1676,11 @@ def list_all_holders(
 
     # Get Holders
     stmt = (
-        select(IDXPosition, func.sum(IDXLockedPosition.value))
+        select(
+            IDXPosition,
+            func.sum(IDXLockedPosition.value),
+            func.max(IDXLockedPosition.modified),
+        )
         .outerjoin(
             IDXLockedPosition,
             and_(
@@ -1703,7 +1707,7 @@ def list_all_holders(
             )
         )
 
-    _holders: Sequence[tuple[IDXPosition, int]] = (
+    _holders: Sequence[tuple[IDXPosition, int, datetime | None]] = (
         db.execute(stmt.order_by(IDXPosition.id)).tuples().all()
     )
 
@@ -1729,10 +1733,20 @@ def list_all_holders(
     }
 
     holders = []
-    for _position, _locked in _holders:
+    for _position, _locked, _lock_event_latest_created in _holders:
         _personal_info = _personal_info_dict.get(
             _position.account_address, personal_info_default
         )
+        if _position is None and _lock_event_latest_created is not None:
+            modified: datetime = _lock_event_latest_created
+        elif _position is not None and _lock_event_latest_created is None:
+            modified: datetime = _position.modified
+        else:
+            modified: datetime = (
+                _position.modified
+                if (_position.modified > _lock_event_latest_created)
+                else _lock_event_latest_created
+            )
         holders.append(
             {
                 "account_address": _position.account_address,
@@ -1742,6 +1756,7 @@ def list_all_holders(
                 "exchange_commitment": _position.exchange_commitment,
                 "pending_transfer": _position.pending_transfer,
                 "locked": _locked if _locked is not None else 0,
+                "modified": modified,
             }
         )
 
@@ -1865,9 +1880,13 @@ def retrieve_holder(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Holders
-    _holder: tuple[IDXPosition, int] = (
+    _holder: tuple[IDXPosition, int, datetime | None] = (
         db.execute(
-            select(IDXPosition, func.sum(IDXLockedPosition.value))
+            select(
+                IDXPosition,
+                func.sum(IDXLockedPosition.value),
+                func.max(IDXLockedPosition.modified),
+            )
             .outerjoin(
                 IDXLockedPosition,
                 and_(
@@ -1898,12 +1917,24 @@ def retrieve_holder(
         exchange_commitment = 0
         pending_transfer = 0
         locked = 0
+        modified = None
     else:
         balance = _holder[0].balance
         exchange_balance = _holder[0].exchange_balance
         exchange_commitment = _holder[0].exchange_commitment
         pending_transfer = _holder[0].pending_transfer
         locked = _holder[1]
+
+        if _holder[0] is None and _holder[2] is not None:
+            modified = _holder[2]
+        elif _holder[0] is not None and _holder[2] is None:
+            modified = _holder[0].modified
+        else:
+            modified = (
+                _holder[0].modified
+                if (_holder[0].modified > _holder[2])
+                else _holder[2]
+            )
 
     # Get personal information
     personal_info_default = {
@@ -1939,6 +1970,7 @@ def retrieve_holder(
         "exchange_commitment": exchange_commitment,
         "pending_transfer": pending_transfer,
         "locked": locked if locked is not None else 0,
+        "modified": modified,
     }
 
     return json_response(holder)

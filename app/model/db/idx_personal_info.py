@@ -74,6 +74,15 @@ class IDXPersonalInfo(Base):
             "tax_category": personal_info_dict.get("tax_category", None),
         }
 
+    def json(self):
+        return {
+            "id": self.id,
+            "account_address": self.account_address,
+            "issuer_address": self.issuer_address,
+            "personal_info": self.personal_info,
+            "created": self.created,
+        }
+
 
 class IDXPersonalInfoBlockNumber(Base):
     """Synchronized blockNumber of IDXPersonalInfo"""
