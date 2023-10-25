@@ -54,7 +54,6 @@ tags_metadata = [
     {"name": "share", "description": "Share token management"},
     {"name": "utility", "description": "Utility functions"},
     {"name": "messaging", "description": "Messaging functions with external systems"},
-    {"name": "personal_info", "description": "Personal information"},
     {"name": "blockchain_explorer", "description": "Blockchain explorer"},
 ]
 
