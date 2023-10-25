@@ -37,7 +37,6 @@ from app.routers import (
     file,
     ledger,
     notification,
-    personal_info,
     position,
     share,
     token_holders,
@@ -103,7 +102,6 @@ app.include_router(notification.router)
 app.include_router(position.router)
 app.include_router(share.router)
 app.include_router(token_holders.router)
-app.include_router(personal_info.router)
 app.include_router(bc_explorer.router)
 
 

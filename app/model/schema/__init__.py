@@ -80,8 +80,6 @@ from .personal_info import (
     BatchRegisterPersonalInfoUploadResponse,
     GetBatchRegisterPersonalInfoResponse,
     ListBatchRegisterPersonalInfoUploadResponse,
-    ListPersonalInfoQuery,
-    ListPersonalInfoResponse,
     RegisterPersonalInfoRequest,
 )
 from .position import (
@@ -126,6 +124,8 @@ from .token_holders import (
     CreateTokenHoldersListRequest,
     CreateTokenHoldersListResponse,
     ListAllTokenHolderCollectionsResponse,
+    ListTokenHoldersPersonalInfoQuery,
+    ListTokenHoldersPersonalInfoResponse,
     RetrieveTokenHoldersListResponse,
 )
 from .transfer import (

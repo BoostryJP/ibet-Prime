@@ -17,14 +17,13 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
-from typing import Annotated, List, Optional
+from typing import List, Optional
 
-from fastapi import Query
-from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from web3 import Web3
 
 from app.model.db import BatchRegisterPersonalInfoUploadStatus
-from app.model.schema.types import ResultSet, SortOrder
+from app.model.schema.types import ResultSet
 
 
 class PersonalInfo(BaseModel):
@@ -62,8 +61,6 @@ class PersonalInfoIndex(BaseModel):
 ############################
 # REQUEST
 ############################
-
-
 class RegisterPersonalInfoRequest(PersonalInfoInput):
     """Register Personal Information schema (REQUEST)"""
 
@@ -78,23 +75,9 @@ class RegisterPersonalInfoRequest(PersonalInfoInput):
         return v
 
 
-class ListPersonalInfoQuery(BaseModel):
-    offset: Annotated[
-        Optional[NonNegativeInt], Query(description="start position")
-    ] = None
-    limit: Annotated[
-        Optional[NonNegativeInt], Query(description="number of set")
-    ] = None
-    sort_order: Annotated[
-        Optional[SortOrder], Query(description="sort order(0: ASC, 1: DESC)")
-    ] = SortOrder.ASC
-
-
 ############################
 # RESPONSE
 ############################
-
-
 class BatchRegisterPersonalInfoUploadResponse(BaseModel):
     """Batch Register PersonalInfo schema (RESPONSE)"""
 
@@ -142,10 +125,3 @@ class GetBatchRegisterPersonalInfoResponse(BaseModel):
 
     status: BatchRegisterPersonalInfoUploadStatus
     results: List[BatchRegisterPersonalInfoResult]
-
-
-class ListPersonalInfoResponse(BaseModel):
-    """List All PersonalInfo (Response)"""
-
-    result_set: ResultSet
-    personal_info: List[PersonalInfoIndex]

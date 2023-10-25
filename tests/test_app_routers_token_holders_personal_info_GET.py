@@ -22,9 +22,9 @@ from app.model.db import IDXPersonalInfo
 from tests.account_config import config_eth_account
 
 
-class TestAppRoutersPersonalInfoGET:
+class TestAppRoutersTokenHoldersPersonalInfoGET:
     # target API endpoint
-    url = "/personal_info"
+    url = "/token/holders/personal_info"
 
     ###########################################################################
     # Normal Case
