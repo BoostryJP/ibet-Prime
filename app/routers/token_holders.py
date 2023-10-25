@@ -19,17 +19,25 @@ SPDX-License-Identifier: Apache-2.0
 import uuid
 from typing import Optional, Sequence
 
-from fastapi import APIRouter, Header, Path, Query
+from fastapi import APIRouter, Depends, Header, Path, Query
 from fastapi.exceptions import HTTPException
 from sqlalchemy import and_, asc, desc, func, select
 
 from app.database import DBSession
 from app.exceptions import InvalidParameterError
-from app.model.db import Token, TokenHolder, TokenHolderBatchStatus, TokenHoldersList
+from app.model.db import (
+    IDXPersonalInfo,
+    Token,
+    TokenHolder,
+    TokenHolderBatchStatus,
+    TokenHoldersList,
+)
 from app.model.schema import (
     CreateTokenHoldersListRequest,
     CreateTokenHoldersListResponse,
     ListAllTokenHolderCollectionsResponse,
+    ListTokenHoldersPersonalInfoQuery,
+    ListTokenHoldersPersonalInfoResponse,
     RetrieveTokenHoldersListResponse,
 )
 from app.utils.check_utils import address_is_valid_address, validate_headers
@@ -45,13 +53,67 @@ router = APIRouter(
 )
 
 
+# GET: /token/holders/personal_info
+@router.get(
+    "/holders/personal_info",
+    response_model=ListTokenHoldersPersonalInfoResponse,
+    responses=get_routers_responses(422),
+)
+def list_all_token_holders_personal_info(
+    db: DBSession,
+    issuer_address: str = Header(...),
+    request_query: ListTokenHoldersPersonalInfoQuery = Depends(),
+):
+    """Lists the personal information of all registered holders linked to the token issuer"""
+    # Validate Headers
+    validate_headers(issuer_address=(issuer_address, address_is_valid_address))
+
+    offset = request_query.offset
+    limit = request_query.limit
+    sort_order = request_query.sort_order  # default: asc
+
+    stmt = select(IDXPersonalInfo).where(
+        IDXPersonalInfo.issuer_address == issuer_address
+    )
+    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+
+    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
+
+    # Sort
+    if sort_order == 0:
+        stmt = stmt.order_by(IDXPersonalInfo.created)
+    else:
+        stmt = stmt.order_by(desc(IDXPersonalInfo.created))
+
+    # Pagination
+    if limit is not None:
+        stmt = stmt.limit(limit)
+    if offset is not None:
+        stmt = stmt.offset(offset)
+
+    personal_info_list: Sequence[IDXPersonalInfo] = db.scalars(stmt).all()
+    data = [_personal_info.json() for _personal_info in personal_info_list]
+
+    return json_response(
+        {
+            "result_set": {
+                "count": count,
+                "offset": offset,
+                "limit": limit,
+                "total": total,
+            },
+            "personal_info": data,
+        },
+    )
+
+
 # POST: /token/holders/{token_address}/collection
 @router.post(
     "/holders/{token_address}/collection",
     response_model=CreateTokenHoldersListResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-def create_collection(
+def create_token_holders_collection(
     db: DBSession,
     data: CreateTokenHoldersListRequest,
     token_address: str = Path(
@@ -60,7 +122,7 @@ def create_collection(
     ),
     issuer_address: str = Header(...),
 ):
-    """Create collection"""
+    """Create token holders collection"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -237,7 +299,7 @@ def list_all_token_holders_collections(
     response_model=RetrieveTokenHoldersListResponse,
     responses=get_routers_responses(404, InvalidParameterError),
 )
-def retrieve_token_holders_list(
+def retrieve_token_holders_collection(
     db: DBSession,
     token_address: str = Path(...),
     list_id: str = Path(
@@ -247,7 +309,7 @@ def retrieve_token_holders_list(
     ),
     issuer_address: str = Header(...),
 ):
-    """Get token holders"""
+    """Retrieve token holders collection"""
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))

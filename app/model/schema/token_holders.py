@@ -17,16 +17,29 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import uuid
-from typing import List
+from typing import Annotated, List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from fastapi import Query
+from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, field_validator
 
 from app.model.db import TokenHolderBatchStatus
-from app.model.schema.types import ResultSet
+from app.model.schema.personal_info import PersonalInfoIndex
+from app.model.schema.types import ResultSet, SortOrder
+
 
 ############################
 # REQUEST
 ############################
+class ListTokenHoldersPersonalInfoQuery(BaseModel):
+    offset: Annotated[
+        Optional[NonNegativeInt], Query(description="start position")
+    ] = None
+    limit: Annotated[
+        Optional[NonNegativeInt], Query(description="number of set")
+    ] = None
+    sort_order: Annotated[
+        Optional[SortOrder], Query(description="sort order(0: ASC, 1: DESC)")
+    ] = SortOrder.ASC
 
 
 class CreateTokenHoldersListRequest(BaseModel):
@@ -58,6 +71,11 @@ class CreateTokenHoldersListRequest(BaseModel):
 ############################
 # RESPONSE
 ############################
+class ListTokenHoldersPersonalInfoResponse(BaseModel):
+    """List All Token Holders PersonalInfo (Response)"""
+
+    result_set: ResultSet
+    personal_info: List[PersonalInfoIndex]
 
 
 class CreateTokenHoldersListResponse(BaseModel):

@@ -16,6 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from datetime import datetime
+
 from app.model.db import (
     Account,
     IDXLockedPosition,
@@ -99,6 +101,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
             "exchange_commitment": 0,
             "pending_transfer": 0,
             "locked": 0,
+            "modified": None,
         }
 
     # <Normal_1_2>
@@ -132,6 +135,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
         idx_position_1.exchange_balance = 11
         idx_position_1.exchange_commitment = 12
         idx_position_1.pending_transfer = 5
+        idx_position_1.modified = datetime(2023, 10, 24, 0, 0, 0)
         db.add(idx_position_1)
 
         # prepare data: Personal Info
@@ -175,6 +179,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
             "exchange_commitment": 12,
             "pending_transfer": 5,
             "locked": 0,
+            "modified": "2023-10-24T00:00:00",
         }
 
     # <Normal_1_3>
@@ -208,6 +213,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
         idx_position_1.exchange_balance = 11
         idx_position_1.exchange_commitment = 12
         idx_position_1.pending_transfer = 5
+        idx_position_1.modified = datetime(2023, 10, 24, 0, 0, 0)
         db.add(idx_position_1)
 
         # prepare data: Locked Position
@@ -218,6 +224,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
         )
         _locked_position.account_address = _account_address_1
         _locked_position.value = 5
+        _locked_position.modified = datetime(2023, 10, 24, 0, 1, 0)
         db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
@@ -227,6 +234,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
         )
         _locked_position.account_address = _account_address_1
         _locked_position.value = 5
+        _locked_position.modified = datetime(2023, 10, 24, 0, 2, 0)
         db.add(_locked_position)
 
         # prepare data: Personal Info
@@ -270,6 +278,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
             "exchange_commitment": 12,
             "pending_transfer": 5,
             "locked": 10,
+            "modified": "2023-10-24T00:02:00",
         }
 
     # <Normal_2_1>
@@ -300,6 +309,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
         idx_position_1.exchange_balance = 11
         idx_position_1.exchange_commitment = 12
         idx_position_1.pending_transfer = 5
+        idx_position_1.modified = datetime(2023, 10, 24, 0, 0, 0)
         db.add(idx_position_1)
 
         # request target API
@@ -327,6 +337,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
             "exchange_commitment": 12,
             "pending_transfer": 5,
             "locked": 0,
+            "modified": "2023-10-24T00:00:00",
         }
 
     # <Normal_2_2>
@@ -357,6 +368,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
         idx_position_1.exchange_balance = 11
         idx_position_1.exchange_commitment = 12
         idx_position_1.pending_transfer = 5
+        idx_position_1.modified = datetime(2023, 10, 24, 0, 0, 0)
         db.add(idx_position_1)
 
         idx_personal_info_1 = IDXPersonalInfo()
@@ -398,6 +410,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
             "exchange_commitment": 12,
             "pending_transfer": 5,
             "locked": 0,
+            "modified": "2023-10-24T00:00:00",
         }
 
     ###########################################################################

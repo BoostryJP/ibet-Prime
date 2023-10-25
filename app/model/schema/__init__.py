@@ -124,6 +124,8 @@ from .token_holders import (
     CreateTokenHoldersListRequest,
     CreateTokenHoldersListResponse,
     ListAllTokenHolderCollectionsResponse,
+    ListTokenHoldersPersonalInfoQuery,
+    ListTokenHoldersPersonalInfoResponse,
     RetrieveTokenHoldersListResponse,
 )
 from .transfer import (
