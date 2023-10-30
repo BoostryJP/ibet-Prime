@@ -394,10 +394,14 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
 
 class IbetStraightBondContract(IbetSecurityTokenInterface):
     face_value: int
+    face_value_currency: str
     interest_rate: float
     interest_payment_date: List[str]
+    interest_payment_currency: str
     redemption_date: str
     redemption_value: int
+    redemption_value_currency: str
+    base_fx_rate: float
     return_date: str
     return_amount: str
     purpose: str
@@ -495,9 +499,15 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
 
         # Set IbetStraightBondToken attribute
         self.face_value = ContractUtils.call_function(contract, "faceValue", (), 0)
+        self.face_value_currency = ContractUtils.call_function(
+            contract, "faceValueCurrency", (), ""
+        )
         self.interest_rate = float(
             Decimal(str(ContractUtils.call_function(contract, "interestRate", (), 0)))
             * Decimal("0.0001")
+        )
+        self.interest_payment_currency = ContractUtils.call_function(
+            contract, "interestPaymentCurrency", (), ""
         )
         self.redemption_date = ContractUtils.call_function(
             contract, "redemptionDate", (), ""
@@ -505,10 +515,23 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         self.redemption_value = ContractUtils.call_function(
             contract, "redemptionValue", (), 0
         )
+        self.redemption_value_currency = ContractUtils.call_function(
+            contract, "redemptionValueCurrency", (), ""
+        )
         self.return_date = ContractUtils.call_function(contract, "returnDate", (), "")
         self.return_amount = ContractUtils.call_function(
             contract, "returnAmount", (), ""
         )
+        try:
+            _raw_base_fx_rate = ContractUtils.call_function(
+                contract, "baseFXRate", (), ""
+            )
+            if _raw_base_fx_rate is not None and _raw_base_fx_rate != "":
+                self.base_fx_rate = float(_raw_base_fx_rate)
+            else:
+                self.base_fx_rate = 0.0
+        except ValueError:
+            self.base_fx_rate = 0.0
         self.purpose = ContractUtils.call_function(contract, "purpose", (), "")
         self.memo = ContractUtils.call_function(contract, "memo", (), "")
         self.is_redeemed = ContractUtils.call_function(
@@ -569,6 +592,26 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
+        if data.face_value_currency is not None:
+            tx = contract.functions.setFaceValueCurrency(
+                data.face_value_currency
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            try:
+                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
+
         if data.interest_rate is not None:
             _interest_rate = int(Decimal(str(data.interest_rate)) * Decimal("10000"))
             tx = contract.functions.setInterestRate(_interest_rate).build_transaction(
@@ -612,6 +655,26 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             except Exception as err:
                 raise SendTransactionError(err)
 
+        if data.interest_payment_currency is not None:
+            tx = contract.functions.setInterestPaymentCurrency(
+                data.interest_payment_currency
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            try:
+                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
+
         if data.redemption_value is not None:
             tx = contract.functions.setRedemptionValue(
                 data.redemption_value
@@ -625,6 +688,46 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
             )
             try:
                 ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
+
+        if data.redemption_value_currency is not None:
+            tx = contract.functions.setRedemptionValueCurrency(
+                data.redemption_value_currency
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            try:
+                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
+            except TimeExhausted as timeout_error:
+                raise SendTransactionError(timeout_error)
+            except Exception as err:
+                raise SendTransactionError(err)
+
+        if data.base_fx_rate is not None:
+            tx = contract.functions.setBaseFXRate(
+                str(data.base_fx_rate)
+            ).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            try:
+                ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            except ContractRevertError:
+                raise
             except TimeExhausted as timeout_error:
                 raise SendTransactionError(timeout_error)
             except Exception as err:

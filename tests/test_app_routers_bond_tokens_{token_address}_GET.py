@@ -68,12 +68,15 @@ class TestAppRoutersBondTokensTokenAddressGET:
         )
         mock_token.status = True
         mock_token.face_value = 200
+        mock_token.face_value_currency = "JPY"
         mock_token.redemption_date = "redemptionDate_test1"
         mock_token.redemption_value = 40
+        mock_token.redemption_value_currency = "JPY"
         mock_token.return_date = "returnDate_test1"
         mock_token.return_amount = "returnAmount_test1"
         mock_token.purpose = "purpose_test1"
         mock_token.interest_rate = 0.003
+        mock_token.base_fx_rate = 123.456789
         mock_token.transferable = True
         mock_token.is_offering = False
         mock_token.is_redeemed = False
@@ -94,8 +97,9 @@ class TestAppRoutersBondTokensTokenAddressGET:
             "interestPaymentDate11_test1",
             "interestPaymentDate12_test1",
         ]
-        mock_token.memo = "memo_test1"
+        mock_token.interest_payment_currency = "JPY"
         mock_token.transfer_approval_required = True
+        mock_token.memo = "memo_test1"
 
         mock_get.side_effect = [mock_token]
 
@@ -108,21 +112,15 @@ class TestAppRoutersBondTokensTokenAddressGET:
             "name": "testtoken1",
             "symbol": "test1",
             "total_supply": 10000,
-            "contact_information": "contactInformation_test1",
-            "privacy_policy": "privacyPolicy_test1",
-            "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
-            "status": True,
             "face_value": 200,
+            "face_value_currency": "JPY",
             "redemption_date": "redemptionDate_test1",
             "redemption_value": 40,
+            "redemption_value_currency": "JPY",
             "return_date": "returnDate_test1",
             "return_amount": "returnAmount_test1",
             "purpose": "purpose_test1",
             "interest_rate": 0.003,
-            "transferable": True,
-            "is_offering": False,
-            "is_redeemed": False,
-            "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
             "interest_payment_date": [
                 "interestPaymentDate1_test1",
                 "interestPaymentDate2_test1",
@@ -137,6 +135,16 @@ class TestAppRoutersBondTokensTokenAddressGET:
                 "interestPaymentDate11_test1",
                 "interestPaymentDate12_test1",
             ],
+            "interest_payment_currency": "JPY",
+            "base_fx_rate": 123.456789,
+            "transferable": True,
+            "is_redeemed": False,
+            "status": True,
+            "is_offering": False,
+            "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
+            "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
+            "contact_information": "contactInformation_test1",
+            "privacy_policy": "privacyPolicy_test1",
             "issue_datetime": _issue_datetime,
             "token_status": 1,
             "transfer_approval_required": True,
@@ -180,12 +188,15 @@ class TestAppRoutersBondTokensTokenAddressGET:
         )
         mock_token.status = True
         mock_token.face_value = 200
+        mock_token.face_value_currency = "JPY"
         mock_token.redemption_date = "redemptionDate_test1"
         mock_token.redemption_value = 40
+        mock_token.redemption_value_currency = "JPY"
         mock_token.return_date = "returnDate_test1"
         mock_token.return_amount = "returnAmount_test1"
         mock_token.purpose = "purpose_test1"
         mock_token.interest_rate = 0.003
+        mock_token.base_fx_rate = 123.456789
         mock_token.transferable = True
         mock_token.is_offering = False
         mock_token.is_redeemed = False
@@ -206,8 +217,9 @@ class TestAppRoutersBondTokensTokenAddressGET:
             "interestPaymentDate11_test1",
             "interestPaymentDate12_test1",
         ]
-        mock_token.memo = "memo_test1"
+        mock_token.interest_payment_currency = "JPY"
         mock_token.transfer_approval_required = True
+        mock_token.memo = "memo_test1"
 
         mock_get.side_effect = [mock_token]
 
@@ -220,21 +232,15 @@ class TestAppRoutersBondTokensTokenAddressGET:
             "name": "testtoken1",
             "symbol": "test1",
             "total_supply": 10000,
-            "contact_information": "contactInformation_test1",
-            "privacy_policy": "privacyPolicy_test1",
-            "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
-            "status": True,
             "face_value": 200,
+            "face_value_currency": "JPY",
             "redemption_date": "redemptionDate_test1",
             "redemption_value": 40,
+            "redemption_value_currency": "JPY",
             "return_date": "returnDate_test1",
             "return_amount": "returnAmount_test1",
             "purpose": "purpose_test1",
             "interest_rate": 0.003,
-            "transferable": True,
-            "is_offering": False,
-            "is_redeemed": False,
-            "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
             "interest_payment_date": [
                 "interestPaymentDate1_test1",
                 "interestPaymentDate2_test1",
@@ -249,6 +255,16 @@ class TestAppRoutersBondTokensTokenAddressGET:
                 "interestPaymentDate11_test1",
                 "interestPaymentDate12_test1",
             ],
+            "interest_payment_currency": "JPY",
+            "base_fx_rate": 123.456789,
+            "transferable": True,
+            "is_redeemed": False,
+            "status": True,
+            "is_offering": False,
+            "tradable_exchange_contract_address": "0x1234567890abCdFe1234567890ABCdFE12345678",
+            "personal_info_contract_address": "0x1234567890aBcDFE1234567890abcDFE12345679",
+            "contact_information": "contactInformation_test1",
+            "privacy_policy": "privacyPolicy_test1",
             "issue_datetime": _issue_datetime,
             "token_status": 1,
             "transfer_approval_required": True,

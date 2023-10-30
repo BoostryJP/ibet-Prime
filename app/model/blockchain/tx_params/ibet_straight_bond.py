@@ -35,9 +35,13 @@ from .ibet_security_token import (
 
 class UpdateParams(BaseModel):
     face_value: Optional[int] = None
+    face_value_currency: Optional[str] = None
     interest_rate: Optional[float] = None
     interest_payment_date: Optional[List[str]] = None
+    interest_payment_currency: Optional[str] = None
     redemption_value: Optional[int] = None
+    redemption_value_currency: Optional[str] = None
+    base_fx_rate: Optional[float] = None
     transferable: Optional[bool] = None
     status: Optional[bool] = None
     is_offering: Optional[bool] = None
@@ -48,6 +52,16 @@ class UpdateParams(BaseModel):
     privacy_policy: Optional[str] = None
     transfer_approval_required: Optional[bool] = None
     memo: Optional[str] = None
+
+    @field_validator("base_fx_rate")
+    @classmethod
+    def base_fx_rate_6_decimal_places(cls, v):
+        if v is not None:
+            float_data = float(v * 10**6)
+            int_data = int(v * 10**6)
+            if not math.isclose(int_data, float_data):
+                raise ValueError("base_fx_rate must be rounded to 6 decimal places")
+        return v
 
     @field_validator("interest_rate")
     @classmethod

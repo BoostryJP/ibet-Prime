@@ -227,8 +227,12 @@ def issue_token(
 
     # Check need update
     update_items = [
+        "face_value_currency",
+        "redemption_value_currency",
         "interest_rate",
         "interest_payment_date",
+        "interest_payment_currency",
+        "base_fx_rate",
         "transferable",
         "status",
         "is_offering",
