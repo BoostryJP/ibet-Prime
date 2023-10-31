@@ -36,7 +36,6 @@ from app.model.db import (
     TokenType,
     TokenUpdateOperationCategory,
     TokenUpdateOperationLog,
-    UpdateToken,
 )
 from app.model.schema import IbetStraightBondCreate
 from app.utils.contract_utils import ContractUtils
@@ -92,6 +91,10 @@ def deploy_bond_token_contract(
         contact_information="contact info test",  # update
         privacy_policy="privacy policy test",  # update
         transfer_approval_required=transfer_approval_required,  # update
+        face_value_currency="JPY",  # update
+        redemption_value_currency="JPY",  # update
+        interest_payment_currency="JPY",  # update
+        base_fx_rate=123.456789,  # update
     ).__dict__
 
     token_create_param.pop("image_url")
@@ -157,6 +160,22 @@ def deploy_bond_token_contract(
     ContractUtils.send_transaction(transaction=tx, private_key=private_key)
     tx = contract.functions.setTransferApprovalRequired(
         token_create_param["transfer_approval_required"]
+    ).build_transaction(build_tx_param)
+    ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+    tx = contract.functions.setFaceValueCurrency(
+        token_create_param["face_value_currency"]
+    ).build_transaction(build_tx_param)
+    ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+    tx = contract.functions.setInterestPaymentCurrency(
+        token_create_param["interest_payment_currency"]
+    ).build_transaction(build_tx_param)
+    ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+    tx = contract.functions.setRedemptionValueCurrency(
+        token_create_param["redemption_value_currency"]
+    ).build_transaction(build_tx_param)
+    ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+    tx = contract.functions.setBaseFXRate(
+        str(token_create_param["base_fx_rate"])
     ).build_transaction(build_tx_param)
     ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 

@@ -60,6 +60,7 @@ def create_ledger(token_address: str, db: Session):
     ):
         return
 
+    # Get ledger template
     _template: LedgerTemplate | None = db.scalars(
         select(LedgerTemplate)
         .where(LedgerTemplate.token_address == token_address)
@@ -67,6 +68,12 @@ def create_ledger(token_address: str, db: Session):
     ).first()
     if _template is None:
         return
+
+    # Get currency code only for BOND tokens
+    currency = ""  # default
+    if _token.type == TokenType.IBET_STRAIGHT_BOND.value:
+        bond_contract = IbetStraightBondContract(token_address).get()
+        currency = bond_contract.face_value_currency
 
     # Get ledger details
     _details_list: Sequence[LedgerDetailsTemplate] = db.scalars(
@@ -98,6 +105,7 @@ def create_ledger(token_address: str, db: Session):
     ledger = {
         "created": created_ymd,
         "token_name": _template.token_name,
+        "currency": currency,
         "headers": _template.headers,
         "details": ledger_details,
         "footers": _template.footers,

@@ -77,6 +77,7 @@ def deploy_bond_token_contract(address, private_key, personal_info_contract_addr
 
     data = IbetStraightBondUpdateParams()
     data.personal_info_contract_address = personal_info_contract_address
+    data.face_value_currency = "JPY"
     bond_contrat.update(data, address, private_key)
 
     return contract_address
@@ -454,6 +455,7 @@ class TestCreateLedger:
         assert _ledger.ledger == {
             "created": now_ymd,
             "token_name": "受益権テスト",
+            "currency": "",
             "headers": [
                 {
                     "key": "aaa",
@@ -920,6 +922,7 @@ class TestCreateLedger:
         assert _ledger.ledger == {
             "created": now_ymd,
             "token_name": "受益権テスト",
+            "currency": "JPY",
             "headers": [
                 {
                     "key": "aaa",

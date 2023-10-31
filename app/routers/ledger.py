@@ -208,7 +208,11 @@ def retrieve_ledger_history(
     if _ledger is None:
         raise HTTPException(status_code=404, detail="ledger does not exist")
 
-    resp = _ledger.ledger
+    resp: dict = _ledger.ledger
+
+    # For backward compatibility, set the default value if `currency` is not set.
+    if resp.get("currency") is None:
+        resp["currency"] = ""
 
     if latest_flg == 1:  # Get the latest personal info
         # Get ibet fin token_detail_type

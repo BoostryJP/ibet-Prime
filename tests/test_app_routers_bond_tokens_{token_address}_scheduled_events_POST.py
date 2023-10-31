@@ -62,9 +62,13 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         datetime_now_str = datetime_now_utc.isoformat()
         update_data = {
             "face_value": 10000,
+            "face_value_currency": "JPY",
             "interest_rate": 0.5,
             "interest_payment_date": ["0101", "0701"],
+            "interest_payment_currency": "JPY",
             "redemption_value": 11000,
+            "redemption_value_currency": "JPY",
+            "base_fx_rate": 123.456789,
             "transferable": False,
             "status": False,
             "is_offering": False,
@@ -141,9 +145,13 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         datetime_now_str = datetime_now_jst.isoformat()
         update_data = {
             "face_value": 10000,
+            "face_value_currency": "JPY",
             "interest_rate": 0.5,
             "interest_payment_date": ["0101", "0701"],
+            "interest_payment_currency": "JPY",
             "redemption_value": 11000,
+            "redemption_value_currency": "JPY",
+            "base_fx_rate": 123.456789,
             "transferable": False,
             "status": False,
             "is_offering": False,

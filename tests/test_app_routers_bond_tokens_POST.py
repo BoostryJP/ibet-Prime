@@ -206,8 +206,12 @@ class TestAppRoutersBondTokensPOST:
                 "return_date": "20211231",
                 "return_amount": "return_amount_test1",
                 "purpose": "purpose_test1",
+                "face_value_currency": "JPY",  # update
+                "redemption_value_currency": "JPY",  # update
                 "interest_rate": 0.0001,  # update
                 "interest_payment_date": ["0331", "0930"],  # update
+                "interest_payment_currency": "JPY",  # update
+                "base_fx_rate": 123.456789,  # update
                 "transferable": False,  # update
                 "image_url": ["image_1"],  # update
                 "status": False,  # update
@@ -422,6 +426,11 @@ class TestAppRoutersBondTokensPOST:
     # <Error_2_1>
     # Validation Error
     # format error
+    #  - base_fx_rate
+    #  - interest_rate
+    #  - interest_payment_date
+    #  - tradable_exchange_contract_address
+    #  - personal_info_contract_address
     def test_error_2_1(self, client, db):
         test_account = config_eth_account("user1")
 
@@ -436,6 +445,7 @@ class TestAppRoutersBondTokensPOST:
             "return_date": "20211231",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
+            "base_fx_rate": 123.4567899,
             "interest_rate": 12.34567,
             "interest_payment_date": [
                 "0101",
@@ -467,15 +477,16 @@ class TestAppRoutersBondTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"error": {}},
-                    "input": 12.34567,
-                    "loc": ["body", "interest_rate"],
-                    "msg": "Value error, interest_rate must be less than or equal to "
-                    "four decimal places",
                     "type": "value_error",
+                    "loc": ["body", "interest_rate"],
+                    "msg": "Value error, interest_rate must be less than or equal to four decimal places",
+                    "input": 12.34567,
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
+                    "type": "value_error",
+                    "loc": ["body", "interest_payment_date"],
+                    "msg": "Value error, list length of interest_payment_date must be less than 13",
                     "input": [
                         "0101",
                         "0201",
@@ -491,26 +502,28 @@ class TestAppRoutersBondTokensPOST:
                         "1201",
                         "1231",
                     ],
-                    "loc": ["body", "interest_payment_date"],
-                    "msg": "Value error, list length of interest_payment_date must be "
-                    "less than 13",
-                    "type": "value_error",
+                    "ctx": {"error": {}},
                 },
                 {
+                    "type": "value_error",
+                    "loc": ["body", "base_fx_rate"],
+                    "msg": "Value error, base_fx_rate must be less than or equal to six decimal places",
+                    "input": 123.4567899,
                     "ctx": {"error": {}},
-                    "input": "0x0",
+                },
+                {
+                    "type": "value_error",
                     "loc": ["body", "tradable_exchange_contract_address"],
-                    "msg": "Value error, tradable_exchange_contract_address is not a "
-                    "valid address",
-                    "type": "value_error",
+                    "msg": "Value error, tradable_exchange_contract_address is not a valid address",
+                    "input": "0x0",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "0x0",
-                    "loc": ["body", "personal_info_contract_address"],
-                    "msg": "Value error, personal_info_contract_address is not a "
-                    "valid address",
                     "type": "value_error",
+                    "loc": ["body", "personal_info_contract_address"],
+                    "msg": "Value error, personal_info_contract_address is not a valid address",
+                    "input": "0x0",
+                    "ctx": {"error": {}},
                 },
             ],
         }
@@ -650,6 +663,7 @@ class TestAppRoutersBondTokensPOST:
             "return_date": "20211231",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
+            "base_fx_rate": -0.000001,  # update
             "interest_rate": -0.0001,  # update
             "interest_payment_date": ["0331", "0930"],  # update
             "transferable": False,  # update
@@ -675,32 +689,39 @@ class TestAppRoutersBondTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"ge": 0},
-                    "input": -1,
+                    "type": "greater_than_equal",
                     "loc": ["body", "total_supply"],
                     "msg": "Input should be greater than or equal to 0",
-                    "type": "greater_than_equal",
+                    "input": -1,
+                    "ctx": {"ge": 0},
                 },
                 {
-                    "ctx": {"ge": 0},
-                    "input": -1,
+                    "type": "greater_than_equal",
                     "loc": ["body", "face_value"],
                     "msg": "Input should be greater than or equal to 0",
-                    "type": "greater_than_equal",
+                    "input": -1,
+                    "ctx": {"ge": 0},
                 },
                 {
-                    "ctx": {"ge": 0},
-                    "input": -1,
+                    "type": "greater_than_equal",
                     "loc": ["body", "redemption_value"],
                     "msg": "Input should be greater than or equal to 0",
-                    "type": "greater_than_equal",
+                    "input": -1,
+                    "ctx": {"ge": 0},
                 },
                 {
-                    "ctx": {"ge": 0.0},
-                    "input": -0.0001,
+                    "type": "greater_than_equal",
                     "loc": ["body", "interest_rate"],
                     "msg": "Input should be greater than or equal to 0",
+                    "input": -0.0001,
+                    "ctx": {"ge": 0.0},
+                },
+                {
                     "type": "greater_than_equal",
+                    "loc": ["body", "base_fx_rate"],
+                    "msg": "Input should be greater than or equal to 0",
+                    "input": -1e-06,
+                    "ctx": {"ge": 0.0},
                 },
             ],
         }
@@ -734,6 +755,9 @@ class TestAppRoutersBondTokensPOST:
             "contact_information": GetRandomStr(2001),  # update
             "privacy_policy": GetRandomStr(5001),  # update
             "transfer_approval_required": True,  # update
+            "face_value_currency": "JPYY",
+            "redemption_value_currency": "JPYY",
+            "interest_payment_currency": "JPYY",
         }
         resp = client.post(
             self.apiurl,
@@ -747,74 +771,95 @@ class TestAppRoutersBondTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"max_length": 100},
-                    "input": ANY,
+                    "type": "string_too_long",
                     "loc": ["body", "name"],
                     "msg": "String should have at most 100 characters",
-                    "type": "string_too_long",
+                    "input": ANY,
+                    "ctx": {"max_length": 100},
                 },
                 {
-                    "ctx": {"le": 1000000000000},
-                    "input": 1000000000001,
+                    "type": "less_than_equal",
                     "loc": ["body", "total_supply"],
                     "msg": "Input should be less than or equal to 1000000000000",
-                    "type": "less_than_equal",
+                    "input": 1000000000001,
+                    "ctx": {"le": 1000000000000},
                 },
                 {
-                    "ctx": {"le": 5000000000},
-                    "input": 5000000001,
+                    "type": "less_than_equal",
                     "loc": ["body", "face_value"],
                     "msg": "Input should be less than or equal to 5000000000",
-                    "type": "less_than_equal",
+                    "input": 5000000001,
+                    "ctx": {"le": 5000000000},
                 },
                 {
-                    "ctx": {"max_length": 2000},
-                    "input": ANY,
+                    "type": "string_too_long",
+                    "loc": ["body", "face_value_currency"],
+                    "msg": "String should have at most 3 characters",
+                    "input": "JPYY",
+                    "ctx": {"max_length": 3},
+                },
+                {
+                    "type": "string_too_long",
                     "loc": ["body", "purpose"],
                     "msg": "String should have at most 2000 characters",
-                    "type": "string_too_long",
+                    "input": ANY,
+                    "ctx": {"max_length": 2000},
                 },
                 {
-                    "ctx": {"max_length": 100},
-                    "input": ANY,
+                    "type": "string_too_long",
                     "loc": ["body", "symbol"],
                     "msg": "String should have at most 100 characters",
-                    "type": "string_too_long",
+                    "input": ANY,
+                    "ctx": {"max_length": 100},
                 },
                 {
-                    "ctx": {"le": 5000000000},
-                    "input": 5000000001,
+                    "type": "less_than_equal",
                     "loc": ["body", "redemption_value"],
                     "msg": "Input should be less than or equal to 5000000000",
-                    "type": "less_than_equal",
+                    "input": 5000000001,
+                    "ctx": {"le": 5000000000},
                 },
                 {
-                    "ctx": {"max_length": 2000},
-                    "input": ANY,
+                    "type": "string_too_long",
+                    "loc": ["body", "redemption_value_currency"],
+                    "msg": "String should have at most 3 characters",
+                    "input": "JPYY",
+                    "ctx": {"max_length": 3},
+                },
+                {
+                    "type": "string_too_long",
                     "loc": ["body", "return_amount"],
                     "msg": "String should have at most 2000 characters",
-                    "type": "string_too_long",
+                    "input": ANY,
+                    "ctx": {"max_length": 2000},
                 },
                 {
-                    "ctx": {"le": 100.0},
-                    "input": 100.0001,
+                    "type": "less_than_equal",
                     "loc": ["body", "interest_rate"],
                     "msg": "Input should be less than or equal to 100",
-                    "type": "less_than_equal",
+                    "input": 100.0001,
+                    "ctx": {"le": 100.0},
                 },
                 {
-                    "ctx": {"max_length": 2000},
-                    "input": ANY,
+                    "type": "string_too_long",
+                    "loc": ["body", "interest_payment_currency"],
+                    "msg": "String should have at most 3 characters",
+                    "input": "JPYY",
+                    "ctx": {"max_length": 3},
+                },
+                {
+                    "type": "string_too_long",
                     "loc": ["body", "contact_information"],
                     "msg": "String should have at most 2000 characters",
-                    "type": "string_too_long",
+                    "input": ANY,
+                    "ctx": {"max_length": 2000},
                 },
                 {
-                    "ctx": {"max_length": 5000},
-                    "input": ANY,
+                    "type": "string_too_long",
                     "loc": ["body", "privacy_policy"],
                     "msg": "String should have at most 5000 characters",
-                    "type": "string_too_long",
+                    "input": ANY,
+                    "ctx": {"max_length": 5000},
                 },
             ],
         }

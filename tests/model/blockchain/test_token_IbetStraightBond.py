@@ -294,6 +294,7 @@ class TestGet:
         assert bond_contract.is_offering is False
         assert bond_contract.transfer_approval_required is False
         assert bond_contract.face_value == arguments[3]
+        assert bond_contract.face_value_currency == ""
         assert bond_contract.interest_rate == 0
         assert bond_contract.interest_payment_date == [
             "",
@@ -309,10 +310,13 @@ class TestGet:
             "",
             "",
         ]
+        assert bond_contract.interest_payment_currency == ""
         assert bond_contract.redemption_date == arguments[4]
         assert bond_contract.redemption_value == arguments[5]
+        assert bond_contract.redemption_value_currency == ""
         assert bond_contract.return_date == arguments[6]
         assert bond_contract.return_amount == arguments[7]
+        assert bond_contract.base_fx_rate == 0.0
         assert bond_contract.purpose == arguments[8]
         assert bond_contract.memo == ""
         assert bond_contract.is_redeemed is False
@@ -360,6 +364,7 @@ class TestGet:
             "is_offering": True,
             "transfer_approval_required": True,
             "face_value": 9999998,
+            "face_value_currency": "JPY",
             "interest_rate": 99.999,
             "interest_payment_date": [
                 "99991231",
@@ -375,10 +380,13 @@ class TestGet:
                 "99991231",
                 "99991231",
             ],
+            "interest_payment_currency": "JPY",
             "redemption_date": "99991231",
             "redemption_value": 9999997,
+            "redemption_value_currency": "JPY",
             "return_date": "99991230",
             "return_amount": "return_amount-test",
+            "base_fx_rate": 123.456789,
             "purpose": "purpose-test",
             "memo": "memo-test",
             "is_redeemed": True,
@@ -417,6 +425,7 @@ class TestGet:
         assert bond_contract.is_offering is True
         assert bond_contract.transfer_approval_required is True
         assert bond_contract.face_value == 9999998
+        assert bond_contract.face_value_currency == "JPY"
         assert bond_contract.interest_rate == 99.999
         assert bond_contract.interest_payment_date == [
             "99991231",
@@ -432,10 +441,13 @@ class TestGet:
             "99991231",
             "99991231",
         ]
+        assert bond_contract.interest_payment_currency == "JPY"
         assert bond_contract.redemption_date == "99991231"
         assert bond_contract.redemption_value == 9999997
+        assert bond_contract.redemption_value_currency == "JPY"
         assert bond_contract.return_date == "99991230"
         assert bond_contract.return_amount == "return_amount-test"
+        assert bond_contract.base_fx_rate == 123.456789
         assert bond_contract.purpose == "purpose-test"
         assert bond_contract.memo == "memo-test"
         assert bond_contract.is_redeemed is True
@@ -483,6 +495,7 @@ class TestGet:
             "is_offering": True,
             "transfer_approval_required": True,
             "face_value": 9999998,
+            "face_value_currency": "JPY",
             "interest_rate": 99.999,
             "interest_payment_date": [
                 "99991231",
@@ -498,10 +511,13 @@ class TestGet:
                 "99991231",
                 "99991231",
             ],
+            "interest_payment_currency": "JPY",
             "redemption_date": "99991231",
             "redemption_value": 9999997,
+            "redemption_value_currency": "JPY",
             "return_date": "99991230",
             "return_amount": "return_amount-test",
+            "base_fx_rate": 123.456789,
             "purpose": "purpose-test",
             "memo": "memo-test",
             "is_redeemed": True,
@@ -540,6 +556,7 @@ class TestGet:
         assert bond_contract.is_offering is False
         assert bond_contract.transfer_approval_required is False
         assert bond_contract.face_value == arguments[3]
+        assert bond_contract.face_value_currency == ""
         assert bond_contract.interest_rate == 0
         assert bond_contract.interest_payment_date == [
             "",
@@ -555,10 +572,13 @@ class TestGet:
             "",
             "",
         ]
+        assert bond_contract.interest_payment_currency == ""
         assert bond_contract.redemption_date == arguments[4]
         assert bond_contract.redemption_value == arguments[5]
+        assert bond_contract.redemption_value_currency == ""
         assert bond_contract.return_date == arguments[6]
         assert bond_contract.return_amount == arguments[7]
+        assert bond_contract.base_fx_rate == 0.0
         assert bond_contract.purpose == arguments[8]
         assert bond_contract.memo == ""
         assert bond_contract.is_redeemed is False
@@ -584,6 +604,7 @@ class TestGet:
         assert bond_contract.is_offering is False
         assert bond_contract.transfer_approval_required is False
         assert bond_contract.face_value == 0
+        assert bond_contract.face_value_currency == ""
         assert bond_contract.interest_rate == 0
         assert bond_contract.interest_payment_date == [
             "",
@@ -599,10 +620,13 @@ class TestGet:
             "",
             "",
         ]
+        assert bond_contract.interest_payment_currency == ""
         assert bond_contract.redemption_date == ""
         assert bond_contract.redemption_value == 0
+        assert bond_contract.redemption_value_currency == ""
         assert bond_contract.return_date == ""
         assert bond_contract.return_amount == ""
+        assert bond_contract.base_fx_rate == 0.0
         assert bond_contract.purpose == ""
         assert bond_contract.memo == ""
         assert bond_contract.is_redeemed is False
@@ -655,6 +679,7 @@ class TestUpdate:
         # assertion
         bond_contract = bond_contract.get()
         assert bond_contract.face_value == 20000
+        assert bond_contract.face_value_currency == ""
         assert bond_contract.interest_rate == 0
         assert bond_contract.interest_payment_date == [
             "",
@@ -670,7 +695,14 @@ class TestUpdate:
             "",
             "",
         ]
-        assert bond_contract.redemption_value == 30000
+        assert bond_contract.interest_payment_currency == ""
+        assert bond_contract.redemption_date == arguments[4]
+        assert bond_contract.redemption_value == arguments[5]
+        assert bond_contract.redemption_value_currency == ""
+        assert bond_contract.return_date == arguments[6]
+        assert bond_contract.return_amount == arguments[7]
+        assert bond_contract.base_fx_rate == 0.0
+        assert bond_contract.purpose == arguments[8]
         assert bond_contract.transferable is False
         assert bond_contract.status is True
         assert bond_contract.is_offering is False
@@ -717,9 +749,13 @@ class TestUpdate:
         # update
         _data = {
             "face_value": 20001,
+            "face_value_currency": "JPY",
             "interest_rate": 0.0001,
             "interest_payment_date": ["0331", "0930"],
+            "interest_payment_currency": "JPY",
             "redemption_value": 30001,
+            "redemption_value_currency": "JPY",
+            "base_fx_rate": 123.456789,
             "transferable": True,
             "status": False,
             "is_offering": True,
@@ -740,6 +776,7 @@ class TestUpdate:
         # assertion
         bond_contract = bond_contract.get()
         assert bond_contract.face_value == 20001
+        assert bond_contract.face_value_currency == "JPY"
         assert bond_contract.interest_rate == 0.0001
         assert bond_contract.interest_payment_date == [
             "0331",
@@ -755,7 +792,10 @@ class TestUpdate:
             "",
             "",
         ]
+        assert bond_contract.interest_payment_currency == "JPY"
         assert bond_contract.redemption_value == 30001
+        assert bond_contract.redemption_value_currency == "JPY"
+        assert bond_contract.base_fx_rate == 123.456789
         assert bond_contract.transferable is True
         assert bond_contract.status is False
         assert bond_contract.is_offering is True
@@ -788,6 +828,7 @@ class TestUpdate:
     def test_error_1(self, db):
         # update
         _data = {
+            "base_fx_rate": 123.4567899,
             "interest_rate": 0.00001,
             "interest_payment_date": [
                 "0101",
@@ -838,6 +879,14 @@ class TestUpdate:
                 "loc": ("interest_payment_date",),
                 "msg": "Value error, list length of interest_payment_date must be less than "
                 "13",
+                "type": "value_error",
+                "url": ANY,
+            },
+            {
+                "ctx": {"error": ANY},
+                "input": 123.4567899,
+                "loc": ("base_fx_rate",),
+                "msg": "Value error, base_fx_rate must be rounded to 6 decimal places",
                 "type": "value_error",
                 "url": ANY,
             },

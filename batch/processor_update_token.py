@@ -254,7 +254,7 @@ class Processor:
         ).all()
         return _update_token_list
 
-    def __create_update_data(self, trigger, token_type, arguments):
+    def __create_update_data(self, trigger, token_type, arguments: dict):
         if trigger == "Issue":
             # NOTE: Items set at the time of issue do not need to be updated.
             if token_type == TokenType.IBET_SHARE.value:
@@ -278,8 +278,16 @@ class Processor:
                 return IbetShareUpdateParams(**update_data)
             elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
                 update_data = {
+                    "face_value_currency": arguments.get("face_value_currency"),
+                    "redemption_value_currency": arguments.get(
+                        "redemption_value_currency"
+                    ),
                     "interest_rate": arguments.get("interest_rate"),
                     "interest_payment_date": arguments.get("interest_payment_date"),
+                    "interest_payment_currency": arguments.get(
+                        "interest_payment_currency"
+                    ),
+                    "base_fx_rate": arguments.get("base_fx_rate"),
                     "transferable": arguments.get("transferable"),
                     "status": arguments.get("status"),
                     "is_offering": arguments.get("is_offering"),

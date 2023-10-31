@@ -132,6 +132,7 @@ class RetrieveLedgerHistoryResponse(BaseModel):
 
     created: str
     token_name: str
+    currency: str
     headers: Optional[List[dict]] = None
     details: List[RetrieveLedgerDetailsHistoryResponse]
     footers: Optional[List[dict]] = None
