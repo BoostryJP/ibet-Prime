@@ -133,6 +133,7 @@ from .transfer import (
     ListTransferHistorySortItem,
     TransferApprovalHistoryResponse,
     TransferApprovalsResponse,
+    TransferApprovalTokenDetailResponse,
     TransferApprovalTokenResponse,
     TransferHistoryResponse,
     TransferResponse,

@@ -143,6 +143,30 @@ class TransferApprovalTokenResponse(BaseModel):
     issuer_cancelable: bool
 
 
+class TransferApprovalTokenDetailResponse(BaseModel):
+    """transfer approval token data"""
+
+    id: int
+    token_address: str
+    exchange_address: str
+    application_id: int
+    from_address: str
+    from_address_personal_information: Optional[dict] = Field(...)
+    to_address: str
+    to_address_personal_information: Optional[dict] = Field(...)
+    amount: int
+    application_datetime: str
+    application_blocktimestamp: str
+    approval_datetime: Optional[str] = Field(...)
+    approval_blocktimestamp: Optional[str] = Field(...)
+    cancellation_blocktimestamp: Optional[str] = Field(...)
+    cancelled: bool
+    escrow_finished: bool
+    transfer_approved: bool
+    status: int
+    issuer_cancelable: bool
+
+
 class TransferApprovalHistoryResponse(BaseModel):
     """transfer approval token history"""
 
