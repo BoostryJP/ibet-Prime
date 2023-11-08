@@ -134,6 +134,7 @@ from app.model.schema import (  # Request; Response
     TokenUpdateOperationCategory,
     TransferApprovalHistoryResponse,
     TransferApprovalsResponse,
+    TransferApprovalTokenDetailResponse,
     TransferApprovalTokenResponse,
     TransferHistoryResponse,
     UpdateTransferApprovalOperationType,
@@ -3225,7 +3226,7 @@ def update_transfer_approval(
 # GET: /share/transfer_approvals/{token_address}/{id}
 @router.get(
     "/transfer_approvals/{token_address}/{id}",
-    response_model=TransferApprovalTokenResponse,
+    response_model=TransferApprovalTokenDetailResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def retrieve_transfer_approval_history(
