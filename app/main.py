@@ -215,6 +215,18 @@ async def response_limit_exceeded_error_handler(
     )
 
 
+# 400:OperationNotAllowedStateError
+@app.exception_handler(OperationNotAllowedStateError)
+async def operation_not_permitted_error_handler(
+    request: Request, exc: OperationNotAllowedStateError
+):
+    meta = {"code": exc.code, "title": "OperationNotAllowedStateError"}
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
+    )
+
+
 # 400:ContractRevertError
 @app.exception_handler(ContractRevertError)
 async def contract_revert_error_handler(request: Request, exc: ContractRevertError):

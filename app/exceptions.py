@@ -27,6 +27,9 @@ class AppError(Exception):
     code_list: list[int] | None = None
 
 
+################################################
+# 400_BAD_REQUEST
+################################################
 class InvalidParameterError(AppError):
     status_code = status.HTTP_400_BAD_REQUEST
     code = 1
@@ -35,36 +38,6 @@ class InvalidParameterError(AppError):
 class SendTransactionError(AppError):
     status_code = status.HTTP_400_BAD_REQUEST
     code = 2
-
-
-class ContractRevertError(AppError):
-    """
-    * Error code is defined here
-      * https://github.com/BoostryJP/ibet-SmartContract/blob/dev-23.3/docs/Errors.md
-    * If contract doesn't throw error code, 0 is returned.
-    """
-
-    status_code = status.HTTP_400_BAD_REQUEST
-    code_list = [0] + list(REVERT_CODE_MAP.keys())
-
-    def __init__(self, code_msg: str):
-        code, message = error_code_msg(code_msg)
-        self.code = code
-        self.message = message
-        super().__init__(message)
-
-    def __repr__(self):
-        return f"<ContractRevertError(code={self.code}, message={self.message})>"
-
-
-class AuthorizationError(AppError):
-    status_code = status.HTTP_401_UNAUTHORIZED
-    code = 1
-
-
-class ServiceUnavailableError(AppError):
-    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-    code = 1
 
 
 class AuthTokenAlreadyExistsError(AppError):
@@ -80,3 +53,55 @@ class ResponseLimitExceededError(AppError):
 class Integer64bitLimitExceededError(AppError):
     status_code = status.HTTP_400_BAD_REQUEST
     code = 5
+
+
+class OperationNotAllowedStateError(AppError):
+    """
+    Error returned when server-side data is not ready to process the request
+    """
+
+    status_code = status.HTTP_400_BAD_REQUEST
+    code_list = [
+        101,  # Transfer approval operations cannot be performed for accounts that do not have personal information registered.
+    ]
+
+    def __init__(self, code: int, message: str = None):
+        self.code = code
+        super().__init__(message)
+
+
+class ContractRevertError(AppError):
+    """
+    Revert error occurs from smart-contract
+
+    - Error code: https://github.com/BoostryJP/ibet-SmartContract/blob/master/docs/Errors.md
+    - If contract doesn't throw error code, 0 is returned.
+    """
+
+    status_code = status.HTTP_400_BAD_REQUEST
+    code_list = [0] + list(REVERT_CODE_MAP.keys())
+
+    def __init__(self, code_msg: str):
+        code, message = error_code_msg(code_msg)
+        self.code = code
+        self.message = message
+        super().__init__(message)
+
+    def __repr__(self):
+        return f"<ContractRevertError(code={self.code}, message={self.message})>"
+
+
+################################################
+# 401_UNAUTHORIZED
+################################################
+class AuthorizationError(AppError):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    code = 1
+
+
+################################################
+# 503_SERVICE_UNAVAILABLE
+################################################
+class ServiceUnavailableError(AppError):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    code = 1

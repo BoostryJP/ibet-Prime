@@ -37,6 +37,7 @@ from app.model.blockchain.tx_params.ibet_share import (
 from app.model.db import (
     Account,
     AuthToken,
+    IDXPersonalInfo,
     IDXTransferApproval,
     Token,
     TokenType,
@@ -111,6 +112,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
 
+        _personal_info_from = IDXPersonalInfo()
+        _personal_info_from.account_address = self.test_from_address
+        _personal_info_from.issuer_address = issuer_address
+        _personal_info_from._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_from)
+
+        _personal_info_to = IDXPersonalInfo()
+        _personal_info_to.account_address = self.test_to_address
+        _personal_info_to.issuer_address = issuer_address
+        _personal_info_to._personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_to)
+
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
@@ -149,6 +180,26 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         assert approval_op.exchange_address == config.ZERO_ADDRESS
         assert approval_op.application_id == 100
         assert approval_op.operation_type == TransferApprovalOperationType.APPROVE.value
+        assert approval_op.from_address_personal_info == {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        assert approval_op.to_address_personal_info == {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
 
     # <Normal_1_2>
     # APPROVE
@@ -193,6 +244,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.escrow_finished = True
         db.add(_idx_transfer_approval)
 
+        _personal_info_from = IDXPersonalInfo()
+        _personal_info_from.account_address = self.test_from_address
+        _personal_info_from.issuer_address = issuer_address
+        _personal_info_from._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_from)
+
+        _personal_info_to = IDXPersonalInfo()
+        _personal_info_to.account_address = self.test_to_address
+        _personal_info_to.issuer_address = issuer_address
+        _personal_info_to._personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_to)
+
         # mock
         IbetSecurityTokenEscrow_approve_transfer = mock.patch(
             target="app.model.blockchain.exchange.IbetSecurityTokenEscrow.approve_transfer",
@@ -231,6 +312,26 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         assert approval_op.exchange_address == self.test_exchange_address
         assert approval_op.application_id == 100
         assert approval_op.operation_type == TransferApprovalOperationType.APPROVE.value
+        assert approval_op.from_address_personal_info == {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        assert approval_op.to_address_personal_info == {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
 
     # <Normal_2_1>
     # CANCEL
@@ -274,6 +375,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
 
+        _personal_info_from = IDXPersonalInfo()
+        _personal_info_from.account_address = self.test_from_address
+        _personal_info_from.issuer_address = issuer_address
+        _personal_info_from._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_from)
+
+        _personal_info_to = IDXPersonalInfo()
+        _personal_info_to.account_address = self.test_to_address
+        _personal_info_to.issuer_address = issuer_address
+        _personal_info_to._personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_to)
+
         # mock
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
@@ -312,6 +443,26 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         assert cancel_op.exchange_address == config.ZERO_ADDRESS
         assert cancel_op.application_id == 100
         assert cancel_op.operation_type == TransferApprovalOperationType.CANCEL.value
+        assert cancel_op.from_address_personal_info == {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        assert cancel_op.to_address_personal_info == {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
 
     # <Normal_3>
     # Authorization by auth-token
@@ -359,6 +510,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
+
+        _personal_info_from = IDXPersonalInfo()
+        _personal_info_from.account_address = self.test_from_address
+        _personal_info_from.issuer_address = issuer_address
+        _personal_info_from._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_from)
+
+        _personal_info_to = IDXPersonalInfo()
+        _personal_info_to.account_address = self.test_to_address
+        _personal_info_to.issuer_address = issuer_address
+        _personal_info_to._personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_to)
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
@@ -1054,6 +1235,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
 
+        _personal_info_from = IDXPersonalInfo()
+        _personal_info_from.account_address = self.test_from_address
+        _personal_info_from.issuer_address = issuer_address
+        _personal_info_from._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_from)
+
+        _personal_info_to = IDXPersonalInfo()
+        _personal_info_to.account_address = self.test_to_address
+        _personal_info_to.issuer_address = issuer_address
+        _personal_info_to._personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_to)
+
         # request target API
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
@@ -1113,6 +1324,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
+
+        _personal_info_from = IDXPersonalInfo()
+        _personal_info_from.account_address = self.test_from_address
+        _personal_info_from.issuer_address = issuer_address
+        _personal_info_from._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_from)
+
+        _personal_info_to = IDXPersonalInfo()
+        _personal_info_to.account_address = self.test_to_address
+        _personal_info_to.issuer_address = issuer_address
+        _personal_info_to._personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_to)
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
@@ -1192,6 +1433,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.escrow_finished = True
         db.add(_idx_transfer_approval)
 
+        _personal_info_from = IDXPersonalInfo()
+        _personal_info_from.account_address = self.test_from_address
+        _personal_info_from.issuer_address = issuer_address
+        _personal_info_from._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_from)
+
+        _personal_info_to = IDXPersonalInfo()
+        _personal_info_to.account_address = self.test_to_address
+        _personal_info_to.issuer_address = issuer_address
+        _personal_info_to._personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_to)
+
         # request target API
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
@@ -1252,6 +1523,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.escrow_finished = True
         db.add(_idx_transfer_approval)
+
+        _personal_info_from = IDXPersonalInfo()
+        _personal_info_from.account_address = self.test_from_address
+        _personal_info_from.issuer_address = issuer_address
+        _personal_info_from._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_from)
+
+        _personal_info_to = IDXPersonalInfo()
+        _personal_info_to.account_address = self.test_to_address
+        _personal_info_to.issuer_address = issuer_address
+        _personal_info_to._personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_to)
 
         # mock
         IbetSecurityTokenEscrow_approve_transfer = mock.patch(
@@ -1324,6 +1625,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
 
+        _personal_info_from = IDXPersonalInfo()
+        _personal_info_from.account_address = self.test_from_address
+        _personal_info_from.issuer_address = issuer_address
+        _personal_info_from._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_from)
+
+        _personal_info_to = IDXPersonalInfo()
+        _personal_info_to.account_address = self.test_to_address
+        _personal_info_to.issuer_address = issuer_address
+        _personal_info_to._personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_to)
+
         # request target API
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
@@ -1384,6 +1715,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
 
+        _personal_info_from = IDXPersonalInfo()
+        _personal_info_from.account_address = self.test_from_address
+        _personal_info_from.issuer_address = issuer_address
+        _personal_info_from._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_from)
+
+        _personal_info_to = IDXPersonalInfo()
+        _personal_info_to.account_address = self.test_to_address
+        _personal_info_to.issuer_address = issuer_address
+        _personal_info_to._personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_to)
+
         # mock
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
@@ -1406,4 +1767,149 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         assert resp.json() == {
             "meta": {"code": 110802, "title": "ContractRevertError"},
             "detail": "Application is invalid.",
+        }
+
+    # <Error_7_1>
+    # InvalidParameterError
+    # personal information for from_address is not registered
+    def test_error_7_1(self, client, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer["address"]
+
+        # prepare data
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = issuer["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        _token = Token()
+        _token.type = TokenType.IBET_SHARE.value
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        id = 10
+        _idx_transfer_approval = IDXTransferApproval()
+        _idx_transfer_approval.id = id
+        _idx_transfer_approval.token_address = self.test_token_address
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+        _idx_transfer_approval.application_id = 100
+        _idx_transfer_approval.from_address = self.test_from_address
+        _idx_transfer_approval.to_address = self.test_to_address
+        _idx_transfer_approval.amount = 200
+        _idx_transfer_approval.application_datetime = self.test_application_datetime
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
+        _idx_transfer_approval.approval_datetime = None
+        _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
+        _idx_transfer_approval.cancelled = None
+        db.add(_idx_transfer_approval)
+
+        # mock
+        IbetSecurityTokenContract_approve_transfer = mock.patch(
+            target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
+            return_value=("test_tx_hash", {"status": 1}),
+        )
+
+        # request target API
+        with IbetSecurityTokenContract_approve_transfer as mock_transfer:
+            resp = client.post(
+                self.base_url.format(self.test_token_address, id),
+                json={"operation_type": "approve"},
+                headers={
+                    "issuer-address": issuer_address,
+                    "eoa-password": E2EEUtils.encrypt("password"),
+                },
+            )
+
+        # Assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {"code": 101, "title": "OperationNotAllowedStateError"},
+            "detail": "personal information for from_address is not registered",
+        }
+
+    # <Error_7_2>
+    # InvalidParameterError
+    # personal information for to_address is not registered
+    def test_error_7_2(self, client, db):
+        issuer = config_eth_account("user1")
+        issuer_address = issuer["address"]
+
+        # prepare data
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = issuer["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        _token = Token()
+        _token.type = TokenType.IBET_SHARE.value
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        db.add(_token)
+
+        id = 10
+        _idx_transfer_approval = IDXTransferApproval()
+        _idx_transfer_approval.id = id
+        _idx_transfer_approval.token_address = self.test_token_address
+        _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
+        _idx_transfer_approval.application_id = 100
+        _idx_transfer_approval.from_address = self.test_from_address
+        _idx_transfer_approval.to_address = self.test_to_address
+        _idx_transfer_approval.amount = 200
+        _idx_transfer_approval.application_datetime = self.test_application_datetime
+        _idx_transfer_approval.application_blocktimestamp = (
+            self.test_application_blocktimestamp
+        )
+        _idx_transfer_approval.approval_datetime = None
+        _idx_transfer_approval.approval_blocktimestamp = None
+        _idx_transfer_approval.cancellation_blocktimestamp = None
+        _idx_transfer_approval.cancelled = None
+        db.add(_idx_transfer_approval)
+
+        _personal_info_from = IDXPersonalInfo()
+        _personal_info_from.account_address = self.test_from_address
+        _personal_info_from.issuer_address = issuer_address
+        _personal_info_from._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(_personal_info_from)
+
+        # mock
+        IbetSecurityTokenContract_approve_transfer = mock.patch(
+            target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
+            return_value=("test_tx_hash", {"status": 1}),
+        )
+
+        # request target API
+        with IbetSecurityTokenContract_approve_transfer as mock_transfer:
+            resp = client.post(
+                self.base_url.format(self.test_token_address, id),
+                json={"operation_type": "approve"},
+                headers={
+                    "issuer-address": issuer_address,
+                    "eoa-password": E2EEUtils.encrypt("password"),
+                },
+            )
+
+        # Assertion
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {"code": 101, "title": "OperationNotAllowedStateError"},
+            "detail": "personal information for to_address is not registered",
         }

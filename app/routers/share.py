@@ -49,6 +49,7 @@ from app.exceptions import (
     AuthorizationError,
     ContractRevertError,
     InvalidParameterError,
+    OperationNotAllowedStateError,
     SendTransactionError,
 )
 from app.model.blockchain import (
@@ -3008,6 +3009,7 @@ def list_token_transfer_approval_history(
         InvalidParameterError,
         SendTransactionError,
         ContractRevertError,
+        OperationNotAllowedStateError,
     ),
 )
 def update_transfer_approval(
@@ -3108,6 +3110,37 @@ def update_transfer_approval(
     if transfer_approval_op is not None:
         raise InvalidParameterError("duplicate operation")
 
+    # Check the existence of personal information data for from_address and to_address
+    _from_address_personal_info: IDXPersonalInfo | None = db.scalars(
+        select(IDXPersonalInfo)
+        .where(
+            and_(
+                IDXPersonalInfo.account_address == _transfer_approval.from_address,
+                IDXPersonalInfo.issuer_address == issuer_address,
+            )
+        )
+        .limit(1)
+    ).first()
+    if _from_address_personal_info is None:
+        raise OperationNotAllowedStateError(
+            101, "personal information for from_address is not registered"
+        )
+
+    _to_address_personal_info: IDXPersonalInfo | None = db.scalars(
+        select(IDXPersonalInfo)
+        .where(
+            and_(
+                IDXPersonalInfo.account_address == _transfer_approval.to_address,
+                IDXPersonalInfo.issuer_address == issuer_address,
+            )
+        )
+        .limit(1)
+    ).first()
+    if _to_address_personal_info is None:
+        raise OperationNotAllowedStateError(
+            101, "personal information for to_address is not registered"
+        )
+
     # Send transaction
     #  - APPROVE -> approveTransfer
     #    In the case of a transfer approval for a token, if the transaction is reverted,
@@ -3179,6 +3212,12 @@ def update_transfer_approval(
     transfer_approval_op.exchange_address = _transfer_approval.exchange_address
     transfer_approval_op.application_id = _transfer_approval.application_id
     transfer_approval_op.operation_type = data.operation_type
+    transfer_approval_op.from_address_personal_info = (
+        _from_address_personal_info.personal_info
+    )
+    transfer_approval_op.to_address_personal_info = (
+        _to_address_personal_info.personal_info
+    )
     db.add(transfer_approval_op)
     db.commit()
 
@@ -3327,13 +3366,51 @@ def retrieve_transfer_approval_history(
     else:
         cancellation_blocktimestamp = None
 
+    # Get personal information of account address
+    # NOTE:
+    #   If the transfer approval operation has already been performed, get the data at that time.
+    #   Otherwise, get the latest data.
+    if _transfer_approval_op is not None:
+        _from_address_personal_info = _transfer_approval_op.from_address_personal_info
+        _to_address_personal_info = _transfer_approval_op.to_address_personal_info
+    else:
+        _from_account: IDXPersonalInfo | None = db.scalars(
+            select(IDXPersonalInfo)
+            .where(
+                and_(
+                    IDXPersonalInfo.account_address == _transfer_approval.from_address,
+                    IDXPersonalInfo.issuer_address == _token.issuer_address,
+                )
+            )
+            .limit(1)
+        ).first()
+        _from_address_personal_info = (
+            _from_account.personal_info if _from_account is not None else None
+        )
+
+        _to_account: IDXPersonalInfo | None = db.scalars(
+            select(IDXPersonalInfo)
+            .where(
+                and_(
+                    IDXPersonalInfo.account_address == _transfer_approval.to_address,
+                    IDXPersonalInfo.issuer_address == _token.issuer_address,
+                )
+            )
+            .limit(1)
+        ).first()
+        _to_address_personal_info = (
+            _to_account.personal_info if _to_account is not None else None
+        )
+
     history = {
         "id": _transfer_approval.id,
         "token_address": token_address,
         "exchange_address": _transfer_approval.exchange_address,
         "application_id": _transfer_approval.application_id,
         "from_address": _transfer_approval.from_address,
+        "from_address_personal_information": _from_address_personal_info,
         "to_address": _transfer_approval.to_address,
+        "to_address_personal_information": _to_address_personal_info,
         "amount": _transfer_approval.amount,
         "application_datetime": application_datetime,
         "application_blocktimestamp": application_blocktimestamp,
