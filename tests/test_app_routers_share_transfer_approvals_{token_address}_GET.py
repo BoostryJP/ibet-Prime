@@ -144,7 +144,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_from_personal_info)
 
@@ -159,7 +159,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_to_personal_info)
 
@@ -201,7 +201,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -212,7 +212,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -240,7 +240,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -251,7 +251,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -279,7 +279,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -290,7 +290,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -335,7 +335,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_from_personal_info)
 
@@ -350,7 +350,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_to_personal_info)
 
@@ -396,7 +396,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -407,7 +407,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -452,7 +452,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_from_personal_info)
 
@@ -467,7 +467,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_to_personal_info)
 
@@ -518,7 +518,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -529,7 +529,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -557,7 +557,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -568,7 +568,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -596,7 +596,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -607,7 +607,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -653,7 +653,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_from_personal_info)
 
@@ -668,7 +668,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_to_personal_info)
 
@@ -717,7 +717,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -763,7 +763,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_from_personal_info)
 
@@ -778,7 +778,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_to_personal_info)
 
@@ -825,7 +825,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -874,7 +874,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_from_personal_info)
 
@@ -889,7 +889,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_to_personal_info)
 
@@ -959,7 +959,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -970,7 +970,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -1017,7 +1017,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_from_personal_info)
 
@@ -1032,7 +1032,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_to_personal_info)
 
@@ -1102,7 +1102,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -1113,7 +1113,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -1391,7 +1391,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_from_personal_info)
 
@@ -1406,7 +1406,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_to_personal_info)
 
@@ -1511,7 +1511,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -1522,7 +1522,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -1608,7 +1608,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_from_personal_info)
 
@@ -1623,7 +1623,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_to_personal_info)
 
@@ -1761,7 +1761,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -1772,7 +1772,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -1800,7 +1800,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -1811,7 +1811,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -1857,7 +1857,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_from_personal_info)
 
@@ -1872,7 +1872,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_to_personal_info)
 
@@ -1919,7 +1919,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -1930,7 +1930,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -1958,7 +1958,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -1969,7 +1969,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -1997,7 +1997,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2008,7 +2008,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2054,7 +2054,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_from_personal_info)
 
@@ -2069,7 +2069,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_to_personal_info)
 
@@ -2117,7 +2117,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2128,7 +2128,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2156,7 +2156,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2167,7 +2167,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2195,7 +2195,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2206,7 +2206,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2234,7 +2234,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2245,7 +2245,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2291,7 +2291,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_from_personal_info)
 
@@ -2306,7 +2306,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_to_personal_info)
 
@@ -2354,7 +2354,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2365,7 +2365,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2393,7 +2393,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2404,7 +2404,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2432,7 +2432,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2443,7 +2443,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2471,7 +2471,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2482,7 +2482,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2528,7 +2528,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_from_personal_info)
 
@@ -2543,7 +2543,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_to_personal_info)
 
@@ -2594,7 +2594,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2624,7 +2624,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2654,7 +2654,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2684,7 +2684,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2730,7 +2730,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_from_personal_info)
 
@@ -2745,7 +2745,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_to_personal_info)
 
@@ -2792,7 +2792,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2822,7 +2822,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2852,7 +2852,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2882,7 +2882,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -2930,7 +2930,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_from_personal_info)
 
@@ -2945,7 +2945,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_to_personal_info)
 
@@ -2992,7 +2992,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3003,7 +3003,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3031,7 +3031,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3042,7 +3042,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3070,7 +3070,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3081,7 +3081,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3109,7 +3109,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3120,7 +3120,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3166,7 +3166,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_from_personal_info)
 
@@ -3181,7 +3181,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_to_personal_info)
 
@@ -3235,7 +3235,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3246,7 +3246,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3274,7 +3274,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3285,7 +3285,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3313,7 +3313,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3324,7 +3324,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3352,7 +3352,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3363,7 +3363,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3409,7 +3409,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_from_personal_info)
 
@@ -3424,7 +3424,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_to_personal_info)
 
@@ -3474,7 +3474,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3485,7 +3485,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3513,7 +3513,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3524,7 +3524,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3552,7 +3552,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3563,7 +3563,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3591,7 +3591,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3602,7 +3602,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3648,7 +3648,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_from_personal_info)
 
@@ -3663,7 +3663,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "address": "address_test",
             "email": "email_test",
             "birth": "birth_test",
-            "is_corporate": "is_corporate_test",
+            "is_corporate": False,
         }
         db.add(_to_personal_info)
 
@@ -3740,7 +3740,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3751,7 +3751,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3779,7 +3779,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3790,7 +3790,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3818,7 +3818,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3829,7 +3829,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3857,7 +3857,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3868,7 +3868,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3896,7 +3896,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3907,7 +3907,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3935,7 +3935,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3946,7 +3946,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3974,7 +3974,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -3985,7 +3985,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -4013,7 +4013,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",
@@ -4024,7 +4024,7 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                         "address": "address_test",
                         "birth": "birth_test",
                         "email": "email_test",
-                        "is_corporate": "is_corporate_test",
+                        "is_corporate": False,
                         "key_manager": "key_manager_test",
                         "name": "name_test",
                         "postal_code": "postal_code_test",

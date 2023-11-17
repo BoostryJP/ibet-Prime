@@ -23,6 +23,7 @@ from fastapi import Query
 from pydantic import BaseModel, Field, NonNegativeInt
 from pydantic.dataclasses import dataclass
 
+from .personal_info import PersonalInfo
 from .types import ResultSet
 
 ############################
@@ -88,7 +89,9 @@ class TransferResponse(BaseModel):
     transaction_hash: str
     token_address: str
     from_address: str
+    from_address_personal_information: Optional[PersonalInfo] = Field(...)
     to_address: str
+    to_address_personal_information: Optional[PersonalInfo] = Field(...)
     amount: int
     source_event: TransferSourceEventType = Field(description="Source Event")
     data: dict | None = Field(description="Event data")
@@ -129,9 +132,9 @@ class TransferApprovalTokenResponse(BaseModel):
     exchange_address: str
     application_id: int
     from_address: str
-    from_address_personal_information: Optional[dict] = Field(...)
+    from_address_personal_information: Optional[PersonalInfo] = Field(...)
     to_address: str
-    to_address_personal_information: Optional[dict] = Field(...)
+    to_address_personal_information: Optional[PersonalInfo] = Field(...)
     amount: int
     application_datetime: str
     application_blocktimestamp: str
@@ -153,9 +156,9 @@ class TransferApprovalTokenDetailResponse(BaseModel):
     exchange_address: str
     application_id: int
     from_address: str
-    from_address_personal_information: Optional[dict] = Field(...)
+    from_address_personal_information: Optional[PersonalInfo] = Field(...)
     to_address: str
-    to_address_personal_information: Optional[dict] = Field(...)
+    to_address_personal_information: Optional[PersonalInfo] = Field(...)
     amount: int
     application_datetime: str
     application_blocktimestamp: str

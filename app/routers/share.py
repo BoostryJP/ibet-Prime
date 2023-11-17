@@ -2574,7 +2574,27 @@ def list_transfer_history(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get transfer history
-    stmt = select(IDXTransfer).where(IDXTransfer.token_address == token_address)
+    from_address_personal_info = aliased(IDXPersonalInfo)
+    to_address_personal_info = aliased(IDXPersonalInfo)
+    stmt = (
+        select(IDXTransfer, from_address_personal_info, to_address_personal_info)
+        .join(Token, IDXTransfer.token_address == Token.token_address)
+        .outerjoin(
+            from_address_personal_info,
+            and_(
+                Token.issuer_address == from_address_personal_info.issuer_address,
+                IDXTransfer.from_address == from_address_personal_info.account_address,
+            ),
+        )
+        .outerjoin(
+            to_address_personal_info,
+            and_(
+                Token.issuer_address == to_address_personal_info.issuer_address,
+                IDXTransfer.to_address == to_address_personal_info.account_address,
+            ),
+        )
+        .where(IDXTransfer.token_address == token_address)
+    )
 
     total = db.scalar(select(func.count()).select_from(stmt.subquery()))
 
@@ -2603,17 +2623,25 @@ def list_transfer_history(
     if request_query.offset is not None:
         stmt = stmt.offset(request_query.offset)
 
-    _transfers: Sequence[IDXTransfer] = db.scalars(stmt).all()
+    _transfers: Sequence[
+        tuple[IDXTransfer, IDXPersonalInfo | None, IDXPersonalInfo | None]
+    ] = db.execute(stmt).all()
 
     transfer_history = []
-    for _transfer in _transfers:
+    for _transfer, _from_address_personal_info, _to_address_personal_info in _transfers:
         block_timestamp_utc = timezone("UTC").localize(_transfer.block_timestamp)
         transfer_history.append(
             {
                 "transaction_hash": _transfer.transaction_hash,
                 "token_address": token_address,
                 "from_address": _transfer.from_address,
+                "from_address_personal_information": _from_address_personal_info.personal_info
+                if _from_address_personal_info is not None
+                else None,
                 "to_address": _transfer.to_address,
+                "to_address_personal_information": _to_address_personal_info.personal_info
+                if _to_address_personal_info is not None
+                else None,
                 "amount": _transfer.amount,
                 "source_event": _transfer.source_event,
                 "data": _transfer.data,
@@ -2732,7 +2760,7 @@ def list_transfer_approval_history(
     if offset is not None:
         stmt = stmt.offset(offset)
 
-    _transfer_approvals = db.execute(stmt).all()
+    _transfer_approvals = db.execute(stmt).tuples().all()
 
     transfer_approvals = []
     for (
