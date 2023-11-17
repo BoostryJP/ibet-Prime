@@ -2863,8 +2863,44 @@ def list_token_transfer_approval_history(
     )
 
     # Get transfer approval history
-    stmt = select(subquery, literal_column("status")).where(
-        subquery.token_address == token_address
+    from_address_personal_info = aliased(IDXPersonalInfo)
+    to_address_personal_info = aliased(IDXPersonalInfo)
+    stmt = (
+        select(
+            subquery,
+            literal_column("status"),
+            # Snapshot Personal Information
+            TransferApprovalHistory.from_address_personal_info,
+            TransferApprovalHistory.to_address_personal_info,
+            # Latest Personal Information
+            from_address_personal_info,
+            to_address_personal_info,
+        )
+        .join(Token, subquery.token_address == Token.token_address)
+        .outerjoin(
+            TransferApprovalHistory,
+            and_(
+                TransferApprovalHistory.token_address == token_address,
+                subquery.token_address == TransferApprovalHistory.token_address,
+                subquery.exchange_address == TransferApprovalHistory.exchange_address,
+                subquery.application_id == TransferApprovalHistory.application_id,
+            ),
+        )
+        .outerjoin(
+            from_address_personal_info,
+            and_(
+                Token.issuer_address == from_address_personal_info.issuer_address,
+                subquery.from_address == from_address_personal_info.account_address,
+            ),
+        )
+        .outerjoin(
+            to_address_personal_info,
+            and_(
+                Token.issuer_address == to_address_personal_info.issuer_address,
+                subquery.to_address == to_address_personal_info.account_address,
+            ),
+        )
+        .where(subquery.token_address == token_address)
     )
 
     total = db.scalar(select(func.count()).select_from(stmt.subquery()))
@@ -2898,12 +2934,26 @@ def list_token_transfer_approval_history(
     if offset is not None:
         stmt = stmt.offset(offset)
 
-    _transfer_approvals: Sequence[tuple[IDXTransferApproval, int]] = (
-        db.execute(stmt).tuples().all()
-    )
+    _transfer_approvals: Sequence[
+        tuple[
+            IDXTransferApproval,
+            int,
+            dict | None,
+            dict | None,
+            IDXPersonalInfo | None,
+            IDXPersonalInfo | None,
+        ]
+    ] = db.execute(stmt).all()
 
     transfer_approval_history = []
-    for _transfer_approval, status in _transfer_approvals:
+    for (
+        _transfer_approval,
+        status,
+        _from_address_snapshot_personal_info,
+        _to_address_snapshot_personal_info,
+        _from_address_latest_personal_info,
+        _to_address_latest_personal_info,
+    ) in _transfer_approvals:
         if status == 2:
             transfer_approved = True
             cancelled = False
@@ -2964,6 +3014,20 @@ def list_token_transfer_approval_history(
         else:
             cancellation_blocktimestamp = None
 
+        from_address_personal_info = (
+            _from_address_snapshot_personal_info
+            if _from_address_snapshot_personal_info is not None
+            else _from_address_latest_personal_info.personal_info
+            if _from_address_latest_personal_info is not None
+            else None
+        )
+        to_address_personal_info = (
+            _to_address_snapshot_personal_info
+            if _to_address_snapshot_personal_info is not None
+            else _to_address_latest_personal_info.personal_info
+            if _to_address_latest_personal_info is not None
+            else None
+        )
         transfer_approval_history.append(
             {
                 "id": _transfer_approval.id,
@@ -2983,6 +3047,8 @@ def list_token_transfer_approval_history(
                 "transfer_approved": transfer_approved,
                 "status": status,
                 "issuer_cancelable": issuer_cancelable,
+                "from_address_personal_information": from_address_personal_info,
+                "to_address_personal_information": to_address_personal_info,
             }
         )
 

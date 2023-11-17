@@ -129,7 +129,9 @@ class TransferApprovalTokenResponse(BaseModel):
     exchange_address: str
     application_id: int
     from_address: str
+    from_address_personal_information: Optional[dict] = Field(...)
     to_address: str
+    to_address_personal_information: Optional[dict] = Field(...)
     amount: int
     application_datetime: str
     application_blocktimestamp: str
