@@ -22,6 +22,7 @@ from pytz import timezone
 
 import config
 from app.model.db import (
+    IDXPersonalInfo,
     IDXTransferApproval,
     Token,
     TokenType,
@@ -132,6 +133,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         _token.abi = {}
         db.add(_token)
 
+        # prepare data: IDXPersonalInfo
+        _from_personal_info = IDXPersonalInfo()
+        _from_personal_info.account_address = self.test_from_address
+        _from_personal_info.issuer_address = self.test_issuer_address
+        _from_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_from_personal_info)
+
+        # prepare data: IDXPersonalInfo
+        _to_personal_info = IDXPersonalInfo()
+        _to_personal_info.account_address = self.test_to_address
+        _to_personal_info.issuer_address = self.test_issuer_address
+        _to_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_to_personal_info)
+
         # prepare data: IDXTransferApproval
         for i in range(0, 3):
             _idx_transfer_approval = IDXTransferApproval()
@@ -166,7 +197,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 2,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 2,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -185,7 +236,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 1,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 1,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -204,7 +275,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 0,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 0,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -232,6 +323,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _from_personal_info = IDXPersonalInfo()
+        _from_personal_info.account_address = self.test_from_address
+        _from_personal_info.issuer_address = self.test_issuer_address
+        _from_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_from_personal_info)
+
+        # prepare data: IDXPersonalInfo
+        _to_personal_info = IDXPersonalInfo()
+        _to_personal_info.account_address = self.test_to_address
+        _to_personal_info.issuer_address = self.test_issuer_address
+        _to_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 3):
@@ -271,7 +392,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 1,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 1,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -299,6 +440,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _from_personal_info = IDXPersonalInfo()
+        _from_personal_info.account_address = self.test_from_address
+        _from_personal_info.issuer_address = self.test_issuer_address
+        _from_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_from_personal_info)
+
+        # prepare data: IDXPersonalInfo
+        _to_personal_info = IDXPersonalInfo()
+        _to_personal_info.account_address = self.test_to_address
+        _to_personal_info.issuer_address = self.test_issuer_address
+        _to_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 3):
@@ -343,7 +514,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address + "1",
                     "application_id": 2,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 2,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -362,7 +553,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address + "0",
                     "application_id": 1,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 1,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -381,7 +592,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address + "1",
                     "application_id": 0,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 0,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -410,6 +641,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _from_personal_info = IDXPersonalInfo()
+        _from_personal_info.account_address = self.test_from_address
+        _from_personal_info.issuer_address = self.test_issuer_address
+        _from_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_from_personal_info)
+
+        # prepare data: IDXPersonalInfo
+        _to_personal_info = IDXPersonalInfo()
+        _to_personal_info.account_address = self.test_to_address
+        _to_personal_info.issuer_address = self.test_issuer_address
+        _to_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 3):
@@ -450,7 +711,18 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 1,
                     "from_address": self.test_from_address + "1",
+                    "from_address_personal_information": None,
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 1,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -479,6 +751,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _from_personal_info = IDXPersonalInfo()
+        _from_personal_info.account_address = self.test_from_address
+        _from_personal_info.issuer_address = self.test_issuer_address
+        _from_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_from_personal_info)
+
+        # prepare data: IDXPersonalInfo
+        _to_personal_info = IDXPersonalInfo()
+        _to_personal_info.account_address = self.test_to_address
+        _to_personal_info.issuer_address = self.test_issuer_address
+        _to_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 3):
@@ -519,7 +821,18 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 1,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address + "1",
+                    "to_address_personal_information": None,
                     "amount": 1,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -549,6 +862,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _from_personal_info = IDXPersonalInfo()
+        _from_personal_info.account_address = self.test_from_address
+        _from_personal_info.issuer_address = self.test_issuer_address
+        _from_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_from_personal_info)
+
+        # prepare data: IDXPersonalInfo
+        _to_personal_info = IDXPersonalInfo()
+        _to_personal_info.account_address = self.test_to_address
+        _to_personal_info.issuer_address = self.test_issuer_address
+        _to_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 5):
@@ -612,7 +955,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 0,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 0,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -642,6 +1005,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _from_personal_info = IDXPersonalInfo()
+        _from_personal_info.account_address = self.test_from_address
+        _from_personal_info.issuer_address = self.test_issuer_address
+        _from_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_from_personal_info)
+
+        # prepare data: IDXPersonalInfo
+        _to_personal_info = IDXPersonalInfo()
+        _to_personal_info.account_address = self.test_to_address
+        _to_personal_info.issuer_address = self.test_issuer_address
+        _to_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 5):
@@ -705,7 +1098,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 1,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 1,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -783,6 +1196,26 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                 _transfer_approval_history.operation_type = (
                     TransferApprovalOperationType.APPROVE.value
                 )
+                _transfer_approval_history.from_address_personal_info = {
+                    "key_manager": "key_manager_test1",
+                    "name": "name_test1",
+                    "postal_code": "postal_code_test1",
+                    "address": "address_test1",
+                    "email": "email_test1",
+                    "birth": "birth_test1",
+                    "is_corporate": False,
+                    "tax_category": 10,
+                }  # snapshot
+                _transfer_approval_history.to_address_personal_info = {
+                    "key_manager": "key_manager_test2",
+                    "name": "name_test2",
+                    "postal_code": "postal_code_test2",
+                    "address": "address_test2",
+                    "email": "email_test2",
+                    "birth": "birth_test2",
+                    "is_corporate": False,
+                    "tax_category": 10,
+                }  # snapshot
                 db.add(_transfer_approval_history)
             elif i == 4:  # transferred_3
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
@@ -807,6 +1240,26 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                 _transfer_approval_history.operation_type = (
                     TransferApprovalOperationType.CANCEL.value
                 )
+                _transfer_approval_history.from_address_personal_info = {
+                    "key_manager": "key_manager_test1",
+                    "name": "name_test1",
+                    "postal_code": "postal_code_test1",
+                    "address": "address_test1",
+                    "email": "email_test1",
+                    "birth": "birth_test1",
+                    "is_corporate": False,
+                    "tax_category": 10,
+                }  # snapshot
+                _transfer_approval_history.to_address_personal_info = {
+                    "key_manager": "key_manager_test2",
+                    "name": "name_test2",
+                    "postal_code": "postal_code_test2",
+                    "address": "address_test2",
+                    "email": "email_test2",
+                    "birth": "birth_test2",
+                    "is_corporate": False,
+                    "tax_category": 10,
+                }  # snapshot
                 db.add(_transfer_approval_history)
             elif i == 6:  # canceled-2
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
@@ -834,7 +1287,9 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 4,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": None,
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": None,
                     "amount": 4,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -853,7 +1308,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 3,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test1",
+                        "birth": "birth_test1",
+                        "email": "email_test1",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test1",
+                        "postal_code": "postal_code_test1",
+                        "tax_category": 10,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test2",
+                        "birth": "birth_test2",
+                        "email": "email_test2",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test2",
+                        "name": "name_test2",
+                        "postal_code": "postal_code_test2",
+                        "tax_category": 10,
+                    },
                     "amount": 3,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -872,7 +1347,9 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": "test_exchange_address",
                     "application_id": 2,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": None,
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": None,
                     "amount": 2,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -902,6 +1379,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _from_personal_info = IDXPersonalInfo()
+        _from_personal_info.account_address = self.test_from_address
+        _from_personal_info.issuer_address = self.test_issuer_address
+        _from_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_from_personal_info)
+
+        # prepare data: IDXPersonalInfo
+        _to_personal_info = IDXPersonalInfo()
+        _to_personal_info.account_address = self.test_to_address
+        _to_personal_info.issuer_address = self.test_issuer_address
+        _to_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 6):
@@ -952,6 +1459,26 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                 _transfer_approval_history.operation_type = (
                     TransferApprovalOperationType.CANCEL.value
                 )
+                _transfer_approval_history.from_address_personal_info = {
+                    "key_manager": "key_manager_test1",
+                    "name": "name_test1",
+                    "postal_code": "postal_code_test1",
+                    "address": "address_test1",
+                    "email": "email_test1",
+                    "birth": "birth_test1",
+                    "is_corporate": False,
+                    "tax_category": 10,
+                }  # snapshot
+                _transfer_approval_history.to_address_personal_info = {
+                    "key_manager": "key_manager_test2",
+                    "name": "name_test2",
+                    "postal_code": "postal_code_test2",
+                    "address": "address_test2",
+                    "email": "email_test2",
+                    "birth": "birth_test2",
+                    "is_corporate": False,
+                    "tax_category": 10,
+                }  # snapshot
                 db.add(_transfer_approval_history)
             elif i == 5:  # canceled-2
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
@@ -980,7 +1507,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 5,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 5,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -999,7 +1546,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 4,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test1",
+                        "birth": "birth_test1",
+                        "email": "email_test1",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test1",
+                        "postal_code": "postal_code_test1",
+                        "tax_category": 10,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test2",
+                        "birth": "birth_test2",
+                        "email": "email_test2",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test2",
+                        "name": "name_test2",
+                        "postal_code": "postal_code_test2",
+                        "tax_category": 10,
+                    },
                     "amount": 4,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1029,6 +1596,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _from_personal_info = IDXPersonalInfo()
+        _from_personal_info.account_address = self.test_from_address
+        _from_personal_info.issuer_address = self.test_issuer_address
+        _from_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_from_personal_info)
+
+        # prepare data: IDXPersonalInfo
+        _to_personal_info = IDXPersonalInfo()
+        _to_personal_info.account_address = self.test_to_address
+        _to_personal_info.issuer_address = self.test_issuer_address
+        _to_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 7):
@@ -1073,6 +1670,26 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                 _transfer_approval_history.operation_type = (
                     TransferApprovalOperationType.APPROVE.value
                 )
+                _transfer_approval_history.from_address_personal_info = {
+                    "key_manager": "key_manager_test1",
+                    "name": "name_test1",
+                    "postal_code": "postal_code_test1",
+                    "address": "address_test1",
+                    "email": "email_test1",
+                    "birth": "birth_test1",
+                    "is_corporate": False,
+                    "tax_category": 10,
+                }  # snapshot
+                _transfer_approval_history.to_address_personal_info = {
+                    "key_manager": "key_manager_test2",
+                    "name": "name_test2",
+                    "postal_code": "postal_code_test2",
+                    "address": "address_test2",
+                    "email": "email_test2",
+                    "birth": "birth_test2",
+                    "is_corporate": False,
+                    "tax_category": 10,
+                }  # snapshot
                 db.add(_transfer_approval_history)
             elif i == 4:  # transferred_3
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
@@ -1093,6 +1710,26 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                 _transfer_approval_history.operation_type = (
                     TransferApprovalOperationType.CANCEL.value
                 )
+                _transfer_approval_history.from_address_personal_info = {
+                    "key_manager": "key_manager_test1",
+                    "name": "name_test1",
+                    "postal_code": "postal_code_test1",
+                    "address": "address_test1",
+                    "email": "email_test1",
+                    "birth": "birth_test1",
+                    "is_corporate": False,
+                    "tax_category": 10,
+                }  # snapshot
+                _transfer_approval_history.to_address_personal_info = {
+                    "key_manager": "key_manager_test2",
+                    "name": "name_test2",
+                    "postal_code": "postal_code_test2",
+                    "address": "address_test2",
+                    "email": "email_test2",
+                    "birth": "birth_test2",
+                    "is_corporate": False,
+                    "tax_category": 10,
+                }  # snapshot
                 db.add(_transfer_approval_history)
             elif i == 6:  # canceled-2
                 _idx_transfer_approval.exchange_address = config.ZERO_ADDRESS
@@ -1120,7 +1757,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 1,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 1,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1139,7 +1796,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 0,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 0,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1168,6 +1845,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _from_personal_info = IDXPersonalInfo()
+        _from_personal_info.account_address = self.test_from_address
+        _from_personal_info.issuer_address = self.test_issuer_address
+        _from_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_from_personal_info)
+
+        # prepare data: IDXPersonalInfo
+        _to_personal_info = IDXPersonalInfo()
+        _to_personal_info.account_address = self.test_to_address
+        _to_personal_info.issuer_address = self.test_issuer_address
+        _to_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 3):
@@ -1208,7 +1915,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 0,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 0,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1227,7 +1954,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 1,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 1,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1246,7 +1993,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 2,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 2,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1275,6 +2042,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _from_personal_info = IDXPersonalInfo()
+        _from_personal_info.account_address = self.test_from_address
+        _from_personal_info.issuer_address = self.test_issuer_address
+        _from_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_from_personal_info)
+
+        # prepare data: IDXPersonalInfo
+        _to_personal_info = IDXPersonalInfo()
+        _to_personal_info.account_address = self.test_to_address
+        _to_personal_info.issuer_address = self.test_issuer_address
+        _to_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 4):
@@ -1316,7 +2113,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 2,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 2,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1335,7 +2152,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 0,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 0,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1354,7 +2191,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 3,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 3,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1373,7 +2230,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 1,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 1,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1402,6 +2279,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _from_personal_info = IDXPersonalInfo()
+        _from_personal_info.account_address = self.test_from_address
+        _from_personal_info.issuer_address = self.test_issuer_address
+        _from_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_from_personal_info)
+
+        # prepare data: IDXPersonalInfo
+        _to_personal_info = IDXPersonalInfo()
+        _to_personal_info.account_address = self.test_to_address
+        _to_personal_info.issuer_address = self.test_issuer_address
+        _to_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 4):
@@ -1443,7 +2350,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 0,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 1,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1462,7 +2389,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 0,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 0,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1481,7 +2428,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 1,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 3,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1500,7 +2467,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 1,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 2,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1529,6 +2516,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _from_personal_info = IDXPersonalInfo()
+        _from_personal_info.account_address = self.test_from_address
+        _from_personal_info.issuer_address = self.test_issuer_address
+        _from_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_from_personal_info)
+
+        # prepare data: IDXPersonalInfo
+        _to_personal_info = IDXPersonalInfo()
+        _to_personal_info.account_address = self.test_to_address
+        _to_personal_info.issuer_address = self.test_issuer_address
+        _to_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 4):
@@ -1571,7 +2588,18 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 1,
                     "from_address": self.test_from_address + "1",
+                    "from_address_personal_information": None,
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 1,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1590,7 +2618,18 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 0,
                     "from_address": self.test_from_address + "1",
+                    "from_address_personal_information": None,
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 0,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1609,7 +2648,18 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 3,
                     "from_address": self.test_from_address + "0",
+                    "from_address_personal_information": None,
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 3,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1628,7 +2678,18 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 2,
                     "from_address": self.test_from_address + "0",
+                    "from_address_personal_information": None,
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 2,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1657,6 +2718,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _from_personal_info = IDXPersonalInfo()
+        _from_personal_info.account_address = self.test_from_address
+        _from_personal_info.issuer_address = self.test_issuer_address
+        _from_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_from_personal_info)
+
+        # prepare data: IDXPersonalInfo
+        _to_personal_info = IDXPersonalInfo()
+        _to_personal_info.account_address = self.test_to_address
+        _to_personal_info.issuer_address = self.test_issuer_address
+        _to_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 4):
@@ -1697,7 +2788,18 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 1,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address + "0",
+                    "to_address_personal_information": None,
                     "amount": 1,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1716,7 +2818,18 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 0,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address + "0",
+                    "to_address_personal_information": None,
                     "amount": 0,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1735,7 +2848,18 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 3,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address + "1",
+                    "to_address_personal_information": None,
                     "amount": 3,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1754,7 +2878,18 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 2,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address + "1",
+                    "to_address_personal_information": None,
                     "amount": 2,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1783,6 +2918,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _from_personal_info = IDXPersonalInfo()
+        _from_personal_info.account_address = self.test_from_address
+        _from_personal_info.issuer_address = self.test_issuer_address
+        _from_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_from_personal_info)
+
+        # prepare data: IDXPersonalInfo
+        _to_personal_info = IDXPersonalInfo()
+        _to_personal_info.account_address = self.test_to_address
+        _to_personal_info.issuer_address = self.test_issuer_address
+        _to_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 4):
@@ -1823,7 +2988,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 1,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 1,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1842,7 +3027,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 0,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 1,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1861,7 +3066,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 3,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 0,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1880,7 +3105,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 2,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 0,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1909,6 +3154,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _from_personal_info = IDXPersonalInfo()
+        _from_personal_info.account_address = self.test_from_address
+        _from_personal_info.issuer_address = self.test_issuer_address
+        _from_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_from_personal_info)
+
+        # prepare data: IDXPersonalInfo
+        _to_personal_info = IDXPersonalInfo()
+        _to_personal_info.account_address = self.test_to_address
+        _to_personal_info.issuer_address = self.test_issuer_address
+        _to_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 4):
@@ -1956,7 +3231,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 2,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 2,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1975,7 +3270,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 0,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 0,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -1994,7 +3309,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 3,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 3,
                     "application_datetime": self.test_application_datetime_str_2,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -2013,7 +3348,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 1,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 1,
                     "application_datetime": self.test_application_datetime_str_2,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -2042,6 +3397,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _from_personal_info = IDXPersonalInfo()
+        _from_personal_info.account_address = self.test_from_address
+        _from_personal_info.issuer_address = self.test_issuer_address
+        _from_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_from_personal_info)
+
+        # prepare data: IDXPersonalInfo
+        _to_personal_info = IDXPersonalInfo()
+        _to_personal_info.account_address = self.test_to_address
+        _to_personal_info.issuer_address = self.test_issuer_address
+        _to_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 4):
@@ -2085,7 +3470,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 3,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 3,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -2104,7 +3509,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 1,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 1,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -2123,7 +3548,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 2,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 2,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -2142,7 +3587,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": self.test_exchange_address,
                     "application_id": 0,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 0,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -2171,6 +3636,36 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _from_personal_info = IDXPersonalInfo()
+        _from_personal_info.account_address = self.test_from_address
+        _from_personal_info.issuer_address = self.test_issuer_address
+        _from_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_from_personal_info)
+
+        # prepare data: IDXPersonalInfo
+        _to_personal_info = IDXPersonalInfo()
+        _to_personal_info.account_address = self.test_to_address
+        _to_personal_info.issuer_address = self.test_issuer_address
+        _to_personal_info._personal_info = {
+            "key_manager": "key_manager_test",
+            "name": "name_test",
+            "postal_code": "postal_code_test",
+            "address": "address_test",
+            "email": "email_test",
+            "birth": "birth_test",
+            "is_corporate": "is_corporate_test",
+        }
+        db.add(_to_personal_info)
 
         # prepare data: IDXTransferApproval
         for i in range(0, 8):
@@ -2241,7 +3736,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 1,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 1,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -2260,7 +3775,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 0,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 0,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -2279,7 +3814,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 3,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 3,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -2298,7 +3853,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 2,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 2,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -2317,7 +3892,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 5,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 5,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -2336,7 +3931,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 4,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 4,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -2355,7 +3970,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 7,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 7,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
@@ -2374,7 +4009,27 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
                     "exchange_address": config.ZERO_ADDRESS,
                     "application_id": 6,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test",
+                        "birth": "birth_test",
+                        "email": "email_test",
+                        "is_corporate": "is_corporate_test",
+                        "key_manager": "key_manager_test",
+                        "name": "name_test",
+                        "postal_code": "postal_code_test",
+                        "tax_category": None,
+                    },
                     "amount": 6,
                     "application_datetime": self.test_application_datetime_str,
                     "application_blocktimestamp": self.test_application_blocktimestamp_str,
