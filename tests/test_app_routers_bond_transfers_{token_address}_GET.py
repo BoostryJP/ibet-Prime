@@ -21,7 +21,13 @@ from datetime import datetime
 from pytz import timezone
 
 import config
-from app.model.db import IDXTransfer, IDXTransferSourceEventType, Token, TokenType
+from app.model.db import (
+    IDXPersonalInfo,
+    IDXTransfer,
+    IDXTransferSourceEventType,
+    Token,
+    TokenType,
+)
 
 local_tz = timezone(config.TZ)
 
@@ -87,7 +93,9 @@ class TestAppRoutersBondTransfersGET:
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": None,
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": None,
                     "amount": 0,
                     "source_event": IDXTransferSourceEventType.TRANSFER.value,
                     "data": None,
@@ -97,7 +105,9 @@ class TestAppRoutersBondTransfersGET:
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": None,
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": None,
                     "amount": 2,
                     "source_event": IDXTransferSourceEventType.TRANSFER.value,
                     "data": None,
@@ -107,7 +117,9 @@ class TestAppRoutersBondTransfersGET:
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": None,
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": None,
                     "amount": 1,
                     "source_event": IDXTransferSourceEventType.TRANSFER.value,
                     "data": None,
@@ -128,6 +140,37 @@ class TestAppRoutersBondTransfersGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _personal_info_from = IDXPersonalInfo()
+        _personal_info_from.account_address = self.test_from_address
+        _personal_info_from.issuer_address = self.test_issuer_address
+        _personal_info_from._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }  # latest data
+        db.add(_personal_info_from)
+
+        _personal_info_to = IDXPersonalInfo()
+        _personal_info_to.account_address = self.test_to_address
+        _personal_info_to.issuer_address = self.test_issuer_address
+        _personal_info_to._personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }  # latest data
+        db.add(_personal_info_to)
 
         # prepare data: IDXTransfer
         for i in range(0, 3):
@@ -156,7 +199,27 @@ class TestAppRoutersBondTransfersGET:
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test1",
+                        "birth": "birth_test1",
+                        "email": "email_test1",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test1",
+                        "postal_code": "postal_code_test1",
+                        "tax_category": 10,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test2",
+                        "birth": "birth_test2",
+                        "email": "email_test2",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test2",
+                        "name": "name_test2",
+                        "postal_code": "postal_code_test2",
+                        "tax_category": 10,
+                    },
                     "amount": 2,
                     "source_event": IDXTransferSourceEventType.TRANSFER.value,
                     "data": None,
@@ -177,6 +240,37 @@ class TestAppRoutersBondTransfersGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _personal_info_from = IDXPersonalInfo()
+        _personal_info_from.account_address = self.test_from_address
+        _personal_info_from.issuer_address = self.test_issuer_address
+        _personal_info_from._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }  # latest data
+        db.add(_personal_info_from)
+
+        _personal_info_to = IDXPersonalInfo()
+        _personal_info_to.account_address = self.test_to_address
+        _personal_info_to.issuer_address = self.test_issuer_address
+        _personal_info_to._personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }  # latest data
+        db.add(_personal_info_to)
 
         # prepare data: IDXTransfer
         _idx_transfer = IDXTransfer()
@@ -227,7 +321,18 @@ class TestAppRoutersBondTransfersGET:
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
                     "from_address": "test_from_address_1",
+                    "from_address_personal_information": None,
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test2",
+                        "birth": "birth_test2",
+                        "email": "email_test2",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test2",
+                        "name": "name_test2",
+                        "postal_code": "postal_code_test2",
+                        "tax_category": 10,
+                    },
                     "amount": 2,
                     "source_event": IDXTransferSourceEventType.UNLOCK.value,
                     "data": {"message": "unlock"},
@@ -248,6 +353,37 @@ class TestAppRoutersBondTransfersGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _personal_info_from = IDXPersonalInfo()
+        _personal_info_from.account_address = self.test_from_address
+        _personal_info_from.issuer_address = self.test_issuer_address
+        _personal_info_from._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }  # latest data
+        db.add(_personal_info_from)
+
+        _personal_info_to = IDXPersonalInfo()
+        _personal_info_to.account_address = self.test_to_address
+        _personal_info_to.issuer_address = self.test_issuer_address
+        _personal_info_to._personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }  # latest data
+        db.add(_personal_info_to)
 
         # prepare data: IDXTransfer
         _idx_transfer = IDXTransfer()
@@ -297,7 +433,18 @@ class TestAppRoutersBondTransfersGET:
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
                     "from_address": "test_from_address_1",
+                    "from_address_personal_information": None,
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test2",
+                        "birth": "birth_test2",
+                        "email": "email_test2",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test2",
+                        "name": "name_test2",
+                        "postal_code": "postal_code_test2",
+                        "tax_category": 10,
+                    },
                     "amount": 2,
                     "source_event": IDXTransferSourceEventType.UNLOCK.value,
                     "data": {"message": "unlock"},
@@ -318,6 +465,37 @@ class TestAppRoutersBondTransfersGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _personal_info_from = IDXPersonalInfo()
+        _personal_info_from.account_address = self.test_from_address
+        _personal_info_from.issuer_address = self.test_issuer_address
+        _personal_info_from._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }  # latest data
+        db.add(_personal_info_from)
+
+        _personal_info_to = IDXPersonalInfo()
+        _personal_info_to.account_address = self.test_to_address
+        _personal_info_to.issuer_address = self.test_issuer_address
+        _personal_info_to._personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }  # latest data
+        db.add(_personal_info_to)
 
         # prepare data: IDXTransfer
         for i in range(0, 3):
@@ -350,7 +528,27 @@ class TestAppRoutersBondTransfersGET:
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test1",
+                        "birth": "birth_test1",
+                        "email": "email_test1",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test1",
+                        "postal_code": "postal_code_test1",
+                        "tax_category": 10,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test2",
+                        "birth": "birth_test2",
+                        "email": "email_test2",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test2",
+                        "name": "name_test2",
+                        "postal_code": "postal_code_test2",
+                        "tax_category": 10,
+                    },
                     "amount": 1,
                     "source_event": IDXTransferSourceEventType.TRANSFER.value,
                     "data": None,
@@ -360,7 +558,27 @@ class TestAppRoutersBondTransfersGET:
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test1",
+                        "birth": "birth_test1",
+                        "email": "email_test1",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test1",
+                        "postal_code": "postal_code_test1",
+                        "tax_category": 10,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test2",
+                        "birth": "birth_test2",
+                        "email": "email_test2",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test2",
+                        "name": "name_test2",
+                        "postal_code": "postal_code_test2",
+                        "tax_category": 10,
+                    },
                     "amount": 2,
                     "source_event": IDXTransferSourceEventType.TRANSFER.value,
                     "data": None,
@@ -370,7 +588,27 @@ class TestAppRoutersBondTransfersGET:
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test1",
+                        "birth": "birth_test1",
+                        "email": "email_test1",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test1",
+                        "postal_code": "postal_code_test1",
+                        "tax_category": 10,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test2",
+                        "birth": "birth_test2",
+                        "email": "email_test2",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test2",
+                        "name": "name_test2",
+                        "postal_code": "postal_code_test2",
+                        "tax_category": 10,
+                    },
                     "amount": 0,
                     "source_event": IDXTransferSourceEventType.TRANSFER.value,
                     "data": None,
@@ -391,6 +629,37 @@ class TestAppRoutersBondTransfersGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _personal_info_from = IDXPersonalInfo()
+        _personal_info_from.account_address = self.test_from_address
+        _personal_info_from.issuer_address = self.test_issuer_address
+        _personal_info_from._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }  # latest data
+        db.add(_personal_info_from)
+
+        _personal_info_to = IDXPersonalInfo()
+        _personal_info_to.account_address = self.test_to_address
+        _personal_info_to.issuer_address = self.test_issuer_address
+        _personal_info_to._personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }  # latest data
+        db.add(_personal_info_to)
 
         # prepare data: IDXTransfer
         _idx_transfer = IDXTransfer()
@@ -444,7 +713,18 @@ class TestAppRoutersBondTransfersGET:
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
                     "from_address": "test_from_address_1",
+                    "from_address_personal_information": None,
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test2",
+                        "birth": "birth_test2",
+                        "email": "email_test2",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test2",
+                        "name": "name_test2",
+                        "postal_code": "postal_code_test2",
+                        "tax_category": 10,
+                    },
                     "amount": 2,
                     "source_event": IDXTransferSourceEventType.UNLOCK.value,
                     "data": {"message": "unlock"},
@@ -454,7 +734,18 @@ class TestAppRoutersBondTransfersGET:
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
                     "from_address": "test_from_address_2",
+                    "from_address_personal_information": None,
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test2",
+                        "birth": "birth_test2",
+                        "email": "email_test2",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test2",
+                        "name": "name_test2",
+                        "postal_code": "postal_code_test2",
+                        "tax_category": 10,
+                    },
                     "amount": 0,
                     "source_event": IDXTransferSourceEventType.TRANSFER.value,
                     "data": None,
@@ -464,7 +755,18 @@ class TestAppRoutersBondTransfersGET:
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
                     "from_address": "test_from_address_2",
+                    "from_address_personal_information": None,
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test2",
+                        "birth": "birth_test2",
+                        "email": "email_test2",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test2",
+                        "name": "name_test2",
+                        "postal_code": "postal_code_test2",
+                        "tax_category": 10,
+                    },
                     "amount": 1,
                     "source_event": IDXTransferSourceEventType.TRANSFER.value,
                     "data": None,
@@ -485,6 +787,37 @@ class TestAppRoutersBondTransfersGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _personal_info_from = IDXPersonalInfo()
+        _personal_info_from.account_address = self.test_from_address
+        _personal_info_from.issuer_address = self.test_issuer_address
+        _personal_info_from._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }  # latest data
+        db.add(_personal_info_from)
+
+        _personal_info_to = IDXPersonalInfo()
+        _personal_info_to.account_address = self.test_to_address
+        _personal_info_to.issuer_address = self.test_issuer_address
+        _personal_info_to._personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }  # latest data
+        db.add(_personal_info_to)
 
         # prepare data: IDXTransfer
         _idx_transfer = IDXTransfer()
@@ -538,7 +871,18 @@ class TestAppRoutersBondTransfersGET:
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test1",
+                        "birth": "birth_test1",
+                        "email": "email_test1",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test1",
+                        "postal_code": "postal_code_test1",
+                        "tax_category": 10,
+                    },
                     "to_address": "test_to_address_2",
+                    "to_address_personal_information": None,
                     "amount": 0,
                     "source_event": IDXTransferSourceEventType.TRANSFER.value,
                     "data": None,
@@ -548,7 +892,18 @@ class TestAppRoutersBondTransfersGET:
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test1",
+                        "birth": "birth_test1",
+                        "email": "email_test1",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test1",
+                        "postal_code": "postal_code_test1",
+                        "tax_category": 10,
+                    },
                     "to_address": "test_to_address_1",
+                    "to_address_personal_information": None,
                     "amount": 2,
                     "source_event": IDXTransferSourceEventType.UNLOCK.value,
                     "data": {"message": "unlock"},
@@ -558,7 +913,18 @@ class TestAppRoutersBondTransfersGET:
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test1",
+                        "birth": "birth_test1",
+                        "email": "email_test1",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test1",
+                        "postal_code": "postal_code_test1",
+                        "tax_category": 10,
+                    },
                     "to_address": "test_to_address_1",
+                    "to_address_personal_information": None,
                     "amount": 1,
                     "source_event": IDXTransferSourceEventType.TRANSFER.value,
                     "data": None,
@@ -579,6 +945,37 @@ class TestAppRoutersBondTransfersGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         db.add(_token)
+
+        # prepare data: IDXPersonalInfo
+        _personal_info_from = IDXPersonalInfo()
+        _personal_info_from.account_address = self.test_from_address
+        _personal_info_from.issuer_address = self.test_issuer_address
+        _personal_info_from._personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }  # latest data
+        db.add(_personal_info_from)
+
+        _personal_info_to = IDXPersonalInfo()
+        _personal_info_to.account_address = self.test_to_address
+        _personal_info_to.issuer_address = self.test_issuer_address
+        _personal_info_to._personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test2",
+            "postal_code": "postal_code_test2",
+            "address": "address_test2",
+            "email": "email_test2",
+            "birth": "birth_test2",
+            "is_corporate": False,
+            "tax_category": 10,
+        }  # latest data
+        db.add(_personal_info_to)
 
         # prepare data: IDXTransfer
         _idx_transfer = IDXTransfer()
@@ -632,7 +1029,27 @@ class TestAppRoutersBondTransfersGET:
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test1",
+                        "birth": "birth_test1",
+                        "email": "email_test1",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test1",
+                        "postal_code": "postal_code_test1",
+                        "tax_category": 10,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test2",
+                        "birth": "birth_test2",
+                        "email": "email_test2",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test2",
+                        "name": "name_test2",
+                        "postal_code": "postal_code_test2",
+                        "tax_category": 10,
+                    },
                     "amount": 1,
                     "source_event": IDXTransferSourceEventType.TRANSFER.value,
                     "data": None,
@@ -642,7 +1059,27 @@ class TestAppRoutersBondTransfersGET:
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test1",
+                        "birth": "birth_test1",
+                        "email": "email_test1",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test1",
+                        "postal_code": "postal_code_test1",
+                        "tax_category": 10,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test2",
+                        "birth": "birth_test2",
+                        "email": "email_test2",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test2",
+                        "name": "name_test2",
+                        "postal_code": "postal_code_test2",
+                        "tax_category": 10,
+                    },
                     "amount": 2,
                     "source_event": IDXTransferSourceEventType.UNLOCK.value,
                     "data": {"message": "unlock"},
@@ -652,7 +1089,27 @@ class TestAppRoutersBondTransfersGET:
                     "transaction_hash": self.test_transaction_hash,
                     "token_address": self.test_token_address,
                     "from_address": self.test_from_address,
+                    "from_address_personal_information": {
+                        "address": "address_test1",
+                        "birth": "birth_test1",
+                        "email": "email_test1",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test1",
+                        "postal_code": "postal_code_test1",
+                        "tax_category": 10,
+                    },
                     "to_address": self.test_to_address,
+                    "to_address_personal_information": {
+                        "address": "address_test2",
+                        "birth": "birth_test2",
+                        "email": "email_test2",
+                        "is_corporate": False,
+                        "key_manager": "key_manager_test2",
+                        "name": "name_test2",
+                        "postal_code": "postal_code_test2",
+                        "tax_category": 10,
+                    },
                     "amount": 2,
                     "source_event": IDXTransferSourceEventType.TRANSFER.value,
                     "data": None,

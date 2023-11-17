@@ -88,7 +88,9 @@ class TransferResponse(BaseModel):
     transaction_hash: str
     token_address: str
     from_address: str
+    from_address_personal_information: Optional[dict] = Field(...)
     to_address: str
+    to_address_personal_information: Optional[dict] = Field(...)
     amount: int
     source_event: TransferSourceEventType = Field(description="Source Event")
     data: dict | None = Field(description="Event data")
