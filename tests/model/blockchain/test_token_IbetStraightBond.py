@@ -48,7 +48,7 @@ from app.model.blockchain.tx_params.ibet_straight_bond import (
 )
 from app.model.db import TokenAttrUpdate, TokenCache
 from app.utils.contract_utils import ContractUtils
-from config import TOKEN_CACHE_TTL, ZERO_ADDRESS
+from config import DEFAULT_CURRENCY, TOKEN_CACHE_TTL, ZERO_ADDRESS
 from tests.account_config import config_eth_account
 from tests.utils.contract_utils import (
     IbetSecurityTokenContractTestUtils,
@@ -604,7 +604,7 @@ class TestGet:
         assert bond_contract.is_offering is False
         assert bond_contract.transfer_approval_required is False
         assert bond_contract.face_value == 0
-        assert bond_contract.face_value_currency == ""
+        assert bond_contract.face_value_currency == DEFAULT_CURRENCY
         assert bond_contract.interest_rate == 0
         assert bond_contract.interest_payment_date == [
             "",

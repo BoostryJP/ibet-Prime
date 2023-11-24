@@ -40,7 +40,7 @@ class IbetStraightBondCreate(BaseModel):
     name: str = Field(max_length=100)
     total_supply: int = Field(..., ge=0, le=1_000_000_000_000)
     face_value: int = Field(..., ge=0, le=5_000_000_000)
-    face_value_currency: Optional[str] = Field(default=None, min_length=3, max_length=3)
+    face_value_currency: str = Field(..., min_length=3, max_length=3)
     purpose: str = Field(max_length=2000)
     symbol: Optional[str] = Field(default=None, max_length=100)
     redemption_date: Optional[YYYYMMDD_constr] = None
