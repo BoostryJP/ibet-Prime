@@ -68,7 +68,6 @@ from app.model.blockchain.tx_params.ibet_straight_bond import (
     UpdateParams,
 )
 from app.model.db import (
-    UTXO,
     Account,
     BatchIssueRedeem,
     BatchIssueRedeemProcessingCategory,
@@ -134,7 +133,6 @@ from app.model.schema import (
     TransferApprovalHistoryResponse,
     TransferApprovalsResponse,
     TransferApprovalTokenDetailResponse,
-    TransferApprovalTokenResponse,
     TransferHistoryResponse,
     UpdateTransferApprovalOperationType,
     UpdateTransferApprovalRequest,
@@ -145,7 +143,6 @@ from app.utils.check_utils import (
     eoa_password_is_encrypted_value,
     validate_headers,
 )
-from app.utils.contract_utils import ContractUtils
 from app.utils.docs_utils import get_routers_responses
 from app.utils.fastapi_utils import json_response
 
