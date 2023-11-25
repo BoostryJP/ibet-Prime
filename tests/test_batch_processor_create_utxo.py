@@ -43,7 +43,7 @@ from app.model.blockchain.tx_params.ibet_straight_bond import (
     TransferParams as IbetStraightBondTransferParams,
     UpdateParams as IbetStraightBondUpdateParams,
 )
-from app.model.db import UTXO, Token, TokenType, UTXOBlockNumber
+from app.model.db import UTXO, Token, TokenType, TokenVersion, UTXOBlockNumber
 from app.utils.contract_utils import ContractUtils
 from batch.processor_create_utxo import Processor
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
@@ -144,6 +144,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
+        _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
         token_address_2 = deploy_share_token_contract(
@@ -155,6 +156,7 @@ class TestProcessor:
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
+        _token_2.version = TokenVersion.V_22_12
         db.add(_token_2)
 
         db.commit()
@@ -280,6 +282,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
+        _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
         latest_block_number = web3.eth.block_number
@@ -388,6 +391,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
+        _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
         db.commit()
@@ -475,6 +479,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
+        _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
         db.commit()
@@ -558,6 +563,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
+        _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -732,6 +738,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
+        _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
         token_address_2 = deploy_share_token_contract(
@@ -743,6 +750,7 @@ class TestProcessor:
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
+        _token_2.version = TokenVersion.V_22_12
         db.add(_token_2)
 
         db.commit()
@@ -809,6 +817,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
+        _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
         token_address_2 = deploy_share_token_contract(
@@ -820,6 +829,7 @@ class TestProcessor:
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
+        _token_2.version = TokenVersion.V_22_12
         db.add(_token_2)
 
         db.commit()
@@ -957,6 +967,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
+        _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
         token_address_2 = deploy_share_token_contract(
@@ -968,6 +979,7 @@ class TestProcessor:
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
+        _token_2.version = TokenVersion.V_22_12
         db.add(_token_2)
 
         db.commit()
@@ -1137,6 +1149,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
+        _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
         token_address_2 = deploy_share_token_contract(
@@ -1148,6 +1161,7 @@ class TestProcessor:
         _token_2.issuer_address = issuer_address
         _token_2.token_address = token_address_2
         _token_2.abi = {}
+        _token_2.version = TokenVersion.V_22_12
         db.add(_token_2)
 
         db.commit()
@@ -1300,6 +1314,7 @@ class TestProcessor:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
+        _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
         db.commit()

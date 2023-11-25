@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
 
-from app.model.db import Ledger, Token, TokenType
+from app.model.db import Ledger, Token, TokenType, TokenVersion
 from tests.account_config import config_eth_account
 
 
@@ -44,6 +44,7 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         _ledger_1 = Ledger()
@@ -106,6 +107,7 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         _ledger_1 = Ledger()
@@ -165,6 +167,7 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         _ledger_1 = Ledger()
@@ -281,6 +284,7 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 2
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # request target API
@@ -339,6 +343,7 @@ class TestAppRoutersLedgerTokenAddressHistoryGET:
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 0
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # request target API

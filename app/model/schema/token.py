@@ -26,9 +26,18 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic.dataclasses import dataclass
 from web3 import Web3
 
+from app.model.schema.base import (
+    EMPTY_str,
+    IbetShareContractVersion,
+    IbetStraightBondContractVersion,
+    MMDD_constr,
+    ResultSet,
+    SortOrder,
+    YYYYMMDD_constr,
+)
+
 from . import LockEventCategory
 from .position import LockEvent
-from .types import EMPTY_str, MMDD_constr, ResultSet, SortOrder, YYYYMMDD_constr
 
 
 ############################
@@ -539,6 +548,7 @@ class IbetStraightBondResponse(BaseModel):
     token_status: int
     transfer_approval_required: bool
     memo: str
+    contract_version: IbetStraightBondContractVersion
 
 
 class IbetShareResponse(BaseModel):
@@ -567,6 +577,7 @@ class IbetShareResponse(BaseModel):
     token_status: int
     is_canceled: bool
     memo: str
+    contract_version: IbetShareContractVersion
 
 
 class TokenOperationLogResponse(BaseModel):

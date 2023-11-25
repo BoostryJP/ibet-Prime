@@ -49,7 +49,7 @@ from app.model.schema import (
     ListBlockDataQuery,
     ListTxDataQuery,
 )
-from app.model.schema.types import SortOrder
+from app.model.schema.base import SortOrder
 
 
 class BlockScreen(TuiScreen):

@@ -25,6 +25,7 @@ from app.model.db import (
     IDXTransferApproval,
     Token,
     TokenType,
+    TokenVersion,
     TransferApprovalHistory,
     TransferApprovalOperationType,
 )
@@ -98,6 +99,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         _token.token_address = self.test_token_address_1
         _token.abi = {}
         _token.token_status = 2
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # prepare data: Token(bond)
@@ -107,6 +109,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_2
         _token.abi = {}
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # prepare data: IDXTransferApproval(failed token)
@@ -195,6 +198,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_1
         _token.abi = {}
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # prepare data: IDXTransferApproval(ApplyFor(unapproved))
@@ -379,6 +383,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_1
         _token.abi = {}
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # prepare data: Token(issuer-1)
@@ -388,6 +393,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_2
         _token.abi = {}
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # prepare data: Token(issuer-2)
@@ -397,6 +403,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         _token.issuer_address = self.test_issuer_address_2
         _token.token_address = self.test_token_address_3
         _token.abi = {}
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # prepare data: IDXTransferApproval(issuer-1 token-1)
@@ -559,6 +566,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_1
         _token.abi = {}
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # prepare data: Token(issuer-1)
@@ -568,6 +576,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_2
         _token.abi = {}
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # prepare data: Token(issuer-2)
@@ -577,6 +586,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         _token.issuer_address = self.test_issuer_address_2
         _token.token_address = self.test_token_address_3
         _token.abi = {}
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # prepare data: IDXTransferApproval(issuer-1 token-1)
@@ -746,6 +756,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_1
         _token.abi = {}
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # prepare data: Token(issuer-1)
@@ -755,6 +766,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_2
         _token.abi = {}
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # prepare data: Token(issuer-1)
@@ -764,6 +776,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_3
         _token.abi = {}
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # prepare data: Token(issuer-1)
@@ -773,6 +786,7 @@ class TestAppRoutersShareTransferApprovalsGET:
         _token.issuer_address = self.test_issuer_address_1
         _token.token_address = self.test_token_address_4
         _token.abi = {}
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # prepare data: IDXTransferApproval(issuer-1 token-1)

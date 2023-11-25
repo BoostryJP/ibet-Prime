@@ -140,4 +140,3 @@ from .transfer import (
     UpdateTransferApprovalOperationType,
     UpdateTransferApprovalRequest,
 )
-from .types import ResultSet

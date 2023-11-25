@@ -24,7 +24,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.model.blockchain import IbetStraightBondContract
-from app.model.db import IDXLock, IDXUnlock, Token, TokenType
+from app.model.db import IDXLock, IDXUnlock, Token, TokenType, TokenVersion
 
 
 class TestAppRoutersBondLockEvents:
@@ -55,6 +55,7 @@ class TestAppRoutersBondLockEvents:
         _token.tx_hash = ""
         _token.abi = ""
         _token.token_status = token_status
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: Token
@@ -65,6 +66,7 @@ class TestAppRoutersBondLockEvents:
         _token.tx_hash = ""
         _token.abi = ""
         _token.token_status = token_status
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: Lock events
@@ -204,6 +206,7 @@ class TestAppRoutersBondLockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # request target api

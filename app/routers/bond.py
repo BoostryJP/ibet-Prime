@@ -93,6 +93,7 @@ from app.model.db import (
     TokenType,
     TokenUpdateOperationCategory,
     TokenUpdateOperationLog,
+    TokenVersion,
     TransferApprovalHistory,
     TransferApprovalOperationType,
     UpdateToken,
@@ -267,6 +268,7 @@ def issue_token(
     _token.token_address = contract_address
     _token.abi = abi
     _token.token_status = token_status
+    _token.version = TokenVersion.V_23_12
     db.add(_token)
 
     # Register operation log
@@ -329,6 +331,7 @@ def list_all_tokens(
             local_tz
         ).isoformat()
         bond_token["token_status"] = token.token_status
+        bond_token["contract_version"] = token.version
         bond_token.pop("contract_name")
         bond_tokens.append(bond_token)
 
@@ -365,6 +368,7 @@ def retrieve_token(db: DBSession, token_address: str):
     issue_datetime_utc = timezone("UTC").localize(_token.created)
     bond_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
     bond_token["token_status"] = _token.token_status
+    bond_token["contract_version"] = _token.version
     bond_token.pop("contract_name")
 
     return json_response(bond_token)

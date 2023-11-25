@@ -39,6 +39,7 @@ from app.model.db import (
     Token,
     TokenType,
     TokenUpdateOperationLog,
+    TokenVersion,
     UpdateToken,
 )
 from app.utils.contract_utils import ContractUtils
@@ -153,6 +154,7 @@ class TestAppRoutersShareTokensPOST:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
+            assert token_1.version == TokenVersion.V_22_12
 
             position = db.scalars(select(IDXPosition).limit(1)).first()
             assert position.token_address == "contract_address_test1"
@@ -261,6 +263,7 @@ class TestAppRoutersShareTokensPOST:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
+            assert token_1.version == TokenVersion.V_22_12
 
             position = db.scalars(select(IDXPosition).limit(1)).first()
             assert position.token_address == "contract_address_test1"
@@ -387,6 +390,7 @@ class TestAppRoutersShareTokensPOST:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 0
+            assert token_1.version == TokenVersion.V_22_12
 
             position = db.scalars(select(IDXPosition).limit(1)).first()
             assert position is None
@@ -505,6 +509,7 @@ class TestAppRoutersShareTokensPOST:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
+            assert token_1.version == TokenVersion.V_22_12
 
             position = db.scalars(select(IDXPosition).limit(1)).first()
             assert position.token_address == "contract_address_test1"

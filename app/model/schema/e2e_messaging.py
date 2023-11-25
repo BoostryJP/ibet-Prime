@@ -21,10 +21,9 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.model.schema.base import ResultSet
 from app.utils.check_utils import check_value_is_encrypted
 from config import E2EE_REQUEST_ENABLED
-
-from .types import ResultSet
 
 
 ############################

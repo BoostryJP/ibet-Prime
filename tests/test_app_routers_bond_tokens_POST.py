@@ -37,6 +37,7 @@ from app.model.db import (
     Token,
     TokenType,
     TokenUpdateOperationLog,
+    TokenVersion,
     UpdateToken,
 )
 from app.utils.contract_utils import ContractUtils
@@ -157,6 +158,7 @@ class TestAppRoutersBondTokensPOST:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 0
+            assert token_1.version == TokenVersion.V_23_12
 
             position = db.scalars(select(IDXPosition).limit(1)).first()
             assert position is None
@@ -173,9 +175,9 @@ class TestAppRoutersBondTokensPOST:
             assert update_token.status == 0
             assert update_token.trigger == "Issue"
 
-    # <Normal_3>
+    # <Normal_2>
     # Authorization by auth token
-    def test_normal_3(self, client, db):
+    def test_normal_2(self, client, db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -251,6 +253,7 @@ class TestAppRoutersBondTokensPOST:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 0
+            assert token_1.version == TokenVersion.V_23_12
 
             position = db.scalars(select(IDXPosition).limit(1)).first()
             assert position is None

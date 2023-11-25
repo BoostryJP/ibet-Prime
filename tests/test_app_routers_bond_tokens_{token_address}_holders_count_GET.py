@@ -16,7 +16,14 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from app.model.db import Account, IDXLockedPosition, IDXPosition, Token, TokenType
+from app.model.db import (
+    Account,
+    IDXLockedPosition,
+    IDXPosition,
+    Token,
+    TokenType,
+    TokenVersion,
+)
 from tests.account_config import config_eth_account
 
 
@@ -47,6 +54,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersCountGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # request target API
@@ -79,6 +87,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersCountGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         idx_position_1 = IDXPosition()
@@ -120,6 +129,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersCountGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         idx_position_1 = IDXPosition()
@@ -179,6 +189,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersCountGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         idx_position_1 = IDXPosition()
@@ -230,6 +241,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersCountGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         idx_position_1 = IDXPosition()
@@ -392,6 +404,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersCountGET:
         token.token_address = _token_address
         token.abi = ""
         token.token_status = 0
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # request target API

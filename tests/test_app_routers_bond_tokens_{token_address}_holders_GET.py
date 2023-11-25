@@ -25,6 +25,7 @@ from app.model.db import (
     IDXPosition,
     Token,
     TokenType,
+    TokenVersion,
 )
 from tests.account_config import config_eth_account
 
@@ -55,6 +56,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # request target API
@@ -87,6 +89,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # prepare data: Position
@@ -198,6 +201,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # prepare data: account_address_1
@@ -422,6 +426,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # prepare data: account_address_1
@@ -552,6 +557,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         idx_position_1 = IDXPosition()
@@ -775,6 +781,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
         token.token_address = _token_address
         token.abi = ""
         token.token_status = 0
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # request target API

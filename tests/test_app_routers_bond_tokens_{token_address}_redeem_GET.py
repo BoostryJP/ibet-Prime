@@ -27,6 +27,7 @@ from app.model.db import (
     IDXIssueRedeemSortItem,
     Token,
     TokenType,
+    TokenVersion,
 )
 
 local_tz = timezone(config.TZ)
@@ -72,6 +73,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXIssueRedeem
@@ -105,6 +107,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXIssueRedeem
@@ -183,6 +186,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXIssueRedeem
@@ -267,6 +271,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXIssueRedeem
@@ -351,6 +356,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.token_status = 0
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # request target API

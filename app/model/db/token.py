@@ -17,12 +17,22 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
-from enum import Enum
+from enum import Enum, StrEnum
 
 from sqlalchemy import JSON, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
+
+
+class TokenType(str, Enum):
+    IBET_STRAIGHT_BOND = "IbetStraightBond"
+    IBET_SHARE = "IbetShare"
+
+
+class TokenVersion(StrEnum):
+    V_22_12 = "22_12"
+    V_23_12 = "23_12"
 
 
 class Token(Base):
@@ -32,14 +42,16 @@ class Token(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     # token type
-    type: Mapped[str] = mapped_column(String(40), nullable=False)
+    type: Mapped[TokenType] = mapped_column(String(40), nullable=False)
     # transaction hash
     tx_hash: Mapped[str] = mapped_column(String(66), nullable=False)
     # issuer address
     issuer_address: Mapped[str] = mapped_column(String(42), nullable=True)
     # token address
     token_address: Mapped[str] = mapped_column(String(42), nullable=True)
-    # ABI
+    # contract version
+    version: Mapped[TokenVersion] = mapped_column(String(5), nullable=False)
+    # contract ABI
     abi: Mapped[dict] = mapped_column(JSON, nullable=False)
     # token processing status (pending:0, succeeded:1, failed:2)
     token_status: Mapped[int | None] = mapped_column(Integer, default=1)
@@ -56,11 +68,6 @@ class TokenAttrUpdate(Base):
     token_address: Mapped[str | None] = mapped_column(String(42), index=True)
     # datetime when token attribute updated (UTC)
     updated_datetime: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-
-
-class TokenType(str, Enum):
-    IBET_STRAIGHT_BOND = "IbetStraightBond"
-    IBET_SHARE = "IbetShare"
 
 
 class TokenCache(Base):
