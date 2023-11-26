@@ -36,6 +36,7 @@ from app.model.db import (
     TokenType,
     TokenUpdateOperationCategory,
     TokenUpdateOperationLog,
+    TokenVersion,
 )
 from app.model.schema import IbetStraightBondCreate
 from app.utils.contract_utils import ContractUtils
@@ -263,6 +264,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # request target api
@@ -312,6 +314,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
         db.commit()
 
@@ -400,6 +403,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
         db.commit()
 
@@ -486,6 +490,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
         db.commit()
 
@@ -563,6 +568,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         _operation_log_1 = TokenUpdateOperationLog()
@@ -665,6 +671,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         _operation_log_1 = TokenUpdateOperationLog()
@@ -753,6 +760,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
         db.commit()
 
@@ -845,6 +853,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
         db.commit()
 
@@ -938,6 +947,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
         db.commit()
 
@@ -1015,6 +1025,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
         db.commit()
 

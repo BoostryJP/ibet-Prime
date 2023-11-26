@@ -16,35 +16,12 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from typing import List
-
-from pydantic import BaseModel
-
-from app.model.schema.base import ResultSet
-
-############################
-# REQUEST
-############################
-
-
-############################
-# RESPONSE
-############################
-
-
-class IssueRedeemEvent(BaseModel):
-    """Issue/Redeem event"""
-
-    transaction_hash: str
-    token_address: str
-    locked_address: str
-    target_address: str
-    amount: int
-    block_timestamp: str
-
-
-class IssueRedeemHistoryResponse(BaseModel):
-    """Issue/Redeem history"""
-
-    result_set: ResultSet
-    history: List[IssueRedeemEvent]
+from .base import (
+    EMPTY_str,
+    IbetShareContractVersion,
+    IbetStraightBondContractVersion,
+    MMDD_constr,
+    ResultSet,
+    SortOrder,
+    YYYYMMDD_constr,
+)

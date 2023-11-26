@@ -18,13 +18,12 @@ SPDX-License-Identifier: Apache-2.0
 """
 import base64
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.model.schema.base import ResultSet
 from config import MAX_UPLOAD_FILE_SIZE
-
-from .types import ResultSet
 
 ############################
 # REQUEST

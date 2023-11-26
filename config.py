@@ -28,6 +28,9 @@ SERVER_NAME = "ibet-Prime"
 # System timezone for REST API
 TZ = os.environ.get("TZ") or "Asia/Tokyo"
 
+# Default currency code
+DEFAULT_CURRENCY = os.environ.get("DEFAULT_CURRENCY") or "JPY"
+
 # Blockchain network
 NETWORK = os.environ.get("NETWORK") or "IBET"  # IBET or IBETFIN
 

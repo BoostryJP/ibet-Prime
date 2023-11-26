@@ -16,7 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from app.model.db import LedgerDetailsData, Token, TokenType
+from app.model.db import LedgerDetailsData, Token, TokenType, TokenVersion
 from tests.account_config import config_eth_account
 
 
@@ -43,6 +43,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdGET:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         _details_1_data_1 = LedgerDetailsData()
@@ -123,6 +124,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdGET:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         _details_1_data_1 = LedgerDetailsData()
@@ -200,6 +202,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdGET:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         _details_1_data_1 = LedgerDetailsData()
@@ -316,6 +319,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdGET:
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 2
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # request target API
@@ -368,6 +372,7 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdGET:
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 0
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # request target API

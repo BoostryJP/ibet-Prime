@@ -23,6 +23,7 @@ from app.model.db import (
     BatchRegisterPersonalInfoUploadStatus,
     Token,
     TokenType,
+    TokenVersion,
 )
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
@@ -92,6 +93,7 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchBatchIdGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_22_12
         db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload

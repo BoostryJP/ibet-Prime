@@ -26,6 +26,7 @@ from app.model.db import (
     IDXTransferApproval,
     Token,
     TokenType,
+    TokenVersion,
     TransferApprovalHistory,
     TransferApprovalOperationType,
 )
@@ -108,6 +109,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # request target API
@@ -131,6 +133,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -322,6 +325,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -439,6 +443,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -640,6 +645,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -750,6 +756,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -861,6 +868,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -1004,6 +1012,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -1147,6 +1156,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXTransferApproval
@@ -1378,6 +1388,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -1595,6 +1606,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -1844,6 +1856,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -2041,6 +2054,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -2278,6 +2292,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -2515,6 +2530,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -2717,6 +2733,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -2917,6 +2934,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -3153,6 +3171,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -3396,6 +3415,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -3635,6 +3655,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: IDXPersonalInfo
@@ -4193,6 +4214,7 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.token_address = self.test_token_address
         _token.abi = {}
         _token.token_status = 0
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # request target API

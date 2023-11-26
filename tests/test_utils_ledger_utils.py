@@ -49,6 +49,7 @@ from app.model.db import (
     NotificationType,
     Token,
     TokenType,
+    TokenVersion,
 )
 from app.utils import ledger_utils
 from app.utils.contract_utils import ContractUtils
@@ -203,6 +204,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
+        _token_1.version = TokenVersion.V_22_12
         db.add(_token_1)
 
         # IDXPersonalInfo(only user_1)
@@ -669,6 +671,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
+        _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
         # IDXPersonalInfo(only user_1)
@@ -1089,6 +1092,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
+        _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
         # Execute
@@ -1120,6 +1124,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
+        _token_1.version = TokenVersion.V_22_12
         db.add(_token_1)
 
         # Execute

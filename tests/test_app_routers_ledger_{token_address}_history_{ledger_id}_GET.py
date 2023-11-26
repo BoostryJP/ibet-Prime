@@ -28,6 +28,7 @@ from app.model.db import (
     LedgerDetailsTemplate,
     Token,
     TokenType,
+    TokenVersion,
 )
 from tests.account_config import config_eth_account
 
@@ -56,6 +57,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         _ledger_1 = Ledger()
@@ -298,6 +300,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         _ledger_1 = Ledger()
@@ -540,6 +543,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         _ledger_1 = Ledger()
@@ -843,6 +847,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         _ledger_1 = Ledger()
@@ -1143,6 +1148,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         _ledger_1 = Ledger()
@@ -1412,6 +1418,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         _ledger_1 = Ledger()
@@ -1755,6 +1762,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 2
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # request target API
@@ -1811,6 +1819,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 0
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # request target API
@@ -1845,6 +1854,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # request target API
@@ -1881,6 +1891,7 @@ class TestAppRoutersLedgerTokenAddressHistoryLedgerIdGET:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         _ledger_1 = Ledger()

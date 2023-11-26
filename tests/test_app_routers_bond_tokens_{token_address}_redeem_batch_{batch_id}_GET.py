@@ -24,6 +24,7 @@ from app.model.db import (
     IDXPersonalInfo,
     Token,
     TokenType,
+    TokenVersion,
 )
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
@@ -69,6 +70,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchBatchIdGET:
         token.issuer_address = issuer_address
         token.token_address = test_token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         batch_upload = BatchIssueRedeemUpload()
@@ -153,6 +155,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchBatchIdGET:
         token.issuer_address = issuer_address
         token.token_address = test_token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         batch_upload = BatchIssueRedeemUpload()
@@ -237,6 +240,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchBatchIdGET:
         token.issuer_address = issuer_address
         token.token_address = test_token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         batch_upload = BatchIssueRedeemUpload()
@@ -347,6 +351,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchBatchIdGET:
         token.issuer_address = issuer_address
         token.token_address = test_token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         batch_upload = BatchIssueRedeemUpload()

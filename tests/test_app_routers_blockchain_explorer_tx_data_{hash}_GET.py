@@ -22,7 +22,7 @@ from eth_utils import to_checksum_address
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.model.db import IDXTxData, Token
+from app.model.db import IDXTxData, Token, TokenVersion
 
 
 class TestGetTxData:
@@ -69,6 +69,7 @@ class TestGetTxData:
         token.issuer_address = ""
         token.token_address = token_info.get("token_address")
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         session.add(token)
         session.commit()
 

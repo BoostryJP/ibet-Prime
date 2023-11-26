@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 from unittest import mock
 
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
-from app.model.db import IDXLockedPosition, IDXPosition, Token, TokenType
+from app.model.db import IDXLockedPosition, IDXPosition, Token, TokenType, TokenVersion
 
 
 class TestAppRoutersPositionsAccountAddressTokenAddressGET:
@@ -47,6 +47,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: Position
@@ -129,6 +130,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.type = TokenType.IBET_SHARE.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: Position
@@ -209,6 +211,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: Position
@@ -263,6 +266,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: Locked Position
@@ -317,6 +321,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: Position
@@ -382,6 +387,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: Position
@@ -436,6 +442,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: Position
@@ -556,6 +563,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: Position
@@ -598,6 +606,7 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _token.tx_hash = ""
         _token.abi = ""
         _token.token_status = 0
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # prepare data: Position

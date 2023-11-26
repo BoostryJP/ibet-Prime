@@ -67,7 +67,7 @@ from .ledger_template import (
 from .node import Node
 from .notification import Notification, NotificationType
 from .scheduled_events import ScheduledEvents, ScheduledEventType
-from .token import Token, TokenAttrUpdate, TokenCache, TokenType
+from .token import Token, TokenAttrUpdate, TokenCache, TokenType, TokenVersion
 from .token_holders import TokenHolder, TokenHolderBatchStatus, TokenHoldersList
 from .token_update_operation_log import (
     TokenUpdateOperationCategory,

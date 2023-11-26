@@ -22,8 +22,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field, field_validator
 
 from app.model.db import LedgerDetailsDataType, TokenType
-
-from .types import ResultSet
+from app.model.schema.base import ResultSet
 
 ############################
 # REQUEST

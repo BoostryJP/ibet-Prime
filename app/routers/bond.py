@@ -55,7 +55,6 @@ from app.model.blockchain import (
     IbetSecurityTokenEscrow,
     IbetStraightBondContract,
     PersonalInfoContract,
-    TokenListContract,
 )
 from app.model.blockchain.tx_params.ibet_security_token_escrow import (
     ApproveTransferParams as EscrowApproveTransferParams,
@@ -69,7 +68,6 @@ from app.model.blockchain.tx_params.ibet_straight_bond import (
     UpdateParams,
 )
 from app.model.db import (
-    UTXO,
     Account,
     BatchIssueRedeem,
     BatchIssueRedeemProcessingCategory,
@@ -95,6 +93,7 @@ from app.model.db import (
     TokenType,
     TokenUpdateOperationCategory,
     TokenUpdateOperationLog,
+    TokenVersion,
     TransferApprovalHistory,
     TransferApprovalOperationType,
     UpdateToken,
@@ -135,7 +134,6 @@ from app.model.schema import (
     TransferApprovalHistoryResponse,
     TransferApprovalsResponse,
     TransferApprovalTokenDetailResponse,
-    TransferApprovalTokenResponse,
     TransferHistoryResponse,
     UpdateTransferApprovalOperationType,
     UpdateTransferApprovalRequest,
@@ -146,7 +144,6 @@ from app.utils.check_utils import (
     eoa_password_is_encrypted_value,
     validate_headers,
 )
-from app.utils.contract_utils import ContractUtils
 from app.utils.docs_utils import get_routers_responses
 from app.utils.fastapi_utils import json_response
 
@@ -229,7 +226,7 @@ def issue_token(
 
     # Check need update
     update_items = [
-        "face_value_currency",
+        "face_value_currency",  # Required field
         "redemption_value_currency",
         "interest_rate",
         "interest_payment_date",
@@ -246,59 +243,22 @@ def issue_token(
         "transfer_approval_required",
     ]
     token_dict = token.__dict__
-    is_update = False
     for key in update_items:
         item = token_dict.get(key)
         if item is not None:
-            is_update = True
             break
 
-    if is_update:
-        # Register token for the update batch
-        _update_token = UpdateToken()
-        _update_token.token_address = contract_address
-        _update_token.issuer_address = issuer_address
-        _update_token.type = TokenType.IBET_STRAIGHT_BOND.value
-        _update_token.arguments = token_dict
-        _update_token.status = 0  # pending
-        _update_token.trigger = "Issue"
-        db.add(_update_token)
+    # Register token for the update batch
+    _update_token = UpdateToken()
+    _update_token.token_address = contract_address
+    _update_token.issuer_address = issuer_address
+    _update_token.type = TokenType.IBET_STRAIGHT_BOND.value
+    _update_token.arguments = token_dict
+    _update_token.status = 0  # pending
+    _update_token.trigger = "Issue"
+    db.add(_update_token)
 
-        token_status = 0  # processing
-    else:
-        # Register token_address token list
-        try:
-            TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
-                token_address=contract_address,
-                token_template=TokenType.IBET_STRAIGHT_BOND.value,
-                tx_from=issuer_address,
-                private_key=private_key,
-            )
-        except SendTransactionError:
-            raise SendTransactionError("failed to register token address token list")
-
-        # Insert initial position data
-        _position = IDXPosition()
-        _position.token_address = contract_address
-        _position.account_address = issuer_address
-        _position.balance = token.total_supply
-        _position.exchange_balance = 0
-        _position.exchange_commitment = 0
-        _position.pending_transfer = 0
-        db.add(_position)
-
-        # Insert issuer's UTXO data
-        block = ContractUtils.get_block_by_transaction_hash(tx_hash)
-        _utxo = UTXO()
-        _utxo.transaction_hash = tx_hash
-        _utxo.account_address = issuer_address
-        _utxo.token_address = contract_address
-        _utxo.amount = token.total_supply
-        _utxo.block_number = block["number"]
-        _utxo.block_timestamp = datetime.utcfromtimestamp(block["timestamp"])
-        db.add(_utxo)
-
-        token_status = 1  # succeeded
+    token_status = 0  # processing (Since `face_value_currency` is a required field, an update transaction is always executed.)
 
     # Register token data
     _token = Token()
@@ -308,6 +268,7 @@ def issue_token(
     _token.token_address = contract_address
     _token.abi = abi
     _token.token_status = token_status
+    _token.version = TokenVersion.V_23_12
     db.add(_token)
 
     # Register operation log
@@ -370,6 +331,7 @@ def list_all_tokens(
             local_tz
         ).isoformat()
         bond_token["token_status"] = token.token_status
+        bond_token["contract_version"] = token.version
         bond_token.pop("contract_name")
         bond_tokens.append(bond_token)
 
@@ -406,6 +368,7 @@ def retrieve_token(db: DBSession, token_address: str):
     issue_datetime_utc = timezone("UTC").localize(_token.created)
     bond_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
     bond_token["token_status"] = _token.token_status
+    bond_token["contract_version"] = _token.version
     bond_token.pop("contract_name")
 
     return json_response(bond_token)

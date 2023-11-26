@@ -23,7 +23,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from web3 import Web3
 
 from app.model.db import BatchRegisterPersonalInfoUploadStatus
-from app.model.schema.types import ResultSet
+from app.model.schema.base import ResultSet
 
 
 class PersonalInfo(BaseModel):

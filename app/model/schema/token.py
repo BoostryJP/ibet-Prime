@@ -26,9 +26,18 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic.dataclasses import dataclass
 from web3 import Web3
 
+from app.model.schema.base import (
+    EMPTY_str,
+    IbetShareContractVersion,
+    IbetStraightBondContractVersion,
+    MMDD_constr,
+    ResultSet,
+    SortOrder,
+    YYYYMMDD_constr,
+)
+
 from . import LockEventCategory
 from .position import LockEvent
-from .types import EMPTY_str, MMDD_constr, ResultSet, SortOrder, YYYYMMDD_constr
 
 
 ############################
@@ -40,7 +49,7 @@ class IbetStraightBondCreate(BaseModel):
     name: str = Field(max_length=100)
     total_supply: int = Field(..., ge=0, le=1_000_000_000_000)
     face_value: int = Field(..., ge=0, le=5_000_000_000)
-    face_value_currency: Optional[str] = Field(default=None, min_length=3, max_length=3)
+    face_value_currency: str = Field(..., min_length=3, max_length=3)
     purpose: str = Field(max_length=2000)
     symbol: Optional[str] = Field(default=None, max_length=100)
     redemption_date: Optional[YYYYMMDD_constr] = None
@@ -539,6 +548,7 @@ class IbetStraightBondResponse(BaseModel):
     token_status: int
     transfer_approval_required: bool
     memo: str
+    contract_version: IbetStraightBondContractVersion
 
 
 class IbetShareResponse(BaseModel):
@@ -567,6 +577,7 @@ class IbetShareResponse(BaseModel):
     token_status: int
     is_canceled: bool
     memo: str
+    contract_version: IbetShareContractVersion
 
 
 class TokenOperationLogResponse(BaseModel):

@@ -40,6 +40,7 @@ from app.model.db import (
     IDXPersonalInfo,
     Token,
     TokenType,
+    TokenVersion,
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
@@ -203,6 +204,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address_1
         token_1.token_address = token_contract_address_1
         token_1.abi = "abi"
+        token_1.version = TokenVersion.V_23_12
         db.add(token_1)
 
         personal_info_contract_address_2 = deploy_personal_info_contract(user_1)
@@ -215,6 +217,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address_1
         token_2.token_address = token_contract_address_2
         token_2.abi = "abi"
+        token_2.version = TokenVersion.V_22_12
         db.add(token_2)
 
         token_contract_address_3 = deploy_bond_token_contract(user_1, None)
@@ -224,6 +227,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address_1
         token_3.token_address = token_contract_address_3
         token_3.abi = "abi"
+        token_3.version = TokenVersion.V_23_12
         db.add(token_3)
 
         token_contract_address_4 = deploy_share_token_contract(user_1, None)
@@ -233,6 +237,7 @@ class TestProcessor:
         token_4.issuer_address = issuer_address_1
         token_4.token_address = token_contract_address_4
         token_4.abi = "abi"
+        token_4.version = TokenVersion.V_22_12
         db.add(token_4)
 
         # PersonalInfo

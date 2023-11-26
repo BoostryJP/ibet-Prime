@@ -95,11 +95,12 @@ from app.model.db import (
     Token,
     TokenType,
     TokenUpdateOperationLog,
+    TokenVersion,
     TransferApprovalHistory,
     TransferApprovalOperationType,
     UpdateToken,
 )
-from app.model.schema import (  # Request; Response
+from app.model.schema import (
     BatchIssueRedeemUploadIdResponse,
     BatchRegisterPersonalInfoUploadResponse,
     BulkTransferResponse,
@@ -135,7 +136,6 @@ from app.model.schema import (  # Request; Response
     TransferApprovalHistoryResponse,
     TransferApprovalsResponse,
     TransferApprovalTokenDetailResponse,
-    TransferApprovalTokenResponse,
     TransferHistoryResponse,
     UpdateTransferApprovalOperationType,
     UpdateTransferApprovalRequest,
@@ -304,6 +304,7 @@ def issue_token(
     _token.token_address = contract_address
     _token.abi = abi
     _token.token_status = token_status
+    _token.version = TokenVersion.V_22_12
     db.add(_token)
 
     # Register operation log
@@ -361,6 +362,7 @@ def list_all_tokens(
             local_tz
         ).isoformat()
         share_token["token_status"] = token.token_status
+        share_token["contract_version"] = token.version
         share_token.pop("contract_name")
         share_tokens.append(share_token)
 
@@ -397,6 +399,7 @@ def retrieve_token(db: DBSession, token_address: str):
     issue_datetime_utc = timezone("UTC").localize(_token.created)
     share_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
     share_token["token_status"] = _token.token_status
+    share_token["contract_version"] = _token.version
     share_token.pop("contract_name")
 
     return json_response(share_token)

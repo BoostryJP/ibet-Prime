@@ -36,6 +36,7 @@ from app.model.db import (
     TokenType,
     TokenUpdateOperationCategory,
     TokenUpdateOperationLog,
+    TokenVersion,
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
@@ -105,6 +106,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_22_12
         db.add(token)
 
         # request target API
@@ -222,6 +224,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_22_12
         db.add(token)
 
         # request target API
@@ -286,6 +289,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_22_12
         db.add(token)
 
         # request target API
@@ -404,6 +408,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_22_12
         db.add(token)
 
         # request target API
@@ -500,6 +505,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_22_12
         db.add(token)
 
         # request target API
@@ -1006,6 +1012,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_22_12
         db.add(token)
 
         # mock
@@ -1125,6 +1132,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.token_address = _token_address
         token.abi = ""
         token.token_status = 0
+        token.version = TokenVersion.V_22_12
         db.add(token)
 
         # request target API
@@ -1170,6 +1178,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_22_12
         db.add(token)
 
         # request target API

@@ -23,6 +23,7 @@ from app.model.db import (
     BatchRegisterPersonalInfoUploadStatus,
     Token,
     TokenType,
+    TokenVersion,
 )
 from tests.account_config import config_eth_account
 
@@ -59,6 +60,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # request target API
@@ -89,6 +91,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -145,6 +148,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -197,6 +201,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -249,6 +254,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -310,6 +316,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # request target API
@@ -350,6 +357,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchGET:
         token.issuer_address = _issuer_address_2
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # Prepare data : BatchRegisterPersonalInfoUpload

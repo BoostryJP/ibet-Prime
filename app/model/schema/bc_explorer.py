@@ -23,7 +23,7 @@ from pydantic import BaseModel, Field, NonNegativeInt, RootModel, field_validato
 from pydantic.dataclasses import dataclass
 from web3 import Web3
 
-from .types import ResultSet, SortOrder
+from app.model.schema.base import ResultSet, SortOrder
 
 ############################
 # COMMON

@@ -16,11 +16,24 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from enum import IntEnum
+from enum import IntEnum, StrEnum
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, StringConstraints
 from typing_extensions import Annotated
+
+
+############################
+# COMMON
+############################
+class IbetStraightBondContractVersion(StrEnum):
+    V_22_12 = "22_12"
+    V_23_12 = "23_12"
+
+
+class IbetShareContractVersion(StrEnum):
+    V_22_12 = "22_12"
+
 
 MMDD_constr = Annotated[
     str, StringConstraints(pattern="^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$")
@@ -34,6 +47,17 @@ YYYYMMDD_constr = Annotated[
 EMPTY_str = Literal[""]
 
 
+############################
+# REQUEST
+############################
+class SortOrder(IntEnum):
+    ASC = 0
+    DESC = 1
+
+
+############################
+# RESPONSE
+############################
 class ResultSet(BaseModel):
     """result set for pagination"""
 
@@ -41,8 +65,3 @@ class ResultSet(BaseModel):
     offset: Optional[int] = Field(...)
     limit: Optional[int] = Field(...)
     total: Optional[int] = Field(...)
-
-
-class SortOrder(IntEnum):
-    ASC = 0
-    DESC = 1

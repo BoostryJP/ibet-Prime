@@ -23,8 +23,8 @@ from fastapi import Query
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, field_validator
 
 from app.model.db import TokenHolderBatchStatus
+from app.model.schema.base import ResultSet, SortOrder
 from app.model.schema.personal_info import PersonalInfoIndex
-from app.model.schema.types import ResultSet, SortOrder
 
 
 ############################

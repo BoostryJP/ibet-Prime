@@ -31,7 +31,7 @@ from textual.message import Message
 from textual.widgets import Button, Input, Label
 
 from app.model.schema import ListBlockDataQuery
-from app.model.schema.types import SortOrder
+from app.model.schema.base import SortOrder
 
 if TYPE_CHECKING:
     from src.gui.explorer import ExplorerApp

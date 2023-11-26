@@ -49,7 +49,14 @@ from app.model.blockchain.tx_params.ibet_straight_bond import (
 from app.model.db import TokenAttrUpdate, TokenCache
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
-from config import CHAIN_ID, TOKEN_CACHE, TOKEN_CACHE_TTL, TX_GAS_LIMIT, ZERO_ADDRESS
+from config import (
+    CHAIN_ID,
+    DEFAULT_CURRENCY,
+    TOKEN_CACHE,
+    TOKEN_CACHE_TTL,
+    TX_GAS_LIMIT,
+    ZERO_ADDRESS,
+)
 
 LOG = log.get_logger()
 
@@ -500,7 +507,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
         # Set IbetStraightBondToken attribute
         self.face_value = ContractUtils.call_function(contract, "faceValue", (), 0)
         self.face_value_currency = ContractUtils.call_function(
-            contract, "faceValueCurrency", (), ""
+            contract, "faceValueCurrency", (), DEFAULT_CURRENCY
         )
         self.interest_rate = float(
             Decimal(str(ContractUtils.call_function(contract, "interestRate", (), 0)))
