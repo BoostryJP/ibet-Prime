@@ -4,6 +4,9 @@ install:
 	poetry install --no-root -E ibet-explorer
 	poetry run pre-commit install
 
+update:
+	poetry update
+
 format: isort black
 
 isort:
