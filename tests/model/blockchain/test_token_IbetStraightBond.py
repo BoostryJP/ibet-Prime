@@ -24,7 +24,7 @@ from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 from eth_keyfile import decode_keyfile_json
-from pydantic.error_wrappers import ValidationError
+from pydantic import ValidationError
 from sqlalchemy import select
 from web3.exceptions import (
     ContractLogicError,
