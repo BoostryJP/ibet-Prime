@@ -61,8 +61,10 @@ def deploy_bond_token_contract(
         "token.symbol",  # symbol
         100,  # total_supply
         20,  # face_value
+        "JPY",  # face_value_currency
         "20230501",  # redemption_date
         30,  # redemption_value
+        "JPY",  # redemption_value_currency
         "20230501",  # return_date
         "token.return_amount",  # return_amount
         "token.purpose",  # purpose
@@ -74,10 +76,12 @@ def deploy_bond_token_contract(
         name="token.name",
         total_supply=100,
         face_value=20,
+        face_value_currency="JPY",
         purpose="token.purpose",
         symbol="token.symbol",
         redemption_date="20230501",
         redemption_value=30,
+        redemption_value_currency="JPY",
         return_date="20230501",
         return_amount="token.return_amount",
         interest_rate=0.0001,  # update
@@ -92,8 +96,6 @@ def deploy_bond_token_contract(
         contact_information="contact info test",  # update
         privacy_policy="privacy policy test",  # update
         transfer_approval_required=transfer_approval_required,  # update
-        face_value_currency="JPY",  # update
-        redemption_value_currency="JPY",  # update
         interest_payment_currency="JPY",  # update
         base_fx_rate=123.456789,  # update
     ).__dict__
