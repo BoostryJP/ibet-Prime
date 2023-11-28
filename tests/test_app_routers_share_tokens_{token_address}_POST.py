@@ -112,7 +112,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         # request target API
         req_param = {
             "cancellation_date": "20221231",
-            "dividends": 345.67,
+            "dividends": 345.57,
             "dividend_record_date": "20211231",
             "dividend_payment_date": "20211231",
             "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
