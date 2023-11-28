@@ -114,7 +114,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         req_param = {
             "face_value": 10000,
             "face_value_currency": "USD",
-            "interest_rate": 0.5,
+            "interest_rate": 0.57,
             "interest_payment_date": ["0101", "0701"],
             "interest_payment_currency": "USD",
             "redemption_value": 11000,
@@ -141,7 +141,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         )
 
         # assertion
-        assert resp.status_code == 200
+        assert resp.status_code == 200, resp.json()
         assert resp.json() is None
 
         token_attr_update = db.scalars(
@@ -191,7 +191,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
         assert operation_log.arguments == {
             "face_value": 10000,
             "face_value_currency": "USD",
-            "interest_rate": 0.5,
+            "interest_rate": 0.57,
             "interest_payment_date": ["0101", "0701"],
             "interest_payment_currency": "USD",
             "redemption_value": 11000,

@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 import math
 from datetime import datetime
+from decimal import Decimal
 from enum import Enum, StrEnum
 from typing import Annotated, Optional, Self
 
@@ -80,8 +81,8 @@ class IbetStraightBondCreate(BaseModel):
     @classmethod
     def base_fx_rate_6_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10**6)
-            int_data = int(v * 10**6)
+            float_data = float(Decimal(str(v)) * 10**6)
+            int_data = int(Decimal(str(v)) * 10**6)
             if not math.isclose(int_data, float_data):
                 raise ValueError(
                     "base_fx_rate must be less than or equal to six decimal places"
@@ -92,8 +93,8 @@ class IbetStraightBondCreate(BaseModel):
     @classmethod
     def interest_rate_4_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10**4)
-            int_data = int(v * 10**4)
+            float_data = float(Decimal(str(v)) * 10**4)
+            int_data = int(Decimal(str(v)) * 10**4)
             if not math.isclose(int_data, float_data):
                 raise ValueError(
                     "interest_rate must be less than or equal to four decimal places"
@@ -156,8 +157,8 @@ class IbetStraightBondUpdate(BaseModel):
     @classmethod
     def base_fx_rate_6_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10**6)
-            int_data = int(v * 10**6)
+            float_data = float(Decimal(str(v)) * 10**6)
+            int_data = int(Decimal(str(v)) * 10**6)
             if not math.isclose(int_data, float_data):
                 raise ValueError(
                     "base_fx_rate must be less than or equal to six decimal places"
@@ -175,8 +176,8 @@ class IbetStraightBondUpdate(BaseModel):
     @classmethod
     def interest_rate_4_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10**4)
-            int_data = int(v * 10**4)
+            float_data = float(Decimal(str(v)) * 10**4)
+            int_data = int(Decimal(str(v)) * 10**4)
             if not math.isclose(int_data, float_data):
                 raise ValueError("interest_rate must be rounded to 4 decimal places")
         return v
@@ -291,8 +292,8 @@ class IbetShareCreate(BaseModel):
     @classmethod
     def dividends_13_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10**13)
-            int_data = int(v * 10**13)
+            float_data = float(Decimal(str(v)) * 10**13)
+            int_data = int(Decimal(str(v)) * 10**13)
             if not math.isclose(int_data, float_data):
                 raise ValueError("dividends must be rounded to 13 decimal places")
         return v
@@ -344,8 +345,8 @@ class IbetShareUpdate(BaseModel):
     @classmethod
     def dividends_13_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10**13)
-            int_data = int(v * 10**13)
+            float_data = float(Decimal(str(v)) * 10**13)
+            int_data = int(Decimal(str(v)) * 10**13)
             if not math.isclose(int_data, float_data):
                 raise ValueError("dividends must be rounded to 13 decimal places")
         return v

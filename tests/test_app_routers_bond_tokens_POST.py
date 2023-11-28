@@ -222,7 +222,7 @@ class TestAppRoutersBondTokensPOST:
                 "return_date": "20211231",
                 "return_amount": "return_amount_test1",
                 "purpose": "purpose_test1",
-                "interest_rate": 0.0001,  # update
+                "interest_rate": 0.57,  # update
                 "interest_payment_date": ["0331", "0930"],  # update
                 "interest_payment_currency": "JPY",  # update
                 "base_fx_rate": 123.456789,  # update

@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import math
+from decimal import Decimal
 from typing import List, Optional
 
 from pydantic import BaseModel, field_validator
@@ -57,8 +58,8 @@ class UpdateParams(BaseModel):
     @classmethod
     def base_fx_rate_6_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10**6)
-            int_data = int(v * 10**6)
+            float_data = float(Decimal(str(v)) * 10**6)
+            int_data = int(Decimal(str(v)) * 10**6)
             if not math.isclose(int_data, float_data):
                 raise ValueError("base_fx_rate must be rounded to 6 decimal places")
         return v
@@ -67,8 +68,8 @@ class UpdateParams(BaseModel):
     @classmethod
     def interest_rate_4_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10**4)
-            int_data = int(v * 10**4)
+            float_data = float(Decimal(str(v)) * 10**4)
+            int_data = int(Decimal(str(v)) * 10**4)
             if not math.isclose(int_data, float_data):
                 raise ValueError("interest_rate must be rounded to 4 decimal places")
         return v
