@@ -17,13 +17,15 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
-from typing import List, Optional
+from typing import Annotated, List, Optional
 
+from fastapi import Query
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic.dataclasses import dataclass
 from web3 import Web3
 
 from app.model.db import BatchRegisterPersonalInfoUploadStatus
-from app.model.schema.base import ResultSet
+from app.model.schema.base import ResultSet, SortOrder
 
 
 class PersonalInfo(BaseModel):
@@ -73,6 +75,16 @@ class RegisterPersonalInfoRequest(PersonalInfoInput):
         if not Web3.is_address(v):
             raise ValueError("account_address is not a valid address")
         return v
+
+
+@dataclass
+class ListAllPersonalInfoBatchRegistrationUploadQuery:
+    status: Annotated[Optional[str], Query()] = None
+    sort_order: Annotated[
+        SortOrder, Query(description="0:asc, 1:desc")
+    ] = SortOrder.DESC
+    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
+    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
 
 
 ############################

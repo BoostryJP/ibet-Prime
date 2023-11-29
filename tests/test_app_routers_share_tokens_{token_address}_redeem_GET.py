@@ -413,11 +413,11 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"ge": 0},
-                    "input": "-1",
+                    "ctx": {"expected": "0 or 1"},
+                    "input": -1,
                     "loc": ["query", "sort_order"],
-                    "msg": "Input should be greater than or equal to 0",
-                    "type": "greater_than_equal",
+                    "msg": "Input should be 0 or 1",
+                    "type": "enum",
                 }
             ],
         }
@@ -437,11 +437,11 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"le": 1},
-                    "input": "2",
+                    "ctx": {"expected": "0 or 1"},
+                    "input": 2,
                     "loc": ["query", "sort_order"],
-                    "msg": "Input should be less than or equal to 1",
-                    "type": "less_than_equal",
+                    "msg": "Input should be 0 or 1",
+                    "type": "enum",
                 }
             ],
         }

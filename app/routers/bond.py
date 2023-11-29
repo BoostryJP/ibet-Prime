@@ -23,7 +23,6 @@ from typing import List, Optional, Sequence
 from eth_keyfile import decode_keyfile_json
 from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.exceptions import HTTPException
-from pydantic import conint
 from pytz import timezone
 from sqlalchemy import (
     String,
@@ -119,13 +118,20 @@ from app.model.schema import (
     IbetStraightBondTransfer,
     IbetStraightBondUpdate,
     IssueRedeemHistoryResponse,
+    ListAdditionalIssuanceHistoryQuery,
+    ListAllAdditionalIssueUploadQuery,
+    ListAllHoldersQuery,
+    ListAllPersonalInfoBatchRegistrationUploadQuery,
+    ListAllRedeemUploadQuery,
     ListAllTokenLockEventsQuery,
     ListAllTokenLockEventsResponse,
     ListAllTokenLockEventsSortItem,
     ListBatchIssueRedeemUploadResponse,
     ListBatchRegisterPersonalInfoUploadResponse,
+    ListRedeemHistoryQuery,
     ListTokenOperationLogHistoryQuery,
     ListTokenOperationLogHistoryResponse,
+    ListTransferApprovalHistoryQuery,
     ListTransferHistoryQuery,
     ListTransferHistorySortItem,
     LockEventCategory,
@@ -602,12 +608,13 @@ def list_bond_operation_log_history(
 def list_additional_issuance_history(
     db: DBSession,
     token_address: str,
-    sort_item: IDXIssueRedeemSortItem = Query(IDXIssueRedeemSortItem.BLOCK_TIMESTAMP),
-    sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
-    offset: Optional[int] = Query(None),
-    limit: Optional[int] = Query(None),
+    request_query: ListAdditionalIssuanceHistoryQuery = Depends(),
 ):
     """List additional issuance history"""
+    sort_item = request_query.sort_item
+    sort_order = request_query.sort_order
+    offset = request_query.offset
+    limit = request_query.limit
 
     # Get token
     _token: Token | None = db.scalars(
@@ -767,12 +774,14 @@ def additional_issue(
 def list_all_additional_issue_upload(
     db: DBSession,
     token_address: str,
-    processed: Optional[bool] = Query(None),
-    sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc (created)"),
-    offset: Optional[int] = Query(None),
-    limit: Optional[int] = Query(None),
+    get_query: ListAllAdditionalIssueUploadQuery = Depends(),
     issuer_address: Optional[str] = Header(None),
 ):
+    processed = get_query.processed
+    sort_order = get_query.sort_order
+    offset = get_query.offset
+    limit = get_query.limit
+
     # Get a list of uploads
     stmt = select(BatchIssueRedeemUpload).where(
         and_(
@@ -1004,12 +1013,13 @@ def retrieve_batch_additional_issue(
 def list_redeem_history(
     db: DBSession,
     token_address: str,
-    sort_item: IDXIssueRedeemSortItem = Query(IDXIssueRedeemSortItem.BLOCK_TIMESTAMP),
-    sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
-    offset: Optional[int] = Query(None),
-    limit: Optional[int] = Query(None),
+    get_query: ListRedeemHistoryQuery = Depends(),
 ):
     """List redemption history"""
+    sort_item = get_query.sort_item
+    sort_order = get_query.sort_order
+    offset = get_query.offset
+    limit = get_query.limit
 
     # Get token
     _token: Token | None = db.scalars(
@@ -1169,12 +1179,14 @@ def redeem_token(
 def list_all_redeem_upload(
     db: DBSession,
     token_address: str,
-    processed: Optional[bool] = Query(None),
-    sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc (created)"),
-    offset: Optional[int] = Query(None),
-    limit: Optional[int] = Query(None),
+    get_query: ListAllRedeemUploadQuery = Depends(),
     issuer_address: Optional[str] = Header(None),
 ):
+    processed = get_query.processed
+    sort_order = get_query.sort_order
+    offset = get_query.offset
+    limit = get_query.limit
+
     # Get a list of uploads
     stmt = select(BatchIssueRedeemUpload).where(
         and_(
@@ -1661,13 +1673,14 @@ def delete_scheduled_event(
 def list_all_holders(
     db: DBSession,
     token_address: str,
-    include_former_holder: bool = False,
-    sort_order: int = Query(0, ge=0, le=1, description="0:asc, 1:desc (created)"),
-    offset: Optional[int] = Query(None),
-    limit: Optional[int] = Query(None),
+    get_query: ListAllHoldersQuery = Depends(),
     issuer_address: str = Header(...),
 ):
     """List all bond token holders"""
+    include_former_holder = get_query.include_former_holder
+    sort_order = get_query.sort_order
+    offset = get_query.offset
+    limit = get_query.limit
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -2113,12 +2126,13 @@ def list_all_personal_info_batch_registration_uploads(
     db: DBSession,
     token_address: str,
     issuer_address: str = Header(...),
-    status: Optional[str] = Query(None),
-    sort_order: int = Query(1, ge=0, le=1, description="0:asc, 1:desc (created)"),
-    offset: Optional[int] = Query(None),
-    limit: Optional[int] = Query(None),
+    get_query: ListAllPersonalInfoBatchRegistrationUploadQuery = Depends(),
 ):
     """List all personal information batch registration uploads"""
+    status = get_query.status
+    sort_order = get_query.sort_order
+    offset = get_query.offset
+    limit = get_query.limit
 
     # Verify that the token is issued by the issuer_address
     _token: Token | None = db.scalars(
@@ -2852,20 +2866,17 @@ def list_transfer_approval_history(
 def list_token_transfer_approval_history(
     db: DBSession,
     token_address: str,
-    from_address: Optional[str] = Query(None),
-    to_address: Optional[str] = Query(None),
-    status: Optional[List[conint(ge=0, le=3)] | conint(ge=0, le=3)] = Query(
-        None,
-        description="0:unapproved, 1:escrow_finished, 2:transferred, 3:canceled",
-    ),
-    sort_item: Optional[IDXTransferApprovalsSortItem] = Query(
-        IDXTransferApprovalsSortItem.ID
-    ),
-    sort_order: Optional[int] = Query(1, ge=0, le=1, description="0:asc, 1:desc"),
-    offset: Optional[int] = Query(None),
-    limit: Optional[int] = Query(None),
+    get_query: ListTransferApprovalHistoryQuery = Depends(),
 ):
     """List token transfer approval history"""
+    from_address = get_query.from_address
+    to_address = get_query.to_address
+    status = get_query.status
+    sort_item = get_query.sort_item
+    sort_order = get_query.sort_order
+    offset = get_query.offset
+    limit = get_query.limit
+
     # Get token
     _token: Token | None = db.scalars(
         select(Token)
