@@ -61,7 +61,7 @@ from .file import (
     ListAllFilesResponse,
     UploadFileRequest,
 )
-from .holder import HolderCountResponse, HolderResponse
+from .holder import HolderCountResponse, HolderResponse, HoldersResponse
 from .index import BlockNumberResponse, E2EEResponse
 from .issue_redeem import IssueRedeemEvent, IssueRedeemHistoryResponse
 from .ledger import (

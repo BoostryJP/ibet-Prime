@@ -110,6 +110,7 @@ from app.model.schema import (
     GetBatchRegisterPersonalInfoResponse,
     HolderCountResponse,
     HolderResponse,
+    HoldersResponse,
     IbetShareAdditionalIssue,
     IbetShareCreate,
     IbetShareRedeem,
@@ -1640,13 +1641,16 @@ def delete_scheduled_event(
 # GET: /share/tokens/{token_address}/holders
 @router.get(
     "/tokens/{token_address}/holders",
-    response_model=List[HolderResponse],
+    response_model=HoldersResponse,
     responses=get_routers_responses(422, InvalidParameterError, 404),
 )
 def list_all_holders(
     db: DBSession,
     token_address: str,
     include_former_holder: bool = False,
+    sort_order: int = Query(0, ge=0, le=1, description="0:asc, 1:desc (created)"),
+    offset: Optional[int] = Query(None),
+    limit: Optional[int] = Query(None),
     issuer_address: str = Header(...),
 ):
     """List all share token holders"""
@@ -1701,6 +1705,8 @@ def list_all_holders(
         )
     )
 
+    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+
     if not include_former_holder:
         stmt = stmt.where(
             or_(
@@ -1712,8 +1718,22 @@ def list_all_holders(
             )
         )
 
+    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
+
+    # Sort
+    if sort_order == 0:  # ASC
+        stmt = stmt.order_by(IDXPosition.id)
+    else:  # DESC
+        stmt = stmt.order_by(desc(IDXPosition.id))
+
+    # Pagination
+    if limit is not None:
+        stmt = stmt.limit(limit)
+    if offset is not None:
+        stmt = stmt.offset(offset)
+
     _holders: Sequence[tuple[IDXPosition, int, datetime | None]] = (
-        db.execute(stmt.order_by(IDXPosition.id)).tuples().all()
+        db.execute(stmt).tuples().all()
     )
 
     # Get personal information
@@ -1752,6 +1772,7 @@ def list_all_holders(
                 if (_position.modified > _lock_event_latest_created)
                 else _lock_event_latest_created
             )
+
         holders.append(
             {
                 "account_address": _position.account_address,
@@ -1765,7 +1786,17 @@ def list_all_holders(
             }
         )
 
-    return json_response(holders)
+    return json_response(
+        {
+            "result_set": {
+                "count": count,
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+            },
+            "holders": holders,
+        }
+    )
 
 
 # GET: /share/tokens/{token_address}/holders/count
