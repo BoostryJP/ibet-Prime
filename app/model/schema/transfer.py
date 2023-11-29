@@ -16,7 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from enum import Enum
+from enum import Enum, IntEnum
 from typing import Annotated, List, Optional
 
 from fastapi import Query
@@ -35,6 +35,13 @@ from .personal_info import PersonalInfo
 class TransferSourceEventType(str, Enum):
     Transfer = "Transfer"
     Unlock = "Unlock"
+
+
+class TransferApprovalStatus(IntEnum):
+    UNAPPROVED = 0
+    ESCROW_FINISHED = 1
+    TRANSFERRED = 2
+    CANCELED = 3
 
 
 ############################
@@ -59,7 +66,9 @@ class ListTransferHistoryQuery:
     sort_item: Annotated[
         ListTransferHistorySortItem, Query(description="sort item")
     ] = ListTransferHistorySortItem.BLOCK_TIMESTAMP
-    sort_order: Annotated[int, Query(ge=0, le=1, description="0:asc, 1:desc")] = 1
+    sort_order: Annotated[
+        SortOrder, Query(description="0:asc, 1:desc")
+    ] = SortOrder.DESC
     offset: Annotated[
         Optional[NonNegativeInt], Query(description="start position")
     ] = None
@@ -96,7 +105,7 @@ class ListTransferApprovalHistoryQuery:
     from_address: Annotated[Optional[str], Query()] = None
     to_address: Annotated[Optional[str], Query()] = None
     status: Annotated[
-        Optional[List[conint(ge=0, le=3)]],
+        Optional[List[TransferApprovalStatus]],
         Query(description="0:unapproved, 1:escrow_finished, 2:transferred, 3:canceled"),
     ] = None
     sort_item: Annotated[

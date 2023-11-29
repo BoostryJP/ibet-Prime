@@ -4133,12 +4133,12 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"ge": 0},
-                    "input": "-1",
+                    "ctx": {"expected": "0, 1, 2 or 3"},
+                    "input": -1,
                     "loc": ["query", "status", 0],
-                    "msg": "Input should be greater than or equal to 0",
-                    "type": "greater_than_equal",
-                },
+                    "msg": "Input should be 0, 1, 2 or 3",
+                    "type": "enum",
+                }
             ],
         }
         assert resp.json() == assumed_response
@@ -4161,12 +4161,12 @@ class TestAppRoutersShareTransferApprovalsTokenAddressGET:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"le": 3},
-                    "input": "4",
+                    "ctx": {"expected": "0, 1, 2 or 3"},
+                    "input": 4,
                     "loc": ["query", "status", 0],
-                    "msg": "Input should be less than or equal to 3",
-                    "type": "less_than_equal",
-                },
+                    "msg": "Input should be 0, 1, 2 or 3",
+                    "type": "enum",
+                }
             ],
         }
         assert resp.json() == assumed_response
