@@ -61,8 +61,8 @@ class BlockListTable(DataTable):
     def update_rows(self, data: Iterable[BlockData]):
         self.raw_data = data
         selected_row = self.cursor_row
-        if len(self.data) > 0:
-            selected_block_number = self.data[selected_row][0]
+        if len(self._data) > 0:
+            selected_block_number = list(self._data.keys())[selected_row]
         else:
             selected_block_number = None
 
@@ -105,4 +105,4 @@ class BlockListTable(DataTable):
         """
         self._set_hover_cursor(False)
         if self.show_cursor and self.cursor_type != "none" and self.has_focus:
-            self._emit_selected_message()
+            self._post_selected_message()
