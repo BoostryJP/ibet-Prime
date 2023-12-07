@@ -143,19 +143,21 @@ class BlockScreen(TuiScreen):
         """
         event.stop()
         event.prevent_default()
-        selected_row = self.query_one(BlockListTable).data.get(event.cursor_row)
+        selected_row = self.query_one(BlockListTable)._data.get(event.row_key)
         if selected_row is None:
             return
-        await self.fetch_block_detail(selected_row[0])
+        block_number = selected_row.get(list(selected_row.keys())[0])
+        block_hash = selected_row.get(list(selected_row.keys())[3])
+        await self.fetch_block_detail(int(block_number))
 
-        if int(selected_row[2]) == 0:
+        if int(selected_row.get(list(selected_row.keys())[2], 0)) == 0:
             # If the number of transaction is 0, menu is not pop up.
             return
 
         self.query_one(Menu).show(
             MenuInstruction(
-                block_number=selected_row[0],
-                block_hash=selected_row[3],
+                block_number=block_number,
+                block_hash=block_hash,
                 selected_row=event.cursor_row,
             )
         )

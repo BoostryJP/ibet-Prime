@@ -59,4 +59,4 @@ class TxListTable(DataTable):
         """
         self._set_hover_cursor(False)
         if self.show_cursor and self.cursor_type != "none" and self.has_focus:
-            self._emit_selected_message()
+            self._post_selected_message()
