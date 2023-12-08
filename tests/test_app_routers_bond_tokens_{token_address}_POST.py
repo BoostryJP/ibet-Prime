@@ -78,7 +78,7 @@ class TestAppRoutersBondTokensTokenAddressPOST:
     # Normal Case
     ###########################################################################
 
-    # <Normal_1>
+    # <Normal_1_1>
     def test_normal_1(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -196,6 +196,139 @@ class TestAppRoutersBondTokensTokenAddressPOST:
             "interest_payment_currency": "USD",
             "redemption_value": 11000,
             "redemption_value_currency": "USD",
+            "base_fx_rate": 123.456789,
+            "transferable": False,
+            "status": False,
+            "is_offering": False,
+            "is_redeemed": True,
+            "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
+            "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "contact_information": "問い合わせ先test",
+            "privacy_policy": "プライバシーポリシーtest",
+            "transfer_approval_required": True,
+            "memo": "m" * 10000,
+        }
+        assert operation_log.operation_category == "Update"
+
+    # <Normal_1_2>
+    # Empty str set to currency code
+    def test_normal_1_2(self, client, db):
+        test_account = config_eth_account("user1")
+        _issuer_address = test_account["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=test_account["keyfile_json"],
+            password="password".encode("utf-8"),
+        )
+        _keyfile = test_account["keyfile_json"]
+
+        # Prepare data : Token
+        token_contract = deploy_bond_token_contract(_issuer_address, issuer_private_key)
+        _token_address = token_contract.address
+
+        # prepare data
+        account = Account()
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        token.version = TokenVersion.V_23_12
+        db.add(token)
+
+        db.commit()
+
+        # request target API
+        req_param = {
+            "face_value": 10000,
+            "face_value_currency": "USD",
+            "interest_rate": 3.0,
+            "interest_payment_date": ["1201"],
+            "interest_payment_currency": "JPY",
+            "redemption_value": 0,
+            "redemption_value_currency": "",
+            "base_fx_rate": 123.456789,
+            "transferable": False,
+            "status": False,
+            "is_offering": False,
+            "is_redeemed": True,
+            "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
+            "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "contact_information": "問い合わせ先test",
+            "privacy_policy": "プライバシーポリシーtest",
+            "transfer_approval_required": True,
+            "memo": "m" * 10000,
+        }
+        resp = client.post(
+            self.base_url.format(_token_address),
+            json=req_param,
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 200, resp.json()
+        assert resp.json() is None
+
+        token_attr_update = db.scalars(
+            select(TokenAttrUpdate).where(
+                TokenAttrUpdate.token_address == _token_address
+            )
+        ).all()
+        assert len(token_attr_update) == 1
+
+        update_token = db.scalars(select(UpdateToken).limit(1)).first()
+        assert update_token is None
+
+        operation_log = db.scalars(select(TokenUpdateOperationLog).limit(1)).first()
+        assert operation_log.token_address == _token_address
+        assert operation_log.issuer_address == _issuer_address
+        assert operation_log.type == TokenType.IBET_STRAIGHT_BOND.value
+        assert operation_log.original_contents == {
+            "contract_name": "IbetStraightBond",
+            "token_address": _token_address,
+            "issuer_address": _issuer_address,
+            "name": "token.name",
+            "symbol": "token.symbol",
+            "total_supply": 100,
+            "tradable_exchange_contract_address": "0x0000000000000000000000000000000000000000",
+            "contact_information": "",
+            "privacy_policy": "",
+            "status": True,
+            "personal_info_contract_address": "0x0000000000000000000000000000000000000000",
+            "transferable": False,
+            "is_offering": False,
+            "transfer_approval_required": False,
+            "face_value": 20,
+            "face_value_currency": "JPY",
+            "interest_rate": 0,
+            "interest_payment_currency": "",
+            "redemption_date": "token.redemption_date",
+            "redemption_value": 30,
+            "redemption_value_currency": "JPY",
+            "return_date": "token.return_date",
+            "return_amount": "token.return_amount",
+            "base_fx_rate": 0.0,
+            "purpose": "token.purpose",
+            "memo": "",
+            "is_redeemed": False,
+            "interest_payment_date": ["", "", "", "", "", "", "", "", "", "", "", ""],
+        }
+        assert operation_log.arguments == {
+            "face_value": 10000,
+            "face_value_currency": "USD",
+            "interest_rate": 3.0,
+            "interest_payment_date": ["1201"],
+            "interest_payment_currency": "JPY",
+            "redemption_value": 0,
+            "redemption_value_currency": "",
             "base_fx_rate": 123.456789,
             "transferable": False,
             "status": False,
@@ -685,16 +818,23 @@ class TestAppRoutersBondTokensTokenAddressPOST:
 
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "type": "string_too_long",
-                    "loc": ["body", "interest_payment_currency"],
-                    "msg": "String should have at most 3 characters",
-                    "input": "JPYY",
                     "ctx": {"max_length": 3},
-                }
+                    "input": "JPYY",
+                    "loc": ["body", "interest_payment_currency", "constrained-str"],
+                    "msg": "String should have at most 3 characters",
+                    "type": "string_too_long",
+                },
+                {
+                    "ctx": {"expected": "''"},
+                    "input": "JPYY",
+                    "loc": ["body", "interest_payment_currency", "literal['']"],
+                    "msg": "Input should be ''",
+                    "type": "literal_error",
+                },
             ],
+            "meta": {"code": 1, "title": "RequestValidationError"},
         }
 
     # <Error_1_7_2>
@@ -713,16 +853,23 @@ class TestAppRoutersBondTokensTokenAddressPOST:
 
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "type": "string_too_short",
-                    "loc": ["body", "interest_payment_currency"],
-                    "msg": "String should have at least 3 characters",
-                    "input": "JP",
                     "ctx": {"min_length": 3},
-                }
+                    "input": "JP",
+                    "loc": ["body", "interest_payment_currency", "constrained-str"],
+                    "msg": "String should have at least 3 characters",
+                    "type": "string_too_short",
+                },
+                {
+                    "ctx": {"expected": "''"},
+                    "input": "JP",
+                    "loc": ["body", "interest_payment_currency", "literal['']"],
+                    "msg": "Input should be ''",
+                    "type": "literal_error",
+                },
             ],
+            "meta": {"code": 1, "title": "RequestValidationError"},
         }
 
     # <Error_1_8_1>
@@ -741,16 +888,23 @@ class TestAppRoutersBondTokensTokenAddressPOST:
 
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "type": "string_too_long",
-                    "loc": ["body", "redemption_value_currency"],
-                    "msg": "String should have at most 3 characters",
-                    "input": "JPYY",
                     "ctx": {"max_length": 3},
-                }
+                    "input": "JPYY",
+                    "loc": ["body", "redemption_value_currency", "constrained-str"],
+                    "msg": "String should have at most 3 characters",
+                    "type": "string_too_long",
+                },
+                {
+                    "ctx": {"expected": "''"},
+                    "input": "JPYY",
+                    "loc": ["body", "redemption_value_currency", "literal['']"],
+                    "msg": "Input should be ''",
+                    "type": "literal_error",
+                },
             ],
+            "meta": {"code": 1, "title": "RequestValidationError"},
         }
 
     # <Error_1_8_2>
@@ -769,16 +923,23 @@ class TestAppRoutersBondTokensTokenAddressPOST:
 
         assert resp.status_code == 422
         assert resp.json() == {
-            "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "type": "string_too_short",
-                    "loc": ["body", "redemption_value_currency"],
-                    "msg": "String should have at least 3 characters",
-                    "input": "JP",
                     "ctx": {"min_length": 3},
-                }
+                    "input": "JP",
+                    "loc": ["body", "redemption_value_currency", "constrained-str"],
+                    "msg": "String should have at least 3 characters",
+                    "type": "string_too_short",
+                },
+                {
+                    "ctx": {"expected": "''"},
+                    "input": "JP",
+                    "loc": ["body", "redemption_value_currency", "literal['']"],
+                    "msg": "Input should be ''",
+                    "type": "literal_error",
+                },
             ],
+            "meta": {"code": 1, "title": "RequestValidationError"},
         }
 
     # <Error_1_9>

@@ -28,6 +28,7 @@ from pydantic.dataclasses import dataclass
 from web3 import Web3
 
 from app.model.schema.base import (
+    CURRENCY_str,
     EMPTY_str,
     IbetShareContractVersion,
     IbetStraightBondContractVersion,
@@ -36,9 +37,7 @@ from app.model.schema.base import (
     SortOrder,
     YYYYMMDD_constr,
 )
-
-from . import LockEventCategory
-from .position import LockEvent
+from app.model.schema.position import LockEvent, LockEventCategory
 
 
 ############################
@@ -134,13 +133,9 @@ class IbetStraightBondUpdate(BaseModel):
     face_value_currency: Optional[str] = Field(default=None, min_length=3, max_length=3)
     interest_rate: Optional[float] = Field(None, ge=0.0000, le=100.0000)
     interest_payment_date: Optional[list[MMDD_constr]] = None
-    interest_payment_currency: Optional[str] = Field(
-        default=None, min_length=3, max_length=3
-    )
+    interest_payment_currency: Optional[CURRENCY_str | EMPTY_str] = Field(default=None)
     redemption_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
-    redemption_value_currency: Optional[str] = Field(
-        default=None, min_length=3, max_length=3
-    )
+    redemption_value_currency: Optional[CURRENCY_str | EMPTY_str] = Field(default=None)
     base_fx_rate: Optional[float] = Field(default=None, ge=0.000000)
     transferable: Optional[bool] = None
     status: Optional[bool] = None
