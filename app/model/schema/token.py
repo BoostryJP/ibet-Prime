@@ -28,6 +28,7 @@ from pydantic.dataclasses import dataclass
 from web3 import Web3
 
 from app.model.schema.base import (
+    CURRENCY_str,
     EMPTY_str,
     IbetShareContractVersion,
     IbetStraightBondContractVersion,
@@ -36,10 +37,7 @@ from app.model.schema.base import (
     SortOrder,
     YYYYMMDD_constr,
 )
-
-from . import LockEventCategory
-from .base.base import CURRENCY_str
-from .position import LockEvent
+from app.model.schema.position import LockEvent, LockEventCategory
 
 
 ############################
