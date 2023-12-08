@@ -44,6 +44,7 @@ YYYYMMDD_constr = Annotated[
         pattern="^(19[0-9]{2}|20[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"
     ),
 ]
+CURRENCY_str = Annotated[str, StringConstraints(min_length=3, max_length=3)]
 EMPTY_str = Literal[""]
 
 
