@@ -3479,7 +3479,11 @@ def retrieve_transfer_approval_history(db: DBSession, token_address: str, id: in
     # NOTE:
     #   If the transfer approval operation has already been performed, get the data at that time.
     #   Otherwise, get the latest data.
-    if _transfer_approval_op is not None:
+    if (
+        _transfer_approval_op is not None
+        and _transfer_approval_op.from_address_personal_info is not None
+        and _transfer_approval_op.to_address_personal_info is not None
+    ):
         _from_address_personal_info = _transfer_approval_op.from_address_personal_info
         _to_address_personal_info = _transfer_approval_op.to_address_personal_info
     else:
