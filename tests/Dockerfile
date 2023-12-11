@@ -32,6 +32,7 @@ RUN apt-get update -q \
  language-pack-ja \
  git \
  libyaml-cpp-dev \
+ libc-bin \
  liblzma-dev
 
 # remove unnessesory package files
@@ -52,7 +53,7 @@ USER apl
 RUN . ~/.bash_profile \
  && pyenv install 3.11.2 \
  && pyenv global 3.11.2 \
- && pip install --upgrade pip
+ && pip install --upgrade pip setuptools
 
 # install poetry
 RUN . ~/.bash_profile \
