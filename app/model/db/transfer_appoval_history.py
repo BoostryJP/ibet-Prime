@@ -17,8 +17,9 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from enum import Enum
+from typing import Optional
 
-from sqlalchemy import BigInteger, String
+from sqlalchemy import JSON, BigInteger, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -41,6 +42,10 @@ class TransferApprovalHistory(Base):
     application_id: Mapped[int] = mapped_column(BigInteger, index=True, nullable=False)
     # Operation Type: TransferApprovalOperationType
     operation_type: Mapped[str] = mapped_column(String(20), index=True, nullable=False)
+    # From Address Personal Information (snapshot)
+    from_address_personal_info: Mapped[Optional[dict | list]] = mapped_column(JSON)
+    # To Address Personal Information (snapshot)
+    to_address_personal_info: Mapped[Optional[dict | list]] = mapped_column(JSON)
 
     def json(self):
         return {
@@ -48,6 +53,8 @@ class TransferApprovalHistory(Base):
             "exchange_address": self.exchange_address,
             "application_id": self.application_id,
             "operation_type": self.operation_type,
+            "from_address_personal_info": self.from_address_personal_info,
+            "to_address_personal_info": self.to_address_personal_info,
         }
 
 

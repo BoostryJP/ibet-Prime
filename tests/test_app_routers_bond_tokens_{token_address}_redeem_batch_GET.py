@@ -24,6 +24,7 @@ from app.model.db import (
     BatchIssueRedeemUpload,
     Token,
     TokenType,
+    TokenVersion,
 )
 from tests.account_config import config_eth_account
 
@@ -50,6 +51,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # request target API
@@ -75,6 +77,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         redeem_upload1 = BatchIssueRedeemUpload()
@@ -119,6 +122,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         redeem_upload1 = BatchIssueRedeemUpload()
@@ -223,6 +227,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         redeem_upload1 = BatchIssueRedeemUpload()
@@ -314,6 +319,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         redeem_upload1 = BatchIssueRedeemUpload()
@@ -411,6 +417,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         redeem_upload1 = BatchIssueRedeemUpload()
@@ -500,6 +507,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         additional_issue_upload1 = BatchIssueRedeemUpload()
@@ -620,6 +628,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # request target API

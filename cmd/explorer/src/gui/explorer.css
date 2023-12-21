@@ -30,6 +30,7 @@ Menu {
 
 DataTable {
     width: 100%;
+    height: 100%;
     padding: 0;
     border: $surface
 }
@@ -63,6 +64,7 @@ QuerySetting.visible {
 }
 .visible {
     visibility: visible;
+    opacity: 100;
 }
 .column_auto {
     width: auto;

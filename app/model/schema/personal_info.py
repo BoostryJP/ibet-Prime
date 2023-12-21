@@ -16,13 +16,14 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from datetime import datetime
 from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from web3 import Web3
 
 from app.model.db import BatchRegisterPersonalInfoUploadStatus
-from app.model.schema.types import ResultSet
+from app.model.schema.base import ResultSet
 
 
 class PersonalInfo(BaseModel):
@@ -48,11 +49,18 @@ class PersonalInfoInput(BaseModel):
     tax_category: Optional[int] = None
 
 
+class PersonalInfoIndex(BaseModel):
+    """Personal Information Index schema"""
+
+    id: int = Field(...)
+    account_address: str = Field(...)
+    personal_info: PersonalInfo = Field(...)
+    created: datetime
+
+
 ############################
 # REQUEST
 ############################
-
-
 class RegisterPersonalInfoRequest(PersonalInfoInput):
     """Register Personal Information schema (REQUEST)"""
 
@@ -70,8 +78,6 @@ class RegisterPersonalInfoRequest(PersonalInfoInput):
 ############################
 # RESPONSE
 ############################
-
-
 class BatchRegisterPersonalInfoUploadResponse(BaseModel):
     """Batch Register PersonalInfo schema (RESPONSE)"""
 

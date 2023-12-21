@@ -35,6 +35,7 @@ from app.model.db import (
     TokenType,
     TokenUpdateOperationCategory,
     TokenUpdateOperationLog,
+    TokenVersion,
 )
 from app.model.schema import IbetShareCreate
 from app.utils.contract_utils import ContractUtils
@@ -226,6 +227,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # request target api
@@ -275,6 +277,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
         db.commit()
 
@@ -375,6 +378,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
         db.commit()
 
@@ -473,6 +477,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
         db.commit()
 
@@ -558,6 +563,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         _operation_log_1 = TokenUpdateOperationLog()
@@ -657,6 +663,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         _operation_log_1 = TokenUpdateOperationLog()
@@ -748,6 +755,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
         db.commit()
 
@@ -852,6 +860,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
         db.commit()
 
@@ -957,6 +966,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
         db.commit()
 
@@ -1042,6 +1052,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_SHARE.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
         db.commit()
 

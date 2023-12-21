@@ -27,6 +27,7 @@ from app.model.db import (
     BulkTransferUpload,
     Token,
     TokenType,
+    TokenVersion,
 )
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
@@ -81,6 +82,7 @@ class TestAppRoutersBondBulkTransferPOST:
             _token.issuer_address = self.admin_address
             _token.token_address = _t
             _token.abi = ""
+            _token.version = TokenVersion.V_23_12
             db.add(_token)
 
         # request target API
@@ -165,6 +167,7 @@ class TestAppRoutersBondBulkTransferPOST:
             _token.issuer_address = self.admin_address
             _token.token_address = _t
             _token.abi = ""
+            _token.version = TokenVersion.V_23_12
             db.add(_token)
 
         # request target API
@@ -554,6 +557,7 @@ class TestAppRoutersBondBulkTransferPOST:
         _token.token_address = self.req_tokens[0]
         _token.abi = ""
         _token.token_status = 0
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # request target API

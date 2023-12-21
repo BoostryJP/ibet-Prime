@@ -21,9 +21,9 @@ from typing import List
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.model.db import TokenType
+from app.model.schema.base import ResultSet
 
 from .personal_info import PersonalInfo
-from .types import ResultSet
 
 ############################
 # RESPONSE

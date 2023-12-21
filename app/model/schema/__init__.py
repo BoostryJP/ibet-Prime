@@ -124,6 +124,8 @@ from .token_holders import (
     CreateTokenHoldersListRequest,
     CreateTokenHoldersListResponse,
     ListAllTokenHolderCollectionsResponse,
+    ListTokenHoldersPersonalInfoQuery,
+    ListTokenHoldersPersonalInfoResponse,
     RetrieveTokenHoldersListResponse,
 )
 from .transfer import (
@@ -131,10 +133,10 @@ from .transfer import (
     ListTransferHistorySortItem,
     TransferApprovalHistoryResponse,
     TransferApprovalsResponse,
+    TransferApprovalTokenDetailResponse,
     TransferApprovalTokenResponse,
     TransferHistoryResponse,
     TransferResponse,
     UpdateTransferApprovalOperationType,
     UpdateTransferApprovalRequest,
 )
-from .types import ResultSet

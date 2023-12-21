@@ -39,6 +39,7 @@ from app.model.db import (
     NotificationType,
     Token,
     TokenType,
+    TokenVersion,
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
@@ -163,6 +164,7 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_22_12
         db.add(token_1)
 
         db.commit()
@@ -204,6 +206,7 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_22_12
         db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -303,6 +306,7 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_22_12
         db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -458,6 +462,7 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_22_12
         db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -596,6 +601,7 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_22_12
         db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -709,6 +715,7 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_22_12
         db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload
@@ -840,6 +847,7 @@ class TestProcessor:
         token_1.issuer_address = _account["address"]
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_22_12
         db.add(token_1)
 
         # Prepare data : BatchRegisterPersonalInfoUpload

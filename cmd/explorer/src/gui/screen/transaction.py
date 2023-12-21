@@ -69,11 +69,11 @@ class TransactionScreen(TuiScreen):
         """
         event.stop()
         event.prevent_default()
-        selected_row = self.query_one(TxListTable).data.get(event.cursor_row)
+        selected_row = self.query_one(TxListTable)._data.get(event.row_key)
         if selected_row is None:
             return
 
-        tx_hash = selected_row[0]
+        tx_hash = selected_row.get(list(selected_row.keys())[0])
         async with TCPConnector(limit=1, keepalive_timeout=0) as tcp_connector:
             async with ClientSession(
                 connector=tcp_connector, timeout=ClientTimeout(30)

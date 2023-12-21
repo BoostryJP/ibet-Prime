@@ -19,7 +19,13 @@ SPDX-License-Identifier: Apache-2.0
 import uuid
 from unittest import mock
 
-from app.model.db import Token, TokenHolderBatchStatus, TokenHoldersList, TokenType
+from app.model.db import (
+    Token,
+    TokenHolderBatchStatus,
+    TokenHoldersList,
+    TokenType,
+    TokenVersion,
+)
 from tests.account_config import config_eth_account
 
 
@@ -45,6 +51,7 @@ class TestAppRoutersTokenHoldersGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
+        token.version = TokenVersion.V_22_12
         db.add(token)
 
         # request target API
@@ -70,6 +77,7 @@ class TestAppRoutersTokenHoldersGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
+        token.version = TokenVersion.V_22_12
         db.add(token)
 
         token_holder_list1 = TokenHoldersList()
@@ -110,6 +118,7 @@ class TestAppRoutersTokenHoldersGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
+        token.version = TokenVersion.V_22_12
         db.add(token)
 
         token_holder_list1 = TokenHoldersList()
@@ -211,6 +220,7 @@ class TestAppRoutersTokenHoldersGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
+        token.version = TokenVersion.V_22_12
         db.add(token)
 
         db.commit()
@@ -317,6 +327,7 @@ class TestAppRoutersTokenHoldersGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
+        token.version = TokenVersion.V_22_12
         db.add(token)
 
         token_holder_list1 = TokenHoldersList()
@@ -388,6 +399,7 @@ class TestAppRoutersTokenHoldersGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
+        token.version = TokenVersion.V_22_12
         db.add(token)
 
         db.commit()
@@ -470,6 +482,7 @@ class TestAppRoutersTokenHoldersGET:
         token.issuer_address = issuer_address
         token.token_address = token_address
         token.abi = ""
+        token.version = TokenVersion.V_22_12
         db.add(token)
 
         token_holder_list1 = TokenHoldersList()
@@ -611,6 +624,7 @@ class TestAppRoutersTokenHoldersGET:
         token.token_address = token_address
         token.token_status = 0
         token.abi = ""
+        token.version = TokenVersion.V_22_12
         db.add(token)
 
         # request target API

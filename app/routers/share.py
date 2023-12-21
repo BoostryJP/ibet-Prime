@@ -49,6 +49,7 @@ from app.exceptions import (
     AuthorizationError,
     ContractRevertError,
     InvalidParameterError,
+    OperationNotAllowedStateError,
     SendTransactionError,
 )
 from app.model.blockchain import (
@@ -94,11 +95,12 @@ from app.model.db import (
     Token,
     TokenType,
     TokenUpdateOperationLog,
+    TokenVersion,
     TransferApprovalHistory,
     TransferApprovalOperationType,
     UpdateToken,
 )
-from app.model.schema import (  # Request; Response
+from app.model.schema import (
     BatchIssueRedeemUploadIdResponse,
     BatchRegisterPersonalInfoUploadResponse,
     BulkTransferResponse,
@@ -133,7 +135,7 @@ from app.model.schema import (  # Request; Response
     TokenUpdateOperationCategory,
     TransferApprovalHistoryResponse,
     TransferApprovalsResponse,
-    TransferApprovalTokenResponse,
+    TransferApprovalTokenDetailResponse,
     TransferHistoryResponse,
     UpdateTransferApprovalOperationType,
     UpdateTransferApprovalRequest,
@@ -302,6 +304,7 @@ def issue_token(
     _token.token_address = contract_address
     _token.abi = abi
     _token.token_status = token_status
+    _token.version = TokenVersion.V_22_12
     db.add(_token)
 
     # Register operation log
@@ -359,6 +362,7 @@ def list_all_tokens(
             local_tz
         ).isoformat()
         share_token["token_status"] = token.token_status
+        share_token["contract_version"] = token.version
         share_token.pop("contract_name")
         share_tokens.append(share_token)
 
@@ -395,6 +399,7 @@ def retrieve_token(db: DBSession, token_address: str):
     issue_datetime_utc = timezone("UTC").localize(_token.created)
     share_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
     share_token["token_status"] = _token.token_status
+    share_token["contract_version"] = _token.version
     share_token.pop("contract_name")
 
     return json_response(share_token)
@@ -1676,7 +1681,11 @@ def list_all_holders(
 
     # Get Holders
     stmt = (
-        select(IDXPosition, func.sum(IDXLockedPosition.value))
+        select(
+            IDXPosition,
+            func.sum(IDXLockedPosition.value),
+            func.max(IDXLockedPosition.modified),
+        )
         .outerjoin(
             IDXLockedPosition,
             and_(
@@ -1703,7 +1712,7 @@ def list_all_holders(
             )
         )
 
-    _holders: Sequence[tuple[IDXPosition, int]] = (
+    _holders: Sequence[tuple[IDXPosition, int, datetime | None]] = (
         db.execute(stmt.order_by(IDXPosition.id)).tuples().all()
     )
 
@@ -1729,10 +1738,20 @@ def list_all_holders(
     }
 
     holders = []
-    for _position, _locked in _holders:
+    for _position, _locked, _lock_event_latest_created in _holders:
         _personal_info = _personal_info_dict.get(
             _position.account_address, personal_info_default
         )
+        if _position is None and _lock_event_latest_created is not None:
+            modified: datetime = _lock_event_latest_created
+        elif _position is not None and _lock_event_latest_created is None:
+            modified: datetime = _position.modified
+        else:
+            modified: datetime = (
+                _position.modified
+                if (_position.modified > _lock_event_latest_created)
+                else _lock_event_latest_created
+            )
         holders.append(
             {
                 "account_address": _position.account_address,
@@ -1742,6 +1761,7 @@ def list_all_holders(
                 "exchange_commitment": _position.exchange_commitment,
                 "pending_transfer": _position.pending_transfer,
                 "locked": _locked if _locked is not None else 0,
+                "modified": modified,
             }
         )
 
@@ -1865,9 +1885,13 @@ def retrieve_holder(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Holders
-    _holder: tuple[IDXPosition, int] = (
+    _holder: tuple[IDXPosition, int, datetime | None] = (
         db.execute(
-            select(IDXPosition, func.sum(IDXLockedPosition.value))
+            select(
+                IDXPosition,
+                func.sum(IDXLockedPosition.value),
+                func.max(IDXLockedPosition.modified),
+            )
             .outerjoin(
                 IDXLockedPosition,
                 and_(
@@ -1898,12 +1922,24 @@ def retrieve_holder(
         exchange_commitment = 0
         pending_transfer = 0
         locked = 0
+        modified = None
     else:
         balance = _holder[0].balance
         exchange_balance = _holder[0].exchange_balance
         exchange_commitment = _holder[0].exchange_commitment
         pending_transfer = _holder[0].pending_transfer
         locked = _holder[1]
+
+        if _holder[0] is None and _holder[2] is not None:
+            modified = _holder[2]
+        elif _holder[0] is not None and _holder[2] is None:
+            modified = _holder[0].modified
+        else:
+            modified = (
+                _holder[0].modified
+                if (_holder[0].modified > _holder[2])
+                else _holder[2]
+            )
 
     # Get personal information
     personal_info_default = {
@@ -1939,6 +1975,7 @@ def retrieve_holder(
         "exchange_commitment": exchange_commitment,
         "pending_transfer": pending_transfer,
         "locked": locked if locked is not None else 0,
+        "modified": modified,
     }
 
     return json_response(holder)
@@ -2540,7 +2577,27 @@ def list_transfer_history(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get transfer history
-    stmt = select(IDXTransfer).where(IDXTransfer.token_address == token_address)
+    from_address_personal_info = aliased(IDXPersonalInfo)
+    to_address_personal_info = aliased(IDXPersonalInfo)
+    stmt = (
+        select(IDXTransfer, from_address_personal_info, to_address_personal_info)
+        .join(Token, IDXTransfer.token_address == Token.token_address)
+        .outerjoin(
+            from_address_personal_info,
+            and_(
+                Token.issuer_address == from_address_personal_info.issuer_address,
+                IDXTransfer.from_address == from_address_personal_info.account_address,
+            ),
+        )
+        .outerjoin(
+            to_address_personal_info,
+            and_(
+                Token.issuer_address == to_address_personal_info.issuer_address,
+                IDXTransfer.to_address == to_address_personal_info.account_address,
+            ),
+        )
+        .where(IDXTransfer.token_address == token_address)
+    )
 
     total = db.scalar(select(func.count()).select_from(stmt.subquery()))
 
@@ -2569,17 +2626,25 @@ def list_transfer_history(
     if request_query.offset is not None:
         stmt = stmt.offset(request_query.offset)
 
-    _transfers: Sequence[IDXTransfer] = db.scalars(stmt).all()
+    _transfers: Sequence[
+        tuple[IDXTransfer, IDXPersonalInfo | None, IDXPersonalInfo | None]
+    ] = db.execute(stmt).all()
 
     transfer_history = []
-    for _transfer in _transfers:
+    for _transfer, _from_address_personal_info, _to_address_personal_info in _transfers:
         block_timestamp_utc = timezone("UTC").localize(_transfer.block_timestamp)
         transfer_history.append(
             {
                 "transaction_hash": _transfer.transaction_hash,
                 "token_address": token_address,
                 "from_address": _transfer.from_address,
+                "from_address_personal_information": _from_address_personal_info.personal_info
+                if _from_address_personal_info is not None
+                else None,
                 "to_address": _transfer.to_address,
+                "to_address_personal_information": _to_address_personal_info.personal_info
+                if _to_address_personal_info is not None
+                else None,
                 "amount": _transfer.amount,
                 "source_event": _transfer.source_event,
                 "data": _transfer.data,
@@ -2698,7 +2763,7 @@ def list_transfer_approval_history(
     if offset is not None:
         stmt = stmt.offset(offset)
 
-    _transfer_approvals = db.execute(stmt).all()
+    _transfer_approvals = db.execute(stmt).tuples().all()
 
     transfer_approvals = []
     for (
@@ -2829,8 +2894,44 @@ def list_token_transfer_approval_history(
     )
 
     # Get transfer approval history
-    stmt = select(subquery, literal_column("status")).where(
-        subquery.token_address == token_address
+    from_address_personal_info = aliased(IDXPersonalInfo)
+    to_address_personal_info = aliased(IDXPersonalInfo)
+    stmt = (
+        select(
+            subquery,
+            literal_column("status"),
+            # Snapshot Personal Information
+            TransferApprovalHistory.from_address_personal_info,
+            TransferApprovalHistory.to_address_personal_info,
+            # Latest Personal Information
+            from_address_personal_info,
+            to_address_personal_info,
+        )
+        .join(Token, subquery.token_address == Token.token_address)
+        .outerjoin(
+            TransferApprovalHistory,
+            and_(
+                TransferApprovalHistory.token_address == token_address,
+                subquery.token_address == TransferApprovalHistory.token_address,
+                subquery.exchange_address == TransferApprovalHistory.exchange_address,
+                subquery.application_id == TransferApprovalHistory.application_id,
+            ),
+        )
+        .outerjoin(
+            from_address_personal_info,
+            and_(
+                Token.issuer_address == from_address_personal_info.issuer_address,
+                subquery.from_address == from_address_personal_info.account_address,
+            ),
+        )
+        .outerjoin(
+            to_address_personal_info,
+            and_(
+                Token.issuer_address == to_address_personal_info.issuer_address,
+                subquery.to_address == to_address_personal_info.account_address,
+            ),
+        )
+        .where(subquery.token_address == token_address)
     )
 
     total = db.scalar(select(func.count()).select_from(stmt.subquery()))
@@ -2864,12 +2965,26 @@ def list_token_transfer_approval_history(
     if offset is not None:
         stmt = stmt.offset(offset)
 
-    _transfer_approvals: Sequence[tuple[IDXTransferApproval, int]] = (
-        db.execute(stmt).tuples().all()
-    )
+    _transfer_approvals: Sequence[
+        tuple[
+            IDXTransferApproval,
+            int,
+            dict | None,
+            dict | None,
+            IDXPersonalInfo | None,
+            IDXPersonalInfo | None,
+        ]
+    ] = db.execute(stmt).all()
 
     transfer_approval_history = []
-    for _transfer_approval, status in _transfer_approvals:
+    for (
+        _transfer_approval,
+        status,
+        _from_address_snapshot_personal_info,
+        _to_address_snapshot_personal_info,
+        _from_address_latest_personal_info,
+        _to_address_latest_personal_info,
+    ) in _transfer_approvals:
         if status == 2:
             transfer_approved = True
             cancelled = False
@@ -2930,6 +3045,20 @@ def list_token_transfer_approval_history(
         else:
             cancellation_blocktimestamp = None
 
+        from_address_personal_info = (
+            _from_address_snapshot_personal_info
+            if _from_address_snapshot_personal_info is not None
+            else _from_address_latest_personal_info.personal_info
+            if _from_address_latest_personal_info is not None
+            else None
+        )
+        to_address_personal_info = (
+            _to_address_snapshot_personal_info
+            if _to_address_snapshot_personal_info is not None
+            else _to_address_latest_personal_info.personal_info
+            if _to_address_latest_personal_info is not None
+            else None
+        )
         transfer_approval_history.append(
             {
                 "id": _transfer_approval.id,
@@ -2949,6 +3078,8 @@ def list_token_transfer_approval_history(
                 "transfer_approved": transfer_approved,
                 "status": status,
                 "issuer_cancelable": issuer_cancelable,
+                "from_address_personal_information": from_address_personal_info,
+                "to_address_personal_information": to_address_personal_info,
             }
         )
 
@@ -2976,6 +3107,7 @@ def list_token_transfer_approval_history(
         InvalidParameterError,
         SendTransactionError,
         ContractRevertError,
+        OperationNotAllowedStateError,
     ),
 )
 def update_transfer_approval(
@@ -3076,6 +3208,37 @@ def update_transfer_approval(
     if transfer_approval_op is not None:
         raise InvalidParameterError("duplicate operation")
 
+    # Check the existence of personal information data for from_address and to_address
+    _from_address_personal_info: IDXPersonalInfo | None = db.scalars(
+        select(IDXPersonalInfo)
+        .where(
+            and_(
+                IDXPersonalInfo.account_address == _transfer_approval.from_address,
+                IDXPersonalInfo.issuer_address == issuer_address,
+            )
+        )
+        .limit(1)
+    ).first()
+    if _from_address_personal_info is None:
+        raise OperationNotAllowedStateError(
+            101, "personal information for from_address is not registered"
+        )
+
+    _to_address_personal_info: IDXPersonalInfo | None = db.scalars(
+        select(IDXPersonalInfo)
+        .where(
+            and_(
+                IDXPersonalInfo.account_address == _transfer_approval.to_address,
+                IDXPersonalInfo.issuer_address == issuer_address,
+            )
+        )
+        .limit(1)
+    ).first()
+    if _to_address_personal_info is None:
+        raise OperationNotAllowedStateError(
+            101, "personal information for to_address is not registered"
+        )
+
     # Send transaction
     #  - APPROVE -> approveTransfer
     #    In the case of a transfer approval for a token, if the transaction is reverted,
@@ -3147,6 +3310,12 @@ def update_transfer_approval(
     transfer_approval_op.exchange_address = _transfer_approval.exchange_address
     transfer_approval_op.application_id = _transfer_approval.application_id
     transfer_approval_op.operation_type = data.operation_type
+    transfer_approval_op.from_address_personal_info = (
+        _from_address_personal_info.personal_info
+    )
+    transfer_approval_op.to_address_personal_info = (
+        _to_address_personal_info.personal_info
+    )
     db.add(transfer_approval_op)
     db.commit()
 
@@ -3154,7 +3323,7 @@ def update_transfer_approval(
 # GET: /share/transfer_approvals/{token_address}/{id}
 @router.get(
     "/transfer_approvals/{token_address}/{id}",
-    response_model=TransferApprovalTokenResponse,
+    response_model=TransferApprovalTokenDetailResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
 def retrieve_transfer_approval_history(
@@ -3295,13 +3464,55 @@ def retrieve_transfer_approval_history(
     else:
         cancellation_blocktimestamp = None
 
+    # Get personal information of account address
+    # NOTE:
+    #   If the transfer approval operation has already been performed, get the data at that time.
+    #   Otherwise, get the latest data.
+    if (
+        _transfer_approval_op is not None
+        and _transfer_approval_op.from_address_personal_info is not None
+        and _transfer_approval_op.to_address_personal_info is not None
+    ):
+        _from_address_personal_info = _transfer_approval_op.from_address_personal_info
+        _to_address_personal_info = _transfer_approval_op.to_address_personal_info
+    else:
+        _from_account: IDXPersonalInfo | None = db.scalars(
+            select(IDXPersonalInfo)
+            .where(
+                and_(
+                    IDXPersonalInfo.account_address == _transfer_approval.from_address,
+                    IDXPersonalInfo.issuer_address == _token.issuer_address,
+                )
+            )
+            .limit(1)
+        ).first()
+        _from_address_personal_info = (
+            _from_account.personal_info if _from_account is not None else None
+        )
+
+        _to_account: IDXPersonalInfo | None = db.scalars(
+            select(IDXPersonalInfo)
+            .where(
+                and_(
+                    IDXPersonalInfo.account_address == _transfer_approval.to_address,
+                    IDXPersonalInfo.issuer_address == _token.issuer_address,
+                )
+            )
+            .limit(1)
+        ).first()
+        _to_address_personal_info = (
+            _to_account.personal_info if _to_account is not None else None
+        )
+
     history = {
         "id": _transfer_approval.id,
         "token_address": token_address,
         "exchange_address": _transfer_approval.exchange_address,
         "application_id": _transfer_approval.application_id,
         "from_address": _transfer_approval.from_address,
+        "from_address_personal_information": _from_address_personal_info,
         "to_address": _transfer_approval.to_address,
+        "to_address_personal_information": _to_address_personal_info,
         "amount": _transfer_approval.amount,
         "application_datetime": application_datetime,
         "application_blocktimestamp": application_blocktimestamp,

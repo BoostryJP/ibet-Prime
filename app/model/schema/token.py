@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 import math
 from datetime import datetime
+from decimal import Decimal
 from enum import Enum, StrEnum
 from typing import Annotated, Optional, Self
 
@@ -26,29 +27,44 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic.dataclasses import dataclass
 from web3 import Web3
 
-from . import LockEventCategory
-from .position import LockEvent
-from .types import EMPTY_str, MMDD_constr, ResultSet, SortOrder, YYYYMMDD_constr
+from app.model.schema.base import (
+    CURRENCY_str,
+    EMPTY_str,
+    IbetShareContractVersion,
+    IbetStraightBondContractVersion,
+    MMDD_constr,
+    ResultSet,
+    SortOrder,
+    YYYYMMDD_constr,
+)
+from app.model.schema.position import LockEvent, LockEventCategory
+
 
 ############################
 # REQUEST
 ############################
-
-
 class IbetStraightBondCreate(BaseModel):
     """ibet Straight Bond schema (Create)"""
 
     name: str = Field(max_length=100)
     total_supply: int = Field(..., ge=0, le=1_000_000_000_000)
     face_value: int = Field(..., ge=0, le=5_000_000_000)
+    face_value_currency: str = Field(..., min_length=3, max_length=3)
     purpose: str = Field(max_length=2000)
     symbol: Optional[str] = Field(default=None, max_length=100)
     redemption_date: Optional[YYYYMMDD_constr] = None
     redemption_value: Optional[int] = Field(default=None, ge=0, le=5_000_000_000)
+    redemption_value_currency: Optional[str] = Field(
+        default=None, min_length=3, max_length=3
+    )
     return_date: Optional[YYYYMMDD_constr] = None
     return_amount: Optional[str] = Field(default=None, max_length=2000)
     interest_rate: Optional[float] = Field(default=None, ge=0.0000, le=100.0000)
     interest_payment_date: Optional[list[MMDD_constr]] = None
+    interest_payment_currency: Optional[str] = Field(
+        default=None, min_length=3, max_length=3
+    )
+    base_fx_rate: Optional[float] = Field(default=None, ge=0.000000)
     transferable: Optional[bool] = None
     is_redeemed: Optional[bool] = None
     status: Optional[bool] = None
@@ -60,12 +76,24 @@ class IbetStraightBondCreate(BaseModel):
     privacy_policy: Optional[str] = Field(default=None, max_length=5000)
     transfer_approval_required: Optional[bool] = None
 
+    @field_validator("base_fx_rate")
+    @classmethod
+    def base_fx_rate_6_decimal_places(cls, v):
+        if v is not None:
+            float_data = float(Decimal(str(v)) * 10**6)
+            int_data = int(Decimal(str(v)) * 10**6)
+            if not math.isclose(int_data, float_data):
+                raise ValueError(
+                    "base_fx_rate must be less than or equal to six decimal places"
+                )
+        return v
+
     @field_validator("interest_rate")
     @classmethod
     def interest_rate_4_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10**4)
-            int_data = int(v * 10**4)
+            float_data = float(Decimal(str(v)) * 10**4)
+            int_data = int(Decimal(str(v)) * 10**4)
             if not math.isclose(int_data, float_data):
                 raise ValueError(
                     "interest_rate must be less than or equal to four decimal places"
@@ -102,9 +130,13 @@ class IbetStraightBondUpdate(BaseModel):
     """ibet Straight Bond schema (Update)"""
 
     face_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
+    face_value_currency: Optional[str] = Field(default=None, min_length=3, max_length=3)
     interest_rate: Optional[float] = Field(None, ge=0.0000, le=100.0000)
     interest_payment_date: Optional[list[MMDD_constr]] = None
+    interest_payment_currency: Optional[CURRENCY_str | EMPTY_str] = Field(default=None)
     redemption_value: Optional[int] = Field(None, ge=0, le=5_000_000_000)
+    redemption_value_currency: Optional[CURRENCY_str | EMPTY_str] = Field(default=None)
+    base_fx_rate: Optional[float] = Field(default=None, ge=0.000000)
     transferable: Optional[bool] = None
     status: Optional[bool] = None
     is_offering: Optional[bool] = None
@@ -115,6 +147,18 @@ class IbetStraightBondUpdate(BaseModel):
     privacy_policy: Optional[str] = Field(default=None, max_length=5000)
     transfer_approval_required: Optional[bool] = None
     memo: Optional[str] = Field(default=None, max_length=10000)
+
+    @field_validator("base_fx_rate")
+    @classmethod
+    def base_fx_rate_6_decimal_places(cls, v):
+        if v is not None:
+            float_data = float(Decimal(str(v)) * 10**6)
+            int_data = int(Decimal(str(v)) * 10**6)
+            if not math.isclose(int_data, float_data):
+                raise ValueError(
+                    "base_fx_rate must be less than or equal to six decimal places"
+                )
+        return v
 
     @field_validator("is_redeemed")
     @classmethod
@@ -127,8 +171,8 @@ class IbetStraightBondUpdate(BaseModel):
     @classmethod
     def interest_rate_4_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10**4)
-            int_data = int(v * 10**4)
+            float_data = float(Decimal(str(v)) * 10**4)
+            int_data = int(Decimal(str(v)) * 10**4)
             if not math.isclose(int_data, float_data):
                 raise ValueError("interest_rate must be rounded to 4 decimal places")
         return v
@@ -243,8 +287,8 @@ class IbetShareCreate(BaseModel):
     @classmethod
     def dividends_13_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10**13)
-            int_data = int(v * 10**13)
+            float_data = float(Decimal(str(v)) * 10**13)
+            int_data = int(Decimal(str(v)) * 10**13)
             if not math.isclose(int_data, float_data):
                 raise ValueError("dividends must be rounded to 13 decimal places")
         return v
@@ -296,8 +340,8 @@ class IbetShareUpdate(BaseModel):
     @classmethod
     def dividends_13_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10**13)
-            int_data = int(v * 10**13)
+            float_data = float(Decimal(str(v)) * 10**13)
+            int_data = int(Decimal(str(v)) * 10**13)
             if not math.isclose(int_data, float_data):
                 raise ValueError("dividends must be rounded to 13 decimal places")
         return v
@@ -461,8 +505,6 @@ class ListTokenOperationLogHistoryQuery:
 ############################
 # RESPONSE
 ############################
-
-
 class TokenAddressResponse(BaseModel):
     """token address"""
 
@@ -479,13 +521,17 @@ class IbetStraightBondResponse(BaseModel):
     symbol: str
     total_supply: int
     face_value: int
+    face_value_currency: str
     redemption_date: str
     redemption_value: int
+    redemption_value_currency: str
     return_date: str
     return_amount: str
     purpose: str
     interest_rate: float
     interest_payment_date: list[str]
+    interest_payment_currency: str
+    base_fx_rate: float
     transferable: bool
     is_redeemed: bool
     status: bool
@@ -498,6 +544,7 @@ class IbetStraightBondResponse(BaseModel):
     token_status: int
     transfer_approval_required: bool
     memo: str
+    contract_version: IbetStraightBondContractVersion
 
 
 class IbetShareResponse(BaseModel):
@@ -526,6 +573,7 @@ class IbetShareResponse(BaseModel):
     token_status: int
     is_canceled: bool
     memo: str
+    contract_version: IbetShareContractVersion
 
 
 class TokenOperationLogResponse(BaseModel):

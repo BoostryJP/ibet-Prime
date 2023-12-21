@@ -24,7 +24,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.model.blockchain import IbetShareContract
-from app.model.db import IDXLock, IDXUnlock, Token, TokenType
+from app.model.db import IDXLock, IDXUnlock, Token, TokenType, TokenVersion
 
 
 class TestAppRoutersShareLockEvents:
@@ -55,6 +55,7 @@ class TestAppRoutersShareLockEvents:
         _token.tx_hash = ""
         _token.abi = ""
         _token.token_status = token_status
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # prepare data: Token
@@ -65,6 +66,7 @@ class TestAppRoutersShareLockEvents:
         _token.tx_hash = ""
         _token.abi = ""
         _token.token_status = token_status
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # prepare data: Lock events
@@ -204,6 +206,7 @@ class TestAppRoutersShareLockEvents:
         _token.type = TokenType.IBET_SHARE.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # request target api

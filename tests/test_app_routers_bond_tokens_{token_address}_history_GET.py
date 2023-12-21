@@ -36,7 +36,7 @@ from app.model.db import (
     TokenType,
     TokenUpdateOperationCategory,
     TokenUpdateOperationLog,
-    UpdateToken,
+    TokenVersion,
 )
 from app.model.schema import IbetStraightBondCreate
 from app.utils.contract_utils import ContractUtils
@@ -61,8 +61,10 @@ def deploy_bond_token_contract(
         "token.symbol",  # symbol
         100,  # total_supply
         20,  # face_value
+        "JPY",  # face_value_currency
         "20230501",  # redemption_date
         30,  # redemption_value
+        "JPY",  # redemption_value_currency
         "20230501",  # return_date
         "token.return_amount",  # return_amount
         "token.purpose",  # purpose
@@ -74,10 +76,12 @@ def deploy_bond_token_contract(
         name="token.name",
         total_supply=100,
         face_value=20,
+        face_value_currency="JPY",
         purpose="token.purpose",
         symbol="token.symbol",
         redemption_date="20230501",
         redemption_value=30,
+        redemption_value_currency="JPY",
         return_date="20230501",
         return_amount="token.return_amount",
         interest_rate=0.0001,  # update
@@ -92,6 +96,8 @@ def deploy_bond_token_contract(
         contact_information="contact info test",  # update
         privacy_policy="privacy policy test",  # update
         transfer_approval_required=transfer_approval_required,  # update
+        interest_payment_currency="JPY",  # update
+        base_fx_rate=123.456789,  # update
     ).__dict__
 
     token_create_param.pop("image_url")
@@ -157,6 +163,22 @@ def deploy_bond_token_contract(
     ContractUtils.send_transaction(transaction=tx, private_key=private_key)
     tx = contract.functions.setTransferApprovalRequired(
         token_create_param["transfer_approval_required"]
+    ).build_transaction(build_tx_param)
+    ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+    tx = contract.functions.setFaceValueCurrency(
+        token_create_param["face_value_currency"]
+    ).build_transaction(build_tx_param)
+    ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+    tx = contract.functions.setInterestPaymentCurrency(
+        token_create_param["interest_payment_currency"]
+    ).build_transaction(build_tx_param)
+    ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+    tx = contract.functions.setRedemptionValueCurrency(
+        token_create_param["redemption_value_currency"]
+    ).build_transaction(build_tx_param)
+    ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+    tx = contract.functions.setBaseFXRate(
+        str(token_create_param["base_fx_rate"])
     ).build_transaction(build_tx_param)
     ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -244,6 +266,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         # request target api
@@ -293,6 +316,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
         db.commit()
 
@@ -381,6 +405,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
         db.commit()
 
@@ -467,6 +492,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
         db.commit()
 
@@ -544,6 +570,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         _operation_log_1 = TokenUpdateOperationLog()
@@ -646,6 +673,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
 
         _operation_log_1 = TokenUpdateOperationLog()
@@ -734,6 +762,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
         db.commit()
 
@@ -826,6 +855,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
         db.commit()
 
@@ -919,6 +949,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
         db.commit()
 
@@ -996,6 +1027,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.type = TokenType.IBET_STRAIGHT_BOND.value
         _token.tx_hash = ""
         _token.abi = ""
+        _token.version = TokenVersion.V_23_12
         db.add(_token)
         db.commit()
 

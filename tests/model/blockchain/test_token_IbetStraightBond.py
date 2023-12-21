@@ -24,7 +24,7 @@ from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 from eth_keyfile import decode_keyfile_json
-from pydantic.error_wrappers import ValidationError
+from pydantic import ValidationError
 from sqlalchemy import select
 from web3.exceptions import (
     ContractLogicError,
@@ -48,7 +48,7 @@ from app.model.blockchain.tx_params.ibet_straight_bond import (
 )
 from app.model.db import TokenAttrUpdate, TokenCache
 from app.utils.contract_utils import ContractUtils
-from config import TOKEN_CACHE_TTL, ZERO_ADDRESS
+from config import DEFAULT_CURRENCY, TOKEN_CACHE_TTL, ZERO_ADDRESS
 from tests.account_config import config_eth_account
 from tests.utils.contract_utils import (
     IbetSecurityTokenContractTestUtils,
@@ -76,8 +76,10 @@ class TestCreate:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -95,8 +97,10 @@ class TestCreate:
         assert bond_contract.functions.symbol().call() == "TEST"
         assert bond_contract.functions.totalSupply().call() == 10000
         assert bond_contract.functions.faceValue().call() == 20000
+        assert bond_contract.functions.faceValueCurrency().call() == "JPY"
         assert bond_contract.functions.redemptionDate().call() == "20211231"
         assert bond_contract.functions.redemptionValue().call() == 30000
+        assert bond_contract.functions.redemptionValueCurrency().call() == "JPY"
         assert bond_contract.functions.returnDate().call() == "20211231"
         assert bond_contract.functions.returnAmount().call() == "リターン内容"
         assert bond_contract.functions.purpose().call() == "発行目的"
@@ -137,7 +141,19 @@ class TestCreate:
         )
 
         # execute the function
-        arguments = [0, 0, "string", "string", 0, 0, "string", 0, 0]  # invalid types
+        arguments = [
+            0,
+            0,
+            "string",
+            "string",
+            0,
+            0,
+            "string",
+            0,
+            0,
+            0,
+            0,
+        ]  # invalid types
         with pytest.raises(SendTransactionError) as exc_info:
             IbetStraightBondContract().create(
                 args=arguments, tx_from=issuer_address, private_key=private_key
@@ -165,8 +181,10 @@ class TestCreate:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -194,8 +212,10 @@ class TestCreate:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -225,8 +245,10 @@ class TestCreate:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -265,8 +287,10 @@ class TestGet:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -294,6 +318,7 @@ class TestGet:
         assert bond_contract.is_offering is False
         assert bond_contract.transfer_approval_required is False
         assert bond_contract.face_value == arguments[3]
+        assert bond_contract.face_value_currency == arguments[4]
         assert bond_contract.interest_rate == 0
         assert bond_contract.interest_payment_date == [
             "",
@@ -309,11 +334,14 @@ class TestGet:
             "",
             "",
         ]
-        assert bond_contract.redemption_date == arguments[4]
-        assert bond_contract.redemption_value == arguments[5]
-        assert bond_contract.return_date == arguments[6]
-        assert bond_contract.return_amount == arguments[7]
-        assert bond_contract.purpose == arguments[8]
+        assert bond_contract.interest_payment_currency == ""
+        assert bond_contract.redemption_date == arguments[5]
+        assert bond_contract.redemption_value == arguments[6]
+        assert bond_contract.redemption_value_currency == arguments[7]
+        assert bond_contract.return_date == arguments[8]
+        assert bond_contract.return_amount == arguments[9]
+        assert bond_contract.base_fx_rate == 0.0
+        assert bond_contract.purpose == arguments[10]
         assert bond_contract.memo == ""
         assert bond_contract.is_redeemed is False
 
@@ -334,8 +362,10 @@ class TestGet:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -360,6 +390,7 @@ class TestGet:
             "is_offering": True,
             "transfer_approval_required": True,
             "face_value": 9999998,
+            "face_value_currency": "JPY",
             "interest_rate": 99.999,
             "interest_payment_date": [
                 "99991231",
@@ -375,10 +406,13 @@ class TestGet:
                 "99991231",
                 "99991231",
             ],
+            "interest_payment_currency": "JPY",
             "redemption_date": "99991231",
             "redemption_value": 9999997,
+            "redemption_value_currency": "JPY",
             "return_date": "99991230",
             "return_amount": "return_amount-test",
+            "base_fx_rate": 123.456789,
             "purpose": "purpose-test",
             "memo": "memo-test",
             "is_redeemed": True,
@@ -417,6 +451,7 @@ class TestGet:
         assert bond_contract.is_offering is True
         assert bond_contract.transfer_approval_required is True
         assert bond_contract.face_value == 9999998
+        assert bond_contract.face_value_currency == "JPY"
         assert bond_contract.interest_rate == 99.999
         assert bond_contract.interest_payment_date == [
             "99991231",
@@ -432,10 +467,13 @@ class TestGet:
             "99991231",
             "99991231",
         ]
+        assert bond_contract.interest_payment_currency == "JPY"
         assert bond_contract.redemption_date == "99991231"
         assert bond_contract.redemption_value == 9999997
+        assert bond_contract.redemption_value_currency == "JPY"
         assert bond_contract.return_date == "99991230"
         assert bond_contract.return_amount == "return_amount-test"
+        assert bond_contract.base_fx_rate == 123.456789
         assert bond_contract.purpose == "purpose-test"
         assert bond_contract.memo == "memo-test"
         assert bond_contract.is_redeemed is True
@@ -457,8 +495,10 @@ class TestGet:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -483,6 +523,7 @@ class TestGet:
             "is_offering": True,
             "transfer_approval_required": True,
             "face_value": 9999998,
+            "face_value_currency": "JPY",
             "interest_rate": 99.999,
             "interest_payment_date": [
                 "99991231",
@@ -498,10 +539,13 @@ class TestGet:
                 "99991231",
                 "99991231",
             ],
+            "interest_payment_currency": "JPY",
             "redemption_date": "99991231",
             "redemption_value": 9999997,
+            "redemption_value_currency": "JPY",
             "return_date": "99991230",
             "return_amount": "return_amount-test",
+            "base_fx_rate": 123.456789,
             "purpose": "purpose-test",
             "memo": "memo-test",
             "is_redeemed": True,
@@ -540,6 +584,7 @@ class TestGet:
         assert bond_contract.is_offering is False
         assert bond_contract.transfer_approval_required is False
         assert bond_contract.face_value == arguments[3]
+        assert bond_contract.face_value_currency == arguments[4]
         assert bond_contract.interest_rate == 0
         assert bond_contract.interest_payment_date == [
             "",
@@ -555,11 +600,14 @@ class TestGet:
             "",
             "",
         ]
-        assert bond_contract.redemption_date == arguments[4]
-        assert bond_contract.redemption_value == arguments[5]
-        assert bond_contract.return_date == arguments[6]
-        assert bond_contract.return_amount == arguments[7]
-        assert bond_contract.purpose == arguments[8]
+        assert bond_contract.interest_payment_currency == ""
+        assert bond_contract.redemption_date == arguments[5]
+        assert bond_contract.redemption_value == arguments[6]
+        assert bond_contract.redemption_value_currency == arguments[7]
+        assert bond_contract.return_date == arguments[8]
+        assert bond_contract.return_amount == arguments[9]
+        assert bond_contract.base_fx_rate == 0.0
+        assert bond_contract.purpose == arguments[10]
         assert bond_contract.memo == ""
         assert bond_contract.is_redeemed is False
 
@@ -584,6 +632,7 @@ class TestGet:
         assert bond_contract.is_offering is False
         assert bond_contract.transfer_approval_required is False
         assert bond_contract.face_value == 0
+        assert bond_contract.face_value_currency == DEFAULT_CURRENCY
         assert bond_contract.interest_rate == 0
         assert bond_contract.interest_payment_date == [
             "",
@@ -599,10 +648,13 @@ class TestGet:
             "",
             "",
         ]
+        assert bond_contract.interest_payment_currency == ""
         assert bond_contract.redemption_date == ""
         assert bond_contract.redemption_value == 0
+        assert bond_contract.redemption_value_currency == ""
         assert bond_contract.return_date == ""
         assert bond_contract.return_amount == ""
+        assert bond_contract.base_fx_rate == 0.0
         assert bond_contract.purpose == ""
         assert bond_contract.memo == ""
         assert bond_contract.is_redeemed is False
@@ -633,8 +685,10 @@ class TestUpdate:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -654,7 +708,8 @@ class TestUpdate:
 
         # assertion
         bond_contract = bond_contract.get()
-        assert bond_contract.face_value == 20000
+        assert bond_contract.face_value == arguments[3]
+        assert bond_contract.face_value_currency == arguments[4]
         assert bond_contract.interest_rate == 0
         assert bond_contract.interest_payment_date == [
             "",
@@ -670,7 +725,14 @@ class TestUpdate:
             "",
             "",
         ]
-        assert bond_contract.redemption_value == 30000
+        assert bond_contract.interest_payment_currency == ""
+        assert bond_contract.redemption_date == arguments[5]
+        assert bond_contract.redemption_value == arguments[6]
+        assert bond_contract.redemption_value_currency == arguments[7]
+        assert bond_contract.return_date == arguments[8]
+        assert bond_contract.return_amount == arguments[9]
+        assert bond_contract.base_fx_rate == 0.0
+        assert bond_contract.purpose == arguments[10]
         assert bond_contract.transferable is False
         assert bond_contract.status is True
         assert bond_contract.is_offering is False
@@ -703,8 +765,10 @@ class TestUpdate:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -717,9 +781,13 @@ class TestUpdate:
         # update
         _data = {
             "face_value": 20001,
+            "face_value_currency": "USD",
             "interest_rate": 0.0001,
             "interest_payment_date": ["0331", "0930"],
+            "interest_payment_currency": "USD",
             "redemption_value": 30001,
+            "redemption_value_currency": "USD",
+            "base_fx_rate": 123.456789,
             "transferable": True,
             "status": False,
             "is_offering": True,
@@ -740,6 +808,7 @@ class TestUpdate:
         # assertion
         bond_contract = bond_contract.get()
         assert bond_contract.face_value == 20001
+        assert bond_contract.face_value_currency == "USD"
         assert bond_contract.interest_rate == 0.0001
         assert bond_contract.interest_payment_date == [
             "0331",
@@ -755,7 +824,10 @@ class TestUpdate:
             "",
             "",
         ]
+        assert bond_contract.interest_payment_currency == "USD"
         assert bond_contract.redemption_value == 30001
+        assert bond_contract.redemption_value_currency == "USD"
+        assert bond_contract.base_fx_rate == 123.456789
         assert bond_contract.transferable is True
         assert bond_contract.status is False
         assert bond_contract.is_offering is True
@@ -788,6 +860,7 @@ class TestUpdate:
     def test_error_1(self, db):
         # update
         _data = {
+            "base_fx_rate": 123.4567899,
             "interest_rate": 0.00001,
             "interest_payment_date": [
                 "0101",
@@ -843,6 +916,14 @@ class TestUpdate:
             },
             {
                 "ctx": {"error": ANY},
+                "input": 123.4567899,
+                "loc": ("base_fx_rate",),
+                "msg": "Value error, base_fx_rate must be rounded to 6 decimal places",
+                "type": "value_error",
+                "url": ANY,
+            },
+            {
+                "ctx": {"error": ANY},
                 "input": "invalid contract address",
                 "loc": ("tradable_exchange_contract_address",),
                 "msg": "Value error, tradable_exchange_contract_address is not a valid "
@@ -876,8 +957,10 @@ class TestUpdate:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -913,8 +996,10 @@ class TestUpdate:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -952,8 +1037,10 @@ class TestUpdate:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -995,8 +1082,10 @@ class TestUpdate:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -1044,8 +1133,10 @@ class TestUpdate:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -1100,8 +1191,10 @@ class TestTransfer:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -1217,8 +1310,10 @@ class TestTransfer:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -1259,8 +1354,10 @@ class TestTransfer:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -1301,8 +1398,10 @@ class TestTransfer:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -1347,8 +1446,10 @@ class TestTransfer:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -1393,8 +1494,10 @@ class TestTransfer:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -1450,8 +1553,10 @@ class TestAdditionalIssue:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -1551,8 +1656,10 @@ class TestAdditionalIssue:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -1588,8 +1695,10 @@ class TestAdditionalIssue:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -1627,8 +1736,10 @@ class TestAdditionalIssue:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -1672,8 +1783,10 @@ class TestAdditionalIssue:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -1721,8 +1834,10 @@ class TestAdditionalIssue:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -1775,8 +1890,10 @@ class TestRedeem:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -1876,8 +1993,10 @@ class TestRedeem:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -1913,8 +2032,10 @@ class TestRedeem:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -1952,8 +2073,10 @@ class TestRedeem:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -1997,8 +2120,10 @@ class TestRedeem:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -2040,8 +2165,10 @@ class TestRedeem:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -2097,8 +2224,10 @@ class TestGetAccountBalance:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -2145,8 +2274,10 @@ class TestGetAccountBalance:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -2320,8 +2451,10 @@ class TestApproveTransfer:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -2459,8 +2592,10 @@ class TestApproveTransfer:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -2497,8 +2632,10 @@ class TestApproveTransfer:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -2557,8 +2694,10 @@ class TestApproveTransfer:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -2669,8 +2808,10 @@ class TestCancelTransfer:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -2806,8 +2947,10 @@ class TestCancelTransfer:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -2844,8 +2987,10 @@ class TestCancelTransfer:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -2904,8 +3049,10 @@ class TestCancelTransfer:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -2998,8 +3145,10 @@ class TestLock:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -3113,8 +3262,10 @@ class TestLock:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -3156,8 +3307,10 @@ class TestLock:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -3199,8 +3352,10 @@ class TestLock:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -3248,8 +3403,10 @@ class TestLock:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -3296,8 +3453,10 @@ class TestLock:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -3356,8 +3515,10 @@ class TestForceUnlock:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -3521,8 +3682,10 @@ class TestForceUnlock:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -3578,8 +3741,10 @@ class TestForceUnlock:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -3635,8 +3800,10 @@ class TestForceUnlock:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -3698,8 +3865,10 @@ class TestForceUnlock:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",
@@ -3760,8 +3929,10 @@ class TestForceUnlock:
             "TEST",
             10000,
             20000,
+            "JPY",
             "20211231",
             30000,
+            "JPY",
             "20211231",
             "リターン内容",
             "発行目的",

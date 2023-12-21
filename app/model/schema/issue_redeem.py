@@ -20,7 +20,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from .types import ResultSet
+from app.model.schema.base import ResultSet
 
 ############################
 # REQUEST

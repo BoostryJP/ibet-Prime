@@ -49,6 +49,7 @@ from app.model.db import (
     NotificationType,
     Token,
     TokenType,
+    TokenVersion,
 )
 from app.utils import ledger_utils
 from app.utils.contract_utils import ContractUtils
@@ -66,8 +67,10 @@ def deploy_bond_token_contract(address, private_key, personal_info_contract_addr
         "token.symbol",
         100,
         20,
+        "JPY",
         "token.redemption_date",
         30,
+        "JPY",
         "token.return_date",
         "token.return_amount",
         "token.purpose",
@@ -77,6 +80,7 @@ def deploy_bond_token_contract(address, private_key, personal_info_contract_addr
 
     data = IbetStraightBondUpdateParams()
     data.personal_info_contract_address = personal_info_contract_address
+    data.face_value_currency = "JPY"
     bond_contrat.update(data, address, private_key)
 
     return contract_address
@@ -202,6 +206,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
+        _token_1.version = TokenVersion.V_22_12
         db.add(_token_1)
 
         # IDXPersonalInfo(only user_1)
@@ -454,6 +459,7 @@ class TestCreateLedger:
         assert _ledger.ledger == {
             "created": now_ymd,
             "token_name": "受益権テスト",
+            "currency": "",
             "headers": [
                 {
                     "key": "aaa",
@@ -667,6 +673,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
+        _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
         # IDXPersonalInfo(only user_1)
@@ -920,6 +927,7 @@ class TestCreateLedger:
         assert _ledger.ledger == {
             "created": now_ymd,
             "token_name": "受益権テスト",
+            "currency": "JPY",
             "headers": [
                 {
                     "key": "aaa",
@@ -1086,6 +1094,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
+        _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
         # Execute
@@ -1117,6 +1126,7 @@ class TestCreateLedger:
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
         _token_1.abi = {}
+        _token_1.version = TokenVersion.V_22_12
         db.add(_token_1)
 
         # Execute

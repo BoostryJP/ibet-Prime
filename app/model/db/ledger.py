@@ -50,6 +50,7 @@ NOTE: Ledger.ledger's JSON structures
 {
   "created": "string(YYYY/MM/DD)",
   "token_name": "string",
+  "currency": "string",
   "headers": [],
   "details": [
     {
@@ -75,7 +76,7 @@ NOTE: Ledger.ledger's JSON structures
 
 
 class LedgerDetailsData(Base):
-    """Ledger Details Data"""
+    """Holder data outside of Blockchain"""
 
     __tablename__ = "ledger_details_data"
 

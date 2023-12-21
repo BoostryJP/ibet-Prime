@@ -24,7 +24,13 @@ from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
 import config
-from app.model.db import Token, TokenHolderBatchStatus, TokenHoldersList, TokenType
+from app.model.db import (
+    Token,
+    TokenHolderBatchStatus,
+    TokenHoldersList,
+    TokenType,
+    TokenVersion,
+)
 from tests.account_config import config_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
@@ -55,6 +61,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         list_id = str(uuid.uuid4())
@@ -99,6 +106,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         for i in range(2):
@@ -136,6 +144,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # request target API
@@ -189,6 +198,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # request target API
@@ -230,6 +240,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # request target API
@@ -265,6 +276,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # request target API
@@ -308,6 +320,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         # request target API
@@ -343,6 +356,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token1.issuer_address = issuer_address
         _token1.token_address = token_address1
         _token1.abi = {}
+        _token1.version = TokenVersion.V_22_12
         db.add(_token1)
 
         # request target API
@@ -369,6 +383,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token2.issuer_address = issuer_address
         _token2.token_address = token_address2
         _token2.abi = {}
+        _token2.version = TokenVersion.V_22_12
         db.add(_token2)
 
         # request target API with same list id as in the past
@@ -406,6 +421,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.token_address = token_address
         _token.abi = {}
         _token.token_status = 0
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         list_id = str(uuid.uuid4())
@@ -444,6 +460,7 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
+        _token.version = TokenVersion.V_22_12
         db.add(_token)
 
         list_id = str(uuid.uuid4())

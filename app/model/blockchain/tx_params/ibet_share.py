@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import math
+from decimal import Decimal
 from typing import Optional
 
 from pydantic import BaseModel, field_validator
@@ -54,8 +55,8 @@ class UpdateParams(BaseModel):
     @classmethod
     def dividends_13_decimal_places(cls, v):
         if v is not None:
-            float_data = float(v * 10**13)
-            int_data = int(v * 10**13)
+            float_data = float(Decimal(str(v)) * 10**13)
+            int_data = int(Decimal(str(v)) * 10**13)
             if not math.isclose(int_data, float_data):
                 raise ValueError("dividends must be rounded to 13 decimal places")
         return v

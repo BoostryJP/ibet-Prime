@@ -28,8 +28,8 @@ from web3.middleware import geth_poa_middleware
 
 import config
 from app.exceptions import SendTransactionError
+from app.model.blockchain import TokenListContract
 from app.model.blockchain.token import IbetStraightBondContract
-from app.model.blockchain.token_list import TokenListContract
 from app.model.db import (
     UTXO,
     Account,
@@ -38,6 +38,7 @@ from app.model.db import (
     Token,
     TokenType,
     TokenUpdateOperationLog,
+    TokenVersion,
     UpdateToken,
 )
 from app.utils.contract_utils import ContractUtils
@@ -97,6 +98,10 @@ class TestAppRoutersBondTokensPOST:
                 "name": "name_test1",
                 "total_supply": 10000,
                 "face_value": 200,
+                "face_value_currency": "JPY",
+                "redemption_date": "20231231",
+                "redemption_value": 200,
+                "redemption_value_currency": "JPY",
                 "purpose": "purpose_test1",
             }
             resp = client.post(
@@ -110,7 +115,19 @@ class TestAppRoutersBondTokensPOST:
 
             # assertion
             IbetStraightBondContract.create.assert_called_with(
-                args=["name_test1", "", 10000, 200, "", 0, "", "", "purpose_test1"],
+                args=[
+                    "name_test1",
+                    "",
+                    10000,
+                    200,
+                    "JPY",
+                    "20231231",
+                    200,
+                    "JPY",
+                    "",
+                    "",
+                    "purpose_test1",
+                ],
                 tx_from=test_account["address"],
                 private_key=ANY,
             )
@@ -137,6 +154,7 @@ class TestAppRoutersBondTokensPOST:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
+            assert token_1.version == TokenVersion.V_23_12
 
             position = db.scalars(select(IDXPosition).limit(1)).first()
             assert position.token_address == "contract_address_test1"
@@ -178,10 +196,6 @@ class TestAppRoutersBondTokensPOST:
             target="app.model.blockchain.token.IbetStraightBondContract.create",
             return_value=("contract_address_test1", "abi_test1", "tx_hash_test1"),
         )
-        TokenListContract_register = patch(
-            target="app.model.blockchain.token_list.TokenListContract.register",
-            return_value=None,
-        )
         ContractUtils_get_block_by_transaction_hash = patch(
             target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
             return_value={
@@ -194,20 +208,24 @@ class TestAppRoutersBondTokensPOST:
 
         with (
             IbetStraightBondContract_create
-        ), TokenListContract_register, ContractUtils_get_block_by_transaction_hash:
+        ), ContractUtils_get_block_by_transaction_hash:
             # request target api
             req_param = {
                 "name": "name_test1",
                 "symbol": "symbol_test1",
                 "total_supply": 10000,
                 "face_value": 200,
+                "face_value_currency": "JPY",
                 "redemption_date": "20211231",
                 "redemption_value": 4000,
+                "redemption_value_currency": "JPY",
                 "return_date": "20211231",
                 "return_amount": "return_amount_test1",
                 "purpose": "purpose_test1",
-                "interest_rate": 0.0001,  # update
+                "interest_rate": 0.57,  # update
                 "interest_payment_date": ["0331", "0930"],  # update
+                "interest_payment_currency": "JPY",  # update
+                "base_fx_rate": 123.456789,  # update
                 "transferable": False,  # update
                 "image_url": ["image_1"],  # update
                 "status": False,  # update
@@ -235,8 +253,10 @@ class TestAppRoutersBondTokensPOST:
                     "symbol_test1",
                     10000,
                     200,
+                    "JPY",
                     "20211231",
                     4000,
+                    "JPY",
                     "20211231",
                     "return_amount_test1",
                     "purpose_test1",
@@ -244,8 +264,6 @@ class TestAppRoutersBondTokensPOST:
                 tx_from=test_account["address"],
                 private_key=ANY,
             )
-
-            TokenListContract.register.assert_not_called()
             ContractUtils.get_block_by_transaction_hash.assert_not_called()
 
             assert resp.status_code == 200
@@ -263,6 +281,7 @@ class TestAppRoutersBondTokensPOST:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 0
+            assert token_1.version == TokenVersion.V_23_12
 
             position = db.scalars(select(IDXPosition).limit(1)).first()
             assert position is None
@@ -326,6 +345,10 @@ class TestAppRoutersBondTokensPOST:
                 "name": "name_test1",
                 "total_supply": 10000,
                 "face_value": 200,
+                "face_value_currency": "JPY",
+                "redemption_date": "20231231",
+                "redemption_value": 200,
+                "redemption_value_currency": "JPY",
                 "purpose": "purpose_test1",
             }
             resp = client.post(
@@ -339,7 +362,19 @@ class TestAppRoutersBondTokensPOST:
 
             # assertion
             IbetStraightBondContract.create.assert_called_with(
-                args=["name_test1", "", 10000, 200, "", 0, "", "", "purpose_test1"],
+                args=[
+                    "name_test1",
+                    "",
+                    10000,
+                    200,
+                    "JPY",
+                    "20231231",
+                    200,
+                    "JPY",
+                    "",
+                    "",
+                    "purpose_test1",
+                ],
                 tx_from=test_account["address"],
                 private_key=ANY,
             )
@@ -366,6 +401,7 @@ class TestAppRoutersBondTokensPOST:
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
             assert token_1.token_status == 1
+            assert token_1.version == TokenVersion.V_23_12
 
             position = db.scalars(select(IDXPosition).limit(1)).first()
             assert position.token_address == "contract_address_test1"
@@ -422,6 +458,11 @@ class TestAppRoutersBondTokensPOST:
     # <Error_2_1>
     # Validation Error
     # format error
+    #  - base_fx_rate
+    #  - interest_rate
+    #  - interest_payment_date
+    #  - tradable_exchange_contract_address
+    #  - personal_info_contract_address
     def test_error_2_1(self, client, db):
         test_account = config_eth_account("user1")
 
@@ -436,6 +477,7 @@ class TestAppRoutersBondTokensPOST:
             "return_date": "20211231",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
+            "base_fx_rate": 123.4567899,
             "interest_rate": 12.34567,
             "interest_payment_date": [
                 "0101",
@@ -467,15 +509,51 @@ class TestAppRoutersBondTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"error": {}},
-                    "input": 12.34567,
-                    "loc": ["body", "interest_rate"],
-                    "msg": "Value error, interest_rate must be less than or equal to "
-                    "four decimal places",
-                    "type": "value_error",
+                    "type": "missing",
+                    "loc": ["body", "face_value_currency"],
+                    "msg": "Field required",
+                    "input": {
+                        "name": "name_test1",
+                        "symbol": "symbol_test1",
+                        "total_supply": 10000,
+                        "face_value": 200,
+                        "redemption_date": "20211231",
+                        "redemption_value": 4000,
+                        "return_date": "20211231",
+                        "return_amount": "return_amount_test1",
+                        "purpose": "purpose_test1",
+                        "base_fx_rate": 123.4567899,
+                        "interest_rate": 12.34567,
+                        "interest_payment_date": [
+                            "0101",
+                            "0201",
+                            "0301",
+                            "0401",
+                            "0501",
+                            "0601",
+                            "0701",
+                            "0801",
+                            "0901",
+                            "1001",
+                            "1101",
+                            "1201",
+                            "1231",
+                        ],
+                        "tradable_exchange_contract_address": "0x0",
+                        "personal_info_contract_address": "0x0",
+                    },
                 },
                 {
+                    "type": "value_error",
+                    "loc": ["body", "interest_rate"],
+                    "msg": "Value error, interest_rate must be less than or equal to four decimal places",
+                    "input": 12.34567,
                     "ctx": {"error": {}},
+                },
+                {
+                    "type": "value_error",
+                    "loc": ["body", "interest_payment_date"],
+                    "msg": "Value error, list length of interest_payment_date must be less than 13",
                     "input": [
                         "0101",
                         "0201",
@@ -491,26 +569,28 @@ class TestAppRoutersBondTokensPOST:
                         "1201",
                         "1231",
                     ],
-                    "loc": ["body", "interest_payment_date"],
-                    "msg": "Value error, list length of interest_payment_date must be "
-                    "less than 13",
-                    "type": "value_error",
+                    "ctx": {"error": {}},
                 },
                 {
+                    "type": "value_error",
+                    "loc": ["body", "base_fx_rate"],
+                    "msg": "Value error, base_fx_rate must be less than or equal to six decimal places",
+                    "input": 123.4567899,
                     "ctx": {"error": {}},
-                    "input": "0x0",
+                },
+                {
+                    "type": "value_error",
                     "loc": ["body", "tradable_exchange_contract_address"],
-                    "msg": "Value error, tradable_exchange_contract_address is not a "
-                    "valid address",
-                    "type": "value_error",
+                    "msg": "Value error, tradable_exchange_contract_address is not a valid address",
+                    "input": "0x0",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "0x0",
-                    "loc": ["body", "personal_info_contract_address"],
-                    "msg": "Value error, personal_info_contract_address is not a "
-                    "valid address",
                     "type": "value_error",
+                    "loc": ["body", "personal_info_contract_address"],
+                    "msg": "Value error, personal_info_contract_address is not a valid address",
+                    "input": "0x0",
+                    "ctx": {"error": {}},
                 },
             ],
         }
@@ -525,6 +605,7 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": 10000,
             "face_value": 200,
+            "face_value_currency": "JPY",
             "redemption_date": "20211231",
             "redemption_value": 4000,
             "return_date": "20211231",
@@ -568,6 +649,7 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": 10000,
             "face_value": 200,
+            "face_value_currency": "JPY",
             "redemption_date": "20211231",
             "redemption_value": 4000,
             "return_date": "20211231",
@@ -607,6 +689,7 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": 10000,
             "face_value": 200,
+            "face_value_currency": "JPY",
             "redemption_date": "20211231",
             "redemption_value": 4000,
             "return_date": "20211231",
@@ -645,11 +728,13 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": -1,
             "face_value": -1,
+            "face_value_currency": "JPY",
             "redemption_date": "20211231",
             "redemption_value": -1,
             "return_date": "20211231",
             "return_amount": "return_amount_test1",
             "purpose": "purpose_test1",
+            "base_fx_rate": -0.000001,  # update
             "interest_rate": -0.0001,  # update
             "interest_payment_date": ["0331", "0930"],  # update
             "transferable": False,  # update
@@ -675,32 +760,39 @@ class TestAppRoutersBondTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"ge": 0},
-                    "input": -1,
+                    "type": "greater_than_equal",
                     "loc": ["body", "total_supply"],
                     "msg": "Input should be greater than or equal to 0",
-                    "type": "greater_than_equal",
+                    "input": -1,
+                    "ctx": {"ge": 0},
                 },
                 {
-                    "ctx": {"ge": 0},
-                    "input": -1,
+                    "type": "greater_than_equal",
                     "loc": ["body", "face_value"],
                     "msg": "Input should be greater than or equal to 0",
-                    "type": "greater_than_equal",
+                    "input": -1,
+                    "ctx": {"ge": 0},
                 },
                 {
-                    "ctx": {"ge": 0},
-                    "input": -1,
+                    "type": "greater_than_equal",
                     "loc": ["body", "redemption_value"],
                     "msg": "Input should be greater than or equal to 0",
-                    "type": "greater_than_equal",
+                    "input": -1,
+                    "ctx": {"ge": 0},
                 },
                 {
-                    "ctx": {"ge": 0.0},
-                    "input": -0.0001,
+                    "type": "greater_than_equal",
                     "loc": ["body", "interest_rate"],
                     "msg": "Input should be greater than or equal to 0",
+                    "input": -0.0001,
+                    "ctx": {"ge": 0.0},
+                },
+                {
                     "type": "greater_than_equal",
+                    "loc": ["body", "base_fx_rate"],
+                    "msg": "Input should be greater than or equal to 0",
+                    "input": -1e-06,
+                    "ctx": {"ge": 0.0},
                 },
             ],
         }
@@ -734,6 +826,9 @@ class TestAppRoutersBondTokensPOST:
             "contact_information": GetRandomStr(2001),  # update
             "privacy_policy": GetRandomStr(5001),  # update
             "transfer_approval_required": True,  # update
+            "face_value_currency": "JPYY",
+            "redemption_value_currency": "JPYY",
+            "interest_payment_currency": "JPYY",
         }
         resp = client.post(
             self.apiurl,
@@ -747,74 +842,95 @@ class TestAppRoutersBondTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"max_length": 100},
-                    "input": ANY,
+                    "type": "string_too_long",
                     "loc": ["body", "name"],
                     "msg": "String should have at most 100 characters",
-                    "type": "string_too_long",
+                    "input": ANY,
+                    "ctx": {"max_length": 100},
                 },
                 {
-                    "ctx": {"le": 1000000000000},
-                    "input": 1000000000001,
+                    "type": "less_than_equal",
                     "loc": ["body", "total_supply"],
                     "msg": "Input should be less than or equal to 1000000000000",
-                    "type": "less_than_equal",
+                    "input": 1000000000001,
+                    "ctx": {"le": 1000000000000},
                 },
                 {
-                    "ctx": {"le": 5000000000},
-                    "input": 5000000001,
+                    "type": "less_than_equal",
                     "loc": ["body", "face_value"],
                     "msg": "Input should be less than or equal to 5000000000",
-                    "type": "less_than_equal",
+                    "input": 5000000001,
+                    "ctx": {"le": 5000000000},
                 },
                 {
-                    "ctx": {"max_length": 2000},
-                    "input": ANY,
+                    "type": "string_too_long",
+                    "loc": ["body", "face_value_currency"],
+                    "msg": "String should have at most 3 characters",
+                    "input": "JPYY",
+                    "ctx": {"max_length": 3},
+                },
+                {
+                    "type": "string_too_long",
                     "loc": ["body", "purpose"],
                     "msg": "String should have at most 2000 characters",
-                    "type": "string_too_long",
+                    "input": ANY,
+                    "ctx": {"max_length": 2000},
                 },
                 {
-                    "ctx": {"max_length": 100},
-                    "input": ANY,
+                    "type": "string_too_long",
                     "loc": ["body", "symbol"],
                     "msg": "String should have at most 100 characters",
-                    "type": "string_too_long",
+                    "input": ANY,
+                    "ctx": {"max_length": 100},
                 },
                 {
-                    "ctx": {"le": 5000000000},
-                    "input": 5000000001,
+                    "type": "less_than_equal",
                     "loc": ["body", "redemption_value"],
                     "msg": "Input should be less than or equal to 5000000000",
-                    "type": "less_than_equal",
+                    "input": 5000000001,
+                    "ctx": {"le": 5000000000},
                 },
                 {
-                    "ctx": {"max_length": 2000},
-                    "input": ANY,
+                    "type": "string_too_long",
+                    "loc": ["body", "redemption_value_currency"],
+                    "msg": "String should have at most 3 characters",
+                    "input": "JPYY",
+                    "ctx": {"max_length": 3},
+                },
+                {
+                    "type": "string_too_long",
                     "loc": ["body", "return_amount"],
                     "msg": "String should have at most 2000 characters",
-                    "type": "string_too_long",
+                    "input": ANY,
+                    "ctx": {"max_length": 2000},
                 },
                 {
-                    "ctx": {"le": 100.0},
-                    "input": 100.0001,
+                    "type": "less_than_equal",
                     "loc": ["body", "interest_rate"],
                     "msg": "Input should be less than or equal to 100",
-                    "type": "less_than_equal",
+                    "input": 100.0001,
+                    "ctx": {"le": 100.0},
                 },
                 {
-                    "ctx": {"max_length": 2000},
-                    "input": ANY,
+                    "type": "string_too_long",
+                    "loc": ["body", "interest_payment_currency"],
+                    "msg": "String should have at most 3 characters",
+                    "input": "JPYY",
+                    "ctx": {"max_length": 3},
+                },
+                {
+                    "type": "string_too_long",
                     "loc": ["body", "contact_information"],
                     "msg": "String should have at most 2000 characters",
-                    "type": "string_too_long",
+                    "input": ANY,
+                    "ctx": {"max_length": 2000},
                 },
                 {
-                    "ctx": {"max_length": 5000},
-                    "input": ANY,
+                    "type": "string_too_long",
                     "loc": ["body", "privacy_policy"],
                     "msg": "String should have at most 5000 characters",
-                    "type": "string_too_long",
+                    "input": ANY,
+                    "ctx": {"max_length": 5000},
                 },
             ],
         }
@@ -829,6 +945,7 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": 10000,
             "face_value": 200,
+            "face_value_currency": "JPY",
             "redemption_date": "invalid_date",
             "redemption_value": 4000,
             "return_date": "invalid_date",
@@ -895,6 +1012,7 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": 10000,
             "face_value": 200,
+            "face_value_currency": "JPY",
             "redemption_date": "20211231",
             "redemption_value": 4000,
             "return_date": "20211231",
@@ -935,6 +1053,7 @@ class TestAppRoutersBondTokensPOST:
             "symbol": "symbol_test1",
             "total_supply": 10000,
             "face_value": 200,
+            "face_value_currency": "JPY",
             "redemption_date": "20211231",
             "redemption_value": 4000,
             "return_date": "20211231",
@@ -984,6 +1103,7 @@ class TestAppRoutersBondTokensPOST:
                 "symbol": "symbol_test1",
                 "total_supply": 10000,
                 "face_value": 200,
+                "face_value_currency": "JPY",
                 "redemption_date": "20211231",
                 "redemption_value": 4000,
                 "return_date": "20211231",
@@ -1006,10 +1126,10 @@ class TestAppRoutersBondTokensPOST:
                 "detail": "failed to send transaction",
             }
 
-    # <Error_5>
+    # <Error_4_2>
     # Send Transaction Error
     # TokenListContract.register
-    def test_error_5(self, client, db):
+    def test_error_4_2(self, client, db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -1036,8 +1156,10 @@ class TestAppRoutersBondTokensPOST:
                 "symbol": "symbol_test1",
                 "total_supply": 10000,
                 "face_value": 200,
+                "face_value_currency": "JPY",
                 "redemption_date": "20211231",
                 "redemption_value": 4000,
+                "redemption_value_currency": "JPY",
                 "return_date": "20211231",
                 "return_amount": "return_amount_test1",
                 "purpose": "purpose_test1",

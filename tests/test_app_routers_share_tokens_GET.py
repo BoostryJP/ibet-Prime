@@ -17,12 +17,11 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 from unittest import mock
-from unittest.mock import call
 
 from pytz import timezone
 
 from app.model.blockchain import IbetShareContract
-from app.model.db import Token, TokenType
+from app.model.db import Token, TokenType, TokenVersion
 from config import TZ
 from tests.account_config import config_eth_account
 
@@ -57,6 +56,7 @@ class TestAppRoutersShareTokensGET:
         token.issuer_address = issuer_address_1
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
+        token.version = TokenVersion.V_22_12
         db.add(token)
         db.commit()
         _issue_datetime = (
@@ -122,6 +122,7 @@ class TestAppRoutersShareTokensGET:
                 "issue_datetime": _issue_datetime,
                 "token_status": 1,
                 "memo": "memo_test1",
+                "contract_version": TokenVersion.V_22_12,
             }
         ]
 
@@ -143,6 +144,7 @@ class TestAppRoutersShareTokensGET:
         token_1.issuer_address = issuer_address_1
         token_1.token_address = "token_address_test1"
         token_1.abi = "abi_test1"
+        token_1.version = TokenVersion.V_22_12
         db.add(token_1)
         db.commit()
         _issue_datetime_1 = (
@@ -187,6 +189,7 @@ class TestAppRoutersShareTokensGET:
         token_2.token_address = "token_address_test2"
         token_2.abi = "abi_test2"
         token_2.token_status = 0
+        token_2.version = TokenVersion.V_22_12
         db.add(token_2)
         db.commit()
         _issue_datetime_2 = (
@@ -252,6 +255,7 @@ class TestAppRoutersShareTokensGET:
                 "issue_datetime": _issue_datetime_1,
                 "token_status": 1,
                 "memo": "memo_test1",
+                "contract_version": TokenVersion.V_22_12,
             },
             {
                 "issuer_address": issuer_address_2,
@@ -277,6 +281,7 @@ class TestAppRoutersShareTokensGET:
                 "issue_datetime": _issue_datetime_2,
                 "token_status": 0,
                 "memo": "memo_test2",
+                "contract_version": TokenVersion.V_22_12,
             },
         ]
 
@@ -295,6 +300,7 @@ class TestAppRoutersShareTokensGET:
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
+        token.version = TokenVersion.V_22_12
         db.add(token)
 
         resp = client.get(self.apiurl, headers={"issuer-address": issuer_address_1})
@@ -317,6 +323,7 @@ class TestAppRoutersShareTokensGET:
         token_1.issuer_address = issuer_address_1
         token_1.token_address = "token_address_test1"
         token_1.abi = "abi_test1"
+        token_1.version = TokenVersion.V_22_12
         db.add(token_1)
         db.commit()
         _issue_datetime = (
@@ -361,6 +368,7 @@ class TestAppRoutersShareTokensGET:
         token_2.issuer_address = issuer_address_2
         token_2.token_address = "token_address_test1"
         token_2.abi = "abi_test1"
+        token_2.version = TokenVersion.V_22_12
         db.add(token_2)
 
         resp = client.get(self.apiurl, headers={"issuer-address": issuer_address_1})
@@ -390,6 +398,7 @@ class TestAppRoutersShareTokensGET:
                 "issue_datetime": _issue_datetime,
                 "token_status": 1,
                 "memo": "memo_test1",
+                "contract_version": TokenVersion.V_22_12,
             }
         ]
 
@@ -411,6 +420,7 @@ class TestAppRoutersShareTokensGET:
         token_1.issuer_address = issuer_address_1
         token_1.token_address = "token_address_test1"
         token_1.abi = "abi_test1"
+        token_1.version = TokenVersion.V_22_12
         db.add(token_1)
         db.commit()
         _issue_datetime_1 = (
@@ -455,6 +465,7 @@ class TestAppRoutersShareTokensGET:
         token_2.token_address = "token_address_test2"
         token_2.abi = "abi_test2"
         token_2.token_status = 0
+        token_2.version = TokenVersion.V_22_12
         db.add(token_2)
         db.commit()
         _issue_datetime_2 = (
@@ -500,6 +511,7 @@ class TestAppRoutersShareTokensGET:
         token_3.issuer_address = issuer_address_2
         token_3.token_address = "token_address_test1"
         token_3.abi = "abi_test1"
+        token_3.version = TokenVersion.V_22_12
         db.add(token_3)
 
         resp = client.get(self.apiurl, headers={"issuer-address": issuer_address_1})
@@ -529,6 +541,7 @@ class TestAppRoutersShareTokensGET:
                 "issue_datetime": _issue_datetime_1,
                 "token_status": 1,
                 "memo": "memo_test1",
+                "contract_version": TokenVersion.V_22_12,
             },
             {
                 "issuer_address": issuer_address_1,
@@ -554,6 +567,7 @@ class TestAppRoutersShareTokensGET:
                 "issue_datetime": _issue_datetime_2,
                 "token_status": 0,
                 "memo": "memo_test2",
+                "contract_version": TokenVersion.V_22_12,
             },
         ]
 

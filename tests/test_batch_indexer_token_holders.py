@@ -40,6 +40,7 @@ from app.model.db import (
     TokenHolderBatchStatus,
     TokenHoldersList,
     TokenType,
+    TokenVersion,
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
@@ -104,8 +105,10 @@ def deploy_bond_token_contract(
         "token.symbol",
         100000000,
         20,
+        "JPY",
         "token.redemption_date",
         30,
+        "JPY",
         "token.return_date",
         "token.return_amount",
         "token.purpose",
@@ -243,6 +246,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_23_12
         db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -616,6 +620,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_23_12
         db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -836,6 +841,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_23_12
         db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -1025,6 +1031,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_22_12
         db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -1412,6 +1419,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_22_12
         db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -1632,6 +1640,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_22_12
         db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -1825,6 +1834,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_23_12
         db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -1940,6 +1950,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_23_12
         db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -2123,6 +2134,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_23_12
         db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -2274,6 +2286,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_23_12
         db.add(token_1)
 
         # Insert collection record with above token and checkpoint block number
@@ -2447,6 +2460,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_23_12
         db.add(token_1)
 
         PersonalInfoContractTestUtils.register(
@@ -2545,6 +2559,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_22_12
         db.add(token_1)
 
         PersonalInfoContractTestUtils.register(

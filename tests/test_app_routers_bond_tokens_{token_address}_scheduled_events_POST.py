@@ -21,7 +21,14 @@ from datetime import datetime, timezone
 from pytz import timezone as tz
 from sqlalchemy import and_, select
 
-from app.model.db import Account, ScheduledEvents, ScheduledEventType, Token, TokenType
+from app.model.db import (
+    Account,
+    ScheduledEvents,
+    ScheduledEventType,
+    Token,
+    TokenType,
+    TokenVersion,
+)
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
@@ -55,6 +62,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # test data
@@ -62,9 +70,13 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         datetime_now_str = datetime_now_utc.isoformat()
         update_data = {
             "face_value": 10000,
+            "face_value_currency": "JPY",
             "interest_rate": 0.5,
             "interest_payment_date": ["0101", "0701"],
+            "interest_payment_currency": "JPY",
             "redemption_value": 11000,
+            "redemption_value_currency": "JPY",
+            "base_fx_rate": 123.456789,
             "transferable": False,
             "status": False,
             "is_offering": False,
@@ -134,6 +146,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # test data
@@ -141,9 +154,13 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         datetime_now_str = datetime_now_jst.isoformat()
         update_data = {
             "face_value": 10000,
+            "face_value_currency": "JPY",
             "interest_rate": 0.5,
             "interest_payment_date": ["0101", "0701"],
+            "interest_payment_currency": "JPY",
             "redemption_value": 11000,
+            "redemption_value_currency": "JPY",
+            "base_fx_rate": 123.456789,
             "transferable": False,
             "status": False,
             "is_offering": False,
@@ -338,6 +355,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # test data
@@ -480,6 +498,7 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         token.token_address = _token_address
         token.abi = ""
         token.token_status = 0
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # test data

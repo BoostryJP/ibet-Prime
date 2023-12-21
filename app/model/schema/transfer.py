@@ -23,7 +23,9 @@ from fastapi import Query
 from pydantic import BaseModel, Field, NonNegativeInt
 from pydantic.dataclasses import dataclass
 
-from .types import ResultSet
+from app.model.schema.base import ResultSet
+
+from .personal_info import PersonalInfo
 
 ############################
 # COMMON
@@ -88,7 +90,9 @@ class TransferResponse(BaseModel):
     transaction_hash: str
     token_address: str
     from_address: str
+    from_address_personal_information: Optional[PersonalInfo] = Field(...)
     to_address: str
+    to_address_personal_information: Optional[PersonalInfo] = Field(...)
     amount: int
     source_event: TransferSourceEventType = Field(description="Source Event")
     data: dict | None = Field(description="Event data")
@@ -129,7 +133,33 @@ class TransferApprovalTokenResponse(BaseModel):
     exchange_address: str
     application_id: int
     from_address: str
+    from_address_personal_information: Optional[PersonalInfo] = Field(...)
     to_address: str
+    to_address_personal_information: Optional[PersonalInfo] = Field(...)
+    amount: int
+    application_datetime: str
+    application_blocktimestamp: str
+    approval_datetime: Optional[str] = Field(...)
+    approval_blocktimestamp: Optional[str] = Field(...)
+    cancellation_blocktimestamp: Optional[str] = Field(...)
+    cancelled: bool
+    escrow_finished: bool
+    transfer_approved: bool
+    status: int
+    issuer_cancelable: bool
+
+
+class TransferApprovalTokenDetailResponse(BaseModel):
+    """transfer approval token data"""
+
+    id: int
+    token_address: str
+    exchange_address: str
+    application_id: int
+    from_address: str
+    from_address_personal_information: Optional[PersonalInfo] = Field(...)
+    to_address: str
+    to_address_personal_information: Optional[PersonalInfo] = Field(...)
     amount: int
     application_datetime: str
     application_blocktimestamp: str

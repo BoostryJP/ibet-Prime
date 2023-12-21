@@ -44,6 +44,7 @@ from app.model.db import (
     IDXPersonalInfoBlockNumber,
     Token,
     TokenType,
+    TokenVersion,
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
@@ -89,8 +90,10 @@ def deploy_bond_token_contract(
         "token.symbol",
         100,
         20,
+        "JPY",
         "token.redemption_date",
         30,
+        "JPY",
         "token.return_date",
         "token.return_amount",
         "token.purpose",
@@ -184,6 +187,7 @@ class TestProcessor:
         token_1.abi = "abi"
         token_1.tx_hash = "tx_hash"
         token_1.token_status = 0
+        token_1.version = TokenVersion.V_23_12
         db.add(token_1)
 
         db.commit()
@@ -235,6 +239,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_23_12
         db.add(token_1)
 
         # Prepare data : Token(processing token)
@@ -245,6 +250,7 @@ class TestProcessor:
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
+        token_2.version = TokenVersion.V_23_12
         db.add(token_2)
 
         # Prepare data : BlockNumber
@@ -306,6 +312,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_23_12
         db.add(token_1)
 
         # Prepare data : Token(processing token)
@@ -316,6 +323,7 @@ class TestProcessor:
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
+        token_2.version = TokenVersion.V_23_12
         db.add(token_2)
 
         db.commit()
@@ -403,6 +411,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_23_12
         db.add(token_1)
 
         # Prepare data : Token(processing token)
@@ -413,6 +422,7 @@ class TestProcessor:
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
+        token_2.version = TokenVersion.V_23_12
         db.add(token_2)
 
         db.commit()
@@ -540,6 +550,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_23_12
         db.add(token_1)
 
         # Prepare data : Token(processing token)
@@ -550,6 +561,7 @@ class TestProcessor:
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
+        token_2.version = TokenVersion.V_23_12
         db.add(token_2)
 
         db.commit()
@@ -753,6 +765,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address_1
         token_1.abi = token_contract1.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_23_12
         db.add(token_1)
 
         # Issuer2 issues bond token.
@@ -769,6 +782,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address_2
         token_2.abi = token_contract2.abi
         token_2.tx_hash = "tx_hash"
+        token_2.version = TokenVersion.V_23_12
         db.add(token_2)
 
         db.commit()
@@ -927,6 +941,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_23_12
         db.add(token_1)
 
         # Prepare data : Token(processing token)
@@ -937,6 +952,7 @@ class TestProcessor:
         token_2.abi = "abi"
         token_2.tx_hash = "tx_hash"
         token_2.token_status = 0
+        token_2.version = TokenVersion.V_23_12
         db.add(token_2)
 
         db.commit()
@@ -1043,6 +1059,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = token_contract_1.abi
         token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_23_12
         db.add(token_1)
 
         db.commit()

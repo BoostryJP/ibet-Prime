@@ -22,8 +22,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field, field_validator
 
 from app.model.db import LedgerDetailsDataType, TokenType
-
-from .types import ResultSet
+from app.model.schema.base import ResultSet
 
 ############################
 # REQUEST
@@ -132,6 +131,7 @@ class RetrieveLedgerHistoryResponse(BaseModel):
 
     created: str
     token_name: str
+    currency: str
     headers: Optional[List[dict]] = None
     details: List[RetrieveLedgerDetailsHistoryResponse]
     footers: Optional[List[dict]] = None

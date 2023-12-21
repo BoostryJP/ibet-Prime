@@ -60,7 +60,7 @@ tags_metadata = [
 app = FastAPI(
     title="ibet Prime",
     description="Security token management system for ibet network",
-    version="23.9.0",
+    version="23.12.0",
     contact={"email": "dev@boostry.co.jp"},
     license_info={
         "name": "Apache 2.0",
@@ -209,6 +209,18 @@ async def response_limit_exceeded_error_handler(
     request: Request, exc: Integer64bitLimitExceededError
 ):
     meta = {"code": 5, "title": "Integer64bitLimitExceededError"}
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),
+    )
+
+
+# 400:OperationNotAllowedStateError
+@app.exception_handler(OperationNotAllowedStateError)
+async def operation_not_permitted_error_handler(
+    request: Request, exc: OperationNotAllowedStateError
+):
+    meta = {"code": exc.code, "title": "OperationNotAllowedStateError"}
     return JSONResponse(
         status_code=exc.status_code,
         content=jsonable_encoder({"meta": meta, "detail": exc.args[0]}),

@@ -25,8 +25,7 @@ from pydantic.dataclasses import dataclass
 from web3 import Web3
 
 from app.model.db import TokenType
-
-from .types import ResultSet, SortOrder
+from app.model.schema.base import ResultSet, SortOrder
 
 ############################
 # COMMON

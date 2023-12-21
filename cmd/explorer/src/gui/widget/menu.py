@@ -43,7 +43,7 @@ class Menu(TuiWidget):
 
     def compose(self) -> ComposeResult:
         yield Button(
-            Text.from_markup(r"\[t] Show Transactions :package:"),
+            Text.from_markup("\[t] Show Transactions :package:", overflow="crop"),
             id=ID.MENU_SHOW_TX,
             classes="menubutton",
         )

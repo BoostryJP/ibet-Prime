@@ -21,7 +21,7 @@ from unittest import mock
 from pytz import timezone
 
 from app.model.blockchain import IbetShareContract
-from app.model.db import Token, TokenType
+from app.model.db import Token, TokenType, TokenVersion
 from config import TZ
 
 
@@ -45,6 +45,7 @@ class TestAppRoutersShareTokensTokenAddressGET:
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
+        token.version = TokenVersion.V_22_12
         db.add(token)
         db.commit()
         _issue_time = (
@@ -110,6 +111,7 @@ class TestAppRoutersShareTokensTokenAddressGET:
             "issue_datetime": _issue_time,
             "token_status": 1,
             "memo": "memo_test1",
+            "contract_version": TokenVersion.V_22_12,
         }
 
         assert resp.status_code == 200
@@ -126,6 +128,7 @@ class TestAppRoutersShareTokensTokenAddressGET:
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
+        token.version = TokenVersion.V_22_12
         db.add(token)
         db.commit()
         _issue_time = (
@@ -191,6 +194,7 @@ class TestAppRoutersShareTokensTokenAddressGET:
             "issue_datetime": _issue_time,
             "token_status": 1,
             "memo": "memo_test1",
+            "contract_version": TokenVersion.V_22_12,
         }
 
         assert resp.status_code == 200
@@ -222,6 +226,7 @@ class TestAppRoutersShareTokensTokenAddressGET:
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.token_status = 0
+        token.version = TokenVersion.V_22_12
         db.add(token)
 
         resp = client.get(self.base_apiurl + "token_address_test1")

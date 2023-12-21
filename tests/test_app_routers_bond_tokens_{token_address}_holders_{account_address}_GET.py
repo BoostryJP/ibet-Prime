@@ -16,6 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+from datetime import datetime
+
 from app.model.db import (
     Account,
     IDXLockedPosition,
@@ -23,6 +25,7 @@ from app.model.db import (
     IDXPosition,
     Token,
     TokenType,
+    TokenVersion,
 )
 from tests.account_config import config_eth_account
 
@@ -56,6 +59,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # prepare data: Personal Info
@@ -99,6 +103,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
             "exchange_commitment": 0,
             "pending_transfer": 0,
             "locked": 0,
+            "modified": None,
         }
 
     # <Normal_1_2>
@@ -122,6 +127,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # prepare data: Position
@@ -132,6 +138,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         idx_position_1.exchange_balance = 11
         idx_position_1.exchange_commitment = 12
         idx_position_1.pending_transfer = 5
+        idx_position_1.modified = datetime(2023, 10, 24, 0, 0, 0)
         db.add(idx_position_1)
 
         # prepare data: Personal Info
@@ -175,6 +182,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
             "exchange_commitment": 12,
             "pending_transfer": 5,
             "locked": 0,
+            "modified": "2023-10-24T00:00:00",
         }
 
     # <Normal_1_3>
@@ -198,6 +206,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # prepare data: Position
@@ -208,6 +217,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         idx_position_1.exchange_balance = 11
         idx_position_1.exchange_commitment = 12
         idx_position_1.pending_transfer = 5
+        idx_position_1.modified = datetime(2023, 10, 24, 0, 0, 0)
         db.add(idx_position_1)
 
         # prepare data: Locked Position
@@ -218,6 +228,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         )
         _locked_position.account_address = _account_address_1
         _locked_position.value = 5
+        _locked_position.modified = datetime(2023, 10, 24, 0, 1, 0)
         db.add(_locked_position)
 
         _locked_position = IDXLockedPosition()
@@ -227,6 +238,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         )
         _locked_position.account_address = _account_address_1
         _locked_position.value = 5
+        _locked_position.modified = datetime(2023, 10, 24, 0, 2, 0)
         db.add(_locked_position)
 
         # prepare data: Personal Info
@@ -270,6 +282,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
             "exchange_commitment": 12,
             "pending_transfer": 5,
             "locked": 10,
+            "modified": "2023-10-24T00:02:00",
         }
 
     # <Normal_2_1>
@@ -291,6 +304,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         idx_position_1 = IDXPosition()
@@ -300,6 +314,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         idx_position_1.exchange_balance = 11
         idx_position_1.exchange_commitment = 12
         idx_position_1.pending_transfer = 5
+        idx_position_1.modified = datetime(2023, 10, 24, 0, 0, 0)
         db.add(idx_position_1)
 
         # request target API
@@ -327,6 +342,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
             "exchange_commitment": 12,
             "pending_transfer": 5,
             "locked": 0,
+            "modified": "2023-10-24T00:00:00",
         }
 
     # <Normal_2_2>
@@ -348,6 +364,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = ""
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         idx_position_1 = IDXPosition()
@@ -357,6 +374,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         idx_position_1.exchange_balance = 11
         idx_position_1.exchange_commitment = 12
         idx_position_1.pending_transfer = 5
+        idx_position_1.modified = datetime(2023, 10, 24, 0, 0, 0)
         db.add(idx_position_1)
 
         idx_personal_info_1 = IDXPersonalInfo()
@@ -398,6 +416,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
             "exchange_commitment": 12,
             "pending_transfer": 5,
             "locked": 0,
+            "modified": "2023-10-24T00:00:00",
         }
 
     ###########################################################################
@@ -497,6 +516,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersAccountAddressGET:
         token.token_address = _token_address
         token.abi = ""
         token.token_status = 0
+        token.version = TokenVersion.V_23_12
         db.add(token)
 
         # request target API

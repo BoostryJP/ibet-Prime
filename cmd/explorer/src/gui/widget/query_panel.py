@@ -31,7 +31,7 @@ from textual.message import Message
 from textual.widgets import Button, Input, Label
 
 from app.model.schema import ListBlockDataQuery
-from app.model.schema.types import SortOrder
+from app.model.schema.base import SortOrder
 
 if TYPE_CHECKING:
     from src.gui.explorer import ExplorerApp
@@ -98,7 +98,7 @@ class ToBlockInput(Input):
         """
         self._cursor_visible = True
         if self.cursor_blink:
-            self.blink_timer.reset()
+            self._blink_timer.reset()
 
         event.prevent_default()
         event.stop()
@@ -282,7 +282,7 @@ class QuerySetting(TuiWidget):
         self.tui.state.block_list_query = query
         self.tui.query_one(BlockListQueryPanel).block_list_query = query
 
-        self.emit_no_wait(self.Enter(sender=self))
+        self.post_message(self.Enter())
         self.hide()
 
     def action_cancel(self):
