@@ -29,7 +29,7 @@ English | [日本語](./README_JA.md)
 
 ## Supported ibet smart contract version
 
-* ibet-SmartContract: version 22.12.0
+* ibet-SmartContract: Supports the latest version of contract specifications.
 * See [details](./contracts/contract_version.md).
 
 
