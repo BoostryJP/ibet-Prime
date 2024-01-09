@@ -61,7 +61,7 @@ from .file import (
     ListAllFilesResponse,
     UploadFileRequest,
 )
-from .holder import HolderCountResponse, HolderResponse
+from .holder import HolderCountResponse, HolderResponse, HoldersResponse
 from .index import BlockNumberResponse, E2EEResponse
 from .issue_redeem import IssueRedeemEvent, IssueRedeemHistoryResponse
 from .ledger import (
@@ -79,6 +79,7 @@ from .personal_info import (
     BatchRegisterPersonalInfoResult,
     BatchRegisterPersonalInfoUploadResponse,
     GetBatchRegisterPersonalInfoResponse,
+    ListAllPersonalInfoBatchRegistrationUploadQuery,
     ListBatchRegisterPersonalInfoUploadResponse,
     RegisterPersonalInfoRequest,
 )
@@ -111,9 +112,14 @@ from .token import (
     IbetStraightBondResponse,
     IbetStraightBondTransfer,
     IbetStraightBondUpdate,
+    ListAdditionalIssuanceHistoryQuery,
+    ListAllAdditionalIssueUploadQuery,
+    ListAllHoldersQuery,
+    ListAllRedeemUploadQuery,
     ListAllTokenLockEventsQuery,
     ListAllTokenLockEventsResponse,
     ListAllTokenLockEventsSortItem,
+    ListRedeemHistoryQuery,
     ListTokenHistorySortItem,
     ListTokenOperationLogHistoryQuery,
     ListTokenOperationLogHistoryResponse,
@@ -129,6 +135,7 @@ from .token_holders import (
     RetrieveTokenHoldersListResponse,
 )
 from .transfer import (
+    ListTransferApprovalHistoryQuery,
     ListTransferHistoryQuery,
     ListTransferHistorySortItem,
     TransferApprovalHistoryResponse,

@@ -21,6 +21,8 @@ from typing import Optional
 
 from pydantic import BaseModel
 
+from app.model.schema.base import ResultSet
+
 from .personal_info import PersonalInfo
 
 
@@ -38,6 +40,13 @@ class HolderResponse(BaseModel):
     pending_transfer: int
     locked: int
     modified: Optional[datetime]
+
+
+class HoldersResponse(BaseModel):
+    """Holders schema (Response)"""
+
+    result_set: ResultSet
+    holders: list[HolderResponse]
 
 
 class HolderCountResponse(BaseModel):

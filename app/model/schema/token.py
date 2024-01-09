@@ -431,6 +431,67 @@ class IbetShareRedeem(BaseModel):
         return v
 
 
+class IssueRedeemSortItem(str, Enum):
+    """Issue/Redeem sort item"""
+
+    BLOCK_TIMESTAMP = "block_timestamp"
+    LOCKED_ADDRESS = "locked_address"
+    TARGET_ADDRESS = "target_address"
+    AMOUNT = "amount"
+
+
+@dataclass
+class ListAdditionalIssuanceHistoryQuery:
+    sort_item: Annotated[
+        IssueRedeemSortItem, Query()
+    ] = IssueRedeemSortItem.BLOCK_TIMESTAMP
+    sort_order: Annotated[
+        SortOrder, Query(description="0:asc, 1:desc")
+    ] = SortOrder.DESC
+    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
+    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
+
+
+@dataclass
+class ListAllAdditionalIssueUploadQuery:
+    processed: Annotated[Optional[bool], Query()] = None
+    sort_order: Annotated[
+        SortOrder, Query(description="0:asc, 1:desc")
+    ] = SortOrder.DESC
+    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
+    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
+
+
+@dataclass
+class ListRedeemHistoryQuery:
+    sort_item: Annotated[
+        IssueRedeemSortItem, Query()
+    ] = IssueRedeemSortItem.BLOCK_TIMESTAMP
+    sort_order: Annotated[
+        SortOrder, Query(description="0:asc, 1:desc")
+    ] = SortOrder.DESC
+    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
+    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
+
+
+@dataclass
+class ListAllRedeemUploadQuery:
+    processed: Annotated[Optional[bool], Query()] = None
+    sort_order: Annotated[
+        SortOrder, Query(description="0:asc, 1:desc")
+    ] = SortOrder.DESC
+    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
+    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
+
+
+@dataclass
+class ListAllHoldersQuery:
+    include_former_holder: Annotated[bool, Query()] = False
+    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = SortOrder.ASC
+    offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
+    limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
+
+
 class ListAllTokenLockEventsSortItem(str, Enum):
     account_address = "account_address"
     lock_address = "lock_address"
