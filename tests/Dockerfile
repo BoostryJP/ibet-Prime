@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 # make application directory
 RUN mkdir -p /app/ibet-Prime/
