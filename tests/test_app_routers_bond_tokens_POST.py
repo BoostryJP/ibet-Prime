@@ -581,14 +581,14 @@ class TestAppRoutersBondTokensPOST:
                 {
                     "type": "value_error",
                     "loc": ["body", "tradable_exchange_contract_address"],
-                    "msg": "Value error, tradable_exchange_contract_address is not a valid address",
+                    "msg": "Value error, invalid ethereum address",
                     "input": "0x0",
                     "ctx": {"error": {}},
                 },
                 {
                     "type": "value_error",
                     "loc": ["body", "personal_info_contract_address"],
-                    "msg": "Value error, personal_info_contract_address is not a valid address",
+                    "msg": "Value error, invalid ethereum address",
                     "input": "0x0",
                     "ctx": {"error": {}},
                 },

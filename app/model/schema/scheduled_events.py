@@ -21,9 +21,9 @@ from typing import Any, Dict
 
 from pydantic import BaseModel, Field
 
-from app.model.db import TokenType
 from app.model.db.scheduled_events import ScheduledEventType
 
+from .base import TokenType
 from .token import IbetShareUpdate, IbetStraightBondUpdate
 
 

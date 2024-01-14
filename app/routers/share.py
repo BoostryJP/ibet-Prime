@@ -24,7 +24,6 @@ from typing import List, Optional, Sequence
 from eth_keyfile import decode_keyfile_json
 from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.exceptions import HTTPException
-from pydantic import conint
 from pytz import timezone
 from sqlalchemy import (
     String,
@@ -113,6 +112,7 @@ from app.model.schema import (
     HolderResponse,
     HoldersResponse,
     IbetShareAdditionalIssue,
+    IbetShareBulkTransferRequest,
     IbetShareCreate,
     IbetShareRedeem,
     IbetShareResponse,
@@ -3584,21 +3584,28 @@ def retrieve_transfer_approval_history(
 def bulk_transfer_ownership(
     db: DBSession,
     request: Request,
-    tokens: List[IbetShareTransfer],
+    bulk_transfer_req: IbetShareBulkTransferRequest,
     issuer_address: str = Header(...),
     eoa_password: Optional[str] = Header(None),
     auth_token: Optional[str] = Header(None),
 ):
-    """Bulk transfer token ownership"""
+    """Bulk transfer token ownership
+
+    When using transaction compression, the following conditions must be met.
+    - All `token_address` must be the same.
+    - All `from_address` must be the same.
+    - `from_address` and `issuer_address` must be the same.
+    """
+    tx_compression = bulk_transfer_req.transaction_compression
+    transfer_list = bulk_transfer_req.transfer_list
+    token_addr_set = set()
+    from_addr_set = set()
 
     # Validate Headers
     validate_headers(
         issuer_address=(issuer_address, address_is_valid_address),
         eoa_password=(eoa_password, eoa_password_is_encrypted_value),
     )
-
-    if len(tokens) < 1:
-        raise InvalidParameterError("list length must be at least one")
 
     # Authentication
     check_auth(
@@ -3610,27 +3617,48 @@ def bulk_transfer_ownership(
     )
 
     # Verify that the tokens are issued by the issuer_address
-    for _token in tokens:
+    for _transfer in transfer_list:
         _issued_token: Token | None = db.scalars(
             select(Token)
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
                     Token.issuer_address == issuer_address,
-                    Token.token_address == _token.token_address,
+                    Token.token_address == _transfer.token_address,
                     Token.token_status != 2,
                 )
             )
             .limit(1)
         ).first()
         if _issued_token is None:
-            raise InvalidParameterError(f"token not found: {_token.token_address}")
+            raise InvalidParameterError(f"token not found: {_transfer.token_address}")
         if _issued_token.token_status == 0:
             raise InvalidParameterError(
-                f"this token is temporarily unavailable: {_token.token_address}"
+                f"this token is temporarily unavailable: {_transfer.token_address}"
             )
 
-    # generate upload_id
+        token_addr_set.add(_transfer.token_address)
+        from_addr_set.add(_transfer.from_address)
+
+    # Checks when compressing transactions
+    if tx_compression:
+        # All token_address must be the same
+        if len(token_addr_set) > 1:
+            raise InvalidParameterError(
+                "When using transaction compression, all token_address must be the same."
+            )
+        # All from_address must be the same
+        if len(from_addr_set) > 1:
+            raise InvalidParameterError(
+                "When using transaction compression, all from_address must be the same."
+            )
+        # from_address must be the same as issuer_address
+        if next(iter(from_addr_set)) != issuer_address:
+            raise InvalidParameterError(
+                "When using transaction compression, from_address must be the same as issuer_address."
+            )
+
+    # Generate upload_id
     upload_id = uuid.uuid4()
 
     # add bulk transfer upload record
@@ -3638,19 +3666,20 @@ def bulk_transfer_ownership(
     _bulk_transfer_upload.upload_id = upload_id
     _bulk_transfer_upload.issuer_address = issuer_address
     _bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
+    _bulk_transfer_upload.transaction_compression = tx_compression
     _bulk_transfer_upload.status = 0
     db.add(_bulk_transfer_upload)
 
-    # add bulk transfer records
-    for _token in tokens:
+    # Add bulk transfer records
+    for _transfer in transfer_list:
         _bulk_transfer = BulkTransfer()
         _bulk_transfer.issuer_address = issuer_address
         _bulk_transfer.upload_id = upload_id
-        _bulk_transfer.token_address = _token.token_address
+        _bulk_transfer.token_address = _transfer.token_address
         _bulk_transfer.token_type = TokenType.IBET_SHARE.value
-        _bulk_transfer.from_address = _token.from_address
-        _bulk_transfer.to_address = _token.to_address
-        _bulk_transfer.amount = _token.amount
+        _bulk_transfer.from_address = _transfer.from_address
+        _bulk_transfer.to_address = _transfer.to_address
+        _bulk_transfer.amount = _transfer.amount
         _bulk_transfer.status = 0
         db.add(_bulk_transfer)
 
@@ -3698,6 +3727,9 @@ def list_bulk_transfer_upload(
                 "issuer_address": _upload.issuer_address,
                 "token_type": _upload.token_type,
                 "upload_id": _upload.upload_id,
+                "transaction_compression": True
+                if _upload.transaction_compression is True
+                else False,
                 "status": _upload.status,
                 "created": created_utc.astimezone(local_tz).isoformat(),
             }

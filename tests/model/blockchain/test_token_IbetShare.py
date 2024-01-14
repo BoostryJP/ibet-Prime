@@ -39,6 +39,7 @@ from app.model.blockchain import IbetShareContract
 from app.model.blockchain.tx_params.ibet_share import (
     AdditionalIssueParams,
     ApproveTransferParams,
+    BulkTransferParams,
     CancelTransferParams,
     ForceUnlockPrams,
     LockParams,
@@ -717,8 +718,7 @@ class TestUpdate:
                 "ctx": {"error": ANY},
                 "input": "invalid contract address",
                 "loc": ("tradable_exchange_contract_address",),
-                "msg": "Value error, tradable_exchange_contract_address is not a valid "
-                "address",
+                "msg": "Value error, invalid ethereum address",
                 "type": "value_error",
                 "url": ANY,
             },
@@ -726,7 +726,7 @@ class TestUpdate:
                 "ctx": {"error": ANY},
                 "input": "invalid contract address",
                 "loc": ("personal_info_contract_address",),
-                "msg": "Value error, personal_info_contract_address is not a valid address",
+                "msg": "Value error, invalid ethereum address",
                 "type": "value_error",
                 "url": ANY,
             },
@@ -1050,7 +1050,7 @@ class TestTransfer:
                 "ctx": {"error": ANY},
                 "input": "invalid from_address",
                 "loc": ("from_address",),
-                "msg": "Value error, from_address is not a valid address",
+                "msg": "Value error, invalid ethereum address",
                 "type": "value_error",
                 "url": ANY,
             },
@@ -1058,7 +1058,7 @@ class TestTransfer:
                 "ctx": {"error": ANY},
                 "input": "invalid to_address",
                 "loc": ("to_address",),
-                "msg": "Value error, to_address is not a valid address",
+                "msg": "Value error, invalid ethereum address",
                 "type": "value_error",
                 "url": ANY,
             },
@@ -1302,6 +1302,398 @@ class TestTransfer:
         assert exc_info.value.args[0] == "Message sender balance is insufficient."
 
 
+class TestBulkTransfer:
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    def test_normal_1(self, db):
+        from_account = config_eth_account("user1")
+        from_address = from_account.get("address")
+        from_pk = decode_keyfile_json(
+            raw_keyfile_json=from_account.get("keyfile_json"),
+            password=from_account.get("password").encode("utf-8"),
+        )
+
+        to1_account = config_eth_account("user2")
+        to1_address = to1_account.get("address")
+        to1_pk = decode_keyfile_json(
+            raw_keyfile_json=to1_account.get("keyfile_json"),
+            password=to1_account.get("password").encode("utf-8"),
+        )
+
+        to2_account = config_eth_account("user3")
+        to2_address = to2_account.get("address")
+        to2_pk = decode_keyfile_json(
+            raw_keyfile_json=to2_account.get("keyfile_json"),
+            password=to2_account.get("password").encode("utf-8"),
+        )
+
+        # deploy new personal info contract
+        personal_info_contract_address, _, _ = ContractUtils.deploy_contract(
+            contract_name="PersonalInfo",
+            args=[],
+            deployer=from_address,
+            private_key=from_pk,
+        )
+
+        # register personal info (to_account)
+        PersonalInfoContractTestUtils.register(
+            contract_address=personal_info_contract_address,
+            tx_from=to1_address,
+            private_key=to1_pk,
+            args=[from_address, "test_personal_info"],
+        )
+
+        PersonalInfoContractTestUtils.register(
+            contract_address=personal_info_contract_address,
+            tx_from=to2_address,
+            private_key=to2_pk,
+            args=[from_address, "test_personal_info"],
+        )
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        share_contract.create(args=arguments, tx_from=from_address, private_key=from_pk)
+
+        update_data = {
+            "personal_info_contract_address": personal_info_contract_address,
+            "transferable": True,
+        }
+        share_contract.update(
+            data=UpdateParams(**update_data),
+            tx_from=from_address,
+            private_key=from_pk,
+        )
+
+        # bulk transfer
+        _data = {"to_address_list": [to1_address, to2_address], "amount_list": [10, 20]}
+        _transfer_data = BulkTransferParams(**_data)
+        share_contract.bulk_transfer(
+            data=_transfer_data, tx_from=from_address, private_key=from_pk
+        )
+
+        # assertion
+        from_balance = share_contract.get_account_balance(from_address)
+        to1_balance = share_contract.get_account_balance(to1_address)
+        to2_balance = share_contract.get_account_balance(to2_address)
+        assert from_balance == arguments[3] - 10 - 20
+        assert to1_balance == 10
+        assert to2_balance == 20
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
+    # Validation (BulkTransferParams)
+    # Required fields
+    # -> ValidationError
+    def test_error_1(self, db):
+        _data = {}
+        with pytest.raises(ValidationError) as exc_info:
+            BulkTransferParams(**_data)
+        assert exc_info.value.errors() == [
+            {
+                "type": "missing",
+                "loc": ("to_address_list",),
+                "msg": "Field required",
+                "input": {},
+                "url": ANY,
+            },
+            {
+                "type": "missing",
+                "loc": ("amount_list",),
+                "msg": "Field required",
+                "input": {},
+                "url": ANY,
+            },
+        ]
+
+    # <Error_2>
+    # Validation (BulkTransferParams)
+    # Invalid parameter
+    # -> ValidationError
+    def test_error_2(self, db):
+        _data = {"to_address_list": ["invalid to_address"], "amount_list": [0]}
+        with pytest.raises(ValidationError) as exc_info:
+            BulkTransferParams(**_data)
+        assert exc_info.value.errors() == [
+            {
+                "type": "value_error",
+                "loc": ("to_address_list", 0),
+                "msg": "Value error, invalid ethereum address",
+                "input": "invalid to_address",
+                "ctx": {"error": ANY},
+                "url": ANY,
+            },
+            {
+                "type": "greater_than",
+                "loc": ("amount_list", 0),
+                "msg": "Input should be greater than 0",
+                "input": 0,
+                "ctx": {"gt": 0},
+                "url": ANY,
+            },
+        ]
+
+    # <Error_3>
+    # Invalid tx_from
+    # -> SendTransactionError
+    def test_error_3(self, db):
+        from_account = config_eth_account("user1")
+        from_address = from_account.get("address")
+        from_pk = decode_keyfile_json(
+            raw_keyfile_json=from_account.get("keyfile_json"),
+            password=from_account.get("password").encode("utf-8"),
+        )
+
+        to1_account = config_eth_account("user2")
+        to1_address = to1_account.get("address")
+
+        to2_account = config_eth_account("user3")
+        to2_address = to2_account.get("address")
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        share_contract.create(args=arguments, tx_from=from_address, private_key=from_pk)
+
+        # bulk transfer
+        _data = {"to_address_list": [to1_address, to2_address], "amount_list": [10, 20]}
+        _transfer_data = BulkTransferParams(**_data)
+        with pytest.raises(SendTransactionError) as exc_info:
+            share_contract.bulk_transfer(
+                data=_transfer_data, tx_from="invalid_tx_from", private_key=from_pk
+            )
+
+        # assertion
+        assert isinstance(exc_info.value.args[0], InvalidAddress)
+        assert exc_info.match("ENS name: 'invalid_tx_from' is invalid.")
+
+    # <Error_4>
+    # Invalid private key
+    # -> SendTransactionError
+    def test_error_4(self, db):
+        from_account = config_eth_account("user1")
+        from_address = from_account.get("address")
+        from_pk = decode_keyfile_json(
+            raw_keyfile_json=from_account.get("keyfile_json"),
+            password=from_account.get("password").encode("utf-8"),
+        )
+
+        to1_account = config_eth_account("user2")
+        to1_address = to1_account.get("address")
+
+        to2_account = config_eth_account("user3")
+        to2_address = to2_account.get("address")
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        share_contract.create(args=arguments, tx_from=from_address, private_key=from_pk)
+
+        # bulk transfer
+        _data = {"to_address_list": [to1_address, to2_address], "amount_list": [10, 20]}
+        _transfer_data = BulkTransferParams(**_data)
+        with pytest.raises(SendTransactionError) as exc_info:
+            share_contract.bulk_transfer(
+                data=_transfer_data,
+                tx_from=from_address,
+                private_key="invalid_private_key",
+            )
+
+    # <Error_5_1>
+    # Transaction Error
+    # REVERT
+    # -> ContractRevertError
+    def test_error_5_1(self, db):
+        from_account = config_eth_account("user1")
+        from_address = from_account.get("address")
+        from_pk = decode_keyfile_json(
+            raw_keyfile_json=from_account.get("keyfile_json"),
+            password=from_account.get("password").encode("utf-8"),
+        )
+
+        to1_account = config_eth_account("user2")
+        to1_address = to1_account.get("address")
+
+        to2_account = config_eth_account("user3")
+        to2_address = to2_account.get("address")
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        share_contract.create(args=arguments, tx_from=from_address, private_key=from_pk)
+
+        # mock
+        # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
+        #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
+        #         geth: ContractLogicError("execution reverted: ")
+        InspectionMock = mock.patch(
+            "web3.eth.Eth.call",
+            MagicMock(side_effect=ContractLogicError("execution reverted: 120502")),
+        )
+
+        # bulk transfer
+        _data = {"to_address_list": [to1_address, to2_address], "amount_list": [10, 20]}
+        _transfer_data = BulkTransferParams(**_data)
+        with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
+            share_contract.bulk_transfer(
+                data=_transfer_data, tx_from=from_address, private_key=from_pk
+            )
+
+        # assertion
+        assert (
+            exc_info.value.args[0]
+            == "Transfer amount is greater than from address balance."
+        )
+
+    # <Error_5_2>
+    # Transaction Error
+    # wait_for_transaction_receipt -> TimeExhausted Exception
+    # -> SendTransactionError
+    def test_error_5_2(self, db):
+        from_account = config_eth_account("user1")
+        from_address = from_account.get("address")
+        from_pk = decode_keyfile_json(
+            raw_keyfile_json=from_account.get("keyfile_json"),
+            password=from_account.get("password").encode("utf-8"),
+        )
+
+        to1_account = config_eth_account("user2")
+        to1_address = to1_account.get("address")
+
+        to2_account = config_eth_account("user3")
+        to2_address = to2_account.get("address")
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        share_contract.create(args=arguments, tx_from=from_address, private_key=from_pk)
+
+        # mock
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
+            side_effect=TimeExhausted,
+        )
+
+        # bulk transfer
+        _data = {"to_address_list": [to1_address, to2_address], "amount_list": [10, 20]}
+        _transfer_data = BulkTransferParams(**_data)
+        with Web3_send_raw_transaction:
+            with pytest.raises(SendTransactionError) as exc_info:
+                share_contract.bulk_transfer(
+                    data=_transfer_data, tx_from=from_address, private_key=from_pk
+                )
+
+        # assertion
+        assert isinstance(exc_info.value.args[0], TimeExhausted)
+
+    # <Error_5_3>
+    # Transaction Error
+    # wait_for_transaction_receipt -> Exception
+    # -> SendTransactionError
+    def test_error_5_3(self, db):
+        from_account = config_eth_account("user1")
+        from_address = from_account.get("address")
+        from_pk = decode_keyfile_json(
+            raw_keyfile_json=from_account.get("keyfile_json"),
+            password=from_account.get("password").encode("utf-8"),
+        )
+
+        to1_account = config_eth_account("user2")
+        to1_address = to1_account.get("address")
+
+        to2_account = config_eth_account("user3")
+        to2_address = to2_account.get("address")
+
+        # deploy token
+        arguments = [
+            "テスト株式",
+            "TEST",
+            10000,
+            20000,
+            1,
+            "20211231",
+            "20211231",
+            "20221231",
+            10000,
+        ]
+        share_contract = IbetShareContract()
+        share_contract.create(args=arguments, tx_from=from_address, private_key=from_pk)
+
+        # mock
+        Web3_send_raw_transaction = patch(
+            target="web3.eth.Eth.wait_for_transaction_receipt",
+            side_effect=TransactionNotFound,
+        )
+
+        # bulk transfer
+        _data = {"to_address_list": [to1_address, to2_address], "amount_list": [10, 20]}
+        _transfer_data = BulkTransferParams(**_data)
+        with Web3_send_raw_transaction:
+            with pytest.raises(SendTransactionError) as exc_info:
+                share_contract.bulk_transfer(
+                    data=_transfer_data, tx_from=from_address, private_key=from_pk
+                )
+
+        # assertion
+        assert isinstance(exc_info.value.args[0], TransactionNotFound)
+
+
 class TestAdditionalIssue:
     ###########################################################################
     # Normal Case
@@ -1395,7 +1787,7 @@ class TestAdditionalIssue:
                 "ctx": {"error": ANY},
                 "input": issuer_address[:-1],
                 "loc": ("account_address",),
-                "msg": "Value error, account_address is not a valid address",
+                "msg": "Value error, invalid ethereum address",
                 "type": "value_error",
                 "url": ANY,
             },
@@ -1720,7 +2112,7 @@ class TestRedeem:
                 "ctx": {"error": ANY},
                 "input": issuer_address[:-1],
                 "loc": ("account_address",),
-                "msg": "Value error, account_address is not a valid address",
+                "msg": "Value error, invalid ethereum address",
                 "type": "value_error",
                 "url": ANY,
             },
@@ -2953,7 +3345,7 @@ class TestLock:
                 "ctx": {"error": ANY},
                 "input": "test_address",
                 "loc": ("lock_address",),
-                "msg": "Value error, lock_address is not a valid address",
+                "msg": "Value error, invalid ethereum address",
                 "type": "value_error",
                 "url": ANY,
             },
@@ -3345,7 +3737,7 @@ class TestForceUnlock:
                 "ctx": {"error": ANY},
                 "input": "test_address",
                 "loc": ("lock_address",),
-                "msg": "Value error, lock_address is not a valid address",
+                "msg": "Value error, invalid ethereum address",
                 "type": "value_error",
                 "url": ANY,
             },
@@ -3353,7 +3745,7 @@ class TestForceUnlock:
                 "ctx": {"error": ANY},
                 "input": "test_address",
                 "loc": ("account_address",),
-                "msg": "Value error, account_address is not a valid address",
+                "msg": "Value error, invalid ethereum address",
                 "type": "value_error",
                 "url": ANY,
             },
@@ -3361,7 +3753,7 @@ class TestForceUnlock:
                 "ctx": {"error": ANY},
                 "input": "test_address",
                 "loc": ("recipient_address",),
-                "msg": "Value error, recipient_address is not a valid address",
+                "msg": "Value error, invalid ethereum address",
                 "type": "value_error",
                 "url": ANY,
             },

@@ -372,12 +372,6 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoPOST:
             "detail": [
                 {
                     "input": None,
-                    "loc": ["body", "account_address"],
-                    "msg": "Input should be a valid string",
-                    "type": "string_type",
-                },
-                {
-                    "input": None,
                     "loc": ["body", "key_manager"],
                     "msg": "Input should be a valid string",
                     "type": "string_type",
@@ -428,7 +422,7 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoPOST:
                     "ctx": {"error": {}},
                     "input": "test",
                     "loc": ["body", "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
+                    "msg": "Value error, invalid ethereum address",
                     "type": "value_error",
                 }
             ],
