@@ -3599,7 +3599,9 @@ def bulk_transfer_ownership(
 ):
     """Bulk transfer token ownership
 
-    When using transaction compression, the following conditions must be met.
+    By using "transaction compression mode", it is possible to consolidate multiple transfers into one transaction.
+    This speeds up the time it takes for all transfers to be completed.
+    On the other hand, when using transaction compression, the input data must meet the following conditions.
     - All `token_address` must be the same.
     - All `from_address` must be the same.
     - `from_address` and `issuer_address` must be the same.
