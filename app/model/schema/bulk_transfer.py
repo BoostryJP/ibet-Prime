@@ -16,15 +16,46 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from pydantic import BaseModel
+from typing import Optional
 
-from app.model.db import TokenType
+from pydantic import BaseModel, Field
+
+from .base import TokenType
+from .token import IbetShareTransfer, IbetStraightBondTransfer
+
+
+############################
+# REQUEST
+############################
+class IbetStraightBondBulkTransferRequest(BaseModel):
+    transfer_list: list[IbetStraightBondTransfer] = Field(
+        ...,
+        description="List of data to be transferred",
+        min_length=1,
+        max_length=500000,
+    )
+    transaction_compression: Optional[bool] = Field(
+        default=None,
+        description="Transaction compression mode",
+    )
+
+
+class IbetShareBulkTransferRequest(BaseModel):
+    transfer_list: list[IbetShareTransfer] = Field(
+        ...,
+        description="List of data to be transferred",
+        min_length=1,
+        max_length=500000,
+    )
+    transaction_compression: Optional[bool] = Field(
+        default=None,
+        description="Transaction compression mode",
+    )
+
 
 ############################
 # RESPONSE
 ############################
-
-
 class BulkTransferUploadIdResponse(BaseModel):
     """bulk transfer upload id"""
 
@@ -37,6 +68,7 @@ class BulkTransferUploadResponse(BaseModel):
     upload_id: str
     issuer_address: str
     token_type: TokenType
+    transaction_compression: bool
     status: int
     created: str
 

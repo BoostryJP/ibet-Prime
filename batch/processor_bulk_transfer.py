@@ -40,9 +40,11 @@ from app.exceptions import (
 )
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.blockchain.tx_params.ibet_share import (
+    BulkTransferParams as IbetShareBulkTransferParams,
     TransferParams as IbetShareTransferParams,
 )
 from app.model.blockchain.tx_params.ibet_straight_bond import (
+    BulkTransferParams as IbetStraightBondBulkTransferParams,
     TransferParams as IbetStraightBondTransferParams,
 )
 from app.model.db import (
@@ -98,16 +100,16 @@ class Processor:
                         .where(Account.issuer_address == _upload.issuer_address)
                         .limit(1)
                     ).first()
-                    if (
-                        _account is None
-                    ):  # If issuer does not exist, update the status of the upload to ERROR
+
+                    # If issuer does not exist, update the status of the upload to ERROR
+                    if _account is None:
                         LOG.warning(
                             f"Issuer of the upload_id:{_upload.upload_id} does not exist"
                         )
                         self.__sink_on_finish_upload_process(
                             db_session=db_session, upload_id=_upload.upload_id, status=2
                         )
-                        self.__sink_on_error_notification(
+                        self.__error_notification(
                             db_session=db_session,
                             issuer_address=_upload.issuer_address,
                             code=0,
@@ -118,21 +120,21 @@ class Processor:
                         db_session.commit()
                         self.__release_processing_issuer(_upload.upload_id)
                         continue
+
                     keyfile_json = _account.keyfile
                     decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
                     private_key = decode_keyfile_json(
                         raw_keyfile_json=keyfile_json,
                         password=decrypt_password.encode("utf-8"),
                     )
-                except Exception as err:
+                except Exception:
                     LOG.exception(
-                        f"Could not get the private key of the issuer of upload_id:{_upload.upload_id}",
-                        err,
+                        f"Could not get the private key of the issuer of upload_id:{_upload.upload_id}"
                     )
                     self.__sink_on_finish_upload_process(
                         db_session=db_session, upload_id=_upload.upload_id, status=2
                     )
-                    self.__sink_on_error_notification(
+                    self.__error_notification(
                         db_session=db_session,
                         issuer_address=_upload.issuer_address,
                         code=1,
@@ -148,64 +150,138 @@ class Processor:
                 transfer_list = self.__get_transfer_data(
                     db_session=db_session, upload_id=_upload.upload_id, status=0
                 )
-                for _transfer in transfer_list:
-                    token = {
-                        "token_address": _transfer.token_address,
-                        "from_address": _transfer.from_address,
-                        "to_address": _transfer.to_address,
-                        "amount": _transfer.amount,
-                    }
-                    try:
-                        if _transfer.token_type == TokenType.IBET_SHARE.value:
-                            _transfer_data = IbetShareTransferParams(**token)
-                            IbetShareContract(_transfer.token_address).transfer(
-                                data=_transfer_data,
-                                tx_from=_transfer.issuer_address,
-                                private_key=private_key,
-                            )
-                        elif _transfer.token_type == TokenType.IBET_STRAIGHT_BOND.value:
-                            _transfer_data = IbetStraightBondTransferParams(**token)
-                            IbetStraightBondContract(_transfer.token_address).transfer(
-                                data=_transfer_data,
-                                tx_from=_transfer.issuer_address,
-                                private_key=private_key,
-                            )
-                        self.__sink_on_finish_transfer_process(
-                            db_session=db_session, record_id=_transfer.id, status=1
-                        )
-                    except ContractRevertError as e:
-                        LOG.warning(
-                            f"Transaction reverted: id=<{_transfer.id}> error_code:<{e.code}> error_msg:<{e.message}>"
-                        )
-                        self.__sink_on_finish_transfer_process(
-                            db_session=db_session, record_id=_transfer.id, status=2
-                        )
-                    except SendTransactionError:
-                        LOG.warning(f"Failed to send transaction: id=<{_transfer.id}>")
-                        self.__sink_on_finish_transfer_process(
-                            db_session=db_session, record_id=_transfer.id, status=2
-                        )
-                    db_session.commit()
+                if _upload.transaction_compression is True:
+                    # Split the original transfer list into sub-lists
+                    chunked_transfer_list: list[list[BulkTransfer]] = list(
+                        self.__split_list(list(transfer_list), 100)
+                    )
+                    # Execute bulkTransfer for each sub-list
+                    for _transfer_list in chunked_transfer_list:
+                        _token_type = _transfer_list[0].token_type
+                        _token_addr = _transfer_list[0].token_address
+                        _from_addr = _transfer_list[0].from_address
 
+                        _to_addr_list = []
+                        _amount_list = []
+                        for _transfer in _transfer_list:
+                            _to_addr_list.append(_transfer.to_address)
+                            _amount_list.append(_transfer.amount)
+
+                        try:
+                            if _token_type == TokenType.IBET_SHARE.value:
+                                _transfer_data = IbetShareBulkTransferParams(
+                                    to_address_list=_to_addr_list,
+                                    amount_list=_amount_list,
+                                )
+                                IbetShareContract(_token_addr).bulk_transfer(
+                                    data=_transfer_data,
+                                    tx_from=_from_addr,
+                                    private_key=private_key,
+                                )
+                            elif _token_type == TokenType.IBET_STRAIGHT_BOND.value:
+                                _transfer_data = IbetStraightBondBulkTransferParams(
+                                    to_address_list=_to_addr_list,
+                                    amount_list=_amount_list,
+                                )
+                                IbetStraightBondContract(_token_addr).bulk_transfer(
+                                    data=_transfer_data,
+                                    tx_from=_from_addr,
+                                    private_key=private_key,
+                                )
+                            for _transfer in _transfer_list:
+                                self.__sink_on_finish_transfer_process(
+                                    db_session=db_session,
+                                    record_id=_transfer.id,
+                                    status=1,
+                                )
+                        except ContractRevertError as e:
+                            LOG.warning(
+                                f"Transaction reverted: id=<{_upload.upload_id}> error_code:<{e.code}> error_msg:<{e.message}>"
+                            )
+                            for _transfer in _transfer_list:
+                                self.__sink_on_finish_transfer_process(
+                                    db_session=db_session,
+                                    record_id=_transfer.id,
+                                    status=2,
+                                )
+                        except SendTransactionError:
+                            LOG.warning(
+                                f"Failed to send transaction: id=<{_upload.upload_id}>"
+                            )
+                            for _transfer in _transfer_list:
+                                self.__sink_on_finish_transfer_process(
+                                    db_session=db_session,
+                                    record_id=_transfer.id,
+                                    status=2,
+                                )
+                        db_session.commit()
+                else:
+                    for _transfer in transfer_list:
+                        token = {
+                            "token_address": _transfer.token_address,
+                            "from_address": _transfer.from_address,
+                            "to_address": _transfer.to_address,
+                            "amount": _transfer.amount,
+                        }
+                        try:
+                            if _transfer.token_type == TokenType.IBET_SHARE.value:
+                                _transfer_data = IbetShareTransferParams(**token)
+                                IbetShareContract(_transfer.token_address).transfer(
+                                    data=_transfer_data,
+                                    tx_from=_transfer.issuer_address,
+                                    private_key=private_key,
+                                )
+                            elif (
+                                _transfer.token_type
+                                == TokenType.IBET_STRAIGHT_BOND.value
+                            ):
+                                _transfer_data = IbetStraightBondTransferParams(**token)
+                                IbetStraightBondContract(
+                                    _transfer.token_address
+                                ).transfer(
+                                    data=_transfer_data,
+                                    tx_from=_transfer.issuer_address,
+                                    private_key=private_key,
+                                )
+                            self.__sink_on_finish_transfer_process(
+                                db_session=db_session, record_id=_transfer.id, status=1
+                            )
+                        except ContractRevertError as e:
+                            LOG.warning(
+                                f"Transaction reverted: id=<{_transfer.id}> error_code:<{e.code}> error_msg:<{e.message}>"
+                            )
+                            self.__sink_on_finish_transfer_process(
+                                db_session=db_session, record_id=_transfer.id, status=2
+                            )
+                        except SendTransactionError:
+                            LOG.warning(
+                                f"Failed to send transaction: id=<{_transfer.id}>"
+                            )
+                            self.__sink_on_finish_transfer_process(
+                                db_session=db_session, record_id=_transfer.id, status=2
+                            )
+                        db_session.commit()
+
+                # Register upload results
                 error_transfer_list = self.__get_transfer_data(
                     db_session=db_session, upload_id=_upload.upload_id, status=2
                 )
-                if len(error_transfer_list) == 0:
+                if len(error_transfer_list) == 0:  # success
                     self.__sink_on_finish_upload_process(
                         db_session=db_session,
                         upload_id=_upload.upload_id,
-                        status=1,  # succeeded
+                        status=1,
                     )
-                else:
+                else:  # error
                     self.__sink_on_finish_upload_process(
                         db_session=db_session,
                         upload_id=_upload.upload_id,
-                        status=2,  # error
+                        status=2,
                     )
                     error_transfer_id = [
                         _error_transfer.id for _error_transfer in error_transfer_list
                     ]
-                    self.__sink_on_error_notification(
+                    self.__error_notification(
                         db_session=db_session,
                         issuer_address=_upload.issuer_address,
                         code=2,
@@ -215,7 +291,10 @@ class Processor:
                     )
 
                 db_session.commit()
+
+                # Pop from the list of processing issuers
                 self.__release_processing_issuer(_upload.upload_id)
+
                 LOG.info(
                     f"<{self.thread_num}> Process end: upload_id={_upload.upload_id}"
                 )
@@ -224,9 +303,9 @@ class Processor:
 
     def __get_uploads(self, db_session: Session) -> List[BulkTransferUpload]:
         # NOTE:
-        # - There is only one Issuer that is processed in the same thread.
-        # - The maximum size to be processed at one time is the size defined in BULK_TRANSFER_WORKER_LOT_SIZE.
-        # - Issuer that is being processed by other threads is controlled to be selected with lower priority.
+        # - Only one issuer can be processed in the same thread.
+        # - The maximum number of uploads that can be processed in one batch cycle is the number defined by BULK_TRANSFER_WORKER_LOT_SIZE.
+        # - Issuers that are not being processed by other threads are processed first.
         # - Exclusion control is performed to eliminate duplication of data to be acquired.
 
         with lock:  # Exclusion control
@@ -239,7 +318,7 @@ class Processor:
             exclude_issuer = list(set(exclude_issuer))
 
             # Retrieve one target data
-            # NOTE: Priority is given to non-issuers that are being processed by other threads.
+            # NOTE: Priority is given to issuers that are not being processed by other threads.
             upload_1: BulkTransferUpload | None = db_session.scalars(
                 select(BulkTransferUpload)
                 .where(
@@ -253,7 +332,7 @@ class Processor:
                 .limit(1)
             ).first()
             if upload_1 is None:
-                # Retrieve again for all issuers
+                # If there are no targets, then all issuers will be retrieved.
                 upload_1: BulkTransferUpload | None = db_session.scalars(
                     select(BulkTransferUpload)
                     .where(
@@ -294,7 +373,8 @@ class Processor:
                 ] = upload.issuer_address
         return upload_list
 
-    def __get_transfer_data(self, db_session: Session, upload_id: str, status: int):
+    @staticmethod
+    def __get_transfer_data(db_session: Session, upload_id: str, status: int):
         transfer_list: Sequence[BulkTransfer] = db_session.scalars(
             select(BulkTransfer).where(
                 and_(BulkTransfer.upload_id == upload_id, BulkTransfer.status == status)
@@ -302,7 +382,14 @@ class Processor:
         ).all()
         return transfer_list
 
+    @staticmethod
+    def __split_list(raw_list: list, size: int):
+        """Split a list into sub-lists"""
+        for idx in range(0, len(raw_list), size):
+            yield raw_list[idx : idx + size]
+
     def __release_processing_issuer(self, upload_id):
+        """Pop from the list of processing issuers"""
         with lock:
             processing_issuer[self.thread_num].pop(upload_id, None)
 
@@ -327,7 +414,7 @@ class Processor:
         )
 
     @staticmethod
-    def __sink_on_error_notification(
+    def __error_notification(
         db_session: Session,
         issuer_address: str,
         code: int,

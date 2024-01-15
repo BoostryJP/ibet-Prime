@@ -751,28 +751,25 @@ class TestAppRoutersShareTokensPOST:
             "meta": {"code": 1, "title": "RequestValidationError"},
             "detail": [
                 {
-                    "ctx": {"error": {}},
-                    "input": 1e-14,
+                    "type": "value_error",
                     "loc": ["body", "dividends"],
-                    "msg": "Value error, dividends must be rounded to 13 decimal "
-                    "places",
-                    "type": "value_error",
+                    "msg": "Value error, dividends must be rounded to 13 decimal places",
+                    "input": 1e-14,
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "0x0",
+                    "type": "value_error",
                     "loc": ["body", "tradable_exchange_contract_address"],
-                    "msg": "Value error, tradable_exchange_contract_address is not a "
-                    "valid address",
-                    "type": "value_error",
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "0x0",
+                    "ctx": {"error": {}},
                 },
                 {
-                    "ctx": {"error": {}},
-                    "input": "0x0",
-                    "loc": ["body", "personal_info_contract_address"],
-                    "msg": "Value error, personal_info_contract_address is not a "
-                    "valid address",
                     "type": "value_error",
+                    "loc": ["body", "personal_info_contract_address"],
+                    "msg": "Value error, invalid ethereum address",
+                    "input": "0x0",
+                    "ctx": {"error": {}},
                 },
             ],
         }

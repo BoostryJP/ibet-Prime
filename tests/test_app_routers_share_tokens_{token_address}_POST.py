@@ -34,7 +34,6 @@ from app.model.db import (
     Token,
     TokenAttrUpdate,
     TokenType,
-    TokenUpdateOperationCategory,
     TokenUpdateOperationLog,
     TokenVersion,
 )
@@ -662,8 +661,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
                     "ctx": {"error": {}},
                     "input": "invalid_address",
                     "loc": ["body", "tradable_exchange_contract_address"],
-                    "msg": "Value error, tradable_exchange_contract_address is not a "
-                    "valid address",
+                    "msg": "Value error, invalid ethereum address",
                     "type": "value_error",
                 }
             ],
@@ -692,8 +690,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
                     "ctx": {"error": {}},
                     "input": "invalid_address",
                     "loc": ["body", "personal_info_contract_address"],
-                    "msg": "Value error, personal_info_contract_address is not a "
-                    "valid address",
+                    "msg": "Value error, invalid ethereum address",
                     "type": "value_error",
                 }
             ],

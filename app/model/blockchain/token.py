@@ -34,6 +34,7 @@ from app.model.blockchain import IbetExchangeInterface
 from app.model.blockchain.tx_params.ibet_security_token import (
     AdditionalIssueParams as IbetSecurityTokenAdditionalIssueParams,
     ApproveTransferParams as IbetSecurityTokenApproveTransfer,
+    BulkTransferParams as IbetSecurityTokenBulkTransferParams,
     CancelTransferParams as IbetSecurityTokenCancelTransfer,
     ForceUnlockParams as IbetSecurityTokenForceUnlockParams,
     LockParams as IbetSecurityTokenLockParams,
@@ -172,6 +173,36 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
             _to = data.to_address
             _amount = data.amount
             tx = contract.functions.transferFrom(_from, _to, _amount).build_transaction(
+                {
+                    "chainId": CHAIN_ID,
+                    "from": tx_from,
+                    "gas": TX_GAS_LIMIT,
+                    "gasPrice": 0,
+                }
+            )
+            tx_hash, _ = ContractUtils.send_transaction(
+                transaction=tx, private_key=private_key
+            )
+        except ContractRevertError:
+            raise
+        except TimeExhausted as timeout_error:
+            raise SendTransactionError(timeout_error)
+        except Exception as err:
+            raise SendTransactionError(err)
+
+        return tx_hash
+
+    def bulk_transfer(
+        self, data: IbetSecurityTokenBulkTransferParams, tx_from: str, private_key: str
+    ):
+        """Transfer ownership"""
+        try:
+            contract = ContractUtils.get_contract(
+                contract_name=self.contract_name, contract_address=self.token_address
+            )
+            tx = contract.functions.bulkTransfer(
+                data.to_address_list, data.amount_list
+            ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
                     "from": tx_from,

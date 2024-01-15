@@ -16,7 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-from enum import IntEnum, StrEnum
+from enum import Enum, IntEnum, StrEnum
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, StringConstraints
@@ -46,6 +46,11 @@ YYYYMMDD_constr = Annotated[
 ]
 CURRENCY_str = Annotated[str, StringConstraints(min_length=3, max_length=3)]
 EMPTY_str = Literal[""]
+
+
+class TokenType(str, Enum):
+    IBET_STRAIGHT_BOND = "IbetStraightBond"
+    IBET_SHARE = "IbetShare"
 
 
 ############################

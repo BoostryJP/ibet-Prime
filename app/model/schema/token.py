@@ -25,9 +25,10 @@ from typing import Annotated, Optional, Self
 from fastapi import Query
 from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic.dataclasses import dataclass
-from web3 import Web3
 
-from app.model.schema.base import (
+from app.model import EthereumAddress
+
+from .base import (
     CURRENCY_str,
     EMPTY_str,
     IbetShareContractVersion,
@@ -37,7 +38,7 @@ from app.model.schema.base import (
     SortOrder,
     YYYYMMDD_constr,
 )
-from app.model.schema.position import LockEvent, LockEventCategory
+from .position import LockEvent, LockEventCategory
 
 
 ############################
@@ -69,8 +70,8 @@ class IbetStraightBondCreate(BaseModel):
     is_redeemed: Optional[bool] = None
     status: Optional[bool] = None
     is_offering: Optional[bool] = None
-    tradable_exchange_contract_address: Optional[str] = None
-    personal_info_contract_address: Optional[str] = None
+    tradable_exchange_contract_address: Optional[EthereumAddress] = None
+    personal_info_contract_address: Optional[EthereumAddress] = None
     image_url: Optional[list[str]] = None
     contact_information: Optional[str] = Field(default=None, max_length=2000)
     privacy_policy: Optional[str] = Field(default=None, max_length=5000)
@@ -109,22 +110,6 @@ class IbetStraightBondCreate(BaseModel):
             )
         return v
 
-    @field_validator("tradable_exchange_contract_address")
-    @classmethod
-    def tradable_exchange_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.is_address(v):
-            raise ValueError(
-                "tradable_exchange_contract_address is not a valid address"
-            )
-        return v
-
-    @field_validator("personal_info_contract_address")
-    @classmethod
-    def personal_info_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.is_address(v):
-            raise ValueError("personal_info_contract_address is not a valid address")
-        return v
-
 
 class IbetStraightBondUpdate(BaseModel):
     """ibet Straight Bond schema (Update)"""
@@ -141,8 +126,8 @@ class IbetStraightBondUpdate(BaseModel):
     status: Optional[bool] = None
     is_offering: Optional[bool] = None
     is_redeemed: Optional[bool] = None
-    tradable_exchange_contract_address: Optional[str] = None
-    personal_info_contract_address: Optional[str] = None
+    tradable_exchange_contract_address: Optional[EthereumAddress] = None
+    personal_info_contract_address: Optional[EthereumAddress] = None
     contact_information: Optional[str] = Field(default=None, max_length=2000)
     privacy_policy: Optional[str] = Field(default=None, max_length=5000)
     transfer_approval_required: Optional[bool] = None
@@ -186,79 +171,28 @@ class IbetStraightBondUpdate(BaseModel):
             )
         return v
 
-    @field_validator("tradable_exchange_contract_address")
-    @classmethod
-    def tradable_exchange_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.is_address(v):
-            raise ValueError(
-                "tradable_exchange_contract_address is not a valid address"
-            )
-        return v
-
-    @field_validator("personal_info_contract_address")
-    @classmethod
-    def personal_info_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.is_address(v):
-            raise ValueError("personal_info_contract_address is not a valid address")
-        return v
-
 
 class IbetStraightBondAdditionalIssue(BaseModel):
     """ibet Straight Bond schema (Additional Issue)"""
 
-    account_address: str
+    account_address: EthereumAddress
     amount: int = Field(..., ge=1, le=1_000_000_000_000)
-
-    @field_validator("account_address")
-    @classmethod
-    def account_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("account_address is not a valid address")
-        return v
 
 
 class IbetStraightBondRedeem(BaseModel):
     """ibet Straight Bond schema (Redeem)"""
 
-    account_address: str
+    account_address: EthereumAddress
     amount: int = Field(..., ge=1, le=1_000_000_000_000)
-
-    @field_validator("account_address")
-    @classmethod
-    def account_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("account_address is not a valid address")
-        return v
 
 
 class IbetStraightBondTransfer(BaseModel):
     """ibet Straight Bond schema (Transfer)"""
 
-    token_address: str
-    from_address: str
-    to_address: str
+    token_address: EthereumAddress
+    from_address: EthereumAddress
+    to_address: EthereumAddress
     amount: int = Field(..., ge=1, le=1_000_000_000_000)
-
-    @field_validator("token_address")
-    @classmethod
-    def token_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("token_address is not a valid address")
-        return v
-
-    @field_validator("from_address")
-    @classmethod
-    def from_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("from_address is not a valid address")
-        return v
-
-    @field_validator("to_address")
-    @classmethod
-    def to_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("to_address is not a valid address")
-        return v
 
 
 class IbetShareCreate(BaseModel):
@@ -276,8 +210,8 @@ class IbetShareCreate(BaseModel):
     transferable: Optional[bool] = None
     status: Optional[bool] = None
     is_offering: Optional[bool] = None
-    tradable_exchange_contract_address: Optional[str] = None
-    personal_info_contract_address: Optional[str] = None
+    tradable_exchange_contract_address: Optional[EthereumAddress] = None
+    personal_info_contract_address: Optional[EthereumAddress] = None
     contact_information: Optional[str] = Field(default=None, max_length=2000)
     privacy_policy: Optional[str] = Field(default=None, max_length=5000)
     transfer_approval_required: Optional[bool] = None
@@ -293,22 +227,6 @@ class IbetShareCreate(BaseModel):
                 raise ValueError("dividends must be rounded to 13 decimal places")
         return v
 
-    @field_validator("tradable_exchange_contract_address")
-    @classmethod
-    def tradable_exchange_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.is_address(v):
-            raise ValueError(
-                "tradable_exchange_contract_address is not a valid address"
-            )
-        return v
-
-    @field_validator("personal_info_contract_address")
-    @classmethod
-    def personal_info_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.is_address(v):
-            raise ValueError("personal_info_contract_address is not a valid address")
-        return v
-
 
 class IbetShareUpdate(BaseModel):
     """ibet Share schema (Update)"""
@@ -317,8 +235,8 @@ class IbetShareUpdate(BaseModel):
     dividend_record_date: Optional[YYYYMMDD_constr | EMPTY_str] = None
     dividend_payment_date: Optional[YYYYMMDD_constr | EMPTY_str] = None
     dividends: Optional[float] = Field(default=None, ge=0.00, le=5_000_000_000.00)
-    tradable_exchange_contract_address: Optional[str] = None
-    personal_info_contract_address: Optional[str] = None
+    tradable_exchange_contract_address: Optional[EthereumAddress] = None
+    personal_info_contract_address: Optional[EthereumAddress] = None
     transferable: Optional[bool] = None
     status: Optional[bool] = None
     is_offering: Optional[bool] = None
@@ -356,79 +274,28 @@ class IbetShareUpdate(BaseModel):
                 )
         return v
 
-    @field_validator("tradable_exchange_contract_address")
-    @classmethod
-    def tradable_exchange_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.is_address(v):
-            raise ValueError(
-                "tradable_exchange_contract_address is not a valid address"
-            )
-        return v
-
-    @field_validator("personal_info_contract_address")
-    @classmethod
-    def personal_info_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.is_address(v):
-            raise ValueError("personal_info_contract_address is not a valid address")
-        return v
-
 
 class IbetShareTransfer(BaseModel):
     """ibet Share schema (Transfer)"""
 
-    token_address: str
-    from_address: str
-    to_address: str
+    token_address: EthereumAddress
+    from_address: EthereumAddress
+    to_address: EthereumAddress
     amount: int = Field(..., ge=1, le=1_000_000_000_000)
-
-    @field_validator("token_address")
-    @classmethod
-    def token_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("token_address is not a valid address")
-        return v
-
-    @field_validator("from_address")
-    @classmethod
-    def from_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("from_address is not a valid address")
-        return v
-
-    @field_validator("to_address")
-    @classmethod
-    def to_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("to_address is not a valid address")
-        return v
 
 
 class IbetShareAdditionalIssue(BaseModel):
     """ibet Share schema (Additional Issue)"""
 
-    account_address: str
+    account_address: EthereumAddress
     amount: int = Field(..., ge=1, le=1_000_000_000_000)
-
-    @field_validator("account_address")
-    @classmethod
-    def account_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("account_address is not a valid address")
-        return v
 
 
 class IbetShareRedeem(BaseModel):
     """ibet Share schema (Redeem)"""
 
-    account_address: str
+    account_address: EthereumAddress
     amount: int = Field(..., ge=1, le=1_000_000_000_000)
-
-    @field_validator("account_address")
-    @classmethod
-    def account_address_is_valid_address(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("account_address is not a valid address")
-        return v
 
 
 class IssueRedeemSortItem(str, Enum):

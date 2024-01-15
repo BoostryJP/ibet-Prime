@@ -20,9 +20,7 @@ from typing import List
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.model.db import TokenType
-from app.model.schema.base import ResultSet
-
+from .base import ResultSet, TokenType
 from .personal_info import PersonalInfo
 
 ############################

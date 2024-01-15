@@ -19,11 +19,12 @@ SPDX-License-Identifier: Apache-2.0
 from typing import Annotated, Optional
 
 from fastapi import Query
-from pydantic import BaseModel, Field, NonNegativeInt, RootModel, field_validator
+from pydantic import BaseModel, Field, NonNegativeInt, RootModel
 from pydantic.dataclasses import dataclass
-from web3 import Web3
 
-from app.model.schema.base import ResultSet, SortOrder
+from app.model import EthereumAddress
+
+from .base import ResultSet, SortOrder
 
 ############################
 # COMMON
@@ -117,24 +118,10 @@ class ListTxDataQuery:
     block_number: Annotated[
         Optional[NonNegativeInt], Query(description="block number")
     ] = None
-    from_address: Annotated[Optional[str], Query(description="tx from")] = None
-    to_address: Annotated[Optional[str], Query(description="tx to")] = None
-
-    @field_validator("from_address")
-    @classmethod
-    def from_address_is_valid_address(cls, v):
-        if v is not None:
-            if not Web3.is_address(v):
-                raise ValueError("from_address is not a valid address")
-        return v
-
-    @field_validator("to_address")
-    @classmethod
-    def to_address_is_valid_address(cls, v):
-        if v is not None:
-            if not Web3.is_address(v):
-                raise ValueError("to_address is not a valid address")
-        return v
+    from_address: Annotated[
+        Optional[EthereumAddress], Query(description="tx from")
+    ] = None
+    to_address: Annotated[Optional[EthereumAddress], Query(description="tx to")] = None
 
 
 ############################

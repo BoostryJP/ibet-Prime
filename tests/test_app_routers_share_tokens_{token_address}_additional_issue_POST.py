@@ -195,7 +195,7 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssuePOST:
                     "ctx": {"error": {}},
                     "input": "0x0",
                     "loc": ["body", "account_address"],
-                    "msg": "Value error, account_address is not a valid address",
+                    "msg": "Value error, invalid ethereum address",
                     "type": "value_error",
                 },
                 {

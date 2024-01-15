@@ -21,11 +21,13 @@ from decimal import Decimal
 from typing import Optional
 
 from pydantic import BaseModel, field_validator
-from web3 import Web3
+
+from app.model import EthereumAddress
 
 from .ibet_security_token import (
     AdditionalIssueParams as IbetSecurityTokenAdditionalIssueParams,
     ApproveTransferParams as IbetSecurityTokenApproveTransferParams,
+    BulkTransferParams as IbetSecurityTokenBulkTransferParams,
     CancelTransferParams as IbetSecurityTokenCancelTransferParams,
     ForceUnlockParams as IbetSecurityTokenForceUnlockParams,
     LockParams as IbetSecurityTokenLockParams,
@@ -39,8 +41,8 @@ class UpdateParams(BaseModel):
     dividend_record_date: Optional[str] = None
     dividend_payment_date: Optional[str] = None
     dividends: Optional[float] = None
-    tradable_exchange_contract_address: Optional[str] = None
-    personal_info_contract_address: Optional[str] = None
+    tradable_exchange_contract_address: Optional[EthereumAddress] = None
+    personal_info_contract_address: Optional[EthereumAddress] = None
     transferable: Optional[bool] = None
     status: Optional[bool] = None
     is_offering: Optional[bool] = None
@@ -61,24 +63,12 @@ class UpdateParams(BaseModel):
                 raise ValueError("dividends must be rounded to 13 decimal places")
         return v
 
-    @field_validator("tradable_exchange_contract_address")
-    @classmethod
-    def tradable_exchange_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.is_address(v):
-            raise ValueError(
-                "tradable_exchange_contract_address is not a valid address"
-            )
-        return v
-
-    @field_validator("personal_info_contract_address")
-    @classmethod
-    def personal_info_contract_address_is_valid_address(cls, v):
-        if v is not None and not Web3.is_address(v):
-            raise ValueError("personal_info_contract_address is not a valid address")
-        return v
-
 
 class TransferParams(IbetSecurityTokenTransferParams):
+    pass
+
+
+class BulkTransferParams(IbetSecurityTokenBulkTransferParams):
     pass
 
 
