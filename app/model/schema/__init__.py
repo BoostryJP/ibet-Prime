@@ -63,6 +63,17 @@ from .file import (
     ListAllFilesResponse,
     UploadFileRequest,
 )
+from .freeze_log import (
+    CreateFreezeLogAccountRequest,
+    FreezeLogAccountChangeEOAPasswordRequest,
+    FreezeLogAccountResponse,
+    ListAllFreezeLogAccountResponse,
+    RecordNewFreezeLogRequest,
+    RecordNewFreezeLogResponse,
+    RetrieveFreezeLogQuery,
+    RetrieveFreezeLogResponse,
+    UpdateFreezeLogRequest,
+)
 from .holder import HolderCountResponse, HolderResponse, HoldersResponse
 from .index import BlockNumberResponse, E2EEResponse
 from .issue_redeem import IssueRedeemEvent, IssueRedeemHistoryResponse

@@ -31,6 +31,7 @@ from .batch_register_personal_info import (
 )
 from .bulk_transfer import BulkTransfer, BulkTransferUpload
 from .e2e_messaging_account import E2EMessagingAccount, E2EMessagingAccountRsaKey
+from .freeze_log_account import FreezeLogAccount
 from .idx_block_data import IDXBlockData, IDXBlockDataBlockNumber
 from .idx_e2e_messaging import IDXE2EMessaging, IDXE2EMessagingBlockNumber
 from .idx_issue_redeem import (

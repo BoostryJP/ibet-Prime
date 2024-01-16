@@ -37,7 +37,7 @@ from config import (
 
 
 class E2EMessaging:
-    """E2EMessaging model"""
+    """E2EMessaging contract"""
 
     def __init__(self, contract_address: str):
         self.contract_address = contract_address

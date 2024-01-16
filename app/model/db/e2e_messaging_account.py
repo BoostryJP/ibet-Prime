@@ -25,7 +25,7 @@ from .base import Base
 
 
 class E2EMessagingAccount(Base):
-    """E2E Messaging Account"""
+    """Account for E2E-Messaging"""
 
     __tablename__ = "e2e_messaging_account"
 

@@ -16,7 +16,6 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-
 import base64
 import json
 import logging
@@ -44,7 +43,7 @@ web3 = Web3Wrapper()
 
 
 class PersonalInfoContract:
-    """PersonalInfo contract model"""
+    """PersonalInfo contract"""
 
     def __init__(self, db: Session, issuer_address: str, contract_address=None):
         self.personal_info_contract = ContractUtils.get_contract(
@@ -142,7 +141,7 @@ class PersonalInfoContract:
         :param account_address: Token holder account address
         :param data: Register data
         :param default_value: Default value for items for which no value is set. (If not specified: None)
-        :return: None
+        :return: tx_hash
         """
 
         # Set default value
