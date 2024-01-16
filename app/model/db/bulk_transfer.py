@@ -62,3 +62,7 @@ class BulkTransfer(Base):
     amount: Mapped[int] = mapped_column(BigInteger, nullable=False)
     # processing status (pending:0, succeeded:1, failed:2)
     status: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    # transaction error code
+    transaction_error_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # transaction error message
+    transaction_error_message: Mapped[str | None] = mapped_column(String, nullable=True)

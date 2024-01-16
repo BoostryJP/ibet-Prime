@@ -3791,6 +3791,8 @@ def retrieve_bulk_transfer(
                 "to_address": _bulk_transfer.to_address,
                 "amount": _bulk_transfer.amount,
                 "status": _bulk_transfer.status,
+                "transaction_error_code": _bulk_transfer.transaction_error_code,
+                "transaction_error_message": _bulk_transfer.transaction_error_message,
             }
         )
 
