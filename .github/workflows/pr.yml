@@ -15,3 +15,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: run unit test using postgres
         run: docker-compose run ibet-prime-postgres
+  migration-test-postgres:
+    name: 'Migration tests (PostgreSQL)'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: run unit test using postgres
+        run: docker-compose run ibet-prime-postgres bash --login -c "cd /app/ibet-Prime && pytest -vv --test-alembic -m 'alembic'"
