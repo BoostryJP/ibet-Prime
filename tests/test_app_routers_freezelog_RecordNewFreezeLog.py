@@ -74,6 +74,54 @@ class TestRecordNewFreezeLog:
         assert freezing_grace_block_count == 10
         assert log_message == "test_message"
 
+    # <Normal_2>
+    # E2EE_REQUEST_ENABLED = False
+    def test_normal_2(self, client, db, freeze_log_contract):
+        user_1 = config_eth_account("user1")
+        user_address_1 = user_1["address"]
+        user_keyfile_1 = user_1["keyfile_json"]
+        password = "password"
+
+        # Prepare data
+        log_account = FreezeLogAccount()
+        log_account.account_address = user_address_1
+        log_account.keyfile = user_keyfile_1
+        log_account.eoa_password = E2EEUtils.encrypt(password)
+        db.add(log_account)
+
+        db.commit()
+
+        # Request target api
+        with mock.patch(
+            "app.routers.freeze_log.E2EE_REQUEST_ENABLED",
+            False,
+        ), mock.patch(
+            "app.model.schema.freeze_log.E2EE_REQUEST_ENABLED",
+            False,
+        ), mock.patch(
+            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            freeze_log_contract.address,
+        ):
+            req_param = {
+                "account_address": user_address_1,
+                "eoa_password": password,
+                "log_message": "test_message",
+                "freezing_grace_block_count": 10,
+            }
+            resp = client.post(self.test_url, json=req_param)
+
+        # Assertion
+        assert resp.status_code == 200
+        assert resp.json() == {"log_index": 0}
+
+        _, freezing_grace_block_count, log_message = FreezeLogContract(
+            log_account, freeze_log_contract.address
+        ).get_log(
+            log_index=0,
+        )
+        assert freezing_grace_block_count == 10
+        assert log_message == "test_message"
+
     ###########################################################################
     # Error Case
     ###########################################################################

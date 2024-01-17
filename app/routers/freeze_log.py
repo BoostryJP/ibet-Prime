@@ -253,7 +253,9 @@ def record_new_log(
 
     # Authentication
     eoa_password = (
-        E2EEUtils.decrypt(req.eoa_password) if E2EE_REQUEST_ENABLED else req.eoa_pass
+        E2EEUtils.decrypt(req.eoa_password)
+        if E2EE_REQUEST_ENABLED
+        else req.eoa_password
     )
     correct_eoa_pass = E2EEUtils.decrypt(log_account.eoa_password)
     if eoa_password != correct_eoa_pass:
@@ -299,7 +301,9 @@ def update_log(
 
     # Authentication
     eoa_password = (
-        E2EEUtils.decrypt(req.eoa_password) if E2EE_REQUEST_ENABLED else req.eoa_pass
+        E2EEUtils.decrypt(req.eoa_password)
+        if E2EE_REQUEST_ENABLED
+        else req.eoa_password
     )
     correct_eoa_pass = E2EEUtils.decrypt(log_account.eoa_password)
     if eoa_password != correct_eoa_pass:
