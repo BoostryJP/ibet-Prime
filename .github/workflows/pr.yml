@@ -21,4 +21,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: run unit test using postgres
-        run: docker-compose run ibet-prime-postgres bash --login -c "cd /app/ibet-Prime && make test_migrations"
+        run: docker-compose run ibet-prime-postgres bash --login -c "cd /app/ibet-Prime && pytest -vv --test-alembic -m 'alembic'"
