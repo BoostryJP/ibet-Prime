@@ -85,6 +85,64 @@ class TestUpdateFreezeLog:
         )
         assert log_message_af == "test_message_after"
 
+    # <Normal_2>
+    # E2EE_REQUEST_ENABLED = False
+    def test_normal_2(self, client, db, freeze_log_contract):
+        user_1 = config_eth_account("user1")
+        user_address_1 = user_1["address"]
+        user_keyfile_1 = user_1["keyfile_json"]
+        password = "password"
+
+        # Prepare data
+        log_account = FreezeLogAccount()
+        log_account.account_address = user_address_1
+        log_account.keyfile = user_keyfile_1
+        log_account.eoa_password = E2EEUtils.encrypt(password)
+        db.add(log_account)
+
+        db.commit()
+
+        with mock.patch(
+            "app.routers.freeze_log.E2EE_REQUEST_ENABLED",
+            False,
+        ), mock.patch(
+            "app.model.schema.freeze_log.E2EE_REQUEST_ENABLED",
+            False,
+        ), mock.patch(
+            "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
+            freeze_log_contract.address,
+        ):
+            # Record new log
+            resp_new = client.post(
+                self.new_log_url,
+                json={
+                    "account_address": user_address_1,
+                    "eoa_password": password,
+                    "log_message": "test_message_before",
+                    "freezing_grace_block_count": 10,
+                },
+            )
+            log_index = resp_new.json()["log_index"]
+            # Update log
+            resp = client.post(
+                self.update_log_url.format(log_index),
+                json={
+                    "account_address": user_address_1,
+                    "eoa_password": password,
+                    "log_message": "test_message_after",
+                },
+            )
+
+        # Assertion
+        assert resp.status_code == 200
+
+        _, _, log_message_af = FreezeLogContract(
+            log_account, freeze_log_contract.address
+        ).get_log(
+            log_index=log_index,
+        )
+        assert log_message_af == "test_message_after"
+
     ###########################################################################
     # Error Case
     ###########################################################################
