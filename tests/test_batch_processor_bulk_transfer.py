@@ -21,7 +21,7 @@ from unittest.mock import patch
 import pytest
 from sqlalchemy import and_, select
 
-from app.exceptions import SendTransactionError
+from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.db import (
     Account,
@@ -689,9 +689,9 @@ class TestProcessor:
             "error_transfer_id": [],
         }
 
-    # <Error_3>
-    # Send Transaction Error: IbetStraightBond
-    def test_error_3(self, processor, db):
+    # <Error_3_1>
+    # SendTransactionError: IbetStraightBond
+    def test_error_3_1(self, processor, db):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
@@ -768,9 +768,93 @@ class TestProcessor:
                 "error_transfer_id": [1],
             }
 
-    # <Error_4>
-    # Send Transaction Error: IbetShare
-    def test_error_4(self, processor, db):
+    # <Error_3_2>
+    # ContractRevertError: IbetStraightBond
+    def test_error_3_2(self, processor, db):
+        _account = self.account_list[0]
+        _from_address = self.account_list[1]
+        _to_address = self.account_list[2]
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = _account["address"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.keyfile = _account["keyfile"]
+        db.add(account)
+
+        # Prepare data : BulkTransferUpload
+        bulk_transfer_upload = BulkTransferUpload()
+        bulk_transfer_upload.issuer_address = _account["address"]
+        bulk_transfer_upload.upload_id = self.upload_id_list[0]
+        bulk_transfer_upload.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        bulk_transfer_upload.status = 0  # pending:0
+        db.add(bulk_transfer_upload)
+
+        # Prepare data : BulkTransfer
+        bulk_transfer = BulkTransfer()
+        bulk_transfer.issuer_address = _account["address"]
+        bulk_transfer.upload_id = self.upload_id_list[0]
+        bulk_transfer.token_type = TokenType.IBET_STRAIGHT_BOND.value
+        bulk_transfer.token_address = self.bulk_transfer_token[0]
+        bulk_transfer.from_address = _from_address["address"]
+        bulk_transfer.to_address = _to_address["address"]
+        bulk_transfer.amount = 1
+        bulk_transfer.status = 0  # pending:0
+        db.add(bulk_transfer)
+
+        db.commit()
+
+        # mock
+        IbetStraightBondContract_transfer = patch(
+            target="app.model.blockchain.token.IbetStraightBondContract.transfer",
+            side_effect=ContractRevertError(code_msg="120601"),
+        )
+
+        with IbetStraightBondContract_transfer:
+            # Execute batch
+            processor.process()
+
+            # Assertion
+            _bulk_transfer_upload = db.scalars(
+                select(BulkTransferUpload)
+                .where(BulkTransferUpload.upload_id == self.upload_id_list[0])
+                .limit(1)
+            ).first()
+            assert _bulk_transfer_upload.status == 2
+
+            _bulk_transfer = db.scalars(
+                select(BulkTransfer)
+                .where(
+                    and_(
+                        BulkTransfer.upload_id == self.upload_id_list[0],
+                        BulkTransfer.token_address == self.bulk_transfer_token[0],
+                    )
+                )
+                .limit(1)
+            ).first()
+            assert _bulk_transfer.status == 2
+            assert _bulk_transfer.transaction_error_code == 120601
+            assert (
+                _bulk_transfer.transaction_error_message
+                == "Transfer amount is greater than from address balance."
+            )
+
+            _notification = db.scalars(select(Notification).limit(1)).first()
+            assert _notification.id == 1
+            assert _notification.notice_id is not None
+            assert _notification.issuer_address == _account["address"]
+            assert _notification.priority == 1
+            assert _notification.type == NotificationType.BULK_TRANSFER_ERROR
+            assert _notification.code == 2
+            assert _notification.metainfo == {
+                "upload_id": self.upload_id_list[0],
+                "token_type": TokenType.IBET_STRAIGHT_BOND.value,
+                "error_transfer_id": [1],
+            }
+
+    # <Error_4_1>
+    # SendTransactionError: IbetShare
+    def test_error_4_1(self, processor, db):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
@@ -833,6 +917,90 @@ class TestProcessor:
                 .limit(1)
             ).first()
             assert _bulk_transfer.status == 2
+
+            _notification = db.scalars(select(Notification).limit(1)).first()
+            assert _notification.id == 1
+            assert _notification.notice_id is not None
+            assert _notification.issuer_address == _account["address"]
+            assert _notification.priority == 1
+            assert _notification.type == NotificationType.BULK_TRANSFER_ERROR
+            assert _notification.code == 2
+            assert _notification.metainfo == {
+                "upload_id": self.upload_id_list[0],
+                "token_type": TokenType.IBET_SHARE.value,
+                "error_transfer_id": [1],
+            }
+
+    # <Error_4_2>
+    # ContractRevertError: IbetShare
+    def test_error_4_2(self, processor, db):
+        _account = self.account_list[0]
+        _from_address = self.account_list[1]
+        _to_address = self.account_list[2]
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = _account["address"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.keyfile = _account["keyfile"]
+        db.add(account)
+
+        # Prepare data : BulkTransferUpload
+        bulk_transfer_upload = BulkTransferUpload()
+        bulk_transfer_upload.issuer_address = _account["address"]
+        bulk_transfer_upload.upload_id = self.upload_id_list[0]
+        bulk_transfer_upload.token_type = TokenType.IBET_SHARE.value
+        bulk_transfer_upload.status = 0  # pending:0
+        db.add(bulk_transfer_upload)
+
+        # Prepare data : BulkTransfer
+        bulk_transfer = BulkTransfer()
+        bulk_transfer.issuer_address = _account["address"]
+        bulk_transfer.upload_id = self.upload_id_list[0]
+        bulk_transfer.token_type = TokenType.IBET_SHARE.value
+        bulk_transfer.token_address = self.bulk_transfer_token[0]
+        bulk_transfer.from_address = _from_address["address"]
+        bulk_transfer.to_address = _to_address["address"]
+        bulk_transfer.amount = 1
+        bulk_transfer.status = 0  # pending:0
+        db.add(bulk_transfer)
+
+        db.commit()
+
+        # mock
+        IbetShareContract_transfer = patch(
+            target="app.model.blockchain.token.IbetShareContract.transfer",
+            side_effect=ContractRevertError(code_msg="110503"),
+        )
+
+        with IbetShareContract_transfer:
+            # Execute batch
+            processor.process()
+
+            # Assertion
+            _bulk_transfer_upload = db.scalars(
+                select(BulkTransferUpload)
+                .where(BulkTransferUpload.upload_id == self.upload_id_list[0])
+                .limit(1)
+            ).first()
+            assert _bulk_transfer_upload.status == 2
+
+            _bulk_transfer = db.scalars(
+                select(BulkTransfer)
+                .where(
+                    and_(
+                        BulkTransfer.upload_id == self.upload_id_list[0],
+                        BulkTransfer.token_address == self.bulk_transfer_token[0],
+                    )
+                )
+                .limit(1)
+            ).first()
+            assert _bulk_transfer.status == 2
+            assert _bulk_transfer.transaction_error_code == 110503
+            assert (
+                _bulk_transfer.transaction_error_message
+                == "Transfer amount is greater than from address balance."
+            )
 
             _notification = db.scalars(select(Notification).limit(1)).first()
             assert _notification.id == 1

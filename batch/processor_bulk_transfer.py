@@ -203,6 +203,8 @@ class Processor:
                                     db_session=db_session,
                                     record_id=_transfer.id,
                                     status=2,
+                                    transaction_error_code=e.code,
+                                    transaction_error_message=e.message,
                                 )
                         except SendTransactionError:
                             LOG.warning(
@@ -251,7 +253,11 @@ class Processor:
                                 f"Transaction reverted: id=<{_transfer.id}> error_code:<{e.code}> error_msg:<{e.message}>"
                             )
                             self.__sink_on_finish_transfer_process(
-                                db_session=db_session, record_id=_transfer.id, status=2
+                                db_session=db_session,
+                                record_id=_transfer.id,
+                                status=2,
+                                transaction_error_code=e.code,
+                                transaction_error_message=e.message,
                             )
                         except SendTransactionError:
                             LOG.warning(
@@ -405,12 +411,20 @@ class Processor:
 
     @staticmethod
     def __sink_on_finish_transfer_process(
-        db_session: Session, record_id: int, status: int
+        db_session: Session,
+        record_id: int,
+        status: int,
+        transaction_error_code: int = None,
+        transaction_error_message: str = None,
     ):
         db_session.execute(
             update(BulkTransfer)
             .where(BulkTransfer.id == record_id)
-            .values(status=status)
+            .values(
+                status=status,
+                transaction_error_code=transaction_error_code,
+                transaction_error_message=transaction_error_message,
+            )
         )
 
     @staticmethod
