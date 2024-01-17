@@ -27,6 +27,8 @@ web3 = Web3Wrapper()
 
 
 class TokenListContract:
+    """TokenList contract"""
+
     def __init__(self, contract_address: str):
         self.contract_address = contract_address
 

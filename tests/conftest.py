@@ -261,3 +261,18 @@ def e2e_messaging_contract():
         "E2EMessaging", [], deployer_address, deployer_private_key
     )
     return ContractUtils.get_contract("E2EMessaging", contract_address)
+
+
+@pytest.fixture(scope="function")
+def freeze_log_contract():
+    user_1 = config_eth_account("user1")
+    deployer_address = user_1["address"]
+    deployer_private_key = decode_keyfile_json(
+        raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+    )
+
+    # Deploy e2e messaging contract
+    contract_address, _, _ = ContractUtils.deploy_contract(
+        "FreezeLog", [], deployer_address, deployer_private_key
+    )
+    return ContractUtils.get_contract("FreezeLog", contract_address)

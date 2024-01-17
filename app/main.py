@@ -35,6 +35,7 @@ from app.routers import (
     common,
     e2e_messaging,
     file,
+    freeze_log,
     ledger,
     notification,
     position,
@@ -102,6 +103,7 @@ app.include_router(position.router)
 app.include_router(share.router)
 app.include_router(token_holders.router)
 app.include_router(bc_explorer.router)
+app.include_router(freeze_log.router)
 
 
 ###############################################################

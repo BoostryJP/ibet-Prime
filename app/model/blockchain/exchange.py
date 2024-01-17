@@ -66,7 +66,7 @@ class IbetExchangeInterface:
 
 
 class IbetSecurityTokenEscrow(IbetExchangeInterface):
-    """IbetSecurityTokenEscrow model"""
+    """IbetSecurityTokenEscrow contract"""
 
     def __init__(self, contract_address: str):
         super().__init__(

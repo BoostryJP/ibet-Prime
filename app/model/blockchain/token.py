@@ -431,6 +431,8 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
 
 
 class IbetStraightBondContract(IbetSecurityTokenInterface):
+    """IbetStraightBond contract"""
+
     face_value: int
     face_value_currency: str
     interest_rate: float
@@ -978,6 +980,8 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
 
 
 class IbetShareContract(IbetSecurityTokenInterface):
+    """IbetShare contract"""
+
     issue_price: int
     cancellation_date: str
     memo: str
