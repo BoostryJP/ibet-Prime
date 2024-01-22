@@ -16,16 +16,10 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import os
-import sys
 from dataclasses import asdict
 from typing import Any
 
 from aiohttp import ClientSession
-from cache import AsyncTTL
-
-path = os.path.join(os.path.dirname(__file__), "../../../../")
-sys.path.append(path)
 
 from app.model.schema import (
     BlockDataDetail,
@@ -36,6 +30,7 @@ from app.model.schema import (
     TxDataDetail,
     TxDataListResponse,
 )
+from cache import AsyncTTL
 
 
 class ApiNotEnabledException(Exception):

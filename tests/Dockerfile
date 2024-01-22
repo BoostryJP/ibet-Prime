@@ -96,6 +96,7 @@ USER root
 RUN mkdir -p /app/ibet-Prime/tests/
 COPY --chown=apl:apl tests/ /app/ibet-Prime/tests/
 RUN chmod -R 755 /app/ibet-Prime/tests/
+ENV PYTHONPATH /app/ibet-Prime
 
 USER apl
 RUN mkdir -p /app/ibet-Prime/cov/

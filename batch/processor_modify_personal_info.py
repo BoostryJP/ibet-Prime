@@ -16,19 +16,12 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import os
-import sys
 import time
 from typing import Sequence, Set
 
 from sqlalchemy import and_, create_engine, delete, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-
-path = os.path.join(os.path.dirname(__file__), "../")
-sys.path.append(path)
-
-import batch_log
 
 from app.exceptions import ServiceUnavailableError
 from app.model.blockchain import (
@@ -45,6 +38,7 @@ from app.model.db import (
     TokenType,
 )
 from app.utils.contract_utils import ContractUtils
+from batch import batch_log
 from config import DATABASE_URL, ZERO_ADDRESS
 
 """

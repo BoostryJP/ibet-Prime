@@ -16,24 +16,3 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import sys
-
-from sqlalchemy import Table
-
-from app.database import engine, get_db_schema
-from app.model.db import Base
-
-
-def reset():
-    meta = Base.metadata
-    meta.bind = engine
-    table = Table("alembic_version", meta, schema=get_db_schema())
-    if table.exists():
-        table.drop(bind=engine)
-
-
-argv = sys.argv
-
-if len(argv) > 0:
-    if argv[1] == "reset":
-        reset()

@@ -19,8 +19,6 @@ SPDX-License-Identifier: Apache-2.0
 import base64
 import json
 import logging
-import os
-import sys
 
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
@@ -28,9 +26,6 @@ from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from web3.exceptions import TimeExhausted
-
-path = os.path.join(os.path.dirname(__file__), "../")
-sys.path.append(path)
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import Account

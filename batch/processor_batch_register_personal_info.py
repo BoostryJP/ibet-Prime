@@ -18,8 +18,6 @@ SPDX-License-Identifier: Apache-2.0
 """
 from __future__ import annotations
 
-import os
-import sys
 import threading
 import time
 import uuid
@@ -28,11 +26,6 @@ from typing import Sequence
 from sqlalchemy import and_, create_engine, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-
-path = os.path.join(os.path.dirname(__file__), "../")
-sys.path.append(path)
-
-import batch_log
 
 from app.exceptions import (
     ContractRevertError,
@@ -55,6 +48,7 @@ from app.model.db import (
     TokenType,
 )
 from app.utils.web3_utils import Web3Wrapper
+from batch import batch_log
 from config import (
     BATCH_REGISTER_PERSONAL_INFO_INTERVAL,
     BATCH_REGISTER_PERSONAL_INFO_WORKER_COUNT,

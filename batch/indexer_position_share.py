@@ -17,8 +17,6 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import json
-import os
-import sys
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -30,11 +28,6 @@ from sqlalchemy import and_, create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from web3.eth import Contract
-
-path = os.path.join(os.path.dirname(__file__), "../")
-sys.path.append(path)
-
-import batch_log
 
 from app.exceptions import ServiceUnavailableError
 from app.model.blockchain import IbetExchangeInterface
@@ -51,6 +44,7 @@ from app.model.db import (
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.web3_utils import Web3Wrapper
+from batch import batch_log
 from config import (
     DATABASE_URL,
     INDEXER_BLOCK_LOT_MAX_SIZE,

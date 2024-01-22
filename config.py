@@ -165,7 +165,11 @@ TOKEN_CACHE_TTL = (
     if os.environ.get("TOKEN_CACHE_TTL")
     else 43200
 )
-
+TOKEN_CACHE_TTL_JITTER = (
+    int(os.environ.get("TOKEN_CACHE_TTL_JITTER"))
+    if os.environ.get("TOKEN_CACHE_TTL_JITTER")
+    else 21600
+)
 
 ####################################################
 # Batch settings

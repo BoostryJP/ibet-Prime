@@ -16,8 +16,6 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import os
-import sys
 import time
 from typing import Sequence
 
@@ -27,13 +25,9 @@ from sqlalchemy import create_engine, or_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-path = os.path.join(os.path.dirname(__file__), "../")
-sys.path.append(path)
-
-import batch_log
-
 from app.model.db import Account, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
+from batch import batch_log
 from config import DATABASE_URL
 
 """

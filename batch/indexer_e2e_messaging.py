@@ -18,8 +18,6 @@ SPDX-License-Identifier: Apache-2.0
 """
 import base64
 import json
-import os
-import sys
 import time
 from datetime import datetime
 
@@ -29,11 +27,6 @@ from Crypto.Util.Padding import unpad
 from sqlalchemy import and_, create_engine, desc, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-
-path = os.path.join(os.path.dirname(__file__), "../")
-sys.path.append(path)
-
-import batch_log
 
 from app.exceptions import ServiceUnavailableError
 from app.model.db import (
@@ -45,6 +38,7 @@ from app.model.db import (
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.web3_utils import Web3Wrapper
+from batch import batch_log
 from config import (
     DATABASE_URL,
     E2E_MESSAGING_CONTRACT_ADDRESS,

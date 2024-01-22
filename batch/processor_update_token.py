@@ -16,8 +16,6 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import os
-import sys
 import time
 import uuid
 from datetime import datetime
@@ -27,11 +25,6 @@ from eth_keyfile import decode_keyfile_json
 from sqlalchemy import create_engine, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-
-path = os.path.join(os.path.dirname(__file__), "../")
-sys.path.append(path)
-
-import batch_log
 
 from app.exceptions import (
     ContractRevertError,
@@ -61,6 +54,7 @@ from app.model.db import (
 )
 from app.utils.contract_utils import ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
+from batch import batch_log
 from config import DATABASE_URL, TOKEN_LIST_CONTRACT_ADDRESS, UPDATE_TOKEN_INTERVAL
 
 """

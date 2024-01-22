@@ -16,19 +16,10 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import os
-import sys
-
 import pytest
 from eth_keyfile import decode_keyfile_json
 from fastapi.testclient import TestClient
 from sqlalchemy import text
-
-path = os.path.join(os.path.dirname(__file__), "../")
-sys.path.append(path)
-path = os.path.join(os.path.dirname(__file__), "../batch")
-sys.path.append(path)
-
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from web3.types import RPCEndpoint
