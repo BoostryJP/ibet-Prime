@@ -90,6 +90,7 @@ RUN . ~/.bash_profile \
  && poetry install --only main --no-root -E ibet-explorer \
  && rm -f /app/ibet-Prime/pyproject.toml \
  && rm -f /app/ibet-Prime/poetry.lock
+ENV PYTHONPATH /app/ibet-Prime
 
 # command deploy
 USER apl

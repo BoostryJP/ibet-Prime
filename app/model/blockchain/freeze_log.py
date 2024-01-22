@@ -17,14 +17,9 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import logging
-import os
-import sys
 
 from eth_keyfile import decode_keyfile_json
 from web3.exceptions import TimeExhausted
-
-path = os.path.join(os.path.dirname(__file__), "../")
-sys.path.append(path)
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import FreezeLogAccount

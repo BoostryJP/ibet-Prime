@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 import json
 from datetime import datetime, timedelta
 from decimal import Decimal
+from random import randint
 from typing import List
 
 from sqlalchemy import delete, desc, select
@@ -55,6 +56,7 @@ from config import (
     DEFAULT_CURRENCY,
     TOKEN_CACHE,
     TOKEN_CACHE_TTL,
+    TOKEN_CACHE_TTL_JITTER,
     TX_GAS_LIMIT,
     ZERO_ADDRESS,
 )
@@ -110,7 +112,10 @@ class IbetStandardTokenInterface:
         token_cache.attributes = self.__dict__
         token_cache.cached_datetime = datetime.utcnow()
         token_cache.expiration_datetime = datetime.utcnow() + timedelta(
-            seconds=TOKEN_CACHE_TTL
+            seconds=randint(
+                TOKEN_CACHE_TTL - TOKEN_CACHE_TTL_JITTER,
+                TOKEN_CACHE_TTL + TOKEN_CACHE_TTL_JITTER,
+            )
         )
         db_session.merge(token_cache)
 
@@ -475,134 +480,140 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
     def get(self):
         """Get token attributes"""
         db_session = Session(autocommit=False, autoflush=True, bind=engine)
+        try:
+            # When using the cache
+            if TOKEN_CACHE:
+                token_cache: TokenCache | None = db_session.scalars(
+                    select(TokenCache)
+                    .where(TokenCache.token_address == self.token_address)
+                    .limit(1)
+                ).first()
+                if token_cache is not None:
+                    is_updated = self.check_attr_update(
+                        db_session=db_session, base_datetime=token_cache.cached_datetime
+                    )
+                    if (
+                        is_updated is False
+                        and token_cache.expiration_datetime > datetime.utcnow()
+                    ):
+                        # Get data from cache
+                        for k, v in token_cache.attributes.items():
+                            setattr(self, k, v)
+                        db_session.close()
+                        return AttributeDict(self.__dict__)
 
-        # When using the cache
-        if TOKEN_CACHE:
-            token_cache: TokenCache | None = db_session.scalars(
-                select(TokenCache)
-                .where(TokenCache.token_address == self.token_address)
-                .limit(1)
-            ).first()
-            if token_cache is not None:
-                is_updated = self.check_attr_update(
-                    db_session=db_session, base_datetime=token_cache.cached_datetime
+            # When cache is not used
+            # Or, if there is no data in the cache
+            # Or, if the cache has expired
+
+            contract = ContractUtils.get_contract(
+                contract_name=self.contract_name, contract_address=self.token_address
+            )
+
+            # Set IbetStandardTokenInterface attribute
+            self.issuer_address = ContractUtils.call_function(
+                contract, "owner", (), ZERO_ADDRESS
+            )
+            self.name = ContractUtils.call_function(contract, "name", (), "")
+            self.symbol = ContractUtils.call_function(contract, "symbol", (), "")
+            self.total_supply = ContractUtils.call_function(
+                contract, "totalSupply", (), 0
+            )
+            self.tradable_exchange_contract_address = ContractUtils.call_function(
+                contract, "tradableExchange", (), ZERO_ADDRESS
+            )
+            self.contact_information = ContractUtils.call_function(
+                contract, "contactInformation", (), ""
+            )
+            self.privacy_policy = ContractUtils.call_function(
+                contract, "privacyPolicy", (), ""
+            )
+            self.status = ContractUtils.call_function(contract, "status", (), True)
+
+            # Set IbetSecurityTokenInterface attribute
+            self.personal_info_contract_address = ContractUtils.call_function(
+                contract, "personalInfoAddress", (), ZERO_ADDRESS
+            )
+            self.transferable = ContractUtils.call_function(
+                contract, "transferable", (), False
+            )
+            self.is_offering = ContractUtils.call_function(
+                contract, "isOffering", (), False
+            )
+            self.transfer_approval_required = ContractUtils.call_function(
+                contract, "transferApprovalRequired", (), False
+            )
+
+            # Set IbetStraightBondToken attribute
+            self.face_value = ContractUtils.call_function(contract, "faceValue", (), 0)
+            self.face_value_currency = ContractUtils.call_function(
+                contract, "faceValueCurrency", (), DEFAULT_CURRENCY
+            )
+            self.interest_rate = float(
+                Decimal(
+                    str(ContractUtils.call_function(contract, "interestRate", (), 0))
                 )
-                if (
-                    is_updated is False
-                    and token_cache.expiration_datetime > datetime.utcnow()
-                ):
-                    # Get data from cache
-                    for k, v in token_cache.attributes.items():
-                        setattr(self, k, v)
-                    db_session.close()
-                    return AttributeDict(self.__dict__)
-
-        # When cache is not used
-        # Or, if there is no data in the cache
-        # Or, if the cache has expired
-
-        contract = ContractUtils.get_contract(
-            contract_name=self.contract_name, contract_address=self.token_address
-        )
-
-        # Set IbetStandardTokenInterface attribute
-        self.issuer_address = ContractUtils.call_function(
-            contract, "owner", (), ZERO_ADDRESS
-        )
-        self.name = ContractUtils.call_function(contract, "name", (), "")
-        self.symbol = ContractUtils.call_function(contract, "symbol", (), "")
-        self.total_supply = ContractUtils.call_function(contract, "totalSupply", (), 0)
-        self.tradable_exchange_contract_address = ContractUtils.call_function(
-            contract, "tradableExchange", (), ZERO_ADDRESS
-        )
-        self.contact_information = ContractUtils.call_function(
-            contract, "contactInformation", (), ""
-        )
-        self.privacy_policy = ContractUtils.call_function(
-            contract, "privacyPolicy", (), ""
-        )
-        self.status = ContractUtils.call_function(contract, "status", (), True)
-
-        # Set IbetSecurityTokenInterface attribute
-        self.personal_info_contract_address = ContractUtils.call_function(
-            contract, "personalInfoAddress", (), ZERO_ADDRESS
-        )
-        self.transferable = ContractUtils.call_function(
-            contract, "transferable", (), False
-        )
-        self.is_offering = ContractUtils.call_function(
-            contract, "isOffering", (), False
-        )
-        self.transfer_approval_required = ContractUtils.call_function(
-            contract, "transferApprovalRequired", (), False
-        )
-
-        # Set IbetStraightBondToken attribute
-        self.face_value = ContractUtils.call_function(contract, "faceValue", (), 0)
-        self.face_value_currency = ContractUtils.call_function(
-            contract, "faceValueCurrency", (), DEFAULT_CURRENCY
-        )
-        self.interest_rate = float(
-            Decimal(str(ContractUtils.call_function(contract, "interestRate", (), 0)))
-            * Decimal("0.0001")
-        )
-        self.interest_payment_currency = ContractUtils.call_function(
-            contract, "interestPaymentCurrency", (), ""
-        )
-        self.redemption_date = ContractUtils.call_function(
-            contract, "redemptionDate", (), ""
-        )
-        self.redemption_value = ContractUtils.call_function(
-            contract, "redemptionValue", (), 0
-        )
-        self.redemption_value_currency = ContractUtils.call_function(
-            contract, "redemptionValueCurrency", (), ""
-        )
-        self.return_date = ContractUtils.call_function(contract, "returnDate", (), "")
-        self.return_amount = ContractUtils.call_function(
-            contract, "returnAmount", (), ""
-        )
-        try:
-            _raw_base_fx_rate = ContractUtils.call_function(
-                contract, "baseFXRate", (), ""
+                * Decimal("0.0001")
             )
-            if _raw_base_fx_rate is not None and _raw_base_fx_rate != "":
-                self.base_fx_rate = float(_raw_base_fx_rate)
-            else:
-                self.base_fx_rate = 0.0
-        except ValueError:
-            self.base_fx_rate = 0.0
-        self.purpose = ContractUtils.call_function(contract, "purpose", (), "")
-        self.memo = ContractUtils.call_function(contract, "memo", (), "")
-        self.is_redeemed = ContractUtils.call_function(
-            contract, "isRedeemed", (), False
-        )
-
-        interest_payment_date_list = []
-        interest_payment_date_string = ContractUtils.call_function(
-            contract, "interestPaymentDate", (), ""
-        ).replace("'", '"')
-        interest_payment_date = {}
-        try:
-            if interest_payment_date_string != "":
-                interest_payment_date = json.loads(interest_payment_date_string)
-        except Exception as err:
-            LOG.warning("Failed to load interestPaymentDate: ", err)
-        for i in range(1, 13):
-            interest_payment_date_list.append(
-                interest_payment_date.get(f"interestPaymentDate{str(i)}", "")
+            self.interest_payment_currency = ContractUtils.call_function(
+                contract, "interestPaymentCurrency", (), ""
             )
-        self.interest_payment_date = interest_payment_date_list
-
-        if TOKEN_CACHE:
-            # Create token cache
+            self.redemption_date = ContractUtils.call_function(
+                contract, "redemptionDate", (), ""
+            )
+            self.redemption_value = ContractUtils.call_function(
+                contract, "redemptionValue", (), 0
+            )
+            self.redemption_value_currency = ContractUtils.call_function(
+                contract, "redemptionValueCurrency", (), ""
+            )
+            self.return_date = ContractUtils.call_function(
+                contract, "returnDate", (), ""
+            )
+            self.return_amount = ContractUtils.call_function(
+                contract, "returnAmount", (), ""
+            )
             try:
-                self.create_cache(db_session)
-                db_session.commit()
-            except SAIntegrityError:
-                db_session.rollback()
+                _raw_base_fx_rate = ContractUtils.call_function(
+                    contract, "baseFXRate", (), ""
+                )
+                if _raw_base_fx_rate is not None and _raw_base_fx_rate != "":
+                    self.base_fx_rate = float(_raw_base_fx_rate)
+                else:
+                    self.base_fx_rate = 0.0
+            except ValueError:
+                self.base_fx_rate = 0.0
+            self.purpose = ContractUtils.call_function(contract, "purpose", (), "")
+            self.memo = ContractUtils.call_function(contract, "memo", (), "")
+            self.is_redeemed = ContractUtils.call_function(
+                contract, "isRedeemed", (), False
+            )
 
-        db_session.close()
+            interest_payment_date_list = []
+            interest_payment_date_string = ContractUtils.call_function(
+                contract, "interestPaymentDate", (), ""
+            ).replace("'", '"')
+            interest_payment_date = {}
+            try:
+                if interest_payment_date_string != "":
+                    interest_payment_date = json.loads(interest_payment_date_string)
+            except Exception as err:
+                LOG.warning("Failed to load interestPaymentDate: ", err)
+            for i in range(1, 13):
+                interest_payment_date_list.append(
+                    interest_payment_date.get(f"interestPaymentDate{str(i)}", "")
+                )
+            self.interest_payment_date = interest_payment_date_list
+
+            if TOKEN_CACHE:
+                # Create token cache
+                try:
+                    self.create_cache(db_session)
+                    db_session.commit()
+                except SAIntegrityError:
+                    db_session.rollback()
+        finally:
+            db_session.close()
 
         return AttributeDict(self.__dict__)
 
@@ -1018,98 +1029,102 @@ class IbetShareContract(IbetSecurityTokenInterface):
     def get(self):
         """Get token attributes"""
         db_session = Session(autocommit=False, autoflush=True, bind=engine)
+        try:
+            # When using the cache
+            if TOKEN_CACHE:
+                token_cache: TokenCache | None = db_session.scalars(
+                    select(TokenCache)
+                    .where(TokenCache.token_address == self.token_address)
+                    .limit(1)
+                ).first()
+                if token_cache is not None:
+                    is_updated = self.check_attr_update(
+                        db_session=db_session, base_datetime=token_cache.cached_datetime
+                    )
+                    if (
+                        is_updated is False
+                        and token_cache.expiration_datetime > datetime.utcnow()
+                    ):
+                        # Get data from cache
+                        for k, v in token_cache.attributes.items():
+                            setattr(self, k, v)
+                        db_session.close()
+                        return AttributeDict(self.__dict__)
 
-        # When using the cache
-        if TOKEN_CACHE:
-            token_cache: TokenCache | None = db_session.scalars(
-                select(TokenCache)
-                .where(TokenCache.token_address == self.token_address)
-                .limit(1)
-            ).first()
-            if token_cache is not None:
-                is_updated = self.check_attr_update(
-                    db_session=db_session, base_datetime=token_cache.cached_datetime
-                )
-                if (
-                    is_updated is False
-                    and token_cache.expiration_datetime > datetime.utcnow()
-                ):
-                    # Get data from cache
-                    for k, v in token_cache.attributes.items():
-                        setattr(self, k, v)
-                    db_session.close()
-                    return AttributeDict(self.__dict__)
+            # When cache is not used
+            # Or, if there is no data in the cache
+            # Or, if the cache has expired
 
-        # When cache is not used
-        # Or, if there is no data in the cache
-        # Or, if the cache has expired
+            contract = ContractUtils.get_contract(
+                contract_name=self.contract_name, contract_address=self.token_address
+            )
 
-        contract = ContractUtils.get_contract(
-            contract_name=self.contract_name, contract_address=self.token_address
-        )
+            # Set IbetStandardTokenInterface attribute
+            self.issuer_address = ContractUtils.call_function(
+                contract, "owner", (), ZERO_ADDRESS
+            )
+            self.name = ContractUtils.call_function(contract, "name", (), "")
+            self.symbol = ContractUtils.call_function(contract, "symbol", (), "")
+            self.total_supply = ContractUtils.call_function(
+                contract, "totalSupply", (), 0
+            )
+            self.tradable_exchange_contract_address = ContractUtils.call_function(
+                contract, "tradableExchange", (), ZERO_ADDRESS
+            )
+            self.contact_information = ContractUtils.call_function(
+                contract, "contactInformation", (), ""
+            )
+            self.privacy_policy = ContractUtils.call_function(
+                contract, "privacyPolicy", (), ""
+            )
+            self.status = ContractUtils.call_function(contract, "status", (), True)
 
-        # Set IbetStandardTokenInterface attribute
-        self.issuer_address = ContractUtils.call_function(
-            contract, "owner", (), ZERO_ADDRESS
-        )
-        self.name = ContractUtils.call_function(contract, "name", (), "")
-        self.symbol = ContractUtils.call_function(contract, "symbol", (), "")
-        self.total_supply = ContractUtils.call_function(contract, "totalSupply", (), 0)
-        self.tradable_exchange_contract_address = ContractUtils.call_function(
-            contract, "tradableExchange", (), ZERO_ADDRESS
-        )
-        self.contact_information = ContractUtils.call_function(
-            contract, "contactInformation", (), ""
-        )
-        self.privacy_policy = ContractUtils.call_function(
-            contract, "privacyPolicy", (), ""
-        )
-        self.status = ContractUtils.call_function(contract, "status", (), True)
+            # Set IbetSecurityTokenInterface attribute
+            self.personal_info_contract_address = ContractUtils.call_function(
+                contract, "personalInfoAddress", (), ZERO_ADDRESS
+            )
+            self.transferable = ContractUtils.call_function(
+                contract, "transferable", (), False
+            )
+            self.is_offering = ContractUtils.call_function(
+                contract, "isOffering", (), False
+            )
+            self.transfer_approval_required = ContractUtils.call_function(
+                contract, "transferApprovalRequired", (), False
+            )
 
-        # Set IbetSecurityTokenInterface attribute
-        self.personal_info_contract_address = ContractUtils.call_function(
-            contract, "personalInfoAddress", (), ZERO_ADDRESS
-        )
-        self.transferable = ContractUtils.call_function(
-            contract, "transferable", (), False
-        )
-        self.is_offering = ContractUtils.call_function(
-            contract, "isOffering", (), False
-        )
-        self.transfer_approval_required = ContractUtils.call_function(
-            contract, "transferApprovalRequired", (), False
-        )
+            # Set IbetShareToken attribute
+            self.issue_price = ContractUtils.call_function(
+                contract, "issuePrice", (), 0
+            )
+            self.cancellation_date = ContractUtils.call_function(
+                contract, "cancellationDate", (), ""
+            )
+            self.memo = ContractUtils.call_function(contract, "memo", (), "")
+            self.principal_value = ContractUtils.call_function(
+                contract, "principalValue", (), 0
+            )
+            self.is_canceled = ContractUtils.call_function(
+                contract, "isCanceled", (), False
+            )
+            _dividend_info = ContractUtils.call_function(
+                contract, "dividendInformation", (), (0, "", "")
+            )
+            self.dividends = float(
+                Decimal(str(_dividend_info[0])) * Decimal("0.0000000000001")
+            )
+            self.dividend_record_date = _dividend_info[1]
+            self.dividend_payment_date = _dividend_info[2]
 
-        # Set IbetShareToken attribute
-        self.issue_price = ContractUtils.call_function(contract, "issuePrice", (), 0)
-        self.cancellation_date = ContractUtils.call_function(
-            contract, "cancellationDate", (), ""
-        )
-        self.memo = ContractUtils.call_function(contract, "memo", (), "")
-        self.principal_value = ContractUtils.call_function(
-            contract, "principalValue", (), 0
-        )
-        self.is_canceled = ContractUtils.call_function(
-            contract, "isCanceled", (), False
-        )
-        _dividend_info = ContractUtils.call_function(
-            contract, "dividendInformation", (), (0, "", "")
-        )
-        self.dividends = float(
-            Decimal(str(_dividend_info[0])) * Decimal("0.0000000000001")
-        )
-        self.dividend_record_date = _dividend_info[1]
-        self.dividend_payment_date = _dividend_info[2]
-
-        if TOKEN_CACHE:
-            # Create token cache
-            try:
-                self.create_cache(db_session)
-                db_session.commit()
-            except SAIntegrityError:
-                db_session.rollback()
-
-        db_session.close()
+            if TOKEN_CACHE:
+                # Create token cache
+                try:
+                    self.create_cache(db_session)
+                    db_session.commit()
+                except SAIntegrityError:
+                    db_session.rollback()
+        finally:
+            db_session.close()
 
         return AttributeDict(self.__dict__)
 
