@@ -66,6 +66,8 @@ class TestAppRoutersForceUnlockPOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # mock
         IbetSecurityTokenInterface_mock.side_effect = [None]
 
@@ -139,6 +141,8 @@ class TestAppRoutersForceUnlockPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # mock
         IbetSecurityTokenInterface_mock.side_effect = [None]
@@ -464,6 +468,8 @@ class TestAppRoutersForceUnlockPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # request target API
         req_param = {
             "token_address": _token_address,
@@ -518,6 +524,8 @@ class TestAppRoutersForceUnlockPOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = {
             "token_address": _token_address,
@@ -562,6 +570,8 @@ class TestAppRoutersForceUnlockPOST:
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # request target API
         req_param = {
@@ -617,6 +627,8 @@ class TestAppRoutersForceUnlockPOST:
         token.token_status = 0
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {
@@ -675,6 +687,8 @@ class TestAppRoutersForceUnlockPOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = {
             "token_address": _token_address,
@@ -731,6 +745,8 @@ class TestAppRoutersForceUnlockPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {

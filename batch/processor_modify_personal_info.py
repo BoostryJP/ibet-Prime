@@ -16,13 +16,15 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import time
+import asyncio
+import sys
 from typing import Sequence, Set
 
-from sqlalchemy import and_, create_engine, delete, select, update
+from sqlalchemy import and_, delete, select, update
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.blockchain import (
     IbetShareContract,
@@ -37,9 +39,9 @@ from app.model.db import (
     Token,
     TokenType,
 )
-from app.utils.contract_utils import ContractUtils
+from app.utils.contract_utils import AsyncContractUtils
 from batch import batch_log
-from config import DATABASE_URL, ZERO_ADDRESS
+from config import ZERO_ADDRESS
 
 """
 [PROCESSOR-Modify-Personal-Info]
@@ -51,27 +53,27 @@ when the issuer's RSA key is updated.
 process_name = "PROCESSOR-Modify-Personal-Info"
 LOG = batch_log.get_logger(process_name=process_name)
 
-db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
-
 
 class Processor:
-    def process(self):
-        db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
+    async def process(self):
+        db_session: AsyncSession = BatchAsyncSessionLocal()
         try:
-            temporary_list = self.__get_temporary_list(db_session=db_session)
+            temporary_list = await self.__get_temporary_list(db_session=db_session)
             for temporary in temporary_list:
                 LOG.info(f"Process start: issuer={temporary.issuer_address}")
 
                 contract_accessor_list = (
-                    self.__get_personal_info_contract_accessor_list(
+                    await self.__get_personal_info_contract_accessor_list(
                         db_session=db_session, issuer_address=temporary.issuer_address
                     )
                 )
 
                 # Get target PersonalInfo account address
-                idx_personal_info_list: Sequence[IDXPersonalInfo] = db_session.scalars(
-                    select(IDXPersonalInfo).where(
-                        IDXPersonalInfo.issuer_address == temporary.issuer_address
+                idx_personal_info_list: Sequence[IDXPersonalInfo] = (
+                    await db_session.scalars(
+                        select(IDXPersonalInfo).where(
+                            IDXPersonalInfo.issuer_address == temporary.issuer_address
+                        )
                     )
                 ).all()
 
@@ -80,7 +82,7 @@ class Processor:
                 for idx_personal_info in idx_personal_info_list:
                     # Get target PersonalInfo contract accessor
                     for contract_accessor in contract_accessor_list:
-                        is_registered = ContractUtils.call_function(
+                        is_registered = await AsyncContractUtils.call_function(
                             contract=contract_accessor.personal_info_contract,
                             function_name="isRegistered",
                             args=(
@@ -93,7 +95,7 @@ class Processor:
                             target_contract_accessor = contract_accessor
                             break
 
-                    is_modify = self.__modify_personal_info(
+                    is_modify = await self.__modify_personal_info(
                         temporary=temporary,
                         idx_personal_info=idx_personal_info,
                         personal_info_contract_accessor=target_contract_accessor,
@@ -106,65 +108,84 @@ class Processor:
                 # Once all investors' personal information has been updated,
                 # update the status of the issuer's RSA key.
                 if count == completed_count:
-                    self.__sink_on_account(
+                    await self.__sink_on_account(
                         db_session=db_session, issuer_address=temporary.issuer_address
                     )
-                    db_session.commit()
+                    await db_session.commit()
 
                 LOG.info(f"Process end: issuer={temporary.issuer_address}")
         finally:
-            db_session.close()
+            await db_session.close()
 
-    def __get_temporary_list(self, db_session: Session):
+    @staticmethod
+    async def __get_temporary_list(db_session: AsyncSession):
         # NOTE: rsa_private_key in Account DB and AccountRsaKeyTemporary DB is the same when API is executed,
         #       Account DB is changed when RSA generate batch is completed.
-        temporary_list: Sequence[AccountRsaKeyTemporary] = db_session.scalars(
-            select(AccountRsaKeyTemporary)
-            .join(
-                Account, AccountRsaKeyTemporary.issuer_address == Account.issuer_address
+        temporary_list: Sequence[AccountRsaKeyTemporary] = (
+            await db_session.scalars(
+                select(AccountRsaKeyTemporary)
+                .join(
+                    Account,
+                    AccountRsaKeyTemporary.issuer_address == Account.issuer_address,
+                )
+                .where(
+                    AccountRsaKeyTemporary.rsa_private_key != Account.rsa_private_key
+                )
             )
-            .where(AccountRsaKeyTemporary.rsa_private_key != Account.rsa_private_key)
         ).all()
 
         return temporary_list
 
-    def __get_personal_info_contract_accessor_list(
-        self, db_session: Session, issuer_address: str
+    @staticmethod
+    async def __get_personal_info_contract_accessor_list(
+        db_session: AsyncSession, issuer_address: str
     ) -> Set[PersonalInfoContract]:
-        token_list: Sequence[Token] = db_session.scalars(
-            select(Token).where(
-                and_(Token.issuer_address == issuer_address, Token.token_status == 1)
+        token_list: Sequence[Token] = (
+            await db_session.scalars(
+                select(Token).where(
+                    and_(
+                        Token.issuer_address == issuer_address, Token.token_status == 1
+                    )
+                )
             )
         ).all()
         personal_info_contract_list = set()
         for token in token_list:
             if token.type == TokenType.IBET_SHARE.value:
-                token_contract = IbetShareContract(token.token_address).get()
+                token_contract = await IbetShareContract(token.token_address).get()
             elif token.type == TokenType.IBET_STRAIGHT_BOND.value:
-                token_contract = IbetStraightBondContract(token.token_address).get()
+                token_contract = await IbetStraightBondContract(
+                    token.token_address
+                ).get()
             else:
                 continue
 
             contract_address = token_contract.personal_info_contract_address
             if contract_address != ZERO_ADDRESS:
+                issuer_account = (
+                    await db_session.scalars(
+                        select(Account)
+                        .where(Account.issuer_address == issuer_address)
+                        .limit(1)
+                    )
+                ).first()
                 personal_info_contract_list.add(
                     PersonalInfoContract(
-                        db=db_session,
-                        issuer_address=issuer_address,
+                        issuer=issuer_account,
                         contract_address=contract_address,
                     )
                 )
 
         return personal_info_contract_list
 
-    def __modify_personal_info(
+    async def __modify_personal_info(
         self,
         temporary: AccountRsaKeyTemporary,
         idx_personal_info: IDXPersonalInfo,
         personal_info_contract_accessor: PersonalInfoContract,
     ) -> bool:
         # Unset information assumes completed.
-        personal_info_state = ContractUtils.call_function(
+        personal_info_state = await AsyncContractUtils.call_function(
             contract=personal_info_contract_accessor.personal_info_contract,
             function_name="personal_info",
             args=(
@@ -187,7 +208,7 @@ class Processor:
         )
         personal_info_contract_accessor.issuer.rsa_passphrase = temporary.rsa_passphrase
         # Modify
-        info = personal_info_contract_accessor.get_info(
+        info = await personal_info_contract_accessor.get_info(
             idx_personal_info.account_address, default_value=None
         )
         # Back RSA
@@ -207,7 +228,7 @@ class Processor:
             return False
 
         # Modify personal information
-        personal_info_contract_accessor.modify_info(
+        await personal_info_contract_accessor.modify_info(
             account_address=idx_personal_info.account_address,
             data=info,
             default_value=None,
@@ -215,26 +236,26 @@ class Processor:
         return True
 
     @staticmethod
-    def __sink_on_account(db_session: Session, issuer_address: str):
-        db_session.execute(
+    async def __sink_on_account(db_session: AsyncSession, issuer_address: str):
+        await db_session.execute(
             update(Account)
             .where(Account.issuer_address == issuer_address)
             .values(rsa_status=AccountRsaStatus.SET.value)
         )
-        db_session.execute(
+        await db_session.execute(
             delete(AccountRsaKeyTemporary).where(
                 AccountRsaKeyTemporary.issuer_address == issuer_address
             )
         )
 
 
-def main():
+async def main():
     LOG.info("Service started successfully")
     processor = Processor()
 
     while True:
         try:
-            processor.process()
+            await processor.process()
         except ServiceUnavailableError:
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:
@@ -242,8 +263,11 @@ def main():
         except Exception as ex:
             LOG.exception(ex)
 
-        time.sleep(10)
+        await asyncio.sleep(10)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        sys.exit(1)

@@ -27,7 +27,7 @@ from Crypto.Util.Padding import pad
 from web3.exceptions import TimeExhausted
 
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.utils.contract_utils import ContractUtils
+from app.utils.contract_utils import AsyncContractUtils
 from config import (
     AWS_KMS_GENERATE_RANDOM_ENABLED,
     AWS_REGION_NAME,
@@ -42,15 +42,17 @@ class E2EMessaging:
     def __init__(self, contract_address: str):
         self.contract_address = contract_address
 
-    def send_message(
-        self, to_address: str, message: str, tx_from: str, private_key: str
+    async def send_message(
+        self, to_address: str, message: str, tx_from: str, private_key: bytes
     ):
         """Send Message"""
-        contract = ContractUtils.get_contract(
+        contract = AsyncContractUtils.get_contract(
             contract_name="E2EMessaging", contract_address=self.contract_address
         )
         try:
-            tx = contract.functions.sendMessage(to_address, message).build_transaction(
+            tx = await contract.functions.sendMessage(
+                to_address, message
+            ).build_transaction(
                 {
                     "chainId": CHAIN_ID,
                     "from": tx_from,
@@ -58,7 +60,9 @@ class E2EMessaging:
                     "gasPrice": 0,
                 }
             )
-            tx_hash, tx_receipt = ContractUtils.send_transaction(tx, private_key)
+            tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
+                tx, private_key
+            )
             return tx_hash, tx_receipt
         except ContractRevertError:
             raise
@@ -67,14 +71,14 @@ class E2EMessaging:
         except Exception as err:
             raise SendTransactionError(err)
 
-    def send_message_external(
+    async def send_message_external(
         self,
         to_address: str,
         _type: str,
         message_org: str,
         to_rsa_public_key: str,
         tx_from: str,
-        private_key: str,
+        private_key: bytes,
     ):
         """Send Message(Format message for external system)"""
 
@@ -110,7 +114,7 @@ class E2EMessaging:
         message = json.dumps(message_dict)
 
         # Send message
-        tx_hash, tx_receipt = E2EMessaging(self.contract_address).send_message(
+        tx_hash, tx_receipt = await E2EMessaging(self.contract_address).send_message(
             to_address=to_address,
             message=message,
             tx_from=tx_from,
@@ -118,15 +122,15 @@ class E2EMessaging:
         )
         return tx_hash, tx_receipt
 
-    def set_public_key(
-        self, public_key: str, key_type: str, tx_from: str, private_key: str
+    async def set_public_key(
+        self, public_key: str, key_type: str, tx_from: str, private_key: bytes
     ):
         """Set Public Key"""
-        contract = ContractUtils.get_contract(
+        contract = AsyncContractUtils.get_contract(
             contract_name="E2EMessaging", contract_address=self.contract_address
         )
         try:
-            tx = contract.functions.setPublicKey(
+            tx = await contract.functions.setPublicKey(
                 public_key, key_type
             ).build_transaction(
                 {
@@ -136,7 +140,9 @@ class E2EMessaging:
                     "gasPrice": 0,
                 }
             )
-            tx_hash, tx_receipt = ContractUtils.send_transaction(tx, private_key)
+            tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
+                tx, private_key
+            )
             return tx_hash, tx_receipt
         except ContractRevertError:
             raise

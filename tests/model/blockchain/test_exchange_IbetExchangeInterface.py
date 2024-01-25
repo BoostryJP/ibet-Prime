@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import pytest
 from eth_keyfile import decode_keyfile_json
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
@@ -73,7 +74,7 @@ def deploy_escrow_contract():
     return escrow_contract
 
 
-def issue_bond_token(issuer: dict, exchange_address: str):
+async def issue_bond_token(issuer: dict, exchange_address: str):
     issuer_address = issuer["address"]
     issuer_pk = decode_keyfile_json(
         raw_keyfile_json=issuer.get("keyfile_json"),
@@ -94,7 +95,7 @@ def issue_bond_token(issuer: dict, exchange_address: str):
         "リターン内容",
         "発行目的",
     ]
-    token_contract_address, abi, tx_hash = IbetStraightBondContract().create(
+    token_contract_address, abi, tx_hash = await IbetStraightBondContract().create(
         args=arguments, tx_from=issuer_address, private_key=issuer_pk
     )
     token_contract = ContractUtils.get_contract(
@@ -134,18 +135,19 @@ class TestGetAccountBalance:
     # <Normal_1>
     # balance = 0, commitment = 0
     # Default value
-    def test_normal_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
         user1_account = config_eth_account("user1")
 
         # deploy contract
         exchange_contract = deploy_escrow_contract()
-        token_contract = issue_bond_token(
+        token_contract = await issue_bond_token(
             issuer=user1_account, exchange_address=exchange_contract.address
         )
 
         # test IbetExchangeInterface.get_account_balance
         exchange_interface = IbetExchangeInterface(exchange_contract.address)
-        exchange_balance = exchange_interface.get_account_balance(
+        exchange_balance = await exchange_interface.get_account_balance(
             account_address=user1_account["address"],
             token_address=token_contract.address,
         )
@@ -155,7 +157,8 @@ class TestGetAccountBalance:
         assert exchange_balance["commitment"] == 0
 
     # <Normal_2>
-    def test_normal_2(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, db):
         user1_account = config_eth_account("user1")
         user1_account_pk = decode_keyfile_json(
             raw_keyfile_json=user1_account["keyfile_json"],
@@ -165,7 +168,7 @@ class TestGetAccountBalance:
 
         # deploy contract
         exchange_contract = deploy_escrow_contract()
-        token_contract = issue_bond_token(
+        token_contract = await issue_bond_token(
             issuer=user1_account, exchange_address=exchange_contract.address
         )
 
@@ -201,7 +204,7 @@ class TestGetAccountBalance:
 
         # test IbetExchangeInterface.get_account_balance
         exchange_interface = IbetExchangeInterface(exchange_contract.address)
-        exchange_balance = exchange_interface.get_account_balance(
+        exchange_balance = await exchange_interface.get_account_balance(
             account_address=user1_account["address"],
             token_address=token_contract.address,
         )
@@ -212,12 +215,13 @@ class TestGetAccountBalance:
 
     # <Normal_3>
     # Not deployed contract
-    def test_normal_3(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, db):
         user1_account = config_eth_account("user1")
 
         # test IbetExchangeInterface.get_account_balance
         exchange_interface = IbetExchangeInterface(ZERO_ADDRESS)
-        exchange_balance = exchange_interface.get_account_balance(
+        exchange_balance = await exchange_interface.get_account_balance(
             account_address=user1_account["address"], token_address=ZERO_ADDRESS
         )
 

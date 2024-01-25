@@ -38,7 +38,8 @@ class TestProcessor:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address_1 = user_1["address"]
         keyfile_1 = user_1["keyfile_json"]
@@ -125,7 +126,7 @@ class TestProcessor:
         generate_mock.side_effect = crypto_publickey_rsa_generate
 
         # Execute batch
-        processor.process()
+        await processor.process()
 
         # Mock end
         patch.stop()

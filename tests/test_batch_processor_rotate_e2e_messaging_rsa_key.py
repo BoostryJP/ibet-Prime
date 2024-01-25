@@ -31,7 +31,7 @@ import batch.processor_rotate_e2e_messaging_rsa_key as processor_rotate_e2e_mess
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.blockchain import E2EMessaging
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
-from app.utils.contract_utils import ContractUtils
+from app.utils.contract_utils import AsyncContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_rotate_e2e_messaging_rsa_key import LOG, Processor
 from tests.account_config import config_eth_account
@@ -58,7 +58,8 @@ class TestProcessor:
 
     # <Normal_1_1>
     # E2E messaging account is not exists
-    def test_normal_1_1(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(self, processor, db):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
 
@@ -71,7 +72,7 @@ class TestProcessor:
         db.commit()
 
         # Run target process
-        processor.process()
+        await processor.process()
 
         # Assertion
         _rsa_key_list = db.scalars(
@@ -83,7 +84,8 @@ class TestProcessor:
 
     # <Normal_1_2>
     # E2E messaging account is not auto generated
-    def test_normal_1_2(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, processor, db):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
 
@@ -107,7 +109,7 @@ class TestProcessor:
         db.commit()
 
         # Run target process
-        processor.process()
+        await processor.process()
 
         # Assertion
         _rsa_key_list = db.scalars(
@@ -127,7 +129,8 @@ class TestProcessor:
 
     # <Normal_1_3>
     # Last generation is within the interval
-    def test_normal_1_3(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_3(self, processor, db):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
 
@@ -151,7 +154,7 @@ class TestProcessor:
         db.commit()
 
         # Run target process
-        processor.process()
+        await processor.process()
 
         # Assertion
         _rsa_key_list = db.scalars(
@@ -171,7 +174,8 @@ class TestProcessor:
 
     # <Normal_2>
     # auto generate and rotate
-    def test_normal_2(self, processor, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -260,7 +264,7 @@ class TestProcessor:
             ],
         )
         mock_ContractUtils_get_block_by_transaction_hash = mock.patch(
-            target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
+            target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             side_effect=[
                 {
                     "number": 12345,
@@ -281,7 +285,7 @@ class TestProcessor:
         with (
             mock_E2EMessaging_set_public_key
         ), mock_ContractUtils_get_block_by_transaction_hash:
-            processor.process()
+            await processor.process()
 
             # # Assertion
             assert user_address_2 < user_address_1
@@ -301,7 +305,7 @@ class TestProcessor:
                     ),
                 ]
             )
-            ContractUtils.get_block_by_transaction_hash.assert_has_calls(
+            AsyncContractUtils.get_block_by_transaction_hash.assert_has_calls(
                 [call(tx_hash="tx_5"), call(tx_hash="tx_6")]
             )
 
@@ -360,7 +364,8 @@ class TestProcessor:
 
     # <Error_1>
     # Could not get the EOA private key
-    def test_error_1(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, processor, db):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -390,7 +395,7 @@ class TestProcessor:
         db.commit()
 
         # Run target process
-        processor.process()
+        await processor.process()
 
         # Assertion
         _rsa_key_list = db.scalars(
@@ -401,7 +406,8 @@ class TestProcessor:
 
     # <Error_2>
     # Failed to send transaction
-    def test_error_2(self, processor, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_2(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -441,7 +447,7 @@ class TestProcessor:
 
         # Run target process
         with mock_E2EMessaging_set_public_key:
-            processor.process()
+            await processor.process()
 
             # Assertion
             E2EMessaging.set_public_key.assert_called_with(
@@ -460,7 +466,8 @@ class TestProcessor:
 
     # <Error_3>
     # ContractRevertError
-    def test_error_3(
+    @pytest.mark.asyncio
+    async def test_error_3(
         self,
         processor: Processor,
         db: Session,
@@ -506,7 +513,7 @@ class TestProcessor:
 
         # Run target process
         with mock_E2EMessaging_set_public_key:
-            processor.process()
+            await processor.process()
 
             # Assertion
             E2EMessaging.set_public_key.assert_called_with(

@@ -16,19 +16,21 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+import asyncio
 import json
-import time
+import sys
 import uuid
 from datetime import datetime, timedelta, timezone
 from itertools import groupby
 from typing import Optional, Sequence
 
 from eth_utils import to_checksum_address
-from sqlalchemy import and_, create_engine, select
+from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
-from web3.eth import Contract
+from sqlalchemy.ext.asyncio import AsyncSession
+from web3.contract import AsyncContract
 
+from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.blockchain import IbetExchangeInterface
 from app.model.db import (
@@ -42,39 +44,35 @@ from app.model.db import (
     Token,
     TokenType,
 )
-from app.utils.contract_utils import ContractUtils
-from app.utils.web3_utils import Web3Wrapper
+from app.utils.asyncio_utils import SemaphoreTaskGroup
+from app.utils.contract_utils import AsyncContractUtils
+from app.utils.web3_utils import AsyncWeb3Wrapper
 from batch import batch_log
-from config import (
-    DATABASE_URL,
-    INDEXER_BLOCK_LOT_MAX_SIZE,
-    INDEXER_SYNC_INTERVAL,
-    ZERO_ADDRESS,
-)
+from config import INDEXER_BLOCK_LOT_MAX_SIZE, INDEXER_SYNC_INTERVAL, ZERO_ADDRESS
 
 process_name = "INDEXER-Position-Share"
 LOG = batch_log.get_logger(process_name=process_name)
 
 UTC = timezone(timedelta(hours=0), "UTC")
 
-web3 = Web3Wrapper()
-
-db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
+web3 = AsyncWeb3Wrapper()
 
 
 class Processor:
     def __init__(self):
-        self.token_list: dict[str, Contract] = {}
+        self.token_list: dict[str, AsyncContract] = {}
         self.exchange_address_list: list[str] = []
 
-    def sync_new_logs(self):
-        db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
+    async def sync_new_logs(self):
+        db_session = BatchAsyncSessionLocal()
         try:
-            self.__get_contract_list(db_session=db_session)
+            await self.__get_contract_list(db_session=db_session)
 
             # Get from_block_number and to_block_number for contract event filter
-            latest_block = web3.eth.block_number
-            _from_block = self.__get_idx_position_block_number(db_session=db_session)
+            latest_block = await web3.eth.block_number
+            _from_block = await self.__get_idx_position_block_number(
+                db_session=db_session
+            )
             _to_block = _from_block + INDEXER_BLOCK_LOT_MAX_SIZE
 
             # Skip processing if the latest block is not counted up
@@ -86,46 +84,49 @@ class Processor:
             # as INDEXER_BLOCK_LOT_MAX_SIZE(1_000_000 blocks)
             if latest_block > _to_block:
                 while _to_block < latest_block:
-                    self.__sync_all(
+                    await self.__sync_all(
                         db_session=db_session,
                         block_from=_from_block + 1,
                         block_to=_to_block,
                     )
                     _to_block += INDEXER_BLOCK_LOT_MAX_SIZE
                     _from_block += INDEXER_BLOCK_LOT_MAX_SIZE
-                self.__sync_all(
+                await self.__sync_all(
                     db_session=db_session,
                     block_from=_from_block + 1,
                     block_to=latest_block,
                 )
             else:
-                self.__sync_all(
+                await self.__sync_all(
                     db_session=db_session,
                     block_from=_from_block + 1,
                     block_to=latest_block,
                 )
 
-            self.__set_idx_position_block_number(
+            await self.__set_idx_position_block_number(
                 db_session=db_session, block_number=latest_block
             )
-            db_session.commit()
+            await db_session.commit()
         except Exception as e:
-            db_session.rollback()
+            await db_session.rollback()
             raise e
         finally:
-            db_session.close()
+            await db_session.close()
         LOG.info("Sync job has been completed")
 
-    def __get_contract_list(self, db_session: Session):
+    async def __get_contract_list(self, db_session: AsyncSession):
         self.exchange_address_list = []
 
         issued_token_address_list: tuple[str, ...] = tuple(
             [
                 record[0]
-                for record in db_session.execute(
-                    select(Token.token_address).where(
-                        and_(
-                            Token.type == TokenType.IBET_SHARE, Token.token_status == 1
+                for record in (
+                    await db_session.execute(
+                        select(Token.token_address).where(
+                            and_(
+                                Token.type == TokenType.IBET_SHARE,
+                                Token.token_status == 1,
+                            )
                         )
                     )
                 )
@@ -138,12 +139,14 @@ class Processor:
             set(issued_token_address_list) ^ set(loaded_token_address_list)
         )
 
-        load_required_token_list: Sequence[Token] = db_session.scalars(
-            select(Token).where(
-                and_(
-                    Token.type == TokenType.IBET_SHARE,
-                    Token.token_status == 1,
-                    Token.token_address.in_(load_required_address_list),
+        load_required_token_list: Sequence[Token] = (
+            await db_session.scalars(
+                select(Token).where(
+                    and_(
+                        Token.type == TokenType.IBET_SHARE,
+                        Token.token_status == 1,
+                        Token.token_address.in_(load_required_address_list),
+                    )
                 )
             )
         ).all()
@@ -156,7 +159,7 @@ class Processor:
 
         _exchange_list_tmp = []
         for token_contract in self.token_list.values():
-            tradable_exchange_address = ContractUtils.call_function(
+            tradable_exchange_address = await AsyncContractUtils.call_function(
                 contract=token_contract,
                 function_name="tradableExchange",
                 args=(),
@@ -168,53 +171,59 @@ class Processor:
         # Remove duplicate exchanges from a list
         self.exchange_address_list = list(set(_exchange_list_tmp))
 
-    def __get_idx_position_block_number(self, db_session: Session):
+    @staticmethod
+    async def __get_idx_position_block_number(db_session: AsyncSession):
         _idx_position_block_number: IDXPositionShareBlockNumber | None = (
-            db_session.scalars(select(IDXPositionShareBlockNumber).limit(1)).first()
-        )
+            await db_session.scalars(select(IDXPositionShareBlockNumber).limit(1))
+        ).first()
         if _idx_position_block_number is None:
             return 0
         else:
             return _idx_position_block_number.latest_block_number
 
-    def __set_idx_position_block_number(self, db_session: Session, block_number: int):
+    @staticmethod
+    async def __set_idx_position_block_number(
+        db_session: AsyncSession, block_number: int
+    ):
         _idx_position_block_number: IDXPositionShareBlockNumber | None = (
-            db_session.scalars(select(IDXPositionShareBlockNumber).limit(1)).first()
-        )
+            await db_session.scalars(select(IDXPositionShareBlockNumber).limit(1))
+        ).first()
         if _idx_position_block_number is None:
             _idx_position_block_number = IDXPositionShareBlockNumber()
 
         _idx_position_block_number.latest_block_number = block_number
-        db_session.merge(_idx_position_block_number)
+        await db_session.merge(_idx_position_block_number)
 
-    def __sync_all(self, db_session: Session, block_from: int, block_to: int):
+    async def __sync_all(
+        self, db_session: AsyncSession, block_from: int, block_to: int
+    ):
         LOG.info("Syncing from={}, to={}".format(block_from, block_to))
-        self.__sync_issuer(db_session)
-        self.__sync_issue(db_session, block_from, block_to)
-        self.__sync_transfer(db_session, block_from, block_to)
-        self.__sync_lock(db_session, block_from, block_to)
-        self.__sync_unlock(db_session, block_from, block_to)
-        self.__sync_redeem(db_session, block_from, block_to)
-        self.__sync_apply_for_transfer(db_session, block_from, block_to)
-        self.__sync_cancel_transfer(db_session, block_from, block_to)
-        self.__sync_approve_transfer(db_session, block_from, block_to)
-        self.__sync_exchange(db_session, block_from, block_to)
-        self.__sync_escrow(db_session, block_from, block_to)
+        await self.__sync_issuer(db_session)
+        await self.__sync_issue(db_session, block_from, block_to)
+        await self.__sync_transfer(db_session, block_from, block_to)
+        await self.__sync_lock(db_session, block_from, block_to)
+        await self.__sync_unlock(db_session, block_from, block_to)
+        await self.__sync_redeem(db_session, block_from, block_to)
+        await self.__sync_apply_for_transfer(db_session, block_from, block_to)
+        await self.__sync_cancel_transfer(db_session, block_from, block_to)
+        await self.__sync_approve_transfer(db_session, block_from, block_to)
+        await self.__sync_exchange(db_session, block_from, block_to)
+        await self.__sync_escrow(db_session, block_from, block_to)
 
-    def __sync_issuer(self, db_session: Session):
+    async def __sync_issuer(self, db_session: AsyncSession):
         """Synchronize issuer position"""
         for token in self.token_list.values():
             try:
-                issuer_address = ContractUtils.call_function(
+                issuer_address = await AsyncContractUtils.call_function(
                     contract=token,
                     function_name="owner",
                     args=(),
                     default_returns=ZERO_ADDRESS,
                 )
-                balance, pending_transfer = self.__get_account_balance_token(
+                balance, pending_transfer = await self.__get_account_balance_token(
                     token, issuer_address
                 )
-                self.__sink_on_position(
+                await self.__sink_on_position(
                     db_session=db_session,
                     token_address=to_checksum_address(token.address),
                     account_address=issuer_address,
@@ -224,7 +233,9 @@ class Processor:
             except Exception as e:
                 raise e
 
-    def __sync_issue(self, db_session: Session, block_from: int, block_to: int):
+    async def __sync_issue(
+        self, db_session: AsyncSession, block_from: int, block_to: int
+    ):
         """Synchronize Issue events
 
         :param db_session: database session
@@ -234,7 +245,7 @@ class Processor:
         """
         for token in self.token_list.values():
             try:
-                events = ContractUtils.get_event_logs(
+                events = await AsyncContractUtils.get_event_logs(
                     contract=token,
                     event="Issue",
                     block_from=block_from,
@@ -243,10 +254,10 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     account = args.get("targetAddress", ZERO_ADDRESS)
-                    balance, pending_transfer = self.__get_account_balance_token(
+                    balance, pending_transfer = await self.__get_account_balance_token(
                         token, account
                     )
-                    self.__sink_on_position(
+                    await self.__sink_on_position(
                         db_session=db_session,
                         token_address=to_checksum_address(token.address),
                         account_address=account,
@@ -256,7 +267,9 @@ class Processor:
             except Exception as e:
                 raise e
 
-    def __sync_transfer(self, db_session: Session, block_from: int, block_to: int):
+    async def __sync_transfer(
+        self, db_session: AsyncSession, block_from: int, block_to: int
+    ):
         """Synchronize Transfer events
 
         :param db_session: database session
@@ -267,7 +280,7 @@ class Processor:
         for token in self.token_list.values():
             try:
                 # Get "Transfer" events from token contract
-                events = ContractUtils.get_event_logs(
+                events = await AsyncContractUtils.get_event_logs(
                     contract=token,
                     event="Transfer",
                     block_from=block_from,
@@ -279,14 +292,14 @@ class Processor:
                         args.get("from", ZERO_ADDRESS),
                         args.get("to", ZERO_ADDRESS),
                     ]:
-                        if web3.eth.get_code(account).hex() == "0x":
+                        if (await web3.eth.get_code(account)).hex() == "0x":
                             (
                                 balance,
                                 pending_transfer,
                                 exchange_balance,
                                 exchange_commitment,
-                            ) = self.__get_account_balance_all(token, account)
-                            self.__sink_on_position(
+                            ) = await self.__get_account_balance_all(token, account)
+                            await self.__sink_on_position(
                                 db_session=db_session,
                                 token_address=to_checksum_address(token.address),
                                 account_address=account,
@@ -298,7 +311,9 @@ class Processor:
             except Exception as e:
                 raise e
 
-    def __sync_lock(self, db_session: Session, block_from: int, block_to: int):
+    async def __sync_lock(
+        self, db_session: AsyncSession, block_from: int, block_to: int
+    ):
         """Synchronize Lock events
 
         :param db_session: database session
@@ -308,7 +323,7 @@ class Processor:
         """
         for token in self.token_list.values():
             try:
-                events = ContractUtils.get_event_logs(
+                events = await AsyncContractUtils.get_event_logs(
                     contract=token,
                     event="Lock",
                     block_from=block_from,
@@ -324,12 +339,12 @@ class Processor:
                         lock_address = args.get("lockAddress", "")
                         value = args.get("value", 0)
                         data = args.get("data", "")
-                        event_created = self.__gen_block_timestamp(event=event)
-                        tx = web3.eth.get_transaction(event["transactionHash"])
+                        event_created = await self.__gen_block_timestamp(event=event)
+                        tx = await web3.eth.get_transaction(event["transactionHash"])
                         msg_sender = tx["from"]
 
                         # Index Lock event
-                        self.__insert_lock_idx(
+                        await self.__insert_lock_idx(
                             db_session=db_session,
                             transaction_hash=event["transactionHash"].hex(),
                             msg_sender=msg_sender,
@@ -348,12 +363,12 @@ class Processor:
 
                     for lock_address in lock_map:
                         for account_address in lock_map[lock_address]:
-                            value = self.__get_account_locked_token(
+                            value = await self.__get_account_locked_token(
                                 token_contract=token,
                                 lock_address=lock_address,
                                 account_address=account_address,
                             )
-                            self.__sink_on_locked_position(
+                            await self.__sink_on_locked_position(
                                 db_session=db_session,
                                 token_address=to_checksum_address(token.address),
                                 lock_address=lock_address,
@@ -367,10 +382,10 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     account = args.get("accountAddress", ZERO_ADDRESS)
-                    balance, pending_transfer = self.__get_account_balance_token(
+                    balance, pending_transfer = await self.__get_account_balance_token(
                         token, account
                     )
-                    self.__sink_on_position(
+                    await self.__sink_on_position(
                         db_session=db_session,
                         token_address=to_checksum_address(token.address),
                         account_address=account,
@@ -380,7 +395,7 @@ class Processor:
 
                 # Insert Notification
                 if len(events) > 0:
-                    issuer_address = ContractUtils.call_function(
+                    issuer_address = await AsyncContractUtils.call_function(
                         contract=token,
                         function_name="owner",
                         args=(),
@@ -392,7 +407,7 @@ class Processor:
                         lock_address = args.get("lockAddress", "")
                         value = args.get("value", 0)
                         data = args.get("data", "")
-                        self.__sink_on_lock_info_notification(
+                        await self.__sink_on_lock_info_notification(
                             db_session=db_session,
                             issuer_address=issuer_address,
                             token_address=token.address,
@@ -406,7 +421,9 @@ class Processor:
             except Exception as e:
                 raise e
 
-    def __sync_unlock(self, db_session: Session, block_from: int, block_to: int):
+    async def __sync_unlock(
+        self, db_session: AsyncSession, block_from: int, block_to: int
+    ):
         """Synchronize Unlock events
 
         :param db_session: database session
@@ -416,7 +433,7 @@ class Processor:
         """
         for token in self.token_list.values():
             try:
-                events = ContractUtils.get_event_logs(
+                events = await AsyncContractUtils.get_event_logs(
                     contract=token,
                     event="Unlock",
                     block_from=block_from,
@@ -433,12 +450,12 @@ class Processor:
                         recipient_address = args.get("recipientAddress", "")
                         value = args.get("value", 0)
                         data = args.get("data", "")
-                        event_created = self.__gen_block_timestamp(event=event)
-                        tx = web3.eth.get_transaction(event["transactionHash"])
+                        event_created = await self.__gen_block_timestamp(event=event)
+                        tx = await web3.eth.get_transaction(event["transactionHash"])
                         msg_sender = tx["from"]
 
                         # Index Unlock event
-                        self.__insert_unlock_idx(
+                        await self.__insert_unlock_idx(
                             db_session=db_session,
                             transaction_hash=event["transactionHash"].hex(),
                             msg_sender=msg_sender,
@@ -458,12 +475,12 @@ class Processor:
 
                     for lock_address in lock_map:
                         for account_address in lock_map[lock_address]:
-                            value = self.__get_account_locked_token(
+                            value = await self.__get_account_locked_token(
                                 token_contract=token,
                                 lock_address=lock_address,
                                 account_address=account_address,
                             )
-                            self.__sink_on_locked_position(
+                            await self.__sink_on_locked_position(
                                 db_session=db_session,
                                 token_address=to_checksum_address(token.address),
                                 lock_address=lock_address,
@@ -477,10 +494,10 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     account = args.get("recipientAddress", ZERO_ADDRESS)
-                    balance, pending_transfer = self.__get_account_balance_token(
+                    balance, pending_transfer = await self.__get_account_balance_token(
                         token, account
                     )
-                    self.__sink_on_position(
+                    await self.__sink_on_position(
                         db_session=db_session,
                         token_address=to_checksum_address(token.address),
                         account_address=account,
@@ -490,7 +507,7 @@ class Processor:
 
                 # Insert Notification
                 if len(events) > 0:
-                    issuer_address = ContractUtils.call_function(
+                    issuer_address = await AsyncContractUtils.call_function(
                         contract=token,
                         function_name="owner",
                         args=(),
@@ -503,7 +520,7 @@ class Processor:
                         recipient_address = args.get("recipientAddress", "")
                         value = args.get("value", 0)
                         data = args.get("data", "")
-                        self.__sink_on_unlock_info_notification(
+                        await self.__sink_on_unlock_info_notification(
                             db_session=db_session,
                             issuer_address=issuer_address,
                             token_address=token.address,
@@ -518,7 +535,9 @@ class Processor:
             except Exception as e:
                 raise e
 
-    def __sync_redeem(self, db_session: Session, block_from: int, block_to: int):
+    async def __sync_redeem(
+        self, db_session: AsyncSession, block_from: int, block_to: int
+    ):
         """Synchronize Redeem events
 
         :param db_session: database session
@@ -528,7 +547,7 @@ class Processor:
         """
         for token in self.token_list.values():
             try:
-                events = ContractUtils.get_event_logs(
+                events = await AsyncContractUtils.get_event_logs(
                     contract=token,
                     event="Redeem",
                     block_from=block_from,
@@ -537,10 +556,10 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     account = args.get("targetAddress", ZERO_ADDRESS)
-                    balance, pending_transfer = self.__get_account_balance_token(
+                    balance, pending_transfer = await self.__get_account_balance_token(
                         token, account
                     )
-                    self.__sink_on_position(
+                    await self.__sink_on_position(
                         db_session=db_session,
                         token_address=to_checksum_address(token.address),
                         account_address=account,
@@ -550,8 +569,8 @@ class Processor:
             except Exception as e:
                 raise e
 
-    def __sync_apply_for_transfer(
-        self, db_session: Session, block_from: int, block_to: int
+    async def __sync_apply_for_transfer(
+        self, db_session: AsyncSession, block_from: int, block_to: int
     ):
         """Sync ApplyForTransfer Events
 
@@ -562,7 +581,7 @@ class Processor:
         """
         for token in self.token_list.values():
             try:
-                events = ContractUtils.get_event_logs(
+                events = await AsyncContractUtils.get_event_logs(
                     contract=token,
                     event="ApplyForTransfer",
                     block_from=block_from,
@@ -571,10 +590,10 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     account = args.get("from", ZERO_ADDRESS)
-                    balance, pending_transfer = self.__get_account_balance_token(
+                    balance, pending_transfer = await self.__get_account_balance_token(
                         token, account
                     )
-                    self.__sink_on_position(
+                    await self.__sink_on_position(
                         db_session=db_session,
                         token_address=to_checksum_address(token.address),
                         account_address=account,
@@ -584,8 +603,8 @@ class Processor:
             except Exception as e:
                 raise e
 
-    def __sync_cancel_transfer(
-        self, db_session: Session, block_from: int, block_to: int
+    async def __sync_cancel_transfer(
+        self, db_session: AsyncSession, block_from: int, block_to: int
     ):
         """Sync CancelTransfer Events
 
@@ -596,7 +615,7 @@ class Processor:
         """
         for token in self.token_list.values():
             try:
-                events = ContractUtils.get_event_logs(
+                events = await AsyncContractUtils.get_event_logs(
                     contract=token,
                     event="CancelTransfer",
                     block_from=block_from,
@@ -605,10 +624,10 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     account = args.get("from", ZERO_ADDRESS)
-                    balance, pending_transfer = self.__get_account_balance_token(
+                    balance, pending_transfer = await self.__get_account_balance_token(
                         token, account
                     )
-                    self.__sink_on_position(
+                    await self.__sink_on_position(
                         db_session=db_session,
                         token_address=to_checksum_address(token.address),
                         account_address=account,
@@ -618,8 +637,8 @@ class Processor:
             except Exception as e:
                 raise e
 
-    def __sync_approve_transfer(
-        self, db_session: Session, block_from: int, block_to: int
+    async def __sync_approve_transfer(
+        self, db_session: AsyncSession, block_from: int, block_to: int
     ):
         """Sync ApproveTransfer Events
 
@@ -630,7 +649,7 @@ class Processor:
         """
         for token in self.token_list.values():
             try:
-                events = ContractUtils.get_event_logs(
+                events = await AsyncContractUtils.get_event_logs(
                     contract=token,
                     event="ApproveTransfer",
                     block_from=block_from,
@@ -642,10 +661,11 @@ class Processor:
                         args.get("from", ZERO_ADDRESS),
                         args.get("to", ZERO_ADDRESS),
                     ]:
-                        balance, pending_transfer = self.__get_account_balance_token(
-                            token, account
-                        )
-                        self.__sink_on_position(
+                        (
+                            balance,
+                            pending_transfer,
+                        ) = await self.__get_account_balance_token(token, account)
+                        await self.__sink_on_position(
                             db_session=db_session,
                             token_address=to_checksum_address(token.address),
                             account_address=account,
@@ -655,7 +675,9 @@ class Processor:
             except Exception as e:
                 raise e
 
-    def __sync_exchange(self, db_session: Session, block_from: int, block_to: int):
+    async def __sync_exchange(
+        self, db_session: AsyncSession, block_from: int, block_to: int
+    ):
         """Sync Events from IbetExchange
 
         :param db_session: database session
@@ -665,12 +687,14 @@ class Processor:
         """
         for exchange_address in self.exchange_address_list:
             try:
-                exchange = ContractUtils.get_contract("IbetExchange", exchange_address)
+                exchange = AsyncContractUtils.get_contract(
+                    "IbetExchange", exchange_address
+                )
 
                 account_list_tmp = []
 
                 # NewOrder event
-                _event_list = ContractUtils.get_event_logs(
+                _event_list = await AsyncContractUtils.get_event_logs(
                     contract=exchange,
                     event="NewOrder",
                     block_from=block_from,
@@ -689,7 +713,7 @@ class Processor:
                     )
 
                 # CancelOrder event
-                _event_list = ContractUtils.get_event_logs(
+                _event_list = await AsyncContractUtils.get_event_logs(
                     contract=exchange,
                     event="CancelOrder",
                     block_from=block_from,
@@ -708,7 +732,7 @@ class Processor:
                     )
 
                 # ForceCancelOrder event
-                _event_list = ContractUtils.get_event_logs(
+                _event_list = await AsyncContractUtils.get_event_logs(
                     contract=exchange,
                     event="ForceCancelOrder",
                     block_from=block_from,
@@ -727,7 +751,7 @@ class Processor:
                     )
 
                 # Agree event
-                _event_list = ContractUtils.get_event_logs(
+                _event_list = await AsyncContractUtils.get_event_logs(
                     contract=exchange,
                     event="Agree",
                     block_from=block_from,
@@ -746,7 +770,7 @@ class Processor:
                     )
 
                 # SettlementOK event
-                _event_list = ContractUtils.get_event_logs(
+                _event_list = await AsyncContractUtils.get_event_logs(
                     contract=exchange,
                     event="SettlementOK",
                     block_from=block_from,
@@ -775,7 +799,7 @@ class Processor:
                     )
 
                 # SettlementNG event
-                _event_list = ContractUtils.get_event_logs(
+                _event_list = await AsyncContractUtils.get_event_logs(
                     contract=exchange,
                     event="SettlementNG",
                     block_from=block_from,
@@ -813,12 +837,12 @@ class Processor:
                     (
                         exchange_balance,
                         exchange_commitment,
-                    ) = self.__get_account_balance_exchange(
+                    ) = await self.__get_account_balance_exchange(
                         exchange_address=exchange_address,
                         token_address=token_address,
                         account_address=account_address,
                     )
-                    self.__sink_on_position(
+                    await self.__sink_on_position(
                         db_session=db_session,
                         token_address=token_address,
                         account_address=account_address,
@@ -828,7 +852,9 @@ class Processor:
             except Exception as e:
                 raise e
 
-    def __sync_escrow(self, db_session: Session, block_from: int, block_to: int):
+    async def __sync_escrow(
+        self, db_session: AsyncSession, block_from: int, block_to: int
+    ):
         """Sync Events from IbetSecurityTokenEscrow
 
         :param db_session: database session
@@ -838,14 +864,14 @@ class Processor:
         """
         for exchange_address in self.exchange_address_list:
             try:
-                escrow = ContractUtils.get_contract(
+                escrow = AsyncContractUtils.get_contract(
                     "IbetSecurityTokenEscrow", exchange_address
                 )
 
                 account_list_tmp = []
 
                 # EscrowCreated event
-                _event_list = ContractUtils.get_event_logs(
+                _event_list = await AsyncContractUtils.get_event_logs(
                     contract=escrow,
                     event="EscrowCreated",
                     block_from=block_from,
@@ -862,7 +888,7 @@ class Processor:
                     )
 
                 # EscrowCanceled event
-                _event_list = ContractUtils.get_event_logs(
+                _event_list = await AsyncContractUtils.get_event_logs(
                     contract=escrow,
                     event="EscrowCanceled",
                     block_from=block_from,
@@ -879,7 +905,7 @@ class Processor:
                     )
 
                 # HolderChanged event
-                _event_list = ContractUtils.get_event_logs(
+                _event_list = await AsyncContractUtils.get_event_logs(
                     contract=escrow,
                     event="HolderChanged",
                     block_from=block_from,
@@ -919,12 +945,12 @@ class Processor:
                     (
                         exchange_balance,
                         exchange_commitment,
-                    ) = self.__get_account_balance_exchange(
+                    ) = await self.__get_account_balance_exchange(
                         exchange_address=exchange_address,
                         token_address=token_address,
                         account_address=account_address,
                     )
-                    self.__sink_on_position(
+                    await self.__sink_on_position(
                         db_session=db_session,
                         token_address=token_address,
                         account_address=account_address,
@@ -935,8 +961,8 @@ class Processor:
                 raise e
 
     @staticmethod
-    def __insert_lock_idx(
-        db_session: Session,
+    async def __insert_lock_idx(
+        db_session: AsyncSession,
         transaction_hash: str,
         msg_sender: str,
         block_number: int,
@@ -977,8 +1003,8 @@ class Processor:
         db_session.add(lock)
 
     @staticmethod
-    def __insert_unlock_idx(
-        db_session: Session,
+    async def __insert_unlock_idx(
+        db_session: AsyncSession,
         transaction_hash: str,
         msg_sender: str,
         block_number: int,
@@ -1022,8 +1048,8 @@ class Processor:
         db_session.add(unlock)
 
     @staticmethod
-    def __sink_on_position(
-        db_session: Session,
+    async def __sink_on_position(
+        db_session: AsyncSession,
         token_address: str,
         account_address: str,
         balance: Optional[int] = None,
@@ -1042,15 +1068,17 @@ class Processor:
         :param pending_transfer: pending transfer
         :return: None
         """
-        position: IDXPosition | None = db_session.scalars(
-            select(IDXPosition)
-            .where(
-                and_(
-                    IDXPosition.token_address == token_address,
-                    IDXPosition.account_address == account_address,
+        position: IDXPosition | None = (
+            await db_session.scalars(
+                select(IDXPosition)
+                .where(
+                    and_(
+                        IDXPosition.token_address == token_address,
+                        IDXPosition.account_address == account_address,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
         if position is not None:
             if balance is not None:
@@ -1061,7 +1089,7 @@ class Processor:
                 position.exchange_balance = exchange_balance
             if exchange_commitment is not None:
                 position.exchange_commitment = exchange_commitment
-            db_session.merge(position)
+            await db_session.merge(position)
         elif any(
             value is not None and value > 0
             for value in [
@@ -1084,8 +1112,8 @@ class Processor:
             db_session.add(position)
 
     @staticmethod
-    def __sink_on_locked_position(
-        db_session: Session,
+    async def __sink_on_locked_position(
+        db_session: AsyncSession,
         token_address: str,
         lock_address: str,
         account_address: str,
@@ -1100,20 +1128,22 @@ class Processor:
         :param value: updated locked amount
         :return: None
         """
-        locked: IDXLockedPosition | None = db_session.scalars(
-            select(IDXLockedPosition)
-            .where(
-                and_(
-                    IDXLockedPosition.token_address == token_address,
-                    IDXLockedPosition.lock_address == lock_address,
-                    IDXLockedPosition.account_address == account_address,
+        locked: IDXLockedPosition | None = (
+            await db_session.scalars(
+                select(IDXLockedPosition)
+                .where(
+                    and_(
+                        IDXLockedPosition.token_address == token_address,
+                        IDXLockedPosition.lock_address == lock_address,
+                        IDXLockedPosition.account_address == account_address,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
         if locked is not None:
             locked.value = value
-            db_session.merge(locked)
+            await db_session.merge(locked)
         else:
             locked = IDXLockedPosition()
             locked.token_address = token_address
@@ -1123,8 +1153,8 @@ class Processor:
             db_session.add(locked)
 
     @staticmethod
-    def __sink_on_lock_info_notification(
-        db_session: Session,
+    async def __sink_on_lock_info_notification(
+        db_session: AsyncSession,
         issuer_address: str,
         token_address: str,
         token_type: str,
@@ -1155,8 +1185,8 @@ class Processor:
         db_session.add(notification)
 
     @staticmethod
-    def __sink_on_unlock_info_notification(
-        db_session: Session,
+    async def __sink_on_unlock_info_notification(
+        db_session: AsyncSession,
         issuer_address: str,
         token_address: str,
         token_type: str,
@@ -1189,32 +1219,44 @@ class Processor:
         db_session.add(notification)
 
     @staticmethod
-    def __get_account_balance_all(token_contract, account_address: str):
+    async def __get_account_balance_all(token_contract, account_address: str):
         """Get balance"""
 
-        balance = ContractUtils.call_function(
-            contract=token_contract,
-            function_name="balanceOf",
-            args=(account_address,),
-            default_returns=0,
-        )
-        pending_transfer = ContractUtils.call_function(
-            contract=token_contract,
-            function_name="pendingTransfer",
-            args=(account_address,),
-            default_returns=0,
-        )
         exchange_balance = 0
         exchange_commitment = 0
-        tradable_exchange_address = ContractUtils.call_function(
-            contract=token_contract,
-            function_name="tradableExchange",
-            args=(),
-            default_returns=ZERO_ADDRESS,
-        )
+        try:
+            tasks = await SemaphoreTaskGroup.run(
+                AsyncContractUtils.call_function(
+                    contract=token_contract,
+                    function_name="balanceOf",
+                    args=(account_address,),
+                    default_returns=0,
+                ),
+                AsyncContractUtils.call_function(
+                    contract=token_contract,
+                    function_name="pendingTransfer",
+                    args=(account_address,),
+                    default_returns=0,
+                ),
+                AsyncContractUtils.call_function(
+                    contract=token_contract,
+                    function_name="tradableExchange",
+                    args=(),
+                    default_returns=ZERO_ADDRESS,
+                ),
+                max_concurrency=3,
+            )
+            balance, pending_transfer, tradable_exchange_address = (
+                tasks[0].result(),
+                tasks[1].result(),
+                tasks[2].result(),
+            )
+        except ExceptionGroup:
+            raise ServiceUnavailableError
+
         if tradable_exchange_address != ZERO_ADDRESS:
             exchange_contract = IbetExchangeInterface(tradable_exchange_address)
-            exchange_contract_balance = exchange_contract.get_account_balance(
+            exchange_contract_balance = await exchange_contract.get_account_balance(
                 account_address=account_address, token_address=token_contract.address
             )
             exchange_balance = exchange_contract_balance["balance"]
@@ -1223,29 +1265,37 @@ class Processor:
         return balance, pending_transfer, exchange_balance, exchange_commitment
 
     @staticmethod
-    def __get_account_balance_token(token_contract, account_address: str):
+    async def __get_account_balance_token(token_contract, account_address: str):
         """Get balance on token"""
 
-        balance = ContractUtils.call_function(
-            contract=token_contract,
-            function_name="balanceOf",
-            args=(account_address,),
-            default_returns=0,
-        )
-        pending_transfer = ContractUtils.call_function(
-            contract=token_contract,
-            function_name="pendingTransfer",
-            args=(account_address,),
-            default_returns=0,
-        )
+        try:
+            tasks = await SemaphoreTaskGroup.run(
+                AsyncContractUtils.call_function(
+                    contract=token_contract,
+                    function_name="balanceOf",
+                    args=(account_address,),
+                    default_returns=0,
+                ),
+                AsyncContractUtils.call_function(
+                    contract=token_contract,
+                    function_name="pendingTransfer",
+                    args=(account_address,),
+                    default_returns=0,
+                ),
+                max_concurrency=3,
+            )
+            balance, pending_transfer = (tasks[0].result(), tasks[1].result())
+        except ExceptionGroup:
+            raise ServiceUnavailableError
+
         return balance, pending_transfer
 
     @staticmethod
-    def __get_account_locked_token(
+    async def __get_account_locked_token(
         token_contract, lock_address: str, account_address: str
     ):
         """Get locked balance on token"""
-        value = ContractUtils.call_function(
+        value = await AsyncContractUtils.call_function(
             contract=token_contract,
             function_name="lockedOf",
             args=(
@@ -1257,13 +1307,13 @@ class Processor:
         return value
 
     @staticmethod
-    def __get_account_balance_exchange(
+    async def __get_account_balance_exchange(
         exchange_address: str, token_address: str, account_address: str
     ):
         """Get balance on exchange"""
 
         exchange_contract = IbetExchangeInterface(exchange_address)
-        exchange_contract_balance = exchange_contract.get_account_balance(
+        exchange_contract_balance = await exchange_contract.get_account_balance(
             account_address=account_address, token_address=token_address
         )
         return (
@@ -1272,19 +1322,19 @@ class Processor:
         )
 
     @staticmethod
-    def __gen_block_timestamp(event):
+    async def __gen_block_timestamp(event):
         return datetime.fromtimestamp(
-            web3.eth.get_block(event["blockNumber"])["timestamp"], UTC
+            (await web3.eth.get_block(event["blockNumber"]))["timestamp"], UTC
         )
 
 
-def main():
+async def main():
     LOG.info("Service started successfully")
     processor = Processor()
 
     while True:
         try:
-            processor.sync_new_logs()
+            await processor.sync_new_logs()
         except ServiceUnavailableError:
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:
@@ -1292,8 +1342,11 @@ def main():
         except Exception:
             LOG.exception("An exception occurred during event synchronization")
 
-        time.sleep(INDEXER_SYNC_INTERVAL)
+        await asyncio.sleep(INDEXER_SYNC_INTERVAL)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        sys.exit(1)

@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 from datetime import datetime
 from unittest import mock
-from unittest.mock import ANY, MagicMock
+from unittest.mock import ANY, AsyncMock
 
 import pytest
 from sqlalchemy.orm import Session
@@ -208,6 +208,8 @@ class TestAppRoutersShareLockEvents:
         _token.abi = ""
         _token.version = TokenVersion.V_22_12
         db.add(_token)
+
+        db.commit()
 
         # request target api
         resp = client.get(
@@ -489,7 +491,7 @@ class TestAppRoutersShareLockEvents:
         # request target api
         with mock.patch(
             "app.model.blockchain.token.IbetShareContract.get",
-            MagicMock(side_effect=data),
+            AsyncMock(side_effect=data),
         ):
             resp = client.get(
                 self.base_url.format(token_address=self.token_address_1),

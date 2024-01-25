@@ -18,20 +18,20 @@ SPDX-License-Identifier: Apache-2.0
 """
 from fastapi import APIRouter
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import log
-from app.database import DBSession
+from app.database import DBAsyncSession
 from app.exceptions import ServiceUnavailableError
 from app.model.db import Node
 from app.model.schema import BlockNumberResponse, E2EEResponse
 from app.utils.docs_utils import get_routers_responses
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.fastapi_utils import json_response
-from app.utils.web3_utils import Web3Wrapper
+from app.utils.web3_utils import AsyncWeb3Wrapper
 from config import E2EE_REQUEST_ENABLED
 
-web3 = Web3Wrapper()
+web3 = AsyncWeb3Wrapper()
 
 LOG = log.get_logger()
 
@@ -40,7 +40,7 @@ router = APIRouter(tags=["common"])
 
 # GET: /e2ee
 @router.get("/e2ee", response_model=E2EEResponse)
-def e2e_encryption_key():
+async def e2e_encryption_key():
     """Get E2EE public key"""
 
     if not E2EE_REQUEST_ENABLED:
@@ -57,16 +57,14 @@ def e2e_encryption_key():
     response_model=None,
     responses=get_routers_responses(ServiceUnavailableError),
 )
-def check_health(db: DBSession):
+async def check_health(db: DBAsyncSession):
     errors = []
 
-    # Check DB Connection
     try:
-        db.connection()
-
+        # Check DB Connection
+        await db.connection()
         # Check Ethereum Block Synchronization
-        __check_ethereum(errors, db)
-
+        await __check_ethereum(errors, db)
     except Exception as err:
         LOG.exception(err)
         errors.append("Can't connect to database")
@@ -84,8 +82,10 @@ def check_health(db: DBSession):
     return
 
 
-def __check_ethereum(errors: list, db: Session):
-    _node = db.scalars(select(Node).where(Node.is_synced == True).limit(1)).first()
+async def __check_ethereum(errors: list, db: AsyncSession):
+    _node = (
+        await db.scalars(select(Node).where(Node.is_synced == True).limit(1))
+    ).first()
     if _node is None:
         msg = "Ethereum node's block synchronization is down"
         LOG.error(msg)
@@ -98,8 +98,8 @@ def __check_ethereum(errors: list, db: Session):
     response_model=BlockNumberResponse,
     responses=get_routers_responses(ServiceUnavailableError),
 )
-def get_block_number():
-    """Get Block Number in current"""
-    block_number = web3.eth.block_number
+async def get_block_number():
+    """Get the latest block number"""
+    block_number = await web3.eth.block_number
 
     return json_response({"block_number": block_number})

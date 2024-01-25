@@ -65,6 +65,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # test data
         datetime_now_utc = datetime.now(timezone.utc)  # utc
         datetime_now_str = datetime_now_utc.isoformat()
@@ -148,6 +150,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # test data
         datetime_now_jst = datetime.now(tz("Asia/Tokyo"))  # jst
@@ -358,6 +362,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # test data
         datetime_now_utc = datetime.now(timezone.utc)
         datetime_now_str = datetime_now_utc.isoformat()
@@ -398,6 +404,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # test data
         datetime_now_utc = datetime.now(timezone.utc)
@@ -500,6 +508,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsPOST:
         token.token_status = 0
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # test data
         datetime_now_utc = datetime.now(timezone.utc)  # utc

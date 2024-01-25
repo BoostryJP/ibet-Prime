@@ -68,6 +68,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = [{"account_address": test_account_1, "amount": 10}]
         resp = client.post(
@@ -130,6 +132,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = [
@@ -204,6 +208,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = {}  # not a list
         resp = client.post(
@@ -253,6 +259,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = [{"account_address": "0x0", "amount": 10}]
@@ -307,6 +315,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = [{"account_address": test_account_1, "amount": 0}]
         resp = client.post(
@@ -359,6 +369,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = [{"account_address": test_account_1, "amount": 1_000_000_000_001}]
@@ -413,6 +425,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = [{"account_address": test_account_1, "amount": 10}]
         resp = client.post(
@@ -459,6 +473,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = [{"account_address": test_account_1, "amount": 10}]
@@ -507,6 +523,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = []
         resp = client.post(
@@ -551,6 +569,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = [{"account_address": test_account_1, "amount": 10}]
@@ -597,6 +617,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = [{"account_address": test_account_1, "amount": 10}]
         resp = client.post(
@@ -633,6 +655,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         account.keyfile = issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # request target API
         req_param = [{"account_address": test_account_1, "amount": 10}]
@@ -680,6 +704,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchPOST:
         token.token_status = 0
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = [{"account_address": test_account_1, "amount": 10}]

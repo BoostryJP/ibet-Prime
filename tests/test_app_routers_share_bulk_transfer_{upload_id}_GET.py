@@ -82,6 +82,8 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer.status = i
             db.add(bulk_transfer)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.test_url.format(self.upload_id_list[1]),
@@ -129,6 +131,8 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer.amount = 10 + i
             bulk_transfer.status = i
             db.add(bulk_transfer)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -179,6 +183,8 @@ class TestAppRoutersShareBulkTransferGET:
             "Transfer amount is greater than from address balance."
         )
         db.add(bulk_transfer)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -274,6 +280,8 @@ class TestAppRoutersShareBulkTransferGET:
             bulk_transfer.amount = 10 + i
             bulk_transfer.status = i
             db.add(bulk_transfer)
+
+        db.commit()
 
         # request target API
         resp = client.get(

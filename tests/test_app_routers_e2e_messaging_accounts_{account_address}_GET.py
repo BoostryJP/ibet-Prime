@@ -60,6 +60,8 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressGET:
         db.add(_rsa_key)
         time.sleep(1)
 
+        db.commit()
+
         # request target api
         resp = client.get(
             self.base_url.format(
@@ -85,6 +87,8 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressGET:
         _account.account_address = "0x1234567890123456789012345678900000000000"
         _account.is_deleted = True
         db.add(_account)
+
+        db.commit()
 
         # request target api
         resp = client.get(

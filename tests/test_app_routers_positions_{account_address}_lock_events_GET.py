@@ -47,6 +47,8 @@ class TestAppRoutersLockEvents:
         _token.version = TokenVersion.V_23_12
         db.add(_token)
 
+        db.commit()
+
         # request target api
         resp = client.get(
             self.base_url.format(account_address=account_address),

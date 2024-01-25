@@ -17,14 +17,22 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import pytest
+import pytest_asyncio
 from eth_keyfile import decode_keyfile_json
 from fastapi.testclient import TestClient
+from httpx import AsyncClient
 from sqlalchemy import text
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from web3.types import RPCEndpoint
 
-from app.database import SessionLocal, db_session, engine
+from app.database import (
+    AsyncSessionLocal,
+    SessionLocal,
+    db_async_session,
+    db_session,
+    engine,
+)
 from app.main import app
 from app.utils.contract_utils import ContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
@@ -34,8 +42,15 @@ web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
+@pytest_asyncio.fixture(scope="session")
+async def async_client() -> AsyncClient:
+    async_client = AsyncClient(app=app, base_url="http://localhost")
+    async with async_client as s:
+        yield s
+
+
 @pytest.fixture(scope="session")
-def client():
+def client() -> TestClient:
     client = TestClient(app)
     return client
 
@@ -75,6 +90,49 @@ def db():
     db.close()
 
     app.dependency_overrides[db_session] = db_session
+
+
+@pytest_asyncio.fixture(scope="function")
+async def async_db():
+    # Create DB session
+    _db = AsyncSessionLocal()
+
+    def override_inject_db_session():
+        return _db
+
+    # Replace target API's dependency DB session.
+    app.dependency_overrides[db_async_session] = override_inject_db_session
+
+    # Create DB tables
+    from app.model.db import Base
+
+    Base.metadata.create_all(engine)
+
+    async with _db as session:
+        await session.begin()
+
+        yield session
+
+        await session.rollback()
+        await session.begin()
+        for table in Base.metadata.sorted_tables:
+            await session.execute(
+                text(f'ALTER TABLE "{table.name}" DISABLE TRIGGER ALL;')
+            )
+            await session.execute(text(f'TRUNCATE TABLE "{table.name}";'))
+            if table.autoincrement_column is not None:
+                await session.execute(
+                    text(
+                        f"ALTER SEQUENCE {table.name}_{table.autoincrement_column.name}_seq RESTART WITH 1;"
+                    )
+                )
+            await session.execute(
+                text(f'ALTER TABLE "{table.name}" ENABLE TRIGGER ALL;')
+            )
+        await session.commit()
+        await session.close()
+
+        app.dependency_overrides[db_async_session] = db_async_session
 
 
 @pytest.fixture(scope="function", autouse=True)

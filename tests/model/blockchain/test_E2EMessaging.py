@@ -20,7 +20,7 @@ import base64
 import json
 import os
 from unittest import mock
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from Crypto.Cipher import AES, PKCS1_OAEP
@@ -47,7 +47,8 @@ class TestSendMessage:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -58,7 +59,9 @@ class TestSendMessage:
         message = "test message"
 
         # Run Test
-        tx_hash, tx_receipt = E2EMessaging(e2e_messaging_contract.address).send_message(
+        tx_hash, tx_receipt = await E2EMessaging(
+            e2e_messaging_contract.address
+        ).send_message(
             to_address=user_address_2,
             message=message,
             tx_from=user_address_1,
@@ -82,7 +85,8 @@ class TestSendMessage:
 
     # <Error_1>
     # Transaction Error
-    def test_error_1(self, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_1(self, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -94,11 +98,11 @@ class TestSendMessage:
 
         with pytest.raises(SendTransactionError) as exc_info:
             with mock.patch(
-                "app.utils.contract_utils.ContractUtils.send_transaction",
-                MagicMock(side_effect=Exception("tx error")),
+                "app.utils.contract_utils.AsyncContractUtils.send_transaction",
+                AsyncMock(side_effect=Exception("tx error")),
             ):
                 # Run Test
-                E2EMessaging(e2e_messaging_contract.address).send_message(
+                await E2EMessaging(e2e_messaging_contract.address).send_message(
                     to_address=user_address_2,
                     message=message,
                     tx_from=user_address_1,
@@ -112,7 +116,8 @@ class TestSendMessage:
 
     # <Error_2>
     # Transaction Timeout
-    def test_error_2(self, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_2(self, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -124,11 +129,11 @@ class TestSendMessage:
 
         with pytest.raises(SendTransactionError) as exc_info:
             with mock.patch(
-                "app.utils.contract_utils.ContractUtils.send_transaction",
-                MagicMock(side_effect=TimeExhausted("Timeout Error test")),
+                "app.utils.contract_utils.AsyncContractUtils.send_transaction",
+                AsyncMock(side_effect=TimeExhausted("Timeout Error test")),
             ):
                 # Run Test
-                E2EMessaging(e2e_messaging_contract.address).send_message(
+                await E2EMessaging(e2e_messaging_contract.address).send_message(
                     to_address=user_address_2,
                     message=message,
                     tx_from=user_address_1,
@@ -217,7 +222,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -229,7 +235,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _type = "test_type"
 
         # Run Test
-        tx_hash, tx_receipt = E2EMessaging(
+        tx_hash, tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message_external(
             to_address=user_address_2,
@@ -265,11 +271,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
     # <Normal_2>
     # use AWS KMS
+    @pytest.mark.asyncio
     @mock.patch(
         "app.model.blockchain.e2e_messaging.AWS_KMS_GENERATE_RANDOM_ENABLED", True
     )
     @mock.patch("boto3.client")
-    def test_normal_2(self, boto3_mock, db, e2e_messaging_contract):
+    async def test_normal_2(self, boto3_mock, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -297,7 +304,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         boto3_mock.side_effect = [KMSClientMock()]
 
         # Run Test
-        tx_hash, tx_receipt = E2EMessaging(
+        tx_hash, tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message_external(
             to_address=user_address_2,
@@ -337,7 +344,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
     # <Error_1>
     # Transaction Error
-    def test_error_1(self, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_1(self, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -351,11 +359,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Run Test
         with pytest.raises(SendTransactionError) as exc_info:
             with mock.patch(
-                "app.utils.contract_utils.ContractUtils.send_transaction",
+                "app.utils.contract_utils.AsyncContractUtils.send_transaction",
                 MagicMock(side_effect=Exception("tx error")),
             ):
                 # Run Test
-                E2EMessaging(e2e_messaging_contract.address).send_message_external(
+                await E2EMessaging(
+                    e2e_messaging_contract.address
+                ).send_message_external(
                     to_address=user_address_2,
                     _type=_type,
                     message_org=message_org,
@@ -371,7 +381,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
     # <Error_2>
     # Transaction Timeout
-    def test_error_2(self, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_2(self, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -384,11 +395,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         with pytest.raises(SendTransactionError) as exc_info:
             with mock.patch(
-                "app.utils.contract_utils.ContractUtils.send_transaction",
+                "app.utils.contract_utils.AsyncContractUtils.send_transaction",
                 MagicMock(side_effect=TimeExhausted("Timeout Error test")),
             ):
                 # Run Test
-                E2EMessaging(e2e_messaging_contract.address).send_message_external(
+                await E2EMessaging(
+                    e2e_messaging_contract.address
+                ).send_message_external(
                     to_address=user_address_2,
                     _type=_type,
                     message_org=message_org,
@@ -425,7 +438,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -434,7 +448,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         key_type = "RSA4098"
 
         # Run Test
-        tx_hash, tx_receipt = E2EMessaging(
+        tx_hash, tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).set_public_key(
             public_key=self.rsa_public_key,
@@ -458,7 +472,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
     # <Error_1>
     # Transaction Error
-    def test_error_1(self, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_1(self, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -469,11 +484,11 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Run Test
         with pytest.raises(SendTransactionError) as exc_info:
             with mock.patch(
-                "app.utils.contract_utils.ContractUtils.send_transaction",
+                "app.utils.contract_utils.AsyncContractUtils.send_transaction",
                 MagicMock(side_effect=Exception("tx error")),
             ):
                 # Run Test
-                E2EMessaging(e2e_messaging_contract.address).set_public_key(
+                await E2EMessaging(e2e_messaging_contract.address).set_public_key(
                     public_key=self.rsa_public_key,
                     key_type=key_type,
                     tx_from=user_address_1,
@@ -487,7 +502,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
     # <Error_2>
     # Transaction Timeout
-    def test_error_2(self, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_2(self, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_private_key_1 = decode_keyfile_json(
@@ -497,11 +513,11 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         with pytest.raises(SendTransactionError) as exc_info:
             with mock.patch(
-                "app.utils.contract_utils.ContractUtils.send_transaction",
+                "app.utils.contract_utils.AsyncContractUtils.send_transaction",
                 MagicMock(side_effect=TimeExhausted("Timeout Error test")),
             ):
                 # Run Test
-                E2EMessaging(e2e_messaging_contract.address).set_public_key(
+                await E2EMessaging(e2e_messaging_contract.address).set_public_key(
                     public_key=self.rsa_public_key,
                     key_type=key_type,
                     tx_from=user_address_1,

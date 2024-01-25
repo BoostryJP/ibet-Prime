@@ -104,6 +104,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchBatchIdGET:
         }
         db.add(idx_personal_info_1)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(test_token_address, self.upload_id_list[0]),
@@ -188,6 +190,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchBatchIdGET:
             "tax_category": 10,
         }
         db.add(idx_personal_info_1)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -281,6 +285,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchBatchIdGET:
         }
         db.add(idx_personal_info_1)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(test_token_address, self.upload_id_list[0]),
@@ -362,6 +368,8 @@ class TestAppRoutersShareTokensTokenAddressAdditionalIssueBatchBatchIdGET:
         batch_upload.category = BatchIssueRedeemProcessingCategory.ISSUE.value
         batch_upload.processed = True
         db.add(batch_upload)
+
+        db.commit()
 
         # request target API
         resp = client.get(

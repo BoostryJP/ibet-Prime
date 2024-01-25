@@ -20,6 +20,7 @@ import json
 from datetime import datetime
 from unittest.mock import ANY
 
+import pytest
 from _decimal import Decimal
 from eth_keyfile import decode_keyfile_json
 from pytz import timezone
@@ -47,7 +48,7 @@ web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
-def deploy_bond_token_contract(
+async def deploy_bond_token_contract(
     session,
     address,
     private_key,
@@ -70,7 +71,7 @@ def deploy_bond_token_contract(
         "token.purpose",  # purpose
     ]
     bond_contrat = IbetStraightBondContract()
-    token_address, _, _ = bond_contrat.create(arguments, address, private_key)
+    token_address, _, _ = await bond_contrat.create(arguments, address, private_key)
     contract = ContractUtils.get_contract("IbetStraightBond", token_address)
     token_create_param = IbetStraightBondCreate(
         name="token.name",
@@ -114,6 +115,8 @@ def deploy_bond_token_contract(
     if created:
         token_update_operation_log.created = created
     session.add(token_update_operation_log)
+
+    session.commit()
 
     build_tx_param = {
         "chainId": config.CHAIN_ID,
@@ -269,6 +272,8 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.version = TokenVersion.V_23_12
         db.add(_token)
 
+        db.commit()
+
         # request target api
         resp = client.get(
             self.base_url.format(_token.token_address),
@@ -288,7 +293,8 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
 
     # <Normal_2>
     # Multiple record
-    def test_normal_2(self, client, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, client, db, personal_info_contract):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -298,7 +304,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract, create_param = deploy_bond_token_contract(
+        token_contract, create_param = await deploy_bond_token_contract(
             db, _issuer_address, issuer_private_key, personal_info_contract.address
         )
         _token_address = token_contract.address
@@ -318,6 +324,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.abi = ""
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
         db.commit()
 
         # create history
@@ -377,7 +384,8 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
 
     # <Normal_3_1>
     # Search filter: trigger
-    def test_normal_3_1(self, client, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_3_1(self, client, db, personal_info_contract):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -387,7 +395,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract, create_param = deploy_bond_token_contract(
+        token_contract, create_param = await deploy_bond_token_contract(
             db, _issuer_address, issuer_private_key, personal_info_contract.address
         )
         _token_address = token_contract.address
@@ -407,6 +415,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.abi = ""
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
         db.commit()
 
         # create history
@@ -464,7 +473,8 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
 
     # <Normal_3_2>
     # Search filter: modified_contents
-    def test_normal_3_2(self, client, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_3_2(self, client, db, personal_info_contract):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -474,7 +484,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract, create_param = deploy_bond_token_contract(
+        token_contract, create_param = await deploy_bond_token_contract(
             db, _issuer_address, issuer_private_key, personal_info_contract.address
         )
         _token_address = token_contract.address
@@ -494,6 +504,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.abi = ""
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
         db.commit()
 
         # create history
@@ -538,7 +549,8 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
 
     # <Normal_3_3>
     # Search filter: created_from
-    def test_normal_3_3(self, client, db, personal_info_contract, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_normal_3_3(self, client, db, personal_info_contract, monkeypatch):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -548,7 +560,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract, create_param = deploy_bond_token_contract(
+        token_contract, create_param = await deploy_bond_token_contract(
             db,
             _issuer_address,
             issuer_private_key,
@@ -600,6 +612,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _operation_log_3.original_contents = {}
         _operation_log_3.operation_category = TokenUpdateOperationCategory.UPDATE.value
         db.add(_operation_log_3)
+
         db.commit()
 
         # request target API
@@ -641,7 +654,8 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
 
     # <Normal_3_4>
     # Search filter: created_to
-    def test_normal_3_4(self, client, db, personal_info_contract, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_normal_3_4(self, client, db, personal_info_contract, monkeypatch):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -651,7 +665,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract, create_param = deploy_bond_token_contract(
+        token_contract, create_param = await deploy_bond_token_contract(
             db,
             _issuer_address,
             issuer_private_key,
@@ -703,6 +717,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _operation_log_3.original_contents = {}
         _operation_log_3.operation_category = TokenUpdateOperationCategory.UPDATE.value
         db.add(_operation_log_3)
+
         db.commit()
 
         # request target API
@@ -734,7 +749,8 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
 
     # <Normal_4_1>
     # Sort Order
-    def test_normal_4_1(self, client, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_4_1(self, client, db, personal_info_contract):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -744,7 +760,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract, create_param = deploy_bond_token_contract(
+        token_contract, create_param = await deploy_bond_token_contract(
             db, _issuer_address, issuer_private_key, personal_info_contract.address
         )
         _token_address = token_contract.address
@@ -764,6 +780,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.abi = ""
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
         db.commit()
 
         # create history
@@ -827,7 +844,8 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
 
     # <Normal_4_2>
     # Sort Item
-    def test_normal_4_2(self, client, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_4_2(self, client, db, personal_info_contract):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -837,7 +855,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract, create_param = deploy_bond_token_contract(
+        token_contract, create_param = await deploy_bond_token_contract(
             db, _issuer_address, issuer_private_key, personal_info_contract.address
         )
         _token_address = token_contract.address
@@ -857,6 +875,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.abi = ""
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
         db.commit()
 
         # create history
@@ -921,7 +940,8 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
 
     # <Normal_5_1>
     # Pagination
-    def test_normal_5_1(self, client, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_5_1(self, client, db, personal_info_contract):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -931,7 +951,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract, create_param = deploy_bond_token_contract(
+        token_contract, create_param = await deploy_bond_token_contract(
             db, _issuer_address, issuer_private_key, personal_info_contract.address
         )
         _token_address = token_contract.address
@@ -951,6 +971,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.abi = ""
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
         db.commit()
 
         # create history
@@ -999,7 +1020,8 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
 
     # <Normal_5_2>
     # Pagination (over offset)
-    def test_normal_5_2(self, client, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_5_2(self, client, db, personal_info_contract):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -1009,7 +1031,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract, create_param = deploy_bond_token_contract(
+        token_contract, create_param = await deploy_bond_token_contract(
             db, _issuer_address, issuer_private_key, personal_info_contract.address
         )
         _token_address = token_contract.address
@@ -1029,6 +1051,7 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         _token.abi = ""
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
         db.commit()
 
         # create history

@@ -81,6 +81,8 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdDELETE:
         _details_1_data_3.acquisition_date = "2000/12/31"
         db.add(_details_1_data_3)
 
+        db.commit()
+
         # request target API
         resp = client.delete(
             self.base_url.format(token_address=token_address, data_id=data_id),
@@ -195,6 +197,8 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdDELETE:
         _token.token_status = 0
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
+        db.commit()
 
         # request target API
         resp = client.delete(

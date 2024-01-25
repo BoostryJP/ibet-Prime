@@ -72,6 +72,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         personal_info = {
             "account_address": _test_account_address,
             "key_manager": "test_key_manager",
@@ -146,6 +148,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         personal_info = {
             "account_address": _test_account_address,
@@ -552,6 +556,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # request target API
         req_param = [
             {
@@ -601,6 +607,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # request target API
         req_param = [
@@ -662,6 +670,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = [
             {
@@ -721,6 +731,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         token.token_status = 1
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = []

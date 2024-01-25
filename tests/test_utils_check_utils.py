@@ -40,7 +40,8 @@ class TestCheckAuth:
 
     # Normal_1_1
     # Authentication by eoa_password(encrypted)
-    def test_normal_1_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(self, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -48,12 +49,12 @@ class TestCheckAuth:
         _account.issuer_address = test_account["address"]
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(_account)
+        async_db.add(_account)
 
         # test function
-        account, decrypted_eoa_password = check_auth(
+        account, decrypted_eoa_password = await check_auth(
             request=Request(scope={"type": "http", "client": ("192.168.1.1", 50000)}),
-            db=db,
+            db=async_db,
             issuer_address=test_account["address"],
             eoa_password=E2EEUtils.encrypt(self.eoa_password),
         )
@@ -64,7 +65,8 @@ class TestCheckAuth:
     # Normal_1_2
     # Authentication by eoa_password(not encrypted)
     @mock.patch("app.utils.check_utils.E2EE_REQUEST_ENABLED", False)
-    def test_normal_1_2(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -72,12 +74,12 @@ class TestCheckAuth:
         _account.issuer_address = test_account["address"]
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(_account)
+        async_db.add(_account)
 
         # test function
-        account, decrypted_eoa_password = check_auth(
+        account, decrypted_eoa_password = await check_auth(
             request=Request(scope={"type": "http", "client": ("192.168.1.1", 50000)}),
-            db=db,
+            db=async_db,
             issuer_address=test_account["address"],
             eoa_password=self.eoa_password,
         )
@@ -88,7 +90,8 @@ class TestCheckAuth:
     # Normal_2_1
     # Authentication by auth_token
     # valid duration = 0
-    def test_normal_2_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_1(self, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -96,18 +99,18 @@ class TestCheckAuth:
         _account.issuer_address = test_account["address"]
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(_account)
+        async_db.add(_account)
 
         _auth_token = AuthToken()
         _auth_token.issuer_address = test_account["address"]
         _auth_token.auth_token = hashlib.sha256(self.auth_token.encode()).hexdigest()
         _auth_token.valid_duration = 0
-        db.add(_auth_token)
+        async_db.add(_auth_token)
 
         # test function
-        account, decrypted_eoa_password = check_auth(
+        account, decrypted_eoa_password = await check_auth(
             request=Request(scope={"type": "http", "client": ("192.168.1.1", 50000)}),
-            db=db,
+            db=async_db,
             issuer_address=test_account["address"],
             auth_token=self.auth_token,
         )
@@ -118,7 +121,8 @@ class TestCheckAuth:
     # Normal_2_2
     # Authentication by auth_token
     # valid duration != 0
-    def test_normal_2_2(self, freezer, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_2(self, freezer, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -126,7 +130,7 @@ class TestCheckAuth:
         _account.issuer_address = test_account["address"]
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(_account)
+        async_db.add(_account)
 
         _auth_token = AuthToken()
         _auth_token.issuer_address = test_account["address"]
@@ -135,13 +139,13 @@ class TestCheckAuth:
             2022, 7, 15, 12, 32, 56
         )  # 2022-07-15 12:34:56 - 120sec
         _auth_token.valid_duration = 120
-        db.add(_auth_token)
+        async_db.add(_auth_token)
 
         # test function
         freezer.move_to("2022-07-15 12:34:56")
-        account, decrypted_eoa_password = check_auth(
+        account, decrypted_eoa_password = await check_auth(
             request=Request(scope={"type": "http", "client": ("192.168.1.1", 50000)}),
-            db=db,
+            db=async_db,
             issuer_address=test_account["address"],
             auth_token=self.auth_token,
         )
@@ -155,23 +159,25 @@ class TestCheckAuth:
 
     # Error_1
     # issuer does not exist
-    def test_error_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_db):
         test_account = config_eth_account("user1")
 
         # test function
         with pytest.raises(AuthorizationError):
-            check_auth(
+            await check_auth(
                 request=Request(
                     scope={"type": "http", "client": ("192.168.1.1", 50000)}
                 ),
-                db=db,
+                db=async_db,
                 issuer_address=test_account["address"],
                 eoa_password=E2EEUtils.encrypt(self.eoa_password),
             )
 
     # Error_2
     # eoa_password is None and auth_token is None
-    def test_error_2(self, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -179,21 +185,22 @@ class TestCheckAuth:
         _account.issuer_address = test_account["address"]
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(_account)
+        async_db.add(_account)
 
         # test function
         with pytest.raises(AuthorizationError):
-            check_auth(
+            await check_auth(
                 request=Request(
                     scope={"type": "http", "client": ("192.168.1.1", 50000)}
                 ),
-                db=db,
+                db=async_db,
                 issuer_address=test_account["address"],
             )
 
     # Error_3_1
     # eoa_password is mismatched (encrypted)
-    def test_error_3_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_3_1(self, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -201,15 +208,15 @@ class TestCheckAuth:
         _account.issuer_address = test_account["address"]
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(_account)
+        async_db.add(_account)
 
         # test function
         with pytest.raises(AuthorizationError):
-            check_auth(
+            await check_auth(
                 request=Request(
                     scope={"type": "http", "client": ("192.168.1.1", 50000)}
                 ),
-                db=db,
+                db=async_db,
                 issuer_address=test_account["address"],
                 eoa_password=E2EEUtils.encrypt(
                     "incorrect_password"
@@ -219,7 +226,8 @@ class TestCheckAuth:
     # Error_3_2
     # eoa_password is mismatched (not encrypted)
     @mock.patch("app.utils.check_utils.E2EE_REQUEST_ENABLED", False)
-    def test_error_3_2(self, db):
+    @pytest.mark.asyncio
+    async def test_error_3_2(self, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -227,22 +235,23 @@ class TestCheckAuth:
         _account.issuer_address = test_account["address"]
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(_account)
+        async_db.add(_account)
 
         # test function
         with pytest.raises(AuthorizationError):
-            check_auth(
+            await check_auth(
                 request=Request(
                     scope={"type": "http", "client": ("192.168.1.1", 50000)}
                 ),
-                db=db,
+                db=async_db,
                 issuer_address=test_account["address"],
                 eoa_password="incorrect_password",  # incorrect password
             )
 
     # Error_4_1
     # auth_token does not exist
-    def test_error_4_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_4_1(self, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -250,22 +259,23 @@ class TestCheckAuth:
         _account.issuer_address = test_account["address"]
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(_account)
+        async_db.add(_account)
 
         # test function
         with pytest.raises(AuthorizationError):
-            check_auth(
+            await check_auth(
                 request=Request(
                     scope={"type": "http", "client": ("192.168.1.1", 50000)}
                 ),
-                db=db,
+                db=async_db,
                 issuer_address=test_account["address"],
                 auth_token=self.eoa_password,
             )
 
     # Error_4_2
     # auth_token is mismatched
-    def test_error_4_2(self, db):
+    @pytest.mark.asyncio
+    async def test_error_4_2(self, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -273,28 +283,29 @@ class TestCheckAuth:
         _account.issuer_address = test_account["address"]
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(_account)
+        async_db.add(_account)
 
         _auth_token = AuthToken()
         _auth_token.issuer_address = test_account["address"]
         _auth_token.auth_token = hashlib.sha256(self.auth_token.encode()).hexdigest()
         _auth_token.valid_duration = 0
-        db.add(_auth_token)
+        async_db.add(_auth_token)
 
         # test function
         with pytest.raises(AuthorizationError):
-            check_auth(
+            await check_auth(
                 request=Request(
                     scope={"type": "http", "client": ("192.168.1.1", 50000)}
                 ),
-                db=db,
+                db=async_db,
                 issuer_address=test_account["address"],
                 auth_token="incorrect_token",  # incorrect token
             )
 
     # Error_4_3
     # auth_token has been expired
-    def test_error_4_3(self, freezer, db):
+    @pytest.mark.asyncio
+    async def test_error_4_3(self, freezer, async_db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -302,7 +313,7 @@ class TestCheckAuth:
         _account.issuer_address = test_account["address"]
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
-        db.add(_account)
+        async_db.add(_account)
 
         _auth_token = AuthToken()
         _auth_token.issuer_address = test_account["address"]
@@ -311,16 +322,16 @@ class TestCheckAuth:
             2022, 7, 15, 12, 32, 55
         )  # 2022-07-15 12:34:56 - 121sec
         _auth_token.valid_duration = 120
-        db.add(_auth_token)
+        async_db.add(_auth_token)
 
         # test function
         freezer.move_to("2022-07-15 12:34:56")
         with pytest.raises(AuthorizationError):
-            check_auth(
+            await check_auth(
                 request=Request(
                     scope={"type": "http", "client": ("192.168.1.1", 50000)}
                 ),
-                db=db,
+                db=async_db,
                 issuer_address=test_account["address"],
                 auth_token=self.auth_token,
             )

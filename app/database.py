@@ -20,20 +20,65 @@ from typing import Annotated
 
 from fastapi import Depends
 from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from config import DATABASE_SCHEMA, DATABASE_URL, DB_ECHO
 
-options = {
-    "pool_recycle": 3600,
-    "pool_size": 10,
-    "pool_timeout": 30,
-    "pool_pre_ping": True,
-    "max_overflow": 30,
-    "echo": DB_ECHO,
-}
-engine = create_engine(DATABASE_URL, **options)
+
+def get_engine(uri: str):
+    options = {
+        "pool_recycle": 3600,
+        "pool_size": 10,
+        "pool_timeout": 30,
+        "pool_pre_ping": True,
+        "max_overflow": 30,
+        "echo": DB_ECHO,
+    }
+    return create_engine(uri, **options)
+
+
+def get_async_engine(uri: str):
+    options = {
+        "pool_recycle": 3600,
+        "pool_size": 10,
+        "pool_timeout": 30,
+        "pool_pre_ping": True,
+        "max_overflow": 30,
+        "echo": DB_ECHO,
+    }
+    return create_async_engine(uri, **options)
+
+
+def get_batch_async_engine(uri: str):
+    options = {
+        "pool_pre_ping": True,
+        "echo": False,
+    }
+    return create_async_engine(uri, **options)
+
+
+# Create Engine
+engine = get_engine(DATABASE_URL)
+async_engine = get_async_engine(DATABASE_URL)
+batch_async_engine = get_batch_async_engine(DATABASE_URL)
+
+# Create Session Maker
 SessionLocal = sessionmaker(autocommit=False, autoflush=True, bind=engine)
+AsyncSessionLocal = async_sessionmaker(
+    autocommit=False,
+    autoflush=True,
+    expire_on_commit=False,
+    bind=async_engine,
+    class_=AsyncSession,
+)
+BatchAsyncSessionLocal = async_sessionmaker(
+    autocommit=False,
+    autoflush=True,
+    expire_on_commit=False,
+    bind=batch_async_engine,
+    class_=AsyncSession,
+)
 
 
 def db_session():
@@ -44,11 +89,17 @@ def db_session():
         db.close()
 
 
+async def db_async_session():
+    db = AsyncSessionLocal()
+    try:
+        yield db
+    finally:
+        await db.close()
+
+
 DBSession = Annotated[Session, Depends(db_session)]
+DBAsyncSession = Annotated[AsyncSession, Depends(db_async_session)]
 
 
 def get_db_schema():
-    if DATABASE_SCHEMA and engine.name != "mysql":
-        return DATABASE_SCHEMA
-    else:
-        return None
+    return DATABASE_SCHEMA

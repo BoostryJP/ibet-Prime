@@ -120,6 +120,8 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
         _details_2.data_source = "data_id_2"
         db.add(_details_2)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(token_address=token_address),
@@ -283,6 +285,8 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
         _details_2.data_source = "data_id_2"
         db.add(_details_2)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(token_address=token_address),
@@ -392,6 +396,8 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
         _details_1.data_source = None  # optional
         db.add(_details_1)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(token_address=token_address),
@@ -471,6 +477,8 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
         _token.version = TokenVersion.V_23_12
         db.add(_token)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(token_address=token_address),
@@ -522,6 +530,8 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
         _token.version = TokenVersion.V_23_12
         db.add(_token)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(token_address=token_address),
@@ -553,6 +563,8 @@ class TestAppRoutersLedgerTokenAddressTemplateGET:
         _token.abi = {}
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
+        db.commit()
 
         # request target API
         resp = client.get(

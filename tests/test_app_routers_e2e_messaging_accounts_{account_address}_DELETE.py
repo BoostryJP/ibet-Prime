@@ -63,6 +63,8 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
         db.add(_rsa_key)
         time.sleep(1)
 
+        db.commit()
+
         # request target api
         resp = client.delete(
             self.base_url.format(

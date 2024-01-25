@@ -35,7 +35,7 @@ from sqlalchemy import and_, asc, delete, desc, select
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import func
 
-from app.database import DBSession
+from app.database import DBAsyncSession
 from app.exceptions import (
     ContractRevertError,
     InvalidParameterError,
@@ -57,7 +57,7 @@ from app.model.schema import (
     E2EMessagingResponse,
     ListAllE2EMessagingResponse,
 )
-from app.utils.contract_utils import ContractUtils
+from app.utils.contract_utils import AsyncContractUtils
 from app.utils.docs_utils import get_routers_responses
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.fastapi_utils import json_response
@@ -88,8 +88,8 @@ utc_tz = pytz.timezone("UTC")
         422, InvalidParameterError, SendTransactionError, ContractRevertError
     ),
 )
-def create_account(
-    db: DBSession,
+async def create_account(
+    db: DBAsyncSession,
     data: E2EMessagingAccountCreateRequest,
 ):
     """Create Account"""
@@ -135,7 +135,7 @@ def create_account(
 
     # Send transaction
     try:
-        tx_hash, _ = E2EMessaging(E2E_MESSAGING_CONTRACT_ADDRESS).set_public_key(
+        tx_hash, _ = await E2EMessaging(E2E_MESSAGING_CONTRACT_ADDRESS).set_public_key(
             public_key=rsa_public_key,
             key_type="RSA4096",
             tx_from=addr,
@@ -155,7 +155,7 @@ def create_account(
     db.add(_account)
 
     # Register RSA key data to DB
-    block = ContractUtils.get_block_by_transaction_hash(tx_hash=tx_hash)
+    block = await AsyncContractUtils.get_block_by_transaction_hash(tx_hash=tx_hash)
     _account_rsa_key = E2EMessagingAccountRsaKey()
     _account_rsa_key.transaction_hash = tx_hash
     _account_rsa_key.account_address = addr
@@ -170,7 +170,7 @@ def create_account(
     _tm.tx_from = addr
     db.add(_tm)
 
-    db.commit()
+    await db.commit()
 
     return json_response(
         {
@@ -185,7 +185,7 @@ def create_account(
 
 # GET: /e2e_messaging/accounts
 @router.get("/accounts", response_model=List[E2EMessagingAccountResponse])
-def list_all_accounts(db: DBSession):
+async def list_all_accounts(db: DBAsyncSession):
     """List all e2e messaging accounts"""
 
     # Create query to get the latest RSA key
@@ -215,13 +215,16 @@ def list_all_accounts(db: DBSession):
 
     # Get E2E Messaging Accounts
     _accounts: Sequence[tuple[E2EMessagingAccount, str]] = (
-        db.execute(
-            select(E2EMessagingAccount, latest_rsa_key.rsa_public_key)
-            .outerjoin(
-                latest_rsa_key,
-                E2EMessagingAccount.account_address == latest_rsa_key.account_address,
+        (
+            await db.execute(
+                select(E2EMessagingAccount, latest_rsa_key.rsa_public_key)
+                .outerjoin(
+                    latest_rsa_key,
+                    E2EMessagingAccount.account_address
+                    == latest_rsa_key.account_address,
+                )
+                .order_by(E2EMessagingAccount.account_address)
             )
-            .order_by(E2EMessagingAccount.account_address)
         )
         .tuples()
         .all()
@@ -248,13 +251,15 @@ def list_all_accounts(db: DBSession):
     response_model=E2EMessagingAccountResponse,
     responses=get_routers_responses(404),
 )
-def retrieve_account(db: DBSession, account_address: str):
+async def retrieve_account(db: DBAsyncSession, account_address: str):
     """Retrieve an e2e messaging account"""
 
-    _account: E2EMessagingAccount | None = db.scalars(
-        select(E2EMessagingAccount)
-        .where(E2EMessagingAccount.account_address == account_address)
-        .limit(1)
+    _account: E2EMessagingAccount | None = (
+        await db.scalars(
+            select(E2EMessagingAccount)
+            .where(E2EMessagingAccount.account_address == account_address)
+            .limit(1)
+        )
     ).first()
     if _account is None:
         raise HTTPException(
@@ -263,11 +268,13 @@ def retrieve_account(db: DBSession, account_address: str):
 
     rsa_public_key = None
     if _account.is_deleted is False:
-        _rsa_key = db.scalars(
-            select(E2EMessagingAccountRsaKey)
-            .where(E2EMessagingAccountRsaKey.account_address == account_address)
-            .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
-            .limit(1)
+        _rsa_key = (
+            await db.scalars(
+                select(E2EMessagingAccountRsaKey)
+                .where(E2EMessagingAccountRsaKey.account_address == account_address)
+                .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
+                .limit(1)
+            )
         ).first()
         rsa_public_key = _rsa_key.rsa_public_key
 
@@ -288,13 +295,15 @@ def retrieve_account(db: DBSession, account_address: str):
     response_model=E2EMessagingAccountResponse,
     responses=get_routers_responses(404),
 )
-def delete_account(db: DBSession, account_address: str):
+async def delete_account(db: DBAsyncSession, account_address: str):
     """Logically delete an e2e messaging account"""
 
-    _account: E2EMessagingAccount | None = db.scalars(
-        select(E2EMessagingAccount)
-        .where(E2EMessagingAccount.account_address == account_address)
-        .limit(1)
+    _account: E2EMessagingAccount | None = (
+        await db.scalars(
+            select(E2EMessagingAccount)
+            .where(E2EMessagingAccount.account_address == account_address)
+            .limit(1)
+        )
     ).first()
     if _account is None:
         raise HTTPException(
@@ -302,15 +311,15 @@ def delete_account(db: DBSession, account_address: str):
         )
 
     _account.is_deleted = True
-    db.merge(_account)
+    await db.merge(_account)
 
     # NOTE: RSA key is physically delete
-    db.execute(
+    await db.execute(
         delete(E2EMessagingAccountRsaKey).where(
             E2EMessagingAccountRsaKey.account_address == account_address
         )
     )
-    db.commit()
+    await db.commit()
 
     return json_response(
         {
@@ -329,39 +338,43 @@ def delete_account(db: DBSession, account_address: str):
     response_model=E2EMessagingAccountResponse,
     responses=get_routers_responses(422, 404),
 )
-def update_account_rsa_key(
-    db: DBSession,
+async def update_account_rsa_key(
+    db: DBAsyncSession,
     account_address: str,
     data: E2EMessagingAccountUpdateRsaKeyRequest,
 ):
     """Update an e2e messaging account rsa key"""
 
-    _account = db.scalars(
-        select(E2EMessagingAccount)
-        .where(
-            and_(
-                E2EMessagingAccount.account_address == account_address,
-                E2EMessagingAccount.is_deleted == False,
+    _account = (
+        await db.scalars(
+            select(E2EMessagingAccount)
+            .where(
+                and_(
+                    E2EMessagingAccount.account_address == account_address,
+                    E2EMessagingAccount.is_deleted == False,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _account is None:
         raise HTTPException(
             status_code=404, detail="e2e messaging account is not exists"
         )
 
-    _rsa_key: E2EMessagingAccountRsaKey | None = db.scalars(
-        select(E2EMessagingAccountRsaKey)
-        .where(E2EMessagingAccountRsaKey.account_address == account_address)
-        .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
-        .limit(1)
+    _rsa_key: E2EMessagingAccountRsaKey | None = (
+        await db.scalars(
+            select(E2EMessagingAccountRsaKey)
+            .where(E2EMessagingAccountRsaKey.account_address == account_address)
+            .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
+            .limit(1)
+        )
     ).first()
 
     _account.rsa_key_generate_interval = data.rsa_key_generate_interval
     _account.rsa_generation = data.rsa_generation
-    db.merge(_account)
-    db.commit()
+    await db.merge(_account)
+    await db.commit()
 
     return json_response(
         {
@@ -380,18 +393,20 @@ def update_account_rsa_key(
     response_model=None,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-def change_eoa_password(
-    db: DBSession,
+async def change_eoa_password(
+    db: DBAsyncSession,
     account_address: str,
     data: E2EMessagingAccountChangeEOAPasswordRequest,
 ):
     """Change Account's EOA Password"""
 
     # Get E2E Messaging Account
-    _account: E2EMessagingAccount | None = db.scalars(
-        select(E2EMessagingAccount)
-        .where(E2EMessagingAccount.account_address == account_address)
-        .limit(1)
+    _account: E2EMessagingAccount | None = (
+        await db.scalars(
+            select(E2EMessagingAccount)
+            .where(E2EMessagingAccount.account_address == account_address)
+            .limit(1)
+        )
     ).first()
     if _account is None:
         raise HTTPException(
@@ -431,9 +446,9 @@ def change_eoa_password(
     # Update data to the DB
     _account.keyfile = keyfile_json
     _account.eoa_password = E2EEUtils.encrypt(eoa_password)
-    db.merge(_account)
+    await db.merge(_account)
 
-    db.commit()
+    await db.commit()
 
     return
 
@@ -444,18 +459,20 @@ def change_eoa_password(
     response_model=None,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-def change_rsa_passphrase(
-    db: DBSession,
+async def change_rsa_passphrase(
+    db: DBAsyncSession,
     account_address: str,
     data: E2EMessagingAccountChangeRSAPassphraseRequest,
 ):
     """Change Account's RSA Passphrase"""
 
     # Get E2E Messaging Account
-    _account: E2EMessagingAccount | None = db.scalars(
-        select(E2EMessagingAccount)
-        .where(E2EMessagingAccount.account_address == account_address)
-        .limit(1)
+    _account: E2EMessagingAccount | None = (
+        await db.scalars(
+            select(E2EMessagingAccount)
+            .where(E2EMessagingAccount.account_address == account_address)
+            .limit(1)
+        )
     ).first()
     if _account is None:
         raise HTTPException(
@@ -463,11 +480,13 @@ def change_rsa_passphrase(
         )
 
     # Get latest RSA key
-    _rsa_key = db.scalars(
-        select(E2EMessagingAccountRsaKey)
-        .where(E2EMessagingAccountRsaKey.account_address == account_address)
-        .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
-        .limit(1)
+    _rsa_key = (
+        await db.scalars(
+            select(E2EMessagingAccountRsaKey)
+            .where(E2EMessagingAccountRsaKey.account_address == account_address)
+            .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
+            .limit(1)
+        )
     ).first()
     if _rsa_key is None:
         raise HTTPException(
@@ -503,9 +522,9 @@ def change_rsa_passphrase(
     # Update data to the DB
     _rsa_key.rsa_private_key = rsa_private_key
     _rsa_key.rsa_passphrase = E2EEUtils.encrypt(rsa_passphrase)
-    db.merge(_rsa_key)
+    await db.merge(_rsa_key)
 
-    db.commit()
+    await db.commit()
 
     return
 
@@ -516,8 +535,8 @@ def change_rsa_passphrase(
     response_model=ListAllE2EMessagingResponse,
     responses=get_routers_responses(422),
 )
-def list_all_e2e_messages(
-    db: DBSession,
+async def list_all_e2e_messages(
+    db: DBAsyncSession,
     from_address: Optional[str] = Query(None),
     to_address: Optional[str] = Query(None),
     _type: Optional[str] = Query(None, alias="type"),
@@ -530,7 +549,7 @@ def list_all_e2e_messages(
     # Get E2E Messaging
     stmt = select(IDXE2EMessaging).order_by(asc(IDXE2EMessaging.id))
 
-    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Search Filter
     if from_address is not None:
@@ -542,7 +561,7 @@ def list_all_e2e_messages(
     if message is not None:
         stmt = stmt.where(IDXE2EMessaging.message.like("%" + message + "%"))
 
-    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Pagination
     if limit is not None:
@@ -550,7 +569,7 @@ def list_all_e2e_messages(
     if offset is not None:
         stmt = stmt.offset(offset)
 
-    _e2e_messaging_list: Sequence[IDXE2EMessaging] = db.scalars(stmt).all()
+    _e2e_messaging_list: Sequence[IDXE2EMessaging] = (await db.scalars(stmt)).all()
 
     e2e_messages = []
     for _e2e_messaging in _e2e_messaging_list:
@@ -594,12 +613,14 @@ def list_all_e2e_messages(
     response_model=E2EMessagingResponse,
     responses=get_routers_responses(422, 404),
 )
-def retrieve_e2e_messaging(db: DBSession, _id: int = Path(..., alias="id")):
+async def retrieve_e2e_messaging(db: DBAsyncSession, _id: int = Path(..., alias="id")):
     """Retrieve an e2e message"""
 
     # Get E2E Messaging
-    _e2e_messaging: IDXE2EMessaging | None = db.scalars(
-        select(IDXE2EMessaging).where(IDXE2EMessaging.id == _id).limit(1)
+    _e2e_messaging: IDXE2EMessaging | None = (
+        await db.scalars(
+            select(IDXE2EMessaging).where(IDXE2EMessaging.id == _id).limit(1)
+        )
     ).first()
     if _e2e_messaging is None:
         raise HTTPException(status_code=404, detail="e2e messaging not found")

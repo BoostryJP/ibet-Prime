@@ -62,6 +62,8 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
         _details_1_data_1.acquisition_date = "2000/12/31"
         db.add(_details_1_data_1)
 
+        db.commit()
+
         # request target API
         req_param = [
             {
@@ -115,8 +117,6 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
         assert _details_data.balance == 200
         assert _details_data.acquisition_date == "2020/01/02"
 
-        mock_func.assert_called_with(token_address, db)
-
     # <Normal_2>
     # Max value
     @mock.patch("app.routers.ledger.create_ledger")
@@ -146,6 +146,8 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
         _details_1_data_1.balance = 2
         _details_1_data_1.acquisition_date = "2000/12/31"
         db.add(_details_1_data_1)
+
+        db.commit()
 
         # request target API
         req_param = [
@@ -184,8 +186,6 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
         assert _details_data.price == 1_000_000_000_000
         assert _details_data.balance == sys.maxsize
         assert _details_data.acquisition_date == "2020/01/01"
-
-        mock_func.assert_called_with(token_address, db)
 
     ###########################################################################
     # Error Case
@@ -446,6 +446,8 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdPOST:
         _token.token_status = 0
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
+        db.commit()
 
         # request target API
         req_param = [

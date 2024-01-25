@@ -69,6 +69,8 @@ abc def"""
         )  # JST 2022/01/02
         db.add(_upload_file)
 
+        db.commit()
+
         # request target api
         resp = client.get(
             self.base_url,
@@ -125,6 +127,8 @@ abc def"""
             "2022/01/02 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
         db.add(_upload_file)
+
+        db.commit()
 
         # request target api
         resp = client.get(
@@ -196,6 +200,8 @@ abc def"""
         )  # JST 2022/01/02
         db.add(_upload_file)
 
+        db.commit()
+
         # request target api
         resp = client.get(
             self.base_url,
@@ -257,6 +263,8 @@ abc def"""
         )  # JST 2022/01/02
         db.add(_upload_file)
 
+        db.commit()
+
         # request target api
         resp = client.get(
             self.base_url,
@@ -317,6 +325,8 @@ abc def"""
             "2022/01/02 00:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
         db.add(_upload_file)
+
+        db.commit()
 
         # request target api
         resp = client.get(
@@ -406,6 +416,8 @@ abc def"""
             "2022/01/01 15:20:30.000001", "%Y/%m/%d %H:%M:%S.%f"
         )  # JST 2022/01/02
         db.add(_upload_file)
+
+        db.commit()
 
         # request target api
         resp = client.get(

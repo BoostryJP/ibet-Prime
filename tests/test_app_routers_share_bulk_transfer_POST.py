@@ -86,6 +86,8 @@ class TestAppRoutersShareBulkTransferPOST:
             _token.version = TokenVersion.V_22_12
             db.add(_token)
 
+        db.commit()
+
         # request target API
         req_param = {
             "transfer_list": [
@@ -174,6 +176,8 @@ class TestAppRoutersShareBulkTransferPOST:
             _token.version = TokenVersion.V_22_12
             db.add(_token)
 
+        db.commit()
+
         # request target API
         req_param = {
             "transfer_list": [
@@ -254,6 +258,8 @@ class TestAppRoutersShareBulkTransferPOST:
             _token.abi = ""
             _token.version = TokenVersion.V_22_12
             db.add(_token)
+
+        db.commit()
 
         # request target API
         req_param = {
@@ -528,6 +534,8 @@ class TestAppRoutersShareBulkTransferPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # request target API
         req_param = {"transfer_list": []}
         resp = client.post(
@@ -602,6 +610,8 @@ class TestAppRoutersShareBulkTransferPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # request target API
         req_param = {
             "transfer_list": [
@@ -638,6 +648,8 @@ class TestAppRoutersShareBulkTransferPOST:
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # request target API
         req_param = {
@@ -687,6 +699,8 @@ class TestAppRoutersShareBulkTransferPOST:
         _token.version = TokenVersion.V_22_12
         db.add(_token)
 
+        db.commit()
+
         # request target API
         req_param = {
             "transfer_list": [
@@ -734,6 +748,8 @@ class TestAppRoutersShareBulkTransferPOST:
             _token.abi = ""
             _token.version = TokenVersion.V_22_12
             db.add(_token)
+
+        db.commit()
 
         # request target API
         req_param = {
@@ -791,6 +807,8 @@ class TestAppRoutersShareBulkTransferPOST:
             _token.version = TokenVersion.V_22_12
             db.add(_token)
 
+        db.commit()
+
         # request target API
         req_param = {
             "transfer_list": [
@@ -846,6 +864,8 @@ class TestAppRoutersShareBulkTransferPOST:
             _token.abi = ""
             _token.version = TokenVersion.V_22_12
             db.add(_token)
+
+        db.commit()
 
         # request target API
         req_param = {

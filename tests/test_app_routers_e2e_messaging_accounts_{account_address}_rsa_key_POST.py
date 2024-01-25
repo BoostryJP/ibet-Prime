@@ -60,6 +60,8 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressRSAKeyPOST:
         db.add(_rsa_key)
         time.sleep(1)
 
+        db.commit()
+
         # request target api
         req_param = {
             "rsa_key_generate_interval": 1,
@@ -113,6 +115,8 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressRSAKeyPOST:
         _rsa_key.block_timestamp = datetime.utcnow()
         db.add(_rsa_key)
         time.sleep(1)
+
+        db.commit()
 
         # request target api
         req_param = {}

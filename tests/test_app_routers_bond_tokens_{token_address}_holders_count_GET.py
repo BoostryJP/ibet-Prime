@@ -57,6 +57,8 @@ class TestAppRoutersBondTokensTokenAddressHoldersCountGET:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(_token_address),
@@ -98,6 +100,8 @@ class TestAppRoutersBondTokensTokenAddressHoldersCountGET:
         idx_position_1.exchange_commitment = 12
         idx_position_1.pending_transfer = 5
         db.add(idx_position_1)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -159,6 +163,8 @@ class TestAppRoutersBondTokensTokenAddressHoldersCountGET:
         idx_locked_position.value = 5
         db.add(idx_locked_position)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(_token_address),
@@ -209,6 +215,8 @@ class TestAppRoutersBondTokensTokenAddressHoldersCountGET:
         idx_locked_position.account_address = _account_address_1
         idx_locked_position.value = 0
         db.add(idx_locked_position)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -298,6 +306,8 @@ class TestAppRoutersBondTokensTokenAddressHoldersCountGET:
         idx_locked_position.value = 5
         db.add(idx_locked_position)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(_token_address),
@@ -371,6 +381,8 @@ class TestAppRoutersBondTokensTokenAddressHoldersCountGET:
         account.issuer_address = _issuer_address
         db.add(account)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(_token_address),
@@ -406,6 +418,8 @@ class TestAppRoutersBondTokensTokenAddressHoldersCountGET:
         token.token_status = 0
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         resp = client.get(

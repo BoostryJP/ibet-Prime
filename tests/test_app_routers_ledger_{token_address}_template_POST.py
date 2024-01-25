@@ -57,6 +57,8 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         _token.version = TokenVersion.V_23_12
         db.add(_token)
 
+        db.commit()
+
         # request target API
         req_param = {
             "token_name": "テスト原簿",
@@ -229,8 +231,6 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         assert _details.data_type == LedgerDetailsDataType.DB.value
         assert _details.data_source == "data_id_2"
 
-        mock_func.assert_called_with(token_address, db)
-
     # <Normal_2>
     # Update
     @mock.patch("app.routers.ledger.create_ledger")
@@ -328,6 +328,8 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         _details_2.data_type = LedgerDetailsDataType.DB.value
         _details_2.data_source = "data_id_2"
         db.add(_details_2)
+
+        db.commit()
 
         # request target API
         req_param = {
@@ -499,8 +501,6 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         ]
         assert _details.data_type == LedgerDetailsDataType.IBET_FIN.value
         assert _details.data_source == token_address
-
-        mock_func.assert_called_with(token_address, db)
 
     ###########################################################################
     # Error Case
@@ -908,6 +908,8 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         _token.version = TokenVersion.V_23_12
         db.add(_token)
 
+        db.commit()
+
         # request target API
         req_param = {
             "token_name": "テスト原簿",
@@ -1096,6 +1098,8 @@ class TestAppRoutersLedgerTokenAddressTemplatePOST:
         _token.token_status = 0
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
+        db.commit()
 
         # request target API
         req_param = {

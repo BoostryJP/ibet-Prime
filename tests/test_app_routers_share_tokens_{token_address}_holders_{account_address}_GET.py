@@ -78,6 +78,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
         }
         db.add(idx_personal_info_1)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, _account_address_1),
@@ -156,6 +158,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
             "tax_category": 10,
         }
         db.add(idx_personal_info_1)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -257,6 +261,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
         }
         db.add(idx_personal_info_1)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, _account_address_1),
@@ -316,6 +322,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
         idx_position_1.pending_transfer = 5
         idx_position_1.modified = datetime(2023, 10, 24, 0, 0, 0)
         db.add(idx_position_1)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -390,6 +398,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
             # PersonalInfo is partially registered.
         }
         db.add(idx_personal_info_1)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -483,6 +493,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
         account.issuer_address = _issuer_address
         db.add(account)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, _account_address_1),
@@ -518,6 +530,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
         token.token_status = 0
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         resp = client.get(

@@ -22,7 +22,7 @@ from typing import Sequence
 
 import pytz
 from sqlalchemy import and_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.blockchain import (
     IbetShareContract,
@@ -31,6 +31,7 @@ from app.model.blockchain import (
 )
 from app.model.db import (
     UTXO,
+    Account,
     IDXPersonalInfo,
     Ledger,
     LedgerDetailsData,
@@ -48,11 +49,13 @@ local_tz = pytz.timezone(TZ)
 utc_tz = pytz.timezone("UTC")
 
 
-def create_ledger(token_address: str, db: Session):
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(and_(Token.token_address == token_address, Token.token_status == 1))
-        .limit(1)
+async def create_ledger(token_address: str, db: AsyncSession):
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(and_(Token.token_address == token_address, Token.token_status == 1))
+            .limit(1)
+        )
     ).first()
     if (
         _token.type != TokenType.IBET_SHARE.value
@@ -61,10 +64,12 @@ def create_ledger(token_address: str, db: Session):
         return
 
     # Get ledger template
-    _template: LedgerTemplate | None = db.scalars(
-        select(LedgerTemplate)
-        .where(LedgerTemplate.token_address == token_address)
-        .limit(1)
+    _template: LedgerTemplate | None = (
+        await db.scalars(
+            select(LedgerTemplate)
+            .where(LedgerTemplate.token_address == token_address)
+            .limit(1)
+        )
     ).first()
     if _template is None:
         return
@@ -72,20 +77,22 @@ def create_ledger(token_address: str, db: Session):
     # Get currency code only for BOND tokens
     currency = ""  # default
     if _token.type == TokenType.IBET_STRAIGHT_BOND.value:
-        bond_contract = IbetStraightBondContract(token_address).get()
+        bond_contract = await IbetStraightBondContract(token_address).get()
         currency = bond_contract.face_value_currency
 
     # Get ledger details
-    _details_list: Sequence[LedgerDetailsTemplate] = db.scalars(
-        select(LedgerDetailsTemplate)
-        .where(LedgerDetailsTemplate.token_address == token_address)
-        .order_by(LedgerDetailsTemplate.id)
+    _details_list: Sequence[LedgerDetailsTemplate] = (
+        await db.scalars(
+            select(LedgerDetailsTemplate)
+            .where(LedgerDetailsTemplate.token_address == token_address)
+            .order_by(LedgerDetailsTemplate.id)
+        )
     ).all()
     ledger_details = []
 
     for _details in _details_list:
         # Get ledger details data
-        data_list = __get_details_data_list(
+        data_list = await __get_details_data_list(
             token_address, _token.type, _details.data_type, _details.data_source, db
         )
 
@@ -121,7 +128,7 @@ def create_ledger(token_address: str, db: Session):
 
     # Although autoflush is enabled, there is no operation invoking flush.
     # Execute flush here to get ledger id which is auto incremented.
-    db.flush()
+    await db.flush()
 
     # Register Notification to the DB
     # NOTE: DB commit is executed by the caller
@@ -139,22 +146,28 @@ def create_ledger(token_address: str, db: Session):
     db.add(_notification)
 
 
-def __get_details_data_list(
-    token_address: str, token_type: str, data_type: str, data_source: str, db: Session
+async def __get_details_data_list(
+    token_address: str,
+    token_type: str,
+    data_type: str,
+    data_source: str,
+    db: AsyncSession,
 ):
     data_list = []
     if data_type == LedgerDetailsDataType.DB.value:
         data_list = []
         # Get Ledger Details Data from DB
-        _details_data_list: Sequence[LedgerDetailsData] = db.scalars(
-            select(LedgerDetailsData)
-            .where(
-                and_(
-                    LedgerDetailsData.token_address == token_address,
-                    LedgerDetailsData.data_id == data_source,
+        _details_data_list: Sequence[LedgerDetailsData] = (
+            await db.scalars(
+                select(LedgerDetailsData)
+                .where(
+                    and_(
+                        LedgerDetailsData.token_address == token_address,
+                        LedgerDetailsData.data_id == data_source,
+                    )
                 )
+                .order_by(LedgerDetailsData.id)
             )
-            .order_by(LedgerDetailsData.id)
         ).all()
         for _details_data in _details_data_list:
             data_list.append(
@@ -169,35 +182,46 @@ def __get_details_data_list(
                 }
             )
     elif data_type == LedgerDetailsDataType.IBET_FIN.value:
-        data_list = __get_details_data_list_from_ibetfin(token_address, token_type, db)
+        data_list = await __get_details_data_list_from_ibetfin(
+            token_address, token_type, db
+        )
 
     return data_list
 
 
-def __get_details_data_list_from_ibetfin(
-    token_address: str, token_type: str, db: Session
+async def __get_details_data_list_from_ibetfin(
+    token_address: str, token_type: str, db: AsyncSession
 ):
     if token_type == TokenType.IBET_SHARE.value:
-        token_contract = IbetShareContract(token_address).get()
+        token_contract = await IbetShareContract(token_address).get()
         price = token_contract.principal_value
     elif token_type == TokenType.IBET_STRAIGHT_BOND.value:
-        token_contract = IbetStraightBondContract(token_address).get()
+        token_contract = await IbetStraightBondContract(token_address).get()
         price = token_contract.face_value
 
-    issuer_address = token_contract.issuer_address
+    issuer_account = (
+        await db.scalars(
+            select(Account)
+            .where(Account.issuer_address == token_contract.issuer_address)
+            .limit(1)
+        )
+    ).first()
     personal_info_contract = PersonalInfoContract(
-        db,
-        issuer_address,
+        issuer=issuer_account,
         contract_address=token_contract.personal_info_contract_address,
     )
 
     # Get token holders from UTXO
-    _utxo_list: Sequence[UTXO] = db.scalars(
-        select(UTXO)
-        .where(
-            and_(UTXO.token_address == token_contract.token_address, UTXO.amount > 0)
+    _utxo_list: Sequence[UTXO] = (
+        await db.scalars(
+            select(UTXO)
+            .where(
+                and_(
+                    UTXO.token_address == token_contract.token_address, UTXO.amount > 0
+                )
+            )
+            .order_by(UTXO.account_address, UTXO.block_timestamp)
         )
-        .order_by(UTXO.account_address, UTXO.block_timestamp)
     ).all()
 
     # NOTE: UTXO grouping
@@ -233,8 +257,11 @@ def __get_details_data_list_from_ibetfin(
             }
 
             # Update PersonalInfo
-            personal_info = __get_personal_info(
-                account_address, issuer_address, personal_info_contract, db
+            personal_info = await __get_personal_info(
+                account_address,
+                token_contract.issuer_address,
+                personal_info_contract,
+                db,
             )
             details_data["name"] = personal_info.get("name", None)
             details_data["address"] = personal_info.get("address", None)
@@ -244,25 +271,27 @@ def __get_details_data_list_from_ibetfin(
     return data_list
 
 
-def __get_personal_info(
+async def __get_personal_info(
     account_address: str,
     issuer_address: str,
     personal_info_contract: PersonalInfoContract,
-    db: Session,
+    db: AsyncSession,
 ):
-    _idx_personal_info: IDXPersonalInfo | None = db.scalars(
-        select(IDXPersonalInfo)
-        .where(
-            and_(
-                IDXPersonalInfo.account_address == account_address,
-                IDXPersonalInfo.issuer_address == issuer_address,
+    _idx_personal_info: IDXPersonalInfo | None = (
+        await db.scalars(
+            select(IDXPersonalInfo)
+            .where(
+                and_(
+                    IDXPersonalInfo.account_address == account_address,
+                    IDXPersonalInfo.issuer_address == issuer_address,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
 
     if _idx_personal_info is None:  # Get PersonalInfo to Contract
-        personal_info = personal_info_contract.get_info(
+        personal_info = await personal_info_contract.get_info(
             account_address, default_value=None
         )
     else:

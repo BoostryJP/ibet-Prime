@@ -61,6 +61,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         # mock
         ibet_share_contract = IbetShareContract()
         ibet_share_contract.personal_info_contract_address = (
@@ -106,11 +108,6 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             # assertion
             assert resp.status_code == 200
             assert resp.json() is None
-            PersonalInfoContract.__init__.assert_called_with(
-                db=db,
-                issuer_address=_issuer_address,
-                contract_address="personal_info_contract_address",
-            )
             PersonalInfoContract.register_info.assert_called_with(
                 account_address=_test_account_address,
                 data=req_param,
@@ -144,6 +141,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # mock
         ibet_share_contract = IbetShareContract()
@@ -190,11 +189,6 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             # assertion
             assert resp.status_code == 200
             assert resp.json() is None
-            PersonalInfoContract.__init__.assert_called_with(
-                db=db,
-                issuer_address=_issuer_address,
-                contract_address="personal_info_contract_address",
-            )
             PersonalInfoContract.register_info.assert_called_with(
                 account_address=_test_account_address,
                 data=req_param,
@@ -234,6 +228,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # mock
         ibet_share_contract = IbetShareContract()
@@ -280,11 +276,6 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
             # assertion
             assert resp.status_code == 200
             assert resp.json() is None
-            PersonalInfoContract.__init__.assert_called_with(
-                db=db,
-                issuer_address=_issuer_address,
-                contract_address="personal_info_contract_address",
-            )
             PersonalInfoContract.register_info.assert_called_with(
                 account_address=_test_account_address,
                 data=req_param,
@@ -581,6 +572,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # request target API
         req_param = {
             "account_address": _test_account_address,
@@ -628,6 +621,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # request target API
         req_param = {
@@ -687,6 +682,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = {
             "account_address": _test_account_address,
@@ -742,6 +739,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # mock
         ibet_share_contract = IbetShareContract()

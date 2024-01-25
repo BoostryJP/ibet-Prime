@@ -57,6 +57,8 @@ class TestAppRoutersPositionsAccountAddressGET:
         _position.pending_transfer = 13
         db.add(_position)
 
+        db.commit()
+
         # request target api
         resp = client.get(
             self.base_url.format(account_address=account_address),
@@ -128,6 +130,8 @@ class TestAppRoutersPositionsAccountAddressGET:
         _locked_position.account_address = other_account_address  # not to be included
         _locked_position.value = 5
         db.add(_locked_position)
+
+        db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -293,6 +297,8 @@ class TestAppRoutersPositionsAccountAddressGET:
         _locked_position.value = 15
         db.add(_locked_position)
 
+        db.commit()
+
         # mock
         bond_1 = IbetStraightBondContract()
         bond_1.name = "test_bond_1"
@@ -447,6 +453,8 @@ class TestAppRoutersPositionsAccountAddressGET:
         _locked_position.value = 0
         db.add(_locked_position)
 
+        db.commit()
+
         # mock
         bond_1 = IbetStraightBondContract()
         bond_1.name = "test_bond_1"
@@ -568,6 +576,8 @@ class TestAppRoutersPositionsAccountAddressGET:
         _position.pending_transfer = 33
         db.add(_position)
 
+        db.commit()
+
         # mock
         bond_1 = IbetStraightBondContract()
         bond_1.name = "test_bond_1"
@@ -687,6 +697,8 @@ class TestAppRoutersPositionsAccountAddressGET:
         _position.pending_transfer = 33
         db.add(_position)
 
+        db.commit()
+
         # mock
         bond_1 = IbetStraightBondContract()
         bond_1.name = "test_bond_1"
@@ -802,6 +814,8 @@ class TestAppRoutersPositionsAccountAddressGET:
         _position.exchange_commitment = 32
         _position.pending_transfer = 33
         db.add(_position)
+
+        db.commit()
 
         # mock
         share_1 = IbetShareContract()
@@ -927,6 +941,8 @@ class TestAppRoutersPositionsAccountAddressGET:
         _position.exchange_commitment = 0
         _position.pending_transfer = 0
         db.add(_position)
+
+        db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -1091,6 +1107,8 @@ class TestAppRoutersPositionsAccountAddressGET:
         _position.exchange_commitment = 42
         _position.pending_transfer = 43
         db.add(_position)
+
+        db.commit()
 
         # mock
         bond_2 = IbetStraightBondContract()

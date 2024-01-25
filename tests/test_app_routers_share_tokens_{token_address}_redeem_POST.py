@@ -60,6 +60,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemPOST:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         # mock
         IbetShareContract_mock.side_effect = [None]
 
@@ -112,6 +114,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # mock
         IbetShareContract_mock.side_effect = [None]
@@ -281,6 +285,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemPOST:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
 
@@ -322,6 +328,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemPOST:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
 
@@ -356,6 +364,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
         resp = client.post(
@@ -387,6 +397,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemPOST:
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
@@ -429,6 +441,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemPOST:
         token.token_status = 0
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
@@ -475,6 +489,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}

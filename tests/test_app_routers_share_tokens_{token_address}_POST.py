@@ -20,6 +20,7 @@ import hashlib
 from unittest import mock
 from unittest.mock import MagicMock
 
+import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
 from web3 import Web3
@@ -45,7 +46,7 @@ web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
-def deploy_share_token_contract(
+async def deploy_share_token_contract(
     address,
     private_key,
 ):
@@ -61,7 +62,7 @@ def deploy_share_token_contract(
         30,
     ]
     share_contract = IbetShareContract()
-    token_address, _, _ = share_contract.create(arguments, address, private_key)
+    token_address, _, _ = await share_contract.create(arguments, address, private_key)
 
     return ContractUtils.get_contract("IbetShare", token_address)
 
@@ -76,7 +77,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -86,7 +88,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract = deploy_share_token_contract(
+        token_contract = await deploy_share_token_contract(
             _issuer_address,
             issuer_private_key,
         )
@@ -107,6 +109,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {
@@ -194,7 +198,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
 
     # <Normal_2>
     # No request parameters
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -204,7 +209,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract = deploy_share_token_contract(
+        token_contract = await deploy_share_token_contract(
             _issuer_address,
             issuer_private_key,
         )
@@ -225,6 +230,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {}
@@ -253,7 +260,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
 
     # <Normal_3>
     # Authorization by auth-token
-    def test_normal_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -263,7 +271,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract = deploy_share_token_contract(
+        token_contract = await deploy_share_token_contract(
             _issuer_address,
             issuer_private_key,
         )
@@ -290,6 +298,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {
@@ -378,7 +388,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
 
     # <Normal_4_1>
     # YYYYMMDD parameter is not an empty string
-    def test_normal_4_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_1(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -388,7 +399,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract = deploy_share_token_contract(
+        token_contract = await deploy_share_token_contract(
             _issuer_address,
             issuer_private_key,
         )
@@ -409,6 +420,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {
@@ -475,7 +488,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
 
     # <Normal_4_2>
     # YYYYMMDD parameter is an empty string
-    def test_normal_4_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_4_2(self, client, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -485,7 +499,7 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract = deploy_share_token_contract(
+        token_contract = await deploy_share_token_contract(
             _issuer_address,
             issuer_private_key,
         )
@@ -506,6 +520,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {
@@ -1012,6 +1028,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         # mock
         IbetShareContract_mock.side_effect = [None]
 
@@ -1049,6 +1067,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # mock
         IbetShareContract_mock.side_effect = [None]
 
@@ -1085,6 +1105,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # mock
         IbetShareContract_mock.side_effect = [None]
@@ -1132,6 +1154,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = {}
         resp = client.post(
@@ -1177,6 +1201,8 @@ class TestAppRoutersShareTokensTokenAddressPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {}

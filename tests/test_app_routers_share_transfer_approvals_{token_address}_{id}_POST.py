@@ -144,6 +144,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         }
         db.add(_personal_info_to)
 
+        db.commit()
+
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.approve_transfer",
@@ -277,6 +279,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         }
         db.add(_personal_info_to)
 
+        db.commit()
+
         # mock
         IbetSecurityTokenEscrow_approve_transfer = mock.patch(
             target="app.model.blockchain.exchange.IbetSecurityTokenEscrow.approve_transfer",
@@ -408,6 +412,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
             "tax_category": 10,
         }
         db.add(_personal_info_to)
+
+        db.commit()
 
         # mock
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
@@ -545,6 +551,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
             "tax_category": 10,
         }
         db.add(_personal_info_to)
+
+        db.commit()
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
@@ -747,6 +755,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         id = 10
 
         # request target api
@@ -779,6 +789,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         id = 10
 
@@ -822,6 +834,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.version = TokenVersion.V_22_12
         db.add(_token)
 
+        db.commit()
+
         id = 10
 
         # request target api
@@ -864,6 +878,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _token.token_status = 0
         _token.version = TokenVersion.V_22_12
         db.add(_token)
+
+        db.commit()
 
         id = 10
 
@@ -930,6 +946,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.transfer_approved = True
         db.add(_idx_transfer_approval)
 
+        db.commit()
+
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
@@ -993,6 +1011,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
+        db.commit()
+
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
@@ -1054,6 +1074,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
+        db.commit()
+
         # request target api
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
@@ -1114,6 +1136,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.escrow_finished = True
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # request target api
         resp = client.post(
@@ -1182,6 +1206,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _cancel_op.application_id = 100
         _cancel_op.operation_type = TransferApprovalOperationType.CANCEL.value
         db.add(_cancel_op)
+
+        db.commit()
 
         # request target api
         resp = client.post(
@@ -1278,6 +1304,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         }
         db.add(_personal_info_to)
 
+        db.commit()
+
         # request target API
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
@@ -1368,6 +1396,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
             "tax_category": 10,
         }
         db.add(_personal_info_to)
+
+        db.commit()
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
@@ -1478,6 +1508,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         }
         db.add(_personal_info_to)
 
+        db.commit()
+
         # request target API
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
@@ -1569,6 +1601,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
             "tax_category": 10,
         }
         db.add(_personal_info_to)
+
+        db.commit()
 
         # mock
         IbetSecurityTokenEscrow_approve_transfer = mock.patch(
@@ -1672,6 +1706,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         }
         db.add(_personal_info_to)
 
+        db.commit()
+
         # request target API
         resp = client.post(
             self.base_url.format(self.test_token_address, id),
@@ -1763,6 +1799,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         }
         db.add(_personal_info_to)
 
+        db.commit()
+
         # mock
         IbetSecurityTokenContract_cancel_transfer = mock.patch(
             target="app.model.blockchain.token.IbetSecurityTokenInterface.cancel_transfer",
@@ -1828,6 +1866,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
         _idx_transfer_approval.cancellation_blocktimestamp = None
         _idx_transfer_approval.cancelled = None
         db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(
@@ -1909,6 +1949,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdPOST:
             "tax_category": 10,
         }
         db.add(_personal_info_from)
+
+        db.commit()
 
         # mock
         IbetSecurityTokenContract_approve_transfer = mock.patch(

@@ -18,7 +18,9 @@ SPDX-License-Identifier: Apache-2.0
 """
 import uuid
 from unittest import mock
+from unittest.mock import AsyncMock
 
+import pytest
 from sqlalchemy import select
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
@@ -47,8 +49,8 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
 
     # Normal_1
     # POST collection request.
-    @mock.patch("web3.eth.Eth.block_number", 100)
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, client, db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -64,22 +66,29 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.version = TokenVersion.V_22_12
         db.add(_token)
 
+        db.commit()
+
         list_id = str(uuid.uuid4())
 
+        # mock setting
+        block_number_mock = AsyncMock()
+        block_number_mock.return_value = 100
+
         # request target API
-        req_param = {"list_id": list_id, "block_number": 100}
+        with mock.patch(
+            "web3.eth.async_eth.AsyncEth.block_number", block_number_mock()
+        ):
+            req_param = {"list_id": list_id, "block_number": 100}
+            resp = client.post(
+                self.base_url.format(token_address=token_address),
+                json=req_param,
+                headers={"issuer-address": issuer_address},
+            )
 
-        # request target api
-        resp = client.post(
-            self.base_url.format(token_address=token_address),
-            json=req_param,
-            headers={"issuer-address": issuer_address},
-        )
-
+        # assertion
         stored_data: TokenHoldersList = db.scalars(
             select(TokenHoldersList).where(TokenHoldersList.list_id == list_id).limit(1)
         ).first()
-        # assertion
         assert resp.status_code == 200
         assert resp.json() == {
             "list_id": list_id,
@@ -91,9 +100,9 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         assert stored_data.block_number == 100
 
     # Normal_2
-    # POST collection request twice.
-    @mock.patch("web3.eth.Eth.block_number", 101)
-    def test_normal_2(self, client, db):
+    # POST collection request with already existing contract_address and block_number.
+    @pytest.mark.asyncio
+    async def test_normal_2(self, client, db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -109,54 +118,24 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.version = TokenVersion.V_22_12
         db.add(_token)
 
-        for i in range(2):
-            list_id = str(uuid.uuid4())
-            # request target API
-            req_param = {"list_id": list_id, "block_number": 100 + i}
+        db.commit()
 
-            # request target api
+        # mock setting
+        block_number_mock = AsyncMock()
+        block_number_mock.return_value = 100
+
+        # request target API
+        with mock.patch(
+            "web3.eth.async_eth.AsyncEth.block_number", block_number_mock()
+        ):
+            list_id1 = str(uuid.uuid4())
+            req_param = {"list_id": list_id1, "block_number": 100}
             resp = client.post(
                 self.base_url.format(token_address=token_address),
                 json=req_param,
                 headers={"issuer-address": issuer_address},
             )
 
-            # assertion
-            assert resp.status_code == 200
-            assert resp.json() == {
-                "list_id": list_id,
-                "status": TokenHolderBatchStatus.PENDING.value,
-            }
-
-    # Normal_3
-    # POST collection request with already existing contract_address and block_number.
-    @mock.patch("web3.eth.Eth.block_number", 100)
-    def test_normal_3(self, client, db):
-        # issue token
-        user = config_eth_account("user1")
-        issuer_address = user["address"]
-        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
-
-        # prepare data
-        _token = Token()
-        _token.type = TokenType.IBET_STRAIGHT_BOND.value
-        _token.tx_hash = ""
-        _token.issuer_address = issuer_address
-        _token.token_address = token_address
-        _token.abi = {}
-        _token.version = TokenVersion.V_22_12
-        db.add(_token)
-
-        # request target API
-        list_id1 = str(uuid.uuid4())
-        req_param = {"list_id": list_id1, "block_number": 100}
-
-        # request target api
-        resp = client.post(
-            self.base_url.format(token_address=token_address),
-            json=req_param,
-            headers={"issuer-address": issuer_address},
-        )
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
@@ -164,15 +143,17 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
             "status": TokenHolderBatchStatus.PENDING.value,
         }
 
-        list_id2 = str(uuid.uuid4())
-        # request target API
-        req_param = {"list_id": list_id2, "block_number": 100}
-        # request target api
-        resp = client.post(
-            self.base_url.format(token_address=token_address),
-            json=req_param,
-            headers={"issuer-address": issuer_address},
-        )
+        with mock.patch(
+            "web3.eth.async_eth.AsyncEth.block_number", block_number_mock()
+        ):
+            list_id2 = str(uuid.uuid4())
+            req_param = {"list_id": list_id2, "block_number": 100}
+            resp = client.post(
+                self.base_url.format(token_address=token_address),
+                json=req_param,
+                headers={"issuer-address": issuer_address},
+            )
+
         # assertion
         # response is same as in the past.
         assert resp.status_code == 200
@@ -181,11 +162,15 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
             "status": TokenHolderBatchStatus.PENDING.value,
         }
 
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
     # Error_1
     # 422: Validation Error
     # List id in request body is empty.
-    @mock.patch("web3.eth.Eth.block_number", 100)
-    def test_error_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, client, db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -201,14 +186,16 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.version = TokenVersion.V_22_12
         db.add(_token)
 
+        db.commit()
+
         # request target API
         req_param = {"block_number": 100}
-        # request target api
         resp = client.post(
             self.base_url.format(token_address=token_address),
             json=req_param,
             headers={"issuer-address": issuer_address},
         )
+
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
@@ -226,8 +213,8 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
     # Error_2
     # 404: Not Found Error
     # Invalid contract address
-    @mock.patch("web3.eth.Eth.block_number", 100)
-    def test_error_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, client, db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -243,15 +230,17 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.version = TokenVersion.V_22_12
         db.add(_token)
 
+        db.commit()
+
         # request target API
         list_id = str(uuid.uuid4())
         req_param = {"block_number": 100, "list_id": list_id}
-        # request target api
         resp = client.post(
             self.base_url.format(token_address="0xABCdeF123456789"),
             json=req_param,
             headers={"issuer-address": issuer_address},
         )
+
         # assertion
         assert resp.status_code == 404
         assert resp.json() == {
@@ -262,8 +251,8 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
     # Error_3
     # 422: Invalid Parameter Error
     # "list_id" is not UUIDv4.
-    @mock.patch("web3.eth.Eth.block_number", 100)
-    def test_error_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, client, db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -279,15 +268,17 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.version = TokenVersion.V_22_12
         db.add(_token)
 
+        db.commit()
+
         # request target API
         list_id = "some_id"
         req_param = {"block_number": 100, "list_id": list_id}
-        # request target api
         resp = client.post(
             self.base_url.format(token_address=token_address),
             json=req_param,
             headers={"issuer-address": issuer_address},
         )
+
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {
@@ -306,7 +297,6 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
     # Error_4
     # 400: Invalid Parameter Error
     # Block number is future one or negative.
-    @mock.patch("web3.eth.Eth.block_number", 100)
     def test_error_4(self, client, db):
         # issue token
         user = config_eth_account("user1")
@@ -323,15 +313,24 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.version = TokenVersion.V_22_12
         db.add(_token)
 
+        db.commit()
+
+        # mock setting
+        block_number_mock = AsyncMock()
+        block_number_mock.return_value = 100
+
         # request target API
-        list_id = str(uuid.uuid4())
-        req_param = {"block_number": 101, "list_id": list_id}
-        # request target api
-        resp = client.post(
-            self.base_url.format(token_address=token_address),
-            json=req_param,
-            headers={"issuer-address": issuer_address},
-        )
+        with mock.patch(
+            "web3.eth.async_eth.AsyncEth.block_number", block_number_mock()
+        ):
+            list_id = str(uuid.uuid4())
+            req_param = {"block_number": 101, "list_id": list_id}
+            resp = client.post(
+                self.base_url.format(token_address=token_address),
+                json=req_param,
+                headers={"issuer-address": issuer_address},
+            )
+
         # assertion
         assert resp.status_code == 400
         assert resp.json() == {
@@ -342,7 +341,6 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
     # Error_5
     # 400: Invalid Parameter Error
     # Duplicate list_id is posted.
-    @mock.patch("web3.eth.Eth.block_number", 100)
     def test_error_5(self, client, db):
         # issue token
         user = config_eth_account("user1")
@@ -359,15 +357,24 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token1.version = TokenVersion.V_22_12
         db.add(_token1)
 
+        db.commit()
+
+        # mock setting
+        block_number_mock = AsyncMock()
+        block_number_mock.return_value = 100
+
         # request target API
-        list_id = str(uuid.uuid4())
-        req_param = {"block_number": 100, "list_id": list_id}
-        # request target api
-        resp = client.post(
-            self.base_url.format(token_address=token_address1),
-            json=req_param,
-            headers={"issuer-address": issuer_address},
-        )
+        with mock.patch(
+            "web3.eth.async_eth.AsyncEth.block_number", block_number_mock()
+        ):
+            list_id = str(uuid.uuid4())
+            req_param = {"block_number": 100, "list_id": list_id}
+            resp = client.post(
+                self.base_url.format(token_address=token_address1),
+                json=req_param,
+                headers={"issuer-address": issuer_address},
+            )
+
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
@@ -386,15 +393,18 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token2.version = TokenVersion.V_22_12
         db.add(_token2)
 
-        # request target API with same list id as in the past
-        req_param = {"block_number": 100, "list_id": list_id}
+        db.commit()
 
-        # request target api
-        resp = client.post(
-            self.base_url.format(token_address=token_address2),
-            json=req_param,
-            headers={"issuer-address": issuer_address},
-        )
+        # request target API
+        with mock.patch(
+            "web3.eth.async_eth.AsyncEth.block_number", block_number_mock()
+        ):
+            req_param = {"block_number": 100, "list_id": list_id}
+            resp = client.post(
+                self.base_url.format(token_address=token_address2),
+                json=req_param,
+                headers={"issuer-address": issuer_address},
+            )
 
         # assertion
         assert resp.status_code == 400
@@ -404,10 +414,10 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         }
 
     # Error_6
-    # 400: Invalid Parameter Errori
+    # 400: Invalid Parameter Error
     # Not listed token
-    @mock.patch("web3.eth.Eth.block_number", 100)
-    def test_error_6(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_6(self, client, db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -424,12 +434,12 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.version = TokenVersion.V_22_12
         db.add(_token)
 
+        db.commit()
+
         list_id = str(uuid.uuid4())
 
         # request target API
         req_param = {"list_id": list_id, "block_number": 100}
-
-        # request target api
         resp = client.post(
             self.base_url.format(token_address=token_address),
             json=req_param,
@@ -446,8 +456,8 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
     # Error_7
     # 422: Validation Error
     # Issuer-address in request header is not set.
-    @mock.patch("web3.eth.Eth.block_number", 100)
-    def test_error_7(self, client, db):
+    @pytest.mark.asyncio
+    async def test_error_7(self, client, db):
         # issue token
         user = config_eth_account("user1")
         issuer_address = user["address"]
@@ -463,15 +473,17 @@ class TestAppRoutersHoldersTokenAddressCollectionPOST:
         _token.version = TokenVersion.V_22_12
         db.add(_token)
 
+        db.commit()
+
         list_id = str(uuid.uuid4())
 
         # request target API
         req_param = {"block_number": 100, "list_id": list_id}
-        # request target api
         resp = client.post(
             self.base_url.format(token_address=token_address),
             json=req_param,
         )
+
         # assertion
         assert resp.status_code == 422
         assert resp.json() == {

@@ -89,6 +89,8 @@ class TestAppRoutersNotificationsNoticeIdDELETE:
         )  # JST 2022/01/03
         db.add(_notification_4)
 
+        db.commit()
+
         # request target API
         resp = client.delete(
             self.base_url.format(notice_id="notice_id_2"),

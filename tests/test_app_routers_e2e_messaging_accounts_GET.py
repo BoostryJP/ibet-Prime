@@ -59,6 +59,8 @@ class TestAppRoutersE2EMessagingAccountsGET:
         db.add(_rsa_key)
         time.sleep(1)
 
+        db.commit()
+
         # request target api
         resp = client.get(
             self.base_url,
@@ -135,6 +137,8 @@ class TestAppRoutersE2EMessagingAccountsGET:
         _rsa_key.block_timestamp = datetime.utcnow()
         db.add(_rsa_key)
         time.sleep(1)
+
+        db.commit()
 
         # request target api
         resp = client.get(

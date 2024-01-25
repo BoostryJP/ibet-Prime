@@ -55,6 +55,8 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
         account.rsa_status = AccountRsaStatus.SET.value
         db.add(account)
 
+        db.commit()
+
         # request target API
         req_param = {
             "old_rsa_passphrase": E2EEUtils.encrypt(_old_password),
@@ -223,6 +225,8 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
         account.rsa_status = AccountRsaStatus.SET.value
         db.add(account)
 
+        db.commit()
+
         # request target API
         req_param = {
             "old_rsa_passphrase": E2EEUtils.encrypt("passwordtest"),
@@ -255,6 +259,8 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
         account.rsa_passphrase = E2EEUtils.encrypt(_old_password)
         account.rsa_status = AccountRsaStatus.SET.value
         db.add(account)
+
+        db.commit()
 
         # request target API
         req_param = {

@@ -47,6 +47,8 @@ class TestAppRoutersE2EMessagingMessagesGET:
             _account.account_address = e2e_messaging["to_address"]
             db.add(_account)
 
+        db.commit()
+
     ###########################################################################
     # Normal Case
     ###########################################################################

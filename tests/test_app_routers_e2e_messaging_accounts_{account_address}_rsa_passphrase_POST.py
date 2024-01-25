@@ -141,6 +141,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         db.add(_rsa_key)
         time.sleep(1)
 
+        db.commit()
+
         # request target API
         req_param = {
             "old_rsa_passphrase": E2EEUtils.encrypt(old_passphrase),
@@ -318,6 +320,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _account.eoa_password = E2EEUtils.encrypt("password")
         db.add(_account)
 
+        db.commit()
+
         # request target API
         req_param = {
             "old_rsa_passphrase": E2EEUtils.encrypt(old_passphrase),
@@ -357,6 +361,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _rsa_key.block_timestamp = datetime.utcnow()
         db.add(_rsa_key)
 
+        db.commit()
+
         # request target API
         req_param = {
             "old_rsa_passphrase": E2EEUtils.encrypt("passphrasetest"),
@@ -395,6 +401,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _rsa_key.rsa_passphrase = E2EEUtils.encrypt(old_passphrase)
         _rsa_key.block_timestamp = datetime.utcnow()
         db.add(_rsa_key)
+
+        db.commit()
 
         # request target API
         req_param = {

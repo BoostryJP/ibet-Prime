@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 import eth_keyfile
+import pytest
 from sqlalchemy import select
 
 from app.model.blockchain import IbetStraightBondContract
@@ -35,7 +36,8 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, client, db):
         _account = config_eth_account("user1")
         _issuer_address = _account["address"]
         _old_keyfile = _account["keyfile_json"]
@@ -49,6 +51,8 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
         account.eoa_password = E2EEUtils.encrypt(_old_password)
         account.rsa_status = AccountRsaStatus.UNSET.value
         db.add(account)
+
+        db.commit()
 
         # request target API
         req_param = {
@@ -84,7 +88,7 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
             "return_amount_test",
             "purpose_test",
         ]
-        IbetStraightBondContract().create(
+        await IbetStraightBondContract().create(
             args=arguments, tx_from=_issuer_address, private_key=private_key
         )
 
@@ -225,6 +229,8 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
         account.rsa_status = AccountRsaStatus.UNSET.value
         db.add(account)
 
+        db.commit()
+
         # request target API
         req_param = {
             "old_eoa_password": E2EEUtils.encrypt("passwordtest"),
@@ -255,6 +261,8 @@ class TestAppRoutersAccountsIssuerAddressEOAPasswordPOST:
         account.eoa_password = E2EEUtils.encrypt(_old_password)
         account.rsa_status = AccountRsaStatus.UNSET.value
         db.add(account)
+
+        db.commit()
 
         # request target API
         req_param = {

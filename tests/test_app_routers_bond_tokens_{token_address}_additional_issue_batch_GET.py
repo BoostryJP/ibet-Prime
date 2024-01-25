@@ -91,6 +91,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssueBatchGET:
         additional_issue_upload1.processed = False
         db.add(additional_issue_upload1)
 
+        db.commit()
+
         # request target API
         resp = client.get(self.base_url.format(token_address), headers={})
 
@@ -181,6 +183,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssueBatchGET:
         )
         additional_issue_upload5.processed = False
         db.add(additional_issue_upload5)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(token_address), headers={})
@@ -297,6 +301,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssueBatchGET:
         additional_issue_upload5.processed = False
         db.add(additional_issue_upload5)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(token_address),
@@ -398,6 +404,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssueBatchGET:
         )
         additional_issue_upload5.processed = False
         db.add(additional_issue_upload5)
+
+        db.commit()
 
         # request target API
         req_param = {"processed": False}
@@ -507,6 +515,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssueBatchGET:
         additional_issue_upload5.processed = False
         db.add(additional_issue_upload5)
 
+        db.commit()
+
         # request target API
         req_param = {"limit": 2, "offset": 2}
         resp = client.get(self.base_url.format(token_address), params=req_param)
@@ -607,6 +617,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssueBatchGET:
         additional_issue_upload5.processed = False
         db.add(additional_issue_upload5)
 
+        db.commit()
+
         # request target API
         req_param = {"sort_order": 0}
         resp = client.get(self.base_url.format(token_address), params=req_param)
@@ -672,6 +684,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssueBatchGET:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {"processed": "invalid_value"}

@@ -83,6 +83,8 @@ class TestAppRoutersBondTransfersGET:
             _idx_transfer.block_timestamp = self.test_block_timestamp[i]
             db.add(_idx_transfer)
 
+        db.commit()
+
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address))
 
@@ -187,6 +189,8 @@ class TestAppRoutersBondTransfersGET:
             _idx_transfer.data = None
             _idx_transfer.block_timestamp = self.test_block_timestamp[i]
             db.add(_idx_transfer)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -310,6 +314,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
@@ -424,6 +430,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address), params={"data": "unlo"}
@@ -515,6 +523,8 @@ class TestAppRoutersBondTransfersGET:
             _idx_transfer.data = None
             _idx_transfer.block_timestamp = self.test_block_timestamp[i]
             db.add(_idx_transfer)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -702,6 +712,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
@@ -860,6 +872,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.data = {"message": "unlock"}
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -1020,6 +1034,8 @@ class TestAppRoutersBondTransfersGET:
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
@@ -1159,6 +1175,8 @@ class TestAppRoutersBondTransfersGET:
         _token.token_status = 0
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address))

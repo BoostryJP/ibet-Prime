@@ -87,6 +87,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
         _record.block_timestamp = self.test_block_timestamp[0]
         db.add(_record)
 
+        db.commit()
+
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address))
 
@@ -140,6 +142,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
         _record.amount = self.test_amount[2]
         _record.block_timestamp = self.test_block_timestamp[2]
         db.add(_record)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address))
@@ -219,6 +223,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
         _record.amount = self.test_amount[2]
         _record.block_timestamp = self.test_block_timestamp[2]
         db.add(_record)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -305,6 +311,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
         _record.block_timestamp = self.test_block_timestamp[2]
         db.add(_record)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
@@ -358,6 +366,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemGET:
         _token.token_status = 0
         _token.version = TokenVersion.V_22_12
         db.add(_token)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address))

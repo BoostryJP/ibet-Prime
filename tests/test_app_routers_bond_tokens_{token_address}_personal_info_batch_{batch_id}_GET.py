@@ -125,6 +125,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoBatchBatchIdGET:
             }
             db.add(batch_register)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, self.upload_id_list[0]),

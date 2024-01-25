@@ -80,6 +80,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdGET:
         token_event.created = datetime_now_utc
         db.add(token_event)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(_token_address, event_id),
@@ -145,6 +147,8 @@ class TestAppRoutersBondTokensTokenAddressScheduledEventsScheduledEventIdGET:
         token_event.data = update_data
         token_event.created = datetime_now_utc
         db.add(token_event)
+
+        db.commit()
 
         # request target API
         resp = client.get(

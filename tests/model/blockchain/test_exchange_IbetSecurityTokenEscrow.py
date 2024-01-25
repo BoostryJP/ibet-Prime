@@ -83,7 +83,7 @@ def deploy_security_token_escrow_contract():
     return escrow_contract
 
 
-def issue_bond_token(issuer: dict, exchange_address: str):
+async def issue_bond_token(issuer: dict, exchange_address: str):
     issuer_address = issuer["address"]
     issuer_pk = decode_keyfile_json(
         raw_keyfile_json=issuer.get("keyfile_json"),
@@ -104,7 +104,7 @@ def issue_bond_token(issuer: dict, exchange_address: str):
         "リターン内容",
         "発行目的",
     ]
-    token_contract_address, abi, tx_hash = IbetStraightBondContract().create(
+    token_contract_address, abi, tx_hash = await IbetStraightBondContract().create(
         args=arguments, tx_from=issuer_address, private_key=issuer_pk
     )
     token_contract = ContractUtils.get_contract(
@@ -171,7 +171,8 @@ class TestApproveTransfer:
     # <Normal_1>
     # balance = 0, commitment = 0
     # Default value
-    def test_normal_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
         user1_account = config_eth_account("user1")
         user1_account_pk = decode_keyfile_json(
             raw_keyfile_json=user1_account["keyfile_json"],
@@ -186,7 +187,7 @@ class TestApproveTransfer:
 
         # deploy contract
         escrow_contract = deploy_security_token_escrow_contract()
-        token_contract = issue_bond_token(
+        token_contract = await issue_bond_token(
             issuer=user1_account, exchange_address=escrow_contract.address
         )
 
@@ -265,7 +266,7 @@ class TestApproveTransfer:
 
         # test IbetSecurityTokenEscrow.approve_transfer
         security_token_escrow = IbetSecurityTokenEscrow(escrow_contract.address)
-        tx_hash, tx_receipt = security_token_escrow.approve_transfer(
+        tx_hash, tx_receipt = await security_token_escrow.approve_transfer(
             data=ApproveTransferParams(escrow_id=1, data="test"),
             tx_from=user1_account["address"],
             private_key=user1_account_pk,
@@ -275,13 +276,13 @@ class TestApproveTransfer:
         assert isinstance(tx_hash, str) and int(tx_hash, 16) > 0
         assert tx_receipt["status"] == 1
 
-        user2_balance = security_token_escrow.get_account_balance(
+        user2_balance = await security_token_escrow.get_account_balance(
             user2_account["address"], token_contract.address
         )
         assert user2_balance["balance"] == 90
         assert user2_balance["commitment"] == 0
 
-        user3_balance = security_token_escrow.get_account_balance(
+        user3_balance = await security_token_escrow.get_account_balance(
             user3_account["address"], token_contract.address
         )
         assert user3_balance["balance"] == 10
@@ -293,7 +294,8 @@ class TestApproveTransfer:
 
     # <Error_1>
     # Send Transaction Failed with HTTP Connection Error
-    def test_error_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, db):
         user1_account = config_eth_account("user1")
         user1_account_pk = decode_keyfile_json(
             raw_keyfile_json=user1_account["keyfile_json"],
@@ -308,7 +310,7 @@ class TestApproveTransfer:
 
         # deploy contract
         escrow_contract = deploy_security_token_escrow_contract()
-        token_contract = issue_bond_token(
+        token_contract = await issue_bond_token(
             issuer=user1_account, exchange_address=escrow_contract.address
         )
 
@@ -387,13 +389,13 @@ class TestApproveTransfer:
 
         # mock
         InspectionMock = mock.patch(
-            "web3.eth.Eth.wait_for_transaction_receipt",
+            "web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             MagicMock(side_effect=ConnectionError),
         )
         # test IbetSecurityTokenEscrow.approve_transfer
         with InspectionMock, pytest.raises(SendTransactionError) as exc_info:
             security_token_escrow = IbetSecurityTokenEscrow(escrow_contract.address)
-            security_token_escrow.approve_transfer(
+            await security_token_escrow.approve_transfer(
                 data=ApproveTransferParams(escrow_id=1, data="test"),
                 tx_from=user1_account["address"],
                 private_key=user1_account_pk,
@@ -404,7 +406,8 @@ class TestApproveTransfer:
 
     # <Error_2>
     # Timeout Error
-    def test_error_2(self, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, db):
         user1_account = config_eth_account("user1")
         user1_account_pk = decode_keyfile_json(
             raw_keyfile_json=user1_account["keyfile_json"],
@@ -413,20 +416,20 @@ class TestApproveTransfer:
 
         # deploy contract
         exchange_contract = deploy_security_token_escrow_contract()
-        _ = issue_bond_token(
+        _ = await issue_bond_token(
             issuer=user1_account, exchange_address=exchange_contract.address
         )
 
         # test IbetSecurityTokenEscrow.approve_transfer
         with pytest.raises(SendTransactionError) as exc_info:
             with mock.patch(
-                "app.utils.contract_utils.ContractUtils.send_transaction",
+                "app.utils.contract_utils.AsyncContractUtils.send_transaction",
                 MagicMock(side_effect=TimeExhausted("Timeout Error test")),
             ):
                 security_token_escrow = IbetSecurityTokenEscrow(
                     exchange_contract.address
                 )
-                security_token_escrow.approve_transfer(
+                await security_token_escrow.approve_transfer(
                     data=ApproveTransferParams(escrow_id=0, data="test"),
                     tx_from=user1_account["address"],
                     private_key=user1_account_pk,
@@ -439,7 +442,8 @@ class TestApproveTransfer:
     # <Error_3>
     # Transaction REVERT
     # Not apply
-    def test_error_3(self, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, db):
         user1_account = config_eth_account("user1")
         user1_account_pk = decode_keyfile_json(
             raw_keyfile_json=user1_account["keyfile_json"],
@@ -448,7 +452,7 @@ class TestApproveTransfer:
 
         # deploy contract
         exchange_contract = deploy_security_token_escrow_contract()
-        _ = issue_bond_token(
+        _ = await issue_bond_token(
             issuer=user1_account, exchange_address=exchange_contract.address
         )
 
@@ -457,14 +461,14 @@ class TestApproveTransfer:
         #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
         #         geth: ContractLogicError("execution reverted")
         InspectionMock = mock.patch(
-            "web3.eth.Eth.call",
+            "web3.eth.async_eth.AsyncEth.call",
             MagicMock(side_effect=ContractLogicError("execution reverted")),
         )
 
         # test IbetSecurityTokenEscrow.approve_transfer
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
             security_token_escrow = IbetSecurityTokenEscrow(exchange_contract.address)
-            security_token_escrow.approve_transfer(
+            await security_token_escrow.approve_transfer(
                 data=ApproveTransferParams(escrow_id=0, data="test"),
                 tx_from=user1_account["address"],
                 private_key=user1_account_pk,

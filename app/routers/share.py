@@ -43,7 +43,7 @@ from sqlalchemy.orm import aliased
 
 import config
 from app import log
-from app.database import DBSession
+from app.database import DBAsyncSession
 from app.exceptions import (
     AuthorizationError,
     ContractRevertError,
@@ -155,7 +155,7 @@ from app.utils.check_utils import (
     eoa_password_is_encrypted_value,
     validate_headers,
 )
-from app.utils.contract_utils import ContractUtils
+from app.utils.contract_utils import AsyncContractUtils
 from app.utils.docs_utils import get_routers_responses
 from app.utils.fastapi_utils import json_response
 
@@ -177,8 +177,8 @@ utc_tz = timezone("UTC")
         422, 401, AuthorizationError, SendTransactionError, ContractRevertError
     ),
 )
-def issue_token(
-    db: DBSession,
+async def issue_token(
+    db: DBAsyncSession,
     request: Request,
     token: IbetShareCreate,
     issuer_address: str = Header(...),
@@ -194,7 +194,7 @@ def issue_token(
     )
 
     # Authentication
-    _account, decrypt_password = check_auth(
+    _account, decrypt_password = await check_auth(
         request=request,
         db=db,
         issuer_address=issuer_address,
@@ -232,7 +232,7 @@ def issue_token(
         token.principal_value,
     ]
     try:
-        contract_address, abi, tx_hash = IbetShareContract().create(
+        contract_address, abi, tx_hash = await IbetShareContract().create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
     except SendTransactionError as e:
@@ -273,7 +273,7 @@ def issue_token(
     else:
         # Register token_address token list
         try:
-            TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
+            await TokenListContract(config.TOKEN_LIST_CONTRACT_ADDRESS).register(
                 token_address=contract_address,
                 token_template=TokenType.IBET_SHARE.value,
                 tx_from=issuer_address,
@@ -293,7 +293,7 @@ def issue_token(
         db.add(_position)
 
         # Insert issuer's UTXO data
-        block = ContractUtils.get_block_by_transaction_hash(tx_hash)
+        block = await AsyncContractUtils.get_block_by_transaction_hash(tx_hash)
         _utxo = UTXO()
         _utxo.transaction_hash = tx_hash
         _utxo.account_address = issuer_address
@@ -326,7 +326,7 @@ def issue_token(
     operation_log.operation_category = TokenUpdateOperationCategory.ISSUE.value
     db.add(operation_log)
 
-    db.commit()
+    await db.commit()
 
     return json_response(
         {"token_address": _token.token_address, "token_status": token_status}
@@ -339,8 +339,8 @@ def issue_token(
     response_model=List[IbetShareResponse],
     responses=get_routers_responses(422),
 )
-def list_all_tokens(
-    db: DBSession,
+async def list_all_tokens(
+    db: DBAsyncSession,
     issuer_address: Optional[str] = Header(None),
 ):
     # Validate Headers
@@ -349,15 +349,17 @@ def list_all_tokens(
     """List all issued tokens"""
     # Get issued token list
     if issuer_address is None:
-        tokens: Sequence[Token] = db.scalars(
-            select(Token).where(Token.type == TokenType.IBET_SHARE)
+        tokens: Sequence[Token] = (
+            await db.scalars(select(Token).where(Token.type == TokenType.IBET_SHARE))
         ).all()
     else:
-        tokens: Sequence[Token] = db.scalars(
-            select(Token).where(
-                and_(
-                    Token.type == TokenType.IBET_SHARE,
-                    Token.issuer_address == issuer_address,
+        tokens: Sequence[Token] = (
+            await db.scalars(
+                select(Token).where(
+                    and_(
+                        Token.type == TokenType.IBET_SHARE,
+                        Token.issuer_address == issuer_address,
+                    )
                 )
             )
         ).all()
@@ -365,7 +367,7 @@ def list_all_tokens(
     share_tokens = []
     for token in tokens:
         # Get contract data
-        share_token = IbetShareContract(token.token_address).get().__dict__
+        share_token = (await IbetShareContract(token.token_address).get()).__dict__
         issue_datetime_utc = timezone("UTC").localize(token.created)
         share_token["issue_datetime"] = issue_datetime_utc.astimezone(
             local_tz
@@ -384,19 +386,21 @@ def list_all_tokens(
     response_model=IbetShareResponse,
     responses=get_routers_responses(404, InvalidParameterError),
 )
-def retrieve_token(db: DBSession, token_address: str):
+async def retrieve_token(db: DBAsyncSession, token_address: str):
     """Retrieve token"""
     # Get Token
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.type == TokenType.IBET_SHARE,
-                Token.token_address == token_address,
-                Token.token_status != 2,
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -404,7 +408,7 @@ def retrieve_token(db: DBSession, token_address: str):
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get contract data
-    share_token = IbetShareContract(token_address).get().__dict__
+    share_token = (await IbetShareContract(token_address).get()).__dict__
     issue_datetime_utc = timezone("UTC").localize(_token.created)
     share_token["issue_datetime"] = issue_datetime_utc.astimezone(local_tz).isoformat()
     share_token["token_status"] = _token.token_status
@@ -428,8 +432,8 @@ def retrieve_token(db: DBSession, token_address: str):
         ContractRevertError,
     ),
 )
-def update_token(
-    db: DBSession,
+async def update_token(
+    db: DBAsyncSession,
     request: Request,
     token_address: str,
     token: IbetShareUpdate,
@@ -446,7 +450,7 @@ def update_token(
     )
 
     # Authentication
-    _account, decrypt_password = check_auth(
+    _account, decrypt_password = await check_auth(
         request=request,
         db=db,
         issuer_address=issuer_address,
@@ -461,17 +465,19 @@ def update_token(
     )
 
     # Get Token
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.type == TokenType.IBET_SHARE,
-                Token.issuer_address == issuer_address,
-                Token.token_address == token_address,
-                Token.token_status != 2,
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.issuer_address == issuer_address,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -481,8 +487,8 @@ def update_token(
     # Send transaction
     try:
         token_contract = IbetShareContract(token_address)
-        original_contents = token_contract.get().__dict__
-        token_contract.update(
+        original_contents = (await token_contract.get()).__dict__
+        await token_contract.update(
             data=UpdateParams(**token.model_dump()),
             tx_from=issuer_address,
             private_key=private_key,
@@ -500,7 +506,7 @@ def update_token(
     operation_log.operation_category = TokenUpdateOperationCategory.UPDATE.value
     db.add(operation_log)
 
-    db.commit()
+    await db.commit()
     return
 
 
@@ -510,8 +516,8 @@ def update_token(
     response_model=ListTokenOperationLogHistoryResponse,
     responses=get_routers_responses(404, InvalidParameterError),
 )
-def list_share_operation_log_history(
-    db: DBSession,
+async def list_share_operation_log_history(
+    db: DBAsyncSession,
     token_address: str,
     request_query: ListTokenOperationLogHistoryQuery = Depends(),
 ):
@@ -522,7 +528,7 @@ def list_share_operation_log_history(
             TokenUpdateOperationLog.token_address == token_address,
         )
     )
-    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     if request_query.operation_category:
         stmt = stmt.where(
@@ -546,7 +552,7 @@ def list_share_operation_log_history(
             <= local_tz.localize(request_query.created_to).astimezone(utc_tz)
         )
 
-    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
     sort_attr = getattr(TokenUpdateOperationLog, request_query.sort_item, None)
@@ -564,7 +570,7 @@ def list_share_operation_log_history(
     if request_query.offset is not None:
         stmt = stmt.offset(request_query.offset)
 
-    history: Sequence[TokenUpdateOperationLog] = db.scalars(stmt).all()
+    history: Sequence[TokenUpdateOperationLog] = (await db.scalars(stmt)).all()
 
     return json_response(
         {
@@ -593,8 +599,8 @@ def list_share_operation_log_history(
     response_model=IssueRedeemHistoryResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-def list_additional_issuance_history(
-    db: DBSession,
+async def list_additional_issuance_history(
+    db: DBAsyncSession,
     token_address: str,
     request_query: ListAdditionalIssuanceHistoryQuery = Depends(),
 ):
@@ -605,16 +611,18 @@ def list_additional_issuance_history(
     limit = request_query.limit
 
     # Get token
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.type == TokenType.IBET_SHARE,
-                Token.token_address == token_address,
-                Token.token_status != 2,
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -628,7 +636,7 @@ def list_additional_issuance_history(
             IDXIssueRedeem.token_address == token_address,
         )
     )
-    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
     count = total
 
     # Sort
@@ -647,7 +655,7 @@ def list_additional_issuance_history(
     if offset is not None:
         stmt = stmt.offset(offset)
 
-    _events: Sequence[IDXIssueRedeem] = db.scalars(stmt).all()
+    _events: Sequence[IDXIssueRedeem] = (await db.scalars(stmt)).all()
 
     history = []
     for _event in _events:
@@ -690,8 +698,8 @@ def list_additional_issuance_history(
         ContractRevertError,
     ),
 )
-def additional_issue(
-    db: DBSession,
+async def additional_issue(
+    db: DBAsyncSession,
     request: Request,
     token_address: str,
     data: IbetShareAdditionalIssue,
@@ -708,7 +716,7 @@ def additional_issue(
     )
 
     # Authentication
-    _account, decrypt_password = check_auth(
+    _account, decrypt_password = await check_auth(
         request=request,
         db=db,
         issuer_address=issuer_address,
@@ -723,17 +731,19 @@ def additional_issue(
     )
 
     # Get Token
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.type == TokenType.IBET_SHARE,
-                Token.issuer_address == issuer_address,
-                Token.token_address == token_address,
-                Token.token_status != 2,
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.issuer_address == issuer_address,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -742,7 +752,7 @@ def additional_issue(
 
     # Send transaction
     try:
-        IbetShareContract(token_address).additional_issue(
+        await IbetShareContract(token_address).additional_issue(
             data=AdditionalIssueParams(**data.model_dump()),
             tx_from=issuer_address,
             private_key=private_key,
@@ -759,8 +769,8 @@ def additional_issue(
     response_model=ListBatchIssueRedeemUploadResponse,
     responses=get_routers_responses(422),
 )
-def list_all_additional_issue_upload(
-    db: DBSession,
+async def list_all_additional_issue_upload(
+    db: DBAsyncSession,
     token_address: str,
     get_query: ListAllAdditionalIssueUploadQuery = Depends(),
     issuer_address: Optional[str] = Header(None),
@@ -782,12 +792,12 @@ def list_all_additional_issue_upload(
     if issuer_address is not None:
         stmt = stmt.where(BatchIssueRedeemUpload.issuer_address == issuer_address)
 
-    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     if processed is not None:
         stmt = stmt.where(BatchIssueRedeemUpload.processed == processed)
 
-    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
     if sort_order == 0:  # ASC
@@ -801,7 +811,7 @@ def list_all_additional_issue_upload(
     if offset is not None:
         stmt = stmt.offset(offset)
 
-    _upload_list: Sequence[BatchIssueRedeemUpload] = db.scalars(stmt).all()
+    _upload_list: Sequence[BatchIssueRedeemUpload] = (await db.scalars(stmt)).all()
 
     uploads = []
     for _upload in _upload_list:
@@ -837,8 +847,8 @@ def list_all_additional_issue_upload(
         422, 401, 404, AuthorizationError, InvalidParameterError
     ),
 )
-def additional_issue_in_batch(
-    db: DBSession,
+async def additional_issue_in_batch(
+    db: DBAsyncSession,
     request: Request,
     token_address: str,
     data: List[IbetShareAdditionalIssue],
@@ -859,7 +869,7 @@ def additional_issue_in_batch(
         raise InvalidParameterError("list length must be at least one")
 
     # Authentication
-    check_auth(
+    await check_auth(
         request=request,
         db=db,
         issuer_address=issuer_address,
@@ -868,17 +878,19 @@ def additional_issue_in_batch(
     )
 
     # Check token status
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.type == TokenType.IBET_SHARE,
-                Token.issuer_address == issuer_address,
-                Token.token_address == token_address,
-                Token.token_status != 2,
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.issuer_address == issuer_address,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -906,7 +918,7 @@ def additional_issue_in_batch(
         _batch_issue.status = 0
         db.add(_batch_issue)
 
-    db.commit()
+    await db.commit()
 
     return json_response({"batch_id": str(upload_id)})
 
@@ -917,8 +929,8 @@ def additional_issue_in_batch(
     response_model=GetBatchIssueRedeemResponse,
     responses=get_routers_responses(422, 404),
 )
-def retrieve_batch_additional_issue(
-    db: DBSession,
+async def retrieve_batch_additional_issue(
+    db: DBAsyncSession,
     token_address: str,
     batch_id: str,
     issuer_address: str = Header(...),
@@ -929,35 +941,40 @@ def retrieve_batch_additional_issue(
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Upload Existence Check
-    batch: Optional[BatchIssueRedeemUpload] = db.scalars(
-        select(BatchIssueRedeemUpload)
-        .where(
-            and_(
-                BatchIssueRedeemUpload.upload_id == batch_id,
-                BatchIssueRedeemUpload.issuer_address == issuer_address,
-                BatchIssueRedeemUpload.token_type == TokenType.IBET_SHARE,
-                BatchIssueRedeemUpload.token_address == token_address,
-                BatchIssueRedeemUpload.category
-                == BatchIssueRedeemProcessingCategory.ISSUE,
+    batch: Optional[BatchIssueRedeemUpload] = (
+        await db.scalars(
+            select(BatchIssueRedeemUpload)
+            .where(
+                and_(
+                    BatchIssueRedeemUpload.upload_id == batch_id,
+                    BatchIssueRedeemUpload.issuer_address == issuer_address,
+                    BatchIssueRedeemUpload.token_type == TokenType.IBET_SHARE,
+                    BatchIssueRedeemUpload.token_address == token_address,
+                    BatchIssueRedeemUpload.category
+                    == BatchIssueRedeemProcessingCategory.ISSUE,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if batch is None:
         raise HTTPException(status_code=404, detail="batch not found")
 
     # Get Batch Records
     record_list: Sequence[tuple[BatchIssueRedeem, IDXPersonalInfo | None]] = (
-        db.execute(
-            select(BatchIssueRedeem, IDXPersonalInfo)
-            .outerjoin(
-                IDXPersonalInfo,
-                and_(
-                    BatchIssueRedeem.account_address == IDXPersonalInfo.account_address,
-                    IDXPersonalInfo.issuer_address == issuer_address,
-                ),
+        (
+            await db.execute(
+                select(BatchIssueRedeem, IDXPersonalInfo)
+                .outerjoin(
+                    IDXPersonalInfo,
+                    and_(
+                        BatchIssueRedeem.account_address
+                        == IDXPersonalInfo.account_address,
+                        IDXPersonalInfo.issuer_address == issuer_address,
+                    ),
+                )
+                .where(BatchIssueRedeem.upload_id == batch_id)
             )
-            .where(BatchIssueRedeem.upload_id == batch_id)
         )
         .tuples()
         .all()
@@ -998,8 +1015,8 @@ def retrieve_batch_additional_issue(
     response_model=IssueRedeemHistoryResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-def list_redeem_history(
-    db: DBSession,
+async def list_redeem_history(
+    db: DBAsyncSession,
     token_address: str,
     get_query: ListRedeemHistoryQuery = Depends(),
 ):
@@ -1010,16 +1027,18 @@ def list_redeem_history(
     limit = get_query.limit
 
     # Get token
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.type == TokenType.IBET_SHARE,
-                Token.token_address == token_address,
-                Token.token_status != 2,
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -1033,7 +1052,7 @@ def list_redeem_history(
             IDXIssueRedeem.token_address == token_address,
         )
     )
-    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
     count = total
 
     # Sort
@@ -1052,7 +1071,7 @@ def list_redeem_history(
     if offset is not None:
         stmt = stmt.offset(offset)
 
-    _events: Sequence[IDXIssueRedeem] = db.scalars(stmt).all()
+    _events: Sequence[IDXIssueRedeem] = (await db.scalars(stmt)).all()
 
     history = []
     for _event in _events:
@@ -1095,8 +1114,8 @@ def list_redeem_history(
         ContractRevertError,
     ),
 )
-def redeem_token(
-    db: DBSession,
+async def redeem_token(
+    db: DBAsyncSession,
     request: Request,
     token_address: str,
     data: IbetShareRedeem,
@@ -1113,7 +1132,7 @@ def redeem_token(
     )
 
     # Authentication
-    _account, decrypt_password = check_auth(
+    _account, decrypt_password = await check_auth(
         request=request,
         db=db,
         issuer_address=issuer_address,
@@ -1128,17 +1147,19 @@ def redeem_token(
     )
 
     # Get Token
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.type == TokenType.IBET_SHARE,
-                Token.issuer_address == issuer_address,
-                Token.token_address == token_address,
-                Token.token_status != 2,
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.issuer_address == issuer_address,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -1147,7 +1168,7 @@ def redeem_token(
 
     # Send transaction
     try:
-        IbetShareContract(token_address).redeem(
+        await IbetShareContract(token_address).redeem(
             data=RedeemParams(**data.model_dump()),
             tx_from=issuer_address,
             private_key=private_key,
@@ -1164,8 +1185,8 @@ def redeem_token(
     response_model=ListBatchIssueRedeemUploadResponse,
     responses=get_routers_responses(422),
 )
-def list_all_redeem_upload(
-    db: DBSession,
+async def list_all_redeem_upload(
+    db: DBAsyncSession,
     token_address: str,
     get_query: ListAllRedeemUploadQuery = Depends(),
     issuer_address: Optional[str] = Header(None),
@@ -1188,12 +1209,12 @@ def list_all_redeem_upload(
     if issuer_address is not None:
         stmt = stmt.where(BatchIssueRedeemUpload.issuer_address == issuer_address)
 
-    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     if processed is not None:
         stmt = stmt.where(BatchIssueRedeemUpload.processed == processed)
 
-    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
     if sort_order == 0:  # ASC
@@ -1207,7 +1228,7 @@ def list_all_redeem_upload(
     if offset is not None:
         stmt = stmt.offset(offset)
 
-    _upload_list: Sequence[BatchIssueRedeemUpload] = db.scalars(stmt).all()
+    _upload_list: Sequence[BatchIssueRedeemUpload] = (await db.scalars(stmt)).all()
 
     uploads = []
     for _upload in _upload_list:
@@ -1243,8 +1264,8 @@ def list_all_redeem_upload(
         422, 401, 404, AuthorizationError, InvalidParameterError
     ),
 )
-def redeem_token_in_batch(
-    db: DBSession,
+async def redeem_token_in_batch(
+    db: DBAsyncSession,
     request: Request,
     token_address: str,
     data: List[IbetShareRedeem],
@@ -1265,7 +1286,7 @@ def redeem_token_in_batch(
         raise InvalidParameterError("list length must be at least one")
 
     # Authentication
-    check_auth(
+    await check_auth(
         request=request,
         db=db,
         issuer_address=issuer_address,
@@ -1274,17 +1295,19 @@ def redeem_token_in_batch(
     )
 
     # Check token status
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.type == TokenType.IBET_SHARE,
-                Token.issuer_address == issuer_address,
-                Token.token_address == token_address,
-                Token.token_status != 2,
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.issuer_address == issuer_address,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -1312,7 +1335,7 @@ def redeem_token_in_batch(
         _batch_issue.status = 0
         db.add(_batch_issue)
 
-    db.commit()
+    await db.commit()
 
     return json_response({"batch_id": str(upload_id)})
 
@@ -1323,8 +1346,8 @@ def redeem_token_in_batch(
     response_model=GetBatchIssueRedeemResponse,
     responses=get_routers_responses(422, 404),
 )
-def retrieve_batch_redeem(
-    db: DBSession,
+async def retrieve_batch_redeem(
+    db: DBAsyncSession,
     token_address: str,
     batch_id: str,
     issuer_address: str = Header(...),
@@ -1335,35 +1358,40 @@ def retrieve_batch_redeem(
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Upload Existence Check
-    batch: Optional[BatchIssueRedeemUpload] = db.scalars(
-        select(BatchIssueRedeemUpload)
-        .where(
-            and_(
-                BatchIssueRedeemUpload.upload_id == batch_id,
-                BatchIssueRedeemUpload.issuer_address == issuer_address,
-                BatchIssueRedeemUpload.token_type == TokenType.IBET_SHARE,
-                BatchIssueRedeemUpload.token_address == token_address,
-                BatchIssueRedeemUpload.category
-                == BatchIssueRedeemProcessingCategory.REDEEM,
+    batch: Optional[BatchIssueRedeemUpload] = (
+        await db.scalars(
+            select(BatchIssueRedeemUpload)
+            .where(
+                and_(
+                    BatchIssueRedeemUpload.upload_id == batch_id,
+                    BatchIssueRedeemUpload.issuer_address == issuer_address,
+                    BatchIssueRedeemUpload.token_type == TokenType.IBET_SHARE,
+                    BatchIssueRedeemUpload.token_address == token_address,
+                    BatchIssueRedeemUpload.category
+                    == BatchIssueRedeemProcessingCategory.REDEEM,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if batch is None:
         raise HTTPException(status_code=404, detail="batch not found")
 
     # Get Batch Records
     record_list: Sequence[tuple[BatchIssueRedeem, IDXPersonalInfo | None]] = (
-        db.execute(
-            select(BatchIssueRedeem, IDXPersonalInfo)
-            .outerjoin(
-                IDXPersonalInfo,
-                and_(
-                    BatchIssueRedeem.account_address == IDXPersonalInfo.account_address,
-                    IDXPersonalInfo.issuer_address == issuer_address,
-                ),
+        (
+            await db.execute(
+                select(BatchIssueRedeem, IDXPersonalInfo)
+                .outerjoin(
+                    IDXPersonalInfo,
+                    and_(
+                        BatchIssueRedeem.account_address
+                        == IDXPersonalInfo.account_address,
+                        IDXPersonalInfo.issuer_address == issuer_address,
+                    ),
+                )
+                .where(BatchIssueRedeem.upload_id == batch_id)
             )
-            .where(BatchIssueRedeem.upload_id == batch_id)
         )
         .tuples()
         .all()
@@ -1403,35 +1431,39 @@ def retrieve_batch_redeem(
     "/tokens/{token_address}/scheduled_events",
     response_model=List[ScheduledEventResponse],
 )
-def list_all_scheduled_events(
-    db: DBSession,
+async def list_all_scheduled_events(
+    db: DBAsyncSession,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
 ):
     """List all scheduled update events"""
 
     if issuer_address is None:
-        _token_events: Sequence[ScheduledEvents] = db.scalars(
-            select(ScheduledEvents)
-            .where(
-                and_(
-                    ScheduledEvents.token_type == TokenType.IBET_SHARE,
-                    ScheduledEvents.token_address == token_address,
+        _token_events: Sequence[ScheduledEvents] = (
+            await db.scalars(
+                select(ScheduledEvents)
+                .where(
+                    and_(
+                        ScheduledEvents.token_type == TokenType.IBET_SHARE,
+                        ScheduledEvents.token_address == token_address,
+                    )
                 )
+                .order_by(ScheduledEvents.id)
             )
-            .order_by(ScheduledEvents.id)
         ).all()
     else:
-        _token_events: Sequence[ScheduledEvents] = db.scalars(
-            select(ScheduledEvents)
-            .where(
-                and_(
-                    ScheduledEvents.token_type == TokenType.IBET_SHARE,
-                    ScheduledEvents.issuer_address == issuer_address,
-                    ScheduledEvents.token_address == token_address,
+        _token_events: Sequence[ScheduledEvents] = (
+            await db.scalars(
+                select(ScheduledEvents)
+                .where(
+                    and_(
+                        ScheduledEvents.token_type == TokenType.IBET_SHARE,
+                        ScheduledEvents.issuer_address == issuer_address,
+                        ScheduledEvents.token_address == token_address,
+                    )
                 )
+                .order_by(ScheduledEvents.id)
             )
-            .order_by(ScheduledEvents.id)
         ).all()
 
     token_events = []
@@ -1465,8 +1497,8 @@ def list_all_scheduled_events(
         422, 401, 404, AuthorizationError, InvalidParameterError
     ),
 )
-def schedule_new_update_event(
-    db: DBSession,
+async def schedule_new_update_event(
+    db: DBAsyncSession,
     request: Request,
     token_address: str,
     event_data: IbetShareScheduledUpdate,
@@ -1483,7 +1515,7 @@ def schedule_new_update_event(
     )
 
     # Authentication
-    check_auth(
+    await check_auth(
         request=request,
         db=db,
         issuer_address=issuer_address,
@@ -1492,17 +1524,19 @@ def schedule_new_update_event(
     )
 
     # Verify that the token is issued by the issuer
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.type == TokenType.IBET_SHARE,
-                Token.issuer_address == issuer_address,
-                Token.token_address == token_address,
-                Token.token_status != 2,
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.issuer_address == issuer_address,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -1520,7 +1554,8 @@ def schedule_new_update_event(
     _scheduled_event.data = event_data.data.model_dump()
     _scheduled_event.status = 0
     db.add(_scheduled_event)
-    db.commit()
+
+    await db.commit()
 
     return json_response({"scheduled_event_id": _scheduled_event.event_id})
 
@@ -1531,8 +1566,8 @@ def schedule_new_update_event(
     response_model=ScheduledEventResponse,
     responses=get_routers_responses(404),
 )
-def retrieve_token_event(
-    db: DBSession,
+async def retrieve_token_event(
+    db: DBAsyncSession,
     token_address: str,
     scheduled_event_id: str,
     issuer_address: Optional[str] = Header(None),
@@ -1540,29 +1575,33 @@ def retrieve_token_event(
     """Retrieve a scheduled token event"""
 
     if issuer_address is None:
-        _token_event: ScheduledEvents | None = db.scalars(
-            select(ScheduledEvents)
-            .where(
-                and_(
-                    ScheduledEvents.token_type == TokenType.IBET_SHARE,
-                    ScheduledEvents.event_id == scheduled_event_id,
-                    ScheduledEvents.token_address == token_address,
+        _token_event: ScheduledEvents | None = (
+            await db.scalars(
+                select(ScheduledEvents)
+                .where(
+                    and_(
+                        ScheduledEvents.token_type == TokenType.IBET_SHARE,
+                        ScheduledEvents.event_id == scheduled_event_id,
+                        ScheduledEvents.token_address == token_address,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
     else:
-        _token_event: ScheduledEvents | None = db.scalars(
-            select(ScheduledEvents)
-            .where(
-                and_(
-                    ScheduledEvents.token_type == TokenType.IBET_SHARE,
-                    ScheduledEvents.event_id == scheduled_event_id,
-                    ScheduledEvents.issuer_address == issuer_address,
-                    ScheduledEvents.token_address == token_address,
+        _token_event: ScheduledEvents | None = (
+            await db.scalars(
+                select(ScheduledEvents)
+                .where(
+                    and_(
+                        ScheduledEvents.token_type == TokenType.IBET_SHARE,
+                        ScheduledEvents.event_id == scheduled_event_id,
+                        ScheduledEvents.issuer_address == issuer_address,
+                        ScheduledEvents.token_address == token_address,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
     if _token_event is None:
         raise HTTPException(status_code=404, detail="event not found")
@@ -1591,8 +1630,8 @@ def retrieve_token_event(
     response_model=ScheduledEventResponse,
     responses=get_routers_responses(422, 401, 404, AuthorizationError),
 )
-def delete_scheduled_event(
-    db: DBSession,
+async def delete_scheduled_event(
+    db: DBAsyncSession,
     request: Request,
     token_address: str,
     scheduled_event_id: str,
@@ -1609,7 +1648,7 @@ def delete_scheduled_event(
     )
 
     # Authentication
-    check_auth(
+    await check_auth(
         request=request,
         db=db,
         issuer_address=issuer_address,
@@ -1618,17 +1657,19 @@ def delete_scheduled_event(
     )
 
     # Delete an event
-    _token_event: ScheduledEvents | None = db.scalars(
-        select(ScheduledEvents)
-        .where(
-            and_(
-                ScheduledEvents.token_type == TokenType.IBET_SHARE,
-                ScheduledEvents.event_id == scheduled_event_id,
-                ScheduledEvents.issuer_address == issuer_address,
-                ScheduledEvents.token_address == token_address,
+    _token_event: ScheduledEvents | None = (
+        await db.scalars(
+            select(ScheduledEvents)
+            .where(
+                and_(
+                    ScheduledEvents.token_type == TokenType.IBET_SHARE,
+                    ScheduledEvents.event_id == scheduled_event_id,
+                    ScheduledEvents.issuer_address == issuer_address,
+                    ScheduledEvents.token_address == token_address,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token_event is None:
         raise HTTPException(status_code=404, detail="event not found")
@@ -1646,8 +1687,8 @@ def delete_scheduled_event(
         "created": created_utc.astimezone(local_tz).isoformat(),
     }
 
-    db.delete(_token_event)
-    db.commit()
+    await db.delete(_token_event)
+    await db.commit()
 
     return json_response(rtn)
 
@@ -1658,8 +1699,8 @@ def delete_scheduled_event(
     response_model=HoldersResponse,
     responses=get_routers_responses(422, InvalidParameterError, 404),
 )
-def list_all_holders(
-    db: DBSession,
+async def list_all_holders(
+    db: DBAsyncSession,
     token_address: str,
     get_query: ListAllHoldersQuery = Depends(),
     issuer_address: str = Header(...),
@@ -1674,24 +1715,28 @@ def list_all_holders(
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get Account
-    _account = db.scalars(
-        select(Account).where(Account.issuer_address == issuer_address).limit(1)
+    _account = (
+        await db.scalars(
+            select(Account).where(Account.issuer_address == issuer_address).limit(1)
+        )
     ).first()
     if _account is None:
         raise InvalidParameterError("issuer does not exist")
 
     # Get Token
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.type == TokenType.IBET_SHARE,
-                Token.issuer_address == issuer_address,
-                Token.token_address == token_address,
-                Token.token_status != 2,
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.issuer_address == issuer_address,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -1720,7 +1765,7 @@ def list_all_holders(
         )
     )
 
-    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     if not include_former_holder:
         stmt = stmt.where(
@@ -1733,7 +1778,7 @@ def list_all_holders(
             )
         )
 
-    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
     if sort_order == 0:  # ASC
@@ -1748,14 +1793,16 @@ def list_all_holders(
         stmt = stmt.offset(offset)
 
     _holders: Sequence[tuple[IDXPosition, int, datetime | None]] = (
-        db.execute(stmt).tuples().all()
+        (await db.execute(stmt)).tuples().all()
     )
 
     # Get personal information
-    _personal_info_list: Sequence[IDXPersonalInfo] = db.scalars(
-        select(IDXPersonalInfo)
-        .where(IDXPersonalInfo.issuer_address == issuer_address)
-        .order_by(IDXPersonalInfo.id)
+    _personal_info_list: Sequence[IDXPersonalInfo] = (
+        await db.scalars(
+            select(IDXPersonalInfo)
+            .where(IDXPersonalInfo.issuer_address == issuer_address)
+            .order_by(IDXPersonalInfo.id)
+        )
     ).all()
     _personal_info_dict = {}
     for item in _personal_info_list:
@@ -1820,8 +1867,8 @@ def list_all_holders(
     response_model=HolderCountResponse,
     responses=get_routers_responses(422, InvalidParameterError, 404),
 )
-def count_number_of_holders(
-    db: DBSession,
+async def count_number_of_holders(
+    db: DBAsyncSession,
     token_address: str,
     issuer_address: str = Header(...),
 ):
@@ -1831,24 +1878,28 @@ def count_number_of_holders(
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get Account
-    _account = db.scalars(
-        select(Account).where(Account.issuer_address == issuer_address).limit(1)
+    _account = (
+        await db.scalars(
+            select(Account).where(Account.issuer_address == issuer_address).limit(1)
+        )
     ).first()
     if _account is None:
         raise InvalidParameterError("issuer does not exist")
 
     # Get Token
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.type == TokenType.IBET_SHARE,
-                Token.issuer_address == issuer_address,
-                Token.token_address == token_address,
-                Token.token_status != 2,
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.issuer_address == issuer_address,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -1883,7 +1934,7 @@ def count_number_of_holders(
             IDXLockedPosition.account_address,
         )
     )
-    _count = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    _count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     return json_response({"count": _count})
 
@@ -1894,8 +1945,8 @@ def count_number_of_holders(
     response_model=HolderResponse,
     responses=get_routers_responses(422, InvalidParameterError, 404),
 )
-def retrieve_holder(
-    db: DBSession,
+async def retrieve_holder(
+    db: DBAsyncSession,
     token_address: str,
     account_address: str,
     issuer_address: str = Header(...),
@@ -1906,24 +1957,28 @@ def retrieve_holder(
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get Issuer
-    _account = db.scalars(
-        select(Account).where(Account.issuer_address == issuer_address).limit(1)
+    _account = (
+        await db.scalars(
+            select(Account).where(Account.issuer_address == issuer_address).limit(1)
+        )
     ).first()
     if _account is None:
         raise InvalidParameterError("issuer does not exist")
 
     # Get Token
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.type == TokenType.IBET_SHARE,
-                Token.issuer_address == issuer_address,
-                Token.token_address == token_address,
-                Token.token_status != 2,
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.issuer_address == issuer_address,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -1932,31 +1987,34 @@ def retrieve_holder(
 
     # Get Holders
     _holder: tuple[IDXPosition, int, datetime | None] = (
-        db.execute(
-            select(
-                IDXPosition,
-                func.sum(IDXLockedPosition.value),
-                func.max(IDXLockedPosition.modified),
-            )
-            .outerjoin(
-                IDXLockedPosition,
-                and_(
-                    IDXLockedPosition.token_address == IDXPosition.token_address,
-                    IDXLockedPosition.account_address == IDXPosition.account_address,
-                ),
-            )
-            .where(
-                and_(
-                    IDXPosition.token_address == token_address,
-                    IDXPosition.account_address == account_address,
+        (
+            await db.execute(
+                select(
+                    IDXPosition,
+                    func.sum(IDXLockedPosition.value),
+                    func.max(IDXLockedPosition.modified),
                 )
+                .outerjoin(
+                    IDXLockedPosition,
+                    and_(
+                        IDXLockedPosition.token_address == IDXPosition.token_address,
+                        IDXLockedPosition.account_address
+                        == IDXPosition.account_address,
+                    ),
+                )
+                .where(
+                    and_(
+                        IDXPosition.token_address == token_address,
+                        IDXPosition.account_address == account_address,
+                    )
+                )
+                .group_by(
+                    IDXPosition.id,
+                    IDXLockedPosition.token_address,
+                    IDXLockedPosition.account_address,
+                )
+                .limit(1)
             )
-            .group_by(
-                IDXPosition.id,
-                IDXLockedPosition.token_address,
-                IDXLockedPosition.account_address,
-            )
-            .limit(1)
         )
         .tuples()
         .first()
@@ -1998,15 +2056,17 @@ def retrieve_holder(
         "is_corporate": None,
         "tax_category": None,
     }
-    _personal_info_record: IDXPersonalInfo | None = db.scalars(
-        select(IDXPersonalInfo)
-        .where(
-            and_(
-                IDXPersonalInfo.account_address == account_address,
-                IDXPersonalInfo.issuer_address == issuer_address,
+    _personal_info_record: IDXPersonalInfo | None = (
+        await db.scalars(
+            select(IDXPersonalInfo)
+            .where(
+                and_(
+                    IDXPersonalInfo.account_address == account_address,
+                    IDXPersonalInfo.issuer_address == issuer_address,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _personal_info_record is None:
         _personal_info = personal_info_default
@@ -2041,8 +2101,8 @@ def retrieve_holder(
         ContractRevertError,
     ),
 )
-def register_holder_personal_info(
-    db: DBSession,
+async def register_holder_personal_info(
+    db: DBAsyncSession,
     request: Request,
     token_address: str,
     personal_info: RegisterPersonalInfoRequest,
@@ -2059,7 +2119,7 @@ def register_holder_personal_info(
     )
 
     # Authentication
-    check_auth(
+    issuer_account, _ = await check_auth(
         request=request,
         db=db,
         issuer_address=issuer_address,
@@ -2068,17 +2128,19 @@ def register_holder_personal_info(
     )
 
     # Verify that the token is issued by the issuer_address
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.type == TokenType.IBET_SHARE,
-                Token.issuer_address == issuer_address,
-                Token.token_address == token_address,
-                Token.token_status != 2,
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.issuer_address == issuer_address,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -2086,14 +2148,13 @@ def register_holder_personal_info(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Register Personal Info
-    token_contract = IbetShareContract(token_address).get()
+    token_contract = await IbetShareContract(token_address).get()
     try:
         personal_info_contract = PersonalInfoContract(
-            db=db,
-            issuer_address=issuer_address,
+            issuer=issuer_account,
             contract_address=token_contract.personal_info_contract_address,
         )
-        personal_info_contract.register_info(
+        await personal_info_contract.register_info(
             account_address=personal_info.account_address,
             data=personal_info.model_dump(),
             default_value=None,
@@ -2110,8 +2171,8 @@ def register_holder_personal_info(
     response_model=ListBatchRegisterPersonalInfoUploadResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-def list_all_personal_info_batch_registration_uploads(
-    db: DBSession,
+async def list_all_personal_info_batch_registration_uploads(
+    db: DBAsyncSession,
     token_address: str,
     issuer_address: str = Header(...),
     get_query: ListAllPersonalInfoBatchRegistrationUploadQuery = Depends(),
@@ -2123,17 +2184,19 @@ def list_all_personal_info_batch_registration_uploads(
     limit = get_query.limit
 
     # Verify that the token is issued by the issuer_address
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.type == TokenType.IBET_SHARE,
-                Token.issuer_address == issuer_address,
-                Token.token_address == token_address,
-                Token.token_status != 2,
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.issuer_address == issuer_address,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -2145,12 +2208,12 @@ def list_all_personal_info_batch_registration_uploads(
         BatchRegisterPersonalInfoUpload.issuer_address == issuer_address
     )
 
-    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     if status is not None:
         stmt = stmt.where(BatchRegisterPersonalInfoUpload.status == status)
 
-    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
     if sort_order == 0:  # ASC
@@ -2164,7 +2227,9 @@ def list_all_personal_info_batch_registration_uploads(
     if offset is not None:
         stmt = stmt.offset(offset)
 
-    _upload_list: Sequence[BatchRegisterPersonalInfoUpload] = db.scalars(stmt).all()
+    _upload_list: Sequence[BatchRegisterPersonalInfoUpload] = (
+        await db.scalars(stmt)
+    ).all()
 
     uploads = []
     for _upload in _upload_list:
@@ -2198,8 +2263,8 @@ def list_all_personal_info_batch_registration_uploads(
         422, 401, 404, AuthorizationError, InvalidParameterError
     ),
 )
-def batch_register_personal_info(
-    db: DBSession,
+async def batch_register_personal_info(
+    db: DBAsyncSession,
     request: Request,
     token_address: str,
     personal_info_list: List[RegisterPersonalInfoRequest],
@@ -2216,7 +2281,7 @@ def batch_register_personal_info(
     )
 
     # Authentication
-    check_auth(
+    await check_auth(
         request=request,
         db=db,
         issuer_address=issuer_address,
@@ -2225,17 +2290,19 @@ def batch_register_personal_info(
     )
 
     # Verify that the token is issued by the issuer_address
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.type == TokenType.IBET_SHARE,
-                Token.issuer_address == issuer_address,
-                Token.token_address == token_address,
-                Token.token_status != 2,
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.issuer_address == issuer_address,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -2260,7 +2327,7 @@ def batch_register_personal_info(
         bulk_register_record.status = 0
         db.add(bulk_register_record)
 
-    db.commit()
+    await db.commit()
 
     return json_response(
         {
@@ -2280,8 +2347,8 @@ def batch_register_personal_info(
     response_model=GetBatchRegisterPersonalInfoResponse,
     responses=get_routers_responses(422, 404),
 )
-def retrieve_batch_register_personal_info(
-    db: DBSession,
+async def retrieve_batch_register_personal_info(
+    db: DBAsyncSession,
     token_address: str,
     batch_id: str,
     issuer_address: str = Header(...),
@@ -2294,25 +2361,29 @@ def retrieve_batch_register_personal_info(
     )
 
     # Upload Existence Check
-    batch: Optional[BatchRegisterPersonalInfoUpload] = db.scalars(
-        select(BatchRegisterPersonalInfoUpload)
-        .where(
-            and_(
-                BatchRegisterPersonalInfoUpload.upload_id == batch_id,
-                BatchRegisterPersonalInfoUpload.issuer_address == issuer_address,
+    batch: Optional[BatchRegisterPersonalInfoUpload] = (
+        await db.scalars(
+            select(BatchRegisterPersonalInfoUpload)
+            .where(
+                and_(
+                    BatchRegisterPersonalInfoUpload.upload_id == batch_id,
+                    BatchRegisterPersonalInfoUpload.issuer_address == issuer_address,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if batch is None:
         raise HTTPException(status_code=404, detail="batch not found")
 
     # Get Batch Records
-    record_list: Sequence[BatchRegisterPersonalInfo] = db.scalars(
-        select(BatchRegisterPersonalInfo).where(
-            and_(
-                BatchRegisterPersonalInfo.upload_id == batch_id,
-                BatchRegisterPersonalInfo.token_address == token_address,
+    record_list: Sequence[BatchRegisterPersonalInfo] = (
+        await db.scalars(
+            select(BatchRegisterPersonalInfo).where(
+                and_(
+                    BatchRegisterPersonalInfo.upload_id == batch_id,
+                    BatchRegisterPersonalInfo.token_address == token_address,
+                )
             )
         )
     ).all()
@@ -2346,8 +2417,8 @@ def retrieve_batch_register_personal_info(
     response_model=ListAllTokenLockEventsResponse,
     responses=get_routers_responses(422),
 )
-def list_all_lock_events_by_share(
-    db: DBSession,
+async def list_all_lock_events_by_share(
+    db: DBAsyncSession,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
     request_query: ListAllTokenLockEventsQuery = Depends(),
@@ -2416,9 +2487,9 @@ def list_all_lock_events_by_share(
     if issuer_address is not None:
         stmt_unlock = stmt_unlock.where(Token.issuer_address == issuer_address)
 
-    total = db.scalar(
-        select(func.count()).select_from(stmt_lock.subquery())
-    ) + db.scalar(select(func.count()).select_from(stmt_unlock.subquery()))
+    total = (
+        await db.scalar(select(func.count()).select_from(stmt_lock.subquery()))
+    ) + (await db.scalar(select(func.count()).select_from(stmt_unlock.subquery())))
 
     # Filter
     match request_query.category:
@@ -2448,7 +2519,7 @@ def list_all_lock_events_by_share(
             all_lock_event_alias.c.recipient_address == request_query.recipient_address
         )
 
-    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
     sort_attr = column(sort_item)
@@ -2482,12 +2553,14 @@ def list_all_lock_events_by_share(
         all_lock_event_alias.c.block_timestamp,
         Token,
     ]
-    lock_events = db.execute(select(*entries).from_statement(stmt)).tuples().all()
+    lock_events = (
+        (await db.execute(select(*entries).from_statement(stmt))).tuples().all()
+    )
 
     resp_data = []
     for lock_event in lock_events:
         token: Token = lock_event.Token
-        share_contract = IbetShareContract(token.token_address).get()
+        share_contract = await IbetShareContract(token.token_address).get()
         block_timestamp_utc = timezone("UTC").localize(lock_event.block_timestamp)
         resp_data.append(
             {
@@ -2533,8 +2606,8 @@ def list_all_lock_events_by_share(
         ContractRevertError,
     ),
 )
-def transfer_ownership(
-    db: DBSession,
+async def transfer_ownership(
+    db: DBAsyncSession,
     request: Request,
     token: IbetShareTransfer,
     issuer_address: str = Header(...),
@@ -2550,7 +2623,7 @@ def transfer_ownership(
     )
 
     # Authentication
-    _account, decrypt_password = check_auth(
+    _account, decrypt_password = await check_auth(
         request=request,
         db=db,
         issuer_address=issuer_address,
@@ -2565,17 +2638,19 @@ def transfer_ownership(
     )
 
     # Check that it is a token that has been issued.
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.type == TokenType.IBET_SHARE,
-                Token.issuer_address == issuer_address,
-                Token.token_address == token.token_address,
-                Token.token_status != 2,
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.issuer_address == issuer_address,
+                    Token.token_address == token.token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -2583,7 +2658,7 @@ def transfer_ownership(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     try:
-        IbetShareContract(token.token_address).transfer(
+        await IbetShareContract(token.token_address).transfer(
             data=TransferParams(**token.model_dump()),
             tx_from=issuer_address,
             private_key=private_key,
@@ -2600,23 +2675,25 @@ def transfer_ownership(
     response_model=TransferHistoryResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-def list_transfer_history(
-    db: DBSession,
+async def list_transfer_history(
+    db: DBAsyncSession,
     token_address: str,
     request_query: ListTransferHistoryQuery = Depends(),
 ):
     """List token transfer history"""
     # Get token
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.type == TokenType.IBET_SHARE,
-                Token.token_address == token_address,
-                Token.token_status != 2,
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -2646,7 +2723,7 @@ def list_transfer_history(
         .where(IDXTransfer.token_address == token_address)
     )
 
-    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     if request_query.source_event is not None:
         stmt = stmt.where(IDXTransfer.source_event == request_query.source_event)
@@ -2655,7 +2732,7 @@ def list_transfer_history(
             cast(IDXTransfer.data, String).like("%" + request_query.data + "%")
         )
 
-    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
     sort_attr = getattr(IDXTransfer, request_query.sort_item.value, None)
@@ -2675,7 +2752,7 @@ def list_transfer_history(
 
     _transfers: Sequence[
         tuple[IDXTransfer, IDXPersonalInfo | None, IDXPersonalInfo | None]
-    ] = db.execute(stmt).all()
+    ] = (await db.execute(stmt)).all()
 
     transfer_history = []
     for _transfer, _from_address_personal_info, _to_address_personal_info in _transfers:
@@ -2718,8 +2795,8 @@ def list_transfer_history(
     response_model=TransferApprovalsResponse,
     responses=get_routers_responses(422),
 )
-def list_transfer_approval_history(
-    db: DBSession,
+async def list_transfer_approval_history(
+    db: DBAsyncSession,
     issuer_address: Optional[str] = Header(None),
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
@@ -2799,10 +2876,10 @@ def list_transfer_approval_history(
         Token.issuer_address, subquery.token_address
     )
 
-    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # NOTE: Because no filtering is performed, `total` and `count` have the same value.
-    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Pagination
     if limit is not None:
@@ -2810,7 +2887,7 @@ def list_transfer_approval_history(
     if offset is not None:
         stmt = stmt.offset(offset)
 
-    _transfer_approvals = db.execute(stmt).tuples().all()
+    _transfer_approvals = (await db.execute(stmt)).tuples().all()
 
     transfer_approvals = []
     for (
@@ -2853,8 +2930,8 @@ def list_transfer_approval_history(
     response_model=TransferApprovalHistoryResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-def list_token_transfer_approval_history(
-    db: DBSession,
+async def list_token_transfer_approval_history(
+    db: DBAsyncSession,
     token_address: str,
     get_query: ListTransferApprovalHistoryQuery = Depends(),
 ):
@@ -2868,16 +2945,18 @@ def list_token_transfer_approval_history(
     limit = get_query.limit
 
     # Get token
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.type == TokenType.IBET_SHARE,
-                Token.token_address == token_address,
-                Token.token_status != 2,
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -2978,7 +3057,7 @@ def list_token_transfer_approval_history(
         .where(subquery.token_address == token_address)
     )
 
-    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Search Filter
     if from_address is not None:
@@ -2988,7 +3067,7 @@ def list_token_transfer_approval_history(
     if status is not None:
         stmt = stmt.where(literal_column("status").in_(status))
 
-    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
     if sort_item != IDXTransferApprovalsSortItem.STATUS:
@@ -3018,7 +3097,7 @@ def list_token_transfer_approval_history(
             IDXPersonalInfo | None,
             IDXPersonalInfo | None,
         ]
-    ] = db.execute(stmt).all()
+    ] = (await db.execute(stmt)).all()
 
     transfer_approval_history = []
     for (
@@ -3154,8 +3233,8 @@ def list_token_transfer_approval_history(
         OperationNotAllowedStateError,
     ),
 )
-def update_transfer_approval(
-    db: DBSession,
+async def update_transfer_approval(
+    db: DBAsyncSession,
     request: Request,
     token_address: str,
     id: int,
@@ -3173,7 +3252,7 @@ def update_transfer_approval(
     )
 
     # Authentication
-    _account, decrypt_password = check_auth(
+    _account, decrypt_password = await check_auth(
         request=request,
         db=db,
         issuer_address=issuer_address,
@@ -3188,16 +3267,18 @@ def update_transfer_approval(
     )
 
     # Get token
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.type == TokenType.IBET_SHARE,
-                Token.token_address == token_address,
-                Token.token_status != 2,
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -3205,15 +3286,17 @@ def update_transfer_approval(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get transfer approval history
-    _transfer_approval: IDXTransferApproval | None = db.scalars(
-        select(IDXTransferApproval)
-        .where(
-            and_(
-                IDXTransferApproval.id == id,
-                IDXTransferApproval.token_address == token_address,
+    _transfer_approval: IDXTransferApproval | None = (
+        await db.scalars(
+            select(IDXTransferApproval)
+            .where(
+                and_(
+                    IDXTransferApproval.id == id,
+                    IDXTransferApproval.token_address == token_address,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _transfer_approval is None:
         raise HTTPException(status_code=404, detail="transfer approval not found")
@@ -3234,49 +3317,55 @@ def update_transfer_approval(
         # Cancellation is possible only against approval of the transfer of a token contract.
         raise InvalidParameterError("application that cannot be canceled")
 
-    transfer_approval_op: TransferApprovalHistory | None = db.scalars(
-        select(TransferApprovalHistory)
-        .where(
-            and_(
-                TransferApprovalHistory.token_address
-                == _transfer_approval.token_address,
-                TransferApprovalHistory.exchange_address
-                == _transfer_approval.exchange_address,
-                TransferApprovalHistory.application_id
-                == _transfer_approval.application_id,
-                TransferApprovalHistory.operation_type == data.operation_type,
+    transfer_approval_op: TransferApprovalHistory | None = (
+        await db.scalars(
+            select(TransferApprovalHistory)
+            .where(
+                and_(
+                    TransferApprovalHistory.token_address
+                    == _transfer_approval.token_address,
+                    TransferApprovalHistory.exchange_address
+                    == _transfer_approval.exchange_address,
+                    TransferApprovalHistory.application_id
+                    == _transfer_approval.application_id,
+                    TransferApprovalHistory.operation_type == data.operation_type,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if transfer_approval_op is not None:
         raise InvalidParameterError("duplicate operation")
 
     # Check the existence of personal information data for from_address and to_address
-    _from_address_personal_info: IDXPersonalInfo | None = db.scalars(
-        select(IDXPersonalInfo)
-        .where(
-            and_(
-                IDXPersonalInfo.account_address == _transfer_approval.from_address,
-                IDXPersonalInfo.issuer_address == issuer_address,
+    _from_address_personal_info: IDXPersonalInfo | None = (
+        await db.scalars(
+            select(IDXPersonalInfo)
+            .where(
+                and_(
+                    IDXPersonalInfo.account_address == _transfer_approval.from_address,
+                    IDXPersonalInfo.issuer_address == issuer_address,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _from_address_personal_info is None:
         raise OperationNotAllowedStateError(
             101, "personal information for from_address is not registered"
         )
 
-    _to_address_personal_info: IDXPersonalInfo | None = db.scalars(
-        select(IDXPersonalInfo)
-        .where(
-            and_(
-                IDXPersonalInfo.account_address == _transfer_approval.to_address,
-                IDXPersonalInfo.issuer_address == issuer_address,
+    _to_address_personal_info: IDXPersonalInfo | None = (
+        await db.scalars(
+            select(IDXPersonalInfo)
+            .where(
+                and_(
+                    IDXPersonalInfo.account_address == _transfer_approval.to_address,
+                    IDXPersonalInfo.issuer_address == issuer_address,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _to_address_personal_info is None:
         raise OperationNotAllowedStateError(
@@ -3297,7 +3386,9 @@ def update_transfer_approval(
                     "data": now,
                 }
                 try:
-                    _, tx_receipt = IbetShareContract(token_address).approve_transfer(
+                    _, tx_receipt = await IbetShareContract(
+                        token_address
+                    ).approve_transfer(
                         data=ApproveTransferParams(**_data),
                         tx_from=issuer_address,
                         private_key=private_key,
@@ -3307,7 +3398,7 @@ def update_transfer_approval(
                     # cancelTransfer should be performed immediately.
                     # After cancelTransfer, ContractRevertError is returned.
                     try:
-                        IbetShareContract(token_address).cancel_transfer(
+                        await IbetShareContract(token_address).cancel_transfer(
                             data=CancelTransferParams(**_data),
                             tx_from=issuer_address,
                             private_key=private_key,
@@ -3322,7 +3413,7 @@ def update_transfer_approval(
                 _data = {"escrow_id": _transfer_approval.application_id, "data": now}
                 escrow = IbetSecurityTokenEscrow(_transfer_approval.exchange_address)
                 try:
-                    _, tx_receipt = escrow.approve_transfer(
+                    _, tx_receipt = await escrow.approve_transfer(
                         data=EscrowApproveTransferParams(**_data),
                         tx_from=issuer_address,
                         private_key=private_key,
@@ -3335,7 +3426,7 @@ def update_transfer_approval(
         else:  # CANCEL
             _data = {"application_id": _transfer_approval.application_id, "data": now}
             try:
-                _, tx_receipt = IbetShareContract(token_address).cancel_transfer(
+                _, tx_receipt = await IbetShareContract(token_address).cancel_transfer(
                     data=CancelTransferParams(**_data),
                     tx_from=issuer_address,
                     private_key=private_key,
@@ -3361,7 +3452,7 @@ def update_transfer_approval(
         _to_address_personal_info.personal_info
     )
     db.add(transfer_approval_op)
-    db.commit()
+    await db.commit()
 
 
 # GET: /share/transfer_approvals/{token_address}/{id}
@@ -3370,23 +3461,25 @@ def update_transfer_approval(
     response_model=TransferApprovalTokenDetailResponse,
     responses=get_routers_responses(422, 404, InvalidParameterError),
 )
-def retrieve_transfer_approval_history(
-    db: DBSession,
+async def retrieve_transfer_approval_history(
+    db: DBAsyncSession,
     token_address: str,
     id: int,
 ):
     """Retrieve share token transfer approval history"""
     # Get token
-    _token: Token | None = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.type == TokenType.IBET_SHARE,
-                Token.token_address == token_address,
-                Token.token_status != 2,
+    _token: Token | None = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.type == TokenType.IBET_SHARE,
+                    Token.token_address == token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -3394,32 +3487,36 @@ def retrieve_transfer_approval_history(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get transfer approval history
-    _transfer_approval: IDXTransferApproval | None = db.scalars(
-        select(IDXTransferApproval)
-        .where(
-            and_(
-                IDXTransferApproval.id == id,
-                IDXTransferApproval.token_address == token_address,
+    _transfer_approval: IDXTransferApproval | None = (
+        await db.scalars(
+            select(IDXTransferApproval)
+            .where(
+                and_(
+                    IDXTransferApproval.id == id,
+                    IDXTransferApproval.token_address == token_address,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _transfer_approval is None:
         raise HTTPException(status_code=404, detail="transfer approval not found")
 
-    _transfer_approval_op: TransferApprovalHistory | None = db.scalars(
-        select(TransferApprovalHistory)
-        .where(
-            and_(
-                TransferApprovalHistory.token_address
-                == _transfer_approval.token_address,
-                TransferApprovalHistory.exchange_address
-                == _transfer_approval.exchange_address,
-                TransferApprovalHistory.application_id
-                == _transfer_approval.application_id,
+    _transfer_approval_op: TransferApprovalHistory | None = (
+        await db.scalars(
+            select(TransferApprovalHistory)
+            .where(
+                and_(
+                    TransferApprovalHistory.token_address
+                    == _transfer_approval.token_address,
+                    TransferApprovalHistory.exchange_address
+                    == _transfer_approval.exchange_address,
+                    TransferApprovalHistory.application_id
+                    == _transfer_approval.application_id,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
 
     status = 0
@@ -3520,29 +3617,35 @@ def retrieve_transfer_approval_history(
         _from_address_personal_info = _transfer_approval_op.from_address_personal_info
         _to_address_personal_info = _transfer_approval_op.to_address_personal_info
     else:
-        _from_account: IDXPersonalInfo | None = db.scalars(
-            select(IDXPersonalInfo)
-            .where(
-                and_(
-                    IDXPersonalInfo.account_address == _transfer_approval.from_address,
-                    IDXPersonalInfo.issuer_address == _token.issuer_address,
+        _from_account: IDXPersonalInfo | None = (
+            await db.scalars(
+                select(IDXPersonalInfo)
+                .where(
+                    and_(
+                        IDXPersonalInfo.account_address
+                        == _transfer_approval.from_address,
+                        IDXPersonalInfo.issuer_address == _token.issuer_address,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
         _from_address_personal_info = (
             _from_account.personal_info if _from_account is not None else None
         )
 
-        _to_account: IDXPersonalInfo | None = db.scalars(
-            select(IDXPersonalInfo)
-            .where(
-                and_(
-                    IDXPersonalInfo.account_address == _transfer_approval.to_address,
-                    IDXPersonalInfo.issuer_address == _token.issuer_address,
+        _to_account: IDXPersonalInfo | None = (
+            await db.scalars(
+                select(IDXPersonalInfo)
+                .where(
+                    and_(
+                        IDXPersonalInfo.account_address
+                        == _transfer_approval.to_address,
+                        IDXPersonalInfo.issuer_address == _token.issuer_address,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
         _to_address_personal_info = (
             _to_account.personal_info if _to_account is not None else None
@@ -3581,8 +3684,8 @@ def retrieve_transfer_approval_history(
         422, AuthorizationError, InvalidParameterError, 401
     ),
 )
-def bulk_transfer_ownership(
-    db: DBSession,
+async def bulk_transfer_ownership(
+    db: DBAsyncSession,
     request: Request,
     bulk_transfer_req: IbetShareBulkTransferRequest,
     issuer_address: str = Header(...),
@@ -3610,7 +3713,7 @@ def bulk_transfer_ownership(
     )
 
     # Authentication
-    check_auth(
+    await check_auth(
         request=request,
         db=db,
         issuer_address=issuer_address,
@@ -3620,17 +3723,19 @@ def bulk_transfer_ownership(
 
     # Verify that the tokens are issued by the issuer_address
     for _transfer in transfer_list:
-        _issued_token: Token | None = db.scalars(
-            select(Token)
-            .where(
-                and_(
-                    Token.type == TokenType.IBET_SHARE,
-                    Token.issuer_address == issuer_address,
-                    Token.token_address == _transfer.token_address,
-                    Token.token_status != 2,
+        _issued_token: Token | None = (
+            await db.scalars(
+                select(Token)
+                .where(
+                    and_(
+                        Token.type == TokenType.IBET_SHARE,
+                        Token.issuer_address == issuer_address,
+                        Token.token_address == _transfer.token_address,
+                        Token.token_status != 2,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
         if _issued_token is None:
             raise InvalidParameterError(f"token not found: {_transfer.token_address}")
@@ -3685,7 +3790,7 @@ def bulk_transfer_ownership(
         _bulk_transfer.status = 0
         db.add(_bulk_transfer)
 
-    db.commit()
+    await db.commit()
 
     return json_response({"upload_id": str(upload_id)})
 
@@ -3696,8 +3801,8 @@ def bulk_transfer_ownership(
     response_model=List[BulkTransferUploadResponse],
     responses=get_routers_responses(422),
 )
-def list_bulk_transfer_upload(
-    db: DBSession, issuer_address: Optional[str] = Header(None)
+async def list_bulk_transfer_upload(
+    db: DBAsyncSession, issuer_address: Optional[str] = Header(None)
 ):
     """List bulk transfer uploads"""
 
@@ -3706,17 +3811,21 @@ def list_bulk_transfer_upload(
 
     # Get bulk transfer upload list
     if issuer_address is None:
-        _uploads: Sequence[BulkTransferUpload] = db.scalars(
-            select(BulkTransferUpload)
-            .where(BulkTransferUpload.token_type == TokenType.IBET_SHARE)
-            .order_by(BulkTransferUpload.issuer_address)
+        _uploads: Sequence[BulkTransferUpload] = (
+            await db.scalars(
+                select(BulkTransferUpload)
+                .where(BulkTransferUpload.token_type == TokenType.IBET_SHARE)
+                .order_by(BulkTransferUpload.issuer_address)
+            )
         ).all()
     else:
-        _uploads: Sequence[BulkTransferUpload] = db.scalars(
-            select(BulkTransferUpload).where(
-                and_(
-                    BulkTransferUpload.issuer_address == issuer_address,
-                    BulkTransferUpload.token_type == TokenType.IBET_SHARE,
+        _uploads: Sequence[BulkTransferUpload] = (
+            await db.scalars(
+                select(BulkTransferUpload).where(
+                    and_(
+                        BulkTransferUpload.issuer_address == issuer_address,
+                        BulkTransferUpload.token_type == TokenType.IBET_SHARE,
+                    )
                 )
             )
         ).all()
@@ -3746,8 +3855,8 @@ def list_bulk_transfer_upload(
     response_model=List[BulkTransferResponse],
     responses=get_routers_responses(422, 404),
 )
-def retrieve_bulk_transfer(
-    db: DBSession,
+async def retrieve_bulk_transfer(
+    db: DBAsyncSession,
     upload_id: str,
     issuer_address: Optional[str] = Header(None),
 ):
@@ -3758,23 +3867,27 @@ def retrieve_bulk_transfer(
 
     # Get bulk transfer upload list
     if issuer_address is None:
-        _bulk_transfers: Sequence[BulkTransfer] = db.scalars(
-            select(BulkTransfer)
-            .where(
-                and_(
-                    BulkTransfer.upload_id == upload_id,
-                    BulkTransfer.token_type == TokenType.IBET_SHARE,
+        _bulk_transfers: Sequence[BulkTransfer] = (
+            await db.scalars(
+                select(BulkTransfer)
+                .where(
+                    and_(
+                        BulkTransfer.upload_id == upload_id,
+                        BulkTransfer.token_type == TokenType.IBET_SHARE,
+                    )
                 )
+                .order_by(BulkTransfer.issuer_address)
             )
-            .order_by(BulkTransfer.issuer_address)
         ).all()
     else:
-        _bulk_transfers: Sequence[BulkTransfer] = db.scalars(
-            select(BulkTransfer).where(
-                and_(
-                    BulkTransfer.issuer_address == issuer_address,
-                    BulkTransfer.upload_id == upload_id,
-                    BulkTransfer.token_type == TokenType.IBET_SHARE,
+        _bulk_transfers: Sequence[BulkTransfer] = (
+            await db.scalars(
+                select(BulkTransfer).where(
+                    and_(
+                        BulkTransfer.issuer_address == issuer_address,
+                        BulkTransfer.upload_id == upload_id,
+                        BulkTransfer.token_type == TokenType.IBET_SHARE,
+                    )
                 )
             )
         ).all()

@@ -26,7 +26,7 @@ from sqlalchemy import select
 from app.exceptions import SendTransactionError
 from app.model.blockchain import E2EMessaging
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey, TransactionLock
-from app.utils.contract_utils import ContractUtils
+from app.utils.contract_utils import AsyncContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from config import (
     E2E_MESSAGING_RSA_DEFAULT_PASSPHRASE,
@@ -56,10 +56,15 @@ class TestAppRoutersE2EMessagingAccountsPOST:
         # mock
         mock_E2EMessaging_set_public_key = mock.patch(
             target="app.model.blockchain.e2e_messaging.E2EMessaging.set_public_key",
-            side_effect=[("tx_1", {"blockNumber": 12345})],
+            side_effect=[
+                (
+                    "0x0000000000000000000000000000000000000000000000000000000000000001",
+                    {"blockNumber": 12345},
+                )
+            ],
         )
         mock_ContractUtils_get_block_by_transaction_hash = mock.patch(
-            target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
+            target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             side_effect=[
                 {
                     "number": 12345,
@@ -87,8 +92,8 @@ class TestAppRoutersE2EMessagingAccountsPOST:
                 tx_from=resp.json()["account_address"],
                 private_key=ANY,
             )
-            ContractUtils.get_block_by_transaction_hash.assert_called_with(
-                tx_hash="tx_1",
+            AsyncContractUtils.get_block_by_transaction_hash.assert_called_with(
+                tx_hash="0x0000000000000000000000000000000000000000000000000000000000000001",
             )
 
         # assertion
@@ -118,7 +123,10 @@ class TestAppRoutersE2EMessagingAccountsPOST:
         assert 1 == len(_rsa_key_after)
         _rsa_key = _rsa_key_after[0]
         assert _rsa_key.id == 1
-        assert _rsa_key.transaction_hash == "tx_1"
+        assert (
+            _rsa_key.transaction_hash
+            == "0x0000000000000000000000000000000000000000000000000000000000000001"
+        )
         assert _rsa_key.account_address == resp.json()["account_address"]
         assert _rsa_key.rsa_private_key == ANY
         assert _rsa_key.rsa_public_key == resp.json()["rsa_public_key"]
@@ -150,10 +158,15 @@ class TestAppRoutersE2EMessagingAccountsPOST:
         )
         mock_E2EMessaging_set_public_key = mock.patch(
             target="app.model.blockchain.e2e_messaging.E2EMessaging.set_public_key",
-            side_effect=[("tx_1", {"blockNumber": 12345})],
+            side_effect=[
+                (
+                    "0x0000000000000000000000000000000000000000000000000000000000000001",
+                    {"blockNumber": 12345},
+                )
+            ],
         )
         mock_ContractUtils_get_block_by_transaction_hash = mock.patch(
-            target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
+            target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             side_effect=[
                 {
                     "number": 12345,
@@ -190,8 +203,8 @@ class TestAppRoutersE2EMessagingAccountsPOST:
                 tx_from=resp.json()["account_address"],
                 private_key=ANY,
             )
-            ContractUtils.get_block_by_transaction_hash.assert_called_with(
-                tx_hash="tx_1",
+            AsyncContractUtils.get_block_by_transaction_hash.assert_called_with(
+                tx_hash="0x0000000000000000000000000000000000000000000000000000000000000001",
             )
 
         # assertion
@@ -221,7 +234,10 @@ class TestAppRoutersE2EMessagingAccountsPOST:
         assert 1 == len(_rsa_key_after)
         _rsa_key = _rsa_key_after[0]
         assert _rsa_key.id == 1
-        assert _rsa_key.transaction_hash == "tx_1"
+        assert (
+            _rsa_key.transaction_hash
+            == "0x0000000000000000000000000000000000000000000000000000000000000001"
+        )
         assert _rsa_key.account_address == resp.json()["account_address"]
         assert _rsa_key.rsa_private_key == ANY
         assert _rsa_key.rsa_public_key == resp.json()["rsa_public_key"]

@@ -67,6 +67,8 @@ class TestAppRoutersShareTransfersPOST:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         # mock
         IbetShareContract_mock.side_effect = [None]
 
@@ -139,6 +141,8 @@ class TestAppRoutersShareTransfersPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # mock
         IbetShareContract_mock.side_effect = [None]
@@ -441,6 +445,8 @@ class TestAppRoutersShareTransfersPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # request target API
         req_param = {
             "token_address": _token_address,
@@ -485,6 +491,8 @@ class TestAppRoutersShareTransfersPOST:
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # request target API
         req_param = {
@@ -540,6 +548,8 @@ class TestAppRoutersShareTransfersPOST:
         token.token_status = 0
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {
@@ -598,6 +608,8 @@ class TestAppRoutersShareTransfersPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {

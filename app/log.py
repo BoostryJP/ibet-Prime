@@ -128,7 +128,11 @@ def output_access_log(req: Request, res: Response, request_start_time: datetime)
 
 
 def __auth_format(req: Request, address: str, msg: str):
-    return AUTH_FORMAT % (req.client.host, address, msg)
+    if req.client is None:
+        _host = ""
+    else:
+        _host = req.client.host
+    return AUTH_FORMAT % (_host, address, msg)
 
 
 def __get_url(req: Request):

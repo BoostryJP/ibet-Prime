@@ -60,6 +60,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemPOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # mock
         IbetStraightBondContract_mock.side_effect = [None]
 
@@ -113,6 +115,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemPOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # mock
         IbetStraightBondContract_mock.side_effect = [None]
 
@@ -156,6 +160,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {"account_address": "0x0", "amount": 10}
@@ -202,6 +208,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemPOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 0}
 
@@ -246,6 +254,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 1_000_000_000_001}
@@ -347,6 +357,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
         resp = client.post(
@@ -386,6 +398,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemPOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
 
@@ -420,6 +434,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
         resp = client.post(
@@ -451,6 +467,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemPOST:
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
@@ -493,6 +511,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemPOST:
         token.token_status = 0
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}
@@ -539,6 +559,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {"account_address": _issuer_address, "amount": 10}

@@ -24,7 +24,7 @@ from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from pydantic_core import ErrorDetails, PydanticCustomError
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
 
 from app.exceptions import AuthorizationError
@@ -105,16 +105,18 @@ def check_value_is_encrypted(name, value):
             raise ValueError(f"{name} is not a Base64-encoded encrypted data")
 
 
-def check_auth(
+async def check_auth(
     request: Request,
-    db: Session,
+    db: AsyncSession,
     issuer_address: str,
     eoa_password: Optional[str] = None,
     auth_token: Optional[str] = None,
 ):
     # Check for existence of issuer account
     try:
-        account, decrypted_eoa_password = check_account_for_auth(db, issuer_address)
+        account, decrypted_eoa_password = await check_account_for_auth(
+            db, issuer_address
+        )
     except AuthorizationError:
         auth_error(request, issuer_address, "issuer does not exist")
         raise AuthorizationError(
@@ -142,7 +144,7 @@ def check_auth(
         elif auth_token is not None:
             # Check auth token
             try:
-                check_token_for_auth(
+                await check_token_for_auth(
                     db=db, issuer_address=issuer_address, auth_token=auth_token
                 )
             except AuthorizationError:
@@ -155,9 +157,11 @@ def check_auth(
     return account, decrypted_eoa_password
 
 
-def check_account_for_auth(db: Session, issuer_address: str):
-    account = db.scalars(
-        select(Account).where(Account.issuer_address == issuer_address).limit(1)
+async def check_account_for_auth(db: AsyncSession, issuer_address: str):
+    account = (
+        await db.scalars(
+            select(Account).where(Account.issuer_address == issuer_address).limit(1)
+        )
     ).first()
     if account is None:
         raise AuthorizationError
@@ -175,9 +179,11 @@ def check_eoa_password_for_auth(checked_pwd: str, correct_pwd: str):
         raise AuthorizationError
 
 
-def check_token_for_auth(db: Session, issuer_address: str, auth_token: str):
-    issuer_token: Optional[AuthToken] = db.scalars(
-        select(AuthToken).where(AuthToken.issuer_address == issuer_address).limit(1)
+async def check_token_for_auth(db: AsyncSession, issuer_address: str, auth_token: str):
+    issuer_token: Optional[AuthToken] = (
+        await db.scalars(
+            select(AuthToken).where(AuthToken.issuer_address == issuer_address).limit(1)
+        )
     ).first()
     if issuer_token is None:
         raise AuthorizationError

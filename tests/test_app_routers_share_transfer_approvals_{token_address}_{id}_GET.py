@@ -151,6 +151,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
 
+        db.commit()
+
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address, id))
 
@@ -230,6 +232,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address, id))
@@ -321,6 +325,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
             "tax_category": 10,
         }  # snapshot
         db.add(_cancel_op)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address, id))
@@ -431,6 +437,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
             "tax_category": 10,
         }  # snapshot
         db.add(_cancel_op)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address, id))
@@ -543,6 +551,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
         _idx_transfer_approval.transfer_approved = False
         db.add(_idx_transfer_approval)
 
+        db.commit()
+
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address, id))
 
@@ -654,6 +664,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
         }  # snapshot
         db.add(_approval_op)
 
+        db.commit()
+
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address, id))
 
@@ -763,6 +775,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
             "tax_category": 10,
         }  # snapshot
         db.add(_approval_op)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address, id))
@@ -888,6 +902,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
         _approval_op.to_address_personal_info = None  # created from v22.12 to v23.9
         db.add(_approval_op)
 
+        db.commit()
+
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address, id))
 
@@ -968,6 +984,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
         _token.version = TokenVersion.V_22_12
         db.add(_token)
 
+        db.commit()
+
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address, id))
 
@@ -993,6 +1011,8 @@ class TestAppRoutersShareTransferApprovalsTokenAddressIdGET:
         _token.token_status = 1
         _token.version = TokenVersion.V_22_12
         db.add(_token)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address, id))

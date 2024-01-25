@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 from web3.exceptions import TimeExhausted
 
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.utils.contract_utils import ContractUtils
+from app.utils.contract_utils import AsyncContractUtils
 from app.utils.web3_utils import Web3Wrapper
 from config import CHAIN_ID, TX_GAS_LIMIT
 
@@ -32,8 +32,8 @@ class TokenListContract:
     def __init__(self, contract_address: str):
         self.contract_address = contract_address
 
-    def register(
-        self, token_address: str, token_template: str, tx_from: str, private_key: str
+    async def register(
+        self, token_address: str, token_template: str, tx_from: str, private_key: bytes
     ) -> None:
         """Register TokenList
 
@@ -44,11 +44,11 @@ class TokenListContract:
         :return: None
         """
         try:
-            contract = ContractUtils.get_contract(
+            contract = AsyncContractUtils.get_contract(
                 contract_name="TokenList",
                 contract_address=self.contract_address,
             )
-            tx = contract.functions.register(
+            tx = await contract.functions.register(
                 token_address, token_template
             ).build_transaction(
                 {
@@ -58,7 +58,9 @@ class TokenListContract:
                     "gasPrice": 0,
                 }
             )
-            ContractUtils.send_transaction(transaction=tx, private_key=private_key)
+            await AsyncContractUtils.send_transaction(
+                transaction=tx, private_key=private_key
+            )
         except ContractRevertError:
             raise
         except TimeExhausted as timeout_error:

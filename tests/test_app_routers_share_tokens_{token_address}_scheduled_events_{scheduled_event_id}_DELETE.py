@@ -87,6 +87,8 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
         token_event.created = datetime_now_utc
         db.add(token_event)
 
+        db.commit()
+
         # request target API
         resp = client.delete(
             self.base_url.format(_token_address, event_id),
@@ -190,6 +192,8 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # request target API
         resp = client.delete(
             self.base_url.format(_token_address, "test_event_id"),
@@ -219,6 +223,8 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsScheduledEventIdDELETE
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # request target API
         resp = client.delete(

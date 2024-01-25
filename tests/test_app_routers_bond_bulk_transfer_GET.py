@@ -79,6 +79,8 @@ class TestAppRoutersBondBulkTransferGET:
             bulk_transfer_upload.created = utc_now
             db.add(bulk_transfer_upload)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.test_url,
@@ -116,6 +118,8 @@ class TestAppRoutersBondBulkTransferGET:
             bulk_transfer_upload.status = i
             bulk_transfer_upload.created = utc_now
             db.add(bulk_transfer_upload)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.test_url)

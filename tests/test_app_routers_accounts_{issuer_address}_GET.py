@@ -41,6 +41,7 @@ class TestAppRoutersAccountsIssuerAddressGET:
         account.keyfile = _admin_keyfile
         account.rsa_status = AccountRsaStatus.UNSET.value
         db.add(account)
+        db.commit()
 
         resp = client.get(self.base_url.format(_admin_address))
 
@@ -67,6 +68,7 @@ class TestAppRoutersAccountsIssuerAddressGET:
         account.rsa_public_key = _admin_rsa_public_key
         account.rsa_status = AccountRsaStatus.CHANGING.value
         db.add(account)
+        db.commit()
 
         resp = client.get(self.base_url.format(_admin_address))
 

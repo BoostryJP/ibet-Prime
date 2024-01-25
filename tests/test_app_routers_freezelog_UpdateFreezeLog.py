@@ -19,6 +19,8 @@ SPDX-License-Identifier: Apache-2.0
 from unittest import mock
 from unittest.mock import MagicMock
 
+import pytest
+
 from app.model.blockchain import FreezeLogContract
 from app.model.db import FreezeLogAccount
 from app.utils.e2ee_utils import E2EEUtils
@@ -35,7 +37,8 @@ class TestUpdateFreezeLog:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client, db, freeze_log_contract):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, client, db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -78,7 +81,7 @@ class TestUpdateFreezeLog:
         # Assertion
         assert resp.status_code == 200
 
-        _, _, log_message_af = FreezeLogContract(
+        _, _, log_message_af = await FreezeLogContract(
             log_account, freeze_log_contract.address
         ).get_log(
             log_index=log_index,
@@ -87,7 +90,8 @@ class TestUpdateFreezeLog:
 
     # <Normal_2>
     # E2EE_REQUEST_ENABLED = False
-    def test_normal_2(self, client, db, freeze_log_contract):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, client, db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -136,7 +140,7 @@ class TestUpdateFreezeLog:
         # Assertion
         assert resp.status_code == 200
 
-        _, _, log_message_af = FreezeLogContract(
+        _, _, log_message_af = await FreezeLogContract(
             log_account, freeze_log_contract.address
         ).get_log(
             log_index=log_index,
@@ -373,6 +377,8 @@ class TestUpdateFreezeLog:
         log_account.eoa_password = E2EEUtils.encrypt(password)
         db.add(log_account)
 
+        db.commit()
+
         with mock.patch(
             "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             freeze_log_contract.address,
@@ -409,8 +415,10 @@ class TestUpdateFreezeLog:
         log_account.eoa_password = E2EEUtils.encrypt(password)
         db.add(log_account)
 
+        db.commit()
+
         with mock.patch(
-            "app.utils.contract_utils.ContractUtils.send_transaction",
+            "app.utils.contract_utils.AsyncContractUtils.send_transaction",
             MagicMock(side_effect=Exception("tx error")),
         ), mock.patch(
             "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",

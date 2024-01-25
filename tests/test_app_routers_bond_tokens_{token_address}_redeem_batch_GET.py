@@ -54,6 +54,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         resp = client.get(self.base_url.format(token_address), headers={})
 
@@ -88,6 +90,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         redeem_upload1.category = BatchIssueRedeemProcessingCategory.REDEEM.value
         redeem_upload1.processed = False
         db.add(redeem_upload1)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(token_address), headers={})
@@ -169,6 +173,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         redeem_upload5.category = BatchIssueRedeemProcessingCategory.REDEEM.value
         redeem_upload5.processed = False
         db.add(redeem_upload5)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(token_address), headers={})
@@ -275,6 +281,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         redeem_upload5.processed = False
         db.add(redeem_upload5)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(token_address),
@@ -366,6 +374,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         redeem_upload5.category = BatchIssueRedeemProcessingCategory.REDEEM.value
         redeem_upload5.processed = False
         db.add(redeem_upload5)
+
+        db.commit()
 
         # request target API
         req_param = {"processed": False}
@@ -464,6 +474,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         redeem_upload5.category = BatchIssueRedeemProcessingCategory.REDEEM.value
         redeem_upload5.processed = False
         db.add(redeem_upload5)
+
+        db.commit()
 
         # request target API
         req_param = {"limit": 2, "offset": 2}
@@ -565,6 +577,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         additional_issue_upload5.processed = False
         db.add(additional_issue_upload5)
 
+        db.commit()
+
         # request target API
         req_param = {"sort_order": 0}
         resp = client.get(self.base_url.format(token_address), params=req_param)
@@ -630,6 +644,8 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {"processed": "invalid_value"}

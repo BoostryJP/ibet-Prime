@@ -20,6 +20,7 @@ from datetime import datetime
 from unittest import mock
 from unittest.mock import ANY
 
+import pytest
 from eth_keyfile import decode_keyfile_json
 from pytz import timezone
 from starlette.testclient import TestClient
@@ -46,7 +47,7 @@ web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
-def deploy_share_token_contract(
+async def deploy_share_token_contract(
     session,
     address,
     private_key,
@@ -67,7 +68,8 @@ def deploy_share_token_contract(
         30,
     ]
     share_contract = IbetShareContract()
-    token_address, _, _ = share_contract.create(arguments, address, private_key)
+    token_address, _, _ = await share_contract.create(arguments, address, private_key)
+
     contract = ContractUtils.get_contract("IbetShare", token_address)
     token_create_param = IbetShareCreate(
         name="token.name",
@@ -103,6 +105,8 @@ def deploy_share_token_contract(
     if created:
         token_update_operation_log.created = created
     session.add(token_update_operation_log)
+
+    session.commit()
 
     build_tx_param = {
         "chainId": config.CHAIN_ID,
@@ -230,6 +234,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.version = TokenVersion.V_22_12
         db.add(_token)
 
+        db.commit()
+
         # request target api
         resp = client.get(
             self.base_url.format(_token.token_address),
@@ -249,7 +255,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
 
     # <Normal_2>
     # Multiple record
-    def test_normal_2(self, client, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, client, db, personal_info_contract):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -259,7 +266,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract, create_param = deploy_share_token_contract(
+        token_contract, create_param = await deploy_share_token_contract(
             db, _issuer_address, issuer_private_key, personal_info_contract.address
         )
         _token_address = token_contract.address
@@ -279,6 +286,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.abi = ""
         _token.version = TokenVersion.V_22_12
         db.add(_token)
+
         db.commit()
 
         # create history
@@ -350,7 +358,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
 
     # <Normal_3_1>
     # Search filter: trigger
-    def test_normal_3_1(self, client, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_3_1(self, client, db, personal_info_contract):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -360,7 +369,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract, create_param = deploy_share_token_contract(
+        token_contract, create_param = await deploy_share_token_contract(
             db, _issuer_address, issuer_private_key, personal_info_contract.address
         )
         _token_address = token_contract.address
@@ -380,6 +389,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.abi = ""
         _token.version = TokenVersion.V_22_12
         db.add(_token)
+
         db.commit()
 
         # create history
@@ -449,7 +459,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
 
     # <Normal_3_2>
     # Search filter: modified_contents
-    def test_normal_3_2(self, client, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_3_2(self, client, db, personal_info_contract):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -459,7 +470,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract, create_param = deploy_share_token_contract(
+        token_contract, create_param = await deploy_share_token_contract(
             db, _issuer_address, issuer_private_key, personal_info_contract.address
         )
         _token_address = token_contract.address
@@ -479,6 +490,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.abi = ""
         _token.version = TokenVersion.V_22_12
         db.add(_token)
+
         db.commit()
 
         # create history
@@ -531,7 +543,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
 
     # <Normal_3_3>
     # Search filter: created_from
-    def test_normal_3_3(self, client, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_3_3(self, client, db, personal_info_contract):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -541,7 +554,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract, create_param = deploy_share_token_contract(
+        token_contract, create_param = await deploy_share_token_contract(
             db,
             _issuer_address,
             issuer_private_key,
@@ -575,6 +588,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _operation_log_1.original_contents = {}
         _operation_log_1.operation_category = TokenUpdateOperationCategory.UPDATE.value
         db.add(_operation_log_1)
+
         _operation_log_2 = TokenUpdateOperationLog()
         _operation_log_2.created = datetime(2023, 5, 3, tzinfo=timezone("UTC"))
         _operation_log_2.issuer_address = _issuer_address
@@ -584,6 +598,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _operation_log_2.original_contents = {}
         _operation_log_2.operation_category = TokenUpdateOperationCategory.UPDATE.value
         db.add(_operation_log_2)
+
         _operation_log_3 = TokenUpdateOperationLog()
         _operation_log_3.created = datetime(2023, 5, 4, tzinfo=timezone("UTC"))
         _operation_log_3.issuer_address = _issuer_address
@@ -594,6 +609,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _operation_log_3.status = 1
         _operation_log_3.operation_category = TokenUpdateOperationCategory.UPDATE.value
         db.add(_operation_log_3)
+
         db.commit()
 
         # request target API
@@ -631,7 +647,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
 
     # <Normal_3_4>
     # Search filter: created_to
-    def test_normal_3_4(self, client, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_3_4(self, client, db, personal_info_contract):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -641,7 +658,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract, create_param = deploy_share_token_contract(
+        token_contract, create_param = await deploy_share_token_contract(
             db,
             _issuer_address,
             issuer_private_key,
@@ -676,6 +693,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _operation_log_1.status = 1
         _operation_log_1.operation_category = TokenUpdateOperationCategory.UPDATE.value
         db.add(_operation_log_1)
+
         _operation_log_2 = TokenUpdateOperationLog()
         _operation_log_2.created = datetime(2023, 5, 3, tzinfo=timezone("UTC"))
         _operation_log_2.issuer_address = _issuer_address
@@ -686,6 +704,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _operation_log_2.status = 1
         _operation_log_2.operation_category = TokenUpdateOperationCategory.UPDATE.value
         db.add(_operation_log_2)
+
         _operation_log_3 = TokenUpdateOperationLog()
         _operation_log_3.created = datetime(2023, 5, 4, tzinfo=timezone("UTC"))
         _operation_log_3.issuer_address = _issuer_address
@@ -696,6 +715,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _operation_log_3.status = 1
         _operation_log_3.operation_category = TokenUpdateOperationCategory.UPDATE.value
         db.add(_operation_log_3)
+
         db.commit()
 
         # request target API
@@ -727,7 +747,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
 
     # <Normal_4_1>
     # Sort Order
-    def test_normal_4_1(self, client, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_4_1(self, client, db, personal_info_contract):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -737,7 +758,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract, create_param = deploy_share_token_contract(
+        token_contract, create_param = await deploy_share_token_contract(
             db, _issuer_address, issuer_private_key, personal_info_contract.address
         )
         _token_address = token_contract.address
@@ -757,6 +778,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.abi = ""
         _token.version = TokenVersion.V_22_12
         db.add(_token)
+
         db.commit()
 
         # create history
@@ -832,7 +854,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
 
     # <Normal_4_2>
     # Sort Item
-    def test_normal_4_2(self, client, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_4_2(self, client, db, personal_info_contract):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -842,7 +865,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract, create_param = deploy_share_token_contract(
+        token_contract, create_param = await deploy_share_token_contract(
             db, _issuer_address, issuer_private_key, personal_info_contract.address
         )
         _token_address = token_contract.address
@@ -862,6 +885,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.abi = ""
         _token.version = TokenVersion.V_22_12
         db.add(_token)
+
         db.commit()
 
         # create history
@@ -938,7 +962,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
 
     # <Normal_5_1>
     # Pagination
-    def test_normal_5_1(self, client, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_5_1(self, client, db, personal_info_contract):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -948,7 +973,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract, create_param = deploy_share_token_contract(
+        token_contract, create_param = await deploy_share_token_contract(
             db, _issuer_address, issuer_private_key, personal_info_contract.address
         )
         _token_address = token_contract.address
@@ -968,6 +993,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.abi = ""
         _token.version = TokenVersion.V_22_12
         db.add(_token)
+
         db.commit()
 
         # create history
@@ -1024,7 +1050,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
 
     # <Normal_5_2>
     # Pagination (over offset)
-    def test_normal_5_2(self, client, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_5_2(self, client, db, personal_info_contract):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -1034,7 +1061,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _keyfile = test_account["keyfile_json"]
 
         # Prepare data : Token
-        token_contract, create_param = deploy_share_token_contract(
+        token_contract, create_param = await deploy_share_token_contract(
             db, _issuer_address, issuer_private_key, personal_info_contract.address
         )
         _token_address = token_contract.address
@@ -1054,6 +1081,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _token.abi = ""
         _token.version = TokenVersion.V_22_12
         db.add(_token)
+
         db.commit()
 
         # create history

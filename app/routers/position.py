@@ -26,7 +26,7 @@ from sqlalchemy import String, and_, column, desc, func, literal, null, or_, sel
 from sqlalchemy.orm import aliased
 from web3 import Web3
 
-from app.database import DBSession
+from app.database import DBAsyncSession
 from app.exceptions import (
     AuthorizationError,
     ContractRevertError,
@@ -79,8 +79,8 @@ local_tz = timezone(TZ)
     response_model=ListAllPositionResponse,
     responses=get_routers_responses(422),
 )
-def list_all_position(
-    db: DBSession,
+async def list_all_position(
+    db: DBAsyncSession,
     account_address: str,
     issuer_address: Optional[str] = Header(None),
     include_former_position: bool = False,
@@ -133,13 +133,13 @@ def list_all_position(
     if issuer_address is not None:
         stmt = stmt.where(Token.issuer_address == issuer_address)
 
-    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Search Filter
     if token_type is not None:
         stmt = stmt.where(Token.type == token_type.value)
 
-    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Pagination
     if limit is not None:
@@ -148,7 +148,7 @@ def list_all_position(
         stmt = stmt.offset(offset)
 
     _position_list: Sequence[tuple[IDXPosition, int, Token]] = (
-        db.execute(stmt).tuples().all()
+        (await db.execute(stmt)).tuples().all()
     )
 
     positions = []
@@ -156,10 +156,10 @@ def list_all_position(
         # Get Token Name
         token_name = None
         if _token.type == TokenType.IBET_STRAIGHT_BOND.value:
-            _bond = IbetStraightBondContract(_token.token_address).get()
+            _bond = await IbetStraightBondContract(_token.token_address).get()
             token_name = _bond.name
         elif _token.type == TokenType.IBET_SHARE.value:
-            _share = IbetShareContract(_token.token_address).get()
+            _share = await IbetShareContract(_token.token_address).get()
             token_name = _share.name
         positions.append(
             {
@@ -195,8 +195,8 @@ def list_all_position(
     response_model=ListAllLockedPositionResponse,
     responses=get_routers_responses(422),
 )
-def list_all_locked_position(
-    db: DBSession,
+async def list_all_locked_position(
+    db: DBAsyncSession,
     account_address: str,
     issuer_address: Optional[str] = Header(None),
     token_type: Optional[TokenType] = Query(None),
@@ -225,13 +225,13 @@ def list_all_locked_position(
     if issuer_address is not None:
         stmt = stmt.where(Token.issuer_address == issuer_address)
 
-    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Search Filter
     if token_type is not None:
         stmt = stmt.where(Token.type == token_type.value)
 
-    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Pagination
     if limit is not None:
@@ -240,7 +240,7 @@ def list_all_locked_position(
         stmt = stmt.offset(offset)
 
     _position_list: Sequence[tuple[IDXLockedPosition, Token]] = (
-        db.execute(stmt).tuples().all()
+        (await db.execute(stmt)).tuples().all()
     )
 
     positions = []
@@ -248,10 +248,10 @@ def list_all_locked_position(
         # Get Token Name
         token_name = None
         if _token.type == TokenType.IBET_STRAIGHT_BOND.value:
-            _bond = IbetStraightBondContract(_token.token_address).get()
+            _bond = await IbetStraightBondContract(_token.token_address).get()
             token_name = _bond.name
         elif _token.type == TokenType.IBET_SHARE.value:
-            _share = IbetShareContract(_token.token_address).get()
+            _share = await IbetShareContract(_token.token_address).get()
             token_name = _share.name
         positions.append(
             {
@@ -283,8 +283,8 @@ def list_all_locked_position(
     response_model=ListAllLockEventsResponse,
     responses=get_routers_responses(422),
 )
-def list_all_lock_events(
-    db: DBSession,
+async def list_all_lock_events(
+    db: DBAsyncSession,
     account_address: str,
     issuer_address: Optional[str] = Header(None),
     request_query: ListAllLockEventsQuery = Depends(),
@@ -347,9 +347,9 @@ def list_all_lock_events(
     if issuer_address is not None:
         stmt_unlock = stmt_unlock.where(Token.issuer_address == issuer_address)
 
-    total = db.scalar(
-        select(func.count()).select_from(stmt_lock.subquery())
-    ) + db.scalar(select(func.count()).select_from(stmt_unlock.subquery()))
+    total = (
+        await db.scalar(select(func.count()).select_from(stmt_lock.subquery()))
+    ) + (await db.scalar(select(func.count()).select_from(stmt_unlock.subquery())))
 
     # Filter
     match request_query.category:
@@ -382,7 +382,7 @@ def list_all_lock_events(
             all_lock_event_alias.c.recipient_address == request_query.recipient_address
         )
 
-    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
     sort_attr = column(sort_item)
@@ -416,17 +416,19 @@ def list_all_lock_events(
         all_lock_event_alias.c.block_timestamp,
         Token,
     ]
-    lock_events = db.execute(select(*entries).from_statement(stmt)).tuples().all()
+    lock_events = (
+        (await db.execute(select(*entries).from_statement(stmt))).tuples().all()
+    )
 
     resp_data = []
     for lock_event in lock_events:
         token_name = None
         token: Token = lock_event.Token
         if token.type == TokenType.IBET_STRAIGHT_BOND.value:
-            _contract = IbetStraightBondContract(token.token_address).get()
+            _contract = await IbetStraightBondContract(token.token_address).get()
             token_name = _contract.name
         elif token.type == TokenType.IBET_SHARE.value:
-            _contract = IbetShareContract(token.token_address).get()
+            _contract = await IbetShareContract(token.token_address).get()
             token_name = _contract.name
 
         block_timestamp_utc = timezone("UTC").localize(lock_event[9])
@@ -473,8 +475,8 @@ def list_all_lock_events(
         ContractRevertError,
     ),
 )
-def force_unlock(
-    db: DBSession,
+async def force_unlock(
+    db: DBAsyncSession,
     request: Request,
     account_address: str,
     data: ForceUnlockRequest,
@@ -491,7 +493,7 @@ def force_unlock(
     )
 
     # Authentication
-    _account, decrypt_password = check_auth(
+    _account, decrypt_password = await check_auth(
         request=request,
         db=db,
         issuer_address=issuer_address,
@@ -509,16 +511,18 @@ def force_unlock(
     )
 
     # Verify that the token is issued by the issuer_address
-    _token = db.scalars(
-        select(Token)
-        .where(
-            and_(
-                Token.issuer_address == issuer_address,
-                Token.token_address == data.token_address,
-                Token.token_status != 2,
+    _token = (
+        await db.scalars(
+            select(Token)
+            .where(
+                and_(
+                    Token.issuer_address == issuer_address,
+                    Token.token_address == data.token_address,
+                    Token.token_status != 2,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _token is None:
         raise InvalidParameterError("token not found")
@@ -534,7 +538,7 @@ def force_unlock(
         "data": "",
     }
     try:
-        IbetSecurityTokenInterface(data.token_address).force_unlock(
+        await IbetSecurityTokenInterface(data.token_address).force_unlock(
             data=ForceUnlockParams(**unlock_data),
             tx_from=issuer_address,
             private_key=private_key,
@@ -554,8 +558,8 @@ def force_unlock(
     response_model=PositionResponse,
     responses=get_routers_responses(422, InvalidParameterError, 404),
 )
-def retrieve_position(
-    db: DBSession,
+async def retrieve_position(
+    db: DBAsyncSession,
     account_address: str,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
@@ -567,22 +571,28 @@ def retrieve_position(
 
     # Get Token
     if issuer_address is not None:
-        _token = db.scalars(
-            select(Token)
-            .where(
-                and_(
-                    Token.token_address == token_address,
-                    Token.issuer_address == issuer_address,
-                    Token.token_status != 2,
+        _token = (
+            await db.scalars(
+                select(Token)
+                .where(
+                    and_(
+                        Token.token_address == token_address,
+                        Token.issuer_address == issuer_address,
+                        Token.token_status != 2,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
     else:
-        _token = db.scalars(
-            select(Token)
-            .where(and_(Token.token_address == token_address, Token.token_status != 2))
-            .limit(1)
+        _token = (
+            await db.scalars(
+                select(Token)
+                .where(
+                    and_(Token.token_address == token_address, Token.token_status != 2)
+                )
+                .limit(1)
+            )
         ).first()
     if _token is None:
         raise HTTPException(status_code=404, detail="token not found")
@@ -590,27 +600,29 @@ def retrieve_position(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Position
-    _record: tuple[IDXPosition, int] = db.execute(
-        select(IDXPosition, func.sum(IDXLockedPosition.value))
-        .outerjoin(
-            IDXLockedPosition,
-            and_(
-                IDXLockedPosition.token_address == IDXPosition.token_address,
-                IDXLockedPosition.account_address == IDXPosition.account_address,
-            ),
-        )
-        .where(
-            and_(
-                IDXPosition.token_address == token_address,
-                IDXPosition.account_address == account_address,
+    _record: tuple[IDXPosition, int] = (
+        await db.execute(
+            select(IDXPosition, func.sum(IDXLockedPosition.value))
+            .outerjoin(
+                IDXLockedPosition,
+                and_(
+                    IDXLockedPosition.token_address == IDXPosition.token_address,
+                    IDXLockedPosition.account_address == IDXPosition.account_address,
+                ),
             )
+            .where(
+                and_(
+                    IDXPosition.token_address == token_address,
+                    IDXPosition.account_address == account_address,
+                )
+            )
+            .group_by(
+                IDXPosition.id,
+                IDXLockedPosition.token_address,
+                IDXLockedPosition.account_address,
+            )
+            .limit(1)
         )
-        .group_by(
-            IDXPosition.id,
-            IDXLockedPosition.token_address,
-            IDXLockedPosition.account_address,
-        )
-        .limit(1)
     ).first()
 
     if _record is not None:
@@ -629,10 +641,10 @@ def retrieve_position(
     # Get Token Name
     token_name = None
     if _token.type == TokenType.IBET_STRAIGHT_BOND.value:
-        _bond = IbetStraightBondContract(_token.token_address).get()
+        _bond = await IbetStraightBondContract(_token.token_address).get()
         token_name = _bond.name
     elif _token.type == TokenType.IBET_SHARE.value:
-        _share = IbetShareContract(_token.token_address).get()
+        _share = await IbetShareContract(_token.token_address).get()
         token_name = _share.name
 
     resp = {

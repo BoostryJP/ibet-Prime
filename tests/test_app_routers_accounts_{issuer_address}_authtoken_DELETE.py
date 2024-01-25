@@ -56,6 +56,8 @@ class TestAppRoutersAccountsAuthTokenDELETE:
         auth_token.valid_duration = 120
         db.add(auth_token)
 
+        db.commit()
+
         # request target api
         resp = client.delete(
             self.apiurl.format(test_account["address"]),
@@ -89,6 +91,8 @@ class TestAppRoutersAccountsAuthTokenDELETE:
         auth_token.auth_token = hashlib.sha256(self.auth_token.encode()).hexdigest()
         auth_token.valid_duration = 0
         db.add(auth_token)
+
+        db.commit()
 
         # request target api
         resp = client.delete(
@@ -129,6 +133,8 @@ class TestAppRoutersAccountsAuthTokenDELETE:
         auth_token.usage_start = datetime(2022, 7, 15, 12, 34, 56)
         auth_token.valid_duration = 120
         db.add(auth_token)
+
+        db.commit()
 
         # request target api
         resp = client.delete(
@@ -177,6 +183,8 @@ class TestAppRoutersAccountsAuthTokenDELETE:
         auth_token.valid_duration = 120
         db.add(auth_token)
 
+        db.commit()
+
         # request target api
         resp = client.delete(
             self.apiurl.format(test_account["address"]),
@@ -224,6 +232,8 @@ class TestAppRoutersAccountsAuthTokenDELETE:
         auth_token.valid_duration = 120
         db.add(auth_token)
 
+        db.commit()
+
         # request target api
         resp = client.delete(
             self.apiurl.format(test_account["address"]),
@@ -263,6 +273,8 @@ class TestAppRoutersAccountsAuthTokenDELETE:
         auth_token.valid_duration = 120
         db.add(auth_token)
 
+        db.commit()
+
         # request target api
         resp = client.delete(
             self.apiurl.format(test_account["address"]),
@@ -296,6 +308,8 @@ class TestAppRoutersAccountsAuthTokenDELETE:
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
         db.add(account)
+
+        db.commit()
 
         # request target api
         resp = client.delete(
