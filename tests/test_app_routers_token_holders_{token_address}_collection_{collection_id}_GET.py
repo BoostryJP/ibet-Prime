@@ -116,9 +116,9 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         _token_holders_list.block_number = 100
         _token_holders_list.batch_status = TokenHolderBatchStatus.DONE.value
         db.add(_token_holders_list)
+        db.commit()
 
         holders = []
-
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
@@ -127,7 +127,6 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             _token_holder.locked_balance = 20000 * (i + 1)
             db.add(_token_holder)
             holders.append(_token_holder.json())
-
         db.commit()
 
         # request target api
