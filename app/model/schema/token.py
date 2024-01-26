@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import math
 from datetime import datetime
 from decimal import Decimal
@@ -309,12 +310,12 @@ class IssueRedeemSortItem(str, Enum):
 
 @dataclass
 class ListAdditionalIssuanceHistoryQuery:
-    sort_item: Annotated[
-        IssueRedeemSortItem, Query()
-    ] = IssueRedeemSortItem.BLOCK_TIMESTAMP
-    sort_order: Annotated[
-        SortOrder, Query(description="0:asc, 1:desc")
-    ] = SortOrder.DESC
+    sort_item: Annotated[IssueRedeemSortItem, Query()] = (
+        IssueRedeemSortItem.BLOCK_TIMESTAMP
+    )
+    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = (
+        SortOrder.DESC
+    )
     offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
     limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
 
@@ -322,21 +323,21 @@ class ListAdditionalIssuanceHistoryQuery:
 @dataclass
 class ListAllAdditionalIssueUploadQuery:
     processed: Annotated[Optional[bool], Query()] = None
-    sort_order: Annotated[
-        SortOrder, Query(description="0:asc, 1:desc")
-    ] = SortOrder.DESC
+    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = (
+        SortOrder.DESC
+    )
     offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
     limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
 
 
 @dataclass
 class ListRedeemHistoryQuery:
-    sort_item: Annotated[
-        IssueRedeemSortItem, Query()
-    ] = IssueRedeemSortItem.BLOCK_TIMESTAMP
-    sort_order: Annotated[
-        SortOrder, Query(description="0:asc, 1:desc")
-    ] = SortOrder.DESC
+    sort_item: Annotated[IssueRedeemSortItem, Query()] = (
+        IssueRedeemSortItem.BLOCK_TIMESTAMP
+    )
+    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = (
+        SortOrder.DESC
+    )
     offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
     limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
 
@@ -344,9 +345,9 @@ class ListRedeemHistoryQuery:
 @dataclass
 class ListAllRedeemUploadQuery:
     processed: Annotated[Optional[bool], Query()] = None
-    sort_order: Annotated[
-        SortOrder, Query(description="0:asc, 1:desc")
-    ] = SortOrder.DESC
+    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = (
+        SortOrder.DESC
+    )
     offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
     limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
 
@@ -372,9 +373,9 @@ class ListAllTokenLockEventsQuery:
     offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
     limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
 
-    account_address: Annotated[
-        Optional[str], Query(description="Account address")
-    ] = None
+    account_address: Annotated[Optional[str], Query(description="Account address")] = (
+        None
+    )
     msg_sender: Annotated[Optional[str], Query(description="Msg sender")] = None
     lock_address: Annotated[Optional[str], Query(description="Lock address")] = None
     recipient_address: Annotated[
@@ -420,9 +421,9 @@ class ListTokenOperationLogHistoryQuery:
     created_to: Annotated[
         Optional[datetime], Query(description="Created datetime filter(To)")
     ] = None
-    sort_item: Annotated[
-        ListTokenHistorySortItem, Query(description="Sort item")
-    ] = ListTokenHistorySortItem.created
+    sort_item: Annotated[ListTokenHistorySortItem, Query(description="Sort item")] = (
+        ListTokenHistorySortItem.created
+    )
     sort_order: Annotated[
         SortOrder, Query(description="Sort order(0: ASC, 1: DESC)")
     ] = SortOrder.DESC

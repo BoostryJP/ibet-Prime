@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import json
 from datetime import datetime, timedelta
 from decimal import Decimal

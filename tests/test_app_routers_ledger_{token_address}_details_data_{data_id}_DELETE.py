@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from sqlalchemy import select
 
 from app.model.db import LedgerDetailsData, Token, TokenType, TokenVersion

@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from aiohttp import ClientSession, ClientTimeout, TCPConnector
 from rich.text import Text
 from src import connector

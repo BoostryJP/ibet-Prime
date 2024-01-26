@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import logging
 from typing import Optional, Sequence
 from unittest.mock import patch
@@ -377,16 +378,16 @@ class TestProcessor:
             await processor.process()
 
             # Assertion
-            _batch_register_upload_list: Sequence[
-                BatchRegisterPersonalInfoUpload
-            ] = db.scalars(
-                select(BatchRegisterPersonalInfoUpload)
-                .where(
-                    BatchRegisterPersonalInfoUpload.status
-                    == BatchRegisterPersonalInfoUploadStatus.DONE.value
-                )
-                .order_by(BatchRegisterPersonalInfoUpload.created)
-            ).all()
+            _batch_register_upload_list: Sequence[BatchRegisterPersonalInfoUpload] = (
+                db.scalars(
+                    select(BatchRegisterPersonalInfoUpload)
+                    .where(
+                        BatchRegisterPersonalInfoUpload.status
+                        == BatchRegisterPersonalInfoUploadStatus.DONE.value
+                    )
+                    .order_by(BatchRegisterPersonalInfoUpload.created)
+                ).all()
+            )
             assert len(_batch_register_upload_list) == 2
 
             assert _batch_register_upload_list[0].issuer_address == _account["address"]
@@ -402,16 +403,16 @@ class TestProcessor:
             for _batch_register in _batch_register_list:
                 assert _batch_register.status == 1
 
-            _batch_register_upload_list: Sequence[
-                BatchRegisterPersonalInfoUpload
-            ] = db.scalars(
-                select(BatchRegisterPersonalInfoUpload)
-                .where(
-                    BatchRegisterPersonalInfoUpload.status
-                    == BatchRegisterPersonalInfoUploadStatus.PENDING.value
-                )
-                .order_by(BatchRegisterPersonalInfoUpload.created)
-            ).all()
+            _batch_register_upload_list: Sequence[BatchRegisterPersonalInfoUpload] = (
+                db.scalars(
+                    select(BatchRegisterPersonalInfoUpload)
+                    .where(
+                        BatchRegisterPersonalInfoUpload.status
+                        == BatchRegisterPersonalInfoUploadStatus.PENDING.value
+                    )
+                    .order_by(BatchRegisterPersonalInfoUpload.created)
+                ).all()
+            )
 
             assert len(_batch_register_upload_list) == 4
 
@@ -533,16 +534,16 @@ class TestProcessor:
             await processor.process()
 
             # Assertion
-            _batch_register_upload_list: Sequence[
-                BatchRegisterPersonalInfoUpload
-            ] = db.scalars(
-                select(BatchRegisterPersonalInfoUpload)
-                .where(
-                    BatchRegisterPersonalInfoUpload.status
-                    == BatchRegisterPersonalInfoUploadStatus.DONE.value
-                )
-                .order_by(BatchRegisterPersonalInfoUpload.created)
-            ).all()
+            _batch_register_upload_list: Sequence[BatchRegisterPersonalInfoUpload] = (
+                db.scalars(
+                    select(BatchRegisterPersonalInfoUpload)
+                    .where(
+                        BatchRegisterPersonalInfoUpload.status
+                        == BatchRegisterPersonalInfoUploadStatus.DONE.value
+                    )
+                    .order_by(BatchRegisterPersonalInfoUpload.created)
+                ).all()
+            )
             assert len(_batch_register_upload_list) == 2
 
             assert _batch_register_upload_list[0].issuer_address == _account["address"]
@@ -558,16 +559,16 @@ class TestProcessor:
             for _batch_register in _batch_register_list:
                 assert _batch_register.status == 1
 
-            _batch_register_upload_list: Sequence[
-                BatchRegisterPersonalInfoUpload
-            ] = db.scalars(
-                select(BatchRegisterPersonalInfoUpload)
-                .where(
-                    BatchRegisterPersonalInfoUpload.status
-                    == BatchRegisterPersonalInfoUploadStatus.PENDING.value
-                )
-                .order_by(BatchRegisterPersonalInfoUpload.created)
-            ).all()
+            _batch_register_upload_list: Sequence[BatchRegisterPersonalInfoUpload] = (
+                db.scalars(
+                    select(BatchRegisterPersonalInfoUpload)
+                    .where(
+                        BatchRegisterPersonalInfoUpload.status
+                        == BatchRegisterPersonalInfoUploadStatus.PENDING.value
+                    )
+                    .order_by(BatchRegisterPersonalInfoUpload.created)
+                ).all()
+            )
 
             assert len(_batch_register_upload_list) == 4
 
@@ -660,16 +661,16 @@ class TestProcessor:
             mock.assert_not_called()
 
             # Assertion
-            _batch_register_upload: Optional[
-                BatchRegisterPersonalInfoUpload
-            ] = db.scalars(
-                select(BatchRegisterPersonalInfoUpload)
-                .where(
-                    BatchRegisterPersonalInfoUpload.issuer_address
-                    == _account["address"]
-                )
-                .limit(1)
-            ).first()
+            _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = (
+                db.scalars(
+                    select(BatchRegisterPersonalInfoUpload)
+                    .where(
+                        BatchRegisterPersonalInfoUpload.issuer_address
+                        == _account["address"]
+                    )
+                    .limit(1)
+                ).first()
+            )
             assert (
                 _batch_register_upload.status
                 == BatchRegisterPersonalInfoUploadStatus.FAILED.value
@@ -777,16 +778,16 @@ class TestProcessor:
             await processor.process()
 
             # Assertion
-            _batch_register_upload: Optional[
-                BatchRegisterPersonalInfoUpload
-            ] = db.scalars(
-                select(BatchRegisterPersonalInfoUpload)
-                .where(
-                    BatchRegisterPersonalInfoUpload.issuer_address
-                    == _account["address"]
-                )
-                .limit(1)
-            ).first()
+            _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = (
+                db.scalars(
+                    select(BatchRegisterPersonalInfoUpload)
+                    .where(
+                        BatchRegisterPersonalInfoUpload.issuer_address
+                        == _account["address"]
+                    )
+                    .limit(1)
+                ).first()
+            )
             assert (
                 _batch_register_upload.status
                 == BatchRegisterPersonalInfoUploadStatus.FAILED.value
@@ -910,16 +911,16 @@ class TestProcessor:
             await processor.process()
 
             # Assertion
-            _batch_register_upload: Optional[
-                BatchRegisterPersonalInfoUpload
-            ] = db.scalars(
-                select(BatchRegisterPersonalInfoUpload)
-                .where(
-                    BatchRegisterPersonalInfoUpload.issuer_address
-                    == _account["address"]
-                )
-                .limit(1)
-            ).first()
+            _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = (
+                db.scalars(
+                    select(BatchRegisterPersonalInfoUpload)
+                    .where(
+                        BatchRegisterPersonalInfoUpload.issuer_address
+                        == _account["address"]
+                    )
+                    .limit(1)
+                ).first()
+            )
             assert (
                 _batch_register_upload.status
                 == BatchRegisterPersonalInfoUploadStatus.FAILED.value

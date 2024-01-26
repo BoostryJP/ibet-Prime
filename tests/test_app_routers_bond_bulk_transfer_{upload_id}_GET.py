@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from app.model.db import Account, BulkTransfer, BulkTransferUpload, TokenType
 from tests.account_config import config_eth_account
 

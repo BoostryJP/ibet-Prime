@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import uuid
 from typing import Annotated, List, Optional
 
@@ -31,12 +32,12 @@ from app.model.schema.personal_info import PersonalInfoIndex
 # REQUEST
 ############################
 class ListTokenHoldersPersonalInfoQuery(BaseModel):
-    offset: Annotated[
-        Optional[NonNegativeInt], Query(description="start position")
-    ] = None
-    limit: Annotated[
-        Optional[NonNegativeInt], Query(description="number of set")
-    ] = None
+    offset: Annotated[Optional[NonNegativeInt], Query(description="start position")] = (
+        None
+    )
+    limit: Annotated[Optional[NonNegativeInt], Query(description="number of set")] = (
+        None
+    )
     sort_order: Annotated[
         Optional[SortOrder], Query(description="sort order(0: ASC, 1: DESC)")
     ] = SortOrder.ASC

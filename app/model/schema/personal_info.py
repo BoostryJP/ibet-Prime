@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 from typing import Annotated, List, Optional
 
@@ -74,9 +75,9 @@ class RegisterPersonalInfoRequest(PersonalInfoInput):
 @dataclass
 class ListAllPersonalInfoBatchRegistrationUploadQuery:
     status: Annotated[Optional[str], Query()] = None
-    sort_order: Annotated[
-        SortOrder, Query(description="0:asc, 1:desc")
-    ] = SortOrder.DESC
+    sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = (
+        SortOrder.DESC
+    )
     offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
     limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
 

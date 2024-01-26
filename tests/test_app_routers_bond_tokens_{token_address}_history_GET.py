@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import json
 from datetime import datetime
 from unittest.mock import ANY
@@ -226,9 +227,11 @@ class TestAppRoutersBondTokensTokenAddressHistoryGET:
         create_token_param: dict, issuer_address: str, token_address: str
     ):
         interest_payment_date = [
-            create_token_param["interest_payment_date"][i]
-            if len(create_token_param["interest_payment_date"]) > i
-            else ""
+            (
+                create_token_param["interest_payment_date"][i]
+                if len(create_token_param["interest_payment_date"]) > i
+                else ""
+            )
             for i in range(12)
         ]
 

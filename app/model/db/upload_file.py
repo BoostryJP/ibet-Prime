@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from sqlalchemy import Integer, LargeBinary, String
 from sqlalchemy.orm import Mapped, mapped_column
 

@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from src.gui.widget.base import TuiWidget
 from src.gui.widget.tx_list_table import TxListTable
 from textual.app import ComposeResult

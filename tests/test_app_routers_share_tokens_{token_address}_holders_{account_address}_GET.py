@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 
 from app.model.db import (
@@ -394,7 +395,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersAccountAddressGET:
             "postal_code": "postal_code_test1",
             "address": "address_test1",
             "email": "email_test1",
-            "birth": "birth_test1"
+            "birth": "birth_test1",
             # PersonalInfo is partially registered.
         }
         db.add(idx_personal_info_1)

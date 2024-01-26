@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 
 from app.model.db import (
@@ -331,7 +332,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
             "postal_code": "postal_code_test3",
             "address": "address_test3",
             "email": "email_test3",
-            "birth": "birth_test3"
+            "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
         db.add(idx_personal_info_3)
@@ -498,7 +499,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
             "postal_code": "postal_code_test3",
             "address": "address_test3",
             "email": "email_test3",
-            "birth": "birth_test3"
+            "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
         db.add(idx_personal_info_3)
@@ -637,7 +638,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
             "postal_code": "postal_code_test3",
             "address": "address_test3",
             "email": "email_test3",
-            "birth": "birth_test3"
+            "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
         db.add(idx_personal_info_3)
@@ -868,7 +869,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
             "postal_code": "postal_code_test3",
             "address": "address_test3",
             "email": "email_test3",
-            "birth": "birth_test3"
+            "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
         db.add(idx_personal_info_3)
@@ -1098,7 +1099,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
             "postal_code": "postal_code_test3",
             "address": "address_test3",
             "email": "email_test3",
-            "birth": "birth_test3"
+            "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
         db.add(idx_personal_info_3)
@@ -1309,7 +1310,7 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
             "postal_code": "postal_code_test3",
             "address": "address_test3",
             "email": "email_test3",
-            "birth": "birth_test3"
+            "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
         db.add(idx_personal_info_3)

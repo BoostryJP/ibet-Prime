@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import uuid
 from datetime import datetime
 from typing import List, Optional, Sequence
@@ -1016,9 +1017,9 @@ async def retrieve_batch_additional_issue(
                     "account_address": record[0].account_address,
                     "amount": record[0].amount,
                     "status": record[0].status,
-                    "personal_information": record[1].personal_info
-                    if record[1]
-                    else personal_info_default,
+                    "personal_information": (
+                        record[1].personal_info if record[1] else personal_info_default
+                    ),
                 }
                 for record in record_list
             ],
@@ -1433,9 +1434,9 @@ async def retrieve_batch_redeem(
                     "account_address": record[0].account_address,
                     "amount": record[0].amount,
                     "status": record[0].status,
-                    "personal_information": record[1].personal_info
-                    if record[1]
-                    else personal_info_default,
+                    "personal_information": (
+                        record[1].personal_info if record[1] else personal_info_default
+                    ),
                 }
                 for record in record_list
             ],
@@ -2774,13 +2775,17 @@ async def list_transfer_history(
                 "transaction_hash": _transfer.transaction_hash,
                 "token_address": token_address,
                 "from_address": _transfer.from_address,
-                "from_address_personal_information": _from_address_personal_info.personal_info
-                if _from_address_personal_info is not None
-                else None,
+                "from_address_personal_information": (
+                    _from_address_personal_info.personal_info
+                    if _from_address_personal_info is not None
+                    else None
+                ),
                 "to_address": _transfer.to_address,
-                "to_address_personal_information": _to_address_personal_info.personal_info
-                if _to_address_personal_info is not None
-                else None,
+                "to_address_personal_information": (
+                    _to_address_personal_info.personal_info
+                    if _to_address_personal_info is not None
+                    else None
+                ),
                 "amount": _transfer.amount,
                 "source_event": _transfer.source_event,
                 "data": _transfer.data,
@@ -3185,16 +3190,20 @@ async def list_token_transfer_approval_history(
         from_address_personal_info = (
             _from_address_snapshot_personal_info
             if _from_address_snapshot_personal_info is not None
-            else _from_address_latest_personal_info.personal_info
-            if _from_address_latest_personal_info is not None
-            else None
+            else (
+                _from_address_latest_personal_info.personal_info
+                if _from_address_latest_personal_info is not None
+                else None
+            )
         )
         to_address_personal_info = (
             _to_address_snapshot_personal_info
             if _to_address_snapshot_personal_info is not None
-            else _to_address_latest_personal_info.personal_info
-            if _to_address_latest_personal_info is not None
-            else None
+            else (
+                _to_address_latest_personal_info.personal_info
+                if _to_address_latest_personal_info is not None
+                else None
+            )
         )
         transfer_approval_history.append(
             {
@@ -3851,9 +3860,9 @@ async def list_bulk_transfer_upload(
                 "issuer_address": _upload.issuer_address,
                 "token_type": _upload.token_type,
                 "upload_id": _upload.upload_id,
-                "transaction_compression": True
-                if _upload.transaction_compression is True
-                else False,
+                "transaction_compression": (
+                    True if _upload.transaction_compression is True else False
+                ),
                 "status": _upload.status,
                 "created": created_utc.astimezone(local_tz).isoformat(),
             }

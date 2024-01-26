@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import eth_keyfile
 import pytest
 from sqlalchemy import select

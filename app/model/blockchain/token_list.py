@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from web3.exceptions import TimeExhausted
 
 from app.exceptions import ContractRevertError, SendTransactionError

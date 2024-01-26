@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from pydantic import BaseModel
 from rich.text import Text
 from src.gui.consts import ID

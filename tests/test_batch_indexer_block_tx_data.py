@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import logging
 from unittest import mock
 from unittest.mock import MagicMock

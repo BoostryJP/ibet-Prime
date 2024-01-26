@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -81,9 +82,9 @@ class Processor:
     async def process(self):
         db_session: AsyncSession = BatchAsyncSessionLocal()
         try:
-            upload_list: list[
-                BatchRegisterPersonalInfoUpload
-            ] = await self.__get_uploads(db_session=db_session)
+            upload_list: list[BatchRegisterPersonalInfoUpload] = (
+                await self.__get_uploads(db_session=db_session)
+            )
 
             if len(upload_list) < 1:
                 return
@@ -235,11 +236,11 @@ class Processor:
 
             contract_address = token_contract.personal_info_contract_address
             if contract_address != ZERO_ADDRESS:
-                self.personal_info_contract_accessor_map[
-                    token.token_address
-                ] = PersonalInfoContract(
-                    issuer=issuer_account,
-                    contract_address=contract_address,
+                self.personal_info_contract_accessor_map[token.token_address] = (
+                    PersonalInfoContract(
+                        issuer=issuer_account,
+                        contract_address=contract_address,
+                    )
                 )
 
     async def __get_uploads(

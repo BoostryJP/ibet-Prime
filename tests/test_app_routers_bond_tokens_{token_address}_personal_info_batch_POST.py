@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import hashlib
 from typing import Optional
 from unittest.mock import ANY

@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import logging
 
 from eth_keyfile import decode_keyfile_json
