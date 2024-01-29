@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 
 import pytest
@@ -79,6 +80,8 @@ class TestAppRoutersBondBulkTransferGET:
             bulk_transfer_upload.created = utc_now
             db.add(bulk_transfer_upload)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.test_url,
@@ -116,6 +119,8 @@ class TestAppRoutersBondBulkTransferGET:
             bulk_transfer_upload.status = i
             bulk_transfer_upload.created = utc_now
             db.add(bulk_transfer_upload)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.test_url)

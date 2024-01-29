@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from unittest import mock
 
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
@@ -85,6 +86,8 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _locked_position.account_address = other_account_address  # not to be included
         _locked_position.value = 5
         db.add(_locked_position)
+
+        db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -169,6 +172,8 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _locked_position.value = 5
         db.add(_locked_position)
 
+        db.commit()
+
         # mock
         share_1 = IbetShareContract()
         share_1.name = "test_share_1"
@@ -224,6 +229,8 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _position.pending_transfer = 13
         db.add(_position)
 
+        db.commit()
+
         # mock
         bond_1 = IbetStraightBondContract()
         bond_1.name = "test_bond_1"
@@ -278,6 +285,8 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _locked_position.account_address = account_address
         _locked_position.value = 5  # not zero
         db.add(_locked_position)
+
+        db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -344,6 +353,8 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _locked_position.value = 5
         db.add(_locked_position)
 
+        db.commit()
+
         # mock
         bond_1 = IbetStraightBondContract()
         bond_1.name = "test_bond_1"
@@ -399,6 +410,8 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _position.exchange_commitment = 15
         _position.pending_transfer = 20
         db.add(_position)
+
+        db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -464,6 +477,8 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _locked_position.account_address = account_address
         _locked_position.value = 0
         db.add(_locked_position)
+
+        db.commit()
 
         # mock
         bond_1 = IbetStraightBondContract()
@@ -576,6 +591,8 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _position.pending_transfer = 13
         db.add(_position)
 
+        db.commit()
+
         # request target api
         resp = client.get(
             self.base_url.format(
@@ -618,6 +635,8 @@ class TestAppRoutersPositionsAccountAddressTokenAddressGET:
         _position.exchange_commitment = 12
         _position.pending_transfer = 13
         db.add(_position)
+
+        db.commit()
 
         # request target api
         resp = client.get(

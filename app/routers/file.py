@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import base64
 import uuid
 from typing import Optional
@@ -25,7 +26,7 @@ from fastapi import APIRouter, Header, Query
 from fastapi.exceptions import HTTPException
 from sqlalchemy import and_, desc, func, select
 
-from app.database import DBSession
+from app.database import DBAsyncSession
 from app.model.db import UploadFile
 from app.model.schema import (
     DownloadFileResponse,
@@ -48,8 +49,8 @@ utc_tz = pytz.timezone("UTC")
 @router.get(
     "", response_model=ListAllFilesResponse, responses=get_routers_responses(422)
 )
-def list_all_upload_files(
-    db: DBSession,
+async def list_all_upload_files(
+    db: DBAsyncSession,
     issuer_address: Optional[str] = Header(None),
     relation: Optional[str] = Query(None),
     file_name: Optional[str] = Query(None, description="partial match"),
@@ -74,7 +75,7 @@ def list_all_upload_files(
     ]
     stmt = select(*rows).order_by(desc(UploadFile.modified))
 
-    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Search Filter
     if issuer_address is not None:
@@ -89,7 +90,7 @@ def list_all_upload_files(
         else:
             stmt = stmt.where(UploadFile.label.like("%" + label + "%"))
 
-    count = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Pagination
     if limit is not None:
@@ -97,7 +98,7 @@ def list_all_upload_files(
     if offset is not None:
         stmt = stmt.offset(offset)
 
-    _upload_file_list = db.execute(stmt).tuples().all()
+    _upload_file_list = (await db.execute(stmt)).tuples().all()
 
     files = []
     for _upload_file in _upload_file_list:
@@ -132,8 +133,8 @@ def list_all_upload_files(
 
 # POST: /files
 @router.post("", response_model=FileResponse, responses=get_routers_responses(422))
-def upload_file(
-    db: DBSession,
+async def upload_file(
+    db: DBAsyncSession,
     data: UploadFileRequest,
     issuer_address: str = Header(...),
 ):
@@ -156,7 +157,7 @@ def upload_file(
     _upload_file.description = data.description
     _upload_file.label = data.label
     db.add(_upload_file)
-    db.commit()
+    await db.commit()
 
     resp = {
         "file_id": _upload_file.file_id,
@@ -180,8 +181,8 @@ def upload_file(
     response_model=DownloadFileResponse,
     responses=get_routers_responses(404),
 )
-def download_file(
-    db: DBSession,
+async def download_file(
+    db: DBAsyncSession,
     file_id: str,
     issuer_address: Optional[str] = Header(None),
 ):
@@ -192,19 +193,23 @@ def download_file(
 
     # Get Upload File
     if issuer_address is None:
-        _upload_file: UploadFile | None = db.scalars(
-            select(UploadFile).where(UploadFile.file_id == file_id).limit(1)
+        _upload_file: UploadFile | None = (
+            await db.scalars(
+                select(UploadFile).where(UploadFile.file_id == file_id).limit(1)
+            )
         ).first()
     else:
-        _upload_file: UploadFile | None = db.scalars(
-            select(UploadFile)
-            .where(
-                and_(
-                    UploadFile.file_id == file_id,
-                    UploadFile.issuer_address == issuer_address,
+        _upload_file: UploadFile | None = (
+            await db.scalars(
+                select(UploadFile)
+                .where(
+                    and_(
+                        UploadFile.file_id == file_id,
+                        UploadFile.issuer_address == issuer_address,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
     if _upload_file is None:
         raise HTTPException(status_code=404, detail="file not found")
@@ -230,8 +235,8 @@ def download_file(
 @router.delete(
     "/{file_id}", response_model=None, responses=get_routers_responses(422, 404)
 )
-def delete_file(
-    db: DBSession,
+async def delete_file(
+    db: DBAsyncSession,
     file_id: str,
     issuer_address: str = Header(...),
 ):
@@ -241,21 +246,23 @@ def delete_file(
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
     # Get Upload File
-    _upload_file = db.scalars(
-        select(UploadFile)
-        .where(
-            and_(
-                UploadFile.file_id == file_id,
-                UploadFile.issuer_address == issuer_address,
+    _upload_file = (
+        await db.scalars(
+            select(UploadFile)
+            .where(
+                and_(
+                    UploadFile.file_id == file_id,
+                    UploadFile.issuer_address == issuer_address,
+                )
             )
+            .limit(1)
         )
-        .limit(1)
     ).first()
     if _upload_file is None:
         raise HTTPException(status_code=404, detail="file not found")
 
     # Delete Upload File
-    db.delete(_upload_file)
-    db.commit()
+    await db.delete(_upload_file)
+    await db.commit()
 
     return

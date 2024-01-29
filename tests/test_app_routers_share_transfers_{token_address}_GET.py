@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 
 from pytz import timezone
@@ -82,6 +83,8 @@ class TestAppRoutersShareTransfersGET:
             _idx_transfer.data = None
             _idx_transfer.block_timestamp = self.test_block_timestamp[i]
             db.add(_idx_transfer)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address))
@@ -187,6 +190,8 @@ class TestAppRoutersShareTransfersGET:
             _idx_transfer.data = None
             _idx_transfer.block_timestamp = self.test_block_timestamp[i]
             db.add(_idx_transfer)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -310,6 +315,8 @@ class TestAppRoutersShareTransfersGET:
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
@@ -424,6 +431,8 @@ class TestAppRoutersShareTransfersGET:
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address), params={"data": "unlo"}
@@ -515,6 +524,8 @@ class TestAppRoutersShareTransfersGET:
             _idx_transfer.data = None
             _idx_transfer.block_timestamp = self.test_block_timestamp[i]
             db.add(_idx_transfer)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -702,6 +713,8 @@ class TestAppRoutersShareTransfersGET:
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
@@ -860,6 +873,8 @@ class TestAppRoutersShareTransfersGET:
         _idx_transfer.data = {"message": "unlock"}
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -1020,6 +1035,8 @@ class TestAppRoutersShareTransfersGET:
         _idx_transfer.block_timestamp = self.test_block_timestamp[2]
         db.add(_idx_transfer)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
@@ -1159,6 +1176,8 @@ class TestAppRoutersShareTransfersGET:
         _token.token_status = 0
         _token.version = TokenVersion.V_22_12
         db.add(_token)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address))

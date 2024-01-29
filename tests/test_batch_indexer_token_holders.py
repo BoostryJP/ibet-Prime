@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import logging
 import uuid
 from typing import List
@@ -25,6 +26,7 @@ import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
@@ -93,7 +95,7 @@ def deploy_personal_info_contract(issuer_user):
     return contract_address
 
 
-def deploy_bond_token_contract(
+async def deploy_bond_token_contract(
     address,
     private_key,
     personal_info_contract_address,
@@ -114,8 +116,8 @@ def deploy_bond_token_contract(
         "token.purpose",
     ]
     bond_contrat = IbetStraightBondContract()
-    token_address, _, _ = bond_contrat.create(arguments, address, private_key)
-    bond_contrat.update(
+    token_address, _, _ = await bond_contrat.create(arguments, address, private_key)
+    await bond_contrat.update(
         data=IbetStraightBondUpdateParams(
             transferable=True,
             personal_info_contract_address=personal_info_contract_address,
@@ -129,7 +131,7 @@ def deploy_bond_token_contract(
     return ContractUtils.get_contract("IbetStraightBond", token_address)
 
 
-def deploy_share_token_contract(
+async def deploy_share_token_contract(
     address,
     private_key,
     personal_info_contract_address,
@@ -148,8 +150,8 @@ def deploy_share_token_contract(
         30,
     ]
     share_contract = IbetShareContract()
-    token_address, _, _ = share_contract.create(arguments, address, private_key)
-    share_contract.update(
+    token_address, _, _ = await share_contract.create(arguments, address, private_key)
+    await share_contract.update(
         data=IbetShareUpdateParams(
             transferable=True,
             personal_info_contract_address=personal_info_contract_address,
@@ -211,7 +213,8 @@ class TestProcessor:
     # - IssueFrom
     # - RedeemFrom
     # - Lock
-    def test_normal_1(
+    @pytest.mark.asyncio
+    async def test_normal_1(
         self, processor, db, personal_info_contract, ibet_exchange_contract
     ):
         exchange_contract = ibet_exchange_contract
@@ -232,7 +235,7 @@ class TestProcessor:
         )
 
         # Issuer issues bond token.
-        token_contract = deploy_bond_token_contract(
+        token_contract = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -464,7 +467,7 @@ class TestProcessor:
         # user1: (hold: 13000, locked: 3000) user2: 44000
 
         # Issuer issues other token to create exchange event
-        other_token_contract = deploy_bond_token_contract(
+        other_token_contract = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -533,7 +536,7 @@ class TestProcessor:
         )
 
         # Then execute processor.
-        processor.collect()
+        await processor.collect()
 
         user1_record: TokenHolder = db.scalars(
             select(TokenHolder)
@@ -586,7 +589,8 @@ class TestProcessor:
     #   - ApproveTransfer
     # - Lock
     # - Unlock
-    def test_normal_2(
+    @pytest.mark.asyncio
+    async def test_normal_2(
         self, processor, db, personal_info_contract, ibet_security_token_escrow_contract
     ):
         user_1 = config_eth_account("user1")
@@ -606,7 +610,7 @@ class TestProcessor:
         )
 
         # Issuer issues bond token.
-        token_contract = deploy_bond_token_contract(
+        token_contract = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -761,7 +765,7 @@ class TestProcessor:
         )
 
         # Then execute processor.
-        processor.collect()
+        await processor.collect()
 
         user1_record: TokenHolder = db.scalars(
             select(TokenHolder)
@@ -807,7 +811,8 @@ class TestProcessor:
     # Events
     # - ApplyForTransfer - pending
     # - Escrow - pending
-    def test_normal_3(
+    @pytest.mark.asyncio
+    async def test_normal_3(
         self, processor, db, personal_info_contract, ibet_security_token_escrow_contract
     ):
         user_1 = config_eth_account("user1")
@@ -827,7 +832,7 @@ class TestProcessor:
         )
 
         # Issuer issues bond token.
-        token_contract = deploy_bond_token_contract(
+        token_contract = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -945,7 +950,7 @@ class TestProcessor:
         )
 
         # Then execute processor.
-        processor.collect()
+        await processor.collect()
 
         user1_record: TokenHolder = db.scalars(
             select(TokenHolder)
@@ -996,7 +1001,8 @@ class TestProcessor:
     # - IssueFrom
     # - RedeemFrom
     # - Lock
-    def test_normal_4(
+    @pytest.mark.asyncio
+    async def test_normal_4(
         self, processor, db, personal_info_contract, ibet_exchange_contract
     ):
         exchange_contract = ibet_exchange_contract
@@ -1017,7 +1023,7 @@ class TestProcessor:
         )
 
         # Issuer issues share token.
-        token_contract = deploy_share_token_contract(
+        token_contract = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -1249,7 +1255,7 @@ class TestProcessor:
         # user1: (hold: 3000, locked: 3000) user2: 44000
 
         # Issuer issues other token to create exchange event
-        other_token_contract = deploy_bond_token_contract(
+        other_token_contract = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -1332,7 +1338,7 @@ class TestProcessor:
         )
 
         # Then execute processor.
-        processor.collect()
+        await processor.collect()
 
         user1_record: TokenHolder = db.scalars(
             select(TokenHolder)
@@ -1385,7 +1391,8 @@ class TestProcessor:
     #   - ApproveTransfer
     # - Lock
     # - Unlock
-    def test_normal_5(
+    @pytest.mark.asyncio
+    async def test_normal_5(
         self, processor, db, personal_info_contract, ibet_security_token_escrow_contract
     ):
         user_1 = config_eth_account("user1")
@@ -1405,7 +1412,7 @@ class TestProcessor:
         )
 
         # Issuer issues share token.
-        token_contract = deploy_share_token_contract(
+        token_contract = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -1560,7 +1567,7 @@ class TestProcessor:
         )
 
         # Then execute processor.
-        processor.collect()
+        await processor.collect()
 
         user1_record: TokenHolder = db.scalars(
             select(TokenHolder)
@@ -1606,7 +1613,8 @@ class TestProcessor:
     # Events
     # - ApplyForTransfer - pending
     # - Escrow - pending
-    def test_normal_6(
+    @pytest.mark.asyncio
+    async def test_normal_6(
         self, processor, db, personal_info_contract, ibet_security_token_escrow_contract
     ):
         user_1 = config_eth_account("user1")
@@ -1626,7 +1634,7 @@ class TestProcessor:
         )
 
         # Issuer issues share token.
-        token_contract = deploy_share_token_contract(
+        token_contract = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -1745,7 +1753,7 @@ class TestProcessor:
         )
 
         # Then execute processor.
-        processor.collect()
+        await processor.collect()
 
         user1_record: TokenHolder = db.scalars(
             select(TokenHolder)
@@ -1789,7 +1797,8 @@ class TestProcessor:
     # <Normal_7>
     # StraightBond
     # Jobs are queued and pending jobs are to be processed one by one.
-    def test_normal_7(
+    @pytest.mark.asyncio
+    async def test_normal_7(
         self,
         processor: Processor,
         db,
@@ -1798,7 +1807,7 @@ class TestProcessor:
         caplog: pytest.LogCaptureFixture,
     ):
         exchange_contract = ibet_exchange_contract
-        processor.collect()
+        await processor.collect()
         assert 1 == caplog.record_tuples.count(
             (LOG.name, logging.DEBUG, "There are no pending collect batch")
         )
@@ -1820,7 +1829,7 @@ class TestProcessor:
         )
 
         # Issuer issues bond token.
-        token_contract = deploy_bond_token_contract(
+        token_contract = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -1893,7 +1902,7 @@ class TestProcessor:
         db.add(_token_holders_list2)
         db.commit()
 
-        processor.collect()
+        await processor.collect()
 
         assert 1 == caplog.record_tuples.count(
             (
@@ -1909,7 +1918,8 @@ class TestProcessor:
     # <Normal_8>
     # StraightBond
     # Indexer uses checkpoint if there is stored data.
-    def test_normal_8(
+    @pytest.mark.asyncio
+    async def test_normal_8(
         self,
         processor: Processor,
         db,
@@ -1936,7 +1946,7 @@ class TestProcessor:
         )
 
         # Issuer issues bond token.
-        token_contract = deploy_bond_token_contract(
+        token_contract = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -2005,7 +2015,7 @@ class TestProcessor:
         )
         db.add(_token_holders_list1)
         db.commit()
-        processor.collect()
+        await processor.collect()
 
         STContractUtils.unlock(
             token_contract.address,
@@ -2040,7 +2050,7 @@ class TestProcessor:
         )
         db.add(_token_holders_list2)
         db.commit()
-        processor.collect()
+        await processor.collect()
 
         user1_record: TokenHolder = db.scalars(
             select(TokenHolder)
@@ -2096,7 +2106,8 @@ class TestProcessor:
     # <Normal_9>
     # StraightBond
     # Batch does not index former holder who has no balance at the target block number.
-    def test_normal_9(
+    @pytest.mark.asyncio
+    async def test_normal_9(
         self, processor, db, personal_info_contract, ibet_exchange_contract
     ):
         exchange_contract = ibet_exchange_contract
@@ -2120,7 +2131,7 @@ class TestProcessor:
         )
 
         # Issuer issues bond token.
-        token_contract = deploy_bond_token_contract(
+        token_contract = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -2210,7 +2221,7 @@ class TestProcessor:
         )
 
         # Then execute processor.
-        processor.collect()
+        await processor.collect()
 
         user1_record: TokenHolder = db.scalars(
             select(TokenHolder)
@@ -2252,7 +2263,8 @@ class TestProcessor:
     # <Normal_10>
     # When stored checkpoint is 9,999,999 and current block number is 19,999,999,
     # then processor should call "__process_all" method 10 times.
-    def test_normal_10(
+    @pytest.mark.asyncio
+    async def test_normal_10(
         self,
         processor,
         db,
@@ -2272,7 +2284,7 @@ class TestProcessor:
         )
 
         # Issuer issues bond token.
-        token_contract = deploy_bond_token_contract(
+        token_contract = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -2306,7 +2318,7 @@ class TestProcessor:
         db.commit()
 
         # Setting stored index to 9,999,999
-        processor.collect()
+        await processor.collect()
         # Then processor call "__process_all" method 10 times.
         assert 1 == caplog.record_tuples.count(
             (LOG.name, logging.INFO, f"syncing from=10000000, to=10999999")
@@ -2354,7 +2366,8 @@ class TestProcessor:
 
     # <Error_1>
     # There is no target token holders list id with batch_status PENDING.
-    def test_error_1(
+    @pytest.mark.asyncio
+    async def test_error_1(
         self,
         processor: Processor,
         db,
@@ -2362,7 +2375,7 @@ class TestProcessor:
         ibet_exchange_contract,
         caplog: pytest.LogCaptureFixture,
     ):
-        processor.collect()
+        await processor.collect()
 
         assert 1 == caplog.record_tuples.count(
             (LOG.name, logging.DEBUG, "There are no pending collect batch")
@@ -2371,7 +2384,8 @@ class TestProcessor:
     # <Error_2>
     # There is target token holders list id with batch_status PENDING.
     # And target token is not contained in "TokenList" contract.
-    def test_error_2(
+    @pytest.mark.asyncio
+    async def test_error_2(
         self,
         processor: Processor,
         db,
@@ -2389,7 +2403,7 @@ class TestProcessor:
         db.commit()
 
         # Debug message should be shown that points out token contract must be listed.
-        processor.collect()
+        await processor.collect()
         assert 1 == caplog.record_tuples.count(
             (
                 LOG.name,
@@ -2420,7 +2434,8 @@ class TestProcessor:
 
     # <Error_3>
     # Failed to get Logs from blockchain.
-    def test_error_3(
+    @pytest.mark.asyncio
+    async def test_error_3(
         self,
         processor: Processor,
         db,
@@ -2446,7 +2461,7 @@ class TestProcessor:
         )
 
         # Issuer issues bond token.
-        token_contract = deploy_bond_token_contract(
+        token_contract = await deploy_bond_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -2510,7 +2525,7 @@ class TestProcessor:
         ) as __sync_all_mock:
             # Then execute processor.
             __sync_all_mock.return_value = None
-            processor.collect()
+            await processor.collect()
             _records: List[TokenHolder] = db.scalars(
                 select(TokenHolder).where(
                     TokenHolder.holder_list_id == _token_holders_list.id
@@ -2520,7 +2535,8 @@ class TestProcessor:
 
     # <Error_4>
     # If DB session fails in phase sinking events, batch logs exception message.
-    def test_error_4(
+    @pytest.mark.asyncio
+    async def test_error_4(
         self,
         main_func,
         db: Session,
@@ -2545,7 +2561,7 @@ class TestProcessor:
         )
 
         # Issuer issues share token.
-        token_contract = deploy_share_token_contract(
+        token_contract = await deploy_share_token_contract(
             issuer_address,
             issuer_private_key,
             personal_info_contract.address,
@@ -2605,9 +2621,11 @@ class TestProcessor:
 
         with patch(
             "batch.indexer_token_holders.INDEXER_SYNC_INTERVAL", None
-        ), patch.object(Session, "close", side_effect=SQLAlchemyError()), pytest.raises(
+        ), patch.object(
+            AsyncSession, "close", side_effect=SQLAlchemyError()
+        ), pytest.raises(
             TypeError
         ):
-            main_func()
+            await main_func()
         assert 1 == caplog.text.count("A database error has occurred")
         caplog.clear()

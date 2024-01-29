@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import logging
 
 from eth_keyfile import decode_keyfile_json
@@ -23,7 +24,7 @@ from web3.exceptions import TimeExhausted
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import FreezeLogAccount
-from app.utils.contract_utils import ContractUtils
+from app.utils.contract_utils import AsyncContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.web3_utils import Web3Wrapper
 from config import CHAIN_ID, TX_GAS_LIMIT
@@ -35,12 +36,12 @@ class FreezeLogContract:
     """FreezeLog contract"""
 
     def __init__(self, log_account: FreezeLogAccount, contract_address: str):
-        self.log_contract = ContractUtils.get_contract(
+        self.log_contract = AsyncContractUtils.get_contract(
             contract_name="FreezeLog", contract_address=contract_address
         )
         self.log_account = log_account
 
-    def record_log(self, log_message: str, freezing_grace_block_count: int):
+    async def record_log(self, log_message: str, freezing_grace_block_count: int):
         """Record new log
 
         :param log_message: Log text
@@ -54,7 +55,7 @@ class FreezeLogContract:
                 raw_keyfile_json=self.log_account.keyfile,
                 password=password.encode("utf-8"),
             )
-            tx = self.log_contract.functions.recordLog(
+            tx = await self.log_contract.functions.recordLog(
                 log_message, freezing_grace_block_count
             ).build_transaction(
                 {
@@ -64,10 +65,10 @@ class FreezeLogContract:
                     "gasPrice": 0,
                 }
             )
-            tx_hash, _ = ContractUtils.send_transaction(
+            tx_hash, _ = await AsyncContractUtils.send_transaction(
                 transaction=tx, private_key=private_key
             )
-            last_log_index = ContractUtils.call_function(
+            last_log_index = await AsyncContractUtils.call_function(
                 contract=self.log_contract,
                 function_name="lastLogIndex",
                 args=(self.log_account.account_address,),
@@ -84,7 +85,7 @@ class FreezeLogContract:
 
         return tx_hash, log_index
 
-    def update_log(self, log_index: int, log_message: str):
+    async def update_log(self, log_index: int, log_message: str):
         """Update recorded log
 
         :param log_index: Log index
@@ -98,7 +99,7 @@ class FreezeLogContract:
                 raw_keyfile_json=self.log_account.keyfile,
                 password=password.encode("utf-8"),
             )
-            tx = self.log_contract.functions.updateLog(
+            tx = await self.log_contract.functions.updateLog(
                 log_index, log_message
             ).build_transaction(
                 {
@@ -108,7 +109,7 @@ class FreezeLogContract:
                     "gasPrice": 0,
                 }
             )
-            tx_hash, _ = ContractUtils.send_transaction(
+            tx_hash, _ = await AsyncContractUtils.send_transaction(
                 transaction=tx, private_key=private_key
             )
         except ContractRevertError:
@@ -121,14 +122,14 @@ class FreezeLogContract:
 
         return tx_hash
 
-    def get_log(self, log_index: int):
+    async def get_log(self, log_index: int):
         """Get recorded log
 
         :param log_index: Log index
         :return: block_number, freezing_grace_block_count, log_message
         """
 
-        log = ContractUtils.call_function(
+        log = await AsyncContractUtils.call_function(
             contract=self.log_contract,
             function_name="getLog",
             args=(

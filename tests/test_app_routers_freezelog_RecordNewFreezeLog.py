@@ -16,8 +16,11 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from unittest import mock
 from unittest.mock import MagicMock
+
+import pytest
 
 from app.model.blockchain import FreezeLogContract
 from app.model.db import FreezeLogAccount
@@ -34,7 +37,8 @@ class TestRecordNewFreezeLog:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, client, db, freeze_log_contract):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, client, db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -66,7 +70,7 @@ class TestRecordNewFreezeLog:
         assert resp.status_code == 200
         assert resp.json() == {"log_index": 0}
 
-        _, freezing_grace_block_count, log_message = FreezeLogContract(
+        _, freezing_grace_block_count, log_message = await FreezeLogContract(
             log_account, freeze_log_contract.address
         ).get_log(
             log_index=0,
@@ -76,7 +80,8 @@ class TestRecordNewFreezeLog:
 
     # <Normal_2>
     # E2EE_REQUEST_ENABLED = False
-    def test_normal_2(self, client, db, freeze_log_contract):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, client, db, freeze_log_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -114,7 +119,7 @@ class TestRecordNewFreezeLog:
         assert resp.status_code == 200
         assert resp.json() == {"log_index": 0}
 
-        _, freezing_grace_block_count, log_message = FreezeLogContract(
+        _, freezing_grace_block_count, log_message = await FreezeLogContract(
             log_account, freeze_log_contract.address
         ).get_log(
             log_index=0,
@@ -379,7 +384,7 @@ class TestRecordNewFreezeLog:
 
         # Request target api
         with mock.patch(
-            "app.utils.contract_utils.ContractUtils.send_transaction",
+            "app.utils.contract_utils.AsyncContractUtils.send_transaction",
             MagicMock(side_effect=Exception("tx error")),
         ), mock.patch(
             "app.routers.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",

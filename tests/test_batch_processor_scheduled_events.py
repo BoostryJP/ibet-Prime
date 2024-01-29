@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import logging
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
@@ -46,7 +47,7 @@ def processor(db):
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
     log.propagate = True
-    yield Processor(thread_num=0)
+    yield Processor(worker_num=0)
     log.propagate = False
     log.setLevel(default_log_level)
 
@@ -58,7 +59,8 @@ class TestProcessor:
 
     # <Normal_1>
     # IbetStraightBond
-    def test_normal_1(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, processor, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -148,7 +150,7 @@ class TestProcessor:
 
         with IbetStraightBondContract_update, IbetStraightBondContract_get:
             # Execute batch
-            processor.process()
+            await processor.process()
 
         # Assertion
         _scheduled_event = db.scalars(
@@ -198,7 +200,8 @@ class TestProcessor:
 
     # <Normal_2>
     # IbetShare
-    def test_normal_2(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, processor, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -288,7 +291,7 @@ class TestProcessor:
 
         with IbetShareContract_update, IbetShareContract_get:
             # Execute batch
-            processor.process()
+            await processor.process()
 
         # Assertion
         _scheduled_event = db.scalars(
@@ -342,7 +345,8 @@ class TestProcessor:
 
     # <Error_1>
     # Account does not exist
-    def test_error_1(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, processor, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -367,7 +371,7 @@ class TestProcessor:
         db.commit()
 
         # Execute batch
-        processor.process()
+        await processor.process()
 
         # Assertion
         _scheduled_event = db.scalars(
@@ -391,7 +395,8 @@ class TestProcessor:
 
     # <Error_2>
     # fail to get the private key
-    def test_error_2(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, processor, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -422,7 +427,7 @@ class TestProcessor:
         db.commit()
 
         # Execute batch
-        processor.process()
+        await processor.process()
 
         # Assertion
         _scheduled_event = db.scalars(
@@ -446,7 +451,8 @@ class TestProcessor:
 
     # <Error_3>
     # IbetStraightBond : SendTransactionError
-    def test_error_3(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, processor, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -490,7 +496,7 @@ class TestProcessor:
 
         with IbetStraightBondContract_update, IbetStraightBondContract_get:
             # Execute batch
-            processor.process()
+            await processor.process()
 
         # Assertion
         _scheduled_event = db.scalars(
@@ -514,7 +520,8 @@ class TestProcessor:
 
     # <Error_4>
     # IbetShare : SendTransactionError
-    def test_error_4(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, processor, db):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -560,7 +567,7 @@ class TestProcessor:
 
         with IbetShareContract_update, IbetShareContract_get:
             # Execute batch
-            processor.process()
+            await processor.process()
 
         # Assertion
         _scheduled_event = db.scalars(
@@ -584,7 +591,8 @@ class TestProcessor:
 
     # <Error_5>
     # IbetStraightBond : ContractRevertError
-    def test_error_5(self, processor, db, caplog):
+    @pytest.mark.asyncio
+    async def test_error_5(self, processor, db, caplog):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -629,7 +637,7 @@ class TestProcessor:
 
         with IbetStraightBondContract_update, IbetStraightBondContract_get:
             # Execute batch
-            processor.process()
+            await processor.process()
 
         # Assertion
         _scheduled_event = db.scalars(
@@ -663,7 +671,8 @@ class TestProcessor:
 
     # <Error_6>
     # IbetShare : ContractRevertError
-    def test_error_6(self, processor, db, caplog):
+    @pytest.mark.asyncio
+    async def test_error_6(self, processor, db, caplog):
         test_account = config_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -709,7 +718,7 @@ class TestProcessor:
 
         with IbetShareContract_update, IbetShareContract_get:
             # Execute batch
-            processor.process()
+            await processor.process()
 
         # Assertion
         _scheduled_event = db.scalars(

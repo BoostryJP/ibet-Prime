@@ -16,18 +16,22 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
+import asyncio
 import base64
 import json
+import sys
 import time
 from datetime import datetime
 
 from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from Crypto.Util.Padding import unpad
-from sqlalchemy import and_, create_engine, desc, select
+from sqlalchemy import and_, desc, select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.db import (
     E2EMessagingAccount,
@@ -35,12 +39,11 @@ from app.model.db import (
     IDXE2EMessaging,
     IDXE2EMessagingBlockNumber,
 )
-from app.utils.contract_utils import ContractUtils
+from app.utils.contract_utils import AsyncContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.web3_utils import Web3Wrapper
+from app.utils.web3_utils import AsyncWeb3Wrapper
 from batch import batch_log
 from config import (
-    DATABASE_URL,
     E2E_MESSAGING_CONTRACT_ADDRESS,
     INDEXER_BLOCK_LOT_MAX_SIZE,
     INDEXER_SYNC_INTERVAL,
@@ -49,9 +52,8 @@ from config import (
 process_name = "INDEXER-E2E-Messaging"
 LOG = batch_log.get_logger(process_name=process_name)
 
-web3 = Web3Wrapper()
+web3 = AsyncWeb3Wrapper()
 
-db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 """
 Acceptable message formats follow.
@@ -71,17 +73,17 @@ decoded message's max length is 5000.
 
 class Processor:
     def __init__(self):
-        self.e2e_messaging_contract = ContractUtils.get_contract(
+        self.e2e_messaging_contract = AsyncContractUtils.get_contract(
             contract_name="E2EMessaging",
             contract_address=E2E_MESSAGING_CONTRACT_ADDRESS,
         )
 
-    def process(self):
-        db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
+    async def process(self):
+        db_session = BatchAsyncSessionLocal()
         try:
             # Get from_block_number and to_block_number for contract event filter
-            latest_block = web3.eth.block_number
-            _from_block = self.__get_idx_e2e_messaging_block_number(
+            latest_block = await web3.eth.block_number
+            _from_block = await self.__get_idx_e2e_messaging_block_number(
                 db_session=db_session
             )
             _to_block = _from_block + INDEXER_BLOCK_LOT_MAX_SIZE
@@ -95,59 +97,65 @@ class Processor:
             # as INDEXER_BLOCK_LOT_MAX_SIZE(1_000_000 blocks)
             if latest_block > _to_block:
                 while _to_block < latest_block:
-                    self.__sync_all(
+                    await self.__sync_all(
                         db_session=db_session,
                         block_from=_from_block + 1,
                         block_to=_to_block,
                     )
                     _to_block += INDEXER_BLOCK_LOT_MAX_SIZE
                     _from_block += INDEXER_BLOCK_LOT_MAX_SIZE
-                self.__sync_all(
+                await self.__sync_all(
                     db_session=db_session,
                     block_from=_from_block + 1,
                     block_to=latest_block,
                 )
             else:
-                self.__sync_all(
+                await self.__sync_all(
                     db_session=db_session,
                     block_from=_from_block + 1,
                     block_to=latest_block,
                 )
 
-            self.__set_idx_e2e_messaging_block_number(
+            await self.__set_idx_e2e_messaging_block_number(
                 db_session=db_session, block_number=latest_block
             )
-            db_session.commit()
+            await db_session.commit()
         finally:
-            db_session.close()
+            await db_session.close()
         LOG.info("Sync job has been completed")
 
-    def __get_idx_e2e_messaging_block_number(self, db_session: Session):
+    @staticmethod
+    async def __get_idx_e2e_messaging_block_number(db_session: AsyncSession):
         _idx_e2e_messaging_block_number: IDXE2EMessagingBlockNumber | None = (
-            db_session.scalars(select(IDXE2EMessagingBlockNumber).limit(1)).first()
-        )
+            await db_session.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
+        ).first()
         if _idx_e2e_messaging_block_number is None:
             return 0
         else:
             return _idx_e2e_messaging_block_number.latest_block_number
 
-    def __set_idx_e2e_messaging_block_number(
-        self, db_session: Session, block_number: int
+    @staticmethod
+    async def __set_idx_e2e_messaging_block_number(
+        db_session: AsyncSession, block_number: int
     ):
         _idx_e2e_messaging_block_number: IDXE2EMessagingBlockNumber | None = (
-            db_session.scalars(select(IDXE2EMessagingBlockNumber).limit(1)).first()
-        )
+            await db_session.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
+        ).first()
         if _idx_e2e_messaging_block_number is None:
             _idx_e2e_messaging_block_number = IDXE2EMessagingBlockNumber()
 
         _idx_e2e_messaging_block_number.latest_block_number = block_number
-        db_session.merge(_idx_e2e_messaging_block_number)
+        await db_session.merge(_idx_e2e_messaging_block_number)
 
-    def __sync_all(self, db_session: Session, block_from: int, block_to: int):
+    async def __sync_all(
+        self, db_session: AsyncSession, block_from: int, block_to: int
+    ):
         LOG.info(f"Syncing from={block_from}, to={block_to}")
-        self.__sync_message(db_session, block_from, block_to)
+        await self.__sync_message(db_session, block_from, block_to)
 
-    def __sync_message(self, db_session: Session, block_from: int, block_to: int):
+    async def __sync_message(
+        self, db_session: AsyncSession, block_from: int, block_to: int
+    ):
         """Synchronize Message events
 
         :param db_session: database session
@@ -156,7 +164,7 @@ class Processor:
         :return: None
         """
         try:
-            events = ContractUtils.get_event_logs(
+            events = await AsyncContractUtils.get_event_logs(
                 contract=self.e2e_messaging_contract,
                 event="Message",
                 block_from=block_from,
@@ -165,7 +173,7 @@ class Processor:
             for event in events:
                 transaction_hash = event["transactionHash"].hex()
                 block_timestamp = datetime.utcfromtimestamp(
-                    web3.eth.get_block(event["blockNumber"])["timestamp"]
+                    (await web3.eth.get_block(event["blockNumber"]))["timestamp"]
                 )
                 args = event["args"]
                 from_address = args["sender"]
@@ -173,15 +181,15 @@ class Processor:
                 send_timestamp = datetime.utcfromtimestamp(args["time"])
                 text = args["text"]
 
-                # Check if the message receiver is own accounts
-                _e2e_messaging_account = self.__get_e2e_messaging_account(
+                # Check if the message receiver is owned accounts
+                _e2e_messaging_account = await self.__get_e2e_messaging_account(
                     db_session=db_session, to_address=to_address
                 )
                 if _e2e_messaging_account is None:
                     continue
 
                 # Get the received message
-                message_type = self.__get_message(
+                message_type = await self.__get_message(
                     db_session=db_session,
                     to_address=to_address,
                     text=text,
@@ -191,7 +199,7 @@ class Processor:
                     continue
                 message, _type = message_type
 
-                self.__sink_on_e2e_messaging(
+                await self.__sink_on_e2e_messaging(
                     db_session=db_session,
                     transaction_hash=transaction_hash,
                     from_address=from_address,
@@ -204,22 +212,26 @@ class Processor:
         except Exception as e:
             LOG.error(e)
 
-    def __get_e2e_messaging_account(self, db_session: Session, to_address: str):
+    @staticmethod
+    async def __get_e2e_messaging_account(db_session: AsyncSession, to_address: str):
         # NOTE: Self sending data is registered at the time of sending.
-        _e2e_messaging_account: E2EMessagingAccount | None = db_session.scalars(
-            select(E2EMessagingAccount)
-            .where(
-                and_(
-                    E2EMessagingAccount.account_address == to_address,
-                    E2EMessagingAccount.is_deleted == False,
+        _e2e_messaging_account: E2EMessagingAccount | None = (
+            await db_session.scalars(
+                select(E2EMessagingAccount)
+                .where(
+                    and_(
+                        E2EMessagingAccount.account_address == to_address,
+                        E2EMessagingAccount.is_deleted == False,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
         return _e2e_messaging_account
 
-    def __get_message(
-        self, db_session: Session, to_address: str, text: str, block_timestamp: datetime
+    @staticmethod
+    async def __get_message(
+        db_session: AsyncSession, to_address: str, text: str, block_timestamp: datetime
     ):
         # Check message format
         try:
@@ -238,16 +250,18 @@ class Processor:
             return None
 
         # Get RSA key
-        account_rsa_key: E2EMessagingAccountRsaKey | None = db_session.scalars(
-            select(E2EMessagingAccountRsaKey)
-            .where(
-                and_(
-                    E2EMessagingAccountRsaKey.account_address == to_address,
-                    E2EMessagingAccountRsaKey.block_timestamp <= block_timestamp,
+        account_rsa_key: E2EMessagingAccountRsaKey | None = (
+            await db_session.scalars(
+                select(E2EMessagingAccountRsaKey)
+                .where(
+                    and_(
+                        E2EMessagingAccountRsaKey.account_address == to_address,
+                        E2EMessagingAccountRsaKey.block_timestamp <= block_timestamp,
+                    )
                 )
+                .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
+                .limit(1)
             )
-            .order_by(desc(E2EMessagingAccountRsaKey.block_timestamp))
-            .limit(1)
         ).first()
         if account_rsa_key is None:
             LOG.warning(f"RSA key does not exist: account_address={to_address}")
@@ -282,8 +296,8 @@ class Processor:
         return decrypt_message, _type
 
     @staticmethod
-    def __sink_on_e2e_messaging(
-        db_session: Session,
+    async def __sink_on_e2e_messaging(
+        db_session: AsyncSession,
         transaction_hash: str,
         from_address: str,
         to_address: str,
@@ -304,14 +318,14 @@ class Processor:
         LOG.debug(f"E2EMessaging: transaction_hash={transaction_hash}")
 
 
-def main():
+async def main():
     LOG.info("Service started successfully")
     processor = Processor()
 
     while True:
         start_time = time.time()
         try:
-            processor.process()
+            await processor.process()
         except ServiceUnavailableError:
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:
@@ -320,8 +334,11 @@ def main():
             LOG.exception(ex)
 
         elapsed_time = time.time() - start_time
-        time.sleep(max(INDEXER_SYNC_INTERVAL - elapsed_time, 0))
+        await asyncio.sleep(max(INDEXER_SYNC_INTERVAL - elapsed_time, 0))
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        sys.exit(1)

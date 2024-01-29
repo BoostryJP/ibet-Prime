@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 
 from app.model.db import (
@@ -58,6 +59,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -142,6 +145,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
             "tax_category": 10,
         }
         db.add(idx_personal_info_1)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -327,10 +332,12 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
             "postal_code": "postal_code_test3",
             "address": "address_test3",
             "email": "email_test3",
-            "birth": "birth_test3"
+            "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
         db.add(idx_personal_info_3)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -492,10 +499,12 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
             "postal_code": "postal_code_test3",
             "address": "address_test3",
             "email": "email_test3",
-            "birth": "birth_test3"
+            "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
         db.add(idx_personal_info_3)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -629,10 +638,12 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
             "postal_code": "postal_code_test3",
             "address": "address_test3",
             "email": "email_test3",
-            "birth": "birth_test3"
+            "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
         db.add(idx_personal_info_3)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -858,10 +869,12 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
             "postal_code": "postal_code_test3",
             "address": "address_test3",
             "email": "email_test3",
-            "birth": "birth_test3"
+            "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
         db.add(idx_personal_info_3)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -1086,10 +1099,12 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
             "postal_code": "postal_code_test3",
             "address": "address_test3",
             "email": "email_test3",
-            "birth": "birth_test3"
+            "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
         db.add(idx_personal_info_3)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -1295,10 +1310,12 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
             "postal_code": "postal_code_test3",
             "address": "address_test3",
             "email": "email_test3",
-            "birth": "birth_test3"
+            "birth": "birth_test3",
             # PersonalInfo is partially registered.
         }
         db.add(idx_personal_info_3)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -1374,6 +1391,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         account.issuer_address = _issuer_address
         db.add(account)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(_token_address),
@@ -1408,6 +1427,8 @@ class TestAppRoutersShareTokensTokenAddressHoldersGET:
         account = Account()
         account.issuer_address = _issuer_address
         db.add(account)
+
+        db.commit()
 
         # request target API
         resp = client.get(

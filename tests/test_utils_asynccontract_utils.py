@@ -30,7 +30,7 @@ from web3.middleware import geth_poa_middleware
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import TransactionLock
-from app.utils.contract_utils import ContractUtils
+from app.utils.contract_utils import AsyncContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
 
@@ -64,7 +64,7 @@ class TestGetContractCode:
                 rtn_abi,
                 rtn_bytecode,
                 rtn_deploy_bytecode,
-            ) = ContractUtils.get_contract_code(contract_name=contract_name)
+            ) = AsyncContractUtils.get_contract_code(contract_name=contract_name)
             expected_json = json.load(open(f"contracts/{contract_name}.json", "r"))
             assert rtn_abi == expected_json["abi"]
             assert rtn_bytecode == expected_json["bytecode"]
@@ -74,7 +74,7 @@ class TestGetContractCode:
     # ContractReceiver and IbetStandardTokenInterface does not have bytecode
     def test_normal_2(self):
         for contract_name in self.contract_interface_list:
-            rtn = ContractUtils.get_contract_code(contract_name=contract_name)
+            rtn = AsyncContractUtils.get_contract_code(contract_name=contract_name)
             expected_json = json.load(open(f"contracts/{contract_name}.json", "r"))
             assert rtn == (expected_json["abi"], None, None)
 
@@ -85,7 +85,7 @@ class TestGetContractCode:
     # Contract name does not exist
     def test_error_1(self):
         with pytest.raises(FileNotFoundError):
-            ContractUtils.get_contract_code(contract_name="NO_EXISTS")
+            AsyncContractUtils.get_contract_code(contract_name="NO_EXISTS")
 
 
 class TestDeployContract:
@@ -115,8 +115,13 @@ class TestDeployContract:
     # Normal Case
     ###########################################################################
     # <Normal_1>
-    def test_normal_1(self, db):
-        rtn_contract_address, rtn_abi, rtn_tx_hash = ContractUtils.deploy_contract(
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
+        (
+            rtn_contract_address,
+            rtn_abi,
+            rtn_tx_hash,
+        ) = await AsyncContractUtils.deploy_contract(
             contract_name=self.test_contract_name,
             args=self.test_arg,
             deployer=self.test_account["address"],
@@ -132,9 +137,10 @@ class TestDeployContract:
     ###########################################################################
     # <Error_1>
     # Contract name does not exist
-    def test_error_1(self):
+    @pytest.mark.asyncio
+    async def test_error_1(self):
         with pytest.raises(SendTransactionError) as ex_info:
-            ContractUtils.deploy_contract(
+            await AsyncContractUtils.deploy_contract(
                 contract_name="NOT_EXIST_CONTRACT",
                 args=self.test_arg,
                 deployer=self.test_account["address"],
@@ -144,16 +150,17 @@ class TestDeployContract:
 
     # <Error_2>
     # Send transaction error
-    def test_error_2(self):
+    @pytest.mark.asyncio
+    async def test_error_2(self):
         # mock
         ContractUtils_send_transaction = patch(
-            target="app.utils.contract_utils.ContractUtils.send_transaction",
+            target="app.utils.contract_utils.AsyncContractUtils.send_transaction",
             side_effect=SendTransactionError,
         )
 
         with ContractUtils_send_transaction:
             with pytest.raises(SendTransactionError) as ex_info:
-                ContractUtils.deploy_contract(
+                await AsyncContractUtils.deploy_contract(
                     contract_name=self.test_contract_name,
                     args=self.test_arg,
                     deployer=self.test_account["address"],
@@ -188,10 +195,12 @@ class TestGetContract:
     def test_normal_1(self):
         test_address = "0x986eBe386b1D04C8d57387b60628fD8BBeEFF1b6"
         for _contract_name in self.contract_list:
-            contract = ContractUtils.get_contract(
+            contract = AsyncContractUtils.get_contract(
                 contract_name=_contract_name, contract_address=test_address
             )
-            assert contract.abi == ContractUtils.get_contract_code(_contract_name)[0]
+            assert (
+                contract.abi == AsyncContractUtils.get_contract_code(_contract_name)[0]
+            )
             assert contract.bytecode is None
             assert contract.bytecode_runtime is None
             assert contract.address == test_address
@@ -200,7 +209,7 @@ class TestGetContract:
     # Contract address is not address
     def test_error_1(self):
         with pytest.raises(ValueError):
-            ContractUtils.get_contract(
+            AsyncContractUtils.get_contract(
                 contract_name="IbetShare",
                 contract_address="0x986eBe386b1D04C8d57387b60628fD8BBeEFF1b6ZZZZ",  # too long
             )
@@ -209,7 +218,7 @@ class TestGetContract:
     # Contract does not exists
     def test_error_2(self):
         with pytest.raises(FileNotFoundError):
-            ContractUtils.get_contract(
+            AsyncContractUtils.get_contract(
                 contract_name="NotExistContract",
                 contract_address="0x986eBe386b1D04C8d57387b60628fD8BBeEFF1b6",
             )
@@ -244,7 +253,8 @@ class TestSendTransaction:
     # Normal Case
     ###########################################################################
     # <Normal_1>
-    def test_normal_1(self, db: Session):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db: Session):
         # Contract
         contract = web3.eth.contract(
             abi=self.contract_json["abi"],
@@ -262,7 +272,7 @@ class TestSendTransaction:
             }
         )
 
-        rtn_tx_hash, rtn_receipt = ContractUtils.send_transaction(
+        rtn_tx_hash, rtn_receipt = await AsyncContractUtils.send_transaction(
             transaction=tx, private_key=self.private_key
         )
 
@@ -277,7 +287,8 @@ class TestSendTransaction:
     ###########################################################################
     # <Error_1>
     # Transaction REVERT(Deploying invalid bytecode)
-    def test_error_1(self, db: Session):
+    @pytest.mark.asyncio
+    async def test_error_1(self, db: Session):
         # Contract
         contract = web3.eth.contract(
             abi=self.contract_json["abi"],
@@ -298,23 +309,24 @@ class TestSendTransaction:
 
         # mock
         Web3_send_raw_transaction = patch(
-            target="web3.eth.Eth.wait_for_transaction_receipt",
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             return_value={"dummy": "hoge", "status": 0},
         )
         InspectionMock = patch(
-            target="web3.eth.Eth.call",
+            target="web3.eth.async_eth.AsyncEth.call",
             side_effect=ContractLogicError("execution reverted"),
         )
 
         with Web3_send_raw_transaction, InspectionMock:
             with pytest.raises(ContractRevertError):
-                ContractUtils.send_transaction(
+                await AsyncContractUtils.send_transaction(
                     transaction=tx, private_key=self.private_key
                 )
 
     # <Error_2>
     # Value Error
-    def test_error_2(self, db: Session):
+    @pytest.mark.asyncio
+    async def test_error_2(self, db: Session):
         # Contract
         contract = web3.eth.contract(
             abi=self.contract_json["abi"],
@@ -334,19 +346,20 @@ class TestSendTransaction:
 
         # mock
         Web3_send_raw_transaction = patch(
-            target="web3.eth.Eth.wait_for_transaction_receipt",
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             side_effect=Web3Exception,
         )
 
         with Web3_send_raw_transaction:
             with pytest.raises(Web3Exception):
-                ContractUtils.send_transaction(
+                await AsyncContractUtils.send_transaction(
                     transaction=tx, private_key=self.private_key
                 )
 
     # <Error_3>
     # Timeout waiting for lock release
-    def test_error_3(self, db: Session):
+    @pytest.mark.asyncio
+    async def test_error_3(self, db: Session):
         # prepare data : TX lock
         _tx_mng = TransactionLock()
         _tx_mng.tx_from = self.test_account["address"]
@@ -379,7 +392,9 @@ class TestSendTransaction:
         ).first()
 
         with pytest.raises(SendTransactionError) as ex_info:
-            ContractUtils.send_transaction(transaction=tx, private_key=self.private_key)
+            await AsyncContractUtils.send_transaction(
+                transaction=tx, private_key=self.private_key
+            )
         assert ex_info.typename == "SendTransactionError"
 
         db.rollback()
@@ -414,7 +429,8 @@ class TestGetBlockByTransactionHash:
     # Normal Case
     ###########################################################################
     # <Normal_1>
-    def test_normal_1(self, db: Session):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db: Session):
         # Contract
         contract = web3.eth.contract(
             abi=self.contract_json["abi"],
@@ -443,7 +459,7 @@ class TestGetBlockByTransactionHash:
             transaction_hash=tx_hash, timeout=10
         )
 
-        block = ContractUtils.get_block_by_transaction_hash(tx_hash)
+        block = await AsyncContractUtils.get_block_by_transaction_hash(tx_hash)
 
         assert block["number"] == tx_receipt["blockNumber"]
         assert block["timestamp"] > 0

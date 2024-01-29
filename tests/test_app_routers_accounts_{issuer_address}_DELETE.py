@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from sqlalchemy import select
 
 from app.model.db import Account, AccountRsaStatus
@@ -43,6 +44,7 @@ class TestAppRoutersAccountsIssuerAddressDELETE:
         account.rsa_status = AccountRsaStatus.UNSET.value
         account.is_deleted = False
         db.add(account)
+        db.commit()
 
         # request target API
         resp = client.delete(self.base_url.format(_admin_address))

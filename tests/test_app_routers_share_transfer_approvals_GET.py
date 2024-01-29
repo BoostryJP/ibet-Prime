@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 
 from pytz import timezone
@@ -174,6 +175,8 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.cancelled = None
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -523,6 +526,8 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.transfer_approved = None  # unapproved
         db.add(_idx_transfer_approval)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url, headers={"issuer-address": self.test_issuer_address_1}
@@ -705,6 +710,8 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.transfer_approved = None  # unapproved
         db.add(_idx_transfer_approval)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url,
@@ -868,6 +875,8 @@ class TestAppRoutersShareTransferApprovalsGET:
         _idx_transfer_approval.escrow_finished = None
         _idx_transfer_approval.transfer_approved = None
         db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # request target API
         resp = client.get(

@@ -16,6 +16,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
+import asyncio
 import sys
 import time
 from datetime import datetime
@@ -23,14 +25,15 @@ from typing import Sequence
 
 from sqlalchemy import and_, create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
-from web3.eth import Contract
+from sqlalchemy.ext.asyncio import AsyncSession
+from web3.contract import AsyncContract
 
+from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.db import UTXO, Token, UTXOBlockNumber
-from app.utils.contract_utils import ContractUtils
+from app.utils.contract_utils import AsyncContractUtils
 from app.utils.ledger_utils import create_ledger
-from app.utils.web3_utils import Web3Wrapper
+from app.utils.web3_utils import AsyncWeb3Wrapper
 from batch import batch_log
 from config import (
     CREATE_UTXO_BLOCK_LOT_MAX_SIZE,
@@ -50,22 +53,24 @@ LOG = batch_log.get_logger(process_name=process_name)
 
 db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
-web3 = Web3Wrapper()
+web3 = AsyncWeb3Wrapper()
 
 
 class Processor:
     def __init__(self):
         self.token_contract_list = []
 
-    def process(self):
-        db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
+    async def process(self):
+        db_session: AsyncSession = BatchAsyncSessionLocal()
         latest_synced = True
         try:
-            self.__refresh_token_contract_list(db_session=db_session)
+            await self.__refresh_token_contract_list(db_session=db_session)
 
             # Get from_block_number and to_block_number for contract event filter
-            utxo_block_number = self.__get_utxo_block_number(db_session=db_session)
-            latest_block = web3.eth.block_number
+            utxo_block_number = await self.__get_utxo_block_number(
+                db_session=db_session
+            )
+            latest_block = await web3.eth.block_number
 
             if utxo_block_number >= latest_block:
                 LOG.debug("skip process")
@@ -79,80 +84,84 @@ class Processor:
                 LOG.info(f"Syncing from={block_from}, to={block_to}")
                 for token_contract in self.token_contract_list:
                     event_triggered = False
-                    event_triggered = event_triggered | self.__process_transfer(
+                    event_triggered = event_triggered | await self.__process_transfer(
                         db_session=db_session,
                         token_contract=token_contract,
                         block_from=block_from,
                         block_to=block_to,
                     )
-                    event_triggered = event_triggered | self.__process_issue(
+                    event_triggered = event_triggered | await self.__process_issue(
                         db_session=db_session,
                         token_contract=token_contract,
                         block_from=block_from,
                         block_to=block_to,
                     )
-                    event_triggered = event_triggered | self.__process_redeem(
+                    event_triggered = event_triggered | await self.__process_redeem(
                         db_session=db_session,
                         token_contract=token_contract,
                         block_from=block_from,
                         block_to=block_to,
                     )
-                    event_triggered = event_triggered | self.__process_unlock(
+                    event_triggered = event_triggered | await self.__process_unlock(
                         db_session=db_session,
                         token_contract=token_contract,
                         block_from=block_from,
                         block_to=block_to,
                     )
-                    self.__process_event_triggered(
+                    await self.__process_event_triggered(
                         db_session=db_session,
                         token_contract=token_contract,
                         event_triggered=event_triggered,
                     )
-                self.__set_utxo_block_number(
+                await self.__set_utxo_block_number(
                     db_session=db_session, block_number=block_to
                 )
-                db_session.commit()
+                await db_session.commit()
         finally:
-            db_session.close()
+            await db_session.close()
         LOG.info("Sync job has been completed")
 
         return latest_synced
 
-    def __refresh_token_contract_list(self, db_session: Session):
+    async def __refresh_token_contract_list(self, db_session: AsyncSession):
         self.token_contract_list = []
 
         # Update token_contract_list to recent
-        _token_list: Sequence[Token] = db_session.scalars(
-            select(Token).where(Token.token_status == 1).order_by(Token.id)
+        _token_list: Sequence[Token] = (
+            await db_session.scalars(
+                select(Token).where(Token.token_status == 1).order_by(Token.id)
+            )
         ).all()
         for _token in _token_list:
-            token_contract = ContractUtils.get_contract(
+            token_contract = AsyncContractUtils.get_contract(
                 contract_name=_token.type, contract_address=_token.token_address
             )
             self.token_contract_list.append(token_contract)
 
-    def __get_utxo_block_number(self, db_session: Session):
-        _utxo_block_number = db_session.scalars(
-            select(UTXOBlockNumber).limit(1)
+    @staticmethod
+    async def __get_utxo_block_number(db_session: AsyncSession):
+        _utxo_block_number = (
+            await db_session.scalars(select(UTXOBlockNumber).limit(1))
         ).first()
         if _utxo_block_number is None:
             return 0
         else:
             return _utxo_block_number.latest_block_number
 
-    def __set_utxo_block_number(self, db_session: Session, block_number: int):
-        _utxo_block_number = db_session.scalars(
-            select(UTXOBlockNumber).limit(1)
+    @staticmethod
+    async def __set_utxo_block_number(db_session: AsyncSession, block_number: int):
+        _utxo_block_number = (
+            await db_session.scalars(select(UTXOBlockNumber).limit(1))
         ).first()
         if _utxo_block_number is None:
             _utxo_block_number = UTXOBlockNumber()
         _utxo_block_number.latest_block_number = block_number
-        db_session.merge(_utxo_block_number)
+        await db_session.merge(_utxo_block_number)
 
-    def __process_transfer(
+    async def __process_transfer(
         self,
-        db_session: Session,
-        token_contract: Contract,
+        db_session: AsyncSession,
+        token_contract: AsyncContract,
         block_from: int,
         block_to: int,
     ):
@@ -170,18 +179,18 @@ class Processor:
         """
         try:
             # Get exchange contract address
-            exchange_contract_address = ContractUtils.call_function(
+            exchange_contract_address = await AsyncContractUtils.call_function(
                 contract=token_contract,
                 function_name="tradableExchange",
                 args=(),
                 default_returns=ZERO_ADDRESS,
             )
             # Get "HolderChanged" events from exchange contract
-            exchange_contract = ContractUtils.get_contract(
+            exchange_contract = AsyncContractUtils.get_contract(
                 contract_name="IbetExchangeInterface",
                 contract_address=exchange_contract_address,
             )
-            exchange_contract_events = ContractUtils.get_event_logs(
+            exchange_contract_events = await AsyncContractUtils.get_event_logs(
                 contract=exchange_contract,
                 event="HolderChanged",
                 block_from=block_from,
@@ -202,7 +211,7 @@ class Processor:
                     )
 
             # Get "Transfer" events from token contract
-            token_transfer_events = ContractUtils.get_event_logs(
+            token_transfer_events = await AsyncContractUtils.get_event_logs(
                 contract=token_contract,
                 event="Transfer",
                 block_from=block_from,
@@ -233,23 +242,22 @@ class Processor:
                 amount = int(args.get("value"))
 
                 # Skip sinking in case of deposit to exchange or withdrawal from exchange
-                if (
-                    web3.eth.get_code(from_account).hex() != "0x"
-                    or web3.eth.get_code(to_account).hex() != "0x"
-                ):
+                if (await web3.eth.get_code(from_account)).hex() != "0x" or (
+                    await web3.eth.get_code(to_account)
+                ).hex() != "0x":
                     continue
 
                 transaction_hash = event["transaction_hash"]
                 block_number = event["block_number"]
                 block_timestamp = datetime.utcfromtimestamp(
-                    web3.eth.get_block(block_number)["timestamp"]
+                    (await web3.eth.get_block(block_number))["timestamp"]
                 )  # UTC
 
                 if amount is not None and amount <= sys.maxsize:
                     event_triggered = True
 
                     # Update UTXO（from account）
-                    self.__sink_on_utxo(
+                    await self.__sink_on_utxo(
                         db_session=db_session,
                         spent=True,
                         transaction_hash=transaction_hash,
@@ -261,7 +269,7 @@ class Processor:
                     )
 
                     # Update UTXO（to account）
-                    self.__sink_on_utxo(
+                    await self.__sink_on_utxo(
                         db_session=db_session,
                         spent=False,
                         transaction_hash=transaction_hash,
@@ -277,10 +285,10 @@ class Processor:
             LOG.exception(e)
             return False
 
-    def __process_issue(
+    async def __process_issue(
         self,
-        db_session: Session,
-        token_contract: Contract,
+        db_session: AsyncSession,
+        token_contract: AsyncContract,
         block_from: int,
         block_to: int,
     ):
@@ -297,7 +305,7 @@ class Processor:
         """
         try:
             # Get "Issue" events from token contract
-            events = ContractUtils.get_event_logs(
+            events = await AsyncContractUtils.get_event_logs(
                 contract=token_contract,
                 event="Issue",
                 block_from=block_from,
@@ -314,14 +322,14 @@ class Processor:
                 transaction_hash = event["transactionHash"].hex()
                 block_number = event["blockNumber"]
                 block_timestamp = datetime.utcfromtimestamp(
-                    web3.eth.get_block(block_number)["timestamp"]
+                    (await web3.eth.get_block(block_number))["timestamp"]
                 )  # UTC
 
                 if amount is not None and amount <= sys.maxsize:
                     event_triggered = True
 
                     # Update UTXO
-                    self.__sink_on_utxo(
+                    await self.__sink_on_utxo(
                         db_session=db_session,
                         spent=False,
                         transaction_hash=transaction_hash,
@@ -337,10 +345,10 @@ class Processor:
             LOG.exception(e)
             return False
 
-    def __process_redeem(
+    async def __process_redeem(
         self,
-        db_session: Session,
-        token_contract: Contract,
+        db_session: AsyncSession,
+        token_contract: AsyncContract,
         block_from: int,
         block_to: int,
     ):
@@ -357,7 +365,7 @@ class Processor:
         """
         try:
             # Get "Redeem" events from token contract
-            events = ContractUtils.get_event_logs(
+            events = await AsyncContractUtils.get_event_logs(
                 contract=token_contract,
                 event="Redeem",
                 block_from=block_from,
@@ -374,14 +382,14 @@ class Processor:
                 transaction_hash = event["transactionHash"].hex()
                 block_number = event["blockNumber"]
                 block_timestamp = datetime.utcfromtimestamp(
-                    web3.eth.get_block(block_number)["timestamp"]
+                    (await web3.eth.get_block(block_number))["timestamp"]
                 )  # UTC
 
                 if amount is not None and amount <= sys.maxsize:
                     event_triggered = True
 
                     # Update UTXO
-                    self.__sink_on_utxo(
+                    await self.__sink_on_utxo(
                         db_session=db_session,
                         spent=True,
                         transaction_hash=transaction_hash,
@@ -397,10 +405,10 @@ class Processor:
             LOG.exception(e)
             return False
 
-    def __process_unlock(
+    async def __process_unlock(
         self,
-        db_session: Session,
-        token_contract: Contract,
+        db_session: AsyncSession,
+        token_contract: AsyncContract,
         block_from: int,
         block_to: int,
     ):
@@ -417,7 +425,7 @@ class Processor:
         """
         try:
             # Get "Unlock" events from token contract
-            events = ContractUtils.get_event_logs(
+            events = await AsyncContractUtils.get_event_logs(
                 contract=token_contract,
                 event="Unlock",
                 block_from=block_from,
@@ -435,7 +443,7 @@ class Processor:
                 transaction_hash = event["transactionHash"].hex()
                 block_number = event["blockNumber"]
                 block_timestamp = datetime.utcfromtimestamp(
-                    web3.eth.get_block(block_number)["timestamp"]
+                    (await web3.eth.get_block(block_number))["timestamp"]
                 )  # UTC
 
                 if (
@@ -446,7 +454,7 @@ class Processor:
                     event_triggered = True
 
                     # Update UTXO（from account）
-                    self.__sink_on_utxo(
+                    await self.__sink_on_utxo(
                         db_session=db_session,
                         spent=True,
                         transaction_hash=transaction_hash,
@@ -458,7 +466,7 @@ class Processor:
                     )
 
                     # Update UTXO（to account）
-                    self.__sink_on_utxo(
+                    await self.__sink_on_utxo(
                         db_session=db_session,
                         spent=False,
                         transaction_hash=transaction_hash,
@@ -474,19 +482,20 @@ class Processor:
             LOG.exception(e)
             return False
 
-    def __process_event_triggered(
-        self, db_session: Session, token_contract: Contract, event_triggered: bool
+    @staticmethod
+    async def __process_event_triggered(
+        db_session: AsyncSession, token_contract: AsyncContract, event_triggered: bool
     ):
         try:
             if event_triggered is True:
                 # Create Ledger
-                create_ledger(token_address=token_contract.address, db=db_session)
+                await create_ledger(token_address=token_contract.address, db=db_session)
         except Exception as e:
             LOG.exception(e)
 
     @staticmethod
-    def __sink_on_utxo(
-        db_session: Session,
+    async def __sink_on_utxo(
+        db_session: AsyncSession,
         spent: bool,
         transaction_hash: str,
         account_address: str,
@@ -496,15 +505,17 @@ class Processor:
         block_timestamp: datetime,
     ):
         if not spent:
-            _utxo: UTXO | None = db_session.scalars(
-                select(UTXO)
-                .where(
-                    and_(
-                        UTXO.transaction_hash == transaction_hash,
-                        UTXO.account_address == account_address,
+            _utxo: UTXO | None = (
+                await db_session.scalars(
+                    select(UTXO)
+                    .where(
+                        and_(
+                            UTXO.transaction_hash == transaction_hash,
+                            UTXO.account_address == account_address,
+                        )
                     )
+                    .limit(1)
                 )
-                .limit(1)
             ).first()
             if _utxo is None:
                 _utxo = UTXO()
@@ -518,18 +529,20 @@ class Processor:
             else:
                 utxo_amount = _utxo.amount
                 _utxo.amount = utxo_amount + amount
-                db_session.merge(_utxo)
+                await db_session.merge(_utxo)
         else:
-            _utxo_list: Sequence[UTXO] = db_session.scalars(
-                select(UTXO)
-                .where(
-                    and_(
-                        UTXO.account_address == account_address,
-                        UTXO.token_address == token_address,
-                        UTXO.amount > 0,
+            _utxo_list: Sequence[UTXO] = (
+                await db_session.scalars(
+                    select(UTXO)
+                    .where(
+                        and_(
+                            UTXO.account_address == account_address,
+                            UTXO.token_address == token_address,
+                            UTXO.amount > 0,
+                        )
                     )
+                    .order_by(UTXO.block_timestamp)
                 )
-                .order_by(UTXO.block_timestamp)
             ).all()
             spend_amount = amount
             for _utxo in _utxo_list:
@@ -539,14 +552,14 @@ class Processor:
                 elif _utxo.amount <= spend_amount:
                     _utxo.amount = 0
                     spend_amount = spend_amount - utxo_amount
-                    db_session.merge(_utxo)
+                    await db_session.merge(_utxo)
                 else:
                     _utxo.amount = utxo_amount - spend_amount
                     spend_amount = 0
-                    db_session.merge(_utxo)
+                    await db_session.merge(_utxo)
 
 
-def main():
+async def main():
     LOG.info("Service started successfully")
     processor = Processor()
 
@@ -554,7 +567,7 @@ def main():
         start_time = time.time()
         latest_synced = True
         try:
-            latest_synced = processor.process()
+            latest_synced = await processor.process()
         except ServiceUnavailableError:
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:
@@ -566,8 +579,11 @@ def main():
             continue
         else:
             elapsed_time = time.time() - start_time
-            time.sleep(max(CREATE_UTXO_INTERVAL - elapsed_time, 0))
+            await asyncio.sleep(max(CREATE_UTXO_INTERVAL - elapsed_time, 0))
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        sys.exit(1)

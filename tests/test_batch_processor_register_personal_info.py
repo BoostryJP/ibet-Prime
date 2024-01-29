@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import logging
 from typing import Optional, Sequence
 from unittest.mock import patch
@@ -53,7 +54,7 @@ def processor(db, caplog: pytest.LogCaptureFixture):
     default_log_level = LOG.level
     LOG.setLevel(logging.DEBUG)
     LOG.propagate = True
-    yield Processor(thread_num=0)
+    yield Processor(worker_num=0)
     LOG.propagate = False
     LOG.setLevel(default_log_level)
 
@@ -101,7 +102,7 @@ class TestProcessor:
     ]
 
     @staticmethod
-    def deploy_share_token_contract(
+    async def deploy_share_token_contract(
         address,
         private_key,
         personal_info_contract_address,
@@ -120,8 +121,10 @@ class TestProcessor:
             30,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = share_contract.create(arguments, address, private_key)
-        share_contract.update(
+        token_address, _, _ = await share_contract.create(
+            arguments, address, private_key
+        )
+        await share_contract.update(
             data=IbetShareUpdateParams(
                 transferable=True,
                 personal_info_contract_address=personal_info_contract_address,
@@ -140,7 +143,10 @@ class TestProcessor:
 
     # <Normal_1>
     # 0 Batch Task
-    def test_normal_1(self, processor: Processor, db: Session, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_1(
+        self, processor: Processor, db: Session, personal_info_contract
+    ):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=_account["keyfile"], password="password".encode("utf-8")
@@ -154,7 +160,7 @@ class TestProcessor:
         db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = self.deploy_share_token_contract(
+        token_contract_1 = await self.deploy_share_token_contract(
             _account["address"], issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -177,12 +183,15 @@ class TestProcessor:
 
         with PersonalInfoContract_register_info as mock:
             # Execute batch
-            processor.process()
+            await processor.process()
             mock.assert_not_called()
 
     # <Normal_2>
     # Multiple upload / Multiple Register
-    def test_normal_2(self, processor: Processor, db: Session, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_2(
+        self, processor: Processor, db: Session, personal_info_contract
+    ):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=_account["keyfile"], password="password".encode("utf-8")
@@ -196,7 +205,7 @@ class TestProcessor:
         db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = self.deploy_share_token_contract(
+        token_contract_1 = await self.deploy_share_token_contract(
             _account["address"], issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -250,7 +259,7 @@ class TestProcessor:
 
         with PersonalInfoContract_register_info:
             # Execute batch
-            processor.process()
+            await processor.process()
 
             # Assertion
             _batch_register_upload_list = db.scalars(
@@ -281,7 +290,10 @@ class TestProcessor:
         "batch.processor_batch_register_personal_info.BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE",
         2,
     )
-    def test_normal_3(self, processor: Processor, db: Session, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_3(
+        self, processor: Processor, db: Session, personal_info_contract
+    ):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=_account["keyfile"], password="password".encode("utf-8")
@@ -296,7 +308,7 @@ class TestProcessor:
         db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = self.deploy_share_token_contract(
+        token_contract_1 = await self.deploy_share_token_contract(
             _account["address"], issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -363,19 +375,19 @@ class TestProcessor:
 
         with PersonalInfoContract_register_info, processing_issuer:
             # Execute batch
-            processor.process()
+            await processor.process()
 
             # Assertion
-            _batch_register_upload_list: Sequence[
-                BatchRegisterPersonalInfoUpload
-            ] = db.scalars(
-                select(BatchRegisterPersonalInfoUpload)
-                .where(
-                    BatchRegisterPersonalInfoUpload.status
-                    == BatchRegisterPersonalInfoUploadStatus.DONE.value
-                )
-                .order_by(BatchRegisterPersonalInfoUpload.created)
-            ).all()
+            _batch_register_upload_list: Sequence[BatchRegisterPersonalInfoUpload] = (
+                db.scalars(
+                    select(BatchRegisterPersonalInfoUpload)
+                    .where(
+                        BatchRegisterPersonalInfoUpload.status
+                        == BatchRegisterPersonalInfoUploadStatus.DONE.value
+                    )
+                    .order_by(BatchRegisterPersonalInfoUpload.created)
+                ).all()
+            )
             assert len(_batch_register_upload_list) == 2
 
             assert _batch_register_upload_list[0].issuer_address == _account["address"]
@@ -391,16 +403,16 @@ class TestProcessor:
             for _batch_register in _batch_register_list:
                 assert _batch_register.status == 1
 
-            _batch_register_upload_list: Sequence[
-                BatchRegisterPersonalInfoUpload
-            ] = db.scalars(
-                select(BatchRegisterPersonalInfoUpload)
-                .where(
-                    BatchRegisterPersonalInfoUpload.status
-                    == BatchRegisterPersonalInfoUploadStatus.PENDING.value
-                )
-                .order_by(BatchRegisterPersonalInfoUpload.created)
-            ).all()
+            _batch_register_upload_list: Sequence[BatchRegisterPersonalInfoUpload] = (
+                db.scalars(
+                    select(BatchRegisterPersonalInfoUpload)
+                    .where(
+                        BatchRegisterPersonalInfoUpload.status
+                        == BatchRegisterPersonalInfoUploadStatus.PENDING.value
+                    )
+                    .order_by(BatchRegisterPersonalInfoUpload.created)
+                ).all()
+            )
 
             assert len(_batch_register_upload_list) == 4
 
@@ -437,7 +449,10 @@ class TestProcessor:
         "batch.processor_batch_register_personal_info.BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE",
         2,
     )
-    def test_normal_4(self, processor: Processor, db: Session, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_4(
+        self, processor: Processor, db: Session, personal_info_contract
+    ):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=_account["keyfile"], password="password".encode("utf-8")
@@ -452,7 +467,7 @@ class TestProcessor:
         db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = self.deploy_share_token_contract(
+        token_contract_1 = await self.deploy_share_token_contract(
             _account["address"], issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -516,19 +531,19 @@ class TestProcessor:
 
         with PersonalInfoContract_register_info, processing_issuer:
             # Execute batch
-            processor.process()
+            await processor.process()
 
             # Assertion
-            _batch_register_upload_list: Sequence[
-                BatchRegisterPersonalInfoUpload
-            ] = db.scalars(
-                select(BatchRegisterPersonalInfoUpload)
-                .where(
-                    BatchRegisterPersonalInfoUpload.status
-                    == BatchRegisterPersonalInfoUploadStatus.DONE.value
-                )
-                .order_by(BatchRegisterPersonalInfoUpload.created)
-            ).all()
+            _batch_register_upload_list: Sequence[BatchRegisterPersonalInfoUpload] = (
+                db.scalars(
+                    select(BatchRegisterPersonalInfoUpload)
+                    .where(
+                        BatchRegisterPersonalInfoUpload.status
+                        == BatchRegisterPersonalInfoUploadStatus.DONE.value
+                    )
+                    .order_by(BatchRegisterPersonalInfoUpload.created)
+                ).all()
+            )
             assert len(_batch_register_upload_list) == 2
 
             assert _batch_register_upload_list[0].issuer_address == _account["address"]
@@ -544,16 +559,16 @@ class TestProcessor:
             for _batch_register in _batch_register_list:
                 assert _batch_register.status == 1
 
-            _batch_register_upload_list: Sequence[
-                BatchRegisterPersonalInfoUpload
-            ] = db.scalars(
-                select(BatchRegisterPersonalInfoUpload)
-                .where(
-                    BatchRegisterPersonalInfoUpload.status
-                    == BatchRegisterPersonalInfoUploadStatus.PENDING.value
-                )
-                .order_by(BatchRegisterPersonalInfoUpload.created)
-            ).all()
+            _batch_register_upload_list: Sequence[BatchRegisterPersonalInfoUpload] = (
+                db.scalars(
+                    select(BatchRegisterPersonalInfoUpload)
+                    .where(
+                        BatchRegisterPersonalInfoUpload.status
+                        == BatchRegisterPersonalInfoUploadStatus.PENDING.value
+                    )
+                    .order_by(BatchRegisterPersonalInfoUpload.created)
+                ).all()
+            )
 
             assert len(_batch_register_upload_list) == 4
 
@@ -578,7 +593,8 @@ class TestProcessor:
 
     # <Error_1>
     # 1 Batch Task but no issuer
-    def test_error_1(
+    @pytest.mark.asyncio
+    async def test_error_1(
         self,
         processor: Processor,
         db: Session,
@@ -591,7 +607,7 @@ class TestProcessor:
         )
 
         # Prepare data : Token
-        token_contract_1 = self.deploy_share_token_contract(
+        token_contract_1 = await self.deploy_share_token_contract(
             _account["address"], issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -641,20 +657,20 @@ class TestProcessor:
 
         with PersonalInfoContract_register_info as mock:
             # Execute batch
-            processor.process()
+            await processor.process()
             mock.assert_not_called()
 
             # Assertion
-            _batch_register_upload: Optional[
-                BatchRegisterPersonalInfoUpload
-            ] = db.scalars(
-                select(BatchRegisterPersonalInfoUpload)
-                .where(
-                    BatchRegisterPersonalInfoUpload.issuer_address
-                    == _account["address"]
-                )
-                .limit(1)
-            ).first()
+            _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = (
+                db.scalars(
+                    select(BatchRegisterPersonalInfoUpload)
+                    .where(
+                        BatchRegisterPersonalInfoUpload.issuer_address
+                        == _account["address"]
+                    )
+                    .limit(1)
+                ).first()
+            )
             assert (
                 _batch_register_upload.status
                 == BatchRegisterPersonalInfoUploadStatus.FAILED.value
@@ -685,7 +701,8 @@ class TestProcessor:
 
     # <Error_2>
     # fail to get the private key
-    def test_error_2(
+    @pytest.mark.asyncio
+    async def test_error_2(
         self,
         processor: Processor,
         db: Session,
@@ -705,7 +722,7 @@ class TestProcessor:
         db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = self.deploy_share_token_contract(
+        token_contract_1 = await self.deploy_share_token_contract(
             _account["address"], issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -758,19 +775,19 @@ class TestProcessor:
 
         with PersonalInfoContract_register_info:
             # Execute batch
-            processor.process()
+            await processor.process()
 
             # Assertion
-            _batch_register_upload: Optional[
-                BatchRegisterPersonalInfoUpload
-            ] = db.scalars(
-                select(BatchRegisterPersonalInfoUpload)
-                .where(
-                    BatchRegisterPersonalInfoUpload.issuer_address
-                    == _account["address"]
-                )
-                .limit(1)
-            ).first()
+            _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = (
+                db.scalars(
+                    select(BatchRegisterPersonalInfoUpload)
+                    .where(
+                        BatchRegisterPersonalInfoUpload.issuer_address
+                        == _account["address"]
+                    )
+                    .limit(1)
+                ).first()
+            )
             assert (
                 _batch_register_upload.status
                 == BatchRegisterPersonalInfoUploadStatus.FAILED.value
@@ -817,7 +834,8 @@ class TestProcessor:
 
     # <Error_3>
     # ContractRevertError
-    def test_error_3(
+    @pytest.mark.asyncio
+    async def test_error_3(
         self,
         processor: Processor,
         db: Session,
@@ -837,7 +855,7 @@ class TestProcessor:
         db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = self.deploy_share_token_contract(
+        token_contract_1 = await self.deploy_share_token_contract(
             _account["address"], issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -890,19 +908,19 @@ class TestProcessor:
 
         with PersonalInfoContract_register_info:
             # Execute batch
-            processor.process()
+            await processor.process()
 
             # Assertion
-            _batch_register_upload: Optional[
-                BatchRegisterPersonalInfoUpload
-            ] = db.scalars(
-                select(BatchRegisterPersonalInfoUpload)
-                .where(
-                    BatchRegisterPersonalInfoUpload.issuer_address
-                    == _account["address"]
-                )
-                .limit(1)
-            ).first()
+            _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = (
+                db.scalars(
+                    select(BatchRegisterPersonalInfoUpload)
+                    .where(
+                        BatchRegisterPersonalInfoUpload.issuer_address
+                        == _account["address"]
+                    )
+                    .limit(1)
+                ).first()
+            )
             assert (
                 _batch_register_upload.status
                 == BatchRegisterPersonalInfoUploadStatus.FAILED.value

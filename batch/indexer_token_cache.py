@@ -16,69 +16,69 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import time
+
+import asyncio
+import sys
 from datetime import timedelta, timezone
 from typing import Sequence
 
-from sqlalchemy import create_engine, select
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
 
+from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.db import Token, TokenType
-from app.utils.web3_utils import Web3Wrapper
 from batch import batch_log
-from config import DATABASE_URL, INDEXER_SYNC_INTERVAL
+from config import INDEXER_SYNC_INTERVAL
 
 process_name = "INDEXER-Token-Cache"
 LOG = batch_log.get_logger(process_name=process_name)
 
 UTC = timezone(timedelta(hours=0), "UTC")
 
-web3 = Web3Wrapper()
-
-db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
-
 
 class Processor:
-    def process(self):
-        db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
+    @staticmethod
+    async def process():
+        db_session = BatchAsyncSessionLocal()
         try:
             token_list: Sequence[tuple[str, str]] = (
-                db_session.execute(
-                    select(Token.type, Token.token_address)
-                    .filter(Token.token_status == 1)
-                    .order_by(Token.created)
+                (
+                    await db_session.execute(
+                        select(Token.type, Token.token_address)
+                        .filter(Token.token_status == 1)
+                        .order_by(Token.created)
+                    )
                 )
                 .tuples()
                 .all()
             )
             for token_type, token_address in token_list:
                 if token_type == TokenType.IBET_STRAIGHT_BOND:
-                    IbetStraightBondContract(token_address).get()
+                    await IbetStraightBondContract(token_address).get()
                 elif token_type == TokenType.IBET_SHARE:
-                    IbetShareContract(token_address).get()
-                db_session.commit()
+                    await IbetShareContract(token_address).get()
+                await db_session.commit()
                 LOG.debug(
                     f"token refreshed: token_type={token_type}, token_address={token_address}"
                 )
-                time.sleep(60)
+                await asyncio.sleep(60)
         except Exception as e:
-            db_session.rollback()
+            await db_session.rollback()
             raise e
         finally:
-            db_session.close()
+            await db_session.close()
         LOG.info("Sync job has been completed")
 
 
-def main():
+async def main():
     LOG.info("Service started successfully")
     processor = Processor()
 
     while True:
         try:
-            processor.process()
+            await processor.process()
         except ServiceUnavailableError:
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:
@@ -86,8 +86,11 @@ def main():
         except Exception:
             LOG.exception("An exception occurred during event synchronization")
 
-        time.sleep(INDEXER_SYNC_INTERVAL)
+        await asyncio.sleep(INDEXER_SYNC_INTERVAL)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        sys.exit(1)

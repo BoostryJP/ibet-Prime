@@ -16,15 +16,17 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
+import asyncio
 import sys
-import time
 from typing import Dict, Optional, Sequence
 
 from sqlalchemy import and_, create_engine, delete, select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
-from web3.contract import Contract
+from sqlalchemy.ext.asyncio import AsyncSession
+from web3.contract import AsyncContract
 
+from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.db import (
     Token,
@@ -33,8 +35,8 @@ from app.model.db import (
     TokenHoldersList,
     TokenType,
 )
-from app.utils.contract_utils import ContractUtils
-from app.utils.web3_utils import Web3Wrapper
+from app.utils.contract_utils import AsyncContractUtils
+from app.utils.web3_utils import AsyncWeb3Wrapper
 from batch import batch_log
 from config import (
     DATABASE_URL,
@@ -48,7 +50,7 @@ LOG = batch_log.get_logger(process_name=process_name)
 
 db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
-web3 = Web3Wrapper()
+web3 = AsyncWeb3Wrapper()
 
 
 class Processor:
@@ -77,9 +79,9 @@ class Processor:
     tradable_exchange_address: str
     token_owner_address: str
 
-    token_contract: Optional[Contract]
-    exchange_contract: Optional[Contract]
-    escrow_contract: Optional[Contract]
+    token_contract: Optional[AsyncContract]
+    exchange_contract: Optional[AsyncContract]
+    escrow_contract: Optional[AsyncContract]
 
     def __init__(self):
         self.target = None
@@ -87,28 +89,32 @@ class Processor:
         self.tradable_exchange_address = ""
 
     @staticmethod
-    def __get_db_session() -> Session:
-        return Session(autocommit=False, autoflush=True, bind=db_engine)
+    def __get_db_session() -> AsyncSession:
+        return BatchAsyncSessionLocal()
 
-    def __load_target(self, db_session: Session) -> bool:
-        self.target: Optional[TokenHoldersList] = db_session.scalars(
-            select(TokenHoldersList)
-            .where(TokenHoldersList.batch_status == TokenHolderBatchStatus.PENDING)
-            .limit(1)
+    async def __load_target(self, db_session: AsyncSession) -> bool:
+        self.target: Optional[TokenHoldersList] = (
+            await db_session.scalars(
+                select(TokenHoldersList)
+                .where(TokenHoldersList.batch_status == TokenHolderBatchStatus.PENDING)
+                .limit(1)
+            )
         ).first()
         return True if self.target else False
 
-    def __load_token_info(self, db_session: Session) -> bool:
+    async def __load_token_info(self, db_session: AsyncSession) -> bool:
         # Fetch token list information from DB
-        issued_token: Optional[Token] = db_session.scalars(
-            select(Token)
-            .where(
-                and_(
-                    Token.token_address == self.target.token_address,
-                    Token.token_status == 1,
+        issued_token: Optional[Token] = (
+            await db_session.scalars(
+                select(Token)
+                .where(
+                    and_(
+                        Token.token_address == self.target.token_address,
+                        Token.token_status == 1,
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
         if not issued_token:
             return False
@@ -116,47 +122,53 @@ class Processor:
         token_type = issued_token.type
         # Store token contract.
         if token_type == TokenType.IBET_STRAIGHT_BOND.value:
-            self.token_contract = ContractUtils.get_contract(
+            self.token_contract = AsyncContractUtils.get_contract(
                 "IbetStraightBond", self.target.token_address
             )
         elif token_type == TokenType.IBET_SHARE.value:
-            self.token_contract = ContractUtils.get_contract(
+            self.token_contract = AsyncContractUtils.get_contract(
                 "IbetShare", self.target.token_address
             )
         else:
             return False
 
         # Fetch current tradable exchange to store exchange contract.
-        self.tradable_exchange_address = ContractUtils.call_function(
+        self.tradable_exchange_address = await AsyncContractUtils.call_function(
             contract=self.token_contract,
             function_name="tradableExchange",
             args=(),
             default_returns=ZERO_ADDRESS,
         )
-        self.exchange_contract = ContractUtils.get_contract(
+        self.exchange_contract = AsyncContractUtils.get_contract(
             contract_name="IbetExchangeInterface",
             contract_address=self.tradable_exchange_address,
         )
         return True
 
-    def __load_checkpoint(
-        self, local_session: Session, target_token_address: str, block_to: int
+    async def __load_checkpoint(
+        self, local_session: AsyncSession, target_token_address: str, block_to: int
     ) -> int:
-        _checkpoint: Optional[TokenHoldersList] = local_session.scalars(
-            select(TokenHoldersList)
-            .where(
-                and_(
-                    TokenHoldersList.token_address == target_token_address,
-                    TokenHoldersList.block_number < block_to,
-                    TokenHoldersList.batch_status == TokenHolderBatchStatus.DONE,
+        _checkpoint: Optional[TokenHoldersList] = (
+            await local_session.scalars(
+                select(TokenHoldersList)
+                .where(
+                    and_(
+                        TokenHoldersList.token_address == target_token_address,
+                        TokenHoldersList.block_number < block_to,
+                        TokenHoldersList.batch_status == TokenHolderBatchStatus.DONE,
+                    )
                 )
+                .order_by(TokenHoldersList.block_number.desc())
+                .limit(1)
             )
-            .order_by(TokenHoldersList.block_number.desc())
-            .limit(1)
         ).first()
         if _checkpoint:
-            _holders: Sequence[TokenHolder] = local_session.scalars(
-                select(TokenHolder).where(TokenHolder.holder_list_id == _checkpoint.id)
+            _holders: Sequence[TokenHolder] = (
+                await local_session.scalars(
+                    select(TokenHolder).where(
+                        TokenHolder.holder_list_id == _checkpoint.id
+                    )
+                )
             ).all()
             for holder in _holders:
                 self.balance_book.store(
@@ -168,58 +180,60 @@ class Processor:
             return block_from
         return 0
 
-    def collect(self):
+    async def collect(self):
         local_session = self.__get_db_session()
         try:
-            if not self.__load_target(local_session):
+            if not (await self.__load_target(local_session)):
                 LOG.debug(f"There are no pending collect batch")
                 return
-            if not self.__load_token_info(local_session):
+            if not (await self.__load_token_info(local_session)):
                 LOG.debug(f"Token contract must be listed to TokenList contract.")
-                self.__update_status(local_session, TokenHolderBatchStatus.FAILED)
-                local_session.commit()
+                await self.__update_status(local_session, TokenHolderBatchStatus.FAILED)
+                await local_session.commit()
                 return
             _target_block = self.target.block_number
-            _from_block = self.__load_checkpoint(
+            _from_block = await self.__load_checkpoint(
                 local_session, self.target.token_address, block_to=_target_block
             )
             _to_block = INDEXER_BLOCK_LOT_MAX_SIZE - 1 + _from_block
 
             if _target_block > _to_block:
                 while _to_block < _target_block:
-                    self.__process_all(
+                    await self.__process_all(
                         db_session=local_session,
                         block_from=_from_block,
                         block_to=_to_block,
                     )
                     _from_block += INDEXER_BLOCK_LOT_MAX_SIZE
                     _to_block += INDEXER_BLOCK_LOT_MAX_SIZE
-                self.__process_all(
+                await self.__process_all(
                     db_session=local_session,
                     block_from=_from_block,
                     block_to=_target_block,
                 )
             else:
-                self.__process_all(
+                await self.__process_all(
                     db_session=local_session,
                     block_from=_from_block,
                     block_to=_target_block,
                 )
-            self.__update_status(local_session, TokenHolderBatchStatus.DONE)
-            local_session.commit()
+            await self.__update_status(local_session, TokenHolderBatchStatus.DONE)
+            await local_session.commit()
             LOG.info("Collect job has been completed")
         except Exception as e:
-            local_session.rollback()
-            self.__update_status(local_session, TokenHolderBatchStatus.FAILED)
-            local_session.commit()
+            await local_session.rollback()
+            await self.__update_status(local_session, TokenHolderBatchStatus.FAILED)
+            await local_session.commit()
             raise e
         finally:
-            local_session.close()
+            await local_session.close()
 
-    def __update_status(self, local_session: Session, status: TokenHolderBatchStatus):
+    async def __update_status(
+        self, local_session: AsyncSession, status: TokenHolderBatchStatus
+    ):
         if status == TokenHolderBatchStatus.DONE:
             # Not to store non-holders
-            local_session.execute(
+            await local_session.execute(
                 delete(TokenHolder).where(
                     and_(
                         TokenHolder.holder_list_id == self.target.id,
@@ -230,7 +244,7 @@ class Processor:
             )
 
         self.target.batch_status = status.value
-        local_session.merge(self.target)
+        await local_session.merge(self.target)
         LOG.info(
             f"Token holder list({self.target.list_id}) status changes to be {status.value}."
         )
@@ -243,16 +257,18 @@ class Processor:
         self.exchange_contract = None
         self.escrow_contract = None
 
-    def __process_all(self, db_session: Session, block_from: int, block_to: int):
+    async def __process_all(
+        self, db_session: AsyncSession, block_from: int, block_to: int
+    ):
         LOG.info("syncing from={}, to={}".format(block_from, block_to))
 
-        self.__process_transfer(block_from, block_to)
-        self.__process_issue(block_from, block_to)
-        self.__process_redeem(block_from, block_to)
-        self.__process_lock(block_from, block_to)
-        self.__process_unlock(block_from, block_to)
+        await self.__process_transfer(block_from, block_to)
+        await self.__process_issue(block_from, block_to)
+        await self.__process_redeem(block_from, block_to)
+        await self.__process_lock(block_from, block_to)
+        await self.__process_unlock(block_from, block_to)
 
-        self.__save_holders(
+        await self.__save_holders(
             db_session,
             self.balance_book,
             self.target.id,
@@ -260,7 +276,7 @@ class Processor:
             self.token_owner_address,
         )
 
-    def __process_transfer(self, block_from: int, block_to: int):
+    async def __process_transfer(self, block_from: int, block_to: int):
         """Process Transfer Event
 
         - The process of updating Hold-Balance data by capturing the following events
@@ -274,7 +290,7 @@ class Processor:
         try:
             tmp_events = []
             # Get "HolderChanged" events from exchange contract
-            holder_changed_events = ContractUtils.get_event_logs(
+            holder_changed_events = await AsyncContractUtils.get_event_logs(
                 contract=self.exchange_contract,
                 event="HolderChanged",
                 block_from=block_from,
@@ -294,7 +310,7 @@ class Processor:
                     )
 
             # Get "Transfer" events from token contract
-            token_transfer_events = ContractUtils.get_event_logs(
+            token_transfer_events = await AsyncContractUtils.get_event_logs(
                 contract=self.token_contract,
                 event="Transfer",
                 block_from=block_from,
@@ -323,10 +339,9 @@ class Processor:
                 amount = int(args.get("value"))
 
                 # Skip sinking in case of deposit to exchange or withdrawal from exchange
-                if (
-                    web3.eth.get_code(from_account).hex() != "0x"
-                    or web3.eth.get_code(to_account).hex() != "0x"
-                ):
+                if (await web3.eth.get_code(from_account)).hex() != "0x" or (
+                    await web3.eth.get_code(to_account)
+                ).hex() != "0x":
                     continue
 
                 if amount is not None and amount <= sys.maxsize:
@@ -341,7 +356,7 @@ class Processor:
         except Exception:
             raise
 
-    def __process_issue(self, block_from: int, block_to: int):
+    async def __process_issue(self, block_from: int, block_to: int):
         """Process Issue Event
 
         - The process of updating Hold-Balance data by capturing the following events
@@ -353,7 +368,7 @@ class Processor:
         """
         try:
             # Get "Issue" events from token contract
-            events = ContractUtils.get_event_logs(
+            events = await AsyncContractUtils.get_event_logs(
                 contract=self.token_contract,
                 event="Issue",
                 block_from=block_from,
@@ -374,7 +389,7 @@ class Processor:
         except Exception:
             raise
 
-    def __process_redeem(self, block_from: int, block_to: int):
+    async def __process_redeem(self, block_from: int, block_to: int):
         """Process Redeem Event
 
         - The process of updating Hold-Balance data by capturing the following events
@@ -386,7 +401,7 @@ class Processor:
         """
         try:
             # Get "Redeem" events from token contract
-            events = ContractUtils.get_event_logs(
+            events = await AsyncContractUtils.get_event_logs(
                 contract=self.token_contract,
                 event="Redeem",
                 block_from=block_from,
@@ -408,7 +423,7 @@ class Processor:
         except Exception:
             raise
 
-    def __process_lock(self, block_from: int, block_to: int):
+    async def __process_lock(self, block_from: int, block_to: int):
         """Process Lock Event
 
         - The process of updating Hold-Balance data by capturing the following events
@@ -420,7 +435,7 @@ class Processor:
         """
         try:
             # Get "Lock" events from token contract
-            events = ContractUtils.get_event_logs(
+            events = await AsyncContractUtils.get_event_logs(
                 contract=self.token_contract,
                 event="Lock",
                 block_from=block_from,
@@ -437,7 +452,7 @@ class Processor:
         except Exception:
             raise
 
-    def __process_unlock(self, block_from: int, block_to: int):
+    async def __process_unlock(self, block_from: int, block_to: int):
         """Process Unlock Event
 
         - The process of updating Hold-Balance data by capturing the following events
@@ -449,7 +464,7 @@ class Processor:
         """
         try:
             # Get "Unlock" events from token contract
-            events = ContractUtils.get_event_logs(
+            events = await AsyncContractUtils.get_event_logs(
                 contract=self.token_contract,
                 event="Unlock",
                 block_from=block_from,
@@ -471,8 +486,8 @@ class Processor:
             raise
 
     @staticmethod
-    def __save_holders(
-        db_session: Session,
+    async def __save_holders(
+        db_session: AsyncSession,
         balance_book: BalanceBook,
         holder_list_id: int,
         token_address: str,
@@ -484,20 +499,22 @@ class Processor:
             if page.account_address == token_owner_address:
                 # Skip storing data for token owner
                 continue
-            token_holder: TokenHolder | None = db_session.scalars(
-                select(TokenHolder)
-                .where(
-                    and_(
-                        TokenHolder.holder_list_id == holder_list_id,
-                        TokenHolder.account_address == account_address,
+            token_holder: TokenHolder | None = (
+                await db_session.scalars(
+                    select(TokenHolder)
+                    .where(
+                        and_(
+                            TokenHolder.holder_list_id == holder_list_id,
+                            TokenHolder.account_address == account_address,
+                        )
                     )
+                    .limit(1)
                 )
-                .limit(1)
             ).first()
             if token_holder is not None:
                 token_holder.hold_balance = page.hold_balance
                 token_holder.locked_balance = page.locked_balance
-                db_session.merge(token_holder)
+                await db_session.merge(token_holder)
             elif page.hold_balance > 0 or page.locked_balance > 0:
                 LOG.debug(
                     f"Collection record created : token_address={token_address}, account_address={account_address}"
@@ -506,13 +523,13 @@ class Processor:
                 db_session.add(page)
 
 
-def main():
+async def main():
     LOG.info("Service started successfully")
     processor = Processor()
 
     while True:
         try:
-            processor.collect()
+            await processor.collect()
         except ServiceUnavailableError:
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:
@@ -520,8 +537,11 @@ def main():
         except Exception:
             LOG.exception("An exception occurred during event synchronization")
 
-        time.sleep(INDEXER_SYNC_INTERVAL)
+        await asyncio.sleep(INDEXER_SYNC_INTERVAL)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        sys.exit(1)

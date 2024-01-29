@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import uuid
 from unittest import mock
 
@@ -54,6 +55,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchGET:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         resp = client.get(self.base_url.format(token_address), headers={})
 
@@ -88,6 +91,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchGET:
         redeem_upload1.category = BatchIssueRedeemProcessingCategory.REDEEM.value
         redeem_upload1.processed = False
         db.add(redeem_upload1)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(token_address), headers={})
@@ -169,6 +174,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchGET:
         redeem_upload5.category = BatchIssueRedeemProcessingCategory.REDEEM.value
         redeem_upload5.processed = False
         db.add(redeem_upload5)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(token_address), headers={})
@@ -275,6 +282,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchGET:
         redeem_upload5.processed = False
         db.add(redeem_upload5)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(token_address),
@@ -366,6 +375,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchGET:
         redeem_upload5.category = BatchIssueRedeemProcessingCategory.REDEEM.value
         redeem_upload5.processed = False
         db.add(redeem_upload5)
+
+        db.commit()
 
         # request target API
         req_param = {"processed": False}
@@ -464,6 +475,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchGET:
         redeem_upload5.category = BatchIssueRedeemProcessingCategory.REDEEM.value
         redeem_upload5.processed = False
         db.add(redeem_upload5)
+
+        db.commit()
 
         # request target API
         req_param = {"limit": 2, "offset": 2}
@@ -565,6 +578,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchGET:
         additional_issue_upload5.processed = False
         db.add(additional_issue_upload5)
 
+        db.commit()
+
         # request target API
         req_param = {"sort_order": 0}
         resp = client.get(self.base_url.format(token_address), params=req_param)
@@ -630,6 +645,8 @@ class TestAppRoutersShareTokensTokenAddressRedeemBatchGET:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = {"processed": "invalid_value"}

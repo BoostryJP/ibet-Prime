@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 
 from pytz import timezone
@@ -112,6 +113,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.version = TokenVersion.V_23_12
         db.add(_token)
 
+        db.commit()
+
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address))
 
@@ -185,6 +188,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address))
@@ -380,6 +385,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address) + "?offset=1&limit=1"
@@ -504,6 +511,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address))
@@ -700,6 +709,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
@@ -810,6 +821,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -946,6 +959,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
             db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -1090,6 +1105,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
             db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -1280,6 +1297,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
             db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -1501,6 +1520,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                 _idx_transfer_approval.transfer_approved = None
 
             db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -1753,6 +1774,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                 _idx_transfer_approval.transfer_approved = None
             db.add(_idx_transfer_approval)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address), params={"status": [0, 1]}
@@ -1910,6 +1933,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -2109,6 +2134,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -2347,6 +2374,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -2587,6 +2616,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
@@ -2788,6 +2819,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
@@ -2988,6 +3021,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -3233,6 +3268,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
@@ -3472,6 +3509,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
             _idx_transfer_approval.cancelled = False
             _idx_transfer_approval.transfer_approved = False
             db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -3739,6 +3778,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
                 _idx_transfer_approval.escrow_finished = None
                 _idx_transfer_approval.transfer_approved = None
             db.add(_idx_transfer_approval)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -4198,6 +4239,8 @@ class TestAppRoutersBondTransferApprovalsTokenAddressGET:
         _token.token_status = 0
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address))

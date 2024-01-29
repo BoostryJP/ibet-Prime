@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from sqlalchemy import select
 
 from app.model.db import LedgerDetailsData, Token, TokenType, TokenVersion
@@ -80,6 +81,8 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdDELETE:
         _details_1_data_3.balance = 2
         _details_1_data_3.acquisition_date = "2000/12/31"
         db.add(_details_1_data_3)
+
+        db.commit()
 
         # request target API
         resp = client.delete(
@@ -195,6 +198,8 @@ class TestAppRoutersLedgerTokenAddressDetailsDataDataIdDELETE:
         _token.token_status = 0
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
+        db.commit()
 
         # request target API
         resp = client.delete(

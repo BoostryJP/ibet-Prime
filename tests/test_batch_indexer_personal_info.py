@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import base64
 import json
 import logging
@@ -28,13 +29,11 @@ from Crypto.PublicKey import RSA
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.exc import InvalidRequestError
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 from app.exceptions import ServiceUnavailableError
-from app.model.blockchain import IbetShareContract, IbetStraightBondContract
-from app.model.blockchain.tx_params.ibet_share import (
-    UpdateParams as IbetShareUpdateParams,
-)
+from app.model.blockchain import IbetStraightBondContract
 from app.model.blockchain.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
 )
@@ -46,9 +45,9 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from app.utils.contract_utils import ContractUtils
+from app.utils.contract_utils import AsyncContractUtils, ContractUtils
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.web3_utils import Web3Wrapper
+from app.utils.web3_utils import AsyncWeb3Wrapper, Web3Wrapper
 from batch.indexer_personal_info import LOG, Processor, main
 from config import CHAIN_ID, TX_GAS_LIMIT
 from tests.account_config import config_eth_account
@@ -78,7 +77,7 @@ def processor(db, caplog: pytest.LogCaptureFixture):
     LOG.setLevel(default_log_level)
 
 
-def deploy_bond_token_contract(
+async def deploy_bond_token_contract(
     address,
     private_key,
     personal_info_contract_address,
@@ -99,8 +98,8 @@ def deploy_bond_token_contract(
         "token.purpose",
     ]
     bond_contrat = IbetStraightBondContract()
-    token_address, _, _ = bond_contrat.create(arguments, address, private_key)
-    bond_contrat.update(
+    token_address, _, _ = await bond_contrat.create(arguments, address, private_key)
+    await bond_contrat.update(
         data=IbetStraightBondUpdateParams(
             transferable=True,
             personal_info_contract_address=personal_info_contract_address,
@@ -112,40 +111,6 @@ def deploy_bond_token_contract(
     )
 
     return ContractUtils.get_contract("IbetStraightBond", token_address)
-
-
-def deploy_share_token_contract(
-    address,
-    private_key,
-    personal_info_contract_address,
-    tradable_exchange_contract_address=None,
-    transfer_approval_required=None,
-):
-    arguments = [
-        "token.name",
-        "token.symbol",
-        20,
-        100,
-        3,
-        "token.dividend_record_date",
-        "token.dividend_payment_date",
-        "token.cancellation_date",
-        30,
-    ]
-    share_contract = IbetShareContract()
-    token_address, _, _ = share_contract.create(arguments, address, private_key)
-    share_contract.update(
-        data=IbetShareUpdateParams(
-            transferable=True,
-            personal_info_contract_address=personal_info_contract_address,
-            tradable_exchange_contract_address=tradable_exchange_contract_address,
-            transfer_approval_required=transfer_approval_required,
-        ),
-        tx_from=address,
-        private_key=private_key,
-    )
-
-    return ContractUtils.get_contract("IbetShare", token_address)
 
 
 def encrypt_personal_info(personal_info, rsa_public_key, passphrase):
@@ -166,7 +131,8 @@ class TestProcessor:
     # Single Token
     # No event logs
     # not issue token
-    def test_normal_1_1(self, processor, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(self, processor, db, personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
 
@@ -194,7 +160,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _personal_info_list = db.scalars(select(IDXPersonalInfo)).all()
@@ -209,7 +175,8 @@ class TestProcessor:
     # Single Token
     # No event logs
     # issued token
-    def test_normal_1_2(self, processor, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, processor, db, personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -229,7 +196,7 @@ class TestProcessor:
         db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(
+        token_contract_1 = await deploy_bond_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -262,7 +229,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _personal_info_list = db.scalars(select(IDXPersonalInfo)).all()
@@ -277,7 +244,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - Register
-    def test_normal_2_1(self, processor, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_2_1(self, processor, db, personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -302,7 +270,7 @@ class TestProcessor:
         db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(
+        token_contract_1 = await deploy_bond_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -356,7 +324,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _personal_info_list = db.scalars(select(IDXPersonalInfo)).all()
@@ -376,7 +344,8 @@ class TestProcessor:
     # Single Token
     # Single event logs
     # - Modify
-    def test_normal_2_2(self, processor, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_2_2(self, processor, db, personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -401,7 +370,7 @@ class TestProcessor:
         db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(
+        token_contract_1 = await deploy_bond_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -454,7 +423,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, user_private_key_1)
 
         # Before run(consume accumulated events)
-        processor.process()
+        await processor.process()
         _personal_info_list = db.scalars(select(IDXPersonalInfo)).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
@@ -491,7 +460,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # If we query in one session before and after update some record in another session,
         # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
@@ -515,7 +484,8 @@ class TestProcessor:
     # Single Token
     # Multi event logs
     # - Modify(twice)
-    def test_normal_3(self, processor, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, processor, db, personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -540,7 +510,7 @@ class TestProcessor:
         db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(
+        token_contract_1 = await deploy_bond_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -593,7 +563,7 @@ class TestProcessor:
         ContractUtils.send_transaction(tx, user_private_key_1)
 
         # Before run(consume accumulated events)
-        processor.process()
+        await processor.process()
         _personal_info_list = db.scalars(select(IDXPersonalInfo)).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
@@ -630,7 +600,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # If we query in one session before and after update some record in another session,
         # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
@@ -678,7 +648,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # If we query in one session before and after update some record in another session,
         # SQLAlchemy will return same result twice. So Expiring all persistent instances within unittest db session.
@@ -700,7 +670,8 @@ class TestProcessor:
 
     # <Normal_4>
     # Multi Token
-    def test_normal_4(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_4(self, processor, db):
         user_1 = config_eth_account("user1")
         issuer_address_1 = user_1["address"]
         issuer_private_key_1 = decode_keyfile_json(
@@ -752,7 +723,7 @@ class TestProcessor:
         )
 
         # Issuer1 issues bond token.
-        token_contract1 = deploy_bond_token_contract(
+        token_contract1 = await deploy_bond_token_contract(
             issuer_address_1,
             issuer_private_key_1,
             personal_info_contract_1.address,
@@ -769,7 +740,7 @@ class TestProcessor:
         db.add(token_1)
 
         # Issuer2 issues bond token.
-        token_contract2 = deploy_bond_token_contract(
+        token_contract2 = await deploy_bond_token_contract(
             issuer_address_2,
             issuer_private_key_2,
             personal_info_contract_2.address,
@@ -840,7 +811,7 @@ class TestProcessor:
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Prepare data for assertion
         tmp_list = [
@@ -883,24 +854,25 @@ class TestProcessor:
     # <Normal_5>
     # If block number processed in batch is equal or greater than current block number,
     # batch logs "skip Process".
-    @mock.patch("web3.eth.Eth.block_number", 100)
-    def test_normal_5(
+    @pytest.mark.asyncio
+    async def test_normal_5(
         self, processor: Processor, db: Session, caplog: pytest.LogCaptureFixture
     ):
         _idx_personal_info_block_number = IDXPersonalInfoBlockNumber()
         _idx_personal_info_block_number.id = 1
-        _idx_personal_info_block_number.latest_block_number = 1000
+        _idx_personal_info_block_number.latest_block_number = 99999999
         db.add(_idx_personal_info_block_number)
         db.commit()
 
-        processor.process()
+        await processor.process()
         assert 1 == caplog.record_tuples.count(
             (LOG.name, logging.DEBUG, "skip process")
         )
 
     # <Normal_6>
     # If DB session fails in phase sinking register/modify events, batch logs exception message.
-    def test_normal_6(
+    @pytest.mark.asyncio
+    async def test_normal_6(
         self,
         processor: Processor,
         db: Session,
@@ -931,7 +903,7 @@ class TestProcessor:
         db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(
+        token_contract_1 = await deploy_bond_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -1011,7 +983,7 @@ class TestProcessor:
 
         with patch.object(Session, "add", side_effect=Exception()):
             # Then execute processor.
-            processor.process()
+            await processor.process()
 
         assert 2 == caplog.record_tuples.count(
             (
@@ -1021,9 +993,14 @@ class TestProcessor:
             )
         )
 
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+
     # <Error_1>
     # If DB session fails in phase sinking register/modify events, batch logs exception message.
-    def test_error_1(
+    @pytest.mark.asyncio
+    async def test_error_1(
         self,
         main_func,
         db: Session,
@@ -1049,7 +1026,7 @@ class TestProcessor:
         db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(
+        token_contract_1 = await deploy_bond_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -1068,11 +1045,11 @@ class TestProcessor:
         with patch(
             "batch.indexer_personal_info.INDEXER_SYNC_INTERVAL", None
         ), patch.object(
-            web3.eth, "contract", side_effect=ServiceUnavailableError()
+            AsyncWeb3Wrapper().eth, "contract", side_effect=ServiceUnavailableError()
         ), pytest.raises(
             TypeError
         ):
-            main_func()
+            await main_func()
         assert 1 == caplog.record_tuples.count(
             (LOG.name, logging.WARNING, "An external service was unavailable")
         )
@@ -1082,11 +1059,11 @@ class TestProcessor:
         with patch(
             "batch.indexer_personal_info.INDEXER_SYNC_INTERVAL", None
         ), patch.object(
-            Session, "scalars", side_effect=InvalidRequestError()
+            AsyncSession, "scalars", side_effect=InvalidRequestError()
         ), pytest.raises(
             TypeError
         ):
-            main_func()
+            await main_func()
         assert 1 == caplog.text.count("A database error has occurred")
         caplog.clear()
 
@@ -1094,11 +1071,11 @@ class TestProcessor:
         with patch(
             "batch.indexer_personal_info.INDEXER_SYNC_INTERVAL", None
         ), patch.object(
-            ContractUtils, "call_function", ConnectionError()
+            AsyncContractUtils, "call_function", ConnectionError()
         ), pytest.raises(
             TypeError
         ):
-            main_func()
+            await main_func()
         assert 1 == caplog.record_tuples.count(
             (
                 LOG.name,

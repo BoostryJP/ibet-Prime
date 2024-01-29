@@ -16,11 +16,12 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import time
 from binascii import Error
 from datetime import datetime, timedelta
 from unittest import mock
-from unittest.mock import ANY, MagicMock, patch
+from unittest.mock import ANY, AsyncMock, patch
 
 import pytest
 from eth_keyfile import decode_keyfile_json
@@ -63,7 +64,8 @@ class TestCreate:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -84,7 +86,7 @@ class TestCreate:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -110,7 +112,8 @@ class TestCreate:
 
     # <Error_1>
     # Invalid argument (args length)
-    def test_error_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -122,7 +125,7 @@ class TestCreate:
         arguments = []
         share_contract = IbetShareContract()
         with pytest.raises(SendTransactionError) as exc_info:
-            share_contract.create(
+            await share_contract.create(
                 args=arguments, tx_from=issuer_address, private_key=private_key
             )
 
@@ -132,7 +135,8 @@ class TestCreate:
 
     # <Error_2>
     # Invalid argument type (args)
-    def test_error_2(self, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -154,7 +158,7 @@ class TestCreate:
         ]  # invalid types
         share_contract = IbetShareContract()
         with pytest.raises(SendTransactionError) as exc_info:
-            share_contract.create(
+            await share_contract.create(
                 args=arguments, tx_from=issuer_address, private_key=private_key
             )
 
@@ -166,7 +170,8 @@ class TestCreate:
 
     # <Error_3>
     # Invalid argument type (tx_from)
-    def test_error_3(self, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -188,7 +193,7 @@ class TestCreate:
         ]
         share_contract = IbetShareContract()
         with pytest.raises(SendTransactionError) as exc_info:
-            share_contract.create(
+            await share_contract.create(
                 args=arguments,
                 tx_from=issuer_address[:-1],  # short address
                 private_key=private_key,
@@ -200,7 +205,8 @@ class TestCreate:
 
     # <Error_4>
     # Invalid argument type (private_key)
-    def test_error_4(self, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
 
@@ -218,7 +224,7 @@ class TestCreate:
         ]
         share_contract = IbetShareContract()
         with pytest.raises(SendTransactionError) as exc_info:
-            share_contract.create(
+            await share_contract.create(
                 args=arguments, tx_from=issuer_address, private_key="some_private_key"
             )
 
@@ -228,7 +234,8 @@ class TestCreate:
 
     # <Error_5>
     # Already deployed
-    def test_error_5(self, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -248,12 +255,12 @@ class TestCreate:
             "20221231",
             10000,
         ]
-        contract_address, abi, tx_hash = IbetShareContract().create(
+        contract_address, abi, tx_hash = await IbetShareContract().create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
         with pytest.raises(SendTransactionError) as exc_info:
-            IbetShareContract(contract_address).create(
+            await IbetShareContract(contract_address).create(
                 args=arguments, tx_from=issuer_address, private_key=private_key
             )
 
@@ -268,8 +275,9 @@ class TestGet:
 
     # <Normal_1>
     # TOKEN_CACHE is False
+    @pytest.mark.asyncio
     @mock.patch("app.model.blockchain.token.TOKEN_CACHE", False)
-    def test_normal_1(self, db):
+    async def test_normal_1(self, db):
         # prepare account
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
@@ -291,12 +299,12 @@ class TestGet:
             10001,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
         # execute the function
-        share_contract = share_contract.get()
+        share_contract = await share_contract.get()
 
         # assertion
         assert share_contract.issuer_address == issuer_address
@@ -323,8 +331,9 @@ class TestGet:
 
     # <Normal_2>
     # TOKEN_CACHE is True
+    @pytest.mark.asyncio
     @mock.patch("app.model.blockchain.token.TOKEN_CACHE", True)
-    def test_normal_2(self, db):
+    async def test_normal_2(self, db):
         # prepare account
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
@@ -346,7 +355,7 @@ class TestGet:
             10001,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -385,7 +394,7 @@ class TestGet:
         db.commit()
 
         # execute the function
-        share_contract = share_contract.get()
+        share_contract = await share_contract.get()
 
         # assertion
         assert share_contract.issuer_address == issuer_address
@@ -418,8 +427,9 @@ class TestGet:
 
     # <Normal_3>
     # TOKEN_CACHE is True, updated token attribute
+    @pytest.mark.asyncio
     @mock.patch("app.model.blockchain.token.TOKEN_CACHE", True)
-    def test_normal_3(self, db):
+    async def test_normal_3(self, db):
         # prepare account
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
@@ -441,7 +451,7 @@ class TestGet:
             10001,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -487,7 +497,7 @@ class TestGet:
         db.commit()
 
         # execute the function
-        share_contract = share_contract.get()
+        share_contract = await share_contract.get()
 
         # assertion
         assert share_contract.issuer_address == issuer_address
@@ -514,10 +524,11 @@ class TestGet:
 
     # <Normal_4>
     # contract not deployed
-    def test_normal_4(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_4(self, db):
         share_contract = IbetShareContract()
         # execute the function
-        share_contract = share_contract.get()
+        share_contract = await share_contract.get()
 
         # assertion
         assert share_contract.issuer_address == ZERO_ADDRESS
@@ -554,7 +565,8 @@ class TestUpdate:
 
     # <Normal_1>
     # All items are None
-    def test_normal_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -575,7 +587,7 @@ class TestUpdate:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -583,12 +595,12 @@ class TestUpdate:
         _data = {}
         _add_data = UpdateParams(**_data)
         pre_datetime = datetime.utcnow()
-        share_contract.update(
+        await share_contract.update(
             data=_add_data, tx_from=issuer_address, private_key=private_key
         )
 
         # assertion
-        share_contract = share_contract.get()
+        share_contract = await share_contract.get()
         assert share_contract.cancellation_date == "20221231"
         assert share_contract.dividend_record_date == "20211231"
         assert share_contract.dividend_payment_date == "20211231"
@@ -612,7 +624,8 @@ class TestUpdate:
 
     # <Normal_2>
     # Update all items
-    def test_normal_2(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -633,7 +646,7 @@ class TestUpdate:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -657,12 +670,12 @@ class TestUpdate:
         }
         _add_data = UpdateParams(**_data)
         pre_datetime = datetime.utcnow()
-        share_contract.update(
+        await share_contract.update(
             data=_add_data, tx_from=issuer_address, private_key=private_key
         )
 
         # assertion
-        share_contract = share_contract.get()
+        share_contract = await share_contract.get()
         assert share_contract.cancellation_date == "20211231"
         assert share_contract.dividend_record_date == "20210930"
         assert share_contract.dividend_payment_date == "20211001"
@@ -696,7 +709,8 @@ class TestUpdate:
     # <Error_1>
     # Validation (UpdateParams)
     # invalid parameter
-    def test_error_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, db):
         # update
         _data = {
             "dividends": 0.00000000000001,
@@ -734,7 +748,8 @@ class TestUpdate:
 
     # <Error_2>
     # invalid tx_from
-    def test_error_2(self, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -755,7 +770,7 @@ class TestUpdate:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -763,7 +778,7 @@ class TestUpdate:
         _data = {"cancellation_date": "20211231"}
         _add_data = UpdateParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
-            share_contract.update(
+            await share_contract.update(
                 data=_add_data,
                 tx_from="invalid_tx_from",
                 private_key="invalid private key",
@@ -773,7 +788,8 @@ class TestUpdate:
 
     # <Error_3>
     # invalid private key
-    def test_error_3(self, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -794,7 +810,7 @@ class TestUpdate:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -802,7 +818,7 @@ class TestUpdate:
         _data = {"cancellation_date": "20211231"}
         _add_data = UpdateParams(**_data)
         with pytest.raises(SendTransactionError):
-            share_contract.update(
+            await share_contract.update(
                 data=_add_data,
                 tx_from=issuer_address,
                 private_key="invalid private key",
@@ -810,7 +826,8 @@ class TestUpdate:
 
     # <Error_4>
     # TimeExhausted
-    def test_error_4(self, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -831,13 +848,13 @@ class TestUpdate:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
         # mock
         Web3_send_raw_transaction = patch(
-            target="web3.eth.Eth.wait_for_transaction_receipt",
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             side_effect=TimeExhausted,
         )
 
@@ -846,7 +863,7 @@ class TestUpdate:
         _add_data = UpdateParams(**_data)
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
-                share_contract.update(
+                await share_contract.update(
                     data=_add_data, tx_from=issuer_address, private_key=private_key
                 )
 
@@ -855,7 +872,8 @@ class TestUpdate:
 
     # <Error_5>
     # Transaction Error
-    def test_error_5(self, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -876,13 +894,13 @@ class TestUpdate:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
         # mock
         Web3_send_raw_transaction = patch(
-            target="web3.eth.Eth.wait_for_transaction_receipt",
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             side_effect=TransactionNotFound,
         )
 
@@ -891,7 +909,7 @@ class TestUpdate:
         _add_data = UpdateParams(**_data)
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
-                share_contract.update(
+                await share_contract.update(
                     data=_add_data, tx_from=issuer_address, private_key=private_key
                 )
 
@@ -900,7 +918,8 @@ class TestUpdate:
 
     # <Error_6>
     # Transaction REVERT(not owner)
-    def test_error_6(self, db):
+    @pytest.mark.asyncio
+    async def test_error_6(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         user_account = config_eth_account("user2")
@@ -927,7 +946,7 @@ class TestUpdate:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -936,15 +955,15 @@ class TestUpdate:
         #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
         #         geth: ContractLogicError("execution reverted")
         InspectionMock = mock.patch(
-            "web3.eth.Eth.call",
-            MagicMock(side_effect=ContractLogicError("execution reverted: 500001")),
+            "web3.eth.async_eth.AsyncEth.call",
+            AsyncMock(side_effect=ContractLogicError("execution reverted: 500001")),
         )
 
         # update
         _data = {"cancellation_date": "20211231"}
         _add_data = UpdateParams(**_data)
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
-            share_contract.update(
+            await share_contract.update(
                 data=_add_data, tx_from=user_address, private_key=user_private_key
             )
 
@@ -958,7 +977,8 @@ class TestTransfer:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
         from_account = config_eth_account("user1")
         from_address = from_account.get("address")
         from_private_key = decode_keyfile_json(
@@ -982,20 +1002,20 @@ class TestTransfer:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=from_address, private_key=from_private_key
         )
 
         # transfer
         _data = {"from_address": from_address, "to_address": to_address, "amount": 10}
         _transfer_data = TransferParams(**_data)
-        share_contract.transfer(
+        await share_contract.transfer(
             data=_transfer_data, tx_from=from_address, private_key=from_private_key
         )
 
         # assertion
-        from_balance = share_contract.get_account_balance(from_address)
-        to_balance = share_contract.get_account_balance(to_address)
+        from_balance = await share_contract.get_account_balance(from_address)
+        to_balance = await share_contract.get_account_balance(to_address)
         assert from_balance == arguments[3] - 10
         assert to_balance == 10
 
@@ -1006,7 +1026,8 @@ class TestTransfer:
     # <Error_1>
     # validation (TransferParams)
     # required field
-    def test_error_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, db):
         _data = {}
         with pytest.raises(ValidationError) as exc_info:
             TransferParams(**_data)
@@ -1037,7 +1058,8 @@ class TestTransfer:
     # <Error_2>
     # validation (TransferParams)
     # invalid parameter
-    def test_error_2(self, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, db):
         _data = {
             "from_address": "invalid from_address",
             "to_address": "invalid to_address",
@@ -1074,7 +1096,8 @@ class TestTransfer:
 
     # <Error_3>
     # invalid tx_from
-    def test_error_3(self, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, db):
         from_account = config_eth_account("user1")
         from_address = from_account.get("address")
         from_private_key = decode_keyfile_json(
@@ -1098,7 +1121,7 @@ class TestTransfer:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=from_address, private_key=from_private_key
         )
 
@@ -1106,7 +1129,7 @@ class TestTransfer:
         _data = {"from_address": from_address, "to_address": to_address, "amount": 10}
         _transfer_data = TransferParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
-            share_contract.transfer(
+            await share_contract.transfer(
                 data=_transfer_data,
                 tx_from="invalid_tx_from",
                 private_key=from_private_key,
@@ -1116,7 +1139,8 @@ class TestTransfer:
 
     # <Error_4>
     # invalid private key
-    def test_error_4(self, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, db):
         from_account = config_eth_account("user1")
         from_address = from_account.get("address")
         from_private_key = decode_keyfile_json(
@@ -1140,7 +1164,7 @@ class TestTransfer:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=from_address, private_key=from_private_key
         )
 
@@ -1148,7 +1172,7 @@ class TestTransfer:
         _data = {"from_address": from_address, "to_address": to_address, "amount": 10}
         _transfer_data = TransferParams(**_data)
         with pytest.raises(SendTransactionError):
-            share_contract.transfer(
+            await share_contract.transfer(
                 data=_transfer_data,
                 tx_from=from_address,
                 private_key="invalid_private_key",
@@ -1156,7 +1180,8 @@ class TestTransfer:
 
     # <Error_5>
     # TimeExhausted
-    def test_error_5(self, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1180,13 +1205,13 @@ class TestTransfer:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
         # mock
         Web3_send_raw_transaction = patch(
-            target="web3.eth.Eth.wait_for_transaction_receipt",
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             side_effect=TimeExhausted,
         )
 
@@ -1195,14 +1220,15 @@ class TestTransfer:
         _transfer_data = TransferParams(**_data)
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
-                share_contract.transfer(
+                await share_contract.transfer(
                     data=_transfer_data, tx_from=issuer_address, private_key=private_key
                 )
         assert isinstance(exc_info.value.args[0], TimeExhausted)
 
     # <Error_6>
     # Error
-    def test_error_6(self, db):
+    @pytest.mark.asyncio
+    async def test_error_6(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1226,13 +1252,13 @@ class TestTransfer:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
         # mock
         Web3_send_raw_transaction = patch(
-            target="web3.eth.Eth.wait_for_transaction_receipt",
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             side_effect=TransactionNotFound,
         )
 
@@ -1241,14 +1267,15 @@ class TestTransfer:
         _transfer_data = TransferParams(**_data)
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
-                share_contract.transfer(
+                await share_contract.transfer(
                     data=_transfer_data, tx_from=issuer_address, private_key=private_key
                 )
         assert isinstance(exc_info.value.args[0], TransactionNotFound)
 
     # <Error_7>
     # Transaction REVERT(insufficient balance)
-    def test_error_7(self, db):
+    @pytest.mark.asyncio
+    async def test_error_7(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1272,7 +1299,7 @@ class TestTransfer:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -1289,12 +1316,12 @@ class TestTransfer:
         #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
         #         geth: ContractLogicError("execution reverted: ")
         InspectionMock = mock.patch(
-            "web3.eth.Eth.call",
-            MagicMock(side_effect=ContractLogicError("execution reverted: 110401")),
+            "web3.eth.async_eth.AsyncEth.call",
+            AsyncMock(side_effect=ContractLogicError("execution reverted: 110401")),
         )
 
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
-            share_contract.transfer(
+            await share_contract.transfer(
                 data=_transfer_data, tx_from=issuer_address, private_key=private_key
             )
 
@@ -1308,7 +1335,8 @@ class TestBulkTransfer:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
         from_account = config_eth_account("user1")
         from_address = from_account.get("address")
         from_pk = decode_keyfile_json(
@@ -1366,13 +1394,15 @@ class TestBulkTransfer:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_contract.create(args=arguments, tx_from=from_address, private_key=from_pk)
+        await share_contract.create(
+            args=arguments, tx_from=from_address, private_key=from_pk
+        )
 
         update_data = {
             "personal_info_contract_address": personal_info_contract_address,
             "transferable": True,
         }
-        share_contract.update(
+        await share_contract.update(
             data=UpdateParams(**update_data),
             tx_from=from_address,
             private_key=from_pk,
@@ -1381,14 +1411,14 @@ class TestBulkTransfer:
         # bulk transfer
         _data = {"to_address_list": [to1_address, to2_address], "amount_list": [10, 20]}
         _transfer_data = BulkTransferParams(**_data)
-        share_contract.bulk_transfer(
+        await share_contract.bulk_transfer(
             data=_transfer_data, tx_from=from_address, private_key=from_pk
         )
 
         # assertion
-        from_balance = share_contract.get_account_balance(from_address)
-        to1_balance = share_contract.get_account_balance(to1_address)
-        to2_balance = share_contract.get_account_balance(to2_address)
+        from_balance = await share_contract.get_account_balance(from_address)
+        to1_balance = await share_contract.get_account_balance(to1_address)
+        to2_balance = await share_contract.get_account_balance(to2_address)
         assert from_balance == arguments[3] - 10 - 20
         assert to1_balance == 10
         assert to2_balance == 20
@@ -1401,7 +1431,8 @@ class TestBulkTransfer:
     # Validation (BulkTransferParams)
     # Required fields
     # -> ValidationError
-    def test_error_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, db):
         _data = {}
         with pytest.raises(ValidationError) as exc_info:
             BulkTransferParams(**_data)
@@ -1426,7 +1457,8 @@ class TestBulkTransfer:
     # Validation (BulkTransferParams)
     # Invalid parameter
     # -> ValidationError
-    def test_error_2(self, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, db):
         _data = {"to_address_list": ["invalid to_address"], "amount_list": [0]}
         with pytest.raises(ValidationError) as exc_info:
             BulkTransferParams(**_data)
@@ -1452,7 +1484,8 @@ class TestBulkTransfer:
     # <Error_3>
     # Invalid tx_from
     # -> SendTransactionError
-    def test_error_3(self, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, db):
         from_account = config_eth_account("user1")
         from_address = from_account.get("address")
         from_pk = decode_keyfile_json(
@@ -1479,13 +1512,15 @@ class TestBulkTransfer:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_contract.create(args=arguments, tx_from=from_address, private_key=from_pk)
+        await share_contract.create(
+            args=arguments, tx_from=from_address, private_key=from_pk
+        )
 
         # bulk transfer
         _data = {"to_address_list": [to1_address, to2_address], "amount_list": [10, 20]}
         _transfer_data = BulkTransferParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
-            share_contract.bulk_transfer(
+            await share_contract.bulk_transfer(
                 data=_transfer_data, tx_from="invalid_tx_from", private_key=from_pk
             )
 
@@ -1496,7 +1531,8 @@ class TestBulkTransfer:
     # <Error_4>
     # Invalid private key
     # -> SendTransactionError
-    def test_error_4(self, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, db):
         from_account = config_eth_account("user1")
         from_address = from_account.get("address")
         from_pk = decode_keyfile_json(
@@ -1523,13 +1559,15 @@ class TestBulkTransfer:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_contract.create(args=arguments, tx_from=from_address, private_key=from_pk)
+        await share_contract.create(
+            args=arguments, tx_from=from_address, private_key=from_pk
+        )
 
         # bulk transfer
         _data = {"to_address_list": [to1_address, to2_address], "amount_list": [10, 20]}
         _transfer_data = BulkTransferParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
-            share_contract.bulk_transfer(
+            await share_contract.bulk_transfer(
                 data=_transfer_data,
                 tx_from=from_address,
                 private_key="invalid_private_key",
@@ -1539,7 +1577,8 @@ class TestBulkTransfer:
     # Transaction Error
     # REVERT
     # -> ContractRevertError
-    def test_error_5_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_5_1(self, db):
         from_account = config_eth_account("user1")
         from_address = from_account.get("address")
         from_pk = decode_keyfile_json(
@@ -1566,22 +1605,24 @@ class TestBulkTransfer:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_contract.create(args=arguments, tx_from=from_address, private_key=from_pk)
+        await share_contract.create(
+            args=arguments, tx_from=from_address, private_key=from_pk
+        )
 
         # mock
         # NOTE: Ganacheがrevertする際にweb3.pyからraiseされるExceptionはGethと異なる
         #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
         #         geth: ContractLogicError("execution reverted: ")
         InspectionMock = mock.patch(
-            "web3.eth.Eth.call",
-            MagicMock(side_effect=ContractLogicError("execution reverted: 120502")),
+            "web3.eth.async_eth.AsyncEth.call",
+            AsyncMock(side_effect=ContractLogicError("execution reverted: 120502")),
         )
 
         # bulk transfer
         _data = {"to_address_list": [to1_address, to2_address], "amount_list": [10, 20]}
         _transfer_data = BulkTransferParams(**_data)
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
-            share_contract.bulk_transfer(
+            await share_contract.bulk_transfer(
                 data=_transfer_data, tx_from=from_address, private_key=from_pk
             )
 
@@ -1595,7 +1636,8 @@ class TestBulkTransfer:
     # Transaction Error
     # wait_for_transaction_receipt -> TimeExhausted Exception
     # -> SendTransactionError
-    def test_error_5_2(self, db):
+    @pytest.mark.asyncio
+    async def test_error_5_2(self, db):
         from_account = config_eth_account("user1")
         from_address = from_account.get("address")
         from_pk = decode_keyfile_json(
@@ -1622,11 +1664,13 @@ class TestBulkTransfer:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_contract.create(args=arguments, tx_from=from_address, private_key=from_pk)
+        await share_contract.create(
+            args=arguments, tx_from=from_address, private_key=from_pk
+        )
 
         # mock
         Web3_send_raw_transaction = patch(
-            target="web3.eth.Eth.wait_for_transaction_receipt",
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             side_effect=TimeExhausted,
         )
 
@@ -1635,7 +1679,7 @@ class TestBulkTransfer:
         _transfer_data = BulkTransferParams(**_data)
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
-                share_contract.bulk_transfer(
+                await share_contract.bulk_transfer(
                     data=_transfer_data, tx_from=from_address, private_key=from_pk
                 )
 
@@ -1646,7 +1690,8 @@ class TestBulkTransfer:
     # Transaction Error
     # wait_for_transaction_receipt -> Exception
     # -> SendTransactionError
-    def test_error_5_3(self, db):
+    @pytest.mark.asyncio
+    async def test_error_5_3(self, db):
         from_account = config_eth_account("user1")
         from_address = from_account.get("address")
         from_pk = decode_keyfile_json(
@@ -1673,11 +1718,13 @@ class TestBulkTransfer:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_contract.create(args=arguments, tx_from=from_address, private_key=from_pk)
+        await share_contract.create(
+            args=arguments, tx_from=from_address, private_key=from_pk
+        )
 
         # mock
         Web3_send_raw_transaction = patch(
-            target="web3.eth.Eth.wait_for_transaction_receipt",
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             side_effect=TransactionNotFound,
         )
 
@@ -1686,7 +1733,7 @@ class TestBulkTransfer:
         _transfer_data = BulkTransferParams(**_data)
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
-                share_contract.bulk_transfer(
+                await share_contract.bulk_transfer(
                     data=_transfer_data, tx_from=from_address, private_key=from_pk
                 )
 
@@ -1700,7 +1747,8 @@ class TestAdditionalIssue:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1721,7 +1769,7 @@ class TestAdditionalIssue:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -1729,15 +1777,15 @@ class TestAdditionalIssue:
         _data = {"account_address": issuer_address, "amount": 10}
         _add_data = AdditionalIssueParams(**_data)
         pre_datetime = datetime.utcnow()
-        share_contract.additional_issue(
+        await share_contract.additional_issue(
             data=_add_data, tx_from=issuer_address, private_key=private_key
         )
 
         # assertion
-        share_contract_attr = share_contract.get()
+        share_contract_attr = await share_contract.get()
         assert share_contract_attr.total_supply == arguments[3] + 10
 
-        balance = share_contract.get_account_balance(issuer_address)
+        balance = await share_contract.get_account_balance(issuer_address)
         assert balance == arguments[3] + 10
 
         _token_attr_update = db.scalars(select(TokenAttrUpdate).limit(1)).first()
@@ -1751,7 +1799,8 @@ class TestAdditionalIssue:
 
     # <Error_1>
     # invalid parameter (AdditionalIssueParams)
-    def test_error_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, db):
         _data = {}
         with pytest.raises(ValidationError) as exc_info:
             AdditionalIssueParams(**_data)
@@ -1774,7 +1823,8 @@ class TestAdditionalIssue:
 
     # <Error_2>
     # invalid parameter (AdditionalIssueParams)
-    def test_error_2(self, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
 
@@ -1803,7 +1853,8 @@ class TestAdditionalIssue:
 
     # <Error_3>
     # invalid tx_from
-    def test_error_3(self, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1824,7 +1875,7 @@ class TestAdditionalIssue:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -1832,7 +1883,7 @@ class TestAdditionalIssue:
         _data = {"account_address": issuer_address, "amount": 10}
         _add_data = AdditionalIssueParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
-            share_contract.additional_issue(
+            await share_contract.additional_issue(
                 data=_add_data, tx_from="invalid_tx_from", private_key=private_key
             )
         assert isinstance(exc_info.value.args[0], InvalidAddress)
@@ -1840,7 +1891,8 @@ class TestAdditionalIssue:
 
     # <Error_4>
     # invalid private key
-    def test_error_4(self, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1861,7 +1913,7 @@ class TestAdditionalIssue:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -1869,7 +1921,7 @@ class TestAdditionalIssue:
         _data = {"account_address": issuer_address, "amount": 10}
         _add_data = AdditionalIssueParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
-            share_contract.additional_issue(
+            await share_contract.additional_issue(
                 data=_add_data,
                 tx_from=test_account.get("address"),
                 private_key="invalid_private_key",
@@ -1879,7 +1931,8 @@ class TestAdditionalIssue:
 
     # <Error_5>
     # TimeExhausted
-    def test_error_5(self, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1900,13 +1953,13 @@ class TestAdditionalIssue:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
         # mock
         Web3_send_raw_transaction = patch(
-            target="web3.eth.Eth.wait_for_transaction_receipt",
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             side_effect=TimeExhausted,
         )
 
@@ -1915,14 +1968,15 @@ class TestAdditionalIssue:
         _add_data = AdditionalIssueParams(**_data)
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
-                share_contract.additional_issue(
+                await share_contract.additional_issue(
                     data=_add_data, tx_from=issuer_address, private_key=private_key
                 )
         assert exc_info.type(SendTransactionError(TimeExhausted))
 
     # <Error_6>
     # Error
-    def test_error_6(self, db):
+    @pytest.mark.asyncio
+    async def test_error_6(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -1943,13 +1997,13 @@ class TestAdditionalIssue:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
         # mock
         Web3_send_raw_transaction = patch(
-            target="web3.eth.Eth.wait_for_transaction_receipt",
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             side_effect=TransactionNotFound,
         )
 
@@ -1958,14 +2012,15 @@ class TestAdditionalIssue:
         _add_data = AdditionalIssueParams(**_data)
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
-                share_contract.additional_issue(
+                await share_contract.additional_issue(
                     data=_add_data, tx_from=issuer_address, private_key=private_key
                 )
         assert isinstance(exc_info.value.args[0], TransactionNotFound)
 
     # <Error_7>
     # Transaction REVERT(not owner)
-    def test_error_7(self, db):
+    @pytest.mark.asyncio
+    async def test_error_7(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         user_account = config_eth_account("user2")
@@ -1992,7 +2047,7 @@ class TestAdditionalIssue:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_private_key
         )
 
@@ -2006,12 +2061,12 @@ class TestAdditionalIssue:
         #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
         #         geth: ContractLogicError("execution reverted")
         InspectionMock = mock.patch(
-            "web3.eth.Eth.call",
-            MagicMock(side_effect=ContractLogicError("execution reverted: 500001")),
+            "web3.eth.async_eth.AsyncEth.call",
+            AsyncMock(side_effect=ContractLogicError("execution reverted: 500001")),
         )
 
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
-            share_contract.additional_issue(
+            await share_contract.additional_issue(
                 data=_add_data, tx_from=user_address, private_key=user_private_key
             )
 
@@ -2025,7 +2080,8 @@ class TestRedeem:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -2046,7 +2102,7 @@ class TestRedeem:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -2054,15 +2110,15 @@ class TestRedeem:
         _data = {"account_address": issuer_address, "amount": 10}
         _add_data = RedeemParams(**_data)
         pre_datetime = datetime.utcnow()
-        share_contract.redeem(
+        await share_contract.redeem(
             data=_add_data, tx_from=issuer_address, private_key=private_key
         )
 
         # assertion
-        share_contract_attr = share_contract.get()
+        share_contract_attr = await share_contract.get()
         assert share_contract_attr.total_supply == arguments[3] - 10
 
-        balance = share_contract.get_account_balance(issuer_address)
+        balance = await share_contract.get_account_balance(issuer_address)
         assert balance == arguments[3] - 10
 
         _token_attr_update = db.scalars(select(TokenAttrUpdate).limit(1)).first()
@@ -2076,7 +2132,8 @@ class TestRedeem:
 
     # <Error_1>
     # invalid parameter (RedeemParams)
-    def test_error_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, db):
         _data = {}
         with pytest.raises(ValidationError) as exc_info:
             RedeemParams(**_data)
@@ -2099,7 +2156,8 @@ class TestRedeem:
 
     # <Error_2>
     # invalid parameter (RedeemParams)
-    def test_error_2(self, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
 
@@ -2128,7 +2186,8 @@ class TestRedeem:
 
     # <Error_3>
     # invalid tx_from
-    def test_error_3(self, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -2149,7 +2208,7 @@ class TestRedeem:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -2157,7 +2216,7 @@ class TestRedeem:
         _data = {"account_address": issuer_address, "amount": 10}
         _add_data = RedeemParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
-            share_contract.redeem(
+            await share_contract.redeem(
                 data=_add_data, tx_from="invalid_tx_from", private_key=private_key
             )
         assert isinstance(exc_info.value.args[0], InvalidAddress)
@@ -2165,7 +2224,8 @@ class TestRedeem:
 
     # <Error_4>
     # invalid private key
-    def test_error_4(self, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -2186,7 +2246,7 @@ class TestRedeem:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -2194,7 +2254,7 @@ class TestRedeem:
         _data = {"account_address": issuer_address, "amount": 10}
         _add_data = RedeemParams(**_data)
         with pytest.raises(SendTransactionError) as exc_info:
-            share_contract.redeem(
+            await share_contract.redeem(
                 data=_add_data,
                 tx_from=test_account.get("address"),
                 private_key="invalid_private_key",
@@ -2204,7 +2264,8 @@ class TestRedeem:
 
     # <Error_5>
     # TimeExhausted
-    def test_error_5(self, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -2225,13 +2286,13 @@ class TestRedeem:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
         # mock
         Web3_send_raw_transaction = patch(
-            target="web3.eth.Eth.wait_for_transaction_receipt",
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             side_effect=TimeExhausted,
         )
 
@@ -2240,14 +2301,15 @@ class TestRedeem:
         _add_data = RedeemParams(**_data)
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
-                share_contract.redeem(
+                await share_contract.redeem(
                     data=_add_data, tx_from=issuer_address, private_key=private_key
                 )
         assert exc_info.type(SendTransactionError(TimeExhausted))
 
     # <Error_6>
     # Error
-    def test_error_6(self, db):
+    @pytest.mark.asyncio
+    async def test_error_6(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -2268,13 +2330,13 @@ class TestRedeem:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
         # mock
         Web3_send_raw_transaction = patch(
-            target="web3.eth.Eth.wait_for_transaction_receipt",
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             side_effect=TransactionNotFound,
         )
 
@@ -2283,14 +2345,15 @@ class TestRedeem:
         _add_data = RedeemParams(**_data)
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
-                share_contract.redeem(
+                await share_contract.redeem(
                     data=_add_data, tx_from=issuer_address, private_key=private_key
                 )
         assert isinstance(exc_info.value.args[0], TransactionNotFound)
 
     # <Error_7>
     # Transaction REVERT(lack balance)
-    def test_error_7(self, db):
+    @pytest.mark.asyncio
+    async def test_error_7(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -2311,7 +2374,7 @@ class TestRedeem:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -2325,12 +2388,12 @@ class TestRedeem:
         #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
         #         geth: ContractLogicError("execution reverted")
         InspectionMock = mock.patch(
-            "web3.eth.Eth.call",
-            MagicMock(side_effect=ContractLogicError("execution reverted: 111102")),
+            "web3.eth.async_eth.AsyncEth.call",
+            AsyncMock(side_effect=ContractLogicError("execution reverted: 111102")),
         )
 
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
-            share_contract.redeem(
+            await share_contract.redeem(
                 data=_add_data, tx_from=issuer_address, private_key=private_key
             )
 
@@ -2347,7 +2410,8 @@ class TestGetAccountBalance:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -2368,23 +2432,24 @@ class TestGetAccountBalance:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
         # assertion
-        balance = share_contract.get_account_balance(issuer_address)
+        balance = await share_contract.get_account_balance(issuer_address)
         assert balance == arguments[3]
 
     # <Normal_2>
     # not deployed contract_address
-    def test_normal_2(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
 
         # execute the function
         share_contract = IbetShareContract(ZERO_ADDRESS)
-        balance = share_contract.get_account_balance(issuer_address)
+        balance = await share_contract.get_account_balance(issuer_address)
 
         # assertion
         assert balance == 0
@@ -2395,7 +2460,8 @@ class TestGetAccountBalance:
 
     # <Error_1>
     # invalid account_address
-    def test_error_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -2416,13 +2482,13 @@ class TestGetAccountBalance:
             10000,
         ]
         share_contract = IbetShareContract()
-        share_contract.create(
+        await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
         # execute the function
         with pytest.raises(Web3ValidationError):
-            share_contract.get_account_balance(issuer_address[:-1])  # short
+            await share_contract.get_account_balance(issuer_address[:-1])  # short
 
 
 class TestCheckAttrUpdate:
@@ -2434,19 +2500,21 @@ class TestCheckAttrUpdate:
 
     # <Normal_1>
     # not exists
-    def test_normal_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_db):
         before_datetime = datetime.utcnow()
 
         # Test
         share_contract = IbetShareContract(self.token_address)
-        result = share_contract.check_attr_update(db, before_datetime)
+        result = await share_contract.check_attr_update(async_db, before_datetime)
 
         # assertion
         assert result is False
 
     # <Normal_2>
     # prev data exists
-    def test_normal_2(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_db):
         before_datetime = datetime.utcnow()
         time.sleep(1)
         after_datetime = datetime.utcnow()
@@ -2455,19 +2523,20 @@ class TestCheckAttrUpdate:
         _update = TokenAttrUpdate()
         _update.token_address = self.token_address
         _update.updated_datetime = before_datetime
-        db.add(_update)
-        db.commit()
+        async_db.add(_update)
+        await async_db.commit()
 
         # Test
         share_contract = IbetShareContract(self.token_address)
-        result = share_contract.check_attr_update(db, after_datetime)
+        result = await share_contract.check_attr_update(async_db, after_datetime)
 
         # assertion
         assert result is False
 
     # <Normal_3>
     # next data exists
-    def test_normal_3(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, async_db):
         before_datetime = datetime.utcnow()
         time.sleep(1)
         after_datetime = datetime.utcnow()
@@ -2476,12 +2545,12 @@ class TestCheckAttrUpdate:
         _update = TokenAttrUpdate()
         _update.token_address = self.token_address
         _update.updated_datetime = after_datetime
-        db.add(_update)
-        db.commit()
+        async_db.add(_update)
+        await async_db.commit()
 
         # Test
         share_contract = IbetShareContract(self.token_address)
-        result = share_contract.check_attr_update(db, before_datetime)
+        result = await share_contract.check_attr_update(async_db, before_datetime)
 
         # assertion
         assert result is True
@@ -2500,38 +2569,42 @@ class TestRecordAttrUpdate:
 
     # <Normal_1>
     # data not exists
+    @pytest.mark.asyncio
     @pytest.mark.freeze_time("2021-04-27 12:34:56")
-    def test_normal_1(self, db):
+    async def test_normal_1(self, async_db):
         # Test
         share_contract = IbetShareContract(self.token_address)
-        share_contract.record_attr_update(db)
+        await share_contract.record_attr_update(async_db)
 
         # assertion
-        _update = db.scalars(select(TokenAttrUpdate).limit(1)).first()
+        _update = (await async_db.scalars(select(TokenAttrUpdate).limit(1))).first()
         assert _update.id == 1
         assert _update.token_address == self.token_address
         assert _update.updated_datetime == datetime(2021, 4, 27, 12, 34, 56)
 
     # <Normal_2>
     # data exists
-    def test_normal_2(self, db, freezer):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_db, freezer):
         # prepare data
         _update = TokenAttrUpdate()
         _update.token_address = self.token_address
         _update.updated_datetime = datetime.utcnow()
-        db.add(_update)
-        db.commit()
+        async_db.add(_update)
+        await async_db.commit()
 
         # Mock datetime
         freezer.move_to("2021-04-27 12:34:56")
 
         # Test
         share_contract = IbetShareContract(self.token_address)
-        share_contract.record_attr_update(db)
+        await share_contract.record_attr_update(async_db)
 
         # assertion
-        _update = db.scalars(
-            select(TokenAttrUpdate).where(TokenAttrUpdate.id == 2).limit(1)
+        _update = (
+            await async_db.scalars(
+                select(TokenAttrUpdate).where(TokenAttrUpdate.id == 2).limit(1)
+            )
         ).first()
         assert _update.id == 2
         assert _update.token_address == self.token_address
@@ -2548,7 +2621,8 @@ class TestApproveTransfer:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
@@ -2591,7 +2665,7 @@ class TestApproveTransfer:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = share_contract.create(
+        token_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -2601,7 +2675,7 @@ class TestApproveTransfer:
             "transfer_approval_required": True,
             "transferable": True,
         }
-        share_contract.update(
+        await share_contract.update(
             data=UpdateParams(**update_data),
             tx_from=issuer_address,
             private_key=issuer_pk,
@@ -2625,7 +2699,7 @@ class TestApproveTransfer:
 
         # approve transfer (from issuer)
         approve_data = {"application_id": 0, "data": "approve transfer test"}
-        tx_hash, tx_receipt = share_contract.approve_transfer(
+        tx_hash, tx_receipt = await share_contract.approve_transfer(
             data=ApproveTransferParams(**approve_data),
             tx_from=issuer_address,
             private_key=issuer_pk,
@@ -2657,7 +2731,8 @@ class TestApproveTransfer:
 
     # <Error_1>
     # invalid application index : not integer, data : missing
-    def test_error_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, db):
         # Transfer approve
         approve_data = {
             "application_id": "not-integer",
@@ -2685,7 +2760,8 @@ class TestApproveTransfer:
 
     # <Error_2>
     # invalid contract_address : does not exists
-    def test_error_2(self, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -2698,7 +2774,7 @@ class TestApproveTransfer:
         _approve_transfer_data = ApproveTransferParams(**approve_data)
         share_contract = IbetShareContract("not address")
         with pytest.raises(SendTransactionError) as ex_info:
-            share_contract.approve_transfer(
+            await share_contract.approve_transfer(
                 data=_approve_transfer_data,
                 tx_from=issuer_address,
                 private_key=private_key,
@@ -2709,7 +2785,8 @@ class TestApproveTransfer:
 
     # <Error_3>
     # invalid issuer_address : does not exists
-    def test_error_3(self, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -2730,7 +2807,7 @@ class TestApproveTransfer:
             10000,
         ]
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -2738,7 +2815,7 @@ class TestApproveTransfer:
         approve_data = {"application_id": 0, "data": "test_data"}
         _approve_transfer_data = ApproveTransferParams(**approve_data)
         with pytest.raises(SendTransactionError) as ex_info:
-            share_contract.approve_transfer(
+            await share_contract.approve_transfer(
                 data=_approve_transfer_data,
                 tx_from=issuer_address[:-1],
                 private_key=private_key,
@@ -2747,7 +2824,8 @@ class TestApproveTransfer:
 
     # <Error_4>
     # invalid private_key : not properly
-    def test_error_4(self, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -2769,7 +2847,7 @@ class TestApproveTransfer:
         ]
 
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -2777,7 +2855,7 @@ class TestApproveTransfer:
         approve_data = {"application_id": 0, "data": "test_data"}
         _approve_transfer_data = ApproveTransferParams(**approve_data)
         with pytest.raises(SendTransactionError) as ex_info:
-            share_contract.approve_transfer(
+            await share_contract.approve_transfer(
                 data=_approve_transfer_data,
                 tx_from=issuer_address,
                 private_key="dummy-private",
@@ -2786,7 +2864,8 @@ class TestApproveTransfer:
 
     # <Error_5>
     # Transaction REVERT(application invalid)
-    def test_error_5(self, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
@@ -2829,7 +2908,7 @@ class TestApproveTransfer:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = share_contract.create(
+        token_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -2839,7 +2918,7 @@ class TestApproveTransfer:
             "transfer_approval_required": True,
             "transferable": True,
         }
-        share_contract.update(
+        await share_contract.update(
             data=UpdateParams(**update_data),
             tx_from=issuer_address,
             private_key=issuer_pk,
@@ -2863,7 +2942,7 @@ class TestApproveTransfer:
 
         # approve transfer (from issuer)
         approve_data = {"application_id": 0, "data": "approve transfer test"}
-        share_contract.approve_transfer(
+        await share_contract.approve_transfer(
             data=ApproveTransferParams(**approve_data),
             tx_from=issuer_address,
             private_key=issuer_pk,
@@ -2877,12 +2956,12 @@ class TestApproveTransfer:
         #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
         #         geth: ContractLogicError("execution reverted")
         InspectionMock = mock.patch(
-            "web3.eth.Eth.call",
-            MagicMock(side_effect=ContractLogicError("execution reverted: 120902")),
+            "web3.eth.async_eth.AsyncEth.call",
+            AsyncMock(side_effect=ContractLogicError("execution reverted: 120902")),
         )
 
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
-            share_contract.approve_transfer(
+            await share_contract.approve_transfer(
                 data=ApproveTransferParams(**approve_data),
                 tx_from=issuer_address,
                 private_key=issuer_pk,
@@ -2898,7 +2977,8 @@ class TestCancelTransfer:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
@@ -2941,7 +3021,7 @@ class TestCancelTransfer:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = share_contract.create(
+        token_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -2951,7 +3031,7 @@ class TestCancelTransfer:
             "transfer_approval_required": True,
             "transferable": True,
         }
-        share_contract.update(
+        await share_contract.update(
             data=UpdateParams(**update_data),
             tx_from=issuer_address,
             private_key=issuer_pk,
@@ -2977,7 +3057,7 @@ class TestCancelTransfer:
         cancel_data = {"application_id": 0, "data": "approve transfer test"}
         _approve_transfer_data = CancelTransferParams(**cancel_data)
 
-        tx_hash, tx_receipt = share_contract.cancel_transfer(
+        tx_hash, tx_receipt = await share_contract.cancel_transfer(
             data=_approve_transfer_data, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -3005,7 +3085,8 @@ class TestCancelTransfer:
 
     # <Error_1>
     # invalid application index : not integer, data : missing
-    def test_error_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, db):
         # Transfer approve
         cancel_data = {
             "application_id": "not-integer",
@@ -3033,7 +3114,8 @@ class TestCancelTransfer:
 
     # <Error_2>
     # invalid contract_address : does not exists
-    def test_error_2(self, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -3046,7 +3128,7 @@ class TestCancelTransfer:
         _cancel_transfer_data = CancelTransferParams(**cancel_data)
         share_contract = IbetShareContract("not address")
         with pytest.raises(SendTransactionError) as ex_info:
-            share_contract.cancel_transfer(
+            await share_contract.cancel_transfer(
                 data=_cancel_transfer_data,
                 tx_from=issuer_address,
                 private_key=private_key,
@@ -3057,7 +3139,8 @@ class TestCancelTransfer:
 
     # <Error_3>
     # invalid issuer_address : does not exists
-    def test_error_3(self, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -3079,7 +3162,7 @@ class TestCancelTransfer:
         ]
 
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -3087,7 +3170,7 @@ class TestCancelTransfer:
         cancel_data = {"application_id": 0, "data": "test_data"}
         _cancel_transfer_data = CancelTransferParams(**cancel_data)
         with pytest.raises(SendTransactionError) as ex_info:
-            share_contract.cancel_transfer(
+            await share_contract.cancel_transfer(
                 data=_cancel_transfer_data,
                 tx_from=issuer_address[:-1],
                 private_key=private_key,
@@ -3096,7 +3179,8 @@ class TestCancelTransfer:
 
     # <Error_4>
     # invalid private_key : not properly
-    def test_error_4(self, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, db):
         test_account = config_eth_account("user1")
         issuer_address = test_account.get("address")
         private_key = decode_keyfile_json(
@@ -3118,7 +3202,7 @@ class TestCancelTransfer:
         ]
 
         share_contract = IbetShareContract()
-        contract_address, abi, tx_hash = share_contract.create(
+        contract_address, abi, tx_hash = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=private_key
         )
 
@@ -3126,7 +3210,7 @@ class TestCancelTransfer:
         cancel_data = {"application_id": 0, "data": "test_data"}
         _cancel_transfer_data = CancelTransferParams(**cancel_data)
         with pytest.raises(SendTransactionError) as ex_info:
-            share_contract.cancel_transfer(
+            await share_contract.cancel_transfer(
                 data=_cancel_transfer_data,
                 tx_from=issuer_address,
                 private_key="dummy-private",
@@ -3135,7 +3219,8 @@ class TestCancelTransfer:
 
     # <Error_5>
     # Transaction REVERT(application invalid)
-    def test_error_5(self, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
@@ -3178,7 +3263,7 @@ class TestCancelTransfer:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = share_contract.create(
+        token_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -3188,7 +3273,7 @@ class TestCancelTransfer:
             "transfer_approval_required": True,
             "transferable": True,
         }
-        share_contract.update(
+        await share_contract.update(
             data=UpdateParams(**update_data),
             tx_from=issuer_address,
             private_key=issuer_pk,
@@ -3212,7 +3297,7 @@ class TestCancelTransfer:
 
         # approve transfer (from issuer)
         approve_data = {"application_id": 0, "data": "approve transfer test"}
-        share_contract.approve_transfer(
+        await share_contract.approve_transfer(
             data=ApproveTransferParams(**approve_data),
             tx_from=issuer_address,
             private_key=issuer_pk,
@@ -3226,12 +3311,12 @@ class TestCancelTransfer:
         #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
         #         geth: ContractLogicError("execution reverted")
         InspectionMock = mock.patch(
-            "web3.eth.Eth.call",
-            MagicMock(side_effect=ContractLogicError("execution reverted: 120802")),
+            "web3.eth.async_eth.AsyncEth.call",
+            AsyncMock(side_effect=ContractLogicError("execution reverted: 120802")),
         )
 
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
-            share_contract.cancel_transfer(
+            await share_contract.cancel_transfer(
                 data=CancelTransferParams(**cancel_data),
                 tx_from=issuer_address,
                 private_key=issuer_pk,
@@ -3247,7 +3332,8 @@ class TestLock:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
@@ -3271,13 +3357,13 @@ class TestLock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = share_contract.create(
+        token_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
         # lock
         lock_data = {"lock_address": lock_address, "value": 10, "data": ""}
-        tx_hash, tx_receipt = share_contract.lock(
+        tx_hash, tx_receipt = await share_contract.lock(
             data=LockParams(**lock_data),
             tx_from=issuer_address,
             private_key=issuer_pk,
@@ -3302,7 +3388,8 @@ class TestLock:
     # <Error_1_1>
     # ValidationError
     # field required
-    def test_error_1_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_1_1(self, db):
         lock_data = {}
         with pytest.raises(ValidationError) as ex_info:
             LockParams(**lock_data)
@@ -3335,7 +3422,8 @@ class TestLock:
     # ValidationError
     # - lock_address is not a valid address
     # - value is not greater than 0
-    def test_error_1_2(self, db):
+    @pytest.mark.asyncio
+    async def test_error_1_2(self, db):
         lock_data = {"lock_address": "test_address", "value": 0, "data": ""}
         with pytest.raises(ValidationError) as ex_info:
             LockParams(**lock_data)
@@ -3362,7 +3450,8 @@ class TestLock:
     # <Error_2_1>
     # SendTransactionError
     # Invalid tx_from
-    def test_error_2_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_2_1(self, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
@@ -3386,14 +3475,14 @@ class TestLock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = share_contract.create(
+        token_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
         # lock
         lock_data = {"lock_address": lock_address, "value": 10, "data": ""}
         with pytest.raises(SendTransactionError) as exc_info:
-            share_contract.lock(
+            await share_contract.lock(
                 data=LockParams(**lock_data),
                 tx_from="invalid_tx_from",  # invalid tx from
                 private_key="",
@@ -3405,7 +3494,8 @@ class TestLock:
     # <Error_2_2>
     # SendTransactionError
     # Invalid pk
-    def test_error_2_2(self, db):
+    @pytest.mark.asyncio
+    async def test_error_2_2(self, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
@@ -3429,14 +3519,14 @@ class TestLock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = share_contract.create(
+        token_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
         # lock
         lock_data = {"lock_address": lock_address, "value": 10, "data": ""}
         with pytest.raises(SendTransactionError) as exc_info:
-            share_contract.lock(
+            await share_contract.lock(
                 data=LockParams(**lock_data),
                 tx_from=issuer_address,
                 private_key="invalid_pk",  # invalid pk
@@ -3448,7 +3538,8 @@ class TestLock:
     # <Error_3>
     # SendTransactionError
     # TimeExhausted
-    def test_error_3(self, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
@@ -3472,13 +3563,13 @@ class TestLock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = share_contract.create(
+        token_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
         # mock
         Web3_send_raw_transaction = patch(
-            target="web3.eth.Eth.wait_for_transaction_receipt",
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             side_effect=TimeExhausted,
         )
 
@@ -3486,7 +3577,7 @@ class TestLock:
         lock_data = {"lock_address": lock_address, "value": 10, "data": ""}
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
-                share_contract.lock(
+                await share_contract.lock(
                     data=LockParams(**lock_data),
                     tx_from=issuer_address,
                     private_key=issuer_pk,
@@ -3497,7 +3588,8 @@ class TestLock:
     # <Error_4>
     # SendTransactionError
     # TransactionNotFound
-    def test_error_4(self, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
@@ -3521,13 +3613,13 @@ class TestLock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = share_contract.create(
+        token_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
         # mock
         Web3_send_raw_transaction = patch(
-            target="web3.eth.Eth.wait_for_transaction_receipt",
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             side_effect=TransactionNotFound,
         )
 
@@ -3535,7 +3627,7 @@ class TestLock:
         lock_data = {"lock_address": lock_address, "value": 10, "data": ""}
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
-                share_contract.lock(
+                await share_contract.lock(
                     data=LockParams(**lock_data),
                     tx_from=issuer_address,
                     private_key=issuer_pk,
@@ -3545,7 +3637,8 @@ class TestLock:
 
     # <Error_5>
     # ContractRevertError
-    def test_error_5(self, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
@@ -3569,7 +3662,7 @@ class TestLock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = share_contract.create(
+        token_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
@@ -3578,14 +3671,14 @@ class TestLock:
         #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
         #         geth: ContractLogicError("execution reverted")
         InspectionMock = mock.patch(
-            "web3.eth.Eth.call",
-            MagicMock(side_effect=ContractLogicError("execution reverted: 110002")),
+            "web3.eth.async_eth.AsyncEth.call",
+            AsyncMock(side_effect=ContractLogicError("execution reverted: 110002")),
         )
 
         # lock
         lock_data = {"lock_address": lock_address, "value": 20001, "data": ""}
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
-            share_contract.lock(
+            await share_contract.lock(
                 data=LockParams(**lock_data),
                 tx_from=issuer_address,
                 private_key=issuer_pk,
@@ -3605,7 +3698,8 @@ class TestForceUnlock:
     ###########################################################################
 
     # <Normal_1>
-    def test_normal_1(self, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
@@ -3629,13 +3723,13 @@ class TestForceUnlock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = share_contract.create(
+        token_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
         # lock
         lock_data = {"lock_address": lock_address, "value": 10, "data": ""}
-        share_contract.lock(
+        await share_contract.lock(
             data=LockParams(**lock_data),
             tx_from=issuer_address,
             private_key=issuer_pk,
@@ -3649,7 +3743,7 @@ class TestForceUnlock:
             "value": 5,
             "data": "",
         }
-        tx_hash, tx_receipt = share_contract.force_unlock(
+        tx_hash, tx_receipt = await share_contract.force_unlock(
             data=ForceUnlockPrams(**lock_data),
             tx_from=issuer_address,
             private_key=issuer_pk,
@@ -3674,7 +3768,8 @@ class TestForceUnlock:
     # <Error_1_1>
     # ValidationError
     # field required
-    def test_error_1_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_1_1(self, db):
         lock_data = {}
         with pytest.raises(ValidationError) as ex_info:
             ForceUnlockPrams(**lock_data)
@@ -3721,7 +3816,8 @@ class TestForceUnlock:
     # ValidationError
     # - address is not a valid address
     # - value is not greater than 0
-    def test_error_1_2(self, db):
+    @pytest.mark.asyncio
+    async def test_error_1_2(self, db):
         lock_data = {
             "lock_address": "test_address",
             "account_address": "test_address",
@@ -3770,7 +3866,8 @@ class TestForceUnlock:
     # <Error_2_1>
     # SendTransactionError
     # Invalid tx_from
-    def test_error_2_1(self, db):
+    @pytest.mark.asyncio
+    async def test_error_2_1(self, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
@@ -3794,13 +3891,13 @@ class TestForceUnlock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = share_contract.create(
+        token_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
         # lock
         lock_data = {"lock_address": lock_address, "value": 10, "data": ""}
-        share_contract.lock(
+        await share_contract.lock(
             data=LockParams(**lock_data),
             tx_from=issuer_address,
             private_key=issuer_pk,
@@ -3815,7 +3912,7 @@ class TestForceUnlock:
             "data": "",
         }
         with pytest.raises(SendTransactionError) as exc_info:
-            share_contract.force_unlock(
+            await share_contract.force_unlock(
                 data=ForceUnlockPrams(**lock_data),
                 tx_from="invalid_tx_from",  # invalid tx from
                 private_key="",
@@ -3827,7 +3924,8 @@ class TestForceUnlock:
     # <Error_2_2>
     # SendTransactionError
     # Invalid pk
-    def test_error_2_2(self, db):
+    @pytest.mark.asyncio
+    async def test_error_2_2(self, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
@@ -3851,13 +3949,13 @@ class TestForceUnlock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = share_contract.create(
+        token_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
         # lock
         lock_data = {"lock_address": lock_address, "value": 10, "data": ""}
-        share_contract.lock(
+        await share_contract.lock(
             data=LockParams(**lock_data),
             tx_from=issuer_address,
             private_key=issuer_pk,
@@ -3872,7 +3970,7 @@ class TestForceUnlock:
             "data": "",
         }
         with pytest.raises(SendTransactionError) as exc_info:
-            share_contract.force_unlock(
+            await share_contract.force_unlock(
                 data=ForceUnlockPrams(**lock_data),
                 tx_from=issuer_address,
                 private_key="invalid_pk",  # invalid pk
@@ -3884,7 +3982,8 @@ class TestForceUnlock:
     # <Error_3>
     # SendTransactionError
     # TimeExhausted
-    def test_error_3(self, db):
+    @pytest.mark.asyncio
+    async def test_error_3(self, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
@@ -3908,13 +4007,13 @@ class TestForceUnlock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = share_contract.create(
+        token_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
         # lock
         lock_data = {"lock_address": lock_address, "value": 10, "data": ""}
-        share_contract.lock(
+        await share_contract.lock(
             data=LockParams(**lock_data),
             tx_from=issuer_address,
             private_key=issuer_pk,
@@ -3922,7 +4021,7 @@ class TestForceUnlock:
 
         # mock
         Web3_send_raw_transaction = patch(
-            target="web3.eth.Eth.wait_for_transaction_receipt",
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             side_effect=TimeExhausted,
         )
 
@@ -3936,7 +4035,7 @@ class TestForceUnlock:
         }
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
-                share_contract.force_unlock(
+                await share_contract.force_unlock(
                     data=ForceUnlockPrams(**lock_data),
                     tx_from=issuer_address,
                     private_key=issuer_pk,
@@ -3947,7 +4046,8 @@ class TestForceUnlock:
     # <Error_4>
     # SendTransactionError
     # TransactionNotFound
-    def test_error_4(self, db):
+    @pytest.mark.asyncio
+    async def test_error_4(self, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
@@ -3971,13 +4071,13 @@ class TestForceUnlock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = share_contract.create(
+        token_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
         # lock
         lock_data = {"lock_address": lock_address, "value": 10, "data": ""}
-        share_contract.lock(
+        await share_contract.lock(
             data=LockParams(**lock_data),
             tx_from=issuer_address,
             private_key=issuer_pk,
@@ -3985,7 +4085,7 @@ class TestForceUnlock:
 
         # mock
         Web3_send_raw_transaction = patch(
-            target="web3.eth.Eth.wait_for_transaction_receipt",
+            target="web3.eth.async_eth.AsyncEth.wait_for_transaction_receipt",
             side_effect=TransactionNotFound,
         )
 
@@ -3999,7 +4099,7 @@ class TestForceUnlock:
         }
         with Web3_send_raw_transaction:
             with pytest.raises(SendTransactionError) as exc_info:
-                share_contract.force_unlock(
+                await share_contract.force_unlock(
                     data=ForceUnlockPrams(**lock_data),
                     tx_from=issuer_address,
                     private_key=issuer_pk,
@@ -4009,7 +4109,8 @@ class TestForceUnlock:
 
     # <Error_5>
     # ContractRevertError
-    def test_error_5(self, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, db):
         issuer = config_eth_account("user1")
         issuer_address = issuer.get("address")
         issuer_pk = decode_keyfile_json(
@@ -4033,13 +4134,13 @@ class TestForceUnlock:
             10000,
         ]
         share_contract = IbetShareContract()
-        token_address, _, _ = share_contract.create(
+        token_address, _, _ = await share_contract.create(
             args=arguments, tx_from=issuer_address, private_key=issuer_pk
         )
 
         # lock
         lock_data = {"lock_address": lock_address, "value": 10, "data": ""}
-        share_contract.lock(
+        await share_contract.lock(
             data=LockParams(**lock_data),
             tx_from=issuer_address,
             private_key=issuer_pk,
@@ -4050,8 +4151,8 @@ class TestForceUnlock:
         #         ganache: ValueError({'message': 'VM Exception while processing transaction: revert',...})
         #         geth: ContractLogicError("execution reverted")
         InspectionMock = mock.patch(
-            "web3.eth.Eth.call",
-            MagicMock(side_effect=ContractLogicError("execution reverted: 111201")),
+            "web3.eth.async_eth.AsyncEth.call",
+            AsyncMock(side_effect=ContractLogicError("execution reverted: 111201")),
         )
 
         # forceUnlock
@@ -4063,7 +4164,7 @@ class TestForceUnlock:
             "data": "",
         }
         with InspectionMock, pytest.raises(ContractRevertError) as exc_info:
-            share_contract.force_unlock(
+            await share_contract.force_unlock(
                 data=ForceUnlockPrams(**lock_data),
                 tx_from=issuer_address,
                 private_key=issuer_pk,

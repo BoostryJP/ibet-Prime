@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import base64
 import json
 import os
@@ -131,7 +132,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
     # <Normal_1>
     # No event logs
-    def test_normal_1(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, processor, db):
         # Prepare data : BlockNumber
         _idx_e2e_messaging_block_number = IDXE2EMessagingBlockNumber()
         _idx_e2e_messaging_block_number.latest_block_number = 0
@@ -141,7 +143,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _e2e_messaging_list = db.scalars(
@@ -157,7 +159,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Normal_2_1>
     # Single event logs
     # not generated RSA key after send
-    def test_normal_2_1(self, processor, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_normal_2_1(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -191,7 +194,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str = json.dumps(message)
-        sending_tx_hash, sending_tx_receipt = E2EMessaging(
+        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message_external(
             user_address_1,
@@ -206,7 +209,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _e2e_messaging_list = db.scalars(
@@ -231,7 +234,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Normal_2_2>
     # Single event logs
     # generated RSA key after send
-    def test_normal_2_2(self, processor, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_normal_2_2(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -283,7 +287,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str = json.dumps(message)
-        sending_tx_hash, sending_tx_receipt = E2EMessaging(
+        sending_tx_hash, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message_external(
             user_address_1,
@@ -320,7 +324,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _e2e_messaging_list = db.scalars(
@@ -344,7 +348,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
     # <Normal_3>
     # Multi event logs
-    def test_normal_3(self, processor, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -396,7 +401,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str_1 = json.dumps(message)
-        sending_tx_hash_1, sending_tx_receipt = E2EMessaging(
+        sending_tx_hash_1, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message_external(
             user_address_1,
@@ -415,7 +420,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         _type_2 = "test_type2"
         message = ["テスト太郎2", "東京都2"]
         message_message_str_2 = json.dumps(message)
-        sending_tx_hash_2, sending_tx_receipt = E2EMessaging(
+        sending_tx_hash_2, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message_external(
             user_address_2,
@@ -433,7 +438,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Send Message(user3 -> user1)
         _type_3 = "test_type3"
         message_message_str_3 = "テスト太郎1,東京都1"
-        sending_tx_hash_3, sending_tx_receipt = E2EMessaging(
+        sending_tx_hash_3, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message_external(
             user_address_1,
@@ -451,7 +456,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Send Message(user3 -> user2)
         _type_4 = "a" * 50
         message_message_str_4 = "a" * 5000
-        sending_tx_hash_4, sending_tx_receipt = E2EMessaging(
+        sending_tx_hash_4, sending_tx_receipt = await E2EMessaging(
             e2e_messaging_contract.address
         ).send_message_external(
             user_address_2,
@@ -468,7 +473,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _e2e_messaging_list = db.scalars(
@@ -519,7 +524,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
     # <Normal_4>
     # Not target message
-    def test_normal_4(self, processor, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_normal_4(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -555,7 +561,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str = json.dumps(message)
-        E2EMessaging(e2e_messaging_contract.address).send_message_external(
+        await E2EMessaging(e2e_messaging_contract.address).send_message_external(
             user_address_3,  # not target
             _type,
             message_message_str,
@@ -566,7 +572,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _e2e_messaging_list = db.scalars(
@@ -586,7 +592,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_1_1>
     # format error
     # not json
-    def test_error_1_1(self, processor, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_1_1(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -615,13 +622,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         # Send Message
         message = "test"
-        E2EMessaging(e2e_messaging_contract.address).send_message(
+        await E2EMessaging(e2e_messaging_contract.address).send_message(
             user_address_1, message, user_address_2, user_private_key_2
         )
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _e2e_messaging_list = db.scalars(
@@ -637,7 +644,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_1_2>
     # format error
     # `type` does not exists
-    def test_error_1_2(self, processor, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_1_2(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -683,13 +691,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 }
             }
         )
-        E2EMessaging(e2e_messaging_contract.address).send_message(
+        await E2EMessaging(e2e_messaging_contract.address).send_message(
             user_address_1, message, user_address_2, user_private_key_2
         )
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _e2e_messaging_list = db.scalars(
@@ -705,7 +713,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_1_3>
     # format error
     # `text` does not exists
-    def test_error_1_3(self, processor, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_1_3(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -738,13 +747,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "type": "test_type",
             }
         )
-        E2EMessaging(e2e_messaging_contract.address).send_message(
+        await E2EMessaging(e2e_messaging_contract.address).send_message(
             user_address_1, message, user_address_2, user_private_key_2
         )
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _e2e_messaging_list = db.scalars(
@@ -760,7 +769,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_1_4>
     # format error
     # `text` max length over
-    def test_error_1_4(self, processor, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_1_4(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -804,13 +814,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": cipher_key, "message": encrypted_message},
             }
         )
-        E2EMessaging(e2e_messaging_contract.address).send_message(
+        await E2EMessaging(e2e_messaging_contract.address).send_message(
             user_address_1, message, user_address_2, user_private_key_2
         )
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _e2e_messaging_list = db.scalars(
@@ -826,7 +836,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_1_5>
     # format error
     # `text.cipher_key` does not exists
-    def test_error_1_5(self, processor, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_1_5(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -869,13 +880,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 },
             }
         )
-        E2EMessaging(e2e_messaging_contract.address).send_message(
+        await E2EMessaging(e2e_messaging_contract.address).send_message(
             user_address_1, message, user_address_2, user_private_key_2
         )
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _e2e_messaging_list = db.scalars(
@@ -891,7 +902,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_1_6>
     # format error
     # `text.message` does not exists
-    def test_error_1_6(self, processor, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_1_6(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -931,13 +943,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 },
             }
         )
-        E2EMessaging(e2e_messaging_contract.address).send_message(
+        await E2EMessaging(e2e_messaging_contract.address).send_message(
             user_address_1, message, user_address_2, user_private_key_2
         )
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _e2e_messaging_list = db.scalars(
@@ -953,7 +965,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_1_7>
     # format error
     # decoded `text.message` max length over
-    def test_error_1_7(self, processor, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_1_7(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -997,13 +1010,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": cipher_key, "message": encrypted_message},
             }
         )
-        E2EMessaging(e2e_messaging_contract.address).send_message(
+        await E2EMessaging(e2e_messaging_contract.address).send_message(
             user_address_1, message, user_address_2, user_private_key_2
         )
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _e2e_messaging_list = db.scalars(
@@ -1018,7 +1031,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
     # <Error_2>
     # RSA key does not exists
-    def test_error_2(self, processor, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_2(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -1040,7 +1054,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
             "address": "東京都1",
         }
         message_message_str = json.dumps(message)
-        E2EMessaging(e2e_messaging_contract.address).send_message_external(
+        await E2EMessaging(e2e_messaging_contract.address).send_message_external(
             user_address_1,
             _type,
             message_message_str,
@@ -1065,7 +1079,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _e2e_messaging_list = db.scalars(
@@ -1081,7 +1095,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_3_1>
     # message decode error
     # `text.cipher_key` is not AES key
-    def test_error_3_1(self, processor, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_3_1(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -1122,13 +1137,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": "cipher_key", "message": encrypted_message},
             }
         )
-        E2EMessaging(e2e_messaging_contract.address).send_message(
+        await E2EMessaging(e2e_messaging_contract.address).send_message(
             user_address_1, message, user_address_2, user_private_key_2
         )
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _e2e_messaging_list = db.scalars(
@@ -1144,7 +1159,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_3_2>
     # message decode error
     # `text.cipher_key` does not encrypt with RSA key
-    def test_error_3_2(self, processor, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_3_2(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -1186,13 +1202,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": cipher_key, "message": encrypted_message},
             }
         )
-        E2EMessaging(e2e_messaging_contract.address).send_message(
+        await E2EMessaging(e2e_messaging_contract.address).send_message(
             user_address_1, message, user_address_2, user_private_key_2
         )
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _e2e_messaging_list = db.scalars(
@@ -1208,7 +1224,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_3_3>
     # message decode error
     # `text.cipher_key` encrypted other RSA key
-    def test_error_3_3(self, processor, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_3_3(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -1255,13 +1272,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": cipher_key, "message": encrypted_message},
             }
         )
-        E2EMessaging(e2e_messaging_contract.address).send_message(
+        await E2EMessaging(e2e_messaging_contract.address).send_message(
             user_address_1, message, user_address_2, user_private_key_2
         )
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _e2e_messaging_list = db.scalars(
@@ -1277,7 +1294,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_3_4>
     # message decode error
     # `text.message` does not encrypt
-    def test_error_3_4(self, processor, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_3_4(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -1315,13 +1333,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": cipher_key, "message": "test_message"},
             }
         )
-        E2EMessaging(e2e_messaging_contract.address).send_message(
+        await E2EMessaging(e2e_messaging_contract.address).send_message(
             user_address_1, message, user_address_2, user_private_key_2
         )
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _e2e_messaging_list = db.scalars(
@@ -1337,7 +1355,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Error_3_5>
     # message decode error
     # `text.message` encrypted other AES key
-    def test_error_3_5(self, processor, db, e2e_messaging_contract):
+    @pytest.mark.asyncio
+    async def test_error_3_5(self, processor, db, e2e_messaging_contract):
         user_1 = config_eth_account("user1")
         user_address_1 = user_1["address"]
         user_2 = config_eth_account("user2")
@@ -1382,13 +1401,13 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 "text": {"cipher_key": cipher_key, "message": encrypted_message},
             }
         )
-        E2EMessaging(e2e_messaging_contract.address).send_message(
+        await E2EMessaging(e2e_messaging_contract.address).send_message(
             user_address_1, message, user_address_2, user_private_key_2
         )
 
         # Run target process
         block_number = web3.eth.block_number
-        processor.process()
+        await processor.process()
 
         # Assertion
         _e2e_messaging_list = db.scalars(

@@ -16,15 +16,18 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
-import time
+
+import asyncio
+import sys
 import uuid
 from typing import Sequence
 
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import and_, create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.database import BatchAsyncSessionLocal
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.blockchain.tx_params.ibet_share import (
@@ -61,26 +64,30 @@ db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 
 class Processor:
-    def process(self):
-        db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
+    async def process(self):
+        db_session = BatchAsyncSessionLocal()
         try:
-            upload_list: Sequence[BatchIssueRedeemUpload] = db_session.scalars(
-                select(BatchIssueRedeemUpload).where(
-                    BatchIssueRedeemUpload.processed == False
+            upload_list: Sequence[BatchIssueRedeemUpload] = (
+                await db_session.scalars(
+                    select(BatchIssueRedeemUpload).where(
+                        BatchIssueRedeemUpload.processed == False
+                    )
                 )
             ).all()
             for upload in upload_list:
                 LOG.info(f"Process start: upload_id={upload.upload_id}")
 
                 # Get issuer's private key
-                issuer_account: Account | None = db_session.scalars(
-                    select(Account)
-                    .where(Account.issuer_address == upload.issuer_address)
-                    .limit(1)
+                issuer_account: Account | None = (
+                    await db_session.scalars(
+                        select(Account)
+                        .where(Account.issuer_address == upload.issuer_address)
+                        .limit(1)
+                    )
                 ).first()
                 if issuer_account is None:
                     LOG.exception("Issuer account does not exist")
-                    self.__sink_on_notification(
+                    await self.__sink_on_notification(
                         db_session=db_session,
                         issuer_address=upload.issuer_address,
                         token_address=upload.token_address,
@@ -91,7 +98,7 @@ class Processor:
                         error_data_id_list=[],
                     )
                     upload.processed = True
-                    db_session.commit()
+                    await db_session.commit()
                     continue
 
                 try:
@@ -103,7 +110,7 @@ class Processor:
                     )
                 except (ValueError, TypeError):
                     LOG.exception("Failed to decode keyfile")
-                    self.__sink_on_notification(
+                    await self.__sink_on_notification(
                         db_session=db_session,
                         issuer_address=upload.issuer_address,
                         token_address=upload.token_address,
@@ -114,15 +121,17 @@ class Processor:
                         error_data_id_list=[],
                     )
                     upload.processed = True
-                    db_session.commit()
+                    await db_session.commit()
                     continue
 
                 # Batch processing
-                batch_data_list: Sequence[BatchIssueRedeem] = db_session.scalars(
-                    select(BatchIssueRedeem).where(
-                        and_(
-                            BatchIssueRedeem.upload_id == upload.upload_id,
-                            BatchIssueRedeem.status == 0,
+                batch_data_list: Sequence[BatchIssueRedeem] = (
+                    await db_session.scalars(
+                        select(BatchIssueRedeem).where(
+                            and_(
+                                BatchIssueRedeem.upload_id == upload.upload_id,
+                                BatchIssueRedeem.status == 0,
+                            )
                         )
                     )
                 ).all()
@@ -134,7 +143,7 @@ class Processor:
                                 upload.category
                                 == BatchIssueRedeemProcessingCategory.ISSUE.value
                             ):
-                                tx_hash = IbetStraightBondContract(
+                                tx_hash = await IbetStraightBondContract(
                                     upload.token_address
                                 ).additional_issue(
                                     data=IbetStraightBondAdditionalIssueParams(
@@ -148,7 +157,7 @@ class Processor:
                                 upload.category
                                 == BatchIssueRedeemProcessingCategory.REDEEM.value
                             ):
-                                tx_hash = IbetStraightBondContract(
+                                tx_hash = await IbetStraightBondContract(
                                     upload.token_address
                                 ).redeem(
                                     data=IbetStraightBondRedeemParams(
@@ -163,7 +172,7 @@ class Processor:
                                 upload.category
                                 == BatchIssueRedeemProcessingCategory.ISSUE.value
                             ):
-                                tx_hash = IbetShareContract(
+                                tx_hash = await IbetShareContract(
                                     upload.token_address
                                 ).additional_issue(
                                     data=IbetShareAdditionalIssueParams(
@@ -177,7 +186,7 @@ class Processor:
                                 upload.category
                                 == BatchIssueRedeemProcessingCategory.REDEEM.value
                             ):
-                                tx_hash = IbetShareContract(
+                                tx_hash = await IbetShareContract(
                                     upload.token_address
                                 ).redeem(
                                     data=IbetShareRedeemParams(
@@ -198,14 +207,16 @@ class Processor:
                         LOG.warning(f"Failed to send transaction: {tx_hash}")
                         batch_data.status = 2
                     finally:
-                        db_session.commit()  # commit for each data
+                        await db_session.commit()  # commit for each data
 
                 # Process failed data
-                failed_batch_data_list: Sequence[BatchIssueRedeem] = db_session.scalars(
-                    select(BatchIssueRedeem).where(
-                        and_(
-                            BatchIssueRedeem.upload_id == upload.upload_id,
-                            BatchIssueRedeem.status == 2,
+                failed_batch_data_list: Sequence[BatchIssueRedeem] = (
+                    await db_session.scalars(
+                        select(BatchIssueRedeem).where(
+                            and_(
+                                BatchIssueRedeem.upload_id == upload.upload_id,
+                                BatchIssueRedeem.status == 2,
+                            )
                         )
                     )
                 ).all()
@@ -213,7 +224,7 @@ class Processor:
                 error_data_id_list = [data.id for data in failed_batch_data_list]
                 # 0: Success, 3: failed
                 code = 3 if len(error_data_id_list) > 0 else 0
-                self.__sink_on_notification(
+                await self.__sink_on_notification(
                     db_session=db_session,
                     issuer_address=upload.issuer_address,
                     token_address=upload.token_address,
@@ -225,15 +236,15 @@ class Processor:
                 )
                 # Update to processed
                 upload.processed = True
-                db_session.commit()
+                await db_session.commit()
 
                 LOG.info(f"Process end: upload_id={upload.upload_id}")
         finally:
-            db_session.close()
+            await db_session.close()
 
     @staticmethod
-    def __sink_on_notification(
-        db_session: Session,
+    async def __sink_on_notification(
+        db_session: AsyncSession,
         issuer_address: str,
         token_address: str,
         token_type: str,
@@ -258,19 +269,22 @@ class Processor:
         db_session.add(notification)
 
 
-def main():
+async def main():
     LOG.info("Service started successfully")
     processor = Processor()
     while True:
         try:
-            processor.process()
+            await processor.process()
         except SQLAlchemyError as sa_err:
             LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
         except Exception as ex:
             LOG.exception(ex)
 
-        time.sleep(60)
+        await asyncio.sleep(60)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        sys.exit(1)

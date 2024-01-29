@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from unittest.mock import patch
 
 import pytest
@@ -38,7 +39,7 @@ from tests.account_config import config_eth_account
 
 @pytest.fixture(scope="function")
 def processor(db):
-    return Processor(thread_num=0)
+    return Processor(worker_num=0)
 
 
 class TestProcessor:
@@ -82,7 +83,8 @@ class TestProcessor:
     # <Normal_1_1>
     # transaction_compression = False
     # IbetStraightBond
-    def test_normal_1_1(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(self, processor, db):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
@@ -127,7 +129,7 @@ class TestProcessor:
 
         with IbetStraightBondContract_transfer:
             # Execute batch
-            processor.process()
+            await processor.process()
 
             # Assertion
             _bulk_transfer_upload = db.scalars(
@@ -148,7 +150,8 @@ class TestProcessor:
     # <Normal_1_2>
     # transaction_compression = False
     # IbetShare
-    def test_normal_1_2(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, processor, db):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
@@ -193,7 +196,7 @@ class TestProcessor:
 
         with IbetShareContract_transfer:
             # Execute batch
-            processor.process()
+            await processor.process()
 
             # Assertion
             _bulk_transfer_upload = db.scalars(
@@ -214,7 +217,8 @@ class TestProcessor:
     # <Normal_2_1>
     # transaction_compression = True
     # IbetStraightBond
-    def test_normal_2_1(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_1(self, processor, db):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
@@ -262,7 +266,7 @@ class TestProcessor:
 
         with IbetStraightBondContract_bulkTransfer:
             # Execute batch process
-            processor.process()
+            await processor.process()
 
             # Assertion
             assert IbetStraightBondContract.bulk_transfer.call_count == 2
@@ -286,7 +290,8 @@ class TestProcessor:
     # <Normal_2_2>
     # transaction_compression = True
     # IbetShare
-    def test_normal_2_2(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_2_2(self, processor, db):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
@@ -334,7 +339,7 @@ class TestProcessor:
 
         with IbetShareContract_bulkTransfer:
             # Execute batch process
-            processor.process()
+            await processor.process()
 
             # Assertion
             assert IbetShareContract.bulk_transfer.call_count == 2
@@ -358,7 +363,8 @@ class TestProcessor:
     # <Normal_3>
     # Skip other thread processed issuer
     @patch("batch.processor_bulk_transfer.BULK_TRANSFER_WORKER_LOT_SIZE", 2)
-    def test_normal_3(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, processor, db):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
@@ -450,7 +456,7 @@ class TestProcessor:
 
         with IbetStraightBondContract_transfer, processing_issuer:
             # Execute batch
-            processor.process()
+            await processor.process()
 
             # Assertion
             _bulk_transfer_upload_list = db.scalars(
@@ -484,7 +490,8 @@ class TestProcessor:
     # <Normal_4>
     # Other thread processed issuer(all same issuer)
     @patch("batch.processor_bulk_transfer.BULK_TRANSFER_WORKER_LOT_SIZE", 2)
-    def test_normal_4(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_normal_4(self, processor, db):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
@@ -573,7 +580,7 @@ class TestProcessor:
 
         with IbetStraightBondContract_transfer, processing_issuer:
             # Execute batch
-            processor.process()
+            await processor.process()
 
             # Assertion
             _bulk_transfer_upload_list = db.scalars(
@@ -608,7 +615,8 @@ class TestProcessor:
 
     # <Error_1>
     # Account does not exist
-    def test_error_1(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_error_1(self, processor, db):
         _account = self.account_list[0]
 
         # Prepare data : BulkTransferUpload
@@ -622,7 +630,7 @@ class TestProcessor:
         db.commit()
 
         # Execute batch
-        processor.process()
+        await processor.process()
 
         # Assertion
         _bulk_transfer_upload = db.scalars(
@@ -646,7 +654,8 @@ class TestProcessor:
 
     # <Error_2>
     # fail to get the private key
-    def test_error_2(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_error_2(self, processor, db):
         _account = self.account_list[0]
 
         # Prepare data : Account
@@ -667,7 +676,7 @@ class TestProcessor:
         db.commit()
 
         # Execute batch
-        processor.process()
+        await processor.process()
 
         # Assertion
         _bulk_transfer_upload = db.scalars(
@@ -691,7 +700,8 @@ class TestProcessor:
 
     # <Error_3_1>
     # SendTransactionError: IbetStraightBond
-    def test_error_3_1(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_error_3_1(self, processor, db):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
@@ -733,7 +743,7 @@ class TestProcessor:
 
         with IbetStraightBondContract_transfer:
             # Execute batch
-            processor.process()
+            await processor.process()
 
             # Assertion
             _bulk_transfer_upload = db.scalars(
@@ -770,7 +780,8 @@ class TestProcessor:
 
     # <Error_3_2>
     # ContractRevertError: IbetStraightBond
-    def test_error_3_2(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_error_3_2(self, processor, db):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
@@ -812,7 +823,7 @@ class TestProcessor:
 
         with IbetStraightBondContract_transfer:
             # Execute batch
-            processor.process()
+            await processor.process()
 
             # Assertion
             _bulk_transfer_upload = db.scalars(
@@ -854,7 +865,8 @@ class TestProcessor:
 
     # <Error_4_1>
     # SendTransactionError: IbetShare
-    def test_error_4_1(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_error_4_1(self, processor, db):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
@@ -896,7 +908,7 @@ class TestProcessor:
 
         with IbetShareContract_transfer:
             # Execute batch
-            processor.process()
+            await processor.process()
 
             # Assertion
             _bulk_transfer_upload = db.scalars(
@@ -933,7 +945,8 @@ class TestProcessor:
 
     # <Error_4_2>
     # ContractRevertError: IbetShare
-    def test_error_4_2(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_error_4_2(self, processor, db):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
@@ -975,7 +988,7 @@ class TestProcessor:
 
         with IbetShareContract_transfer:
             # Execute batch
-            processor.process()
+            await processor.process()
 
             # Assertion
             _bulk_transfer_upload = db.scalars(
@@ -1017,7 +1030,8 @@ class TestProcessor:
 
     # <Error_5>
     # Process down after error occurred, Re-run process
-    def test_error_5(self, processor, db):
+    @pytest.mark.asyncio
+    async def test_error_5(self, processor, db):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
@@ -1062,7 +1076,7 @@ class TestProcessor:
 
         with IbetStraightBondContract_transfer:
             # Execute batch
-            processor.process()
+            await processor.process()
 
             # Assertion
             _bulk_transfer_upload = db.scalars(

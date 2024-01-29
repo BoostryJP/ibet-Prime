@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 from unittest import mock
 from unittest.mock import ANY
@@ -46,6 +47,8 @@ class TestAppRoutersLockEvents:
         _token.abi = ""
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
+        db.commit()
 
         # request target api
         resp = client.get(

@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import sys
 
 from sqlalchemy import select
@@ -47,6 +48,8 @@ class TestAppRoutersLedgerTokenAddressDetailsDataPOST:
         _token.abi = {}
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
+        db.commit()
 
         # request target API
         req_param = [
@@ -117,6 +120,8 @@ class TestAppRoutersLedgerTokenAddressDetailsDataPOST:
         _token.abi = {}
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
+        db.commit()
 
         # request target API
         req_param = [
@@ -410,6 +415,8 @@ class TestAppRoutersLedgerTokenAddressDetailsDataPOST:
         _token.token_status = 0
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
+        db.commit()
 
         # request target API
         req_param = [

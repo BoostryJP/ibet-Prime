@@ -16,13 +16,14 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from web3.exceptions import TimeExhausted
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.blockchain.tx_params.ibet_security_token_escrow import (
     ApproveTransferParams,
 )
-from app.utils.contract_utils import ContractUtils
+from app.utils.contract_utils import AsyncContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT
 
 
@@ -32,18 +33,18 @@ class IbetExchangeInterface:
     def __init__(
         self, contract_address: str, contract_name: str = "IbetExchangeInterface"
     ):
-        self.exchange_contract = ContractUtils.get_contract(
+        self.exchange_contract = AsyncContractUtils.get_contract(
             contract_name=contract_name, contract_address=contract_address
         )
 
-    def get_account_balance(self, account_address: str, token_address: str):
+    async def get_account_balance(self, account_address: str, token_address: str):
         """Get account balance
 
         :param account_address: account address
         :param token_address: token address
         :return: account balance
         """
-        balance = ContractUtils.call_function(
+        balance = await AsyncContractUtils.call_function(
             contract=self.exchange_contract,
             function_name="balanceOf",
             args=(
@@ -52,7 +53,7 @@ class IbetExchangeInterface:
             ),
             default_returns=0,
         )
-        commitment = ContractUtils.call_function(
+        commitment = await AsyncContractUtils.call_function(
             contract=self.exchange_contract,
             function_name="commitmentOf",
             args=(
@@ -73,12 +74,12 @@ class IbetSecurityTokenEscrow(IbetExchangeInterface):
             contract_address=contract_address, contract_name="IbetSecurityTokenEscrow"
         )
 
-    def approve_transfer(
-        self, data: ApproveTransferParams, tx_from: str, private_key: str
+    async def approve_transfer(
+        self, data: ApproveTransferParams, tx_from: str, private_key: bytes
     ):
         """Approve Transfer"""
         try:
-            tx = self.exchange_contract.functions.approveTransfer(
+            tx = await self.exchange_contract.functions.approveTransfer(
                 data.escrow_id, data.data
             ).build_transaction(
                 {
@@ -88,7 +89,7 @@ class IbetSecurityTokenEscrow(IbetExchangeInterface):
                     "gasPrice": 0,
                 }
             )
-            tx_hash, tx_receipt = ContractUtils.send_transaction(
+            tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
                 transaction=tx, private_key=private_key
             )
             return tx_hash, tx_receipt

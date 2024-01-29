@@ -87,7 +87,7 @@ COPY pyproject.toml /app/ibet-Prime/pyproject.toml
 COPY poetry.lock /app/ibet-Prime/poetry.lock
 RUN . ~/.bash_profile \
  && cd /app/ibet-Prime \
- && poetry install --no-root \
+ && poetry install --no-root -E ibet-explorer \
  && rm -f /app/ibet-Prime/pyproject.toml \
  && rm -f /app/ibet-Prime/poetry.lock
 

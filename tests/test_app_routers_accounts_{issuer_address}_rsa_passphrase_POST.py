@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from sqlalchemy import select
@@ -54,6 +55,8 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
         account.rsa_passphrase = E2EEUtils.encrypt(_old_password)
         account.rsa_status = AccountRsaStatus.SET.value
         db.add(account)
+
+        db.commit()
 
         # request target API
         req_param = {
@@ -223,6 +226,8 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
         account.rsa_status = AccountRsaStatus.SET.value
         db.add(account)
 
+        db.commit()
+
         # request target API
         req_param = {
             "old_rsa_passphrase": E2EEUtils.encrypt("passwordtest"),
@@ -255,6 +260,8 @@ class TestAppRoutersAccountsIssuerAddressRSAPassphrasePOST:
         account.rsa_passphrase = E2EEUtils.encrypt(_old_password)
         account.rsa_status = AccountRsaStatus.SET.value
         db.add(account)
+
+        db.commit()
 
         # request target API
         req_param = {

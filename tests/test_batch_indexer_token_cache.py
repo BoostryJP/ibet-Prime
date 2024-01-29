@@ -16,16 +16,18 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import logging
 import time
 from datetime import datetime
 from unittest import mock
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.exc import InvalidRequestError
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 from app.exceptions import ServiceUnavailableError
@@ -68,7 +70,7 @@ def processor(db, caplog: pytest.LogCaptureFixture):
     LOG.setLevel(default_log_level)
 
 
-def deploy_bond_token_contract(
+async def deploy_bond_token_contract(
     address,
     private_key,
     personal_info_contract_address,
@@ -89,8 +91,8 @@ def deploy_bond_token_contract(
         "token.purpose",
     ]
     bond_contrat = IbetStraightBondContract()
-    token_address, _, _ = bond_contrat.create(arguments, address, private_key)
-    bond_contrat.update(
+    token_address, _, _ = await bond_contrat.create(arguments, address, private_key)
+    await bond_contrat.update(
         data=IbetStraightBondUpdateParams(
             transferable=True,
             personal_info_contract_address=personal_info_contract_address,
@@ -104,7 +106,7 @@ def deploy_bond_token_contract(
     return ContractUtils.get_contract("IbetStraightBond", token_address)
 
 
-def deploy_share_token_contract(
+async def deploy_share_token_contract(
     address,
     private_key,
     personal_info_contract_address,
@@ -123,8 +125,8 @@ def deploy_share_token_contract(
         30,
     ]
     share_contract = IbetShareContract()
-    token_address, _, _ = share_contract.create(arguments, address, private_key)
-    share_contract.update(
+    token_address, _, _ = await share_contract.create(arguments, address, private_key)
+    await share_contract.update(
         data=IbetShareUpdateParams(
             transferable=True,
             personal_info_contract_address=personal_info_contract_address,
@@ -146,7 +148,8 @@ class TestProcessor:
     # <Normal_1_1>
     # Single Token
     # not issue token
-    def test_normal_1_1(self, processor, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_1_1(self, processor, db, personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
 
@@ -163,12 +166,12 @@ class TestProcessor:
 
         db.commit()
 
-        time_mock = MagicMock(wraps=time)
-        time_mock.sleep.side_effect = [True]
+        sleep_mock = AsyncMock()
+        sleep_mock.return_value = 0
 
         # Run target process
-        with mock.patch("batch.indexer_token_cache.time", time_mock):
-            processor.process()
+        with mock.patch("asyncio.sleep", sleep_mock):
+            await processor.process()
         # Assertion
         _cache_list = db.scalars(
             select(TokenCache).order_by(TokenCache.cached_datetime)
@@ -178,7 +181,8 @@ class TestProcessor:
     # <Normal_1_2>
     # Multi Token
     # issued token
-    def test_normal_1_2(self, processor, db, personal_info_contract):
+    @pytest.mark.asyncio
+    async def test_normal_1_2(self, processor, db, personal_info_contract):
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -186,7 +190,7 @@ class TestProcessor:
         )
 
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(
+        token_contract_1 = await deploy_bond_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -200,7 +204,7 @@ class TestProcessor:
         db.add(token_1)
 
         # Prepare data : Token
-        token_contract_2 = deploy_share_token_contract(
+        token_contract_2 = await deploy_share_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
         )
         token_address_2 = token_contract_2.address
@@ -228,12 +232,12 @@ class TestProcessor:
 
         before_cache_time = datetime.utcnow()
 
-        time_mock = MagicMock(wraps=time)
-        time_mock.sleep.side_effect = [True, True]
+        sleep_mock = AsyncMock()
+        sleep_mock.return_value = 0
 
         # Run target process
-        with mock.patch("batch.indexer_token_cache.time", time_mock):
-            processor.process()
+        with mock.patch("asyncio.sleep", sleep_mock):
+            await processor.process()
 
         # Assertion
         _cache_list = db.scalars(
@@ -309,7 +313,8 @@ class TestProcessor:
 
     # <Error_1>
     # If each error occurs, batch will output logs and continue next sync.
-    def test_error_1(
+    @pytest.mark.asyncio
+    async def test_error_1(
         self,
         main_func,
         db: Session,
@@ -322,7 +327,7 @@ class TestProcessor:
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
         # Prepare data : Token
-        token_contract_1 = deploy_bond_token_contract(
+        token_contract_1 = await deploy_bond_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
@@ -338,20 +343,20 @@ class TestProcessor:
         db.commit()
 
         # Run mainloop once and fail with web3 utils error
-        time_mock = MagicMock(wraps=time)
-        time_mock.sleep.side_effect = [TypeError]
+        sleep_mock = AsyncMock()
+        sleep_mock.side_effect = [TypeError]
 
         # Run target process
         with (
             patch("batch.indexer_token_cache.INDEXER_SYNC_INTERVAL", None),
-            patch("batch.indexer_token_cache.time", time_mock),
+            patch("asyncio.sleep", sleep_mock),
             patch(
-                target="app.utils.contract_utils.ContractUtils.call_function",
+                target="app.utils.contract_utils.AsyncContractUtils.call_function",
                 side_effect=ServiceUnavailableError(),
             ),
             pytest.raises(TypeError),
         ):
-            main_func()
+            await main_func()
         assert 1 == caplog.record_tuples.count(
             (LOG.name, logging.WARNING, "An external service was unavailable")
         )
@@ -361,10 +366,10 @@ class TestProcessor:
         with patch("batch.indexer_token_cache.INDEXER_SYNC_INTERVAL", None), patch(
             "batch.indexer_token_cache.INDEXER_SYNC_INTERVAL", None
         ), patch.object(
-            Session, "scalars", side_effect=InvalidRequestError()
+            AsyncSession, "scalars", side_effect=InvalidRequestError()
         ), pytest.raises(
             TypeError
         ):
-            main_func()
+            await main_func()
         assert 1 == caplog.text.count("A database error has occurred")
         caplog.clear()

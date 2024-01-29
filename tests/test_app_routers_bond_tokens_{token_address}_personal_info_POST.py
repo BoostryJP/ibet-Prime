@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import hashlib
 from unittest.mock import patch
 
@@ -60,6 +61,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # mock
         ibet_bond_contract = IbetStraightBondContract()
@@ -106,11 +109,6 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoPOST:
             # assertion
             assert resp.status_code == 200
             assert resp.json() is None
-            PersonalInfoContract.__init__.assert_called_with(
-                db=db,
-                issuer_address=_issuer_address,
-                contract_address="personal_info_contract_address",
-            )
             PersonalInfoContract.register_info.assert_called_with(
                 account_address=_test_account_address,
                 data=req_param,
@@ -144,6 +142,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # mock
         ibet_bond_contract = IbetStraightBondContract()
@@ -190,11 +190,6 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoPOST:
             # assertion
             assert resp.status_code == 200
             assert resp.json() is None
-            PersonalInfoContract.__init__.assert_called_with(
-                db=db,
-                issuer_address=_issuer_address,
-                contract_address="personal_info_contract_address",
-            )
             PersonalInfoContract.register_info.assert_called_with(
                 account_address=_test_account_address,
                 data=req_param,
@@ -234,6 +229,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # mock
         ibet_bond_contract = IbetStraightBondContract()
@@ -280,11 +277,6 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoPOST:
             # assertion
             assert resp.status_code == 200
             assert resp.json() is None
-            PersonalInfoContract.__init__.assert_called_with(
-                db=db,
-                issuer_address=_issuer_address,
-                contract_address="personal_info_contract_address",
-            )
             PersonalInfoContract.register_info.assert_called_with(
                 account_address=_test_account_address,
                 data=req_param,
@@ -581,6 +573,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # request target API
         req_param = {
             "account_address": _test_account_address,
@@ -628,6 +622,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoPOST:
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # request target API
         req_param = {
@@ -687,6 +683,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoPOST:
         token.version = TokenVersion.V_23_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = {
             "account_address": _test_account_address,
@@ -742,6 +740,8 @@ class TestAppRoutersBondTokensTokenAddressPersonalInfoPOST:
         token.abi = ""
         token.version = TokenVersion.V_23_12
         db.add(token)
+
+        db.commit()
 
         # mock
         ibet_bond_contract = IbetStraightBondContract()

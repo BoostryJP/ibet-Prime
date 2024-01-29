@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from unittest import mock
 
 from pytz import timezone
@@ -59,6 +60,7 @@ class TestAppRoutersShareTokensGET:
         token.version = TokenVersion.V_22_12
         db.add(token)
         db.commit()
+
         _issue_datetime = (
             timezone("UTC")
             .localize(token.created)
@@ -147,6 +149,7 @@ class TestAppRoutersShareTokensGET:
         token_1.version = TokenVersion.V_22_12
         db.add(token_1)
         db.commit()
+
         _issue_datetime_1 = (
             timezone("UTC")
             .localize(token_1.created)
@@ -192,6 +195,7 @@ class TestAppRoutersShareTokensGET:
         token_2.version = TokenVersion.V_22_12
         db.add(token_2)
         db.commit()
+
         _issue_datetime_2 = (
             timezone("UTC")
             .localize(token_2.created)
@@ -423,6 +427,7 @@ class TestAppRoutersShareTokensGET:
         token_1.version = TokenVersion.V_22_12
         db.add(token_1)
         db.commit()
+
         _issue_datetime_1 = (
             timezone("UTC")
             .localize(token_1.created)
@@ -468,6 +473,7 @@ class TestAppRoutersShareTokensGET:
         token_2.version = TokenVersion.V_22_12
         db.add(token_2)
         db.commit()
+
         _issue_datetime_2 = (
             timezone("UTC")
             .localize(token_2.created)

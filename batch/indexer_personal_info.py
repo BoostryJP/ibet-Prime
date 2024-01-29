@@ -16,48 +16,44 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
+import asyncio
 import json
-import time
+import sys
 from datetime import datetime
 from typing import Sequence
 
 from eth_utils import to_checksum_address
-from sqlalchemy import and_, create_engine, select
+from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.blockchain import PersonalInfoContract
-from app.model.db import IDXPersonalInfo, IDXPersonalInfoBlockNumber, Token
-from app.utils.contract_utils import ContractUtils
-from app.utils.web3_utils import Web3Wrapper
+from app.model.db import Account, IDXPersonalInfo, IDXPersonalInfoBlockNumber, Token
+from app.utils.contract_utils import AsyncContractUtils
+from app.utils.web3_utils import AsyncWeb3Wrapper
 from batch import batch_log
-from config import (
-    DATABASE_URL,
-    INDEXER_BLOCK_LOT_MAX_SIZE,
-    INDEXER_SYNC_INTERVAL,
-    ZERO_ADDRESS,
-)
+from config import INDEXER_BLOCK_LOT_MAX_SIZE, INDEXER_SYNC_INTERVAL, ZERO_ADDRESS
 
 process_name = "INDEXER-Personal-Info"
 LOG = batch_log.get_logger(process_name=process_name)
 
-web3 = Web3Wrapper()
-
-db_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
+web3 = AsyncWeb3Wrapper()
 
 
 class Processor:
     def __init__(self):
         self.personal_info_contract_list = []
 
-    def process(self):
-        db_session = Session(autocommit=False, autoflush=True, bind=db_engine)
+    async def process(self):
+        db_session = BatchAsyncSessionLocal()
         try:
-            self.__refresh_personal_info_list(db_session=db_session)
+            await self.__refresh_personal_info_list(db_session=db_session)
             # most recent blockNumber that has been synchronized with DB
-            latest_block = web3.eth.block_number  # latest blockNumber
-            _from_block = self.__get_block_number(db_session=db_session)
+            latest_block = await web3.eth.block_number  # latest blockNumber
+            _from_block = await self.__get_block_number(db_session=db_session)
             _to_block = _from_block + INDEXER_BLOCK_LOT_MAX_SIZE
 
             # Skip processing if the latest block is not counted up
@@ -69,41 +65,43 @@ class Processor:
             # as INDEXER_BLOCK_LOT_MAX_SIZE(1_000_000 blocks)
             if latest_block > _to_block:
                 while _to_block < latest_block:
-                    self.__sync_all(
+                    await self.__sync_all(
                         db_session=db_session,
                         block_from=_from_block + 1,
                         block_to=_to_block,
                     )
                     _to_block += INDEXER_BLOCK_LOT_MAX_SIZE
                     _from_block += INDEXER_BLOCK_LOT_MAX_SIZE
-                self.__sync_all(
+                await self.__sync_all(
                     db_session=db_session,
                     block_from=_from_block + 1,
                     block_to=latest_block,
                 )
             else:
-                self.__sync_all(
+                await self.__sync_all(
                     db_session=db_session,
                     block_from=_from_block + 1,
                     block_to=latest_block,
                 )
 
-            self.__set_block_number(db_session=db_session, block_number=latest_block)
-            db_session.commit()
+            await self.__set_block_number(
+                db_session=db_session, block_number=latest_block
+            )
+            await db_session.commit()
         finally:
-            db_session.close()
+            await db_session.close()
         LOG.info("Sync job has been completed")
 
-    def __refresh_personal_info_list(self, db_session: Session):
+    async def __refresh_personal_info_list(self, db_session: AsyncSession):
         self.personal_info_contract_list.clear()
-        _tokens: Sequence[Token] = db_session.scalars(
-            select(Token).where(Token.token_status == 1)
+        _tokens: Sequence[Token] = (
+            await db_session.scalars(select(Token).where(Token.token_status == 1))
         ).all()
         tmp_list = []
         for _token in _tokens:
             abi = _token.abi
             token_contract = web3.eth.contract(address=_token.token_address, abi=abi)
-            personal_info_address = ContractUtils.call_function(
+            personal_info_address = await AsyncContractUtils.call_function(
                 contract=token_contract,
                 function_name="personalInfoAddress",
                 args=(),
@@ -121,48 +119,60 @@ class Processor:
         unique_list = list(map(json.loads, set(map(json.dumps, tmp_list))))
         # Get a list of PersonalInfoContracts
         for item in unique_list:
+            issuer_account = (
+                await db_session.scalars(
+                    select(Account)
+                    .where(Account.issuer_address == item["issuer_address"])
+                    .limit(1)
+                )
+            ).first()
             personal_info_contract = PersonalInfoContract(
-                db_session,
-                issuer_address=item["issuer_address"],
+                issuer=issuer_account,
                 contract_address=item["personal_info_address"],
             )
             self.personal_info_contract_list.append(personal_info_contract)
 
-    def __get_block_number(self, db_session: Session):
+    @staticmethod
+    async def __get_block_number(db_session: AsyncSession):
         """Get the most recent blockNumber"""
-        block_number: IDXPersonalInfoBlockNumber | None = db_session.scalars(
-            select(IDXPersonalInfoBlockNumber).limit(1)
+        block_number: IDXPersonalInfoBlockNumber | None = (
+            await db_session.scalars(select(IDXPersonalInfoBlockNumber).limit(1))
         ).first()
         if block_number is None:
             return 0
         else:
             return block_number.latest_block_number
 
-    def __set_block_number(self, db_session: Session, block_number: int):
+    @staticmethod
+    async def __set_block_number(db_session: AsyncSession, block_number: int):
         """Setting the most recent blockNumber"""
-        _block_number: IDXPersonalInfoBlockNumber | None = db_session.scalars(
-            select(IDXPersonalInfoBlockNumber).limit(1)
+        _block_number: IDXPersonalInfoBlockNumber | None = (
+            await db_session.scalars(select(IDXPersonalInfoBlockNumber).limit(1))
         ).first()
         if _block_number is None:
             _block_number = IDXPersonalInfoBlockNumber()
             _block_number.latest_block_number = block_number
         else:
             _block_number.latest_block_number = block_number
-        db_session.merge(_block_number)
+        await db_session.merge(_block_number)
 
-    def __sync_all(self, db_session: Session, block_from: int, block_to: int):
+    async def __sync_all(
+        self, db_session: AsyncSession, block_from: int, block_to: int
+    ):
         LOG.info(f"Syncing from={block_from}, to={block_to}")
-        self.__sync_personal_info_register(
+        await self.__sync_personal_info_register(
             db_session=db_session, block_from=block_from, block_to=block_to
         )
-        self.__sync_personal_info_modify(
+        await self.__sync_personal_info_modify(
             db_session=db_session, block_from=block_from, block_to=block_to
         )
 
-    def __sync_personal_info_register(self, db_session: Session, block_from, block_to):
+    async def __sync_personal_info_register(
+        self, db_session: AsyncSession, block_from, block_to
+    ):
         for _personal_info_contract in self.personal_info_contract_list:
             try:
-                register_event_list = _personal_info_contract.get_register_event(
+                register_event_list = await _personal_info_contract.get_register_event(
                     block_from, block_to
                 )
                 for event in register_event_list:
@@ -170,26 +180,30 @@ class Processor:
                     account_address = args.get("account_address", ZERO_ADDRESS)
                     link_address = args.get("link_address", ZERO_ADDRESS)
                     if link_address == _personal_info_contract.issuer.issuer_address:
-                        block = web3.eth.get_block(event["blockNumber"])
+                        block = await web3.eth.get_block(event["blockNumber"])
                         timestamp = datetime.utcfromtimestamp(block["timestamp"])
-                        decrypted_personal_info = _personal_info_contract.get_info(
-                            account_address=account_address, default_value=None
+                        decrypted_personal_info = (
+                            await _personal_info_contract.get_info(
+                                account_address=account_address, default_value=None
+                            )
                         )
-                        self.__sink_on_personal_info(
+                        await self.__sink_on_personal_info(
                             db_session=db_session,
                             account_address=account_address,
                             issuer_address=link_address,
                             personal_info=decrypted_personal_info,
                             timestamp=timestamp,
                         )
-                        db_session.commit()
+                        await db_session.commit()
             except Exception:
                 LOG.exception("An exception occurred during event synchronization")
 
-    def __sync_personal_info_modify(self, db_session: Session, block_from, block_to):
+    async def __sync_personal_info_modify(
+        self, db_session: AsyncSession, block_from, block_to
+    ):
         for _personal_info_contract in self.personal_info_contract_list:
             try:
-                register_event_list = _personal_info_contract.get_modify_event(
+                register_event_list = await _personal_info_contract.get_modify_event(
                     block_from, block_to
                 )
                 for event in register_event_list:
@@ -197,46 +211,50 @@ class Processor:
                     account_address = args.get("account_address", ZERO_ADDRESS)
                     link_address = args.get("link_address", ZERO_ADDRESS)
                     if link_address == _personal_info_contract.issuer.issuer_address:
-                        block = web3.eth.get_block(event["blockNumber"])
+                        block = await web3.eth.get_block(event["blockNumber"])
                         timestamp = datetime.utcfromtimestamp(block["timestamp"])
-                        decrypted_personal_info = _personal_info_contract.get_info(
-                            account_address=account_address, default_value=None
+                        decrypted_personal_info = (
+                            await _personal_info_contract.get_info(
+                                account_address=account_address, default_value=None
+                            )
                         )
-                        self.__sink_on_personal_info(
+                        await self.__sink_on_personal_info(
                             db_session=db_session,
                             account_address=account_address,
                             issuer_address=link_address,
                             personal_info=decrypted_personal_info,
                             timestamp=timestamp,
                         )
-                        db_session.commit()
+                        await db_session.commit()
             except Exception:
                 LOG.exception("An exception occurred during event synchronization")
 
     @staticmethod
-    def __sink_on_personal_info(
-        db_session: Session,
+    async def __sink_on_personal_info(
+        db_session: AsyncSession,
         account_address: str,
         issuer_address: str,
         personal_info: dict,
         timestamp: datetime,
     ):
-        _personal_info: IDXPersonalInfo | None = db_session.scalars(
-            select(IDXPersonalInfo)
-            .where(
-                and_(
-                    IDXPersonalInfo.account_address
-                    == to_checksum_address(account_address),
-                    IDXPersonalInfo.issuer_address
-                    == to_checksum_address(issuer_address),
+        _personal_info: IDXPersonalInfo | None = (
+            await db_session.scalars(
+                select(IDXPersonalInfo)
+                .where(
+                    and_(
+                        IDXPersonalInfo.account_address
+                        == to_checksum_address(account_address),
+                        IDXPersonalInfo.issuer_address
+                        == to_checksum_address(issuer_address),
+                    )
                 )
+                .limit(1)
             )
-            .limit(1)
         ).first()
         if _personal_info is not None:
             _personal_info.personal_info = personal_info
             _personal_info.modified = timestamp
-            db_session.merge(_personal_info)
+            await db_session.merge(_personal_info)
             LOG.debug(
                 f"Modify: account_address={account_address}, issuer_address={issuer_address}"
             )
@@ -253,13 +271,13 @@ class Processor:
             )
 
 
-def main():
+async def main():
     LOG.info("Service started successfully")
     processor = Processor()
 
     while True:
         try:
-            processor.process()
+            await processor.process()
         except ServiceUnavailableError:
             LOG.warning("An external service was unavailable")
         except SQLAlchemyError as sa_err:
@@ -267,8 +285,11 @@ def main():
         except Exception:
             LOG.exception("An exception occurred during event synchronization")
 
-        time.sleep(INDEXER_SYNC_INTERVAL)
+        await asyncio.sleep(INDEXER_SYNC_INTERVAL)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        sys.exit(1)

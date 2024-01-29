@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from app.model.db import Account, BulkTransfer, BulkTransferUpload, TokenType
 from tests.account_config import config_eth_account
 
@@ -82,6 +83,8 @@ class TestAppRoutersBondBulkTransferGET:
             bulk_transfer.status = i
             db.add(bulk_transfer)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.test_url.format(self.upload_id_list[1]),
@@ -129,6 +132,8 @@ class TestAppRoutersBondBulkTransferGET:
             bulk_transfer.amount = 10 + i
             bulk_transfer.status = i
             db.add(bulk_transfer)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -179,6 +184,8 @@ class TestAppRoutersBondBulkTransferGET:
             "Transfer amount is greater than from address balance."
         )
         db.add(bulk_transfer)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -274,6 +281,8 @@ class TestAppRoutersBondBulkTransferGET:
             bulk_transfer.amount = 10 + i
             bulk_transfer.status = i
             db.add(bulk_transfer)
+
+        db.commit()
 
         # request target API
         resp = client.get(

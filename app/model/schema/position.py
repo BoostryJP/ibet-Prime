@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from enum import Enum
 from typing import Annotated, List, Optional
 
@@ -111,9 +112,9 @@ class ListAllLockEventsQuery:
         Optional[LockEventCategory], Query(description="Event category")
     ] = None
 
-    sort_item: Annotated[
-        ListAllLockEventsSortItem, Query(description="Sort item")
-    ] = ListAllLockEventsSortItem.block_timestamp
+    sort_item: Annotated[ListAllLockEventsSortItem, Query(description="Sort item")] = (
+        ListAllLockEventsSortItem.block_timestamp
+    )
     sort_order: Annotated[
         SortOrder, Query(description="Sort order(0: ASC, 1: DESC)")
     ] = SortOrder.DESC

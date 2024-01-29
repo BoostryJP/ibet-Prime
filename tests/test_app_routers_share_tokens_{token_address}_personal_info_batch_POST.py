@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import hashlib
 from typing import Optional
 from unittest.mock import ANY
@@ -71,6 +72,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         personal_info = {
             "account_address": _test_account_address,
@@ -146,6 +149,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         token.abi = ""
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         personal_info = {
             "account_address": _test_account_address,
@@ -552,6 +557,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # request target API
         req_param = [
             {
@@ -601,6 +608,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # request target API
         req_param = [
@@ -662,6 +671,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         token.version = TokenVersion.V_22_12
         db.add(token)
 
+        db.commit()
+
         # request target API
         req_param = [
             {
@@ -721,6 +732,8 @@ class TestAppRoutersShareTokensTokenAddressPersonalInfoBatchPOST:
         token.token_status = 1
         token.version = TokenVersion.V_22_12
         db.add(token)
+
+        db.commit()
 
         # request target API
         req_param = []

@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 from datetime import datetime
 
 from pytz import timezone
@@ -87,6 +88,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssueGET:
         _record.block_timestamp = self.test_block_timestamp[0]
         db.add(_record)
 
+        db.commit()
+
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address))
 
@@ -140,6 +143,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssueGET:
         _record.amount = self.test_amount[2]
         _record.block_timestamp = self.test_block_timestamp[2]
         db.add(_record)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address))
@@ -219,6 +224,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssueGET:
         _record.amount = self.test_amount[2]
         _record.block_timestamp = self.test_block_timestamp[2]
         db.add(_record)
+
+        db.commit()
 
         # request target API
         resp = client.get(
@@ -305,6 +312,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssueGET:
         _record.block_timestamp = self.test_block_timestamp[2]
         db.add(_record)
 
+        db.commit()
+
         # request target API
         resp = client.get(
             self.base_url.format(self.test_token_address),
@@ -358,6 +367,8 @@ class TestAppRoutersBondTokensTokenAddressAdditionalIssueGET:
         _token.token_status = 0
         _token.version = TokenVersion.V_23_12
         db.add(_token)
+
+        db.commit()
 
         # request target API
         resp = client.get(self.base_url.format(self.test_token_address))

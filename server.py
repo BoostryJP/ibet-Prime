@@ -16,6 +16,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import os
 
 from uvicorn.workers import UvicornWorker
@@ -36,8 +37,8 @@ WORKER_CONNECTIONS = (
 # Worker class to load by gunicorn when server run
 class AppUvicornWorker(UvicornWorker):
     CONFIG_KWARGS = {
-        "loop": "asyncio",
-        "http": "h11",
+        "loop": "uvloop",
+        "http": "httptools",
         # NOTE: gunicorn don't support '--worker-connections' to uvicorn
         "limit_concurrency": WORKER_CONNECTIONS,
     }

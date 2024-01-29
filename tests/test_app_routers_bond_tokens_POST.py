@@ -16,12 +16,14 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 """
+
 import hashlib
 import random
 import string
 from datetime import datetime, timezone
 from unittest.mock import ANY, patch
 
+import pytest
 from sqlalchemy import select
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
@@ -41,7 +43,7 @@ from app.model.db import (
     TokenVersion,
     UpdateToken,
 )
-from app.utils.contract_utils import ContractUtils
+from app.utils.contract_utils import AsyncContractUtils
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import config_eth_account
 
@@ -59,7 +61,8 @@ class TestAppRoutersBondTokensPOST:
 
     # <Normal_1>
     # create only
-    def test_normal_1(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_1(self, client, db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -69,19 +72,25 @@ class TestAppRoutersBondTokensPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         token_before = db.scalars(select(Token)).all()
 
         # mock
         IbetStraightBondContract_create = patch(
             target="app.model.blockchain.token.IbetStraightBondContract.create",
-            return_value=("contract_address_test1", "abi_test1", "tx_hash_test1"),
+            return_value=(
+                "contract_address_test1",
+                "abi_test1",
+                "0x0000000000000000000000000000000000000000000000000000000000000001",
+            ),
         )
         TokenListContract_register = patch(
             target="app.model.blockchain.token_list.TokenListContract.register",
             return_value=None,
         )
         ContractUtils_get_block_by_transaction_hash = patch(
-            target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
+            target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             return_value={
                 "number": 12345,
                 "timestamp": datetime(
@@ -137,7 +146,9 @@ class TestAppRoutersBondTokensPOST:
                 tx_from=test_account["address"],
                 private_key=ANY,
             )
-            ContractUtils.get_block_by_transaction_hash(tx_hash="tx_hash_test1")
+            await AsyncContractUtils.get_block_by_transaction_hash(
+                tx_hash="0x0000000000000000000000000000000000000000000000000000000000000001"
+            )
 
             assert resp.status_code == 200
             assert resp.json()["token_address"] == "contract_address_test1"
@@ -149,7 +160,10 @@ class TestAppRoutersBondTokensPOST:
             token_1 = token_after[0]
             assert token_1.id == 1
             assert token_1.type == TokenType.IBET_STRAIGHT_BOND.value
-            assert token_1.tx_hash == "tx_hash_test1"
+            assert (
+                token_1.tx_hash
+                == "0x0000000000000000000000000000000000000000000000000000000000000001"
+            )
             assert token_1.issuer_address == test_account["address"]
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
@@ -165,7 +179,10 @@ class TestAppRoutersBondTokensPOST:
             assert position.pending_transfer == 0
 
             utxo = db.scalars(select(UTXO).limit(1)).first()
-            assert utxo.transaction_hash == "tx_hash_test1"
+            assert (
+                utxo.transaction_hash
+                == "0x0000000000000000000000000000000000000000000000000000000000000001"
+            )
             assert utxo.account_address == test_account["address"]
             assert utxo.token_address == "contract_address_test1"
             assert utxo.amount == req_param["total_supply"]
@@ -179,7 +196,8 @@ class TestAppRoutersBondTokensPOST:
 
     # <Normal_2>
     # include updates
-    def test_normal_2(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_2(self, client, db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -189,15 +207,21 @@ class TestAppRoutersBondTokensPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         token_before = db.scalars(select(Token)).all()
 
         # mock
         IbetStraightBondContract_create = patch(
             target="app.model.blockchain.token.IbetStraightBondContract.create",
-            return_value=("contract_address_test1", "abi_test1", "tx_hash_test1"),
+            return_value=(
+                "contract_address_test1",
+                "abi_test1",
+                "0x0000000000000000000000000000000000000000000000000000000000000001",
+            ),
         )
         ContractUtils_get_block_by_transaction_hash = patch(
-            target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
+            target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             return_value={
                 "number": 12345,
                 "timestamp": datetime(
@@ -264,7 +288,9 @@ class TestAppRoutersBondTokensPOST:
                 tx_from=test_account["address"],
                 private_key=ANY,
             )
-            ContractUtils.get_block_by_transaction_hash.assert_not_called()
+            await AsyncContractUtils.get_block_by_transaction_hash(
+                tx_hash="0x0000000000000000000000000000000000000000000000000000000000000001"
+            )
 
             assert resp.status_code == 200
             assert resp.json()["token_address"] == "contract_address_test1"
@@ -276,7 +302,10 @@ class TestAppRoutersBondTokensPOST:
             token_1 = token_after[0]
             assert token_1.id == 1
             assert token_1.type == TokenType.IBET_STRAIGHT_BOND.value
-            assert token_1.tx_hash == "tx_hash_test1"
+            assert (
+                token_1.tx_hash
+                == "0x0000000000000000000000000000000000000000000000000000000000000001"
+            )
             assert token_1.issuer_address == test_account["address"]
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
@@ -300,7 +329,8 @@ class TestAppRoutersBondTokensPOST:
 
     # <Normal_3>
     # Authorization by auth token
-    def test_normal_3(self, client, db):
+    @pytest.mark.asyncio
+    async def test_normal_3(self, client, db):
         test_account = config_eth_account("user1")
 
         # prepare data
@@ -316,19 +346,25 @@ class TestAppRoutersBondTokensPOST:
         auth_token.valid_duration = 0
         db.add(auth_token)
 
+        db.commit()
+
         token_before = db.scalars(select(Token)).all()
 
         # mock
         IbetStraightBondContract_create = patch(
             target="app.model.blockchain.token.IbetStraightBondContract.create",
-            return_value=("contract_address_test1", "abi_test1", "tx_hash_test1"),
+            return_value=(
+                "contract_address_test1",
+                "abi_test1",
+                "0x0000000000000000000000000000000000000000000000000000000000000001",
+            ),
         )
         TokenListContract_register = patch(
             target="app.model.blockchain.token_list.TokenListContract.register",
             return_value=None,
         )
         ContractUtils_get_block_by_transaction_hash = patch(
-            target="app.utils.contract_utils.ContractUtils.get_block_by_transaction_hash",
+            target="app.utils.contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
             return_value={
                 "number": 12345,
                 "timestamp": datetime(
@@ -384,7 +420,9 @@ class TestAppRoutersBondTokensPOST:
                 tx_from=test_account["address"],
                 private_key=ANY,
             )
-            ContractUtils.get_block_by_transaction_hash(tx_hash="tx_hash_test1")
+            await AsyncContractUtils.get_block_by_transaction_hash(
+                tx_hash="0x0000000000000000000000000000000000000000000000000000000000000001"
+            )
 
             assert resp.status_code == 200
             assert resp.json()["token_address"] == "contract_address_test1"
@@ -396,7 +434,10 @@ class TestAppRoutersBondTokensPOST:
             token_1 = token_after[0]
             assert token_1.id == 1
             assert token_1.type == TokenType.IBET_STRAIGHT_BOND.value
-            assert token_1.tx_hash == "tx_hash_test1"
+            assert (
+                token_1.tx_hash
+                == "0x0000000000000000000000000000000000000000000000000000000000000001"
+            )
             assert token_1.issuer_address == test_account["address"]
             assert token_1.token_address == "contract_address_test1"
             assert token_1.abi == "abi_test1"
@@ -412,7 +453,10 @@ class TestAppRoutersBondTokensPOST:
             assert position.pending_transfer == 0
 
             utxo = db.scalars(select(UTXO).limit(1)).first()
-            assert utxo.transaction_hash == "tx_hash_test1"
+            assert (
+                utxo.transaction_hash
+                == "0x0000000000000000000000000000000000000000000000000000000000000001"
+            )
             assert utxo.account_address == test_account["address"]
             assert utxo.token_address == "contract_address_test1"
             assert utxo.amount == req_param["total_supply"]
@@ -642,6 +686,8 @@ class TestAppRoutersBondTokensPOST:
         account.keyfile = test_account_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # request target api
         req_param = {
@@ -1006,6 +1052,8 @@ class TestAppRoutersBondTokensPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # request target api
         req_param = {
             "name": "name_test1",
@@ -1046,6 +1094,8 @@ class TestAppRoutersBondTokensPOST:
         account.keyfile = test_account_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # request target api
         req_param = {
@@ -1089,6 +1139,8 @@ class TestAppRoutersBondTokensPOST:
         account.keyfile = test_account_2["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
+
+        db.commit()
 
         # mock
         IbetStraightBondContract_create = patch(
@@ -1139,10 +1191,16 @@ class TestAppRoutersBondTokensPOST:
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        db.commit()
+
         # mock
         IbetStraightBondContract_create = patch(
             target="app.model.blockchain.token.IbetStraightBondContract.create",
-            return_value=("contract_address_test1", "abi_test1", "tx_hash_test1"),
+            return_value=(
+                "contract_address_test1",
+                "abi_test1",
+                "0x0000000000000000000000000000000000000000000000000000000000000001",
+            ),
         )
         TokenListContract_register = patch(
             target="app.model.blockchain.token_list.TokenListContract.register",
