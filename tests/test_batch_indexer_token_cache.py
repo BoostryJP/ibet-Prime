@@ -38,8 +38,9 @@ from app.model.blockchain.tx_params.ibet_share import (
 from app.model.blockchain.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
 )
-from app.model.db import Token, TokenCache, TokenType, TokenVersion
+from app.model.db import Account, Token, TokenCache, TokenType, TokenVersion
 from app.utils.contract_utils import ContractUtils
+from app.utils.e2ee_utils import E2EEUtils
 from app.utils.web3_utils import Web3Wrapper
 from batch.indexer_token_cache import LOG, Processor, main
 from config import ZERO_ADDRESS
@@ -189,6 +190,13 @@ class TestProcessor:
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
@@ -326,6 +334,14 @@ class TestProcessor:
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address

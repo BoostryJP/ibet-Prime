@@ -1015,6 +1015,11 @@ class TestProcessor:
         issuer_rsa_private_key = user_1["rsa_private_key"]
         issuer_rsa_public_key = user_1["rsa_public_key"]
         issuer_rsa_passphrase = "password"
+        user_2 = config_eth_account("user2")
+        user_address_1 = user_2["address"]
+        user_private_key_1 = decode_keyfile_json(
+            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
+        )
 
         # Prepare data : Account
         account = Account()
@@ -1041,19 +1046,31 @@ class TestProcessor:
 
         db.commit()
 
-        # Run mainloop once and fail with web3 utils error
-        with patch(
-            "batch.indexer_personal_info.INDEXER_SYNC_INTERVAL", None
-        ), patch.object(
-            AsyncWeb3Wrapper().eth, "contract", side_effect=ServiceUnavailableError()
-        ), pytest.raises(
-            TypeError
-        ):
-            await main_func()
-        assert 1 == caplog.record_tuples.count(
-            (LOG.name, logging.WARNING, "An external service was unavailable")
+        # Register
+        personal_info_1 = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        ciphertext = encrypt_personal_info(
+            personal_info_1, issuer_rsa_public_key, issuer_rsa_passphrase
         )
-        caplog.clear()
+        tx = personal_info_contract.functions.register(
+            issuer_address, ciphertext.decode("utf-8")
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": user_address_1,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        ContractUtils.send_transaction(tx, user_private_key_1)
 
         # Run mainloop once and fail with sqlalchemy InvalidRequestError
         with patch(

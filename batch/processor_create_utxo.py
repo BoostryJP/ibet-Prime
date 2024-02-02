@@ -30,7 +30,8 @@ from web3.contract import AsyncContract
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
-from app.model.db import UTXO, Token, UTXOBlockNumber
+from app.model.blockchain import IbetShareContract, IbetStraightBondContract
+from app.model.db import UTXO, Account, Token, TokenType, UTXOBlockNumber
 from app.utils.contract_utils import AsyncContractUtils
 from app.utils.ledger_utils import create_ledger
 from app.utils.web3_utils import AsyncWeb3Wrapper
@@ -59,6 +60,7 @@ web3 = AsyncWeb3Wrapper()
 class Processor:
     def __init__(self):
         self.token_contract_list = []
+        self.token_type_map: dict[str, TokenType] = {}
 
     async def process(self):
         db_session: AsyncSession = BatchAsyncSessionLocal()
@@ -129,7 +131,16 @@ class Processor:
         # Update token_contract_list to recent
         _token_list: Sequence[Token] = (
             await db_session.scalars(
-                select(Token).where(Token.token_status == 1).order_by(Token.id)
+                select(Token)
+                .join(
+                    Account,
+                    and_(
+                        Account.issuer_address == Token.issuer_address,
+                        Account.is_deleted == False,
+                    ),
+                )
+                .where(Token.token_status == 1)
+                .order_by(Token.id)
             )
         ).all()
         for _token in _token_list:
@@ -137,6 +148,7 @@ class Processor:
                 contract_name=_token.type, contract_address=_token.token_address
             )
             self.token_contract_list.append(token_contract)
+            self.token_type_map[_token.token_address] = _token.type
 
     @staticmethod
     async def __get_utxo_block_number(db_session: AsyncSession):
@@ -179,12 +191,26 @@ class Processor:
         """
         try:
             # Get exchange contract address
-            exchange_contract_address = await AsyncContractUtils.call_function(
-                contract=token_contract,
-                function_name="tradableExchange",
-                args=(),
-                default_returns=ZERO_ADDRESS,
-            )
+            exchange_contract_address = ZERO_ADDRESS
+            if (
+                self.token_type_map.get(token_contract.address)
+                == TokenType.IBET_STRAIGHT_BOND.value
+            ):
+                bond_token = IbetStraightBondContract(token_contract.address)
+                await bond_token.get()
+                exchange_contract_address = (
+                    bond_token.tradable_exchange_contract_address
+                )
+            elif (
+                self.token_type_map.get(token_contract.address)
+                == TokenType.IBET_SHARE.value
+            ):
+                share_token = IbetShareContract(token_contract.address)
+                await share_token.get()
+                exchange_contract_address = (
+                    share_token.tradable_exchange_contract_address
+                )
+
             # Get "HolderChanged" events from exchange contract
             exchange_contract = AsyncContractUtils.get_contract(
                 contract_name="IbetExchangeInterface",

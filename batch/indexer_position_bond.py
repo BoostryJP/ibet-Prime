@@ -33,8 +33,9 @@ from web3.contract import AsyncContract
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
-from app.model.blockchain import IbetExchangeInterface
+from app.model.blockchain import IbetExchangeInterface, IbetStraightBondContract
 from app.model.db import (
+    Account,
     IDXLock,
     IDXLockedPosition,
     IDXPosition,
@@ -123,7 +124,15 @@ class Processor:
                 record[0]
                 for record in (
                     await db_session.execute(
-                        select(Token.token_address).where(
+                        select(Token.token_address)
+                        .join(
+                            Account,
+                            and_(
+                                Account.issuer_address == Token.issuer_address,
+                                Account.is_deleted == False,
+                            ),
+                        )
+                        .where(
                             and_(
                                 Token.type == TokenType.IBET_STRAIGHT_BOND,
                                 Token.token_status == 1,
@@ -160,14 +169,10 @@ class Processor:
 
         _exchange_list_tmp = []
         for token_contract in self.token_list.values():
-            tradable_exchange_address = await AsyncContractUtils.call_function(
-                contract=token_contract,
-                function_name="tradableExchange",
-                args=(),
-                default_returns=ZERO_ADDRESS,
-            )
-            if tradable_exchange_address != ZERO_ADDRESS:
-                _exchange_list_tmp.append(tradable_exchange_address)
+            bond_token = IbetStraightBondContract(token_contract.address)
+            await bond_token.get()
+            if bond_token.tradable_exchange_contract_address != ZERO_ADDRESS:
+                _exchange_list_tmp.append(bond_token.tradable_exchange_contract_address)
 
         # Remove duplicate exchanges from a list
         self.exchange_address_list = list(set(_exchange_list_tmp))
@@ -215,12 +220,9 @@ class Processor:
         """Synchronize issuer position"""
         for token in self.token_list.values():
             try:
-                issuer_address = await AsyncContractUtils.call_function(
-                    contract=token,
-                    function_name="owner",
-                    args=(),
-                    default_returns=ZERO_ADDRESS,
-                )
+                bond_token = IbetStraightBondContract(token.address)
+                await bond_token.get()
+                issuer_address = bond_token.issuer_address
                 balance, pending_transfer = await self.__get_account_balance_token(
                     token, issuer_address
                 )
@@ -396,12 +398,9 @@ class Processor:
 
                 # Insert Notification
                 if len(events) > 0:
-                    issuer_address = await AsyncContractUtils.call_function(
-                        contract=token,
-                        function_name="owner",
-                        args=(),
-                        default_returns=ZERO_ADDRESS,
-                    )
+                    bond_token = IbetStraightBondContract(token.address)
+                    await bond_token.get()
+                    issuer_address = bond_token.issuer_address
                     for event in events:
                         args = event["args"]
                         account_address = args.get("accountAddress", "")
@@ -508,12 +507,9 @@ class Processor:
 
                 # Insert Notification
                 if len(events) > 0:
-                    issuer_address = await AsyncContractUtils.call_function(
-                        contract=token,
-                        function_name="owner",
-                        args=(),
-                        default_returns=ZERO_ADDRESS,
-                    )
+                    bond_token = IbetStraightBondContract(token.address)
+                    await bond_token.get()
+                    issuer_address = bond_token.issuer_address
                     for event in events:
                         args = event["args"]
                         account_address = args.get("accountAddress", "")
@@ -1239,21 +1235,18 @@ class Processor:
                     args=(account_address,),
                     default_returns=0,
                 ),
-                AsyncContractUtils.call_function(
-                    contract=token_contract,
-                    function_name="tradableExchange",
-                    args=(),
-                    default_returns=ZERO_ADDRESS,
-                ),
                 max_concurrency=3,
             )
-            balance, pending_transfer, tradable_exchange_address = (
+            balance, pending_transfer = (
                 tasks[0].result(),
                 tasks[1].result(),
-                tasks[2].result(),
             )
         except ExceptionGroup:
             raise ServiceUnavailableError
+
+        bond_token = IbetStraightBondContract(token_contract.address)
+        await bond_token.get()
+        tradable_exchange_address = bond_token.tradable_exchange_contract_address
 
         if tradable_exchange_address != ZERO_ADDRESS:
             exchange_contract = IbetExchangeInterface(tradable_exchange_address)

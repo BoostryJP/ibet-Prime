@@ -30,9 +30,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
-from app.model.blockchain import PersonalInfoContract
-from app.model.db import Account, IDXPersonalInfo, IDXPersonalInfoBlockNumber, Token
-from app.utils.contract_utils import AsyncContractUtils
+from app.model.blockchain import (
+    IbetShareContract,
+    IbetStraightBondContract,
+    PersonalInfoContract,
+)
+from app.model.db import (
+    Account,
+    IDXPersonalInfo,
+    IDXPersonalInfoBlockNumber,
+    Token,
+    TokenType,
+)
 from app.utils.web3_utils import AsyncWeb3Wrapper
 from batch import batch_log
 from config import INDEXER_BLOCK_LOT_MAX_SIZE, INDEXER_SYNC_INTERVAL, ZERO_ADDRESS
@@ -95,18 +104,30 @@ class Processor:
     async def __refresh_personal_info_list(self, db_session: AsyncSession):
         self.personal_info_contract_list.clear()
         _tokens: Sequence[Token] = (
-            await db_session.scalars(select(Token).where(Token.token_status == 1))
+            await db_session.scalars(
+                select(Token)
+                .join(
+                    Account,
+                    and_(
+                        Account.issuer_address == Token.issuer_address,
+                        Account.is_deleted == False,
+                    ),
+                )
+                .where(Token.token_status == 1)
+            )
         ).all()
         tmp_list = []
         for _token in _tokens:
-            abi = _token.abi
-            token_contract = web3.eth.contract(address=_token.token_address, abi=abi)
-            personal_info_address = await AsyncContractUtils.call_function(
-                contract=token_contract,
-                function_name="personalInfoAddress",
-                args=(),
-                default_returns=ZERO_ADDRESS,
-            )
+            personal_info_address = ZERO_ADDRESS
+            if _token.type == TokenType.IBET_STRAIGHT_BOND.value:
+                bond_token = IbetStraightBondContract(_token.token_address)
+                await bond_token.get()
+                personal_info_address = bond_token.personal_info_contract_address
+            elif _token.type == TokenType.IBET_SHARE.value:
+                share_token = IbetShareContract(_token.token_address)
+                await share_token.get()
+                personal_info_address = share_token.personal_info_contract_address
+
             if personal_info_address != ZERO_ADDRESS:
                 tmp_list.append(
                     {

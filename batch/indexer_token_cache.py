@@ -22,13 +22,13 @@ import sys
 from datetime import timedelta, timezone
 from typing import Sequence
 
-from sqlalchemy import select
+from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.blockchain import IbetShareContract, IbetStraightBondContract
-from app.model.db import Token, TokenType
+from app.model.db import Account, Token, TokenType
 from batch import batch_log
 from config import INDEXER_SYNC_INTERVAL
 
@@ -47,7 +47,14 @@ class Processor:
                 (
                     await db_session.execute(
                         select(Token.type, Token.token_address)
-                        .filter(Token.token_status == 1)
+                        .join(
+                            Account,
+                            and_(
+                                Account.issuer_address == Token.issuer_address,
+                                Account.is_deleted == False,
+                            ),
+                        )
+                        .where(Token.token_status == 1)
                         .order_by(Token.created)
                     )
                 )
