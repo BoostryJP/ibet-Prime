@@ -31,6 +31,7 @@ from web3.contract import AsyncContract
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
 from app.model.db import (
+    Account,
     IDXIssueRedeem,
     IDXIssueRedeemBlockNumber,
     IDXIssueRedeemEventType,
@@ -105,7 +106,15 @@ class Processor:
                 record[0]
                 for record in (
                     await db_session.execute(
-                        select(Token.token_address).where(Token.token_status == 1)
+                        select(Token.token_address)
+                        .join(
+                            Account,
+                            and_(
+                                Account.issuer_address == Token.issuer_address,
+                                Account.is_deleted == False,
+                            ),
+                        )
+                        .where(Token.token_status == 1)
                     )
                 )
                 .tuples()

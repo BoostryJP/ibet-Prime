@@ -216,7 +216,15 @@ class Processor:
 
         token_list: Sequence[Token] = (
             await db_session.scalars(
-                select(Token).where(
+                select(Token)
+                .join(
+                    Account,
+                    and_(
+                        Account.issuer_address == Token.issuer_address,
+                        Account.is_deleted == False,
+                    ),
+                )
+                .where(
                     and_(
                         Token.issuer_address == issuer_account.issuer_address,
                         Token.token_status == 1,

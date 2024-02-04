@@ -40,6 +40,7 @@ from app.model.blockchain.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
 )
 from app.model.db import (
+    Account,
     IDXTransferApproval,
     IDXTransferApprovalBlockNumber,
     Notification,
@@ -49,6 +50,7 @@ from app.model.db import (
     TokenVersion,
 )
 from app.utils.contract_utils import ContractUtils
+from app.utils.e2ee_utils import E2EEUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper, Web3Wrapper
 from batch.indexer_transfer_approval import LOG, Processor, main
 from config import CHAIN_ID, TX_GAS_LIMIT
@@ -277,6 +279,13 @@ class TestProcessor:
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
@@ -403,6 +412,13 @@ class TestProcessor:
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -537,6 +553,13 @@ class TestProcessor:
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
@@ -668,6 +691,13 @@ class TestProcessor:
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -805,6 +835,13 @@ class TestProcessor:
         )
         user_3 = config_eth_account("user3")
         user_address_2 = user_3["address"]
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -946,6 +983,13 @@ class TestProcessor:
         )
         user_3 = config_eth_account("user3")
         user_address_2 = user_3["address"]
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -1111,6 +1155,13 @@ class TestProcessor:
         user_3 = config_eth_account("user3")
         user_address_2 = user_3["address"]
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
             issuer_address,
@@ -1258,6 +1309,13 @@ class TestProcessor:
         )
         user_3 = config_eth_account("user3")
         user_address_2 = user_3["address"]
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_bond_token_contract(
@@ -1448,6 +1506,13 @@ class TestProcessor:
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
         token_contract = await deploy_bond_token_contract(
             issuer_address,
@@ -1604,6 +1669,13 @@ class TestProcessor:
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Issuer issues bond token.
         token_contract1 = await deploy_bond_token_contract(
             issuer_address,
@@ -1678,6 +1750,14 @@ class TestProcessor:
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
         token_contract = await deploy_bond_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address

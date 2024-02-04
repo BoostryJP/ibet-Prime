@@ -28,6 +28,7 @@ from web3.contract import AsyncContract
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
+from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.db import (
     Token,
     TokenHolder,
@@ -125,20 +126,19 @@ class Processor:
             self.token_contract = AsyncContractUtils.get_contract(
                 "IbetStraightBond", self.target.token_address
             )
+            token_cache = IbetStraightBondContract(self.target.token_address)
+            await token_cache.get()
         elif token_type == TokenType.IBET_SHARE.value:
             self.token_contract = AsyncContractUtils.get_contract(
                 "IbetShare", self.target.token_address
             )
+            token_cache = IbetShareContract(self.target.token_address)
+            await token_cache.get()
         else:
             return False
 
         # Fetch current tradable exchange to store exchange contract.
-        self.tradable_exchange_address = await AsyncContractUtils.call_function(
-            contract=self.token_contract,
-            function_name="tradableExchange",
-            args=(),
-            default_returns=ZERO_ADDRESS,
-        )
+        self.tradable_exchange_address = token_cache.tradable_exchange_contract_address
         self.exchange_contract = AsyncContractUtils.get_contract(
             contract_name="IbetExchangeInterface",
             contract_address=self.tradable_exchange_address,

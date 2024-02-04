@@ -30,12 +30,15 @@ from web3.contract import AsyncContract
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
+from app.model.blockchain import IbetShareContract, IbetStraightBondContract
 from app.model.db import (
+    Account,
     IDXTransferApproval,
     IDXTransferApprovalBlockNumber,
     Notification,
     NotificationType,
     Token,
+    TokenType,
 )
 from app.utils.contract_utils import AsyncContractUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper
@@ -69,6 +72,7 @@ class Processor:
     def __init__(self):
         self.token_list: dict[str, AsyncContract] = {}
         self.exchange_list: list[AsyncContract] = []
+        self.token_type_map: dict[str, TokenType] = {}
 
     async def sync_new_logs(self):
         db_session = BatchAsyncSessionLocal()
@@ -126,7 +130,15 @@ class Processor:
                 record[0]
                 for record in (
                     await db_session.execute(
-                        select(Token.token_address).where(Token.token_status == 1)
+                        select(Token.token_address)
+                        .join(
+                            Account,
+                            and_(
+                                Account.issuer_address == Token.issuer_address,
+                                Account.is_deleted == False,
+                            ),
+                        )
+                        .where(Token.token_status == 1)
                     )
                 )
                 .tuples()
@@ -153,15 +165,32 @@ class Processor:
                 address=load_required_token.token_address, abi=load_required_token.abi
             )
             self.token_list[load_required_token.token_address] = token_contract
+            self.token_type_map[load_required_token.token_address] = (
+                load_required_token.type
+            )
 
         _exchange_list_tmp = []
         for token_contract in self.token_list.values():
-            tradable_exchange_address = await AsyncContractUtils.call_function(
-                contract=token_contract,
-                function_name="tradableExchange",
-                args=(),
-                default_returns=ZERO_ADDRESS,
-            )
+            tradable_exchange_address = ZERO_ADDRESS
+            if (
+                self.token_type_map.get(token_contract.address)
+                == TokenType.IBET_STRAIGHT_BOND.value
+            ):
+                bond_token = IbetStraightBondContract(token_contract.address)
+                await bond_token.get()
+                tradable_exchange_address = (
+                    bond_token.tradable_exchange_contract_address
+                )
+            elif (
+                self.token_type_map.get(token_contract.address)
+                == TokenType.IBET_SHARE.value
+            ):
+                share_token = IbetShareContract(token_contract.address)
+                await share_token.get()
+                tradable_exchange_address = (
+                    share_token.tradable_exchange_contract_address
+                )
+
             if tradable_exchange_address != ZERO_ADDRESS:
                 _exchange_list_tmp.append(tradable_exchange_address)
 

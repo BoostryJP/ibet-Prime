@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import logging
+from datetime import datetime, timedelta
 from unittest import mock
 from unittest.mock import patch
 
@@ -34,6 +35,7 @@ from app.model.blockchain.tx_params.ibet_share import (
     UpdateParams as IbetShareUpdateParams,
 )
 from app.model.db import (
+    Account,
     IDXLock,
     IDXLockedPosition,
     IDXPosition,
@@ -42,13 +44,15 @@ from app.model.db import (
     Notification,
     NotificationType,
     Token,
+    TokenCache,
     TokenType,
     TokenVersion,
 )
 from app.utils.contract_utils import AsyncContractUtils, ContractUtils
+from app.utils.e2ee_utils import E2EEUtils
 from app.utils.web3_utils import AsyncWeb3Wrapper, Web3Wrapper
 from batch.indexer_position_share import LOG, Processor, main
-from config import CHAIN_ID, TX_GAS_LIMIT, ZERO_ADDRESS
+from config import CHAIN_ID, TOKEN_CACHE_TTL, TX_GAS_LIMIT, ZERO_ADDRESS
 from tests.account_config import config_eth_account
 from tests.utils.contract_utils import (
     IbetExchangeContractTestUtils,
@@ -132,6 +136,13 @@ class TestProcessor:
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token(bond token)
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND.value
@@ -181,6 +192,13 @@ class TestProcessor:
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -263,6 +281,13 @@ class TestProcessor:
         )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -364,6 +389,13 @@ class TestProcessor:
         )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -468,6 +500,13 @@ class TestProcessor:
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
             issuer_address,
@@ -564,6 +603,13 @@ class TestProcessor:
         )
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -712,6 +758,13 @@ class TestProcessor:
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
@@ -847,6 +900,13 @@ class TestProcessor:
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -1047,6 +1107,13 @@ class TestProcessor:
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
             issuer_address, issuer_private_key, personal_info_contract.address
@@ -1139,6 +1206,13 @@ class TestProcessor:
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -1241,6 +1315,13 @@ class TestProcessor:
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -1374,6 +1455,13 @@ class TestProcessor:
         user_private_key_1 = decode_keyfile_json(
             raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
         )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -1518,6 +1606,13 @@ class TestProcessor:
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
             issuer_address,
@@ -1656,6 +1751,13 @@ class TestProcessor:
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
@@ -1806,6 +1908,13 @@ class TestProcessor:
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
@@ -1960,6 +2069,13 @@ class TestProcessor:
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
             issuer_address,
@@ -2112,6 +2228,13 @@ class TestProcessor:
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
@@ -2275,6 +2398,13 @@ class TestProcessor:
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
             issuer_address,
@@ -2428,6 +2558,13 @@ class TestProcessor:
         user_2 = config_eth_account("user2")
         user_address_1 = user_2["address"]
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
             issuer_address,
@@ -2566,6 +2703,13 @@ class TestProcessor:
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
@@ -2718,6 +2862,13 @@ class TestProcessor:
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
             issuer_address,
@@ -2865,6 +3016,13 @@ class TestProcessor:
         user_private_key_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -3021,6 +3179,13 @@ class TestProcessor:
         user_pk_4 = decode_keyfile_json(
             raw_keyfile_json=user_5["keyfile_json"], password="password".encode("utf-8")
         )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -3215,6 +3380,13 @@ class TestProcessor:
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
             issuer_address,
@@ -3380,6 +3552,13 @@ class TestProcessor:
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Issuer issues share token.
         token_contract = await deploy_share_token_contract(
             issuer_address,
@@ -3528,6 +3707,13 @@ class TestProcessor:
         user_pk_2 = decode_keyfile_json(
             raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
         )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Issuer issues share token.
         token_contract1 = await deploy_share_token_contract(
@@ -3760,6 +3946,13 @@ class TestProcessor:
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         # Issuer issues bond token.
         token_contract1 = await deploy_share_token_contract(
             issuer_address,
@@ -3834,6 +4027,15 @@ class TestProcessor:
         issuer_private_key = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
+        user_2 = config_eth_account("user2")
+        user_address_1 = user_2["address"]
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         # Prepare data : Token
         token_contract_1 = await deploy_share_token_contract(
@@ -3849,7 +4051,53 @@ class TestProcessor:
         token_1.version = TokenVersion.V_22_12
         db.add(token_1)
 
+        # Prepare data : TokenCache
+        token_attr = {
+            "issuer_address": issuer_address,
+            "token_address": token_address_1,
+            "name": "テスト株式-test",
+            "symbol": "TEST-test",
+            "total_supply": 999999,
+            "contact_information": "test1",
+            "privacy_policy": "test2",
+            "tradable_exchange_contract_address": "0x1234567890123456789012345678901234567890",
+            "status": False,
+            "personal_info_contract_address": "0x1234567890123456789012345678901234567891",
+            "transferable": True,
+            "is_offering": True,
+            "transfer_approval_required": True,
+            "issue_price": 999997,
+            "cancellation_date": "99991231",
+            "memo": "memo_test",
+            "principal_value": 999998,
+            "is_canceled": True,
+            "dividends": 9.99,
+            "dividend_record_date": "99991230",
+            "dividend_payment_date": "99991229",
+        }
+        token_cache = TokenCache()
+        token_cache.token_address = token_address_1
+        token_cache.attributes = token_attr
+        token_cache.cached_datetime = datetime.utcnow()
+        token_cache.expiration_datetime = datetime.utcnow() + timedelta(
+            seconds=TOKEN_CACHE_TTL
+        )
+        db.add(token_cache)
+
         db.commit()
+
+        # Issue
+        tx = token_contract_1.functions.issueFrom(
+            user_address_1, ZERO_ADDRESS, 40
+        ).build_transaction(
+            {
+                "chainId": CHAIN_ID,
+                "from": issuer_address,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": 0,
+            }
+        )
+        ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run mainloop once and fail with web3 utils error
         with patch(
@@ -3875,22 +4123,4 @@ class TestProcessor:
         ):
             await main_func()
         assert 1 == caplog.text.count("A database error has occurred")
-        caplog.clear()
-
-        # Run mainloop once and fail with connection to blockchain
-        with patch(
-            "batch.indexer_position_share.INDEXER_SYNC_INTERVAL", None
-        ), patch.object(
-            AsyncContractUtils, "call_function", side_effect=ConnectionError()
-        ), pytest.raises(
-            TypeError
-        ):
-            await main_func()
-        assert 1 == caplog.record_tuples.count(
-            (
-                LOG.name,
-                logging.ERROR,
-                "An exception occurred during event synchronization",
-            )
-        )
         caplog.clear()

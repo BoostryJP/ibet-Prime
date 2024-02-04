@@ -44,8 +44,9 @@ from app.model.blockchain.tx_params.ibet_straight_bond import (
     TransferParams as IbetStraightBondTransferParams,
     UpdateParams as IbetStraightBondUpdateParams,
 )
-from app.model.db import UTXO, Token, TokenType, TokenVersion, UTXOBlockNumber
+from app.model.db import UTXO, Account, Token, TokenType, TokenVersion, UTXOBlockNumber
 from app.utils.contract_utils import ContractUtils
+from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_create_utxo import Processor
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import config_eth_account
@@ -166,6 +167,12 @@ class TestProcessor:
         _token_2.abi = {}
         _token_2.version = TokenVersion.V_22_12
         db.add(_token_2)
+
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         db.commit()
 
@@ -301,6 +308,12 @@ class TestProcessor:
         _utxo_block_number.latest_block_number = latest_block_number
         db.add(_utxo_block_number)
 
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         db.commit()
 
         # Transfer event 6 times
@@ -408,6 +421,12 @@ class TestProcessor:
         _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         db.commit()
 
         token_contract = ContractUtils.get_contract("IbetStraightBond", token_address_1)
@@ -498,6 +517,12 @@ class TestProcessor:
         _token_1.abi = {}
         _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
+
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         db.commit()
 
@@ -698,6 +723,12 @@ class TestProcessor:
             [latest_order_id, latest_agreement_id],
         )
 
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
         db.commit()
 
         # Execute batch
@@ -739,6 +770,7 @@ class TestProcessor:
     @mock.patch("batch.processor_create_utxo.create_ledger")
     @pytest.mark.asyncio
     async def test_normal_6(self, mock_func, processor, db):
+
         user_1 = config_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -773,6 +805,12 @@ class TestProcessor:
         _token_2.abi = {}
         _token_2.version = TokenVersion.V_22_12
         db.add(_token_2)
+
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         db.commit()
 
@@ -855,6 +893,12 @@ class TestProcessor:
         _token_2.abi = {}
         _token_2.version = TokenVersion.V_22_12
         db.add(_token_2)
+
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         db.commit()
 
@@ -1008,6 +1052,12 @@ class TestProcessor:
         _token_2.abi = {}
         _token_2.version = TokenVersion.V_22_12
         db.add(_token_2)
+
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         db.commit()
 
@@ -1195,6 +1245,12 @@ class TestProcessor:
         _token_2.abi = {}
         _token_2.version = TokenVersion.V_22_12
         db.add(_token_2)
+
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
 
         db.commit()
 
