@@ -451,24 +451,24 @@ class TestAppRoutersShareTokensTokenAddressScheduledEventsPOST:
         assert resp.json()["meta"] == {"code": 1, "title": "RequestValidationError"}
         assert resp.json()["detail"] == [
             {
-                "ctx": {"error": "invalid character in year"},
-                "input": "this is not time format",
+                "type": "datetime_from_date_parsing",
                 "loc": ["body", "scheduled_datetime"],
-                "msg": "Input should be a valid datetime, invalid character in year",
-                "type": "datetime_parsing",
+                "msg": "Input should be a valid datetime or date, invalid character in year",
+                "input": "this is not time format",
+                "ctx": {"error": "invalid character in year"},
             },
             {
-                "ctx": {"expected": "'Update'"},
-                "input": "aUpdateb",
+                "type": "enum",
                 "loc": ["body", "event_type"],
                 "msg": "Input should be 'Update'",
-                "type": "enum",
+                "input": "aUpdateb",
+                "ctx": {"expected": "'Update'"},
             },
             {
-                "input": "must be integer, but string",
+                "type": "float_parsing",
                 "loc": ["body", "data", "dividends"],
                 "msg": "Input should be a valid number, unable to parse string as a number",
-                "type": "float_parsing",
+                "input": "must be integer, but string",
             },
         ]
 
