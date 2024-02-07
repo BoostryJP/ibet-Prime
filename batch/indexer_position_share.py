@@ -26,7 +26,7 @@ from itertools import groupby
 from typing import Optional, Sequence
 
 from eth_utils import to_checksum_address
-from sqlalchemy import and_, select
+from sqlalchemy import and_, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3.contract import AsyncContract
@@ -62,7 +62,11 @@ web3 = AsyncWeb3Wrapper()
 
 class Processor:
     def __init__(self):
+        # List of tokens to be synchronized
         self.token_list: dict[str, AsyncContract] = {}
+        # Determining which tokens require initial synchronization
+        self.init_position_synced: dict[str, bool | None] = {}
+        # Exchange addresses
         self.exchange_address_list: list[str] = []
 
     async def sync_new_logs(self):
@@ -166,6 +170,9 @@ class Processor:
                 address=load_required_token.token_address, abi=load_required_token.abi
             )
             self.token_list[load_required_token.token_address] = token_contract
+            self.init_position_synced[load_required_token.token_address] = (
+                load_required_token.initial_position_synced
+            )
 
         _exchange_list_tmp = []
         for token_contract in self.token_list.values():
@@ -220,23 +227,37 @@ class Processor:
 
     async def __sync_issuer(self, db_session: AsyncSession):
         """Synchronize issuer position"""
+
+        # Synchronize issuer positions only for tokens
+        # that require initial synchronization.
         for token in self.token_list.values():
-            try:
-                share_token = IbetShareContract(token.address)
-                await share_token.get()
-                issuer_address = share_token.issuer_address
-                balance, pending_transfer = await self.__get_account_balance_token(
-                    token, issuer_address
-                )
-                await self.__sink_on_position(
-                    db_session=db_session,
-                    token_address=to_checksum_address(token.address),
-                    account_address=issuer_address,
-                    balance=balance,
-                    pending_transfer=pending_transfer,
-                )
-            except Exception as e:
-                raise e
+            if self.init_position_synced.get(token.address, False) is False:
+                try:
+                    share_token = IbetShareContract(token.address)
+                    await share_token.get()
+                    issuer_address = share_token.issuer_address
+                    balance, pending_transfer = await self.__get_account_balance_token(
+                        token, issuer_address
+                    )
+                    await self.__sink_on_position(
+                        db_session=db_session,
+                        token_address=to_checksum_address(token.address),
+                        account_address=issuer_address,
+                        balance=balance,
+                        pending_transfer=pending_transfer,
+                    )
+                    await db_session.execute(
+                        update(Token)
+                        .where(
+                            and_(
+                                Token.issuer_address == issuer_address,
+                                Token.token_address == token.address,
+                            )
+                        )
+                        .values(initial_position_synced=True)
+                    )
+                except Exception as e:
+                    raise e
 
     async def __sync_issue(
         self, db_session: AsyncSession, block_from: int, block_to: int
