@@ -3920,10 +3920,11 @@ class TestProcessor:
             (LOG.name, logging.DEBUG, "skip process")
         )
 
-    # <Normal_6>
+    # <Normal_6_1>
     # Newly tokens added
+    # -> Sync issuer position
     @pytest.mark.asyncio
-    async def test_normal_6(
+    async def test_normal_6_1(
         self,
         processor: Processor,
         db: Session,
@@ -3971,6 +3972,20 @@ class TestProcessor:
         assert len(processor.token_list.keys()) == 1
         assert len(processor.exchange_address_list) == 1
 
+        positions = db.scalars(select(IDXPosition)).all()
+        assert len(positions) == 1
+        issuer_position = positions[0]
+        assert issuer_position.json() == {
+            "account_address": issuer_address,
+            "balance": 100,
+            "exchange_balance": 0,
+            "exchange_commitment": 0,
+            "pending_transfer": 0,
+        }
+
+        token_af = db.scalars(select(Token).limit(1)).first()
+        assert token_af.initial_position_synced is True
+
         # Prepare additional token
         token_contract2 = await deploy_bond_token_contract(
             issuer_address,
@@ -3998,6 +4013,64 @@ class TestProcessor:
         # newly issued token is loaded properly
         assert len(processor.token_list.keys()) == 2
         assert len(processor.exchange_address_list) == 1
+
+    # <Normal_6_2>
+    # Already init synced
+    # -> Skip issuer position sync
+    @pytest.mark.asyncio
+    async def test_normal_6_2(
+        self,
+        processor: Processor,
+        db: Session,
+        personal_info_contract,
+        ibet_security_token_escrow_contract,
+    ):
+        escrow_contract = ibet_security_token_escrow_contract
+        user_1 = config_eth_account("user1")
+        issuer_address = user_1["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
+        )
+
+        # Prepare data : Account
+        account = Account()
+        account.issuer_address = issuer_address
+        account.keyfile = user_1["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        db.add(account)
+
+        # Issuer issues bond token.
+        token_contract1 = await deploy_bond_token_contract(
+            issuer_address,
+            issuer_private_key,
+            personal_info_contract.address,
+            tradable_exchange_contract_address=escrow_contract.address,
+            transfer_approval_required=False,
+        )
+        token_address_1 = token_contract1.address
+
+        # Prepare data: Token (Already init synced)
+        token_1 = Token()
+        token_1.type = TokenType.IBET_STRAIGHT_BOND.value
+        token_1.token_address = token_address_1
+        token_1.issuer_address = issuer_address
+        token_1.abi = token_contract1.abi
+        token_1.tx_hash = "tx_hash"
+        token_1.version = TokenVersion.V_23_12
+        token_1.initial_position_synced = True  # already synced
+        db.add(token_1)
+
+        db.commit()
+
+        # Run target process
+        await processor.sync_new_logs()
+
+        # Assertion
+        assert len(processor.token_list.keys()) == 1
+        assert len(processor.exchange_address_list) == 1
+
+        positions = db.scalars(select(IDXPosition)).all()
+        assert len(positions) == 0
 
     ###########################################################################
     # Error Case

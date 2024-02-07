@@ -1,4 +1,4 @@
-"""v24.3.0_feature_582
+"""v24_3_0_feature_582
 
 Revision ID: 6814beab6ff6
 Revises: beb9a0e876f8
