@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import sys
 from typing import Sequence, Set
+import uvloop
 
 from sqlalchemy import and_, delete, select, update
 from sqlalchemy.exc import SQLAlchemyError
@@ -277,6 +278,6 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        uvloop.run(main())
     except KeyboardInterrupt:
         sys.exit(1)

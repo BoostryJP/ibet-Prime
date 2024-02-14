@@ -21,6 +21,7 @@ import asyncio
 import sys
 from datetime import timedelta, timezone
 from typing import Sequence
+import uvloop
 
 from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
@@ -98,6 +99,6 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        uvloop.run(main())
     except KeyboardInterrupt:
         sys.exit(1)

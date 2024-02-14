@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import sys
 from typing import Sequence
+import uvloop
 
 from Crypto import Random
 from Crypto.PublicKey import RSA
@@ -139,6 +140,6 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        uvloop.run(main())
     except KeyboardInterrupt:
         sys.exit(1)

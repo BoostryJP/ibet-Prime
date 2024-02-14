@@ -24,6 +24,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from itertools import groupby
 from typing import Optional, Sequence
+import uvloop
 
 from eth_utils import to_checksum_address
 from sqlalchemy import and_, select, update
@@ -1362,6 +1363,6 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        uvloop.run(main())
     except KeyboardInterrupt:
         sys.exit(1)

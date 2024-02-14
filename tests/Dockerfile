@@ -57,7 +57,7 @@ RUN . ~/.bash_profile \
 
 # install poetry
 RUN . ~/.bash_profile \
- && python -m pip install poetry==1.6.1
+ && python -m pip install poetry==1.7.1
 RUN . ~/.bash_profile \
  && poetry config virtualenvs.create false
 

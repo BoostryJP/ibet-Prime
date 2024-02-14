@@ -22,6 +22,7 @@ import sys
 import time
 from datetime import datetime
 from typing import Sequence
+import uvloop
 
 from sqlalchemy import and_, create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
@@ -610,6 +611,6 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        uvloop.run(main())
     except KeyboardInterrupt:
         sys.exit(1)
