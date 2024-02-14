@@ -22,6 +22,7 @@ import sys
 import uuid
 from datetime import datetime
 from typing import Sequence
+import uvloop
 
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select, update
@@ -383,6 +384,6 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        uvloop.run(main())
     except KeyboardInterrupt:
         sys.exit(1)

@@ -23,6 +23,7 @@ import asyncio
 import sys
 import uuid
 from typing import Sequence
+import uvloop
 
 from sqlalchemy import and_, select, update
 from sqlalchemy.exc import SQLAlchemyError
@@ -450,6 +451,6 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        uvloop.run(main())
     except KeyboardInterrupt:
         sys.exit(1)
