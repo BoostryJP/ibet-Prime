@@ -37,8 +37,8 @@ WORKER_CONNECTIONS = (
 # Worker class to load by gunicorn when server run
 class AppUvicornWorker(UvicornWorker):
     CONFIG_KWARGS = {
-        "loop": "uvloop",
-        "http": "httptools",
+        "loop": "asyncio",
+        "http": "h11",
         # NOTE: gunicorn don't support '--worker-connections' to uvicorn
         "limit_concurrency": WORKER_CONNECTIONS,
     }
