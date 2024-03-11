@@ -1864,6 +1864,9 @@ async def list_all_holders(
         stmt = stmt.order_by(asc(sort_attr))
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
+    if sort_item != ListAllHoldersSortItem.CREATED:
+        # NOTE: Set secondary sort for consistent results
+        stmt = stmt.order_by(asc(IDXPosition.created))
 
     # Pagination
     if limit is not None:

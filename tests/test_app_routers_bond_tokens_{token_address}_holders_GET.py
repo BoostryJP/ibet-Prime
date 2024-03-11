@@ -3921,6 +3921,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
         _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
         _account_address_2 = "0x3F198534Bbe3B2a197d3B317d41392F348EAC707"
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
+        _account_address_4 = "0x917eFFaC072dcda308e2337636f562D0A96F42eA"
 
         account = Account()
         account.issuer_address = _issuer_address
@@ -4071,6 +4072,18 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
         }
         db.add(idx_personal_info_3)
 
+        # prepare data: account_address_4
+        idx_position_4 = IDXPosition()
+        idx_position_4.token_address = _token_address
+        idx_position_4.account_address = _account_address_4
+        idx_position_4.balance = 100
+        idx_position_4.exchange_balance = 100
+        idx_position_4.exchange_commitment = 100
+        idx_position_4.pending_transfer = 100
+        idx_position_4.created = datetime(2023, 10, 24, 6, 0, 0)
+        idx_position_4.modified = datetime(2023, 10, 24, 6, 0, 0)
+        db.add(idx_position_4)
+
         db.commit()
 
         # request target API
@@ -4083,7 +4096,7 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
         # assertion
         assert resp.status_code == 200
         assert resp.json() == {
-            "result_set": {"count": 3, "total": 3, "offset": None, "limit": None},
+            "result_set": {"count": 4, "total": 4, "offset": None, "limit": None},
             "holders": [
                 {
                     "account_address": _account_address_2,
@@ -4103,6 +4116,25 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
                     "pending_transfer": 10,
                     "locked": 20,
                     "modified": "2023-10-24T02:20:00",
+                },
+                {
+                    "account_address": _account_address_4,
+                    "personal_information": {
+                        "key_manager": None,
+                        "name": None,
+                        "postal_code": None,
+                        "address": None,
+                        "email": None,
+                        "birth": None,
+                        "is_corporate": None,
+                        "tax_category": None,
+                    },
+                    "balance": 100,
+                    "exchange_balance": 100,
+                    "exchange_commitment": 100,
+                    "pending_transfer": 100,
+                    "locked": 0,
+                    "modified": "2023-10-24T06:00:00",
                 },
                 {
                     "account_address": _account_address_3,
