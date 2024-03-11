@@ -23,8 +23,8 @@ import json
 import sys
 import time
 from datetime import datetime
-import uvloop
 
+import uvloop
 from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from Crypto.Util.Padding import unpad

@@ -20,8 +20,8 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import sys
 from typing import Sequence
-import uvloop
 
+import uvloop
 from Crypto import Random
 from Crypto.PublicKey import RSA
 from sqlalchemy import create_engine, or_, select

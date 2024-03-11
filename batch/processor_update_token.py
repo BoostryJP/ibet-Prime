@@ -22,8 +22,8 @@ import sys
 import uuid
 from datetime import datetime
 from typing import Sequence
-import uvloop
 
+import uvloop
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import select, update
 from sqlalchemy.exc import SQLAlchemyError

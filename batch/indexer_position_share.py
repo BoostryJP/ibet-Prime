@@ -24,8 +24,8 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from itertools import groupby
 from typing import Optional, Sequence
-import uvloop
 
+import uvloop
 from eth_utils import to_checksum_address
 from sqlalchemy import and_, select, update
 from sqlalchemy.exc import SQLAlchemyError

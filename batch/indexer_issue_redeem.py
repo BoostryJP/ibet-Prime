@@ -21,8 +21,8 @@ import asyncio
 import sys
 from datetime import datetime
 from typing import Sequence
-import uvloop
 
+import uvloop
 from eth_utils import to_checksum_address
 from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError

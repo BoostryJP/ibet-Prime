@@ -23,8 +23,8 @@ import time
 import uuid
 from datetime import datetime
 from typing import List, Optional, Sequence, Set
-import uvloop
 
+import uvloop
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import and_, select, update
 from sqlalchemy.exc import SQLAlchemyError

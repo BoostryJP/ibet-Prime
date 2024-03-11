@@ -20,8 +20,8 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import sys
 from typing import Dict, Optional, Sequence
-import uvloop
 
+import uvloop
 from sqlalchemy import and_, create_engine, delete, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession

@@ -21,8 +21,8 @@ import asyncio
 import sys
 import uuid
 from typing import Sequence
-import uvloop
 
+import uvloop
 from eth_keyfile import decode_keyfile_json
 from sqlalchemy import and_, create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
