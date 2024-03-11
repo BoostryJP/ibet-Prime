@@ -23,8 +23,8 @@ import asyncio
 import sys
 import uuid
 from typing import Sequence
-import uvloop
 
+import uvloop
 from sqlalchemy import and_, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession

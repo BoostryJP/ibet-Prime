@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 from typing import Annotated
 
 from fastapi import Depends
-from sqlalchemy import create_engine
+from sqlalchemy import AsyncAdaptedQueuePool, create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -41,6 +41,7 @@ def get_engine(uri: str):
 
 def get_async_engine(uri: str):
     options = {
+        "poolclass": AsyncAdaptedQueuePool,
         "pool_recycle": 3600,
         "pool_size": 10,
         "pool_timeout": 30,
@@ -53,6 +54,7 @@ def get_async_engine(uri: str):
 
 def get_batch_async_engine(uri: str):
     options = {
+        "poolclass": AsyncAdaptedQueuePool,
         "pool_pre_ping": True,
         "echo": False,
     }

@@ -22,8 +22,8 @@ import sys
 import time
 from datetime import datetime
 from typing import Sequence
-import uvloop
 
+import uvloop
 from sqlalchemy import and_, create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
