@@ -37,6 +37,7 @@ from .base import (
     MMDD_constr,
     ResultSet,
     SortOrder,
+    ValueOperator,
     YYYYMMDD_constr,
 )
 from .position import LockEvent, LockEventCategory
@@ -352,9 +353,49 @@ class ListAllRedeemUploadQuery:
     limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None
 
 
+class ListAllHoldersSortItem(StrEnum):
+    CREATED = "created"
+    ACCOUNT_ADDRESS = "account_address"
+    BALANCE = "balance"
+    PENDING_TRANSFER = "pending_transfer"
+    LOCKED = "locked"
+    HOLDER_NAME = "holder_name"
+
+
 @dataclass
 class ListAllHoldersQuery:
     include_former_holder: Annotated[bool, Query()] = False
+    balance: Annotated[Optional[int], Query(description="number of balance")] = None
+    balance_operator: Annotated[
+        Optional[ValueOperator],
+        Query(
+            description="search condition of balance(0:equal, 1:greater than or equal, 2:less than or equal）",
+        ),
+    ] = ValueOperator.EQUAL
+    pending_transfer: Annotated[
+        Optional[int], Query(description="number of pending transfer amount")
+    ] = None
+    pending_transfer_operator: Annotated[
+        Optional[ValueOperator],
+        Query(
+            description="search condition of pending transfer(0:equal, 1:greater than or equal, 2:less than or equal）",
+        ),
+    ] = ValueOperator.EQUAL
+    locked: Annotated[Optional[int], Query(description="number of locked amount")] = (
+        None
+    )
+    locked_operator: Annotated[
+        Optional[ValueOperator],
+        Query(
+            description="search condition of locked amount(0:equal, 1:greater than or equal, 2:less than or equal）",
+        ),
+    ] = ValueOperator.EQUAL
+    holder_name: Annotated[
+        Optional[str], Query(description="holder_name(partial match)")
+    ] = None
+    sort_item: Annotated[ListAllHoldersSortItem, Query(description="Sort Item")] = (
+        ListAllHoldersSortItem.CREATED
+    )
     sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = SortOrder.ASC
     offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None
     limit: Annotated[Optional[int], Query(description="Number of set", ge=0)] = None

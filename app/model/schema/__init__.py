@@ -129,6 +129,7 @@ from .token import (
     ListAdditionalIssuanceHistoryQuery,
     ListAllAdditionalIssueUploadQuery,
     ListAllHoldersQuery,
+    ListAllHoldersSortItem,
     ListAllRedeemUploadQuery,
     ListAllTokenLockEventsQuery,
     ListAllTokenLockEventsResponse,

@@ -54,6 +54,12 @@ class TokenType(str, Enum):
     IBET_SHARE = "IbetShare"
 
 
+class ValueOperator(IntEnum):
+    EQUAL = 0
+    GTE = 1
+    LTE = 2
+
+
 ############################
 # REQUEST
 ############################
