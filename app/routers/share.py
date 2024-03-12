@@ -29,6 +29,7 @@ from pytz import timezone
 from sqlalchemy import (
     String,
     and_,
+    asc,
     case,
     cast,
     column,
@@ -124,6 +125,7 @@ from app.model.schema import (
     ListAdditionalIssuanceHistoryQuery,
     ListAllAdditionalIssueUploadQuery,
     ListAllHoldersQuery,
+    ListAllHoldersSortItem,
     ListAllPersonalInfoBatchRegistrationUploadQuery,
     ListAllRedeemUploadQuery,
     ListAllTokenLockEventsQuery,
@@ -150,6 +152,7 @@ from app.model.schema import (
     UpdateTransferApprovalOperationType,
     UpdateTransferApprovalRequest,
 )
+from app.model.schema.base import ValueOperator
 from app.utils.check_utils import (
     address_is_valid_address,
     check_auth,
@@ -1708,6 +1711,16 @@ async def list_all_holders(
 ):
     """List all share token holders"""
     include_former_holder = get_query.include_former_holder
+    balance = get_query.balance
+    balance_operator = get_query.balance_operator
+    pending_transfer = get_query.pending_transfer
+    pending_transfer_operator = get_query.pending_transfer_operator
+    locked = get_query.locked
+    locked_operator = get_query.locked_operator
+    account_address = get_query.account_address
+    holder_name = get_query.holder_name
+    key_manager = get_query.key_manager
+    sort_item = get_query.sort_item
     sort_order = get_query.sort_order
     offset = get_query.offset
     limit = get_query.limit
@@ -1745,10 +1758,12 @@ async def list_all_holders(
         raise InvalidParameterError("this token is temporarily unavailable")
 
     # Get Holders
+    locked_value = func.sum(IDXLockedPosition.value)
     stmt = (
         select(
             IDXPosition,
-            func.sum(IDXLockedPosition.value),
+            locked_value,
+            IDXPersonalInfo,
             func.max(IDXLockedPosition.modified),
         )
         .outerjoin(
@@ -1758,9 +1773,17 @@ async def list_all_holders(
                 IDXLockedPosition.account_address == IDXPosition.account_address,
             ),
         )
+        .outerjoin(
+            IDXPersonalInfo,
+            and_(
+                IDXPersonalInfo.issuer_address == issuer_address,
+                IDXPersonalInfo.account_address == IDXPosition.account_address,
+            ),
+        )
         .where(IDXPosition.token_address == token_address)
         .group_by(
             IDXPosition.id,
+            IDXPersonalInfo.id,
             IDXLockedPosition.token_address,
             IDXLockedPosition.account_address,
         )
@@ -1779,13 +1802,69 @@ async def list_all_holders(
             )
         )
 
+    if balance is not None and balance_operator is not None:
+        match balance_operator:
+            case ValueOperator.EQUAL:
+                stmt = stmt.where(IDXPosition.balance == balance)
+            case ValueOperator.GTE:
+                stmt = stmt.where(IDXPosition.balance >= balance)
+            case ValueOperator.LTE:
+                stmt = stmt.where(IDXPosition.balance <= balance)
+
+    if pending_transfer is not None and pending_transfer_operator is not None:
+        match pending_transfer_operator:
+            case ValueOperator.EQUAL:
+                stmt = stmt.where(IDXPosition.pending_transfer == pending_transfer)
+            case ValueOperator.GTE:
+                stmt = stmt.where(IDXPosition.pending_transfer >= pending_transfer)
+            case ValueOperator.LTE:
+                stmt = stmt.where(IDXPosition.pending_transfer <= pending_transfer)
+
+    if locked is not None and locked_operator is not None:
+        match locked_operator:
+            case ValueOperator.EQUAL:
+                stmt = stmt.having(locked_value == locked)
+            case ValueOperator.GTE:
+                stmt = stmt.having(locked_value >= locked)
+            case ValueOperator.LTE:
+                stmt = stmt.having(locked_value <= locked)
+
+    if account_address is not None:
+        stmt = stmt.where(IDXPosition.account_address.like("%" + account_address + "%"))
+
+    if holder_name is not None:
+        stmt = stmt.where(
+            IDXPersonalInfo._personal_info["name"]
+            .as_string()
+            .like("%" + holder_name + "%")
+        )
+
+    if key_manager is not None:
+        stmt = stmt.where(
+            IDXPersonalInfo._personal_info["key_manager"]
+            .as_string()
+            .like("%" + key_manager + "%")
+        )
+
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
+    if sort_item == ListAllHoldersSortItem.holder_name:
+        sort_attr = IDXPersonalInfo._personal_info["name"].as_string()
+    elif sort_item == ListAllHoldersSortItem.key_manager:
+        sort_attr = IDXPersonalInfo._personal_info["key_manager"].as_string()
+    elif sort_item == ListAllHoldersSortItem.locked:
+        sort_attr = locked_value
+    else:
+        sort_attr = getattr(IDXPosition, sort_item)
+
     if sort_order == 0:  # ASC
-        stmt = stmt.order_by(IDXPosition.id)
+        stmt = stmt.order_by(asc(sort_attr))
     else:  # DESC
-        stmt = stmt.order_by(desc(IDXPosition.id))
+        stmt = stmt.order_by(desc(sort_attr))
+    if sort_item != ListAllHoldersSortItem.created:
+        # NOTE: Set secondary sort for consistent results
+        stmt = stmt.order_by(asc(IDXPosition.created))
 
     # Pagination
     if limit is not None:
@@ -1793,21 +1872,9 @@ async def list_all_holders(
     if offset is not None:
         stmt = stmt.offset(offset)
 
-    _holders: Sequence[tuple[IDXPosition, int, datetime | None]] = (
-        (await db.execute(stmt)).tuples().all()
-    )
-
-    # Get personal information
-    _personal_info_list: Sequence[IDXPersonalInfo] = (
-        await db.scalars(
-            select(IDXPersonalInfo)
-            .where(IDXPersonalInfo.issuer_address == issuer_address)
-            .order_by(IDXPersonalInfo.id)
-        )
-    ).all()
-    _personal_info_dict = {}
-    for item in _personal_info_list:
-        _personal_info_dict[item.account_address] = item.personal_info
+    _holders: Sequence[
+        tuple[IDXPosition, int, IDXPersonalInfo | None, datetime | None]
+    ] = ((await db.execute(stmt)).tuples().all())
 
     personal_info_default = {
         "key_manager": None,
@@ -1821,9 +1888,11 @@ async def list_all_holders(
     }
 
     holders = []
-    for _position, _locked, _lock_event_latest_created in _holders:
-        _personal_info = _personal_info_dict.get(
-            _position.account_address, personal_info_default
+    for _position, _locked, _personal_info, _lock_event_latest_created in _holders:
+        personal_info = (
+            _personal_info.personal_info
+            if _personal_info is not None
+            else personal_info_default
         )
         if _position is None and _lock_event_latest_created is not None:
             modified: datetime = _lock_event_latest_created
@@ -1839,7 +1908,7 @@ async def list_all_holders(
         holders.append(
             {
                 "account_address": _position.account_address,
-                "personal_information": _personal_info,
+                "personal_information": personal_info,
                 "balance": _position.balance,
                 "exchange_balance": _position.exchange_balance,
                 "exchange_commitment": _position.exchange_commitment,

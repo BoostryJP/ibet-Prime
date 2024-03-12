@@ -26,5 +26,6 @@ from .base import (
     ResultSet,
     SortOrder,
     TokenType,
+    ValueOperator,
     YYYYMMDD_constr,
 )
