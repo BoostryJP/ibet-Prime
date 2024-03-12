@@ -182,10 +182,10 @@ class TestProcessor:
         await processor.process()
 
         # assertion
-        _utox_list = db.scalars(select(UTXO)).all()
-        assert len(_utox_list) == 0
-        _utox_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
-        assert _utox_block_number.latest_block_number == latest_block
+        _utxo_list = db.scalars(select(UTXO)).all()
+        assert len(_utxo_list) == 0
+        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        assert _utxo_block_number.latest_block_number == latest_block
 
         # Execute Transfer Event
         # Share:issuer -> user1
@@ -230,42 +230,42 @@ class TestProcessor:
 
         # assertion
         db.rollback()
-        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
         # 1.Bond token:issuer -> user1 (tx2)
         # 2.Bond token:issuer -> user2 (tx3)
         # 3.Share token:issuer -> user1 (tx1)
         # 4.Share token:user1 -> issuer (tx4)
-        assert len(_utox_list) == 4
-        _utox = _utox_list[0]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_1
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 40
-        assert _utox.block_number > _utox_list[2].block_number
-        assert _utox.block_timestamp > _utox_list[2].block_timestamp
-        _utox = _utox_list[1]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 20
-        assert _utox.block_number > _utox_list[0].block_number
-        assert _utox.block_timestamp > _utox_list[0].block_timestamp
-        _utox = _utox_list[2]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_1
-        assert _utox.token_address == token_address_2
-        assert _utox.amount == 60  # spend to user2(70 - 10)
-        assert _utox.block_number is not None
-        assert _utox.block_timestamp is not None
-        _utox = _utox_list[3]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_2
-        assert _utox.amount == 10
-        assert _utox.block_number > _utox_list[1].block_number
-        assert _utox.block_timestamp > _utox_list[1].block_timestamp
-        _utox_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
-        assert _utox_block_number.latest_block_number == _utox_list[3].block_number
+        assert len(_utxo_list) == 4
+        _utxo = _utxo_list[0]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 40
+        assert _utxo.block_number > _utxo_list[2].block_number
+        assert _utxo.block_timestamp > _utxo_list[2].block_timestamp
+        _utxo = _utxo_list[1]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 20
+        assert _utxo.block_number > _utxo_list[0].block_number
+        assert _utxo.block_timestamp > _utxo_list[0].block_timestamp
+        _utxo = _utxo_list[2]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 60  # spend to user2(70 - 10)
+        assert _utxo.block_number is not None
+        assert _utxo.block_timestamp is not None
+        _utxo = _utxo_list[3]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 10
+        assert _utxo.block_number > _utxo_list[1].block_number
+        assert _utxo.block_timestamp > _utxo_list[1].block_timestamp
+        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        assert _utxo_block_number.latest_block_number == _utxo_list[3].block_number
 
         mock_func.assert_has_calls(
             [
@@ -354,38 +354,38 @@ class TestProcessor:
         # Assertion
         _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
         assert _utxo_block_number.latest_block_number == latest_block_number + 5
-        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
-        assert len(_utox_list) == 5
-        _utox = _utox_list[0]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_1
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 20
-        assert _utox.block_number == latest_block_number + 1
-        _utox = _utox_list[1]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 10
-        assert _utox.block_number == latest_block_number + 2
-        _utox = _utox_list[2]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 10
-        assert _utox.block_number == latest_block_number + 3
-        _utox = _utox_list[3]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 10
-        assert _utox.block_number == latest_block_number + 4
-        _utox = _utox_list[4]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 10
-        assert _utox.block_number == latest_block_number + 5
+        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        assert len(_utxo_list) == 5
+        _utxo = _utxo_list[0]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 20
+        assert _utxo.block_number == latest_block_number + 1
+        _utxo = _utxo_list[1]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 10
+        assert _utxo.block_number == latest_block_number + 2
+        _utxo = _utxo_list[2]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 10
+        assert _utxo.block_number == latest_block_number + 3
+        _utxo = _utxo_list[3]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 10
+        assert _utxo.block_number == latest_block_number + 4
+        _utxo = _utxo_list[4]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 10
+        assert _utxo.block_number == latest_block_number + 5
 
     # <Normal_3>
     # bulk transfer(same transaction-hash)
@@ -481,18 +481,18 @@ class TestProcessor:
         await processor.process()
 
         # Assertion
-        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
-        assert len(_utox_list) == 2
-        _utox = _utox_list[0]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_1
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 50
-        _utox = _utox_list[1]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 20
+        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        assert len(_utxo_list) == 2
+        _utxo = _utxo_list[0]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 50
+        _utxo = _utxo_list[1]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 20
 
     # <Normal_4>
     # to Exchange transfer only
@@ -566,8 +566,8 @@ class TestProcessor:
         await processor.process()
 
         # assertion
-        _utox_list = db.scalars(select(UTXO)).all()
-        assert len(_utox_list) == 0
+        _utxo_list = db.scalars(select(UTXO)).all()
+        assert len(_utxo_list) == 0
         mock_func.assert_not_called()
 
     # <Normal_5>
@@ -737,31 +737,31 @@ class TestProcessor:
 
         # assertion
         db.rollback()
-        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
 
-        assert len(_utox_list) == 3
-        _utox = _utox_list[0]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_1
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 0
-        assert _utox.block_number < _utox_list[1].block_number
-        assert _utox.block_timestamp <= _utox_list[1].block_timestamp
-        _utox = _utox_list[1]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 10
-        assert _utox.block_number < _utox_list[2].block_number
-        assert _utox.block_timestamp <= _utox_list[2].block_timestamp
-        _utox = _utox_list[2]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 10
+        assert len(_utxo_list) == 3
+        _utxo = _utxo_list[0]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 0
+        assert _utxo.block_number < _utxo_list[1].block_number
+        assert _utxo.block_timestamp <= _utxo_list[1].block_timestamp
+        _utxo = _utxo_list[1]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 10
+        assert _utxo.block_number < _utxo_list[2].block_number
+        assert _utxo.block_timestamp <= _utxo_list[2].block_timestamp
+        _utxo = _utxo_list[2]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 10
 
-        _utox_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
-        assert _utox_block_number.latest_block_number >= _utox_list[1].block_number
+        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        assert _utxo_block_number.latest_block_number >= _utxo_list[1].block_number
 
         mock_func.assert_has_calls([call(token_address=token_address_1, db=ANY)])
 
@@ -794,65 +794,100 @@ class TestProcessor:
         _token_1.version = TokenVersion.V_23_12
         db.add(_token_1)
 
-        token_address_2 = await deploy_share_token_contract(
-            issuer_address, issuer_private_key
-        )
-        _token_2 = Token()
-        _token_2.type = TokenType.IBET_SHARE.value
-        _token_2.tx_hash = ""
-        _token_2.issuer_address = issuer_address
-        _token_2.token_address = token_address_2
-        _token_2.abi = {}
-        _token_2.version = TokenVersion.V_22_12
-        db.add(_token_2)
-
         account = Account()
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
         db.add(account)
 
+        _utxo = UTXO()
+        _utxo.transaction_hash = "deploy"
+        _utxo.account_address = issuer_address
+        _utxo.token_address = token_address_1
+        _utxo.amount = 100
+        _utxo.block_number = web3.eth.block_number
+        _utxo.block_timestamp = None
+        db.add(_utxo)
+
         db.commit()
+        await processor.process()
 
         # Execute Issue Event
-        # Share
-        _additional_issue_1 = IbetShareAdditionalIssueParams(
-            account_address=user_address_1, amount=70
+        # Bond
+        _additional_issue_1 = IbetStraightBondAdditionalIssueParams(
+            account_address=issuer_address, amount=1000000000000
         )
-        await IbetShareContract(token_address_1).additional_issue(
+        await IbetStraightBondContract(token_address_1).additional_issue(
             _additional_issue_1, issuer_address, issuer_private_key
         )
-        time.sleep(1)
+
+        # Share:issuer -> user1
+        _transfer_1 = IbetStraightBondTransferParams(
+            from_address=issuer_address, to_address=user_address_1, amount=90
+        )
+        await IbetStraightBondContract(token_address_1).transfer(
+            _transfer_1, issuer_address, issuer_private_key
+        )
+        # Share:issuer -> user2
+        _transfer_3 = IbetStraightBondTransferParams(
+            from_address=issuer_address, to_address=user_address_2, amount=1000000000000
+        )
+        await IbetStraightBondContract(token_address_1).transfer(
+            _transfer_3, issuer_address, issuer_private_key
+        )
 
         # Bond
-        _additional_issue_2 = IbetStraightBondAdditionalIssueParams(
-            account_address=user_address_2, amount=80
+        _redeem_1 = IbetStraightBondRedeemParams(
+            account_address=user_address_2, amount=1000000000000
         )
-        await IbetStraightBondContract(token_address_2).additional_issue(
-            _additional_issue_2, issuer_address, issuer_private_key
+        await IbetStraightBondContract(token_address_1).redeem(
+            _redeem_1, issuer_address, issuer_private_key
         )
-        time.sleep(1)
+
+        _redeem_2 = IbetStraightBondRedeemParams(
+            account_address=issuer_address, amount=10
+        )
+        await IbetStraightBondContract(token_address_1).redeem(
+            _redeem_2, issuer_address, issuer_private_key
+        )
+
+        _redeem_3 = IbetStraightBondRedeemParams(
+            account_address=user_address_1, amount=90
+        )
+        await IbetStraightBondContract(token_address_1).redeem(
+            _redeem_3, issuer_address, issuer_private_key
+        )
 
         # Execute batch
         latest_block = web3.eth.block_number
         await processor.process()
 
         # assertion
-        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
-        assert len(_utox_list) == 2
-        _utox = _utox_list[0]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_1
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 70
-        _utox = _utox_list[1]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_2
-        assert _utox.amount == 80
+        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        assert len(_utxo_list) == 4
+        _utxo = _utxo_list[0]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == issuer_address
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 0
+        _utxo = _utxo_list[1]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == issuer_address
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 0
+        _utxo = _utxo_list[2]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 0
+        _utxo = _utxo_list[3]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 0
 
-        _utox_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
-        assert _utox_block_number.latest_block_number == latest_block
+        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        assert _utxo_block_number.latest_block_number == latest_block
 
     # <Normal_7>
     # Redeem
@@ -937,28 +972,28 @@ class TestProcessor:
 
         # Before execute
         await processor.process()
-        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
-        assert len(_utox_list) == 4
-        _utox = _utox_list[0]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_1
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 10
-        _utox = _utox_list[1]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_1
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 20
-        _utox = _utox_list[2]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_2
-        assert _utox.amount == 30
-        _utox = _utox_list[3]
-        assert _utox.transaction_hash is not None
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_2
-        assert _utox.amount == 40
+        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        assert len(_utxo_list) == 4
+        _utxo = _utxo_list[0]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 10
+        _utxo = _utxo_list[1]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 20
+        _utxo = _utxo_list[2]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 30
+        _utxo = _utxo_list[3]
+        assert _utxo.transaction_hash is not None
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 40
 
         # Execute Redeem Event
         # Share
@@ -983,27 +1018,27 @@ class TestProcessor:
 
         # assertion
         db.rollback()
-        _utox_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
-        assert len(_utox_list) == 4
-        _utox = _utox_list[0]
-        assert _utox.account_address == user_address_1
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 0
-        _utox = _utox_list[1]
-        assert _utox.account_address == user_address_1
-        assert _utox.token_address == token_address_1
-        assert _utox.amount == 10
-        _utox = _utox_list[2]
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_2
-        assert _utox.amount == 0
-        _utox = _utox_list[3]
-        assert _utox.account_address == user_address_2
-        assert _utox.token_address == token_address_2
-        assert _utox.amount == 30
+        _utxo_list = db.scalars(select(UTXO).order_by(UTXO.created)).all()
+        assert len(_utxo_list) == 4
+        _utxo = _utxo_list[0]
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 0
+        _utxo = _utxo_list[1]
+        assert _utxo.account_address == user_address_1
+        assert _utxo.token_address == token_address_1
+        assert _utxo.amount == 10
+        _utxo = _utxo_list[2]
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 0
+        _utxo = _utxo_list[3]
+        assert _utxo.account_address == user_address_2
+        assert _utxo.token_address == token_address_2
+        assert _utxo.amount == 30
 
-        _utox_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
-        assert _utox_block_number.latest_block_number == latest_block
+        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        assert _utxo_block_number.latest_block_number == latest_block
 
     # <Normal_8_1>
     # Unlock(account_address!=recipient_address)
@@ -1420,7 +1455,7 @@ class TestProcessor:
         ) as web3_mock:
             await processor.process()
 
-        _utox_list = db.scalars(select(UTXO)).all()
-        assert len(_utox_list) == 0
-        _utox_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
-        assert _utox_block_number.latest_block_number == latest_block
+        _utxo_list = db.scalars(select(UTXO)).all()
+        assert len(_utxo_list) == 0
+        _utxo_block_number = db.scalars(select(UTXOBlockNumber).limit(1)).first()
+        assert _utxo_block_number.latest_block_number == latest_block
