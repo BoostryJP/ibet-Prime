@@ -2747,6 +2747,409 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
             ],
         }
 
+    # <Normal_4_6>
+    # Search filter: key_manager
+    def test_normal_4_6(self, client, db):
+        user = config_eth_account("user1")
+        _issuer_address = user["address"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+        _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
+        _account_address_2 = "0x3F198534Bbe3B2a197d3B317d41392F348EAC707"
+        _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
+
+        account = Account()
+        account.issuer_address = _issuer_address
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        token.version = TokenVersion.V_23_12
+        db.add(token)
+
+        # prepare data: account_address_1
+        idx_position_1 = IDXPosition()
+        idx_position_1.token_address = _token_address
+        idx_position_1.account_address = _account_address_1
+        idx_position_1.balance = 10
+        idx_position_1.exchange_balance = 11
+        idx_position_1.exchange_commitment = 12
+        idx_position_1.pending_transfer = 5
+        idx_position_1.modified = datetime(2023, 10, 24, 0, 0, 0)
+        db.add(idx_position_1)
+
+        idx_locked_position = IDXLockedPosition()
+        idx_locked_position.token_address = _token_address
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
+        idx_locked_position.account_address = _account_address_1
+        idx_locked_position.value = 5
+        idx_locked_position.modified = datetime(2023, 10, 24, 1, 0, 0)
+        db.add(idx_locked_position)
+
+        idx_locked_position = IDXLockedPosition()
+        idx_locked_position.token_address = _token_address
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
+        idx_locked_position.account_address = _account_address_1
+        idx_locked_position.value = 5
+        idx_locked_position.modified = datetime(2023, 10, 24, 1, 10, 0)
+        db.add(idx_locked_position)
+
+        idx_personal_info_1 = IDXPersonalInfo()
+        idx_personal_info_1.account_address = _account_address_1
+        idx_personal_info_1.issuer_address = _issuer_address
+        idx_personal_info_1.personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(idx_personal_info_1)
+
+        # prepare data: account_address_2
+        idx_position_2 = IDXPosition()
+        idx_position_2.token_address = _token_address
+        idx_position_2.account_address = _account_address_2
+        idx_position_2.balance = 20
+        idx_position_2.exchange_balance = 21
+        idx_position_2.exchange_commitment = 22
+        idx_position_2.pending_transfer = 10
+        idx_position_2.modified = datetime(2023, 10, 24, 2, 0, 0)
+        db.add(idx_position_2)
+
+        idx_locked_position = IDXLockedPosition()
+        idx_locked_position.token_address = _token_address
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
+        idx_locked_position.account_address = _account_address_2
+        idx_locked_position.value = 10
+        idx_locked_position.modified = datetime(2023, 10, 24, 2, 10, 0)
+        db.add(idx_locked_position)
+
+        idx_locked_position = IDXLockedPosition()
+        idx_locked_position.token_address = _token_address
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
+        idx_locked_position.account_address = _account_address_2
+        idx_locked_position.value = 10
+        idx_locked_position.modified = datetime(2023, 10, 24, 2, 20, 0)
+        db.add(idx_locked_position)
+
+        # prepare data: account_address_3
+        idx_position_3 = IDXPosition()
+        idx_position_3.token_address = _token_address
+        idx_position_3.account_address = _account_address_3
+        idx_position_3.balance = 99
+        idx_position_3.exchange_balance = 99
+        idx_position_3.exchange_commitment = 99
+        idx_position_3.pending_transfer = 99
+        idx_position_3.modified = datetime(2023, 10, 24, 3, 0, 0)
+        db.add(idx_position_3)
+
+        idx_locked_position = IDXLockedPosition()
+        idx_locked_position.token_address = _token_address
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
+        idx_locked_position.account_address = _account_address_3
+        idx_locked_position.value = 15
+        idx_locked_position.modified = datetime(2023, 10, 24, 4, 0, 0)
+        db.add(idx_locked_position)
+
+        idx_locked_position = IDXLockedPosition()
+        idx_locked_position.token_address = _token_address
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
+        idx_locked_position.account_address = _account_address_3
+        idx_locked_position.value = 15
+        idx_locked_position.modified = datetime(2023, 10, 24, 5, 0, 0)
+        db.add(idx_locked_position)
+
+        # Other locked position
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = "other_token_address"
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
+        _locked_position.account_address = _account_address_1
+        _locked_position.value = 5
+        _locked_position.modified = datetime(2023, 10, 25, 0, 2, 0)
+        db.add(_locked_position)
+
+        idx_personal_info_3 = IDXPersonalInfo()
+        idx_personal_info_3.account_address = _account_address_3
+        idx_personal_info_3.issuer_address = _issuer_address
+        idx_personal_info_3.personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test3",
+            "postal_code": "postal_code_test3",
+            "address": "address_test3",
+            "email": "email_test3",
+            "birth": "birth_test3",
+            # PersonalInfo is partially registered.
+        }
+        db.add(idx_personal_info_3)
+
+        db.commit()
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(_token_address),
+            headers={"issuer-address": _issuer_address},
+            params={"key_manager": "_test1"},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 2, "total": 3, "offset": None, "limit": None},
+            "holders": [
+                {
+                    "account_address": _account_address_1,
+                    "personal_information": {
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test1",
+                        "postal_code": "postal_code_test1",
+                        "address": "address_test1",
+                        "email": "email_test1",
+                        "birth": "birth_test1",
+                        "is_corporate": False,
+                        "tax_category": 10,
+                    },
+                    "balance": 10,
+                    "exchange_balance": 11,
+                    "exchange_commitment": 12,
+                    "pending_transfer": 5,
+                    "locked": 10,
+                    "modified": "2023-10-24T01:10:00",
+                },
+                {
+                    "account_address": _account_address_3,
+                    "personal_information": {
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test3",
+                        "postal_code": "postal_code_test3",
+                        "address": "address_test3",
+                        "email": "email_test3",
+                        "birth": "birth_test3",
+                        "is_corporate": None,
+                        "tax_category": None,
+                    },
+                    "balance": 99,
+                    "exchange_balance": 99,
+                    "exchange_commitment": 99,
+                    "pending_transfer": 99,
+                    "locked": 30,
+                    "modified": "2023-10-24T05:00:00",
+                },
+            ],
+        }
+
+    # <Normal_4_7>
+    # Search filter: account_address
+    def test_normal_4_7(self, client, db):
+        user = config_eth_account("user1")
+        _issuer_address = user["address"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+        _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
+        _account_address_2 = "0x3F198534Bbe3B2a197d3B317d41392F348EAC707"
+        _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
+
+        account = Account()
+        account.issuer_address = _issuer_address
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        token.version = TokenVersion.V_23_12
+        db.add(token)
+
+        # prepare data: account_address_1
+        idx_position_1 = IDXPosition()
+        idx_position_1.token_address = _token_address
+        idx_position_1.account_address = _account_address_1
+        idx_position_1.balance = 10
+        idx_position_1.exchange_balance = 11
+        idx_position_1.exchange_commitment = 12
+        idx_position_1.pending_transfer = 5
+        idx_position_1.modified = datetime(2023, 10, 24, 0, 0, 0)
+        db.add(idx_position_1)
+
+        idx_locked_position = IDXLockedPosition()
+        idx_locked_position.token_address = _token_address
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
+        idx_locked_position.account_address = _account_address_1
+        idx_locked_position.value = 5
+        idx_locked_position.modified = datetime(2023, 10, 24, 1, 0, 0)
+        db.add(idx_locked_position)
+
+        idx_locked_position = IDXLockedPosition()
+        idx_locked_position.token_address = _token_address
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
+        idx_locked_position.account_address = _account_address_1
+        idx_locked_position.value = 5
+        idx_locked_position.modified = datetime(2023, 10, 24, 1, 10, 0)
+        db.add(idx_locked_position)
+
+        idx_personal_info_1 = IDXPersonalInfo()
+        idx_personal_info_1.account_address = _account_address_1
+        idx_personal_info_1.issuer_address = _issuer_address
+        idx_personal_info_1.personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(idx_personal_info_1)
+
+        # prepare data: account_address_2
+        idx_position_2 = IDXPosition()
+        idx_position_2.token_address = _token_address
+        idx_position_2.account_address = _account_address_2
+        idx_position_2.balance = 20
+        idx_position_2.exchange_balance = 21
+        idx_position_2.exchange_commitment = 22
+        idx_position_2.pending_transfer = 10
+        idx_position_2.modified = datetime(2023, 10, 24, 2, 0, 0)
+        db.add(idx_position_2)
+
+        idx_locked_position = IDXLockedPosition()
+        idx_locked_position.token_address = _token_address
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
+        idx_locked_position.account_address = _account_address_2
+        idx_locked_position.value = 10
+        idx_locked_position.modified = datetime(2023, 10, 24, 2, 10, 0)
+        db.add(idx_locked_position)
+
+        idx_locked_position = IDXLockedPosition()
+        idx_locked_position.token_address = _token_address
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
+        idx_locked_position.account_address = _account_address_2
+        idx_locked_position.value = 10
+        idx_locked_position.modified = datetime(2023, 10, 24, 2, 20, 0)
+        db.add(idx_locked_position)
+
+        # prepare data: account_address_3
+        idx_position_3 = IDXPosition()
+        idx_position_3.token_address = _token_address
+        idx_position_3.account_address = _account_address_3
+        idx_position_3.balance = 99
+        idx_position_3.exchange_balance = 99
+        idx_position_3.exchange_commitment = 99
+        idx_position_3.pending_transfer = 99
+        idx_position_3.modified = datetime(2023, 10, 24, 3, 0, 0)
+        db.add(idx_position_3)
+
+        idx_locked_position = IDXLockedPosition()
+        idx_locked_position.token_address = _token_address
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
+        idx_locked_position.account_address = _account_address_3
+        idx_locked_position.value = 15
+        idx_locked_position.modified = datetime(2023, 10, 24, 4, 0, 0)
+        db.add(idx_locked_position)
+
+        idx_locked_position = IDXLockedPosition()
+        idx_locked_position.token_address = _token_address
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
+        idx_locked_position.account_address = _account_address_3
+        idx_locked_position.value = 15
+        idx_locked_position.modified = datetime(2023, 10, 24, 5, 0, 0)
+        db.add(idx_locked_position)
+
+        # Other locked position
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = "other_token_address"
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
+        _locked_position.account_address = _account_address_1
+        _locked_position.value = 5
+        _locked_position.modified = datetime(2023, 10, 25, 0, 2, 0)
+        db.add(_locked_position)
+
+        idx_personal_info_3 = IDXPersonalInfo()
+        idx_personal_info_3.account_address = _account_address_3
+        idx_personal_info_3.issuer_address = _issuer_address
+        idx_personal_info_3.personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test3",
+            "postal_code": "postal_code_test3",
+            "address": "address_test3",
+            "email": "email_test3",
+            "birth": "birth_test3",
+            # PersonalInfo is partially registered.
+        }
+        db.add(idx_personal_info_3)
+
+        db.commit()
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(_token_address),
+            headers={"issuer-address": _issuer_address},
+            params={"account_address": _account_address_1[10:20]},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 1, "total": 3, "offset": None, "limit": None},
+            "holders": [
+                {
+                    "account_address": _account_address_1,
+                    "personal_information": {
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test1",
+                        "postal_code": "postal_code_test1",
+                        "address": "address_test1",
+                        "email": "email_test1",
+                        "birth": "birth_test1",
+                        "is_corporate": False,
+                        "tax_category": 10,
+                    },
+                    "balance": 10,
+                    "exchange_balance": 11,
+                    "exchange_commitment": 12,
+                    "pending_transfer": 5,
+                    "locked": 10,
+                    "modified": "2023-10-24T01:10:00",
+                },
+            ],
+        }
+
     # <Normal_5_1>
     # Sort Item: created
     def test_normal_5_1(self, client, db):
@@ -4140,6 +4543,271 @@ class TestAppRoutersBondTokensTokenAddressHoldersGET:
                     "account_address": _account_address_3,
                     "personal_information": {
                         "key_manager": "key_manager_test1",
+                        "name": "name_test3",
+                        "postal_code": "postal_code_test3",
+                        "address": "address_test3",
+                        "email": "email_test3",
+                        "birth": "birth_test3",
+                        "is_corporate": None,
+                        "tax_category": None,
+                    },
+                    "balance": 99,
+                    "exchange_balance": 99,
+                    "exchange_commitment": 99,
+                    "pending_transfer": 99,
+                    "locked": 30,
+                    "modified": "2023-10-24T05:00:00",
+                },
+                {
+                    "account_address": _account_address_1,
+                    "personal_information": {
+                        "key_manager": "key_manager_test1",
+                        "name": "name_test1",
+                        "postal_code": "postal_code_test1",
+                        "address": "address_test1",
+                        "email": "email_test1",
+                        "birth": "birth_test1",
+                        "is_corporate": False,
+                        "tax_category": 10,
+                    },
+                    "balance": 10,
+                    "exchange_balance": 11,
+                    "exchange_commitment": 12,
+                    "pending_transfer": 5,
+                    "locked": 10,
+                    "modified": "2023-10-24T01:10:00",
+                },
+            ],
+        }
+
+    # <Normal_5_7>
+    # Sort Item: key_manager
+    def test_normal_5_7(self, client, db):
+        user = config_eth_account("user1")
+        _issuer_address = user["address"]
+        _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+        _account_address_1 = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
+        _account_address_2 = "0x3F198534Bbe3B2a197d3B317d41392F348EAC707"
+        _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
+        _account_address_4 = "0x917eFFaC072dcda308e2337636f562D0A96F42eA"
+
+        account = Account()
+        account.issuer_address = _issuer_address
+        db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND.value
+        token.tx_hash = ""
+        token.issuer_address = _issuer_address
+        token.token_address = _token_address
+        token.abi = ""
+        token.version = TokenVersion.V_23_12
+        db.add(token)
+
+        # prepare data: account_address_1
+        idx_position_1 = IDXPosition()
+        idx_position_1.token_address = _token_address
+        idx_position_1.account_address = _account_address_1
+        idx_position_1.balance = 10
+        idx_position_1.exchange_balance = 11
+        idx_position_1.exchange_commitment = 12
+        idx_position_1.pending_transfer = 5
+        idx_position_1.created = datetime(2023, 10, 24, 0, 0, 0)
+        idx_position_1.modified = datetime(2023, 10, 24, 0, 0, 0)
+        db.add(idx_position_1)
+
+        idx_locked_position = IDXLockedPosition()
+        idx_locked_position.token_address = _token_address
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
+        idx_locked_position.account_address = _account_address_1
+        idx_locked_position.value = 5
+        idx_locked_position.modified = datetime(2023, 10, 24, 1, 0, 0)
+        db.add(idx_locked_position)
+
+        idx_locked_position = IDXLockedPosition()
+        idx_locked_position.token_address = _token_address
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
+        idx_locked_position.account_address = _account_address_1
+        idx_locked_position.value = 5
+        idx_locked_position.modified = datetime(2023, 10, 24, 1, 10, 0)
+        db.add(idx_locked_position)
+
+        idx_personal_info_1 = IDXPersonalInfo()
+        idx_personal_info_1.account_address = _account_address_1
+        idx_personal_info_1.issuer_address = _issuer_address
+        idx_personal_info_1.personal_info = {
+            "key_manager": "key_manager_test1",
+            "name": "name_test1",
+            "postal_code": "postal_code_test1",
+            "address": "address_test1",
+            "email": "email_test1",
+            "birth": "birth_test1",
+            "is_corporate": False,
+            "tax_category": 10,
+        }
+        db.add(idx_personal_info_1)
+
+        # prepare data: account_address_2
+        idx_position_2 = IDXPosition()
+        idx_position_2.token_address = _token_address
+        idx_position_2.account_address = _account_address_2
+        idx_position_2.balance = 20
+        idx_position_2.exchange_balance = 21
+        idx_position_2.exchange_commitment = 22
+        idx_position_2.pending_transfer = 10
+        idx_position_2.created = datetime(2023, 10, 24, 2, 0, 0)
+        idx_position_2.modified = datetime(2023, 10, 24, 2, 0, 0)
+        db.add(idx_position_2)
+
+        idx_locked_position = IDXLockedPosition()
+        idx_locked_position.token_address = _token_address
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
+        idx_locked_position.account_address = _account_address_2
+        idx_locked_position.value = 10
+        idx_locked_position.modified = datetime(2023, 10, 24, 2, 10, 0)
+        db.add(idx_locked_position)
+
+        idx_locked_position = IDXLockedPosition()
+        idx_locked_position.token_address = _token_address
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
+        idx_locked_position.account_address = _account_address_2
+        idx_locked_position.value = 10
+        idx_locked_position.modified = datetime(2023, 10, 24, 2, 20, 0)
+        db.add(idx_locked_position)
+
+        # prepare data: account_address_3
+        idx_position_3 = IDXPosition()
+        idx_position_3.token_address = _token_address
+        idx_position_3.account_address = _account_address_3
+        idx_position_3.balance = 99
+        idx_position_3.exchange_balance = 99
+        idx_position_3.exchange_commitment = 99
+        idx_position_3.pending_transfer = 99
+        idx_position_3.created = datetime(2023, 10, 24, 3, 0, 0)
+        idx_position_3.modified = datetime(2023, 10, 24, 3, 0, 0)
+        db.add(idx_position_3)
+
+        idx_locked_position = IDXLockedPosition()
+        idx_locked_position.token_address = _token_address
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000001"  # lock address 1
+        )
+        idx_locked_position.account_address = _account_address_3
+        idx_locked_position.value = 15
+        idx_locked_position.modified = datetime(2023, 10, 24, 4, 0, 0)
+        db.add(idx_locked_position)
+
+        idx_locked_position = IDXLockedPosition()
+        idx_locked_position.token_address = _token_address
+        idx_locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
+        idx_locked_position.account_address = _account_address_3
+        idx_locked_position.value = 15
+        idx_locked_position.modified = datetime(2023, 10, 24, 5, 0, 0)
+        db.add(idx_locked_position)
+
+        # Other locked position
+        _locked_position = IDXLockedPosition()
+        _locked_position.token_address = "other_token_address"
+        _locked_position.lock_address = (
+            "0x1234567890123456789012345678900000000002"  # lock address 2
+        )
+        _locked_position.account_address = _account_address_1
+        _locked_position.value = 5
+        _locked_position.modified = datetime(2023, 10, 25, 0, 2, 0)
+        db.add(_locked_position)
+
+        idx_personal_info_3 = IDXPersonalInfo()
+        idx_personal_info_3.account_address = _account_address_3
+        idx_personal_info_3.issuer_address = _issuer_address
+        idx_personal_info_3.personal_info = {
+            "key_manager": "key_manager_test2",
+            "name": "name_test3",
+            "postal_code": "postal_code_test3",
+            "address": "address_test3",
+            "email": "email_test3",
+            "birth": "birth_test3",
+            # PersonalInfo is partially registered.
+        }
+        db.add(idx_personal_info_3)
+
+        # prepare data: account_address_4
+        idx_position_4 = IDXPosition()
+        idx_position_4.token_address = _token_address
+        idx_position_4.account_address = _account_address_4
+        idx_position_4.balance = 100
+        idx_position_4.exchange_balance = 100
+        idx_position_4.exchange_commitment = 100
+        idx_position_4.pending_transfer = 100
+        idx_position_4.created = datetime(2023, 10, 24, 6, 0, 0)
+        idx_position_4.modified = datetime(2023, 10, 24, 6, 0, 0)
+        db.add(idx_position_4)
+
+        db.commit()
+
+        # request target API
+        resp = client.get(
+            self.base_url.format(_token_address),
+            headers={"issuer-address": _issuer_address},
+            params={"sort_order": 1, "sort_item": "key_manager"},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 4, "total": 4, "offset": None, "limit": None},
+            "holders": [
+                {
+                    "account_address": _account_address_2,
+                    "personal_information": {
+                        "key_manager": None,
+                        "name": None,
+                        "postal_code": None,
+                        "address": None,
+                        "email": None,
+                        "birth": None,
+                        "is_corporate": None,
+                        "tax_category": None,
+                    },
+                    "balance": 20,
+                    "exchange_balance": 21,
+                    "exchange_commitment": 22,
+                    "pending_transfer": 10,
+                    "locked": 20,
+                    "modified": "2023-10-24T02:20:00",
+                },
+                {
+                    "account_address": _account_address_4,
+                    "personal_information": {
+                        "key_manager": None,
+                        "name": None,
+                        "postal_code": None,
+                        "address": None,
+                        "email": None,
+                        "birth": None,
+                        "is_corporate": None,
+                        "tax_category": None,
+                    },
+                    "balance": 100,
+                    "exchange_balance": 100,
+                    "exchange_commitment": 100,
+                    "pending_transfer": 100,
+                    "locked": 0,
+                    "modified": "2023-10-24T06:00:00",
+                },
+                {
+                    "account_address": _account_address_3,
+                    "personal_information": {
+                        "key_manager": "key_manager_test2",
                         "name": "name_test3",
                         "postal_code": "postal_code_test3",
                         "address": "address_test3",

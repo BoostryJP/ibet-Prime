@@ -354,12 +354,13 @@ class ListAllRedeemUploadQuery:
 
 
 class ListAllHoldersSortItem(StrEnum):
-    CREATED = "created"
-    ACCOUNT_ADDRESS = "account_address"
-    BALANCE = "balance"
-    PENDING_TRANSFER = "pending_transfer"
-    LOCKED = "locked"
-    HOLDER_NAME = "holder_name"
+    created = "created"
+    account_address = "account_address"
+    balance = "balance"
+    pending_transfer = "pending_transfer"
+    locked = "locked"
+    key_manager = "key_manager"
+    holder_name = "holder_name"
 
 
 @dataclass
@@ -390,11 +391,17 @@ class ListAllHoldersQuery:
             description="search condition of locked amount(0:equal, 1:greater than or equal, 2:less than or equal）",
         ),
     ] = ValueOperator.EQUAL
+    account_address: Annotated[
+        Optional[str], Query(description="account address(partial match)")
+    ] = None
     holder_name: Annotated[
-        Optional[str], Query(description="holder_name(partial match)")
+        Optional[str], Query(description="holder name(partial match)")
+    ] = None
+    key_manager: Annotated[
+        Optional[str], Query(description="key manager(partial match)")
     ] = None
     sort_item: Annotated[ListAllHoldersSortItem, Query(description="Sort Item")] = (
-        ListAllHoldersSortItem.CREATED
+        ListAllHoldersSortItem.created
     )
     sort_order: Annotated[SortOrder, Query(description="0:asc, 1:desc")] = SortOrder.ASC
     offset: Annotated[Optional[int], Query(description="Start position", ge=0)] = None

@@ -29,8 +29,8 @@ from pytz import timezone
 from sqlalchemy import (
     String,
     and_,
-    case,
     asc,
+    case,
     cast,
     column,
     desc,
@@ -1717,7 +1717,9 @@ async def list_all_holders(
     pending_transfer_operator = get_query.pending_transfer_operator
     locked = get_query.locked
     locked_operator = get_query.locked_operator
+    account_address = get_query.account_address
     holder_name = get_query.holder_name
+    key_manager = get_query.key_manager
     sort_item = get_query.sort_item
     sort_order = get_query.sort_order
     offset = get_query.offset
@@ -1827,6 +1829,9 @@ async def list_all_holders(
             case ValueOperator.LTE:
                 stmt = stmt.having(locked_value <= locked)
 
+    if account_address is not None:
+        stmt = stmt.where(IDXPosition.account_address.like("%" + account_address + "%"))
+
     if holder_name is not None:
         stmt = stmt.where(
             IDXPersonalInfo._personal_info["name"]
@@ -1834,12 +1839,21 @@ async def list_all_holders(
             .like("%" + holder_name + "%")
         )
 
+    if key_manager is not None:
+        stmt = stmt.where(
+            IDXPersonalInfo._personal_info["key_manager"]
+            .as_string()
+            .like("%" + key_manager + "%")
+        )
+
     count = await db.scalar(select(func.count()).select_from(stmt.subquery()))
 
     # Sort
-    if sort_item == ListAllHoldersSortItem.HOLDER_NAME:
+    if sort_item == ListAllHoldersSortItem.holder_name:
         sort_attr = IDXPersonalInfo._personal_info["name"].as_string()
-    elif sort_item == ListAllHoldersSortItem.LOCKED:
+    elif sort_item == ListAllHoldersSortItem.key_manager:
+        sort_attr = IDXPersonalInfo._personal_info["key_manager"].as_string()
+    elif sort_item == ListAllHoldersSortItem.locked:
         sort_attr = locked_value
     else:
         sort_attr = getattr(IDXPosition, sort_item)
@@ -1848,7 +1862,7 @@ async def list_all_holders(
         stmt = stmt.order_by(asc(sort_attr))
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
-    if sort_item != ListAllHoldersSortItem.CREATED:
+    if sort_item != ListAllHoldersSortItem.created:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(asc(IDXPosition.created))
 
